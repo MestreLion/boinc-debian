@@ -1,0 +1,37 @@
+#!/usr/bin/make -f
+
+DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+
+ifneq (, $(BOINC_BUILD_TYPE))
+DEB_BUILD_GNU_TYPE = $(BOINC_BUILD_TYPE)
+endif
+
+# Only compile the BOINC core client and gui application.
+DEB_CONFIGURE_EXTRA_FLAGS := --disable-server
+
+DEB_INSTALL_MANPAGES_boinc-client = boinc.1
+#DEB_INSTALL_MANPAGES_boinc-manager = boincmgr.1
+
+pre-build::
+	aclocal -I m4 && autoheader && automake && autoconf
+	
+	docbook2x-man debian/manpages/boinc.xml
+	docbook2x-man debian/manpages/boincmgr.xml
+
+binary-install/boinc-dev::
+	cd $(CURDIR)/debian/boinc-dev/usr/share/boinc/api && \
+	  ln -s ../../../include/boinc/api/* . && \
+	  ln -s ../../../lib/boinc/api/* .
+	
+	cd $(CURDIR)/debian/boinc-dev/usr/share/boinc/lib && \
+	  ln -s ../../../include/boinc/lib/* . && \
+	  ln -s ../../../lib/boinc/lib/* .
+	 
+	chmod 0644 $(CURDIR)/debian/boinc-dev/usr/share/boinc/Makefile.am
+
+clean::
+	dh_clean boinc.1
+	dh_clean boincmgr.1

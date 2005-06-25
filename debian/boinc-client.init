@@ -1,0 +1,125 @@
+#! /bin/sh
+# Debian init.d script for the BOINC core client
+# Copyright (C) 2005 Frank S. Thomas <frank@thomas-alfeld.de>
+#
+# This file is licensed under the terms of the GNU General Public License,
+# Version 2 or any later version published by the Free Software Foundation.
+#
+# $LastChangedDate: 2005-06-25 13:43:40 +0200 (Sat, 25 Jun 2005) $
+
+set -e
+
+ENABLED=0
+
+# Source defaults file. Edit that file to configure this script.
+if [ -e /etc/default/boinc-client ]; then
+  . /etc/default/boinc-client
+fi
+
+# Quit quietly, if $ENABLED is 0.
+test "$ENABLED" != "0" || exit 0
+
+if [ ! -x "$BOINC_CLIENT" ]; then
+  echo "BOINC client '$BOINC_CLIENT' does not exist or is not executable." >&2
+  exit 2
+fi
+
+if [ ! -d "$BOINC_DIR" ]; then
+  echo "BOINC working directory '$BOINC_DIR' does not exist." >&2
+  exit 3
+fi
+
+if [ ! -f "$BOINC_DIR/client_state.xml" ]; then
+  echo "State file 'client_state.xml' does not exist in '$BOINC_DIR'." \
+       "Run the BOINC core client in this directory manually first." >&2
+  exit 4
+fi
+
+PIDFILE=/var/run/boinc.pid
+DESC="BOINC core client"
+NAME=`basename $BOINC_CLIENT`
+
+is_alive()
+{
+  ret=1
+  if [ -r $PIDFILE ]; then
+    pid=`cat $PIDFILE`
+    if [ -e /proc/$pid ]; then
+      procname=`/bin/ps h -p $pid`
+      [ -n "$procname" ] && ret=0
+    fi
+  fi
+  return $ret
+}
+
+print_status()
+{
+  if is_alive; then
+    echo "."
+  else
+    echo " failed."
+  fi
+}
+
+start()
+{
+  if [ -f "$BOINC_DIR/lockfile" ]; then
+    echo "$DESC already started (lockfile exists); not starting." >&2
+    exit 5
+  fi
+  
+  echo -n "Starting $DESC: $NAME"
+  start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
+    --make-pidfile --user $BOINC_USER --chuid $BOINC_USER --chdir $BOINC_DIR \
+    --exec $BOINC_CLIENT -- -redirectio $BOINC_OPTS
+  print_status
+}
+
+stop()
+{
+  echo -n "Stopping $DESC: $NAME"
+  print_status 
+  start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
+    --user $BOINC_USER --exec $BOINC_CLIENT
+  rm -f "$BOINC_DIR/lockfile"
+  rm -f $PIDFILE
+}
+
+status()
+{
+  echo -n "Status of $DESC: "
+  if is_alive; then
+    echo "alive."
+  else
+    echo "dead."
+    exit 1
+  fi
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+
+  stop)
+    stop    
+    ;;
+
+  restart|force-reload)
+    stop
+    sleep 1
+    start
+    ;;
+
+  status)
+    status
+    ;;
+
+  *)
+    echo "Usage: /etc/init.d/boinc-client " \
+         "{start|stop|restart|force-reload|status}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

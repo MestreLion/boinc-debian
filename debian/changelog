@@ -1,0 +1,121 @@
+boinc (4.45a-2) experimental; urgency=low
+
+  * NOT RELEASED YET
+  * debian/boinc-client.init:
+    - Added status option to init.d script as proposed in Debian bug #291148.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 10 Jun 2005 17:25:52 +0200
+
+boinc (4.45a-1) experimental; urgency=low
+
+  * New upstream release.
+  * debian/control.in:
+    - Moved all packages into non-free section, because RSAEuro's license
+      does not comply with DFSG #6 (No Discrimination Against Fields of
+      Endeavor). The RSAEuro license is included in debian/copyright.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 10 Jun 2005 16:39:21 +0200
+
+boinc (4.40-1) experimental; urgency=low
+
+  * New upstream release.
+  * Disabled the boinc-manager package, because it build depends on
+    wxWidgets 2.6 which is not in Debian yet.
+  * debian/control.in:
+    - Added Steffen Moeller and myself to Uploaders.
+    - Build-Depend on libmysqlclient12-dev instead of the virtual package
+      libmysqlclient-dev.
+  * debian/boinc-manager.menu:
+    - Added BOINC, Science and Monitoring to the 'hints' field.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 13 May 2005 23:30:01 +0200
+
+boinc (4.27-1) experimental; urgency=low
+
+  * New upstream release.
+  * debian/control.in:
+    - Added automake1.9 and autoconf (>> 2.52) to Build-Depends.
+    - Added automake1.6 to Build-Conflicts.
+  * Renamed boinc-gui package to boinc-manager. The BOINC manager binary was
+    renamed from 'boinc_gui' to 'boincmgr', the BOINC core client binary was
+    renamed to 'boinc'. This package is still experimental, so boinc-manager
+    does not replace (or conflict with) boinc-gui.
+  * debian/rules:
+    - The BOINC_BUILD_TYPE environment variable can be used to specify
+      DEB_BUILD_GNU_TYPE in debian/rules. This is an interim solution for
+      the "platform '...' not found" problem. 
+    - Create symlinks of BOINC libraries and header files under
+      /usr/share/boinc/ in the boinc-dev package.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  4 Apr 2005 19:18:31 +0200
+
+boinc (4.26-1) experimental; urgency=low
+
+  * New upstream release.
+  * Added init.d script and defaults file for the boinc-client package.
+  * debian/copyright:
+    - Added copyright/license notices for RSAEURO, GLUT, Stripchart and
+      Zip/UnZip.
+  * Updated boinc_client and boinc_gui manpages.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 21 Mar 2005 02:33:02 +0100
+
+boinc (4.25-1) experimental; urgency=low
+
+  * New upstream release.
+  * Provides now the boinc-gui package, which contains the BOINC manager, a
+    graphical monitoring utility for the core client.
+  * Revised the boinc_client manpage and added the boinc_gui manpage. Manpages
+    are now created with the docbook2x-man tool.
+  * debian/control: 
+    - Added build dependences on libmysqlclient-dev, freeglut-dev,
+      libwxgtk2.4-dev and docbook2x.  
+    - Added build conflict with automake1.4.
+    - Changed section from "science" to "net" (boinc-client), "x11" (boinc-gui)
+      and "devel" (boinc-dev).
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue,  8 Mar 2005 15:54:12 +0100
+
+boinc (4.19-1) experimental; urgency=low
+
+  * New upstream release.
+  * Cleaned up the debian directory and rewrote debian/rules for cdbs. 
+  
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 27 Jan 2005 15:51:54 +0100
+
+boinc (4.18-1) experimental; urgency=low
+
+  * New upstream release.
+  * Removed debian/watch, because BOINC core releases are not distributed
+    as tar archives.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 25 Jan 2005 17:26:42 +0100
+
+boinc (4.17-1) experimental; urgency=low
+
+  * New upstream release.
+  * Removed menu entry of the boinc-client package.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 24 Jan 2005 20:35:10 +0100
+
+boinc (4.16b-1) experimental; urgency=low
+
+  * New upstream release.
+  * Updated debian/copyright, because the BOINC source code is now distributed
+    under the GNU Lesser General Public License (LGPL).
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 23 Jan 2005 15:48:10 +0100
+
+boinc (4.13.20041201-1) experimental; urgency=low
+
+  * New upstream release.
+  * Package boinc-dev also contains Makefile.am as searched for by SETI client.
+
+ -- Steffen Moeller <moeller@pzr.uni-rostock.de>  Sun, 5 Dec 2004 23:32:17 +0100
+
+boinc (4.13.20041119-1) experimental; urgency=low
+
+  * Initial release.
+
+ -- Steffen Moeller <moeller@pzr.uni-rostock.de>  Fri, 12 Nov 2004 23:32:17 +0100
+

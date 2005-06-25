@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Steffen</firstname>">
+  <!ENTITY dhsurname   "<surname>Moeller</surname>">
+  <!ENTITY dhusername  "Steffen Moeller">
+  <!ENTITY dhemail     "<email>moeller@pzr.uni-rostock.de</email>">
+  <!ENTITY dhpackage   "boinc">
+  <!ENTITY dhdate      "<date>November 12, 2004</date>">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<!-- 
+ This is the manual page for the BOINC core client.
+
+ This file is licensed under the terms of the GNU General Public License,
+ Version 2 or any later version published by the Free Software Foundation.
+ 
+ Copyright 2004 Steffen Moeller <moeller@pzr.uni-rostock.de>
+-->
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2004</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>boinc</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>The BOINC core client program.</refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>boinc</command>
+      <arg><replaceable>options</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  
+  <refsect1>
+    <title>DESCRIPTION</title>
+    <para><command>&dhpackage;</command> starts a client for communication with
+      the Berkeley Open Infrastructure for Network Computing.</para>
+  </refsect1>
+  
+  <refsect1>
+    <title>OPTIONS</title>
+    <para>A full summary of options is included below.</para>
+      
+    <variablelist>
+      <varlistentry>
+        <term><option>-version</option></term>
+        <listitem>
+          <para>show version info</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-show_projects</option></term>
+        <listitem>
+          <para>show attached projects</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-return_results_immediately</option></term>
+        <listitem>
+          <para>contact server when have results</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>-detach_project <replaceable>URL</replaceable></option>
+        </term>
+        <listitem>
+          <para>detach from a project</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>-reset_project <replaceable>URL</replaceable></option>
+        </term>
+        <listitem>
+          <para>reset (clear) a project</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-attach_project</option></term>
+        <listitem>
+          <para>attach to a project (will prompt for URL and account key)</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>-update_prefs <replaceable>URL</replaceable></option>
+        </term>
+        <listitem>
+          <para>contact a project to update preferences</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-run_cpu_benchmarks</option></term>
+        <listitem>
+          <para>run the CPU benchmarks</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-check_all_logins</option></term>
+        <listitem>
+          <para>check input from remote users</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-allow_remote_gui_rpc</option></term>
+        <listitem>
+          <para>allow remote GUI RPC connections</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-redirectio</option></term>
+	<listitem>
+	  <para>redirect stdout and stderr to log files</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Access control for GUI RPC</title>
+    <para>By default the core client accepts GUI RPC connections only from
+      programs on the same host, which means that any user on this host can
+      control the core client.</para>
+  </refsect1>
+  
+  <refsect1>
+    <title>SEE ALSO</title>
+    <para><ulink url="http://setiweb.ssl.berkeley.edu"
+      >http://setiweb.ssl.berkeley.edu</ulink></para>
+    <para><ulink url="http://boinc.berkeley.edu"
+      >http://boinc.berkeley.edu</ulink></para>
+  </refsect1>
+  
+  <refsect1>
+    <title>AUTHOR</title>
+    <para>This manual page was written by &dhusername; &dhemail; for the
+      &debian; project (but may be used by others). Permission is granted to
+      copy, distribute and/or modify this document under the terms of the &gnu;
+      General Public License, Version 2 or any later version published by the
+      Free Software Foundation.</para>
+  </refsect1>
+</refentry>

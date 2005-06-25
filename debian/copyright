@@ -1,0 +1,248 @@
+This package was debianized by Steffen Moeller <moeller@pzr.uni-rostock.de> on
+Sat, 13 Nov 2004 23:28:53 +0100 and updated by Frank S. Thomas
+<frank@thomas-alfeld.de> on Tue, 25 Jan 2005 17:33:23 +0100.
+
+It was downloaded via CVS from alien.ssl.berkeley.edu.
+
+Upstream Author: David Anderson <davea@ssl.berkeley.edu> 
+                 and others, see http://boinc.berkeley.edu/contact.php
+
+Copyright (C) 2005 University of California at Berkeley
+
+Allmost all software included in this package is licensed under the terms of
+the LGPL (exceptions are listed below):
+
+   This package is free software; you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as published
+   by the Free Software Foundation; either version 2.1 of the License, or
+   (at your option) any later version
+
+   This package is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with this package; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+   02111-1307, USA.
+
+On Debian systems, the complete text of the GNU Lesser General
+Public License can be found in `/usr/share/common-licenses/LGPL'.
+
+
+Copyright and license notices for additional software included in this package:
+
+RSAEURO in RSAEuro directory:
+=============================
+
+Copyright (C) 1994-1996 J.S.A.Kapp
+
+License:
+                             RSAEURO
+                    TOOLKIT LICENSE AGREEMENT
+                         17th April 1996.
+
+               Copyright (c) J.S.A.Kapp, 1994-1996.
+
+1.   LICENSE. J.S.A.Kapp grants you a nonexclusive, non-transferable,
+     perpetual (subject to the conditions of section 7) license for the
+     "RSAEURO" toolkit (the "Toolkit") and its associated documentation,
+     subject to all of the following terms and conditions:
+
+     i.   To use the Toolkit on any computer in your possession.
+
+     ii.  to make copies of the Toolkit for back-up purposes.
+
+     iii. to modify the Toolkit in any manner for porting or performance
+          improvement purposes (subject to Section 2) or to incorporate the 
+          Toolkit into other computer programs for your own personal or
+          internal use, provided that you provide J.S.A.Kapp with a copy 
+          of any such modification or Application Program by electronic
+          mail, and grant J.S.A.Kapp a perpetual, royalty-free license to
+          use and distribute such modifications and Application Programs on
+          the terms set forth in this Agreement.
+
+     iv.  To copy and distribute the Toolkit and Application Programs in
+          accordance with the limitations set forth in Section 2.
+
+"Application Programs" are programs that incorporate all or any portion of the
+Toolkit in any form. The restrictions imposed on Application Programs in this
+Agreement shall not apply to any software which through the mere aggregation
+on distribution media, is co-located or stored with the Toolkit.
+
+2.   LIMITATIONS ON LICENSE.
+
+     i.   J.S.A.Kapp owns the Toolkit and its associated documentation and
+          all copyrights therein. You may only use, copy, modify and
+          distribute the Toolkit as expressly provided for in this
+          Agreement. You must reproduce and include this Agreement,
+          J.S.A.Kapp's copyright notices and disclaimer of warranty on any
+          copy and its associated documentation.
+
+     ii.  The Toolkit and its associated documentation are freeware for
+          noncommercial purposes, however for commercial purposes please
+          contact J.S.A.Kapp for licensing details.
+
+     iii. The Toolkit and Application Programs are to be used for
+          noncommercial purposes.  However, media costs associated with the
+          distribution of the Program or Application Programs may be
+          recovered.
+
+     iv.  The Toolkit, if modified, must carry prominent notices stating
+          that changes have been made, and the dates of any such changes. 
+
+     v.   Prior permission from J.S.A.Kapp is required for any
+          modifications that access the Toolkit through ways other than the
+          published Toolkit interface or for modifications to the Toolkit
+          interface, and structures. J.S.A.Kapp will grant all reasonable
+          requests for permission to make such modifications.
+
+3.   You are solely responsible for all of your costs and expenses incurred
+     in connection with the distribution of the Toolkit or any Application
+     Program hereunder, and J.S.A.Kapp shall have no liability, obligation
+     or responsibility there of. J.S.A.Kapp shall have no obligation to
+     provide maintenance, support, upgrades or new releases to you or to any
+     distributee of the Toolkit or any Application Program.
+
+4.   THE TOOLKIT AND ITS ASSOCIATED DOCUMENTATION ARE LICENSED "AS IS"
+     WITHOUT WARRANTY AS TO THEIR PERFORMANCE, MERCHANTABILITY OR FITNESS
+     FOR ANY PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE RESULTS AND
+     PERFORMANCE OF THE TOOLKIT IS ASSUMED BY YOU AND YOUR DISTRIBUTEES.
+     SHOULD THE TOOLKIT PROVE DEFECTIVE, YOU AND YOUR DISTRIBUTEES (AND NOT
+     J.S.A.KAPP) ASSUME THE ENTIRE COST OF ALL NECESSARY SERVICING, REPAIR
+     OR CORRECTION.
+
+5.   LIMITATION OF LIABILITY, NEITHER J.S.A.KAPP NOR ANY OTHER PERSON WHO
+     HAS BEEN INVOLVED IN THE CREATION, PRODUCTION, OR DELIVERY OF THE
+     TOOLKIT SHALL BE LIABLE TO YOU OR TO ANY OTHER PERSON FOR ANY DIRECT,
+     INCIDENTAL OR CONSEQUENTIAL DAMAGES, EVEN IF J.S.A.KAPP HAS BEEN
+     ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+6.   RSAEURO is a publication of cryptographic techniques. Applications
+     developed with RSAEURO may be subject to export controls in some
+     countries. If you are located in the United States and develop such
+     applications using RSAEURO, you are advised to obtain a copy of RSAREF
+     from RSADSI, as you may using RSAEURO infringe on Patents held by RSA
+     Data Security and Cylink.
+
+7.   The license granted hereunder is effective until terminated. You may
+     terminate it at anytime by destroying all components of the Toolkit and
+     its associated documentation. The termination of your license will not
+     result in the termination of the licenses of any distributees who have
+     received rights to the Toolkit through you so long as they are in
+     compliance with the provisions of this license.
+
+8.   GENERAL
+
+     i.   Address all correspondence regarding this license to J.S.A.Kapp's
+          electronic mail address <rsaeuro@sourcery.demon.co.uk>, or to
+
+          Mr J.S.A.Kapp.
+          The Post Office,
+          Dunsop Bridge,
+          Clitheroe,
+          Lancashire,
+          England.
+          BB7 3BB.
+
+          Tel. (+44) 1200-448241
+          Tel. (+44) 468-286034
+
+     ii.  For details of Export Controls and other controls regarding the
+          use of cryptographic techniques please contact your country's
+          relevant authority.
+
+
+GLUT in boinc_glut directory:
+=============================
+
+Copyright (C) 1994-1998 Mark J. Kilgard
+
+License:
+ 
+   This program is freely distributable without licensing fees
+   and is provided without guarantee or warrantee expressed or
+   implied. This program is -not- in the public domain.
+
+
+Stripchart in stripchart directory:
+===================================
+
+Copyright (C) 2002 Matt Lebofsky <mattl@ssl.berkeley.edu>,
+                   University of California at Berkeley                 
+
+Stripchart source code includes the following header:
+
+   The contents of this file are subject to the Mozilla Public License
+   Version 1.0 (the "License"); you may not use this file except in
+   compliance with the License. You may obtain a copy of the License at
+   http://www.mozilla.org/MPL/ 
+ 
+   Software distributed under the License is distributed on an "AS IS"
+   basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+   License for the specific language governing rights and limitations
+   under the License. 
+ 
+   The Original Code is the Berkeley Open Infrastructure for Network Computing. 
+ 
+   The Initial Developer of the Original Code is the SETI@home project.
+   Portions created by the SETI@home project are Copyright (C) 2002
+   University of California at Berkeley. All Rights Reserved.
+
+
+Zip in directory zip/zip and UnZip in directory zip/unzip:
+==========================================================
+
+Copyright (C) 1990-2002 Info-ZIP
+
+License:
+ 
+   For the purposes of this copyright and license, "Info-ZIP" is defined as
+   the following set of individuals:
+
+      Mark Adler, John Bush, Karl Davis, Harald Denker, Jean-Michel Dubois,
+      Jean-loup Gailly, Hunter Goatley, Ian Gorman, Chris Herborth, Dirk Haase,
+      Greg Hartwig, Robert Heath, Jonathan Hudson, Paul Kienitz,
+      David Kirschbaum, Johnny Lee, Onno van der Linden, Igor Mandrichenko,
+      Steve P. Miller, Sergio Monesi, Keith Owens, George Petrov, Greg Roelofs,
+      Kai Uwe Rommel, Steve Salisbury, Dave Smith, Christian Spieler,
+      Antoine Verheijen, Paul von Behren, Rich Wales, Mike White
+
+   This software is provided "as is," without warranty of any kind, express
+   or implied.  In no event shall Info-ZIP or its contributors be held liable
+   for any direct, indirect, incidental, special or consequential damages
+   arising out of the use of or inability to use this software.
+
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute it
+   freely, subject to the following restrictions:
+
+      1. Redistributions of source code must retain the above copyright notice,
+         definition, disclaimer, and this list of conditions.
+
+      2. Redistributions in binary form (compiled executables) must reproduce
+         the above copyright notice, definition, disclaimer, and this list of
+         conditions in documentation and/or other materials provided with the
+         distribution.  The sole exception to this condition is redistribution
+         of a standard UnZipSFX binary as part of a self-extracting archive;
+         that is permitted without inclusion of this license, as long as the
+         normal UnZipSFX banner has not been removed from the binary or
+         disabled.
+
+      3. Altered versions--including, but not limited to, ports to new
+         operating systems, existing ports with new graphical interfaces, and
+         dynamic, shared, or static library versions--must be plainly marked as
+         such and must not be misrepresented as being the original source.
+         Such altered versions also must not be misrepresented as being
+         Info-ZIP releases--including, but not limited to, labeling of the
+         altered versions with the names "Info-ZIP" (or any variation thereof,
+         including, but not limited to, different capitalizations),
+         "Pocket UnZip," "WiZ" or "MacZip" without the explicit permission of
+         Info-ZIP.  Such altered versions are further prohibited from
+         misrepresentative use of the Zip-Bugs or Info-ZIP e-mail addresses or
+         of the Info-ZIP URL(s).
+
+      4. Info-ZIP retains the right to use the names "Info-ZIP," "Zip,"
+         "UnZip," "UnZipSFX," "WiZ," "Pocket UnZip," "Pocket Zip," and "MacZip"
+         for its own source and binary releases.

@@ -1,0 +1,41 @@
+Source: boinc
+Section: non-free/net
+Priority: optional
+Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
+Uploaders: Frank S. Thomas <frank@thomas-alfeld.de>, Steffen Moeller <moeller@pzr.uni-rostock.de>
+Standards-Version: 3.6.1
+Build-Depends: @cdbs@, libmysqlclient12-dev, freeglut-dev, libwxgtk2.4-dev, automake1.9, autoconf (>> 2.52), docbook2x
+Build-Conflicts: automake1.4, automake1.6
+
+Package: boinc-client
+Section: non-free/net
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: core client program for BOINC
+ The Berkeley Open Infrastructure for Networking Computing (BOINC) is a
+ software platform for distributed computing. 
+ .
+ This package contains the BOINC core client program, that is required to
+ participate in any project that uses BOINC.
+
+#Package: boinc-manager
+#Section: non-free/x11
+#Architecture: any
+#Depends: ${shlibs:Depends}
+#Suggests: boinc-client
+#Description: monitoring utility for the BOINC core client
+# The Berkeley Open Infrastructure for Networking Computing (BOINC) is a
+# software platform for distributed computing.
+# .
+# This package contains the BOINC manager, a graphical monitoring utility
+# for the BOINC core client.
+
+Package: boinc-dev
+Section: non-free/devel
+Architecture: any
+Description: development files for BOINC
+ The Berkeley Open Infrastructure for Networking Computing (BOINC) is a
+ software platform for distributed computing.
+ .
+ This package contains library and header files required to compile and develop
+ BOINC clients.
