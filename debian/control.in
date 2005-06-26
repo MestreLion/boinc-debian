@@ -3,7 +3,7 @@ Section: non-free/net
 Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Frank S. Thomas <frank@thomas-alfeld.de>, Steffen Moeller <moeller@pzr.uni-rostock.de>
-Standards-Version: 3.6.1
+Standards-Version: 3.6.2
 Build-Depends: @cdbs@, libmysqlclient12-dev, freeglut-dev, libwxgtk2.4-dev, automake1.9, autoconf (>> 2.52), docbook2x
 Build-Conflicts: automake1.4, automake1.6
 

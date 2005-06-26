@@ -3,6 +3,8 @@ boinc (4.45a-2) experimental; urgency=low
   * NOT RELEASED YET
   * debian/boinc-client.init:
     - Added status option to init.d script as proposed in Debian bug #291148.
+  * debian/control.in:
+    - Bumped Standards-Version from 3.6.1 to 3.6.2, no changes required.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 10 Jun 2005 17:25:52 +0200
 
