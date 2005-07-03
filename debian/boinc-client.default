@@ -19,7 +19,6 @@ BOINC_DIR=
 BOINC_CLIENT=/usr/bin/boinc
 
 # Here you can specify additional options to pass to the BOINC core client.
-# Type 'boinc_client -help' or 'man boinc_client' for a full summary of
-# allowed options.
-#BOINC_OPTS="-allow_remote_gui_rpc"
+# Type 'boinc -help' or 'man boinc' for a full summary of allowed options.
+#BOINC_OPTS="-return_results_immediately -allow_remote_gui_rpc"
 BOINC_OPTS=""

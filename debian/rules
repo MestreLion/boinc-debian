@@ -1,5 +1,6 @@
 #!/usr/bin/make -f
 
+# Remember: comment this before tagging
 DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
 
 include /usr/share/cdbs/1/rules/debhelper.mk
@@ -16,7 +17,7 @@ DEB_INSTALL_MANPAGES_boinc-client = boinc.1
 #DEB_INSTALL_MANPAGES_boinc-manager = boincmgr.1
 
 pre-build::
-	aclocal -I m4 && autoheader && automake && autoconf
+	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	
 	docbook2x-man debian/manpages/boinc.xml
 	docbook2x-man debian/manpages/boincmgr.xml
