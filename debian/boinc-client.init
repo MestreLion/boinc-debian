@@ -36,7 +36,7 @@ if [ ! -f "$BOINC_DIR/client_state.xml" ]; then
 fi
 
 if [ -z "$BOINC_USER" ]; then
-  echo "BOINC_USER variable is empty. Set it to a user to run the BOINC " \
+  echo "BOINC_USER variable is empty. Set it to a user to run the BOINC" \
        "core client." >&2
   exit 7
 fi
@@ -52,7 +52,7 @@ is_running()
     pid=`cat $PIDFILE`
     if [ -e /proc/$pid ]; then
       procname=`/bin/ps h -p $pid`
-      [ -n $procname ] && retval=0
+      [ -n "$procname" ] && retval=0
     fi
   fi
   return $retval
