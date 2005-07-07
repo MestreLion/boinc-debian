@@ -1,10 +1,14 @@
 #!/usr/bin/make -f
 
-# Remember: comment this before tagging
-DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
+# Remember to comment this before tagging for a release.
+#DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
+
+ifeq ($(DEB_BUILD_GNU_TYPE), i486-linux-gnu)
+DEB_BUILD_GNU_TYPE = i686-linux-gnu
+endif
 
 ifneq (, $(BOINC_BUILD_TYPE))
 DEB_BUILD_GNU_TYPE = $(BOINC_BUILD_TYPE)

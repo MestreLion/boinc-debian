@@ -1,6 +1,5 @@
 boinc (4.70-1) experimental; urgency=low
 
-  * UNRELEASED
   * New upstream release.
   * Built with g++-4.0.
   * debian/boinc-client.init:
@@ -10,10 +9,13 @@ boinc (4.70-1) experimental; urgency=low
       aclocal-1.9 and automake-1.9 in debian/rules directly now.
     - Bumped Standards-Version from 3.6.1 to 3.6.2, no changes required.
   * debian/rules:
+    - Use 'i686-linux-gnu' as default DEB_BUILD_GNU_TYPE on 'i486-linux-gnu'.
+      It is still possible to override DEB_BUILD_GNU_TYPE with the
+      BOINC_BUILD_TYPE variable.
     - Added '--enable-client' and '--enable-server' as configure flags.
   * Added missing options to boinc-client manpage.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 10 Jun 2005 17:25:52 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  7 Jul 2005 18:00:03 +0200
 
 boinc (4.45a-1) experimental; urgency=low
 
