@@ -10,6 +10,8 @@ ifneq (, $(BOINC_BUILD_TYPE))
 DEB_BUILD_GNU_TYPE = $(BOINC_BUILD_TYPE)
 endif
 
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-client --enable-server
+
 DEB_INSTALL_MANPAGES_boinc-client = boinc.1
 #DEB_INSTALL_MANPAGES_boinc-manager = boincmgr.1
 
