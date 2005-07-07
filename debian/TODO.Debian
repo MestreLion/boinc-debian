@@ -6,6 +6,15 @@
   Fortunately the BOINC developers are considering using another crypto
   library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
 
+* GENERAL:
+  - What/where is the boinc_cmd script. Probably it should be packaged within the
+    boinc-client package. (Frank)
+
+* debian/boinc-client.init:
+  - The BOINC core client can start in an uninitialized directory. Should we remove
+    the check for the client_state.xml file? Users are supposed to attach to projects
+    with the BOINC manager or other similar tools like KBoincSpy. (Frank)
+
 * debian/manpages/boinc.xml:
   - Add information from this page: http://boinc.berkeley.edu/gui_rpc_control.php
     (Frank)
