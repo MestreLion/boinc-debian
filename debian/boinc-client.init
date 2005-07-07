@@ -35,64 +35,65 @@ if [ ! -f "$BOINC_DIR/client_state.xml" ]; then
   exit 4
 fi
 
+if [ -z "$BOINC_USER" ]; then
+  echo "BOINC_USER variable is empty. Set it to a user to run the BOINC " \
+       "core client." >&2
+  exit 7
+fi
+
 PIDFILE=/var/run/boinc.pid
 DESC="BOINC core client"
 NAME=`basename $BOINC_CLIENT`
 
-is_alive()
+is_running()
 {
-  ret=1
+  retval=1
   if [ -r $PIDFILE ]; then
     pid=`cat $PIDFILE`
     if [ -e /proc/$pid ]; then
       procname=`/bin/ps h -p $pid`
-      [ -n "$procname" ] && ret=0
+      [ -n $procname ] && retval=0
     fi
   fi
-  return $ret
-}
-
-print_status()
-{
-  if is_alive; then
-    echo "."
-  else
-    echo " failed."
-  fi
+  return $retval
 }
 
 start()
 {
-  if [ -f "$BOINC_DIR/lockfile" ]; then
-    echo "$DESC already started (lockfile exists); not starting." >&2
-    exit 5
+#  if [ -f "$BOINC_DIR/lockfile" ]; then
+#    echo "$DESC already started (lockfile exists); not starting." >&2
+#    exit 5
+#  fi
+
+  if is_running; then
+    echo "$DESC already started; not starting." >&2
+    exit 6
   fi
   
   echo -n "Starting $DESC: $NAME"
   start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
     --make-pidfile --user $BOINC_USER --chuid $BOINC_USER --chdir $BOINC_DIR \
     --exec $BOINC_CLIENT -- -redirectio $BOINC_OPTS
-  print_status
+  echo "."
 }
 
 stop()
 {
-  echo -n "Stopping $DESC: $NAME"
-  print_status 
+  echo -n "Stopping $DESC: $NAME" 
   start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
     --user $BOINC_USER --exec $BOINC_CLIENT
   rm -f "$BOINC_DIR/lockfile"
   rm -f $PIDFILE
+  echo "."
 }
 
 status()
 {
   echo -n "Status of $DESC: "
-  if is_alive; then
-    echo "alive."
+  if is_running; then
+    echo "running."
   else
-    echo "dead."
-    exit 1
+    echo "stopped."
   fi
 }
 

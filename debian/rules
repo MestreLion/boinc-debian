@@ -10,9 +10,6 @@ ifneq (, $(BOINC_BUILD_TYPE))
 DEB_BUILD_GNU_TYPE = $(BOINC_BUILD_TYPE)
 endif
 
-# Only compile the BOINC core client and gui application.
-DEB_CONFIGURE_EXTRA_FLAGS := --disable-server
-
 DEB_INSTALL_MANPAGES_boinc-client = boinc.1
 #DEB_INSTALL_MANPAGES_boinc-manager = boincmgr.1
 

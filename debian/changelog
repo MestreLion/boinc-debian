@@ -1,6 +1,8 @@
-boinc (4.45a-2) experimental; urgency=low
+boinc (4.70-1) experimental; urgency=low
 
-  * NOT RELEASED YET
+  * UNRELEASED
+  * New upstream release.
+  * Built with g++-4.0.
   * debian/boinc-client.init:
     - Added status option to init.d script as proposed in Debian bug #291148.
   * debian/control.in:
@@ -8,6 +10,7 @@ boinc (4.45a-2) experimental; urgency=low
       aclocal-1.9 and automake-1.9 in debian/rules directly now.
     - Bumped Standards-Version from 3.6.1 to 3.6.2, no changes required.
   * Added missing options to boinc-client manpage.
+  * --- removed --disable-server ----
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 10 Jun 2005 17:25:52 +0200
 
