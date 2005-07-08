@@ -1,1 +1,2 @@
-client/boinc     usr/bin
+client/boinc    usr/bin
+lib/boinc_cmd   usr/bin
