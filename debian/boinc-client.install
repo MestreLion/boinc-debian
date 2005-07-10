@@ -1,2 +1,2 @@
-client/boinc    usr/bin
-lib/boinc_cmd   usr/bin
+debian/tmp/usr/bin/boinc_client usr/bin
+debian/tmp/usr/bin/boinc_cmd    usr/bin
