@@ -1,2 +1,2 @@
-clientgui/boincmgr             usr/bin
-debian/icons/boincmgr-*.xpm    usr/share/pixmaps
+debian/tmp/usr/bin/boincmgr     usr/bin
+debian/icons/boincmgr-*.xpm     usr/share/pixmaps

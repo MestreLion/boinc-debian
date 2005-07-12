@@ -16,13 +16,14 @@ endif
 
 DEB_CONFIGURE_EXTRA_FLAGS := --enable-client --enable-server
 
-DEB_INSTALL_MANPAGES_boinc-client = boinc.1
+DEB_INSTALL_MANPAGES_boinc-client = boinc.1 boinc_cmd.1
 #DEB_INSTALL_MANPAGES_boinc-manager = boincmgr.1
 
 pre-build::
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	
-	docbook2x-man debian/manpages/boinc.xml
+	docbook2x-man debian/manpages/boinc_client.xml
+	docbook2x-man debian/manpages/boinc_cmd.xml
 	docbook2x-man debian/manpages/boincmgr.xml
 
 binary-install/boinc-dev::
@@ -37,5 +38,6 @@ binary-install/boinc-dev::
 	chmod 0644 $(CURDIR)/debian/boinc-dev/usr/share/boinc/Makefile.am
 
 clean::
-	dh_clean boinc.1
+	dh_clean boinc_client.1
+	dh_clean boinc_cmd.1
 	dh_clean boincmgr.1

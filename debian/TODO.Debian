@@ -4,23 +4,29 @@
   Fortunately the BOINC developers are considering using another crypto
   library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
 
+* [boinc-client]
+  - Create BOINC working directory for the CC under /var/lib (or spool?)/boinc-client. (Frank)
+  - Log CC output to /var/log/boinc-client.log? (Frank)
+
+  * debian/boinc-client.init:
+    - The BOINC core client can start in an uninitialized directory. Should we remove
+      the check for the client_state.xml file? Users are supposed to attach to projects
+      with boinc_cmd, the BOINC manager or other similar tools like KBoincSpy. (Frank)
+
+  * debian/manpages/boinc.xml:
+    - Add information from this page: http://boinc.berkeley.edu/gui_rpc_control.php
+      (Frank)
+    - Have a look at the FreeBSD BOINC manpage (debian/manpages/boinc-client.1.freebsd)
+      and adopt content that is also useful for our manpage. (Frank)
+    - Revise the description of all options. IMHO they are pretty useless if they are
+      only a copy of `boinc -help'. (Frank)
+
+  * debian/manpages/boinc_cmd.xml:
+    - Write it :-). (Frank)
+
+
 * [boinc-server]
   - Have a look at the dbconfig-common package. (Frank)
   - Use "test/test_sanity" to check for run-time dependencies of the
     boinc-server package. (Frank)
 
-* debian/boinc-client.init:
-  - The BOINC core client can start in an uninitialized directory. Should we remove
-    the check for the client_state.xml file? Users are supposed to attach to projects
-    with boinc_cmd, the BOINC manager or other similar tools like KBoincSpy. (Frank)
-
-* debian/manpages/boinc.xml:
-  - Add information from this page: http://boinc.berkeley.edu/gui_rpc_control.php
-    (Frank)
-  - Have a look at the FreeBSD BOINC manpage (debian/manpages/boinc-client.1.freebsd)
-    and adopt content that is also useful for our manpage. (Frank)
-  - Revise the description of all options. IMHO they are pretty useless if they are
-    only a copy of `boinc -help'. (Frank)
-
-* debian/manpages/boinc_cmd.xml:
-  - Write it :-). (Frank)

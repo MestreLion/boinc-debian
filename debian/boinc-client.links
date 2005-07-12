@@ -1,1 +1,2 @@
-usr/bin/boinc_client    usr/bin/boinc
+usr/bin/boinc_client                    usr/bin/boinc
+usr/share/man/man1/boinc_client.1.gz    usr/share/man/man1/boinc.1.gz
