@@ -1,10 +1,13 @@
-* Add dependencies to boinc-server. Use test/test_sanity ...
-
 * Write a nice long description for all BOINC packages.
 
 * Makes the RSAEURO TOOLKIT LICENSE AGREEMENT boinc non-free? Yes!
   Fortunately the BOINC developers are considering using another crypto
   library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
+
+* [boinc-server]
+  - Have a look at the dbconfig-common package. (Frank)
+  - Use "test/test_sanity" to check for run-time dependencies of the
+    boinc-server package. (Frank)
 
 * debian/boinc-client.init:
   - The BOINC core client can start in an uninitialized directory. Should we remove
