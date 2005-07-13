@@ -6,7 +6,7 @@
   <!ENTITY dhsurname   "<surname>Moeller</surname>">
   <!ENTITY dhusername  "Steffen Moeller">
   <!ENTITY dhemail     "<email>moeller@pzr.uni-rostock.de</email>">
-  <!ENTITY dhpackage   "boinc">
+  <!ENTITY dhbinary    "boinc_client">
   <!ENTITY dhdate      "<date>June 26, 2005</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
@@ -15,7 +15,7 @@
 ]>
 
 <!-- 
- This is the manual page for the BOINC core client.
+ This is the manual page for the BOINC core client (boinc_client).
 
  This file is licensed under the terms of the GNU General Public License,
  Version 2 or any later version published by the Free Software Foundation.
@@ -40,25 +40,25 @@
   </refentryinfo>
 
   <refmeta>
-    <refentrytitle>boinc</refentrytitle>
+    <refentrytitle>&dhbinary;</refentrytitle>
     <manvolnum>1</manvolnum>
   </refmeta>
 
   <refnamediv>
-    <refname>&dhpackage;</refname>
+    <refname>&dhbinary;</refname>
     <refpurpose>The BOINC core client program.</refpurpose>
   </refnamediv>
 
   <refsynopsisdiv>
     <cmdsynopsis>
-      <command>boinc</command>
+      <command>&dhbinary;</command>
       <arg><replaceable>options</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
   
   <refsect1>
     <title>DESCRIPTION</title>
-    <para><command>&dhpackage;</command> starts a client for communication with
+    <para><command>&dhbinary;</command> starts a client for communication with
       the Berkeley Open Infrastructure for Network Computing.</para>
   </refsect1>
   
