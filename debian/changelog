@@ -1,7 +1,9 @@
 boinc (4.70-2) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
-  * boinc_cmd now in boinc-client
+  * The boinc-client package now includes the boinc_cmd program, a command
+    tool that provides an interactive command-line interface to the BOINC
+    core client.
   * debian/control.in:
     - Added libwxgtk2.6-dev to Build-Depends and enabled the boinc-manager
       package again. 

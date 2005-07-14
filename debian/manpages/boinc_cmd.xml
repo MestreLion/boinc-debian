@@ -14,11 +14,13 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
 
+  <!ENTITY dhgroupname "Debian BOINC Maintainers">  
+
   <!ENTITY dhfirstname "<firstname>Frank</firstname>">
   <!ENTITY dhsurname   "<surname>Thomas</surname>">
   <!ENTITY dhusername  "Frank S. Thomas">
-  <!ENTITY dhgroupname "Debian BOINC Maintainers">  
   <!ENTITY dhemail     "<email>frank@thomas-alfeld.de</email>">
+
   <!ENTITY dhbinary    "boinc_cmd">
   <!ENTITY dhdate      "<date>July 14, 2005</date>">
   

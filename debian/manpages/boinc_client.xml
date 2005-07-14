@@ -12,10 +12,13 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
 
+  <!ENTITY dhgroupname "Debian BOINC Maintainers">
+  
   <!ENTITY dhfirstname "<firstname>Steffen</firstname>">
   <!ENTITY dhsurname   "<surname>Moeller</surname>">
   <!ENTITY dhusername  "Steffen Moeller">
   <!ENTITY dhemail     "<email>moeller@pzr.uni-rostock.de</email>">
+  
   <!ENTITY dhbinary    "boinc_client">
   <!ENTITY dhdate      "<date>June 26, 2005</date>">
 

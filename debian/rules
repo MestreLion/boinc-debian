@@ -26,17 +26,6 @@ pre-build::
 	docbook2x-man debian/manpages/boinc_cmd.xml
 	docbook2x-man debian/manpages/boincmgr.xml
 
-binary-install/boinc-dev::
-	cd $(CURDIR)/debian/boinc-dev/usr/share/boinc/api && \
-	  ln -s ../../../include/boinc/api/* . && \
-	  ln -s ../../../lib/boinc/api/* .
-	
-	cd $(CURDIR)/debian/boinc-dev/usr/share/boinc/lib && \
-	  ln -s ../../../include/boinc/lib/* . && \
-	  ln -s ../../../lib/boinc/lib/* .
-	 
-	chmod 0644 $(CURDIR)/debian/boinc-dev/usr/share/boinc/Makefile.am
-
 clean::
 	dh_clean boinc_client.1
 	dh_clean boinc_cmd.1

@@ -1,2 +1,11 @@
-debian/tmp/usr/bin/1sec     usr/bin
-debian/tmp/usr/bin/concat   usr/bin
+debian/tmp/usr/bin/1sec             usr/bin
+debian/tmp/usr/bin/concat           usr/bin
+debian/tmp/usr/bin/create_work      usr/bin
+debian/tmp/usr/bin/crypt_prog       usr/bin
+debian/tmp/usr/bin/dir_hier_move    usr/bin
+debian/tmp/usr/bin/dir_hier_path    usr/bin
+debian/tmp/usr/bin/sign_executable  usr/bin
+debian/tmp/usr/bin/start            usr/bin
+debian/tmp/usr/bin/status           usr/bin
+debian/tmp/usr/bin/stop             usr/bin
+debian/tmp/usr/bin/upper_case       usr/bin
