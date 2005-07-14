@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- 
+ This is the manual page for boinc_cmd, a command tool that provides an
+ interactive command-line interface to a running core client.
+  
+ This file is licensed under the terms of the GNU General Public License,
+ Version 2 or any later version published by the Free Software Foundation.
+
+ Copyright 2005 - The Debian BOINC Maintainers 
+                  <pkg-boinc-devel@lists.alioth.debian.org>
+-->
+
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
 
-  <!ENTITY dhfirstname "<firstname>Frank S.</firstname>">
+  <!ENTITY dhfirstname "<firstname>Frank</firstname>">
   <!ENTITY dhsurname   "<surname>Thomas</surname>">
-  <!ENTITY dhusername  "Frank S. Thomas">  
+  <!ENTITY dhusername  "Frank S. Thomas">
+  <!ENTITY dhgroupname "Debian BOINC Maintainers">  
   <!ENTITY dhemail     "<email>frank@thomas-alfeld.de</email>">
   <!ENTITY dhbinary    "boinc_cmd">
-  <!ENTITY dhdate      "<date>April 04, 2005</date>">
+  <!ENTITY dhdate      "<date>July 14, 2005</date>">
   
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
 ]>
-
-<!-- 
- This is the manual page for boinc_cmd.
-  
- This file is licensed under the terms of the GNU General Public License,
- Version 2 or any later version published by the Free Software Foundation.
-
- Copyright 2005 Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
--->
 
 <refentry>
   <refentryinfo>
@@ -34,7 +38,7 @@
     </author>
     <copyright>
       <year>2005</year>
-      <holder>&dhusername;</holder>
+      <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
   </refentryinfo>
@@ -46,7 +50,8 @@
   
   <refnamediv>
     <refname>&dhbinary;</refname> 
-    <refpurpose>???</refpurpose>
+    <refpurpose>A command tool that provides an interactive command-line
+      interface to the BOINC core client.</refpurpose>
   </refnamediv>
 
   <refsynopsisdiv>
@@ -57,9 +62,15 @@
   
   <refsect1>
     <title>DESCRIPTION</title>
-    <para>???</para>
+    <para></para>
   </refsect1>
-  
+
+  <refsect1>
+    <title>SEE ALSO</title>
+    <para><ulink url="http://boinc.berkeley.edu/client_unix.php"
+      >http://boinc.berkeley.edu/client_unix.php</ulink></para>
+  </refsect1>
+
   <refsect1>
     <title>AUTHOR</title>
     <para>This manual page was written by &dhusername; &lt;&dhemail;&gt; for
