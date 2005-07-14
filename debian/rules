@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 # Remember to comment this before tagging for a release.
-DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
+#DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
@@ -16,7 +16,7 @@ endif
 
 DEB_CONFIGURE_EXTRA_FLAGS := --enable-client --enable-server
 
-DEB_INSTALL_MANPAGES_boinc-client = boinc.1 boinc_cmd.1
+DEB_INSTALL_MANPAGES_boinc-client = boinc_client.1 boinc_cmd.1
 DEB_INSTALL_MANPAGES_boinc-manager = boincmgr.1
 
 pre-build::

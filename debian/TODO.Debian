@@ -16,7 +16,7 @@
   * debian/manpages/boinc.xml:
     - Add information from this page: http://boinc.berkeley.edu/gui_rpc_control.php
       (Frank)
-    - Have a look at the FreeBSD BOINC manpage (debian/manpages/boinc-client.1.freebsd)
+    - Have a look at the FreeBSD BOINC manpage (http://opal.com/freebsd/ports/net/boinc-client/)
       and adopt content that is also useful for our manpage. (Frank)
     - Revise the description of all options. IMHO they are pretty useless if they are
       only a copy of `boinc -help'. (Frank)
