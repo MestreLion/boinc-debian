@@ -1,6 +1,7 @@
-boinc (4.70-2) UNRELEASED; urgency=low
+boinc (4.71-1) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
+  * New upstream release.
   * The boinc-client package now includes the boinc_cmd program, a command
     tool that provides an interactive command-line interface to the BOINC
     core client.

@@ -3,21 +3,12 @@
   library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
 
 * [GENERAL]
-  - Write nice and expressive descriptions for all packages.
+  - Write nice and expressive descriptions for all packages. (Frank)
 
 * [boinc-client]
   - Create BOINC working directory for the CC under
     /var/lib(or spool?)/boinc-client. (Frank)
   - Log CC output to /var/log/boinc-client.log? (Frank)
-
-  * debian/boinc-client.init:
-    - The BOINC core client can start in an uninitialized directory. Should we
-      remove the check for the client_state.xml file? Users are supposed to
-      attach to projects with boinc_cmd, the BOINC manager or other similar
-      tools like KBoincSpy. (Frank)
-      http://boinc.berkeley.edu/client_unix.php: "boinc_client, a
-      non-interactive program intended to be run as a background or daemon
-      process" says it all, or?
 
   * debian/manpages/boinc.xml:
     - Add information from this page:

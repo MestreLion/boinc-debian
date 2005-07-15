@@ -29,12 +29,6 @@ if [ ! -d "$BOINC_DIR" ]; then
   exit 3
 fi
 
-if [ ! -f "$BOINC_DIR/client_state.xml" ]; then
-  echo "State file 'client_state.xml' does not exist in '$BOINC_DIR'." \
-       "Run the BOINC core client in this directory manually first." >&2
-  exit 4
-fi
-
 if [ -z "$BOINC_USER" ]; then
   echo "BOINC_USER variable is empty. Set it to a user to run the BOINC" \
        "core client." >&2
