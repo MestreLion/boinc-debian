@@ -73,6 +73,11 @@ start()
 
 stop()
 {
+  if ! is_running; then
+    echo "$DESC already stopped; not stopping." >&2
+    exit 8
+  fi
+  
   echo -n "Stopping $DESC: $NAME" 
   start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
     --user $BOINC_USER --exec $BOINC_CLIENT
