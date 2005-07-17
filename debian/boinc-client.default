@@ -3,14 +3,14 @@
 
 # Set to 1 to enable the init script. You must then edit the BOINC_USER and
 # BOINC_DIR options too.
-ENABLED=0
+ENABLED=1
 
 # The BOINC core client will be started with the permissions of this user.
-BOINC_USER=
+BOINC_USER=boinc
 
 # This is the working directory of the BOINC core client. This directory must
 # contain the 'client_state.xml' file.
-BOINC_DIR=
+BOINC_DIR=/var/lib/boinc-client
 
 # This is the location of the BOINC core client, that the init script should
 # use. If you do not want use the client program provided by the boinc-client

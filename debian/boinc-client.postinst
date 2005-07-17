@@ -1,0 +1,28 @@
+#!/bin/sh
+# postinst script for boinc-client
+
+set -e
+
+case "$1" in
+    configure)
+        if ! getent passwd boinc >/dev/null; then
+            adduser --quiet --system --group --home /var/lib/boinc-client \
+             --gecos "BOINC Core Client" boinc
+        fi
+
+        # make sure the /var/lib/boinc-client dir is owned by the boinc user
+        chown boinc:boinc /var/lib/boinc-client 2>/dev/null || true
+    ;;
+  
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+    
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
