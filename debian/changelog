@@ -1,16 +1,18 @@
 boinc (4.71-1) UNRELEASED; urgency=low
 
-  * NOT RELEASED YET
   * New upstream release.
   * The boinc-client package now includes the boinc_cmd program, a command
     tool that provides an interactive command-line interface to the BOINC
     core client.
   * postinst etc...
+
+  * Added .desktop file for the BOINC Manager program, thanks to Reed Hedges.
   * debian/control.in:
     - Added libwxgtk2.6-dev to Build-Depends and enabled the boinc-manager
       package again.
-    - Added docbook-xml to Build-Depends.FTBS without docbook-xml
-      Adrian Zaugg
+    - Added docbook-xml to Build-Depends. Without it this package FTBFS
+      (particularly docbook2x-man fails) on some systems. Thanks to
+      Adrian Zaugg for the report.
       
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  7 Jul 2005 18:45:03 +0200
 

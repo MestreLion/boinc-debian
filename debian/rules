@@ -30,3 +30,6 @@ clean::
 	dh_clean boinc_client.1
 	dh_clean boinc_cmd.1
 	dh_clean boincmgr.1
+
+install/boinc-manager::
+	dh_desktop -p$(cdbs_curpkg)

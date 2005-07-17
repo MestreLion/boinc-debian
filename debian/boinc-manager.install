@@ -1,1 +1,2 @@
 debian/icons/boincmgr-*.xpm     usr/share/pixmaps
+debian/boinc-manager.desktop    usr/share/applications
