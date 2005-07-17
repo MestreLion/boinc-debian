@@ -6,8 +6,6 @@
   - Write nice and expressive descriptions for all packages. (Frank)
 
 * [boinc-client]
-  - Create BOINC working directory for the CC under
-    /var/lib(or spool?)/boinc-client. (Frank)
   - Log CC output to /var/log/boinc-client.log? (Frank)
 
   * debian/manpages/boinc.xml:
