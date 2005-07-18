@@ -2,7 +2,7 @@
 Type=Application
 Encoding=UTF-8
 Exec=/usr/bin/boincmgr
-Categories=Monitor;Utility
+Categories=Monitor;Utility;GTK
 Name=BOINC Manager
 GenericName=BOINC monitor and control utility
 Comment=Configure or monitor a BOINC Core Client
