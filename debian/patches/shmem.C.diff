@@ -1,0 +1,11 @@
+--- boinc-4.71.orig/lib/shmem.C
++++ boinc-4.71/lib/shmem.C
+@@ -128,7 +128,7 @@
+         return ERR_SHMGET;
+     }
+     p = shmat(id, 0, 0);
+-    if ((int)p == -1) {
++    if ((long)p == -1) {
+         return ERR_SHMAT;
+     }
+     *pp = p;
