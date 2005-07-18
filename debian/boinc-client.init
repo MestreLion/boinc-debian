@@ -60,24 +60,28 @@ start()
 #    echo "$DESC already started (lockfile exists); not starting." >&2
 #    exit 5
 #  fi
-
-  if is_running; then
-    echo "$DESC already started; not starting." >&2
-    exit 6
-  fi
   
   echo -n "Starting $DESC: $NAME"
-  start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
-    --make-pidfile --user $BOINC_USER --chuid $BOINC_USER --chdir $BOINC_DIR \
-    --exec $BOINC_CLIENT -- $BOINC_OPTS
+  if is_running; then
+    echo -n " already running"
+  else
+    start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
+      --make-pidfile --user $BOINC_USER --chuid $BOINC_USER --chdir $BOINC_DIR \
+      --exec $BOINC_CLIENT -- $BOINC_OPTS
+  fi
   echo "."
 }
 
 stop()
 {
-  echo -n "Stopping $DESC: $NAME" 
-  start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
-    --user $BOINC_USER --exec $BOINC_CLIENT
+  echo -n "Stopping $DESC: $NAME"
+  if ! is_running; then
+    echo -n " not running"
+  else
+    start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
+      --user $BOINC_USER --exec $BOINC_CLIENT
+  fi
+  
   rm -f "$BOINC_DIR/lockfile"
   rm -f $PIDFILE
   echo "."
