@@ -1,0 +1,16 @@
+boinc (4.71-1) experimental; urgency=low
+
+    In this release of boinc-client the BOINC core client is started by default
+    and uses '/var/lib/boinc-client' as working directory. Also the boinc-client
+    package creates the system user 'boinc' which is used to run the core
+    client.
+
+    To configure the running local BOINC core client you can use the 'boinc_cmd'
+    program.
+
+    - upgrade not replacing default/boinc-client
+
+    - move existing working directory to /var/lib/boinc-client
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 19 Jul 2005 13:54:35 +0200
+
