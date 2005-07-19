@@ -7,8 +7,8 @@ case "$1" in
     purge)
         rm -rf /var/lib/boinc-client
 
-        deluser --quiet boinc >/dev/null || true
-        delgroup --quiet boinc >/dev/null || true
+        deluser --quiet boinc 2>/dev/null || true
+        delgroup --quiet boinc 2>/dev/null || true
     ;;
 
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)

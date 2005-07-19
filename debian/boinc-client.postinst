@@ -10,8 +10,10 @@ case "$1" in
              --gecos "BOINC Core Client" boinc
         fi
 
-        # make sure the /var/lib/boinc-client dir is owned by the boinc user
-        chown boinc:boinc /var/lib/boinc-client 2>/dev/null || true
+        # make sure the /var/lib/boinc-client dir exists and
+	# is owned by the boinc user
+        mkdir /var/lib/boinc-client 2>/dev/null || true
+	chown boinc:boinc /var/lib/boinc-client 2>/dev/null || true
     ;;
   
     abort-upgrade|abort-remove|abort-deconfigure)
