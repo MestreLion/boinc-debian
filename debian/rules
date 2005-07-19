@@ -34,3 +34,14 @@ clean::
 
 binary-install/boinc-manager::
 	dh_desktop -p$(cdbs_curpkg)
+
+binary-install/boinc-dev::
+	cd debian/$(cdbs_curpkg)/usr/share/boinc/api && \
+	  ln -s ../../../include/boinc/api/* . && \
+	  ln -s ../../../lib/boinc/api/* .
+	
+	cd debian/$(cdbs_curpkg)/usr/share/boinc/lib && \
+	  ln -s ../../../include/boinc/lib/* . && \
+	  ln -s ../../../lib/boinc/lib/* .
+	 
+	chmod 0644 debian/$(cdbs_curpkg)/usr/share/boinc/Makefile.am

@@ -1,2 +1,8 @@
-debian/tmp/usr/include/BOINC    usr/include
-debian/tmp/usr/lib/*            usr/lib
+RSAEuro/source/librsaeuro.a     usr/lib/boinc/RSAEuro/source
+api/*.a      usr/lib/boinc/api
+api/*.h      usr/include/boinc/api
+client/*.h   usr/include/boinc/client
+db/*.h       usr/include/boinc/db
+lib/*.a      usr/lib/boinc/lib
+lib/*.h      usr/include/boinc/lib
+Makefile.am  usr/share/boinc
