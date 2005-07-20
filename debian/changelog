@@ -1,18 +1,20 @@
-boinc (4.71-1) UNRELEASED; urgency=low
+boinc (4.71-1) experimental; urgency=low
 
   * New upstream release.
-  * The boinc-client package now includes the boinc_cmd program, a command
-    tool that provides an interactive command-line interface to the BOINC
-    core client.
-  * postinst etc...
-
+  * Included the 'boinc_cmd' program into the boinc-client package. boinc_cmd
+    is a command tool that provides an interactive command-line interface to
+    the BOINC core client.
+  * Created maintainer scripts to create/remove the '/var/lib/boinc-client'
+    working directory and the system user/group 'boinc'.
+  * Improved the boinc-client.init script and also removed the check for
+    uninitialized working directories (no client_state.xml file).
   * Added .desktop file for the BOINC Manager program, thanks to Reed Hedges.
   * debian/control.in:
     - Added docbook-xml to Build-Depends. Without it this package FTBFS
-      (particularly docbook2x-man fails) on some systems. Thanks to
+      (particularly docbook2x-man fails) on some systems. Thanks to 
       Adrian Zaugg for the report.
       
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  7 Jul 2005 18:45:03 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 20 Jul 2005 23:54:37 +0200
 
 boinc (4.70-1) experimental; urgency=low
 
