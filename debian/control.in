@@ -9,7 +9,7 @@ Build-Depends: @cdbs@, libmysqlclient12-dev, freeglut3-dev, libxmu-dev, automake
 Package: boinc-client
 Section: non-free/net
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, adduser
 Description: BOINC core client
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer

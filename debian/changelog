@@ -15,7 +15,7 @@ boinc (4.71-1) experimental; urgency=low
       Adrian Zaugg for the report.
     - Added libxmu-dev and freeglut3-dev (instead of the virtual package
       freeglut-dev) to Build-Depends. Both are needed for the graphical parts
-      of the BOINC library.
+      of the BOINC API library.
       
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 20 Jul 2005 23:54:37 +0200
 
