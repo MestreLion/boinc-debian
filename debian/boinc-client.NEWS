@@ -5,16 +5,20 @@ boinc (4.71-1) experimental; urgency=low
     the boinc-client package creates the system user 'boinc' which is
     used to run the core client.
 
-    To configure the running local BOINC core client you can use the
-    'boinc_cmd' program. So for example if you want to attach to a
-    project you can call 'boinc_cmd --project_attach <url> <auth_key>'.
-    For a complete list of commands call 'boinc_cmd --help'.
+    To configure the running BOINC core client you can use the 'boinc_cmd'
+    program or the BOINC Manager which is in the boinc-manager package. So for
+    example if you want to attach to a project you can call
+    'boinc_cmd --project_attach <url> <auth_key>'. For a complete list of 
+    commands call 'boinc_cmd --help'. 
 
-    If you have decied not to replace your c
-    - upgrade not replacing default/boinc-client
-
-    
-    - move existing working directory to /var/lib/boinc-client
+    If you want to move an existing BOINC working directory to the new default
+    location follow these instructions:
+      1. Stop the BOINC core client: /etc/init.d/boinc-client stop
+      2. Copy the content of your old BOINC working directory to
+         /var/lib/boinc-client/
+      3. Make all files in this directory writeable by the user and group
+         boinc: chown -R boinc:boinc /var/lib/boinc-client
+      4. Start the BOINC core client: /etc/init.d/boinc-client start
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 19 Jul 2005 13:54:35 +0200
 
