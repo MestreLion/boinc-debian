@@ -1,6 +1,8 @@
-boinc (4.71-2) UNRELEASED; urgency=low
+boinc (4.72-1) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
+  * debian/rules:
+    - Set default optimization level to -O3.
   * debian/control.in:
     - Added missing build dependencies for the BOINC graphics API library
       (libsm-dev, libice-dev, libxi-dev, libx11-dev).
