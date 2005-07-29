@@ -1,9 +1,10 @@
-* Makes the RSAEURO TOOLKIT LICENSE AGREEMENT boinc non-free? Yes!
-  Fortunately the BOINC developers are considering using another crypto
-  library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
-
 * [GENERAL]
-  - Write nice and expressive descriptions for all packages. (Frank)
+  - Write nice and expressive descriptions for the boinc-manager and 
+    boinc-server packages. (Frank)
+  - Makes the RSAEURO TOOLKIT LICENSE AGREEMENT boinc non-free? Yes!
+    Fortunately the BOINC developers are considering using another crypto
+    library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
+    Update: Carl Christensen is working on OpenSSL for BOINC. Great! 
 
 * [boinc-client]
   - Log CC output to /var/log/boinc-client.log? (Frank)

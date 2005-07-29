@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 # Remember to comment this before tagging for a release.
-DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
+#DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/rules/simple-patchsys.mk
@@ -12,7 +12,7 @@ CXXFLAGS = -g -Wall
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 DEB_OPT_FLAG = -O0
 else
-DEB_OPT_FLAG = -O3
+DEB_OPT_FLAG = -O3 -ffast-math
 endif
 CFLAGS += $(DEB_OPT_FLAG)
 CXXFLAGS += $(DEB_OPT_FLAG)

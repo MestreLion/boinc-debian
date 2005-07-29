@@ -10,19 +10,25 @@ Package: boinc-client
 Section: non-free/net
 Architecture: any
 Depends: ${shlibs:Depends}, adduser
+Suggests: boinc-manager | kboincspy
 Description: BOINC core client
- The Berkeley Open Infrastructure for Network Computing (BOINC) is a
- software platform for distributed computing using volunteered computer
- resources.
- .
  This package contains the BOINC core client program, that is required to
  participate in any project that uses BOINC.
+ .
+ The Berkeley Open Infrastructure for Network Computing (BOINC) is a
+ software platform for distributed computing. A central server
+ distributes work units and collects results via this client.
+ When attaching a local machine to a project, this client will also 
+ dynamically download the projects application's program to be then
+ wrapped by the BOINC core client.
+ .
+ Homepage: http://boinc.berkeley.edu/
 
 Package: boinc-manager
 Section: non-free/x11
 Architecture: any
 Depends: ${shlibs:Depends}
-Suggests: boinc-client
+Recommends: boinc-client
 Description: control and monitor utility for the BOINC core client
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
