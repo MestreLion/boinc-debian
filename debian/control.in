@@ -28,6 +28,8 @@ Package: boinc-manager
 Section: non-free/x11
 Architecture: any
 Depends: ${shlibs:Depends}
+Conflicts: boinc-gui
+Replaces: boinc-gui
 Recommends: boinc-client
 Description: control and monitor utility for the BOINC core client
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a

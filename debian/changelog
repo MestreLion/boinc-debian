@@ -3,8 +3,11 @@ boinc (4.72-2) UNRELEASED; urgency=low
   [ Frank S. Thomas ]
   * debian/control.in:
     - Added libjpeg62-dev to Build-Depends.
+    - boinc-manager properly conflicts with and replaces now the old boinc-gui
+      package. The experimental state of this package was no good excuse for
+      not providing a smooth upgrade path in 4.27-1.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 30 Jul 2005 01:20:02 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  6 Aug 2005 01:35:01 +0200
 
 boinc (4.72-1) experimental; urgency=low
 
