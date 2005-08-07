@@ -6,7 +6,7 @@
     library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
     Update: Carl Christensen is working on OpenSSL for BOINC. Great! 
   - On the next release that uses OpenSSL:
-    - Build depend on libssl-dev and remove the OpenSSL copy from CVS co.
+    - Build depend on libssl-dev.
     - Remove RSAEuro license and move all packages to main again.
     - Remove GLUT license, the code has been removed.
     - Add dsfg suffix, because we are removing non-free stuff from CVS co.
