@@ -43,6 +43,8 @@ clean::
 	dh_clean boincmgr.1
 
 binary-install/boinc-manager::
+	install -D debian/tmp/usr/bin/boinc_gui \
+	  debian/$(cdbs_curpkg)/usr/bin/boincmgr
 	dh_desktop -p$(cdbs_curpkg)
 
 binary-install/boinc-dev::

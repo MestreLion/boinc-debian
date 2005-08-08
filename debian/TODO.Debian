@@ -27,6 +27,9 @@
   * debian/manpages/boinc_cmd.xml:
     - List all options. (Frank)
 
+* [boinc-manager]
+  - Install *.mo files.
+
 * [boinc-server]
   - Have a look at the dbconfig-common package. (Frank)
   - Use "test/test_sanity.(py|php)" to check for run-time dependencies of the
