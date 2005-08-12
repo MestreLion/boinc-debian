@@ -12,6 +12,8 @@ set -e
 
 ENABLED=0
 
+. /lib/lsb/init-functions
+
 # Source defaults file. Edit that file to configure this script.
 if [ -e /etc/default/boinc-client ]; then
   . /etc/default/boinc-client
@@ -21,18 +23,19 @@ fi
 test "$ENABLED" != "0" || exit 0
 
 if [ ! -x "$BOINC_CLIENT" ]; then
-  echo "BOINC client '$BOINC_CLIENT' does not exist or is not executable." >&2
+  log_failure_msg \
+    "BOINC client '$BOINC_CLIENT' does not exist or is not executable."
   exit 2
 fi
 
 if [ ! -d "$BOINC_DIR" ]; then
-  echo "BOINC working directory '$BOINC_DIR' does not exist." >&2
+  log_failure_msg "BOINC working directory '$BOINC_DIR' does not exist."
   exit 3
 fi
 
 if [ -z "$BOINC_USER" ]; then
-  echo "BOINC_USER variable is empty. Set it to a user to run the BOINC" \
-       "core client." >&2
+  log_failure_msg "BOINC_USER variable is empty. Set it to a user to run " \
+    "the BOINC core client."
   exit 7
 fi
 
@@ -56,27 +59,22 @@ is_running()
 
 start()
 {
-#  if [ -f "$BOINC_DIR/lockfile" ]; then
-#    echo "$DESC already started (lockfile exists); not starting." >&2
-#    exit 5
-#  fi
-  
-  echo -n "Starting $DESC: $NAME"
+  log_begin_msg "Starting $DESC: $NAME"
   if is_running; then
-    echo -n " already running"
+    log_progress_msg "already running"
   else
     start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
       --make-pidfile --user $BOINC_USER --chuid $BOINC_USER --chdir $BOINC_DIR \
-      --exec $BOINC_CLIENT -- $BOINC_OPTS
+      --exec $BOINC_CLIENT -- $BOINC_OPTS || return 1
   fi
-  echo "."
+  log_end_msg 0
 }
 
 stop()
 {
-  echo -n "Stopping $DESC: $NAME"
+  log_begin_msg "Stopping $DESC: $NAME"
   if ! is_running; then
-    echo -n " not running"
+    log_progress_msg "not running"
   else
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
       --user $BOINC_USER --exec $BOINC_CLIENT
@@ -84,16 +82,16 @@ stop()
   
   rm -f "$BOINC_DIR/lockfile"
   rm -f $PIDFILE
-  echo "."
+  log_end_msg 0
 }
 
 status()
 {
-  echo -n "Status of $DESC: "
+  STATUS="Status of $DESC:"
   if is_running; then
-    echo "running."
+    log_success_msg "$STATUS running."
   else
-    echo "stopped."
+    log_success_msg "$STATUS stopped."
   fi
 }
 
@@ -103,7 +101,7 @@ case "$1" in
     ;;
 
   stop)
-    stop    
+    stop
     ;;
 
   restart|force-reload)
@@ -117,8 +115,7 @@ case "$1" in
     ;;
 
   *)
-    echo "Usage: /etc/init.d/boinc-client " \
-         "{start|stop|restart|force-reload|status}" >&2
+    log_success_msg "Usage: $0 {start|stop|restart|force-reload|status}" >&2
     exit 1
     ;;
 esac

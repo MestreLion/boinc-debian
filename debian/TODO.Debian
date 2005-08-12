@@ -16,9 +16,6 @@
       CC
 
 * [boinc-client]
-  - Use LSB output functions in init script.
-  - Log CC output to /var/log/boinc-client.log? (Frank)
-
   * debian/manpages/boinc.xml:
     - Add information from this page:
       http://boinc.berkeley.edu/gui_rpc_control.php (Frank)
