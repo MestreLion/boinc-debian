@@ -65,7 +65,7 @@ start()
   else
     start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
       --make-pidfile --user $BOINC_USER --chuid $BOINC_USER --chdir $BOINC_DIR \
-      --exec $BOINC_CLIENT -- $BOINC_OPTS || return 1
+      --exec $BOINC_CLIENT -- $BOINC_OPTS
   fi
   log_end_msg 0
 }

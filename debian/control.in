@@ -4,12 +4,12 @@ Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <moeller@pzr.uni-rostock.de>, Frank S. Thomas <frank@thomas-alfeld.de>
 Standards-Version: 3.6.2
-Build-Depends: @cdbs@, libmysqlclient12-dev, freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), lsb-core, docbook2x, docbook-xml
+Build-Depends: @cdbs@, libmysqlclient12-dev, freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), docbook2x, docbook-xml
 
 Package: boinc-client
 Section: non-free/net
 Architecture: any
-Depends: ${shlibs:Depends}, adduser
+Depends: ${shlibs:Depends}, adduser, lsb-core
 Suggests: boinc-manager | kboincspy
 Description: BOINC core client
  This package contains the BOINC core client program, that is required to
