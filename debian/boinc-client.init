@@ -23,8 +23,8 @@ fi
 test "$ENABLED" != "0" || exit 0
 
 if [ ! -x "$BOINC_CLIENT" ]; then
-  log_failure_msg \
-    "BOINC client '$BOINC_CLIENT' does not exist or is not executable."
+  log_failure_msg "BOINC client '$BOINC_CLIENT' does not exist or is not " \
+    "executable."
   exit 2
 fi
 
