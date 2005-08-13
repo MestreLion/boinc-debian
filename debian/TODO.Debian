@@ -1,7 +1,8 @@
 * [GENERAL]
   - Write nice and expressive descriptions for the boinc-manager and 
     boinc-server packages. (Frank)
-  - Run autotools in export-boinc.
+  - Run autotools in export-boinc or remove all files created by all autotools
+    in the clean target.
   - Makes the RSAEURO TOOLKIT LICENSE AGREEMENT boinc non-free? Yes!
     Fortunately the BOINC developers are considering using another crypto
     library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
@@ -27,9 +28,6 @@
 
   * debian/manpages/boinc_cmd.xml:
     - List all options. (Frank)
-
-* [boinc-manager]
-  - Install *.mo files.
 
 * [boinc-server]
   - Have a look at the dbconfig-common package. (Frank)

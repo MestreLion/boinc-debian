@@ -45,6 +45,14 @@ clean::
 binary-install/boinc-manager::
 	install -D debian/tmp/usr/bin/boinc_gui \
 	  debian/$(cdbs_curpkg)/usr/bin/boincmgr
+	
+	for i in `ls locale/client`; do \
+	  if [ -f "locale/client/$$i/BOINC Manager.mo" ]; then \
+	    install -D -m644 "locale/client/$$i/BOINC Manager.mo" \
+	      "debian/$(cdbs_curpkg)/usr/share/locale/$$i/LC_MESSAGES/BOINC Manager.mo"; \
+	  fi; \
+	done;
+	
 	dh_desktop -p$(cdbs_curpkg)
 
 binary-install/boinc-dev::

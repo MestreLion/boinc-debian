@@ -66,7 +66,29 @@
     <title>DESCRIPTION</title>
     <para></para>
   </refsect1>
+  
+  <refsect1>
+    <title>OPTIONS</title>
+    <para>A full summary of options is included below.</para>
 
+    <variablelist>
+      <varlistentry>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show all options.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--quit</option></term>
+        <listitem>
+          <para>Stop the BOINC client.</para>
+        </listitem>
+      </varlistentry>
+      
+    </variablelist>
+  </refsect1>
+  
   <refsect1>
     <title>SEE ALSO</title>
     <para><ulink url="http://boinc.berkeley.edu/client_unix.php"
