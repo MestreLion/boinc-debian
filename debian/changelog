@@ -2,14 +2,17 @@ boinc (4.72-2) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * Patched the BOINC Manager so that it compiles with Debian's experimental
-    wxWidgets 2.6.1-1 (see: 03_wxwidgets_with_unicode.patch).
+    wxWidgets version 2.6.1 (see: 03_wxwidgets_with_unicode.patch).
+  * Install "BOINC Manager.mo" files under /usr/share/locale/.
+  * Use LSB init-functions for the boinc-client init script and add lsb-base
+    dependency to boinc-client.
   * debian/control.in:
     - Added libjpeg62-dev to Build-Depends.
     - boinc-manager properly conflicts with and replaces now the old boinc-gui
       package. The experimental state of this package was a lame excuse for
       not providing a smooth upgrade path in 4.27-1.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  8 Aug 2005 23:35:31 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 13 Aug 2005 17:50:58 +0200
 
 boinc (4.72-1) experimental; urgency=low
 
