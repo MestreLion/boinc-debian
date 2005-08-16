@@ -2,11 +2,12 @@ boinc (4.72-3) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
   * boinc-server:
+    - Install python boinc module
     - Install html files to usr/share/boinc/html
   * debian/control.in:
     - Build depend on the newer libmysqlclient15-dev package.
 
- -- Frank S. Thomas <mrfrost@avalon.thomas.de>  Sun, 14 Aug 2005 02:15:35 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 14 Aug 2005 02:15:35 +0200
 
 boinc (4.72-2) experimental; urgency=low
 

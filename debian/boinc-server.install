@@ -13,8 +13,10 @@ debian/tmp/usr/bin/dir_hier_move    usr/lib/boinc/tools
 debian/tmp/usr/bin/dir_hier_path    usr/lib/boinc/tools
 debian/tmp/usr/bin/sign_executable  usr/lib/boinc/tools
 
-html/inc            usr/share/boinc/html
-html/languages      usr/share/boinc/html
-html/ops            usr/share/boinc/html
-html/project.sample usr/share/boinc/html
-html/user           usr/share/boinc/html
+html/inc                            usr/share/boinc/html
+html/languages                      usr/share/boinc/html
+html/ops                            usr/share/boinc/html
+html/project.sample                 usr/share/boinc/html
+html/user                           usr/share/boinc/html
+
+py/Boinc/*.py                       usr/lib/python2.3/site-packages/Boinc

@@ -6,6 +6,7 @@ DEB_AUTO_UPDATE_DEBIAN_CONTROL := yes
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/rules/simple-patchsys.mk
 include /usr/share/cdbs/1/class/autotools.mk
+include 
 
 CFLAGS = -g -Wall
 CXXFLAGS = -g -Wall
@@ -55,6 +56,9 @@ binary-install/boinc-manager::
 	
 	dh_desktop -p$(cdbs_curpkg)
 
+binary-install/boinc-server::
+	dh_python -p$(cdbs_curpkg)
+
 binary-install/boinc-dev::
 	cd debian/$(cdbs_curpkg)/usr/share/boinc/api && \
 	  ln -s ../../../include/boinc/api/* . && \
@@ -63,5 +67,3 @@ binary-install/boinc-dev::
 	cd debian/$(cdbs_curpkg)/usr/share/boinc/lib && \
 	  ln -s ../../../include/boinc/lib/* . && \
 	  ln -s ../../../lib/boinc/lib/* .
-	 
-	chmod 0644 debian/$(cdbs_curpkg)/usr/share/boinc/Makefile.am
