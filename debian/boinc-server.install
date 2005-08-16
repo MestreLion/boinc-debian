@@ -1,22 +1,15 @@
-debian/tmp/usr/bin/1sec             usr/lib/boinc/examples
-debian/tmp/usr/bin/concat           usr/lib/boinc/examples
-debian/tmp/usr/bin/upper_case       usr/lib/boinc/examples
-
-debian/tmp/usr/bin/crypt_prog       usr/lib/boinc/lib
-
-debian/tmp/usr/bin/start            usr/lib/boinc/shed
-debian/tmp/usr/bin/status           usr/lib/boinc/shed
-debian/tmp/usr/bin/stop             usr/lib/boinc/shed
-
-debian/tmp/usr/bin/create_work      usr/lib/boinc/tools
-debian/tmp/usr/bin/dir_hier_move    usr/lib/boinc/tools
-debian/tmp/usr/bin/dir_hier_path    usr/lib/boinc/tools
-debian/tmp/usr/bin/sign_executable  usr/lib/boinc/tools
-
-html/inc                            usr/share/boinc/html
-html/languages                      usr/share/boinc/html
-html/ops                            usr/share/boinc/html
-html/project.sample                 usr/share/boinc/html
-html/user                           usr/share/boinc/html
-
+debian/tmp/usr/bin/1sec             usr/lib/boinc-server/bin
+debian/tmp/usr/bin/concat           usr/lib/boinc-server/bin
+debian/tmp/usr/bin/upper_case       usr/lib/boinc-server/bin
+debian/tmp/usr/bin/crypt_prog       usr/lib/boinc-server/bin
+debian/tmp/usr/bin/create_work      usr/lib/boinc-server/bin
+debian/tmp/usr/bin/dir_hier_move    usr/lib/boinc-server/bin
+debian/tmp/usr/bin/dir_hier_path    usr/lib/boinc-server/bin
+debian/tmp/usr/bin/sign_executable  usr/lib/boinc-server/bin
+debian/tmp/usr/bin/start            usr/share/boinc-server/bin
+html/inc                            usr/share/boinc-server/html
+html/languages                      usr/share/boinc-server/html
+html/ops                            usr/share/boinc-server/html
+html/project.sample                 usr/share/boinc-server/html
+html/user                           usr/share/boinc-server/html
 py/Boinc/*.py                       usr/lib/python2.3/site-packages/Boinc

@@ -1,0 +1,2 @@
+usr/share/boinc-server/bin/start    usr/share/boinc-server/bin/status
+usr/share/boinc-server/bin/start    usr/share/boinc-server/bin/stop
