@@ -42,7 +42,7 @@ Description: control and monitor utility for the BOINC core client
 Package: boinc-server
 Section: non-free/net
 Architecture: any
-Depends: ${shlibs:Depends}, ${python:Depends}
+Depends: ${shlibs:Depends}, ${python:Depends}, python2.3-mysqldb
 Description: BOINC server applications and data files
  none
 

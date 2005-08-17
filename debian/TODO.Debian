@@ -3,18 +3,14 @@
     boinc-server packages. (Frank)
   - Run autotools in export-boinc or remove all files created by all autotools
     in the clean target.
-  - Makes the RSAEURO TOOLKIT LICENSE AGREEMENT boinc non-free? Yes!
-    Fortunately the BOINC developers are considering using another crypto
-    library: http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-May/002382.html
-    Update: Carl Christensen is working on OpenSSL for BOINC. Great! 
   - On the next release that uses OpenSSL:
     - Build depend on libssl-dev.
     - Remove RSAEuro license and move all packages to main again.
     - Remove GLUT license, the code has been removed.
     - Add dsfg suffix, because we are removing non-free stuff from CVS co.
     - stripchart: Include the full text of the MPL?
-    - ??? build depend on libcurl-dev ??? they'll probably release a curl-based
-      CC
+    - build depend on libcurl-dev
+    - more licenses in html/inc/geoip.inc and paypal*.inc
 
 * [boinc-client]
   * debian/manpages/boinc.xml:
