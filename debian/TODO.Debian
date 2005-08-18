@@ -1,8 +1,6 @@
 * [GENERAL]
   - Write nice and expressive descriptions for the boinc-manager and 
     boinc-server packages. (Frank)
-  - Run autotools in export-boinc or remove all files created by all autotools
-    in the clean target.
   - On the next release that uses OpenSSL:
     - Build depend on libssl-dev.
     - Remove RSAEuro license and move all packages to main again.
@@ -11,6 +9,7 @@
     - stripchart: Include the full text of the MPL?
     - build depend on libcurl-dev
     - more licenses in html/inc/geoip.inc and paypal*.inc
+    - build depend on zlib1g-dev?
 
 * [boinc-client]
   * debian/manpages/boinc.xml:

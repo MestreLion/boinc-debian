@@ -2,10 +2,13 @@ boinc (4.72-3) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
   * boinc-server:
-    - Install python boinc module
-    - Install html files to usr/share/boinc/html
+    - Install Python BOINC module to /usr/lib/python2.3/site-packages/Boinc.
+    - Install HTML files to /usr/share/boinc-server/html.    
   * debian/control.in:
     - Build depend on the newer libmysqlclient15-dev package.
+  * debian/rules:
+    - Remove all files that are created by the autotools during the
+      pre-build target in the clean target.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 14 Aug 2005 02:15:35 +0200
 
