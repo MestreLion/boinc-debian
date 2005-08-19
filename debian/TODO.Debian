@@ -1,30 +1,27 @@
-* [GENERAL]
-  - Write nice and expressive descriptions for the boinc-manager and 
-    boinc-server packages. (Frank)
-  - On the next release that uses OpenSSL:
-    - Build depend on libssl-dev.
-    - Remove RSAEuro license and move all packages to main again.
-    - Remove GLUT license, the code has been removed.
-    - Add dsfg suffix, because we are removing non-free stuff from CVS co.
-    - stripchart: Include the full text of the MPL?
-    - build depend on libcurl-dev
-    - more licenses in html/inc/geoip.inc and paypal*.inc
-    - build depend on zlib1g-dev?
+Things that need to be done before uploading to unstable:
+=========================================================
+ - Implement a working solution for boinc-client and boinc-app-* packages.
+ - Add "dfsg" suffix to tarball, because we are removing a bunch of non-free
+   files from the CVS export. 
+ - Add complete license of stripchart to debian/copyright.
+ - Add more licenses for html/inc/geoip.inc and html/inc/paypal*.inc.
+ - Use "test/test_sanity.py" to check runtime dependencies of the boinc-server
+   package.
 
-* [boinc-client]
-  * debian/manpages/boinc.xml:
-    - Add information from this page:
-      http://boinc.berkeley.edu/gui_rpc_control.php (Frank)
-    - Have a look at the FreeBSD BOINC manpage
-      (http://opal.com/freebsd/ports/net/boinc-client/) and adopt content that
-      is also useful for our manpage. (Frank)
-    - Revise the description of all options. IMHO they are pretty useless if
-      they are only a copy of `boinc -help'. (Frank)
+General major TODOs:
+====================
+ - Write expressive long descriptions for boinc-manager, boinc-dev and
+   boinc-server. 
+ - Have a look at the dbconfig-common package. Is it useful for boinc-server?
 
-  * debian/manpages/boinc_cmd.xml:
-    - List all options. (Frank)
+General minor TODOs:
+====================
+ - Revise all manpages.
 
-* [boinc-server]
-  - Have a look at the dbconfig-common package. (Frank)
-  - Use "test/test_sanity.(py|php)" to check for run-time dependencies of the
-    boinc-server package. (Frank)
+TODOs for the next upstream release:
+====================================
+ - Build depend on libssl-dev.
+ - Build depend on libcurl-dev.
+ - Build depend on zlib1g-dev? Check with pbuilder if this is necessary.
+ - Remove RSAEuro and GLUT licenses (code has been removed). 
+ - Move all packages to main again.
