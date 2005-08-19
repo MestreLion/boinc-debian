@@ -1,2 +1,1 @@
-debian/tmp/usr/bin/boinc_client usr/bin
 debian/tmp/usr/bin/boinc_cmd    usr/bin

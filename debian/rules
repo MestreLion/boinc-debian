@@ -3,7 +3,9 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+# Included dpatch makefile.
+include /usr/share/dpatch/dpatch.make
+
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
 # Most BOINC projects only provide applications for i686.
@@ -33,7 +35,6 @@ CXXFLAGS_boinc-client += $(DEB_OPT_FLAG_boinc-client)
 
 CFGFLAGS = \
   --build=$(DEB_BUILD_GNU_TYPE) \
-  --host=$(DEB_HOST_GNU_TYPE) \
   --prefix=/usr \
   --enable-client \
   --enable-server \
@@ -42,13 +43,12 @@ CFGFLAGS = \
 
 CFGFLAGS_boinc-client = \
   --build=$(DEB_BUILD_GNU_TYPE) \
-  --host=$(DEB_HOST_GNU_TYPE) \
   --enable-client \
   --disable-server \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)"
 
-pre-build:
+pre-build: patch
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	
 	docbook2x-man debian/manpages/boinc_client.xml
@@ -71,7 +71,8 @@ build-stamp-boinc-client:
 	cp client/boinc_client client/boinc_client.optimized
 	touch $@
 
-clean: clean-boinc-client
+clean: clean-patched unpatch
+clean-patched: clean-boinc-client
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
@@ -124,6 +125,12 @@ install: build
 	dh_install
 	
 	#
+	# boinc-client
+	#
+	install -D client/boinc_client.optimized \
+	  debian/boinc-client/usr/bin/boinc_client
+	
+	#
 	# boinc-manager
 	#
 	install -D debian/tmp/usr/bin/boinc_gui \
@@ -170,4 +177,4 @@ binary-arch: build install
 	dh_builddeb -a
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install
+.PHONY: build clean binary-indep binary-arch binary install patch unpatch

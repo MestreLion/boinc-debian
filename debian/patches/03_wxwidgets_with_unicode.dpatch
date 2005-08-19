@@ -1,0 +1,702 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_wxwidgets_with_unicode.dpatch by  <frank@thomas-alfeld.de>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+
+diff -Naur boinc-4.72.orig/clientgui/BOINCBaseView.cpp boinc-4.72/clientgui/BOINCBaseView.cpp
+--- boinc-4.72.orig/clientgui/BOINCBaseView.cpp	2005-07-23 02:53:26.000000000 +0200
++++ boinc-4.72/clientgui/BOINCBaseView.cpp	2005-08-13 15:29:12.000000000 +0200
+@@ -277,7 +277,7 @@
+ wxString CBOINCBaseView::OnListGetItemText(
+     long WXUNUSED(item), long WXUNUSED(column)
+ ) const {
+-    return wxString("Undefined");
++    return wxString(wxT("Undefined"));
+ }
+ 
+ 
+@@ -297,17 +297,17 @@
+ 
+ 
+ wxString CBOINCBaseView::OnDocGetItemText(long WXUNUSED(item), long WXUNUSED(column)) const {
+-    return wxString("Undefined");
++    return wxString(wxT("Undefined"));
+ }
+ 
+ 
+ wxString CBOINCBaseView::OnDocGetItemImage(long WXUNUSED(item)) const {
+-    return wxString("Undefined");
++    return wxString(wxT("Undefined"));
+ }
+ 
+ 
+ wxString CBOINCBaseView::OnDocGetItemAttr(long WXUNUSED(item)) const {
+-    return wxString("Undefined");
++    return wxString(wxT("Undefined"));
+ }
+ 
+ 
+@@ -409,7 +409,7 @@
+     if (existing.size() == 0) {
+         existing = additional;
+     } else {
+-        existing = existing + ", " + additional;
++        existing = existing + wxT(", ") + additional;
+     }
+ }
+ 
+diff -Naur boinc-4.72.orig/clientgui/BOINCGUIApp.cpp boinc-4.72/clientgui/BOINCGUIApp.cpp
+--- boinc-4.72.orig/clientgui/BOINCGUIApp.cpp	2005-07-23 02:53:27.000000000 +0200
++++ boinc-4.72/clientgui/BOINCGUIApp.cpp	2005-08-13 15:46:36.000000000 +0200
+@@ -100,7 +100,7 @@
+     m_hBOINCCoreProcess = NULL;
+     m_hIdleDetectionDll = NULL;
+ #endif
+-	m_strDefaultWindowStation = wxT("");
++    m_strDefaultWindowStation = wxT("");
+     m_strDefaultDesktop = wxT("");
+     m_strDefaultDisplay = wxT("");
+ 
+@@ -313,7 +313,7 @@
+     }
+ 
+ #else
+-    char* p = getenv("DISPLAY");
++    wxString p = wxString(getenv("DISPLAY"), wxConvUTF8);
+     if (p) m_strDefaultDisplay = p;
+ #endif
+ 
+@@ -412,7 +412,7 @@
+ 
+ #ifndef __WXMSW__
+         // copy the path to the boinmgr from argv[0]
+-        strncpy(szExecutableDirectory, wxGetApp().argv[0], sizeof(szExecutableDirectory));
++        strncpy((char*)szExecutableDirectory, (const char*)wxGetApp().argv[0], sizeof(szExecutableDirectory));
+ #endif 
+ 
+         // We are only interested in the path component of the fully qualified path.
+diff -Naur boinc-4.72.orig/clientgui/BOINCGUIApp.h boinc-4.72/clientgui/BOINCGUIApp.h
+--- boinc-4.72.orig/clientgui/BOINCGUIApp.h	2005-07-23 02:53:27.000000000 +0200
++++ boinc-4.72/clientgui/BOINCGUIApp.h	2005-08-13 15:31:17.000000000 +0200
+@@ -90,9 +90,9 @@
+ 
+ public:
+ 
+-    std::string     m_strDefaultWindowStation;
+-    std::string     m_strDefaultDesktop;
+-    std::string     m_strDefaultDisplay;
++    wxString        m_strDefaultWindowStation;
++    wxString        m_strDefaultDesktop;
++    wxString        m_strDefaultDisplay;
+ 
+     bool            OnInit();
+ 
+diff -Naur boinc-4.72.orig/clientgui/DlgAbout.cpp boinc-4.72/clientgui/DlgAbout.cpp
+--- boinc-4.72.orig/clientgui/DlgAbout.cpp	2005-07-23 02:53:28.000000000 +0200
++++ boinc-4.72/clientgui/DlgAbout.cpp	2005-08-13 15:47:45.000000000 +0200
+@@ -73,7 +73,7 @@
+ 
+ bool CDlgAbout::Create(wxWindow* parent, wxWindowID id, const wxString& caption, const wxPoint& pos, const wxSize& size, long style) {
+ ////@begin CDlgAbout member initialisation
+-    m_strVersion = BOINC_VERSION_STRING;
++    m_strVersion = wxT(BOINC_VERSION_STRING);
+ ////@end CDlgAbout member initialisation
+ 
+ ////@begin CDlgAbout creation
+diff -Naur boinc-4.72.orig/clientgui/MainDocument.cpp boinc-4.72/clientgui/MainDocument.cpp
+--- boinc-4.72.orig/clientgui/MainDocument.cpp	2005-07-23 02:53:31.000000000 +0200
++++ boinc-4.72/clientgui/MainDocument.cpp	2005-08-13 16:23:13.000000000 +0200
+@@ -60,11 +60,11 @@
+         retval = m_pDocument->rpc.init_poll();
+         if (!retval) {
+             wxLogTrace(wxT("Function Status"), wxT("CNetworkConnection::Poll - init_poll() returned ERR_CONNECT, now authorizing..."));
+-            retval = m_pDocument->rpc.authorize(m_strNewComputerPassword.c_str());
++            retval = m_pDocument->rpc.authorize(m_strNewComputerPassword.mb_str());
+             if (!retval) {
+                 wxLogTrace(wxT("Function Status"), wxT("CNetworkConnection::Poll - Connection Success"));
+-                std::string host = m_strNewComputerName.c_str();
+-                std::string pwd = m_strNewComputerPassword.c_str();
++                std::string host = (const char*) m_strNewComputerName.mb_str();
++                std::string pwd = (const char*) m_strNewComputerPassword.mb_str();
+                 SetStateSuccess(host, pwd);
+             } else if (ERR_AUTHENTICATOR == retval) {
+                 wxLogTrace(wxT("Function Status"), wxT("CNetworkConnection::Poll - RPC Authorization - ERR_AUTHENTICATOR"));
+@@ -90,12 +90,12 @@
+         if (!IsConnected()) {
+             // determine computer name and password to use.
+             if (!m_strNewComputerName.empty()) {
+-                strComputer = m_strNewComputerName;
+-                strComputerPassword = m_strNewComputerPassword;
++                strComputer = (const char*)m_strNewComputerName.mb_str();
++                strComputerPassword = (const char*)m_strNewComputerPassword.mb_str();
+             } else {
+                 if (!m_strConnectedComputerName.empty()) {
+-                    strComputer = m_strConnectedComputerName.c_str();
+-                    strComputerPassword = m_strConnectedComputerPassword.c_str();
++                    strComputer = (const char*) m_strConnectedComputerName.mb_str();
++                    strComputerPassword = (const char*) m_strConnectedComputerPassword.mb_str();
+                 }
+             }
+ 
+@@ -204,8 +204,8 @@
+         m_bConnected = true;
+         m_bReconnecting = false;
+         m_bReconnectOnError = true;
+-        m_strConnectedComputerName = strComputer.c_str();
+-        m_strConnectedComputerPassword = strComputerPassword.c_str();
++        m_strConnectedComputerName = wxString(strComputer.c_str(), wxConvUTF8);
++        m_strConnectedComputerPassword = wxString(strComputerPassword.c_str(), wxConvUTF8);
+         m_strNewComputerName = wxEmptyString;
+         m_strNewComputerPassword = wxEmptyString;
+ 
+@@ -289,7 +289,7 @@
+         m_dtCachedStateTimestamp = m_dtCachedStateLockTimestamp;
+         retval = rpc.get_state(state);
+         if (retval) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedStateUpdate - Get State Failed '%d'", retval);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedStateUpdate - Get State Failed '%d'"), retval);
+             m_pNetworkConnection->SetStateDisconnected();
+         }
+ 
+@@ -297,7 +297,7 @@
+ 
+         retval = rpc.get_host_info(host);
+         if (retval) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedStateUpdate - Get Host Information Failed '%d'", retval);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedStateUpdate - Get Host Information Failed '%d'"), retval);
+             m_pNetworkConnection->SetStateDisconnected();
+         }
+ 
+@@ -549,7 +549,7 @@
+     if (IsConnected()) {
+         iRetVal = rpc.get_project_status(project_status);
+         if (iRetVal) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedProjectStatusUpdate - Get Project Status Failed '%d'", iRetVal);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedProjectStatusUpdate - Get Project Status Failed '%d'"), iRetVal);
+             m_pNetworkConnection->SetStateDisconnected();
+         }
+ 
+@@ -598,7 +598,7 @@
+ 
+ 
+ int CMainDocument::ProjectAttach(const wxString& strURL, const wxString& strAccountKey) {
+-    return rpc.project_attach(strURL.c_str(), strAccountKey.c_str());
++    return rpc.project_attach((const char*)strURL.mb_str(), (const char*)strAccountKey.mb_str());
+ }
+ 
+ 
+@@ -609,7 +609,7 @@
+     pProject = project(iIndex);
+ 
+     if (pProject)
+-        iRetVal = rpc.project_op((*pProject), wxT("detach"));
++        iRetVal = rpc.project_op((*pProject), "detach");
+ 
+     return iRetVal;
+ }
+@@ -622,7 +622,7 @@
+     pProject = project(iIndex);
+ 
+     if (pProject)
+-        iRetVal = rpc.project_op((*pProject), wxT("update"));
++        iRetVal = rpc.project_op((*pProject), "update");
+ 
+     return iRetVal;
+ }
+@@ -635,7 +635,7 @@
+     pProject = project(iIndex);
+ 
+     if (pProject)
+-        iRetVal = rpc.project_op((*pProject), wxT("reset"));
++        iRetVal = rpc.project_op((*pProject), "reset");
+ 
+     return iRetVal;
+ }
+@@ -648,7 +648,7 @@
+     pProject = project(iIndex);
+ 
+     if (pProject)
+-        iRetVal = rpc.project_op((*pProject), wxT("suspend"));
++        iRetVal = rpc.project_op((*pProject), "suspend");
+ 
+     return iRetVal;
+ }
+@@ -661,7 +661,7 @@
+     pProject = project(iIndex);
+ 
+     if (pProject)
+-        iRetVal = rpc.project_op((*pProject), wxT("resume"));
++        iRetVal = rpc.project_op((*pProject), "resume");
+ 
+     return iRetVal;
+ }
+@@ -673,7 +673,7 @@
+     pProject = project(iIndex);
+ 
+     if (pProject)
+-        iRetVal = rpc.project_op((*pProject), wxT("nomorework"));
++        iRetVal = rpc.project_op((*pProject), "nomorework");
+ 
+     return iRetVal;
+ }
+@@ -685,7 +685,7 @@
+     pProject = project(iIndex);
+ 
+     if (pProject)
+-        iRetVal = rpc.project_op((*pProject), wxT("allowmorework"));
++        iRetVal = rpc.project_op((*pProject), "allowmorework");
+ 
+     return iRetVal;
+ }
+@@ -697,7 +697,7 @@
+     if (IsConnected()) {
+         iRetVal = rpc.get_results(results);
+         if (iRetVal) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedResultsStatusUpdate - Get Result Status Failed '%d'", iRetVal);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedResultsStatusUpdate - Get Result Status Failed '%d'"), iRetVal);
+             m_pNetworkConnection->SetStateDisconnected();
+         }
+     }
+@@ -750,7 +750,7 @@
+     if (pResult) {
+         pStateResult = state.lookup_result(pResult->project_url, pResult->name);
+         if (pStateResult) {
+-            iRetVal = rpc.result_op((*pStateResult), wxT("suspend"));
++            iRetVal = rpc.result_op((*pStateResult), "suspend");
+         } else {
+             ForceCacheUpdate();
+         }
+@@ -770,7 +770,7 @@
+     if (pResult) {
+         pStateResult = state.lookup_result(pResult->project_url, pResult->name);
+         if (pStateResult) {
+-            iRetVal = rpc.result_op((*pStateResult), wxT("resume"));
++            iRetVal = rpc.result_op((*pStateResult), "resume");
+         } else {
+             ForceCacheUpdate();
+         }
+@@ -813,7 +813,7 @@
+     if (pResult) {
+         pStateResult = state.lookup_result(pResult->project_url, pResult->name);
+         if (pStateResult) {
+-            iRetVal = rpc.result_op((*pStateResult), wxT("abort"));
++            iRetVal = rpc.result_op((*pStateResult), "abort");
+         } else {
+             ForceCacheUpdate();
+         }
+@@ -840,7 +840,7 @@
+ 
+         retval = rpc.get_messages(m_iMessageSequenceNumber, new_msgs);
+         if (retval) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedMessageUpdate - Get Messages Failed '%d'", retval);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedMessageUpdate - Get Messages Failed '%d'"), retval);
+             m_pNetworkConnection->SetStateDisconnected();
+             goto done;
+         }
+@@ -853,7 +853,7 @@
+                 if (m_iMessageSequenceNumber) {
+                     pFrame->ShowAlert(
+                         _("BOINC error"),
+-                        mp->body.c_str(),
++                        wxString(mp->body.c_str(), wxConvUTF8),
+                         wxICON_ERROR
+                     );
+                 }
+@@ -863,7 +863,7 @@
+                 if (m_iMessageSequenceNumber) {
+                     pFrame->ShowAlert(
+                         _("BOINC info"),
+-                        mp->body.c_str(),
++                        wxString(mp->body.c_str(), wxConvUTF8),
+                         wxICON_INFORMATION
+                     );
+                 }
+@@ -929,7 +929,7 @@
+     if (IsConnected()) {
+         iRetVal = rpc.get_file_transfers(ft);
+         if (iRetVal) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedFileTransfersUpdate - Get File Transfers Failed '%d'", iRetVal);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedFileTransfersUpdate - Get File Transfers Failed '%d'"), iRetVal);
+             m_pNetworkConnection->SetStateDisconnected();
+         }
+     }
+@@ -979,7 +979,7 @@
+     pFT = file_transfer(iIndex);
+ 
+     if (pFT)
+-        iRetVal = rpc.file_transfer_op((*pFT), wxT("retry"));
++        iRetVal = rpc.file_transfer_op((*pFT), "retry");
+ 
+     return iRetVal;
+ }
+@@ -992,7 +992,7 @@
+     pFT = file_transfer(iIndex);
+ 
+     if (pFT)
+-        iRetVal = rpc.file_transfer_op((*pFT), wxT("abort"));
++        iRetVal = rpc.file_transfer_op((*pFT), "abort");
+ 
+     return iRetVal;
+ }
+@@ -1004,7 +1004,7 @@
+     if (IsConnected()) {
+         iRetVal = rpc.get_disk_usage(resource_status);
+         if (iRetVal) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedResourceStatusUpdate - Get Disk Usage Failed '%d'", iRetVal);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedResourceStatusUpdate - Get Disk Usage Failed '%d'"), iRetVal);
+             m_pNetworkConnection->SetStateDisconnected();
+         }
+     }
+@@ -1055,7 +1055,7 @@
+     if (IsConnected()) {
+         iRetVal = rpc.get_statistics(statistics_status);
+         if (iRetVal) {
+-            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedStatisticsStatusUpdate - Get Statistics Failed '%d'", iRetVal);
++            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedStatisticsStatusUpdate - Get Statistics Failed '%d'"), iRetVal);
+             m_pNetworkConnection->SetStateDisconnected();
+         }
+     }
+@@ -1106,7 +1106,7 @@
+ 
+     iRetVal = rpc.get_proxy_settings(proxy_info);
+     if (iRetVal) {
+-        wxLogTrace(wxT("Function Status"), "CMainDocument::GetProxyInfo - Get Proxy Info Failed '%d'", iRetVal);
++        wxLogTrace(wxT("Function Status"), wxT("CMainDocument::GetProxyInfo - Get Proxy Info Failed '%d'"), iRetVal);
+     }
+ 
+     return iRetVal;
+@@ -1125,7 +1125,7 @@
+ 
+     iRetVal = rpc.set_proxy_settings(proxy_info);
+     if (iRetVal) {
+-        wxLogTrace(wxT("Function Status"), "CMainDocument::SetProxyInfo - Set Proxy Info Failed '%d'", iRetVal);
++        wxLogTrace(wxT("Function Status"), wxT("CMainDocument::SetProxyInfo - Set Proxy Info Failed '%d'"), iRetVal);
+     }
+ 
+     return iRetVal;
+diff -Naur boinc-4.72.orig/clientgui/MainFrame.cpp boinc-4.72/clientgui/MainFrame.cpp
+--- boinc-4.72.orig/clientgui/MainFrame.cpp	2005-07-23 02:53:32.000000000 +0200
++++ boinc-4.72/clientgui/MainFrame.cpp	2005-08-13 16:47:13.000000000 +0200
+@@ -989,9 +989,9 @@
+     pDoc->rpc.acct_mgr_info(ami);
+     if (ami.acct_mgr_url.size()) {
+         strTitle = pDlgSignup->GetTitle();
+-        strTitle += wxT(" - ") + wxString(ami.acct_mgr_name.c_str());
+-        pDlgStatus->SetAcctManagerName(ami.acct_mgr_name.c_str());
+-        pDlgStatus->SetAcctManagerURL(ami.acct_mgr_url.c_str());
++        strTitle += wxT(" - ") + wxString(ami.acct_mgr_name.c_str(), wxConvUTF8);
++        pDlgStatus->SetAcctManagerName(wxString(ami.acct_mgr_name.c_str(), wxConvUTF8));
++        pDlgStatus->SetAcctManagerURL(wxString(ami.acct_mgr_url.c_str(), wxConvUTF8));
+         pDlgStatus->SetTitle(strTitle);
+ 
+         iAnswer = pDlgStatus->ShowModal();
+@@ -1004,19 +1004,19 @@
+     if (ID_CHANGE == iAnswer) {
+         strTitle = pDlgSignup->GetTitle();
+         if (!ami.acct_mgr_name.empty()) {
+-            strTitle += wxT(" - ") + wxString(ami.acct_mgr_name.c_str());
++            strTitle += wxT(" - ") + wxString(ami.acct_mgr_name.c_str(), wxConvUTF8);
+         } else if (!ami.acct_mgr_url.empty()) {
+-            strTitle += wxT(" - ") + wxString(ami.acct_mgr_url.c_str());
++            strTitle += wxT(" - ") + wxString(ami.acct_mgr_url.c_str(), wxConvUTF8);
+         }
+         pDlgSignup->SetTitle(strTitle);
+-        pDlgSignup->m_strAcctManagerURL = ami.acct_mgr_url.c_str();
+-        pDlgSignup->m_strAcctManagerUsername = ami.login_name.c_str();
+-        pDlgSignup->m_strAcctManagerPassword = ami.password.c_str();
++        pDlgSignup->m_strAcctManagerURL = wxString(ami.acct_mgr_url.c_str(), wxConvUTF8);
++        pDlgSignup->m_strAcctManagerUsername = wxString(ami.login_name.c_str(), wxConvUTF8);
++        pDlgSignup->m_strAcctManagerPassword = wxString(ami.password.c_str(), wxConvUTF8);
+         iAnswer = pDlgSignup->ShowModal();
+         if (wxID_OK == iAnswer) {
+-            ami.acct_mgr_url = pDlgSignup->m_strAcctManagerURL;
+-            ami.login_name = pDlgSignup->m_strAcctManagerUsername.c_str();
+-            ami.password = pDlgSignup->m_strAcctManagerPassword.c_str();
++            ami.acct_mgr_url = (const char*)pDlgSignup->m_strAcctManagerURL.mb_str();       
++            ami.login_name = (const char*)pDlgSignup->m_strAcctManagerUsername.mb_str();
++            ami.password = (const char*)pDlgSignup->m_strAcctManagerPassword.mb_str();
+         }
+     }
+ 
+@@ -1086,17 +1086,17 @@
+     }
+ 
+     pDlg->m_EnableHTTPProxyCtrl->SetValue(pDoc->proxy_info.use_http_proxy);
+-    pDlg->m_HTTPAddressCtrl->SetValue(pDoc->proxy_info.http_server_name.c_str());
+-    pDlg->m_HTTPUsernameCtrl->SetValue(pDoc->proxy_info.http_user_name.c_str());
+-    pDlg->m_HTTPPasswordCtrl->SetValue(pDoc->proxy_info.http_user_passwd.c_str());
++    pDlg->m_HTTPAddressCtrl->SetValue(wxString(pDoc->proxy_info.http_server_name.c_str(), wxConvUTF8));
++    pDlg->m_HTTPUsernameCtrl->SetValue(wxString(pDoc->proxy_info.http_user_name.c_str(), wxConvUTF8));
++    pDlg->m_HTTPPasswordCtrl->SetValue(wxString(pDoc->proxy_info.http_user_passwd.c_str(), wxConvUTF8));
+ 
+     strBuffer.Printf(wxT("%d"), pDoc->proxy_info.http_server_port);
+     pDlg->m_HTTPPortCtrl->SetValue(strBuffer);
+ 
+     pDlg->m_EnableSOCKSProxyCtrl->SetValue(pDoc->proxy_info.use_socks_proxy);
+-    pDlg->m_SOCKSAddressCtrl->SetValue(pDoc->proxy_info.socks_server_name.c_str());
+-    pDlg->m_SOCKSUsernameCtrl->SetValue(pDoc->proxy_info.socks5_user_name.c_str());
+-    pDlg->m_SOCKSPasswordCtrl->SetValue(pDoc->proxy_info.socks5_user_passwd.c_str());
++    pDlg->m_SOCKSAddressCtrl->SetValue(wxString(pDoc->proxy_info.socks_server_name.c_str(), wxConvUTF8));
++    pDlg->m_SOCKSUsernameCtrl->SetValue(wxString(pDoc->proxy_info.socks5_user_name.c_str(), wxConvUTF8));
++    pDlg->m_SOCKSPasswordCtrl->SetValue(wxString(pDoc->proxy_info.socks5_user_passwd.c_str(), wxConvUTF8));
+ 
+     strBuffer.Printf(wxT("%d"), pDoc->proxy_info.socks_server_port);
+     pDlg->m_SOCKSPortCtrl->SetValue(strBuffer);
+@@ -1125,18 +1125,18 @@
+         // Proxy Tabs
+         if (bRetrievedProxyConfiguration) {
+             pDoc->proxy_info.use_http_proxy = pDlg->m_EnableHTTPProxyCtrl->GetValue();
+-            pDoc->proxy_info.http_server_name = pDlg->m_HTTPAddressCtrl->GetValue().c_str();
+-            pDoc->proxy_info.http_user_name = pDlg->m_HTTPUsernameCtrl->GetValue().c_str();
+-            pDoc->proxy_info.http_user_passwd = pDlg->m_HTTPPasswordCtrl->GetValue().c_str();
++            pDoc->proxy_info.http_server_name = (const char*)pDlg->m_HTTPAddressCtrl->GetValue().mb_str();
++            pDoc->proxy_info.http_user_name = (const char*)pDlg->m_HTTPUsernameCtrl->GetValue().mb_str();
++            pDoc->proxy_info.http_user_passwd = (const char*)pDlg->m_HTTPPasswordCtrl->GetValue().mb_str();
+ 
+             strBuffer = pDlg->m_HTTPPortCtrl->GetValue();
+             strBuffer.ToLong((long*)&iBuffer);
+             pDoc->proxy_info.http_server_port = iBuffer;
+ 
+             pDoc->proxy_info.use_socks_proxy = pDlg->m_EnableSOCKSProxyCtrl->GetValue();
+-            pDoc->proxy_info.socks_server_name = pDlg->m_SOCKSAddressCtrl->GetValue().c_str();
+-            pDoc->proxy_info.socks5_user_name = pDlg->m_SOCKSUsernameCtrl->GetValue().c_str();
+-            pDoc->proxy_info.socks5_user_passwd = pDlg->m_SOCKSPasswordCtrl->GetValue().c_str();
++            pDoc->proxy_info.socks_server_name = (const char*)pDlg->m_SOCKSAddressCtrl->GetValue().mb_str();
++            pDoc->proxy_info.socks5_user_name = (const char*)pDlg->m_SOCKSUsernameCtrl->GetValue().mb_str();
++            pDoc->proxy_info.socks5_user_passwd = (const char*)pDlg->m_SOCKSPasswordCtrl->GetValue().mb_str();
+ 
+             strBuffer = pDlg->m_SOCKSPortCtrl->GetValue();
+             strBuffer.ToLong((long*)&iBuffer);
+@@ -1686,7 +1686,7 @@
+                     wxString strComputerName = wxEmptyString;
+                     wxString strStatusText = wxEmptyString;
+                     wxString strTitle = m_strBaseTitle;
+-                    wxString strLocale = setlocale(LC_NUMERIC, NULL);
++                    wxString strLocale = wxString(setlocale(LC_NUMERIC, NULL), wxConvUTF8);
+      
+                     if (pDoc->IsReconnecting())
+                         pDoc->GetConnectingComputerName(strComputerName);
+diff -Naur boinc-4.72.orig/clientgui/ViewMessages.cpp boinc-4.72/clientgui/ViewMessages.cpp
+--- boinc-4.72.orig/clientgui/ViewMessages.cpp	2005-07-23 02:53:33.000000000 +0200
++++ boinc-4.72/clientgui/ViewMessages.cpp	2005-08-13 16:48:39.000000000 +0200
+@@ -284,7 +284,7 @@
+     MESSAGE* message = wxGetApp().GetDocument()->message(item);
+ 
+     if (message) {
+-        strBuffer = wxString(message->project.c_str());
++        strBuffer = wxString(message->project.c_str(), wxConvUTF8);
+     }
+ 
+     return 0;
+@@ -326,7 +326,7 @@
+     MESSAGE*   message = wxGetApp().GetDocument()->message(item);
+ 
+     if (message) {
+-        strBuffer = wxString(message->body.c_str());
++        strBuffer = wxString(message->body.c_str(), wxConvUTF8);
+     }
+ 
+     strBuffer.Replace(wxT("\n"), wxT(""), true);
+diff -Naur boinc-4.72.orig/clientgui/ViewProjects.cpp boinc-4.72/clientgui/ViewProjects.cpp
+--- boinc-4.72.orig/clientgui/ViewProjects.cpp	2005-07-23 02:53:33.000000000 +0200
++++ boinc-4.72/clientgui/ViewProjects.cpp	2005-08-13 16:54:33.000000000 +0200
+@@ -682,9 +682,9 @@
+ 
+             // Default project url
+             pItem = new CTaskItem(
+-                project->project_name.c_str(), 
++                wxString(project->project_name.c_str(), wxConvUTF8), 
+                 wxT(""), 
+-                project->master_url.c_str(),
++                wxString(project->master_url.c_str(), wxConvUTF8),
+                 ID_TASK_PROJECT_WEB_PROJDEF_MIN
+             );
+             pGroup->m_Tasks.push_back(pItem);
+@@ -693,9 +693,9 @@
+             // Project defined urls
+             for (i=0;(i<project->gui_urls.size())&&(i<=ID_TASK_PROJECT_WEB_PROJDEF_MAX);i++) {
+                 pItem = new CTaskItem(
+-                    project->gui_urls[i].name.c_str(),
+-                    project->gui_urls[i].description.c_str(),
+-                    project->gui_urls[i].url.c_str(),
++                    wxString(project->gui_urls[i].name.c_str(), wxConvUTF8),
++                    wxString(project->gui_urls[i].description.c_str(), wxConvUTF8),
++                    wxString(project->gui_urls[i].url.c_str(), wxConvUTF8),
+                     ID_TASK_PROJECT_WEB_PROJDEF_MIN + 1 + i
+                 );
+                 pGroup->m_Tasks.push_back(pItem);
+@@ -716,7 +716,7 @@
+ 
+     if (project) {
+         project->get_name(project_name);
+-        strBuffer = wxString(project_name.c_str());
++        strBuffer = wxString(project_name.c_str(), wxConvUTF8);
+     }
+ 
+     return 0;
+@@ -727,7 +727,7 @@
+     PROJECT* project = wxGetApp().GetDocument()->project(item);
+ 
+     if (project) {
+-        strBuffer = wxString(project->user_name.c_str());
++        strBuffer = wxString(project->user_name.c_str(), wxConvUTF8);
+     }
+ 
+     return 0;
+@@ -738,7 +738,7 @@
+     PROJECT* project = wxGetApp().GetDocument()->project(item);
+ 
+     if (project) {
+-        strBuffer = wxString(project->team_name.c_str());
++        strBuffer = wxString(project->team_name.c_str(), wxConvUTF8);
+     }
+ 
+     return 0;
+diff -Naur boinc-4.72.orig/clientgui/ViewResources.cpp boinc-4.72/clientgui/ViewResources.cpp
+--- boinc-4.72.orig/clientgui/ViewResources.cpp	2005-07-23 02:53:34.000000000 +0200
++++ boinc-4.72/clientgui/ViewResources.cpp	2005-08-13 16:55:28.000000000 +0200
+@@ -204,7 +204,7 @@
+         state_project = doc->state.lookup_project(resource->master_url);
+         if (state_project) {
+             state_project->get_name(project_name);
+-            strBuffer = wxString(project_name.c_str());
++            strBuffer = wxString(project_name.c_str(), wxConvUTF8);
+         }
+     }
+ 
+diff -Naur boinc-4.72.orig/clientgui/ViewStatistics.cpp boinc-4.72/clientgui/ViewStatistics.cpp
+--- boinc-4.72.orig/clientgui/ViewStatistics.cpp	2005-07-23 02:53:34.000000000 +0200
++++ boinc-4.72/clientgui/ViewStatistics.cpp	2005-08-13 17:00:13.000000000 +0200
+@@ -143,7 +143,7 @@
+                 state_project = pDoc->state.lookup_project(statistic->master_url);
+                 if (state_project) {
+                     state_project->get_name(project_name);
+-                    name = wxString(project_name.c_str());
++                    name = wxString(project_name.c_str(), wxConvUTF8);
+                 }
+             }
+ 
+@@ -187,23 +187,23 @@
+ 
+ 
+ 			wxCoord w_temp, h_temp, des_temp, lead_temp;
+-			dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+ 
+ 			rectangle_x_start=x_start+w_temp+2;
+ 			rectangle_y_start=y_start+heading_height+2;
+ 			rectangle_x_end=x_end-2;
+ 			rectangle_y_end=y_end-2-h_temp;
+ 
+-			dc.GetTextExtent("days", &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.GetTextExtent(wxT("days"), &w_temp, &h_temp, &des_temp, &lead_temp);
+ 			rectangle_x_end-=w_temp;
+ 
+-			dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+ 			dc.DrawRectangle(rectangle_x_start,rectangle_y_start,rectangle_x_end-rectangle_x_start,rectangle_y_end-rectangle_y_start);	
+-			dc.DrawText(wxString::Format("%.0f", max_val),x_start,rectangle_y_start-h_temp);
++			dc.DrawText(wxString::Format(wxT("%.0f"), max_val),x_start,rectangle_y_start-h_temp);
+ 
+-			dc.GetTextExtent(wxString::Format("%.0f", min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+-			dc.DrawText(wxString::Format("%.0f", min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
+-			dc.DrawText("days", rectangle_x_end, rectangle_y_end);
++			dc.GetTextExtent(wxString::Format(wxT("%.0f"), min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.DrawText(wxString::Format(wxT("%.0f"), min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
++			dc.DrawText(wxT("days"), rectangle_x_end, rectangle_y_end);
+ 
+ 			//Draw day numbers and lines marking the days
+ 			wxCoord xpos=rectangle_x_start;
+@@ -211,7 +211,7 @@
+ 				double day=dday()-j->day;
+ 				day=day/(60*60*24);
+ 				dc.SetPen(wxPen(wxColour (0 , 0 , 0) , 1 , wxSOLID));
+-				if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format("-%.0f", day),xpos,rectangle_y_end);
++				if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format(wxT("-%.0f"), day),xpos,rectangle_y_end);
+ 				if (j!=(--(*i)->statistics.end()) && j!=(*i)->statistics.begin()) {
+ 					dc.SetPen(wxPen(wxColour (200 , 200 , 200) , 1 , wxSOLID));
+ 					dc.DrawLine(xpos,rectangle_y_start+1,xpos,rectangle_y_end-1);
+@@ -301,7 +301,7 @@
+     m_pTaskPane = new CBOINCTaskCtrl(this, ID_TASK_STATISTICSVIEW, DEFAULT_TASK_FLAGS);
+     wxASSERT(m_pTaskPane);
+ 
+-	m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0);
++	m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0, wxEmptyString);
+ 	wxASSERT(m_PaintStatistics);
+ 
+     itemFlexGridSizer->Add(m_pTaskPane, 1, wxGROW|wxALL, 1);
+diff -Naur boinc-4.72.orig/clientgui/ViewTransfers.cpp boinc-4.72/clientgui/ViewTransfers.cpp
+--- boinc-4.72.orig/clientgui/ViewTransfers.cpp	2005-07-23 02:53:35.000000000 +0200
++++ boinc-4.72/clientgui/ViewTransfers.cpp	2005-08-13 17:01:08.000000000 +0200
+@@ -356,7 +356,7 @@
+     FILE_TRANSFER* transfer = wxGetApp().GetDocument()->file_transfer(item);
+ 
+     if (transfer) {
+-        strBuffer = wxString(transfer->project_name.c_str());
++        strBuffer = wxString(transfer->project_name.c_str(), wxConvUTF8);
+     }
+     return 0;
+ }
+@@ -366,7 +366,7 @@
+     FILE_TRANSFER* transfer = wxGetApp().GetDocument()->file_transfer(item);
+ 
+     if (transfer) {
+-        strBuffer = wxString(transfer->name.c_str());
++        strBuffer = wxString(transfer->name.c_str(), wxConvUTF8);
+     }
+     return 0;
+ }
+diff -Naur boinc-4.72.orig/clientgui/ViewWork.cpp boinc-4.72/clientgui/ViewWork.cpp
+--- boinc-4.72.orig/clientgui/ViewWork.cpp	2005-07-23 02:53:35.000000000 +0200
++++ boinc-4.72/clientgui/ViewWork.cpp	2005-08-13 17:04:53.000000000 +0200
+@@ -220,9 +220,9 @@
+             pDoc->WorkShowGraphics(
+                 m_pListPane->GetFirstSelected(),
+                 false,
+-                wxGetApp().m_strDefaultWindowStation,
+-                wxGetApp().m_strDefaultDesktop,
+-                wxGetApp().m_strDefaultDisplay
++                (const char*)wxGetApp().m_strDefaultWindowStation.mb_str(),
++                (const char*)wxGetApp().m_strDefaultDesktop.mb_str(),
++                (const char*)wxGetApp().m_strDefaultDisplay.mb_str()
+             );
+         }
+ 
+@@ -473,7 +473,7 @@
+         state_result = doc->state.lookup_result(result->project_url, result->name);
+         if (state_result) {
+             state_result->project->get_name(project_name);
+-            strBuffer = wxString(project_name.c_str());
++            strBuffer = wxString(project_name.c_str(), wxConvUTF8);
+         } else {
+             doc->ForceCacheUpdate();
+         }
+@@ -495,14 +495,14 @@
+     if (result) {
+         state_result = doc->state.lookup_result(result->project_url, result->name);
+         if (state_result) {
+-            wxString strLocale = setlocale(LC_NUMERIC, NULL);
++            wxString strLocale = wxString(setlocale(LC_NUMERIC, NULL), wxConvUTF8);
+             setlocale(LC_NUMERIC, "C");
+             strBuffer.Printf(
+                 wxT("%s %.2f"), 
+                 state_result->wup->avp->app_name.c_str(),
+                 state_result->wup->avp->version_num/100.0
+             );
+-            setlocale(LC_NUMERIC, strLocale.c_str());
++            setlocale(LC_NUMERIC, (const char*)strLocale.mb_str());
+         } else {
+             doc->ForceCacheUpdate();
+         }
+@@ -518,7 +518,7 @@
+     wxASSERT(result);
+ 
+     if (result) {
+-        strBuffer = wxString(result->name.c_str());
++        strBuffer = wxString(result->name.c_str(), wxConvUTF8);
+     }
+ 
+     return 0;
