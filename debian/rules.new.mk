@@ -33,11 +33,20 @@ CXXFLAGS_boinc-client += $(DEB_OPT_FLAG_boinc-client)
 CFGFLAGS = --prefix=/usr --enable-client --enable-server CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)"
 CFGFLAGS_boinc-client = --build=$(DEB_BUILD_GNU_TYPE) --enable-client --disable-server CFLAGS="$(CFLAGS_boinc-client)" CXXFLAGS="$(CXXFLAGS_boinc-client)"
 
+pre-build:
+	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
+
+build: pre-build
 build: build-stamp
 build-stamp: build-stamp-boinc-client
 	dh_testdir
 	./configure $(CFGFLAGS)
 	$(MAKE)
+	
+	docbook2x-man debian/manpages/boinc_client.xml
+	docbook2x-man debian/manpages/boinc_cmd.xml
+	docbook2x-man debian/manpages/boincmgr.xml
+	
 	touch $@
 
 build-stamp-boinc-client:
@@ -54,14 +63,34 @@ clean: clean-boinc-client
 	-$(MAKE) clean
 	-$(MAKE) distclean
 	
-	dh_clean boinc_client.1 boinc_cmd.1 boincmgr.1
-	dh_clean api/Makefile.in apps/Makefile.in client/Makefile.in \
-	  clientgui/Makefile.in db/Makefile.in lib/Makefile.in \
-	  m4/Makefile.in py/Makefile.in py/Boinc/Makefile.in \
-	  sched/Makefile.in sched/status sched/stop sea/Makefile.in \
-	  test/Makefile.in tools/Makefile.in zip/Makefile.in \
-	  zip/unzip/Makefile.in zip/zip/Makefile.in Makefile.in \
-	  aclocal.m4 config.h.in configure
+	dh_clean \
+	  boinc_client.1 \
+	  boinc_cmd.1 \
+	  boincmgr.1
+	  
+	dh_clean \
+	  api/Makefile.in \
+	  apps/Makefile.in \
+	  client/Makefile.in \
+	  clientgui/Makefile.in \
+	  db/Makefile.in \
+	  lib/Makefile.in \
+	  m4/Makefile.in \
+	  py/Makefile.in \
+	  py/Boinc/Makefile.in \
+	  sched/Makefile.in \
+	  sched/status \
+	  sched/stop \
+	  sea/Makefile.in \
+	  test/Makefile.in \
+	  tools/Makefile.in \
+	  zip/Makefile.in \
+	  zip/unzip/Makefile.in \
+	  zip/zip/Makefile.in \
+	  Makefile.in \
+	  aclocal.m4 \
+	  config.h.in \
+	  configure
 
 clean-boinc-client:
 	dh_testdir
