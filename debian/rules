@@ -48,16 +48,16 @@ CFGFLAGS_boinc-client = \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)"
 
-pre-build: patch
+pre-build: patch pre-build-stamp
+pre-build-stamp:
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
-	
 	docbook2x-man debian/manpages/boinc_client.xml
 	docbook2x-man debian/manpages/boinc_cmd.xml
 	docbook2x-man debian/manpages/boincmgr.xml
+	touch $@
 
 build: pre-build
 build: build-stamp
-
 build-stamp: build-stamp-boinc-client
 	dh_testdir
 	./configure $(CFGFLAGS)
@@ -76,6 +76,8 @@ clean-patched: clean-boinc-client
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
+	rm -f pre-build-stamp
+	
 	-$(MAKE) clean
 	-$(MAKE) distclean
 	
@@ -177,4 +179,5 @@ binary-arch: build install
 	dh_builddeb -a
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install patch unpatch
+.PHONY: build clean clean-patched binary-indep binary-arch binary install \
+  patch unpatch
