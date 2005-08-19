@@ -3,7 +3,7 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# Included dpatch makefile.
+# Include dpatch makefile.
 include /usr/share/dpatch/dpatch.make
 
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
