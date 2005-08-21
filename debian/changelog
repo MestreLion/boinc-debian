@@ -7,7 +7,8 @@ boinc (4.72-3) UNRELEASED; urgency=low
   * debian/control:
     - Build depend on the newer libmysqlclient15-dev package.
   * debian/rules:
-    - Rewrote debian/rules without CDBS.
+    - Rewrote debian/rules without CDBS. CFLAGS and CXXFLAGS are now forwarded
+      to the build process.
     - Compile only the BOINC core client program with "-O3 -ffast-math".
     - Remove all files that are created by the autotools during the
       pre-build target in the clean target.

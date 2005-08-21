@@ -56,8 +56,7 @@ pre-build-stamp:
 	docbook2x-man debian/manpages/boincmgr.xml
 	touch $@
 
-build: pre-build
-build: build-stamp
+build: pre-build build-stamp
 build-stamp: build-stamp-boinc-client
 	dh_testdir
 	./configure $(CFGFLAGS)

@@ -1,0 +1,30 @@
+BOINC core client for Debian
+============================
+
+System startup
+ By default the BOINC core client is started after the system
+is booted. 
+
+ After the installation of the boinc-client package the BOINC core
+client is started by default after the system is booted.
+
+ I) Attach a project to the core client.
+  The easiest way to attach a project to your client is to use the `boinc_cmd'
+  program which is also included in the boinc-client package. Call in a shell
+
+    $ boinc_cmd --project_attach <url> <auth_key>
+  
+  where <url> is the URL of the project and <auth_key> is your account key
+
+ II) move boinc dir to new location
+
+Moving an old BOINC directory to the default Debian location
+------------------------------------------------------------
+
+  1. Stop the BOINC core client:
+     # /etc/init.d/boinc-client stop
+  2. Copy the entire content of your old BOINC directory to
+     /var/lib/boinc-client
+  3. Make all files in that directory writeable by the user and group boinc:
+     # chown -R boinc:boinc /var/lib/boinc-client
+  4. Start the BOINC core client again: # /etc/init.d/boinc-client start
