@@ -4,7 +4,8 @@ Things that need to be done before uploading to unstable:
  - Create arch any packages  for the Python module which is currently
    included in boinc-server. (python2.3-boinc, python2.4-boinc, python-boinc)
  - Add complete license of stripchart to debian/copyright.
- - Add more licenses for html/inc/geoip.inc and html/inc/paypal*.inc.
+ - Add more licenses for html/inc/geoip.inc, html/inc/paypal*.inc,
+   html/inc/kses.php.
  - Use "test/test_sanity.py" to check runtime dependencies of the boinc-server
    package.
 
