@@ -1,8 +1,6 @@
 Things that need to be done before uploading to unstable:
 =========================================================
  - Implement a working solution for boinc-client and boinc-app-* packages.
- - Create arch any packages  for the Python module which is currently
-   included in boinc-server. (python2.3-boinc, python2.4-boinc, python-boinc)
  - Add complete license of stripchart to debian/copyright.
  - Add more licenses for html/inc/geoip.inc, html/inc/paypal*.inc,
    html/inc/kses.php.
@@ -11,8 +9,8 @@ Things that need to be done before uploading to unstable:
 
 General major TODOs:
 ====================
- - Write expressive long descriptions for boinc-manager, boinc-dev and
-   boinc-server. 
+ - Write expressive long descriptions for boinc-manager, boinc-dev,
+   boinc-server, python*-boinc. 
  - Have a look at the dbconfig-common package. Is it useful for boinc-server?
  - Don't install the English BOINC Manager.mo. It has been generated from a
    po template.

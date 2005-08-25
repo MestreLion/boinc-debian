@@ -38,6 +38,7 @@ CFGFLAGS = \
   --prefix=/usr \
   --enable-client \
   --enable-server \
+  --disable-static-linkage \
   CFLAGS="$(CFLAGS)" \
   CXXFLAGS="$(CXXFLAGS)"
 
@@ -45,6 +46,7 @@ CFGFLAGS_boinc-client = \
   --build=$(DEB_BUILD_GNU_TYPE) \
   --enable-client \
   --disable-server \
+  --disable-static-linkage \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)"
 
@@ -124,7 +126,7 @@ install-arch: build
 	
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 	
-	dh_install
+	dh_install -a
 	
 	#
 	# boinc-client
@@ -160,20 +162,24 @@ install-indep:
 	dh_testdir
 	dh_testroot
 	
+	dh_install -i
+	
 	#
 	# python-boinc
 	#
-	dh_install py/Boinc/*.py \
-	  debian/python2.3-boinc/usr/lib/python2.3/site-packages/Boinc
-	dh_install py/Boinc/*.py \
-	  debian/python2.4-boinc/usr/lib/python2.4/site-packages/Boinc
+	dh_install -ppython2.3-boinc py/Boinc/*.py \
+	  usr/lib/python2.3/site-packages/Boinc
+	dh_install -ppython2.4-boinc py/Boinc/*.py \
+	  usr/lib/python2.4/site-packages/Boinc
 
 binary-indep: install-indep
 	dh_testdir -i
 	dh_testroot
-	dh_installchangelogs -a
-	dh_installdocs -a
-	dh_compress -i -X.py
+	dh_installchangelogs -i -Npython-boinc
+	dh_installdocs -i -Npython-boinc
+	mkdir -p debian/python-boinc/usr/share/doc
+	ln -sf python2.3-boinc debian/python-boinc/usr/share/doc/python-boinc
+	dh_compress -i
 	dh_fixperms -i
 	dh_python -i
 	dh_installdeb -i
