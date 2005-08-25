@@ -115,7 +115,8 @@ clean-boinc-client:
 	rm -f build-stamp-boinc-client
 	dh_clean client/boinc_client.optimized
 
-install: build
+install: install-indep install-arch
+install-arch: build
 	dh_testdir
 	dh_testroot
 	dh_clean -k
@@ -155,7 +156,30 @@ install: build
 	  ln -s ../../../include/boinc/lib/* . && \
 	  ln -s ../../../lib/boinc/lib/* .
 
-binary-indep: build install
+install-indep:
+	dh_testdir
+	dh_testroot
+	
+	#
+	# python-boinc
+	#
+	dh_install py/Boinc/*.py \
+	  debian/python2.3-boinc/usr/lib/python2.3/site-packages/Boinc
+	dh_install py/Boinc/*.py \
+	  debian/python2.4-boinc/usr/lib/python2.4/site-packages/Boinc
+
+binary-indep: install-indep
+	dh_testdir -i
+	dh_testroot
+	dh_installchangelogs -a
+	dh_installdocs -a
+	dh_compress -i -X.py
+	dh_fixperms -i
+	dh_python -i
+	dh_installdeb -i
+	dh_gencontrol -i
+	dh_md5sums -i
+	dh_builddeb -i
 
 binary-arch: build install
 	dh_testdir -a
@@ -166,7 +190,6 @@ binary-arch: build install
 	dh_desktop -pboinc-manager
 	dh_installinit -a
 	dh_installman -a
-	dh_python -pboinc-server
 	dh_link -a
 	dh_strip -a
 	dh_compress -a
@@ -179,4 +202,4 @@ binary-arch: build install
 
 binary: binary-indep binary-arch
 .PHONY: build clean clean-patched binary-indep binary-arch binary install \
-  patch unpatch
+  install-indep install-arch patch unpatch

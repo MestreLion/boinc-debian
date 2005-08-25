@@ -42,7 +42,7 @@ Description: control and monitor utility for the BOINC core client
 Package: boinc-server
 Section: non-free/net
 Architecture: any
-Depends: ${shlibs:Depends}, ${python:Depends}, python2.3-mysqldb
+Depends: ${shlibs:Depends}, python2.3-mysqldb
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
@@ -60,3 +60,21 @@ Description: BOINC development files
  .
  This package contains static libraries and header files needed to develop
  and compile applications which utilize the BOINC infrastructure.
+
+Package: python2.3-boinc
+Architecture: all
+Depends: ${python:Depends}
+Description: none
+ none
+
+Package: python2.4-boinc
+Architecture: all
+Depends: ${python:Depends}
+Description: none
+ none
+
+Package: python-boinc
+Architecture: all
+Depends: ${python:Depends}
+Description: none
+ none
