@@ -1,5 +1,5 @@
 #! /bin/sh /usr/share/dpatch/dpatch-run
-## 01_amd64-gcc4-fixes.dpatch by  <frank@thomas-alfeld.de>
+## 01_amd64-gcc4-fixes.dpatch by Frank S. Thomas <frank@thomas-alfeld.de>
 ##
 ## All lines beginning with `## DP:' are a description of the patch.
 ## DP: No description.

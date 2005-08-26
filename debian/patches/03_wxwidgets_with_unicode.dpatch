@@ -1,5 +1,5 @@
 #! /bin/sh /usr/share/dpatch/dpatch-run
-## 03_wxwidgets_with_unicode.dpatch by  <frank@thomas-alfeld.de>
+## 03_wxwidgets_with_unicode.dpatch by Frank S. Thomas <frank@thomas-alfeld.de>
 ##
 ## All lines beginning with `## DP:' are a description of the patch.
 ## DP: No description.

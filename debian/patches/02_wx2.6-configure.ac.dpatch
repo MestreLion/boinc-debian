@@ -1,5 +1,5 @@
 #! /bin/sh /usr/share/dpatch/dpatch-run
-## 02_wx2.6-configure.ac.dpatch by  <frank@thomas-alfeld.de>
+## 02_wx2.6-configure.ac.dpatch by Frank S. Thomas <frank@thomas-alfeld.de>
 ##
 ## All lines beginning with `## DP:' are a description of the patch.
 ## DP: No description.
