@@ -2,17 +2,24 @@ boinc (4.72-3) UNRELEASED; urgency=low
 
   [ Frank S. Thomas ]
   * NOT RELEASED YET
-  * Create python-boinc, python2.3-boinc and python2.4-boinc packages.
-  * boinc-server:
-    - Install HTML files to /usr/share/boinc-server/html.    
+  * New packages: boinc-server, python-boinc, python2.3-boinc and
+    python2.4-boinc. 
   * debian/control:
-    - Build depend on the newer libmysqlclient15-dev package.
+    - Build depend on the newer libmysqlclient14-dev package since
+      libmysqlclient12-dev is scheduled to be removed.
+  * debian/copyright:
+    - Added copyright and license informations for various PHP libraries
+      found in html/inc/.
+    - Added the full text of the Mozilla Public License 1.0 since stripchart
+      is distributed under the MPL.
   * debian/rules:
     - Rewrote debian/rules without CDBS. CFLAGS and CXXFLAGS are now forwarded
       to the build process.
     - Compile only the BOINC core client program with "-O3 -ffast-math".
     - Remove all files that are created by the autotools during the
       pre-build target in the clean target.
+  * Added icon to BOINC Manager's desktop file and translated
+    Comment/GenericName to German.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 19 Aug 2005 15:07:22 +0200
 

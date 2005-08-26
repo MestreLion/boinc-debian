@@ -1,11 +1,9 @@
 Things that need to be done before uploading to unstable:
 =========================================================
  - Implement a working solution for boinc-client and boinc-app-* packages.
- - Add complete license of stripchart to debian/copyright.
- - Add more licenses for html/inc/geoip.inc, html/inc/paypal*.inc,
-   html/inc/kses.php.
  - Use "test/test_sanity.py" to check runtime dependencies of the boinc-server
    package.
+ - Check again if all licenses are compliant with the DFSG.
 
 General major TODOs:
 ====================
@@ -24,5 +22,4 @@ TODOs for the next upstream release:
  - Build depend on libssl-dev.
  - Build depend on libcurl-dev.
  - Build depend on zlib1g-dev? Check with pbuilder if this is necessary.
- - Remove RSAEuro and GLUT licenses (code has been removed). 
  - Move all packages to main again.
