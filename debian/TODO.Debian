@@ -22,4 +22,3 @@ TODOs for the next upstream release:
  - Build depend on libssl-dev.
  - Build depend on libcurl-dev.
  - Build depend on zlib1g-dev? Check with pbuilder if this is necessary.
- - Move all packages to main again.

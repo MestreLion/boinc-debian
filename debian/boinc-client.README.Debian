@@ -18,13 +18,13 @@ the 'boinc_cmd' console program or the graphical BOINC Manager
 for more information.
 
 
-Moving a BOINC home directory to /var/lib/boinc-client 
+Moving a BOINC home directory to /var/lib/boinc-client
 ------------------------------------------------------
 
 To move an existing BOINC home directory to Debian's default directory
 follow these instructions:
 
- 1. Stop the BOINC core client:     
+ 1. Stop the BOINC core client:
     % /etc/init.d/boinc-client stop
  
  2. Copy the entire content of your old BOINC home directory to

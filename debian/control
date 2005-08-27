@@ -1,5 +1,5 @@
 Source: boinc
-Section: non-free/net
+Section: net
 Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <moeller@pzr.uni-rostock.de>, Frank S. Thomas <frank@thomas-alfeld.de>
@@ -7,7 +7,7 @@ Standards-Version: 3.6.2
 Build-Depends: debhelper (>= 4.2.21), dpatch, python, libmysqlclient14-dev, freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), docbook2x, docbook-xml
 
 Package: boinc-client
-Section: non-free/net
+Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, adduser, lsb-base
 Suggests: boinc-manager | kboincspy
@@ -25,7 +25,7 @@ Description: BOINC core client
  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-manager
-Section: non-free/x11
+Section: x11
 Architecture: any
 Depends: ${shlibs:Depends}
 Conflicts: boinc-gui
@@ -42,7 +42,7 @@ Description: control and monitor utility for the BOINC core client
  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-server
-Section: non-free/net
+Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, python-boinc, python-mysqldb
 Description: BOINC server applications and data files
@@ -55,7 +55,7 @@ Description: BOINC server applications and data files
  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-dev
-Section: non-free/devel
+Section: devel
 Architecture: any
 Description: BOINC development files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
@@ -68,7 +68,7 @@ Description: BOINC development files
  Homepage: http://boinc.berkeley.edu
 
 Package: python-boinc
-Section: non-free/python
+Section: python
 Architecture: all
 Depends: ${python:Depends}
 Description: none
@@ -77,7 +77,7 @@ Description: none
  Homepage: http://boinc.berkeley.edu
 
 Package: python2.3-boinc
-Section: non-free/python
+Section: python
 Architecture: all
 Depends: ${python:Depends}
 Description: none
@@ -86,7 +86,7 @@ Description: none
  Homepage: http://boinc.berkeley.edu
 
 Package: python2.4-boinc
-Section: non-free/python
+Section: python
 Architecture: all
 Depends: ${python:Depends}
 Description: none
