@@ -47,6 +47,7 @@ CFGFLAGS_boinc-client = \
   --enable-client \
   --disable-server \
   --disable-static-linkage \
+  --without-wx-config \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)"
 
@@ -183,8 +184,8 @@ binary-arch: build install
 	dh_testroot
 	dh_installchangelogs -a
 	dh_installdocs -a
-	dh_installmenu -pboinc-manager
-	dh_desktop -pboinc-manager
+	dh_installmenu -a
+	dh_desktop -a
 	dh_installinit -a
 	dh_installman -a
 	dh_link -a
