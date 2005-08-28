@@ -163,22 +163,13 @@ install-indep:
 	dh_testroot
 	
 	dh_install -i
-	
-	#
-	# python-boinc
-	#
-	dh_install -ppython2.3-boinc py/Boinc/*.py \
-	  usr/lib/python2.3/site-packages/Boinc
-	dh_install -ppython2.4-boinc py/Boinc/*.py \
-	  usr/lib/python2.4/site-packages/Boinc
 
 binary-indep: install-indep
 	dh_testdir -i
 	dh_testroot
 	dh_installchangelogs -i -Npython-boinc
 	dh_installdocs -i -Npython-boinc
-	mkdir -p debian/python-boinc/usr/share/doc
-	ln -sf python2.3-boinc debian/python-boinc/usr/share/doc/python-boinc
+	dh_link -i
 	dh_compress -i
 	dh_fixperms -i
 	dh_python -i
