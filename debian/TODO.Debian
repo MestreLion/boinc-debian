@@ -3,7 +3,7 @@ Things that need to be done before uploading to unstable:
  - Implement a working solution for boinc-client and boinc-app-* packages.
  - Use "test/test_sanity.py" to check runtime dependencies of the boinc-server
    package.
- - Check again if all licenses are compliant with the DFSG.
+ - Check if CPL is compliant with the DFSG.
 
 General major TODOs:
 ====================
@@ -19,6 +19,3 @@ General minor TODOs:
 
 TODOs for the next upstream release:
 ====================================
- - Build depend on libssl-dev.
- - Build depend on libcurl-dev.
- - Build depend on zlib1g-dev? Check with pbuilder if this is necessary.

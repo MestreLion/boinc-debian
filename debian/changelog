@@ -5,6 +5,7 @@ boinc (4.72-3) UNRELEASED; urgency=low
   * New packages: boinc-server, python-boinc, python2.3-boinc and
     python2.4-boinc. 
   * debian/control:
+    - Add build dependencies on zlib1g-dev, libssl-dev and libcurl3-dev.
     - Build depend on the newer libmysqlclient14-dev package since
       libmysqlclient12-dev is scheduled to be removed.
     - Moved all packages back to main. Non-free code (RSAEuro and GLUT) has
