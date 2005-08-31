@@ -1,3 +1,2 @@
-01_amd64-gcc4-fixes.dpatch
 02_wx2.6-configure.ac.dpatch
 03_wxwidgets_with_unicode.dpatch
