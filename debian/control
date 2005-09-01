@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 4.2.21), dpatch, python, libmysqlclient14-dev, zlib
 Package: boinc-client
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, adduser, lsb-base
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base
 Suggests: boinc-manager | kboincspy
 Description: BOINC core client
  This package contains the BOINC core client program, that is required to
@@ -27,7 +27,7 @@ Description: BOINC core client
 Package: boinc-manager
 Section: x11
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: boinc-gui
 Replaces: boinc-gui
 Recommends: boinc-client
@@ -44,7 +44,7 @@ Description: control and monitor utility for the BOINC core client
 Package: boinc-server
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, python-boinc, python-mysqldb
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-boinc, python-mysqldb
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
@@ -70,7 +70,7 @@ Description: BOINC development files
 Package: python-boinc
 Section: python
 Architecture: all
-Depends: ${python:Depends}
+Depends: ${python:Depends}, ${misc:Depends}
 Description: none
  none
  .
@@ -79,7 +79,7 @@ Description: none
 Package: python2.3-boinc
 Section: python
 Architecture: all
-Depends: ${python:Depends}
+Depends: ${python:Depends}, ${misc:Depends}
 Description: none
  none
  .
@@ -88,7 +88,7 @@ Description: none
 Package: python2.4-boinc
 Section: python
 Architecture: all
-Depends: ${python:Depends}
+Depends: ${python:Depends}, ${misc:Depends}
 Description: none
  none
  .

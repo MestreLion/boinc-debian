@@ -1,4 +1,4 @@
-boinc (5.1.1-1) UNRELEASED; urgency=low
+boinc (4.72-3) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
   * New upstream release.
@@ -6,6 +6,7 @@ boinc (5.1.1-1) UNRELEASED; urgency=low
   [ Frank S. Thomas ]
   * New packages: boinc-server, python-boinc, python2.3-boinc and
     python2.4-boinc.
+  * Removed all references to RSAEuro from the boinc-dev package. 
   * debian/patches/:
     - Removed obsolete 01_amd64-gcc4-fixes.dpatch.
   * debian/control:
@@ -14,6 +15,8 @@ boinc (5.1.1-1) UNRELEASED; urgency=low
       libmysqlclient12-dev is scheduled to be removed.
     - Moved all packages back to main. Non-free code (RSAEuro and GLUT) has
       been removed from BOINC.
+    - Added ${misc:Depends} to all packages' Depends. This variable is not
+      used at the moment.
   * debian/copyright:
     - Added copyright and license informations for various PHP libraries
       found in html/inc/.

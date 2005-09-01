@@ -1,4 +1,3 @@
-RSAEuro/source/librsaeuro.a     usr/lib/boinc/RSAEuro/source
 api/*.a      usr/lib/boinc/api
 api/*.h      usr/include/boinc/api
 client/*.h   usr/include/boinc/client
