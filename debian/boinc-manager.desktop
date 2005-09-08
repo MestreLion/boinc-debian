@@ -2,10 +2,10 @@
 Type=Application
 Encoding=UTF-8
 Exec=/usr/bin/boincmgr
-Icon=/usr/share/pixmaps/boincmgr-32.xpm
+Icon=boincmgr-32.xpm
 Categories=Monitor;Utility;GTK
 Name=BOINC Manager
 GenericName=BOINC monitor and control utility
 GenericName[de]=BOINC Überwachungs- und Kontrollprogramm 
-Comment=Configure or monitor a BOINC Core Client
+Comment=Configure or monitor a BOINC core client
 Comment[de]=BOINC Basis Client konfigurieren oder überwachen
