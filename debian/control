@@ -44,7 +44,7 @@ Description: control and monitor utility for the BOINC core client
 Package: boinc-server
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-boinc, python-mysqldb
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-boinc, python-mysqldb, mysql-server-4.1 | virtual-mysql-server
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
