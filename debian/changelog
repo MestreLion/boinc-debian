@@ -17,6 +17,8 @@ boinc (5.1.2-1) UNRELEASED; urgency=low
       been removed from BOINC.
     - Added ${misc:Depends} to all packages' Depends. This variable is not
       used at the moment.
+    - Use a versioned dependency for lsb-base (>= 3.0-6) to ensure that the
+      log_progress_msg function is available. (fixes: Alioth bug #302179)
   * debian/copyright:
     - Added copyright and license informations for various PHP libraries
       found in html/inc/.
@@ -35,7 +37,7 @@ boinc (5.1.2-1) UNRELEASED; urgency=low
   * Added icon to BOINC Manager's desktop file and translated
     Comment/GenericName to German.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 26 Aug 2005 21:21:56 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 19 Sep 2005 13:47:27 +0200
 
 boinc (4.72-2) experimental; urgency=low
 

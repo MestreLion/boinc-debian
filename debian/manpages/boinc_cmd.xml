@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!-- 
+<!--
  This is the manual page for boinc_cmd, a command tool that provides an
  interactive command-line interface to a running core client.
-  
+
  This file is licensed under the terms of the GNU General Public License,
  Version 2 or any later version published by the Free Software Foundation.
 
- Copyright 2005 Debian BOINC Maintainers 
-                <pkg-boinc-devel@lists.alioth.debian.org>
+ Copyright © 2005 Debian BOINC Maintainers
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"

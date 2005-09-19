@@ -9,7 +9,7 @@ It was downloaded via CVS from alien.ssl.berkeley.edu.
 Upstream Authors: Dr. David P. Anderson <davea@ssl.berkeley.edu>
                   and others, see http://boinc.berkeley.edu/contact.php
 
-Copyright (C) 2005 University of California at Berkeley
+Copyright © 2005 University of California at Berkeley
 
 BOINC is licensed under the terms of the LGPL:
 
@@ -40,7 +40,7 @@ PHP GeoIP library in html/inc/geoip.inc:
 based on php version of the geoip library written in may 2002
 by jim winstead <jimw@apache.org>
 
-Copyright (C) 2003 MaxMind LLC
+Copyright © 2003 MaxMind LLC
 
 License:
 
@@ -67,7 +67,7 @@ kses in html/inc/kses.php:
 
 Author: Ulf Harnhammar <metaur@users.sourceforge.net>
 
-Copyright (C) 2002, 2003  Ulf Harnhammar
+Copyright © 2002, 2003  Ulf Harnhammar
 
 License:
 
@@ -95,7 +95,7 @@ PHP Toolkit for PayPal in html/inc/paypal_global_config.inc:
 
 PHP Toolkit for PayPal v0.50 - http://www.paypal.com/pdn
 
-Copyright (C) 2004 PayPal Inc
+Copyright © 2004 PayPal Inc
 
 Released under Common Public License 1.0
 http://opensource.org/licenses/cpl.php
@@ -323,7 +323,7 @@ Stripchart in stripchart/:
 Author: Matt Lebofsky <mattl@ssl.berkeley.edu>
         SETI@home project
 
-Copyright (C) 2002 University of California at Berkeley
+Copyright © 2002 University of California at Berkeley
 
 License:
 
@@ -715,7 +715,7 @@ The definitive version of this document should be available at
 ftp://ftp.info-zip.org/pub/infozip/license.html indefinitely.
 
 
-Copyright (c) 1990-2002 Info-ZIP.  All rights reserved.
+Copyright © 1990-2002 Info-ZIP.  All rights reserved.
 
 For the purposes of this copyright and license, "Info-ZIP" is defined as
 the following set of individuals:

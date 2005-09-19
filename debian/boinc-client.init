@@ -1,7 +1,7 @@
 #! /bin/sh
 # Debian init.d script for the BOINC core client
-# Copyright (C) 2005 Debian BOINC Maintainers 
-#                    <pkg-boinc-devel@lists.alioth.debian.org>
+# Copyright © 2005 Debian BOINC Maintainers
+#                  <pkg-boinc-devel@lists.alioth.debian.org>
 #
 # This file is licensed under the terms of the GNU General Public License,
 # Version 2 or any later version published by the Free Software Foundation.
@@ -79,7 +79,7 @@ stop()
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
       --user $BOINC_USER --exec $BOINC_CLIENT
   fi
-  
+
   rm -f "$BOINC_DIR/lockfile"
   rm -f $PIDFILE
   log_end_msg 0

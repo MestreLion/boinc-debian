@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!-- 
+<!--
  This is the manual page for the BOINC core client (boinc_client).
 
  This file is licensed under the terms of the GNU General Public License,
  Version 2 or any later version published by the Free Software Foundation.
- 
- Copyright 2004 Steffen Moeller <moeller@pzr.uni-rostock.de>
+
+ Copyright © 2004 Steffen Moeller
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
