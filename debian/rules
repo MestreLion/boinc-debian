@@ -179,7 +179,7 @@ binary-indep: install-indep
 	dh_md5sums -i
 	dh_builddeb -i
 
-binary-arch: build install
+binary-arch: build install-arch
 	dh_testdir -a
 	dh_testroot
 	dh_installchangelogs -a
