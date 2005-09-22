@@ -35,7 +35,7 @@ boinc (5.1.4-1) UNRELEASED; urgency=low
   * Added boinc-client.README.Debian that replaces boinc-client's previous
     NEWS file and explains how to use the BOINC core client in Debian.
   * Added icon to BOINC Manager's desktop file and translated
-    Comment/GenericName to German.
+    Comment/GenericName to German. (fixes: Alioth bug #302212)
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 19 Sep 2005 13:47:27 +0200
 

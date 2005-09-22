@@ -16,6 +16,8 @@ General major TODOs:
 General minor TODOs:
 ====================
  - Revise all manpages.
+ - boincmgr has command line options ("boincmgr --help").
+   List them in the manpage.
 
 TODOs for the next upstream release:
 ====================================
