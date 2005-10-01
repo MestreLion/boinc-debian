@@ -4,7 +4,9 @@ README.Debian-source for BOINC
 The BOINC project does not distribute source code releases as tarballs, but
 they are available as CVS tags. Anonymous CVS access is available at
 alien.ssl.berkeley.edu:/home/cvs/cvsroot. The module for the BOINC source is
-called 'boinc'.
+called 'boinc'. For more information see:
+
+  http://boinc.berkeley.edu/source_code.php
  
 To obtain the source from CVS and package it as .orig.tar.gz the Debian BOINC
 Maintainers use a script called 'export-boinc' which is available in our
