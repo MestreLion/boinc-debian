@@ -1,4 +1,4 @@
-boinc (5.1.5-1) UNRELEASED; urgency=low
+boinc (5.1.8-1) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
   * New upstream release.
@@ -9,6 +9,8 @@ boinc (5.1.5-1) UNRELEASED; urgency=low
   * Removed all references to RSAEuro from the boinc-dev package. 
   * debian/patches/:
     - Removed obsolete 01_amd64-gcc4-fixes.dpatch.
+    - Updated 02_wx2.6-configure.ac.dpatch for new release.
+    - Updated 03_wx2.6-with-unicode.dpatch for new release.
   * debian/control:
     - Add zlib1g-dev, libssl-dev and libcurl3-dev to Build-Depends.
     - Build depend on the newer libmysqlclient14-dev package since
@@ -37,7 +39,7 @@ boinc (5.1.5-1) UNRELEASED; urgency=low
   * Added icon to BOINC Manager's desktop file and translated
     Comment/GenericName to German. (fixes: Alioth bug #302212)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 19 Sep 2005 13:47:27 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  6 Oct 2005 16:01:36 +0200
 
 boinc (4.72-2) experimental; urgency=low
 
