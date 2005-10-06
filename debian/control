@@ -28,8 +28,6 @@ Package: boinc-manager
 Section: x11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Conflicts: boinc-gui
-Replaces: boinc-gui
 Recommends: boinc-client
 Description: control and monitor utility for the BOINC core client
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
@@ -71,12 +69,13 @@ Package: python-boinc
 Section: python
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}
-Description: none
+Description: Python module for BOINC (dummy package)
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
  resources.
  .
- none
+ This is a dummy package that depends on the version of the Python BOINC
+ module that is compiled for the default version of Python in Debian. 
  .
  Homepage: http://boinc.berkeley.edu
 
@@ -84,12 +83,12 @@ Package: python2.3-boinc
 Section: python
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}
-Description: none
+Description: Python 2.3 module for BOINC
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
  resources.
  .
- none
+ This package contains the Python 2.3 module for BOINC.
  .
  Homepage: http://boinc.berkeley.edu
 
@@ -97,11 +96,11 @@ Package: python2.4-boinc
 Section: python
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends}
-Description: none
+Description: Python 2.4 module for BOINC
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
  resources.
  .
- none
+ This package contains the Python 2.4 module for BOINC.
  .
  Homepage: http://boinc.berkeley.edu
