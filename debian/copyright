@@ -1,7 +1,5 @@
 This package was debianized by Steffen Moeller <moeller@pzr.uni-rostock.de> on
-Sat, 13 Nov 2004 23:28:53 +0100 and updated by Frank S. Thomas
-<frank@thomas-alfeld.de> on Tue, 25 Jan 2005 17:33:23 +0100.
-Since Wed, 26 Jan 2005 14:56:00 +0100 this package is maintained by the
+Sat, 13 Nov 2004 23:28:53 +0100. Since Wed, 26 Jan 2005 it is maintained by the
 Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>.
 
 It was downloaded via CVS from alien.ssl.berkeley.edu.

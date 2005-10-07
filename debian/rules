@@ -146,7 +146,10 @@ install-arch: build
 	    install -D -m644 "locale/client/$$i/BOINC Manager.mo" \
 	      "debian/boinc-manager/usr/share/locale/$$i/LC_MESSAGES/BOINC Manager.mo"; \
 	  fi; \
-	done;
+	done; 
+# The en_US po file is actually a po template, thus the corresponding
+# "BOINC Manager.mo" is empty and useless. 
+	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	
 	#
 	# boinc-dev

@@ -65,6 +65,41 @@
     <para>The BOINC manager (<command>&dhbinary;</command>) is a controling
       and monitoring utility for the BOINC core client.</para>
   </refsect1>
+
+  <refsect1>
+    <title>OPTIONS</title>
+    <para>A full summary of options is included below.</para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+          <option>-h</option>,
+          <option>--help</option>
+        </term>
+        <listitem>
+          <para>Show all options.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--verbose</option></term>
+        <listitem>
+          <para>Generate verbose log messages.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>-s</option>,
+          <option>--systray</option>
+        </term>
+        <listitem>
+          <para>Startup BOINC Manager so only the system tray icon is
+            visible.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
   
   <refsect1>
     <title>AUTHOR</title>

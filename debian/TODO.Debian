@@ -10,14 +10,10 @@ General major TODOs:
  - Write expressive long descriptions for boinc-manager, boinc-dev,
    boinc-server, python*-boinc. 
  - Have a look at the dbconfig-common package. Is it useful for boinc-server?
- - Don't install the English BOINC Manager.mo. It has been generated from a
-   po template.
 
 General minor TODOs:
 ====================
  - Revise all manpages.
- - boincmgr has command line options ("boincmgr --help").
-   List them in the manpage.
 
 TODOs for the next upstream release:
 ====================================

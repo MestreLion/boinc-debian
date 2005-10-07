@@ -38,7 +38,7 @@ boinc (5.1.8-1) UNRELEASED; urgency=low
     NEWS file and explains how to use the BOINC core client in Debian.
   * Added icon to BOINC Manager's desktop file and translated
     Comment/GenericName to German. (fixes: Alioth bug #302212)
-  * Updated watch file.
+  * Updated boincmgr.xml manpage and watch file.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  6 Oct 2005 16:01:36 +0200
 
