@@ -1,18 +1,15 @@
-boinc (5.2.0-1) UNRELEASED; urgency=low
+boinc (5.2.1-1) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
   * New upstream release.
 
   [ Frank S. Thomas ]
-  * New packages: boinc-server, python-boinc, python2.3-boinc and
-    python2.4-boinc.
-  * Removed all references to RSAEuro from the boinc-dev package.
   * debian/patches/:
     - Removed obsolete 01_amd64-gcc4-fixes.dpatch.
     - Updated 02_wx2.6-configure.ac.dpatch for new release.
     - Updated 03_wx2.6-with-unicode.dpatch for new release.
   * debian/control:
-    - Add zlib1g-dev, libssl-dev and libcurl3-dev to Build-Depends.
+    - Add zlib1g-dev, libssl-dev and libcurl3-openssl-dev to Build-Depends.
     - Build depend on the newer libmysqlclient14-dev package since
       libmysqlclient12-dev is scheduled to be removed.
     - Moved all packages back to main. Non-free code (RSAEuro and GLUT) has
@@ -34,12 +31,13 @@ boinc (5.2.0-1) UNRELEASED; urgency=low
     - Compile only the BOINC core client program with "-O3 -ffast-math".
     - Remove all files that are created by the autotools during the
       pre-build target in the clean target.
+  * Removed all references to RSAEuro from the boinc-dev package.
   * Added boinc-client.README.Debian that replaces boinc-client's previous
     NEWS file and explains how to use the BOINC core client in Debian.
   * Added icon to BOINC Manager's desktop file. (fixes: Alioth bug #302212)
   * Updated boincmgr.xml manpage and watch file.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  6 Oct 2005 16:01:36 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 11 Oct 2005 11:35:45 +0200
 
 boinc (4.72-2) experimental; urgency=low
 

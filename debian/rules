@@ -162,25 +162,25 @@ install-arch: build
 	  ln -s ../../../include/boinc/lib/* . && \
 	  ln -s ../../../lib/boinc/lib/* .
 
-install-indep:
-	dh_testdir
-	dh_testroot
-	
-	dh_install -i
-
-binary-indep: install-indep
-	dh_testdir -i
-	dh_testroot
-	dh_installchangelogs -i -Npython-boinc
-	dh_installdocs -i -Npython-boinc
-	dh_link -i
-	dh_compress -i
-	dh_fixperms -i
-	dh_python -i
-	dh_installdeb -i
-	dh_gencontrol -i
-	dh_md5sums -i
-	dh_builddeb -i
+#install-indep:
+#	dh_testdir
+#	dh_testroot
+#	
+#	dh_install -i
+#
+#binary-indep: install-indep
+#	dh_testdir -i
+#	dh_testroot
+#	dh_installchangelogs -i -Npython-boinc
+#	dh_installdocs -i -Npython-boinc
+#	dh_link -i
+#	dh_compress -i
+#	dh_fixperms -i
+#	dh_python -i
+#	dh_installdeb -i
+#	dh_gencontrol -i
+#	dh_md5sums -i
+#	dh_builddeb -i
 
 binary-arch: build install-arch
 	dh_testdir -a
