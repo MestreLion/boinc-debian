@@ -8,7 +8,7 @@
 
 diff -Naur boinc-5.2.2a.orig/clientgui/AccountManagerProcessingPage.cpp boinc-5.2.2a/clientgui/AccountManagerProcessingPage.cpp
 --- boinc-5.2.2a.orig/clientgui/AccountManagerProcessingPage.cpp	2005-10-04 01:14:15.000000000 +0200
-+++ boinc-5.2.2a/clientgui/AccountManagerProcessingPage.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/AccountManagerProcessingPage.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -215,9 +215,9 @@
              break;
          case ATTACHACCTMGR_ATTACHACCTMGR_EXECUTE:
@@ -33,7 +33,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/AccountManagerProcessingPage.cpp boinc-5.
                  }
 diff -Naur boinc-5.2.2a.orig/clientgui/AccountManagerPropertiesPage.cpp boinc-5.2.2a/clientgui/AccountManagerPropertiesPage.cpp
 --- boinc-5.2.2a.orig/clientgui/AccountManagerPropertiesPage.cpp	2005-10-04 01:14:15.000000000 +0200
-+++ boinc-5.2.2a/clientgui/AccountManagerPropertiesPage.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/AccountManagerPropertiesPage.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -217,7 +217,7 @@
          case ACCTMGRPROP_RETRPROJECTPROPERTIES_EXECUTE:
              // Attempt to retrieve the project's account creation policies
@@ -45,7 +45,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/AccountManagerPropertiesPage.cpp boinc-5.
              // Wait until we are done processing the request.
 diff -Naur boinc-5.2.2a.orig/clientgui/BOINCBaseView.cpp boinc-5.2.2a/clientgui/BOINCBaseView.cpp
 --- boinc-5.2.2a.orig/clientgui/BOINCBaseView.cpp	2005-09-30 11:00:47.000000000 +0200
-+++ boinc-5.2.2a/clientgui/BOINCBaseView.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/BOINCBaseView.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -279,7 +279,7 @@
  wxString CBOINCBaseView::OnListGetItemText(
      long WXUNUSED(item), long WXUNUSED(column)
@@ -87,7 +87,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/BOINCBaseView.cpp boinc-5.2.2a/clientgui/
  
 diff -Naur boinc-5.2.2a.orig/clientgui/BOINCGUIApp.cpp boinc-5.2.2a/clientgui/BOINCGUIApp.cpp
 --- boinc-5.2.2a.orig/clientgui/BOINCGUIApp.cpp	2005-10-01 10:56:37.000000000 +0200
-+++ boinc-5.2.2a/clientgui/BOINCGUIApp.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/BOINCGUIApp.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -100,7 +100,7 @@
      m_hBOINCCoreProcess = NULL;
      m_hIdleDetectionDll = NULL;
@@ -117,7 +117,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/BOINCGUIApp.cpp boinc-5.2.2a/clientgui/BO
          // We are only interested in the path component of the fully qualified path.
 diff -Naur boinc-5.2.2a.orig/clientgui/BOINCGUIApp.h boinc-5.2.2a/clientgui/BOINCGUIApp.h
 --- boinc-5.2.2a.orig/clientgui/BOINCGUIApp.h	2005-10-01 10:56:37.000000000 +0200
-+++ boinc-5.2.2a/clientgui/BOINCGUIApp.h	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/BOINCGUIApp.h	2005-10-19 14:22:54.000000000 +0200
 @@ -87,9 +87,9 @@
  
  public:
@@ -133,7 +133,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/BOINCGUIApp.h boinc-5.2.2a/clientgui/BOIN
  
 diff -Naur boinc-5.2.2a.orig/clientgui/DlgAbout.cpp boinc-5.2.2a/clientgui/DlgAbout.cpp
 --- boinc-5.2.2a.orig/clientgui/DlgAbout.cpp	2005-10-04 01:14:13.000000000 +0200
-+++ boinc-5.2.2a/clientgui/DlgAbout.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/DlgAbout.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -73,7 +73,7 @@
  
  bool CDlgAbout::Create(wxWindow* parent, wxWindowID id, const wxString& caption, const wxPoint& pos, const wxSize& size, long style) {
@@ -145,7 +145,16 @@ diff -Naur boinc-5.2.2a.orig/clientgui/DlgAbout.cpp boinc-5.2.2a/clientgui/DlgAb
  ////@begin CDlgAbout creation
 diff -Naur boinc-5.2.2a.orig/clientgui/MainDocument.cpp boinc-5.2.2a/clientgui/MainDocument.cpp
 --- boinc-5.2.2a.orig/clientgui/MainDocument.cpp	2005-10-17 21:56:37.000000000 +0200
-+++ boinc-5.2.2a/clientgui/MainDocument.cpp	2005-10-19 14:09:23.000000000 +0200
++++ boinc-5.2.2a/clientgui/MainDocument.cpp	2005-10-19 14:39:50.000000000 +0200
+@@ -61,7 +61,7 @@
+             buf[n] = 0;
+         }
+     }
+-    passwd = buf;
++    passwd = wxString(buf, wxConvUTF8);
+ }
+ 
+ // TODO: get rid of "reconnecting" stuff
 @@ -81,11 +81,11 @@
                  // look for password in file
                  get_password_from_file(m_strNewComputerPassword);
@@ -416,7 +425,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/MainDocument.cpp boinc-5.2.2a/clientgui/M
      return iRetVal;
 diff -Naur boinc-5.2.2a.orig/clientgui/MainFrame.cpp boinc-5.2.2a/clientgui/MainFrame.cpp
 --- boinc-5.2.2a.orig/clientgui/MainFrame.cpp	2005-10-10 20:21:48.000000000 +0200
-+++ boinc-5.2.2a/clientgui/MainFrame.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/MainFrame.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -977,9 +977,9 @@
          CDlgAccountManagerStatus* pDlgStatus = new CDlgAccountManagerStatus(this);
  
@@ -523,7 +532,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/MainFrame.cpp boinc-5.2.2a/clientgui/Main
                          pDoc->GetConnectingComputerName(strComputerName);
 diff -Naur boinc-5.2.2a.orig/clientgui/ProjectProcessingPage.cpp boinc-5.2.2a/clientgui/ProjectProcessingPage.cpp
 --- boinc-5.2.2a.orig/clientgui/ProjectProcessingPage.cpp	2005-10-04 01:14:19.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ProjectProcessingPage.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ProjectProcessingPage.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -366,25 +366,25 @@
              ai->clear();
              ao->clear();
@@ -597,7 +606,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ProjectProcessingPage.cpp boinc-5.2.2a/cl
              } else {
 diff -Naur boinc-5.2.2a.orig/clientgui/ProjectPropertiesPage.cpp boinc-5.2.2a/clientgui/ProjectPropertiesPage.cpp
 --- boinc-5.2.2a.orig/clientgui/ProjectPropertiesPage.cpp	2005-10-04 01:14:19.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ProjectPropertiesPage.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ProjectPropertiesPage.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -373,7 +373,7 @@
          case PROJPROP_RETRPROJECTPROPERTIES_EXECUTE:
              // Attempt to retrieve the project's account creation policies
@@ -618,7 +627,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ProjectPropertiesPage.cpp boinc-5.2.2a/cl
                  if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTALREADYATTACHED)) {
 diff -Naur boinc-5.2.2a.orig/clientgui/ProxyPage.cpp boinc-5.2.2a/clientgui/ProxyPage.cpp
 --- boinc-5.2.2a.orig/clientgui/ProxyPage.cpp	2005-10-04 01:14:20.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ProxyPage.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ProxyPage.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -299,16 +299,16 @@
      if (event.GetDirection() == true) {
          // Moving from the previous page, get state
@@ -669,7 +678,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ProxyPage.cpp boinc-5.2.2a/clientgui/Prox
          strBuffer.ToLong((long*)&iBuffer);
 diff -Naur boinc-5.2.2a.orig/clientgui/ValidateURL.cpp boinc-5.2.2a/clientgui/ValidateURL.cpp
 --- boinc-5.2.2a.orig/clientgui/ValidateURL.cpp	2005-09-28 13:59:26.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ValidateURL.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ValidateURL.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -63,12 +63,12 @@
      bool ok = TRUE;
      std::string canonicalize_url;
@@ -698,7 +707,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ValidateURL.cpp boinc-5.2.2a/clientgui/Va
  }
 diff -Naur boinc-5.2.2a.orig/clientgui/ViewMessages.cpp boinc-5.2.2a/clientgui/ViewMessages.cpp
 --- boinc-5.2.2a.orig/clientgui/ViewMessages.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ViewMessages.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ViewMessages.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -287,7 +287,7 @@
      MESSAGE* message = wxGetApp().GetDocument()->message(item);
  
@@ -719,7 +728,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ViewMessages.cpp boinc-5.2.2a/clientgui/V
      strBuffer.Replace(wxT("\n"), wxT(""), true);
 diff -Naur boinc-5.2.2a.orig/clientgui/ViewProjects.cpp boinc-5.2.2a/clientgui/ViewProjects.cpp
 --- boinc-5.2.2a.orig/clientgui/ViewProjects.cpp	2005-10-09 23:44:32.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ViewProjects.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ViewProjects.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -601,9 +601,9 @@
  
                  // Default project url
@@ -774,7 +783,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ViewProjects.cpp boinc-5.2.2a/clientgui/V
      return 0;
 diff -Naur boinc-5.2.2a.orig/clientgui/ViewResources.cpp boinc-5.2.2a/clientgui/ViewResources.cpp
 --- boinc-5.2.2a.orig/clientgui/ViewResources.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ViewResources.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ViewResources.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -207,7 +207,7 @@
          state_project = doc->state.lookup_project(resource->master_url);
          if (state_project) {
@@ -786,7 +795,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ViewResources.cpp boinc-5.2.2a/clientgui/
  
 diff -Naur boinc-5.2.2a.orig/clientgui/ViewStatistics.cpp boinc-5.2.2a/clientgui/ViewStatistics.cpp
 --- boinc-5.2.2a.orig/clientgui/ViewStatistics.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ViewStatistics.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ViewStatistics.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -143,7 +143,7 @@
                  state_project = pDoc->state.lookup_project(statistic->master_url);
                  if (state_project) {
@@ -847,7 +856,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ViewStatistics.cpp boinc-5.2.2a/clientgui
      itemFlexGridSizer->Add(m_pTaskPane, 1, wxGROW|wxALL, 1);
 diff -Naur boinc-5.2.2a.orig/clientgui/ViewTransfers.cpp boinc-5.2.2a/clientgui/ViewTransfers.cpp
 --- boinc-5.2.2a.orig/clientgui/ViewTransfers.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ViewTransfers.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ViewTransfers.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -360,7 +360,7 @@
      FILE_TRANSFER* transfer = wxGetApp().GetDocument()->file_transfer(item);
  
@@ -868,7 +877,7 @@ diff -Naur boinc-5.2.2a.orig/clientgui/ViewTransfers.cpp boinc-5.2.2a/clientgui/
  }
 diff -Naur boinc-5.2.2a.orig/clientgui/ViewWork.cpp boinc-5.2.2a/clientgui/ViewWork.cpp
 --- boinc-5.2.2a.orig/clientgui/ViewWork.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.2a/clientgui/ViewWork.cpp	2005-10-19 13:59:15.000000000 +0200
++++ boinc-5.2.2a/clientgui/ViewWork.cpp	2005-10-19 14:22:54.000000000 +0200
 @@ -222,9 +222,9 @@
              pDoc->WorkShowGraphics(
                  m_pListPane->GetFirstSelected(),

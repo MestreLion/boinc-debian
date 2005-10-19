@@ -38,7 +38,7 @@ CFGFLAGS = \
   --prefix=/usr \
   --enable-client \
   --enable-server \
-  --disable-client-release \
+  --with-ssl \
   CFLAGS="$(CFLAGS)" \
   CXXFLAGS="$(CXXFLAGS)"
 
@@ -46,7 +46,7 @@ CFGFLAGS_boinc-client = \
   --build=$(DEB_BUILD_GNU_TYPE) \
   --enable-client \
   --disable-server \
-  --disable-client-release \
+  --with-ssl \
   --without-wx-config \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)"
