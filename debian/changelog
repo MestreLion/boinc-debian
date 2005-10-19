@@ -1,11 +1,11 @@
-boinc (5.2.1-1) UNRELEASED; urgency=low
+boinc (5.2.2a-1) experimental; urgency=low
 
-  * NOT RELEASED YET
   * New upstream release.
 
   [ Frank S. Thomas ]
   * debian/patches/:
     - Removed obsolete 01_amd64-gcc4-fixes.dpatch.
+    - Added 01_gui_rpc_server.C.dpatch which includes <sys/stat.h>.
     - Updated 02_wx2.6-configure.ac.dpatch for new release.
     - Updated 03_wx2.6-with-unicode.dpatch for new release.
   * debian/control:
@@ -31,13 +31,17 @@ boinc (5.2.1-1) UNRELEASED; urgency=low
     - Compile only the BOINC core client program with "-O3 -ffast-math".
     - Remove all files that are created by the autotools during the
       pre-build target in the clean target.
+  * The boinc-dev package now only includes headers and static libraries, that
+    are installed by "make install". According to Bruce Allen this should be
+    sufficient for building BOINC applications.
+    (http://www.ssl.berkeley.edu/pipermail/boinc_dev/2005-October/003855.html)
   * Removed all references to RSAEuro from the boinc-dev package.
   * Added boinc-client.README.Debian that replaces boinc-client's previous
     NEWS file and explains how to use the BOINC core client in Debian.
   * Added icon to BOINC Manager's desktop file. (fixes: Alioth bug #302212)
   * Updated boincmgr.xml manpage and watch file.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 11 Oct 2005 11:35:45 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 19 Oct 2005 14:16:48 +0200
 
 boinc (4.72-2) experimental; urgency=low
 

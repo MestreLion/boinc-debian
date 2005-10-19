@@ -1,2 +1,3 @@
+01_gui_rpc_server.C.dpatch
 02_wx2.6-configure.ac.dpatch
 03_wx2.6-with-unicode.dpatch

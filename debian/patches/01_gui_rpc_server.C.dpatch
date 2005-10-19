@@ -1,0 +1,18 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01_gui_rpc_server.C.dpatch by Frank S. Thomas <frank@thomas-alfeld.de>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+
+--- boinc-5.2.2a.orig/client/gui_rpc_server.C	2005-10-17 21:56:36.000000000 +0200
++++ boinc-5.2.2a/client/gui_rpc_server.C	2005-10-19 13:17:46.000000000 +0200
+@@ -28,6 +28,7 @@
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <sys/socket.h>
++#include <sys/stat.h>
+ #include <sys/un.h>
+ #include <vector>
+ #include <string.h>

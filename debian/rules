@@ -150,25 +150,14 @@ install-arch: build
 # The en_US po file is actually a po template, thus the corresponding
 # "BOINC Manager.mo" is empty and useless. 
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
-	
-	#
-	# boinc-dev
-	#
-	cd debian/boinc-dev/usr/share/boinc/api && \
-	  ln -s ../../../include/boinc/api/* . && \
-	  ln -s ../../../lib/boinc/api/* .
-	
-	cd debian/boinc-dev/usr/share/boinc/lib && \
-	  ln -s ../../../include/boinc/lib/* . && \
-	  ln -s ../../../lib/boinc/lib/* .
 
-#install-indep:
+install-indep:
 #	dh_testdir
 #	dh_testroot
 #	
 #	dh_install -i
 #
-#binary-indep: install-indep
+binary-indep: install-indep
 #	dh_testdir -i
 #	dh_testroot
 #	dh_installchangelogs -i -Npython-boinc
