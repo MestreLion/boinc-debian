@@ -1,11 +1,10 @@
-boinc (5.2.2a-1) experimental; urgency=low
+boinc (5.2.4-1) experimental; urgency=low
 
   * New upstream release.
 
   [ Frank S. Thomas ]
   * debian/patches/:
     - Removed obsolete 01_amd64-gcc4-fixes.dpatch.
-    - Added 01_gui_rpc_server.C.dpatch which includes <sys/stat.h>.
     - Updated 02_wx2.6-configure.ac.dpatch for new release.
     - Updated 03_wx2.6-with-unicode.dpatch for new release.
   * debian/control:

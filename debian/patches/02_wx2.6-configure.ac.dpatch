@@ -8,15 +8,6 @@
 
 --- boinc-5.2.2a.orig/configure.ac	2005-10-17 22:09:53.000000000 +0200
 +++ boinc-5.2.2a/configure.ac	2005-10-19 13:54:05.000000000 +0200
-@@ -9,7 +9,7 @@
- AC_PREREQ(2.57)
- 
- dnl Set the BOINC version here.  You can also use the set-version script.
--AC_INIT(BOINC, 5.2.1)
-+AC_INIT(BOINC, 5.2.2)
- 
- AC_ARG_ENABLE(debug, 
-     AS_HELP_STRING([--enable-debug],
 @@ -473,20 +473,10 @@
  AM_OPTIONS_WXCONFIG
  
