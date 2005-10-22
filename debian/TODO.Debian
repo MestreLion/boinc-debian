@@ -12,6 +12,8 @@ General major TODOs:
 
 General minor TODOs:
 ====================
+ - Explain in boinc-client's manpage/README how to restrict GUI RPC access by
+   changing the permission of the gui_rpc_auth.cfg file. 
  - Revise all manpages.
 
 TODOs for the next upstream release:

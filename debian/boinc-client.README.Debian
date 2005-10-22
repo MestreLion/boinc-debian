@@ -1,6 +1,16 @@
 BOINC core client for Debian
 ============================
 
+This README file discusses some topics that are specific to Debian's default
+configuration of the BOINC core client. Additional information is available
+on the Debian Wiki:
+
+  http://wiki.debian.org/BOINC
+
+
+Configuring the BOINC core client
+---------------------------------
+
 On Debian systems the BOINC core client is started by default after
 boot by the '/etc/init.d/boinc-client' init script. In the default
 configuration the BOINC core client uses '/var/lib/boinc-client' as
@@ -10,7 +20,7 @@ BOINC home and for security reasons it is executed as the system user
 Edit the file '/etc/default/boinc-client' to configure the init
 script, to change the BOINC home directory or the user used to execute
 the core client or to disable the automatic start of the BOINC core
-client.
+client at boot time.
 
 To configure a running core client (e.g. attaching a project to it)
 the 'boinc_cmd' console program or the graphical BOINC Manager
