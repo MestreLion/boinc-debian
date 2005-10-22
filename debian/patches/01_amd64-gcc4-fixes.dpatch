@@ -1,0 +1,19 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01_amd64-gcc4-fixes.dpatch by Frank S. Thomas <frank@thomas-alfeld.de>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+
+--- boinc-4.71.orig/lib/shmem.C
++++ boinc-4.71/lib/shmem.C
+@@ -128,7 +128,7 @@
+         return ERR_SHMGET;
+     }
+     p = shmat(id, 0, 0);
+-    if ((int)p == -1) {
++    if ((long)p == -1) {
+         return ERR_SHMAT;
+     }
+     *pp = p;

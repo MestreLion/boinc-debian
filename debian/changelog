@@ -1,3 +1,11 @@
+boinc (5.2.4-2) experimental; urgency=low
+
+  * debian/patches/:
+    - Added 01_amd64-gcc4-fixes.dpatch again, it is still needed to compile
+      BOINC on AMD64.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 22 Oct 2005 16:13:55 +0200
+
 boinc (5.2.4-1) experimental; urgency=low
 
   * New upstream release.
