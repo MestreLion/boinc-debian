@@ -1,3 +1,9 @@
+boinc (5.2.5-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 28 Oct 2005 07:57:05 +0200
+
 boinc (5.2.4-2) experimental; urgency=low
 
   * debian/patches/:
