@@ -56,52 +56,12 @@ Description: BOINC development files
 #Package: boinc-server
 #Section: net
 #Architecture: any
-#Depends: ${shlibs:Depends}, ${misc:Depends}, python, python-boinc, python-mysqldb, mysql-server-4.1 | virtual-mysql-server
+#Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python-mysqldb, mysql-server-4.1 | virtual-mysql-server
 #Description: BOINC server applications and data files
 # The Berkeley Open Infrastructure for Network Computing (BOINC) is a
 # software platform for distributed computing using volunteered computer
 # resources.
 # .
 # This package ...
-# .
-# Homepage: http://boinc.berkeley.edu
-#
-#Package: python-boinc
-#Section: python
-#Architecture: all
-#Depends: ${python:Depends}, ${misc:Depends}
-#Description: Python module for BOINC (dummy package)
-# The Berkeley Open Infrastructure for Network Computing (BOINC) is a
-# software platform for distributed computing using volunteered computer
-# resources.
-# .
-# This is a dummy package that depends on the version of the Python BOINC
-# module that is compiled for the default version of Python in Debian. 
-# .
-# Homepage: http://boinc.berkeley.edu
-#
-#Package: python2.3-boinc
-#Section: python
-#Architecture: all
-#Depends: ${python:Depends}, ${misc:Depends}
-#Description: Python 2.3 module for BOINC
-# The Berkeley Open Infrastructure for Network Computing (BOINC) is a
-# software platform for distributed computing using volunteered computer
-# resources.
-# .
-# This package contains the Python 2.3 module for BOINC.
-# .
-# Homepage: http://boinc.berkeley.edu
-#
-#Package: python2.4-boinc
-#Section: python
-#Architecture: all
-#Depends: ${python:Depends}, ${misc:Depends}
-#Description: Python 2.4 module for BOINC
-# The Berkeley Open Infrastructure for Network Computing (BOINC) is a
-# software platform for distributed computing using volunteered computer
-# resources.
-# .
-# This package contains the Python 2.4 module for BOINC.
 # .
 # Homepage: http://boinc.berkeley.edu

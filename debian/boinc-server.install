@@ -12,3 +12,4 @@ html/languages                      usr/share/boinc-server/html
 html/ops                            usr/share/boinc-server/html
 html/project.sample                 usr/share/boinc-server/html
 html/user                           usr/share/boinc-server/html
+py/Boinc/*.py                       usr/lib/python2.3/site-packages/Boinc

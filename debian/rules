@@ -118,7 +118,7 @@ clean-boinc-client:
 	rm -f build-stamp-boinc-client
 	dh_clean client/boinc_client.optimized
 
-install: install-indep install-arch
+install: install-arch
 install-arch: build
 	dh_testdir
 	dh_testroot
@@ -151,26 +151,6 @@ install-arch: build
 # "BOINC Manager.mo" is empty and useless. 
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 
-install-indep:
-#	dh_testdir
-#	dh_testroot
-#	
-#	dh_install -i
-#
-binary-indep: install-indep
-#	dh_testdir -i
-#	dh_testroot
-#	dh_installchangelogs -i -Npython-boinc
-#	dh_installdocs -i -Npython-boinc
-#	dh_link -i
-#	dh_compress -i
-#	dh_fixperms -i
-#	dh_python -i
-#	dh_installdeb -i
-#	dh_gencontrol -i
-#	dh_md5sums -i
-#	dh_builddeb -i
-
 binary-arch: build install-arch
 	dh_testdir -a
 	dh_testroot
@@ -184,12 +164,13 @@ binary-arch: build install-arch
 	dh_strip -a
 	dh_compress -a
 	dh_fixperms -a
+	dh_python -a
 	dh_installdeb -a
 	dh_shlibdeps -a
 	dh_gencontrol -a
 	dh_md5sums -a
 	dh_builddeb -a
 
-binary: binary-indep binary-arch
-.PHONY: build clean clean-patched binary-indep binary-arch binary install \
-  install-indep install-arch patch unpatch
+binary: binary-arch
+.PHONY: build clean clean-patched binary-arch binary install install-arch \
+  patch unpatch
