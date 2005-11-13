@@ -1,3 +1,12 @@
+boinc (5.2.7-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+
+  [ Frank S. Thomas]
+  * Added LSB headers to the boinc-client init script.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun,  6 Nov 2005 13:36:01 +0100
+
 boinc (5.2.5-1) experimental; urgency=low
 
   * New upstream release.
