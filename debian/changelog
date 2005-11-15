@@ -2,7 +2,7 @@ boinc (5.2.7-1) UNRELEASED; urgency=low
 
   * New upstream release.
 
-  [ Frank S. Thomas]
+  [ Frank S. Thomas ]
   * Added LSB headers to the boinc-client init script.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun,  6 Nov 2005 13:36:01 +0100
@@ -15,6 +15,7 @@ boinc (5.2.5-1) experimental; urgency=low
 
 boinc (5.2.4-2) experimental; urgency=low
 
+  [ Frank S. Thomas ]
   * debian/patches/:
     - Added 01_amd64-gcc4-fixes.dpatch again, it is still needed to compile
       BOINC on AMD64.

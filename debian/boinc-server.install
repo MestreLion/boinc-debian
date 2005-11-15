@@ -13,3 +13,13 @@ html/ops                            usr/share/boinc-server/html
 html/project.sample                 usr/share/boinc-server/html
 html/user                           usr/share/boinc-server/html
 py/Boinc/*.py                       usr/lib/python2.3/site-packages/Boinc
+tools/add                           usr/share/boinc-server/tools
+tools/db_query                      usr/share/boinc-server/tools
+tools/dbcheck_file_exists           usr/share/boinc-server/tools
+tools/grep_logs                     usr/share/boinc-server/tools
+tools/make_project                  usr/share/boinc-server/tools
+tools/parse_config                  usr/share/boinc-server/tools
+tools/update_versions               usr/share/boinc-server/tools
+tools/upgrade                       usr/share/boinc-server/tools
+tools/watch_tcp                     usr/share/boinc-server/tools
+tools/xadd                          usr/share/boinc-server/tools
