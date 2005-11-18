@@ -7,6 +7,8 @@ debian/tmp/usr/bin/dir_hier_move    usr/lib/boinc-server/bin
 debian/tmp/usr/bin/dir_hier_path    usr/lib/boinc-server/bin
 debian/tmp/usr/bin/sign_executable  usr/lib/boinc-server/bin
 debian/tmp/usr/bin/start            usr/share/boinc-server/bin
+debian/tmp/usr/lib/BOINC/sched      usr/lib/boinc-server
+db/*.sql                            usr/share/boinc-server/db
 html/inc                            usr/share/boinc-server/html
 html/languages                      usr/share/boinc-server/html
 html/ops                            usr/share/boinc-server/html
@@ -15,7 +17,7 @@ html/user                           usr/share/boinc-server/html
 py/Boinc/*.py                       usr/lib/python2.3/site-packages/Boinc
 tools/add                           usr/share/boinc-server/tools
 tools/db_query                      usr/share/boinc-server/tools
-tools/dbcheck_file_exists           usr/share/boinc-server/tools
+tools/dbcheck_files_exist           usr/share/boinc-server/tools
 tools/grep_logs                     usr/share/boinc-server/tools
 tools/make_project                  usr/share/boinc-server/tools
 tools/parse_config                  usr/share/boinc-server/tools
