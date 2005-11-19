@@ -8,7 +8,6 @@ General major TODOs:
 ====================
  - Write expressive long descriptions for boinc-manager, boinc-dev,
    boinc-server, python*-boinc. 
- - Have a look at the dbconfig-common package. Is it useful for boinc-server?
 
 General minor TODOs:
 ====================

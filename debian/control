@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <moeller@pzr.uni-rostock.de>, Frank S. Thomas <frank@thomas-alfeld.de>
 Standards-Version: 3.6.2
-Build-Depends: debhelper (>= 4.2.21), dpatch, python, libmysqlclient14-dev, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.13.2), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), docbook2x, docbook-xml
+Build-Depends: debhelper (>= 4.2.21), dpatch, python, libmysqlclient14-dev, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.13.2), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), docbook2x, docbook-xml, dh-buildinfo
 
 Package: boinc-client
 Section: net
