@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <moeller@pzr.uni-rostock.de>, Frank S. Thomas <frank@thomas-alfeld.de>
 Standards-Version: 3.6.2
-Build-Depends: debhelper (>= 4.2.21), dpatch, python, libmysqlclient14-dev, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.13.2), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), docbook2x, docbook-xml, dh-buildinfo
+Build-Depends: debhelper (>= 5), dpatch, python, libmysqlclient15-dev, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.13.2), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), docbook2x, docbook-xml, dh-buildinfo
 
 Package: boinc-client
 Section: net
@@ -42,7 +42,7 @@ Description: control and monitor utility for the BOINC core client
 Package: boinc-dev
 Section: devel
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libc6-dev, libstdc++6-4.0-dev, libssl-dev, libmysqlclient14-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, libc6-dev, libstdc++6-4.0-dev, libssl-dev, libmysqlclient15-dev
 Description: BOINC development files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
@@ -56,7 +56,7 @@ Description: BOINC development files
 Package: boinc-server
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python2.3-mysqldb, mysql-server-4.1 | virtual-mysql-server, apache2 | httpd-cgi, php4 | php5, php4-cli | php5-cli, php4-mysql | php5-mysql
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python2.3-mysqldb, mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php4 | php5, php4-cli | php5-cli, php4-mysql | php5-mysql
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
