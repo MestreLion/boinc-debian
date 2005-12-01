@@ -3,14 +3,17 @@ boinc (5.2.13a-1) experimental; urgency=low
   * New upstream release.
   
   [ Frank S. Thomas ]
+  * debian/patches/:
+    - Updated 01_amd64-gcc4-fixes.dpatch for the new release. 
+    - Updated 03_wx2.6-with-unicode.dpatch for the new release.
   * Added LSB headers to the BOINC core client init script.
   * Record versions of build dependencies at compile-time using dh_buildinfo.
-  * Updated MySQL (build) dependencies to libmysqlclient15-dev and
-    mysql-server-5.0.
+  * Updated MySQL (build) dependencies to "libmysqlclient15-dev" and
+    "mysql-server-5.0".
   * Bumped debhelper compatibility level to V5 and updated it's build
     dependency to "debhelper (>= 5)".
-  
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun,  6 Nov 2005 13:36:01 +0100
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  1 Dec 2005 13:47:54 +0100
 
 boinc (5.2.5-1) experimental; urgency=low
 

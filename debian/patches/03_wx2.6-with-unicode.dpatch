@@ -8,7 +8,7 @@
 
 diff -Naur boinc-5.2.13a.orig/clientgui/AccountManagerProcessingPage.cpp boinc-5.2.13a/clientgui/AccountManagerProcessingPage.cpp
 --- boinc-5.2.13a.orig/clientgui/AccountManagerProcessingPage.cpp   2005-10-04 01:14:15.000000000 +0200
-+++ boinc-5.2.13a/clientgui/AccountManagerProcessingPage.cpp    2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/AccountManagerProcessingPage.cpp    2005-12-01 08:01:32.000000000 +0100
 @@ -215,9 +215,9 @@
              break;
          case ATTACHACCTMGR_ATTACHACCTMGR_EXECUTE:
@@ -33,7 +33,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/AccountManagerProcessingPage.cpp boinc-5
                  }
 diff -Naur boinc-5.2.13a.orig/clientgui/AccountManagerPropertiesPage.cpp boinc-5.2.13a/clientgui/AccountManagerPropertiesPage.cpp
 --- boinc-5.2.13a.orig/clientgui/AccountManagerPropertiesPage.cpp   2005-11-29 09:06:44.000000000 +0100
-+++ boinc-5.2.13a/clientgui/AccountManagerPropertiesPage.cpp    2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/AccountManagerPropertiesPage.cpp    2005-12-01 08:01:32.000000000 +0100
 @@ -217,7 +217,7 @@
          case ACCTMGRPROP_RETRPROJECTPROPERTIES_EXECUTE:
              // Attempt to retrieve the project's account creation policies
@@ -45,7 +45,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/AccountManagerPropertiesPage.cpp boinc-5
              // Wait until we are done processing the request.
 diff -Naur boinc-5.2.13a.orig/clientgui/BOINCBaseView.cpp boinc-5.2.13a/clientgui/BOINCBaseView.cpp
 --- boinc-5.2.13a.orig/clientgui/BOINCBaseView.cpp  2005-09-30 11:00:47.000000000 +0200
-+++ boinc-5.2.13a/clientgui/BOINCBaseView.cpp   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/BOINCBaseView.cpp   2005-12-01 08:01:32.000000000 +0100
 @@ -279,7 +279,7 @@
  wxString CBOINCBaseView::OnListGetItemText(
      long WXUNUSED(item), long WXUNUSED(column)
@@ -87,16 +87,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/BOINCBaseView.cpp boinc-5.2.13a/clientgu
  
 diff -Naur boinc-5.2.13a.orig/clientgui/BOINCGUIApp.cpp boinc-5.2.13a/clientgui/BOINCGUIApp.cpp
 --- boinc-5.2.13a.orig/clientgui/BOINCGUIApp.cpp    2005-10-01 10:56:37.000000000 +0200
-+++ boinc-5.2.13a/clientgui/BOINCGUIApp.cpp 2005-12-01 02:26:24.000000000 +0100
-@@ -100,7 +100,7 @@
-     m_hBOINCCoreProcess = NULL;
-     m_hIdleDetectionDll = NULL;
- #endif
--   m_strDefaultWindowStation = wxT("");
-+    m_strDefaultWindowStation = wxT("");
-     m_strDefaultDesktop = wxT("");
-     m_strDefaultDisplay = wxT("");
- 
++++ boinc-5.2.13a/clientgui/BOINCGUIApp.cpp 2005-12-01 08:01:32.000000000 +0100
 @@ -312,7 +312,7 @@
      }
  
@@ -117,7 +108,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/BOINCGUIApp.cpp boinc-5.2.13a/clientgui/
          // We are only interested in the path component of the fully qualified path.
 diff -Naur boinc-5.2.13a.orig/clientgui/BOINCGUIApp.h boinc-5.2.13a/clientgui/BOINCGUIApp.h
 --- boinc-5.2.13a.orig/clientgui/BOINCGUIApp.h  2005-10-01 10:56:37.000000000 +0200
-+++ boinc-5.2.13a/clientgui/BOINCGUIApp.h   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/BOINCGUIApp.h   2005-12-01 08:01:32.000000000 +0100
 @@ -87,9 +87,9 @@
  
  public:
@@ -133,7 +124,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/BOINCGUIApp.h boinc-5.2.13a/clientgui/BO
  
 diff -Naur boinc-5.2.13a.orig/clientgui/DlgAbout.cpp boinc-5.2.13a/clientgui/DlgAbout.cpp
 --- boinc-5.2.13a.orig/clientgui/DlgAbout.cpp   2005-10-04 01:14:13.000000000 +0200
-+++ boinc-5.2.13a/clientgui/DlgAbout.cpp    2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/DlgAbout.cpp    2005-12-01 08:01:32.000000000 +0100
 @@ -73,7 +73,7 @@
  
  bool CDlgAbout::Create(wxWindow* parent, wxWindowID id, const wxString& caption, const wxPoint& pos, const wxSize& size, long style) {
@@ -145,7 +136,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/DlgAbout.cpp boinc-5.2.13a/clientgui/Dlg
  ////@begin CDlgAbout creation
 diff -Naur boinc-5.2.13a.orig/clientgui/MainDocument.cpp boinc-5.2.13a/clientgui/MainDocument.cpp
 --- boinc-5.2.13a.orig/clientgui/MainDocument.cpp   2005-11-29 10:14:20.000000000 +0100
-+++ boinc-5.2.13a/clientgui/MainDocument.cpp    2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/MainDocument.cpp    2005-12-01 08:01:32.000000000 +0100
 @@ -63,7 +63,7 @@
              buf[n] = 0;
          }
@@ -382,7 +373,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/MainDocument.cpp boinc-5.2.13a/clientgui
      return iRetVal;
 diff -Naur boinc-5.2.13a.orig/clientgui/MainFrame.cpp boinc-5.2.13a/clientgui/MainFrame.cpp
 --- boinc-5.2.13a.orig/clientgui/MainFrame.cpp  2005-11-29 09:06:47.000000000 +0100
-+++ boinc-5.2.13a/clientgui/MainFrame.cpp   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/MainFrame.cpp   2005-12-01 08:01:32.000000000 +0100
 @@ -984,9 +984,9 @@
              CDlgAccountManagerStatus* pDlgStatus = new CDlgAccountManagerStatus(this);
  
@@ -489,7 +480,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/MainFrame.cpp boinc-5.2.13a/clientgui/Ma
                          pDoc->GetConnectingComputerName(strComputerName);
 diff -Naur boinc-5.2.13a.orig/clientgui/ProjectProcessingPage.cpp boinc-5.2.13a/clientgui/ProjectProcessingPage.cpp
 --- boinc-5.2.13a.orig/clientgui/ProjectProcessingPage.cpp  2005-10-04 01:14:19.000000000 +0200
-+++ boinc-5.2.13a/clientgui/ProjectProcessingPage.cpp   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ProjectProcessingPage.cpp   2005-12-01 08:01:32.000000000 +0100
 @@ -366,25 +366,25 @@
              ai->clear();
              ao->clear();
@@ -563,7 +554,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ProjectProcessingPage.cpp boinc-5.2.13a/
              } else {
 diff -Naur boinc-5.2.13a.orig/clientgui/ProjectPropertiesPage.cpp boinc-5.2.13a/clientgui/ProjectPropertiesPage.cpp
 --- boinc-5.2.13a.orig/clientgui/ProjectPropertiesPage.cpp  2005-11-29 09:06:47.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ProjectPropertiesPage.cpp   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ProjectPropertiesPage.cpp   2005-12-01 08:01:32.000000000 +0100
 @@ -373,7 +373,7 @@
          case PROJPROP_RETRPROJECTPROPERTIES_EXECUTE:
              // Attempt to retrieve the project's account creation policies
@@ -584,7 +575,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ProjectPropertiesPage.cpp boinc-5.2.13a/
                  if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTALREADYATTACHED)) {
 diff -Naur boinc-5.2.13a.orig/clientgui/ProxyPage.cpp boinc-5.2.13a/clientgui/ProxyPage.cpp
 --- boinc-5.2.13a.orig/clientgui/ProxyPage.cpp  2005-10-04 01:14:20.000000000 +0200
-+++ boinc-5.2.13a/clientgui/ProxyPage.cpp   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ProxyPage.cpp   2005-12-01 08:01:32.000000000 +0100
 @@ -299,16 +299,16 @@
      if (event.GetDirection() == true) {
          // Moving from the previous page, get state
@@ -635,7 +626,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ProxyPage.cpp boinc-5.2.13a/clientgui/Pr
          strBuffer.ToLong((long*)&iBuffer);
 diff -Naur boinc-5.2.13a.orig/clientgui/ValidateURL.cpp boinc-5.2.13a/clientgui/ValidateURL.cpp
 --- boinc-5.2.13a.orig/clientgui/ValidateURL.cpp    2005-11-29 09:06:48.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ValidateURL.cpp 2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ValidateURL.cpp 2005-12-01 08:01:32.000000000 +0100
 @@ -63,7 +63,7 @@
      bool ok = TRUE;
      std::string canonicalize_url;
@@ -669,7 +660,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ValidateURL.cpp boinc-5.2.13a/clientgui/
      return ok;
 diff -Naur boinc-5.2.13a.orig/clientgui/ViewMessages.cpp boinc-5.2.13a/clientgui/ViewMessages.cpp
 --- boinc-5.2.13a.orig/clientgui/ViewMessages.cpp   2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.13a/clientgui/ViewMessages.cpp    2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewMessages.cpp    2005-12-01 08:01:32.000000000 +0100
 @@ -287,7 +287,7 @@
      MESSAGE* message = wxGetApp().GetDocument()->message(item);
  
@@ -690,7 +681,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ViewMessages.cpp boinc-5.2.13a/clientgui
      strBuffer.Replace(wxT("\n"), wxT(""), true);
 diff -Naur boinc-5.2.13a.orig/clientgui/ViewProjects.cpp boinc-5.2.13a/clientgui/ViewProjects.cpp
 --- boinc-5.2.13a.orig/clientgui/ViewProjects.cpp   2005-11-02 19:36:03.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ViewProjects.cpp    2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewProjects.cpp    2005-12-01 08:01:32.000000000 +0100
 @@ -609,9 +609,9 @@
  
                  // Default project url
@@ -745,7 +736,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ViewProjects.cpp boinc-5.2.13a/clientgui
      return 0;
 diff -Naur boinc-5.2.13a.orig/clientgui/ViewResources.cpp boinc-5.2.13a/clientgui/ViewResources.cpp
 --- boinc-5.2.13a.orig/clientgui/ViewResources.cpp  2005-11-02 19:36:03.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ViewResources.cpp   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewResources.cpp   2005-12-01 08:01:32.000000000 +0100
 @@ -215,7 +215,7 @@
          state_project = doc->state.lookup_project(resource->master_url);
          if (state_project) {
@@ -755,82 +746,9 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ViewResources.cpp boinc-5.2.13a/clientgu
          }
      }
  
-diff -Naur boinc-5.2.13a.orig/clientgui/ViewStatistics.cpp boinc-5.2.13a/clientgui/ViewStatistics.cpp
---- boinc-5.2.13a.orig/clientgui/ViewStatistics.cpp 2005-11-15 00:27:11.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ViewStatistics.cpp  2005-12-01 02:30:16.000000000 +0100
-@@ -144,7 +144,7 @@
-                 state_project = pDoc->state.lookup_project(statistic->master_url);
-                 if (state_project) {
-                     state_project->get_name(project_name);
--                    name = wxString(project_name.c_str());
-+                    name = wxString(project_name.c_str(), wxConvUTF8);
-                 }
-             }
- 
-@@ -188,23 +188,23 @@
- 
- 
-            wxCoord w_temp, h_temp, des_temp, lead_temp;
--           dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
-+           dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
- 
-            rectangle_x_start=x_start+w_temp+2;
-            rectangle_y_start=y_start+heading_height+2;
-            rectangle_x_end=x_end-2;
-            rectangle_y_end=y_end-2-h_temp;
- 
--           dc.GetTextExtent("days", &w_temp, &h_temp, &des_temp, &lead_temp);
-+           dc.GetTextExtent(wxT("days"), &w_temp, &h_temp, &des_temp, &lead_temp);
-            rectangle_x_end-=w_temp;
- 
--           dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
-+           dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
-            dc.DrawRectangle(rectangle_x_start,rectangle_y_start,rectangle_x_end-rectangle_x_start,rectangle_y_end-rectangle_y_start);  
--           dc.DrawText(wxString::Format("%.0f", max_val),x_start,rectangle_y_start-h_temp);
-+           dc.DrawText(wxString::Format(wxT("%.0f"), max_val),x_start,rectangle_y_start-h_temp);
- 
--           dc.GetTextExtent(wxString::Format("%.0f", min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
--           dc.DrawText(wxString::Format("%.0f", min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
--           dc.DrawText("days", rectangle_x_end, rectangle_y_end);
-+           dc.GetTextExtent(wxString::Format(wxT("%.0f"), min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
-+           dc.DrawText(wxString::Format(wxT("%.0f"), min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
-+           dc.DrawText(wxT("days"), rectangle_x_end, rectangle_y_end);
- 
-            //Draw day numbers and lines marking the days
-            wxCoord xpos=rectangle_x_start;
-@@ -212,7 +212,7 @@
-                double day=dday()-j->day;
-                day=day/(60*60*24);
-                dc.SetPen(wxPen(wxColour (0 , 0 , 0) , 1 , wxSOLID));
--               if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format("-%.0f", day),xpos,rectangle_y_end);
-+               if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format(wxT("-%.0f"), day),xpos,rectangle_y_end);
-                if (j!=(--(*i)->statistics.end()) && j!=(*i)->statistics.begin()) {
-                    dc.SetPen(wxPen(wxColour (200 , 200 , 200) , 1 , wxSOLID));
-                    dc.DrawLine(xpos,rectangle_y_start+1,xpos,rectangle_y_end-1);
-@@ -308,7 +308,7 @@
-     m_pTaskPane = new CBOINCTaskCtrl(this, ID_TASK_STATISTICSVIEW, DEFAULT_TASK_FLAGS);
-     wxASSERT(m_pTaskPane);
- 
--   m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0);
-+   m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0, wxEmptyString);
-    wxASSERT(m_PaintStatistics);
- 
-     itemFlexGridSizer->Add(m_pTaskPane, 1, wxGROW|wxALL, 1);
-diff -Naur boinc-5.2.13a.orig/clientgui/ViewStatistics.h boinc-5.2.13a/clientgui/ViewStatistics.h
---- boinc-5.2.13a.orig/clientgui/ViewStatistics.h   2005-11-15 00:27:11.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ViewStatistics.h    2005-12-01 02:30:44.000000000 +0100
-@@ -32,7 +32,7 @@
- {
- public:
-    CPaintStatistics();
--   CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = "panel");
-+   CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = wxT("panel"));
- 
-     wxInt32                 m_SelectedStatistic;
-    wxString                heading;
 diff -Naur boinc-5.2.13a.orig/clientgui/ViewTransfers.cpp boinc-5.2.13a/clientgui/ViewTransfers.cpp
 --- boinc-5.2.13a.orig/clientgui/ViewTransfers.cpp  2005-11-02 19:36:03.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ViewTransfers.cpp   2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewTransfers.cpp   2005-12-01 08:01:32.000000000 +0100
 @@ -368,7 +368,7 @@
      FILE_TRANSFER* transfer = wxGetApp().GetDocument()->file_transfer(item);
  
@@ -851,7 +769,7 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ViewTransfers.cpp boinc-5.2.13a/clientgu
  }
 diff -Naur boinc-5.2.13a.orig/clientgui/ViewWork.cpp boinc-5.2.13a/clientgui/ViewWork.cpp
 --- boinc-5.2.13a.orig/clientgui/ViewWork.cpp   2005-11-27 02:58:37.000000000 +0100
-+++ boinc-5.2.13a/clientgui/ViewWork.cpp    2005-12-01 02:24:53.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewWork.cpp    2005-12-01 08:01:32.000000000 +0100
 @@ -220,9 +220,9 @@
          pDoc->WorkShowGraphics(
              m_pListPane->GetFirstSelected(),
@@ -900,3 +818,65 @@ diff -Naur boinc-5.2.13a.orig/clientgui/ViewWork.cpp boinc-5.2.13a/clientgui/Vie
      }
  
      return 0;
+--- boinc-5.2.13a.orig/clientgui/ViewStatistics.h	2005-11-15 00:27:11.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewStatistics.h	2005-12-01 12:10:39.000000000 +0100
+@@ -32,7 +32,7 @@
+ {
+ public:
+ 	CPaintStatistics();
+-	CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = "panel");
++	CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = wxT("panel") );
+ 
+     wxInt32                 m_SelectedStatistic;
+ 	wxString                heading;
+--- boinc-5.2.13a.orig/clientgui/ViewStatistics.cpp	2005-11-15 00:27:11.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewStatistics.cpp	2005-12-01 12:38:41.000000000 +0100
+@@ -144,7 +144,7 @@
+                 state_project = pDoc->state.lookup_project(statistic->master_url);
+                 if (state_project) {
+                     state_project->get_name(project_name);
+-                    name = wxString(project_name.c_str());
++                    name = wxString(project_name.c_str(), wxConvUTF8);
+                 }
+             }
+ 
+@@ -188,23 +188,23 @@
+ 
+ 
+ 			wxCoord w_temp, h_temp, des_temp, lead_temp;
+-			dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+ 
+ 			rectangle_x_start=x_start+w_temp+2;
+ 			rectangle_y_start=y_start+heading_height+2;
+ 			rectangle_x_end=x_end-2;
+ 			rectangle_y_end=y_end-2-h_temp;
+ 
+-			dc.GetTextExtent("days", &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.GetTextExtent(wxT("days"), &w_temp, &h_temp, &des_temp, &lead_temp);
+ 			rectangle_x_end-=w_temp;
+ 
+-			dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+ 			dc.DrawRectangle(rectangle_x_start,rectangle_y_start,rectangle_x_end-rectangle_x_start,rectangle_y_end-rectangle_y_start);	
+-			dc.DrawText(wxString::Format("%.0f", max_val),x_start,rectangle_y_start-h_temp);
++			dc.DrawText(wxString::Format(wxT("%.0f"), max_val),x_start,rectangle_y_start-h_temp);
+ 
+-			dc.GetTextExtent(wxString::Format("%.0f", min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+-			dc.DrawText(wxString::Format("%.0f", min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
+-			dc.DrawText("days", rectangle_x_end, rectangle_y_end);
++			dc.GetTextExtent(wxString::Format(wxT("%.0f"), min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++			dc.DrawText(wxString::Format(wxT("%.0f"), min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
++			dc.DrawText(wxT("days"), rectangle_x_end, rectangle_y_end);
+ 
+ 			//Draw day numbers and lines marking the days
+ 			wxCoord xpos=rectangle_x_start;
+@@ -212,7 +212,7 @@
+ 				double day=dday()-j->day;
+ 				day=day/(60*60*24);
+ 				dc.SetPen(wxPen(wxColour (0 , 0 , 0) , 1 , wxSOLID));
+-				if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format("-%.0f", day),xpos,rectangle_y_end);
++				if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format(wxT("-%.0f"), day),xpos,rectangle_y_end);
+ 				if (j!=(--(*i)->statistics.end()) && j!=(*i)->statistics.begin()) {
+ 					dc.SetPen(wxPen(wxColour (200 , 200 , 200) , 1 , wxSOLID));
+ 					dc.DrawLine(xpos,rectangle_y_start+1,xpos,rectangle_y_end-1);

@@ -7,7 +7,7 @@ Things that need to be done before uploading to unstable:
 General major TODOs:
 ====================
  - Write expressive long descriptions for boinc-manager, boinc-dev,
-   boinc-server, python*-boinc. 
+   boinc-server. 
 
 General minor TODOs:
 ====================
