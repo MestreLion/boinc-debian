@@ -6,9 +6,9 @@
 
 @DPATCH@
 
---- boinc-4.71.orig/lib/shmem.C
-+++ boinc-4.71/lib/shmem.C
-@@ -128,7 +128,7 @@
+--- boinc-5.2.13a.orig/lib/shmem.C  2005-07-23 10:10:39.000000000 +0200
++++ boinc-5.2.13a/lib/shmem.C   2005-12-01 02:21:14.000000000 +0100
+@@ -129,7 +129,7 @@
          return ERR_SHMGET;
      }
      p = shmat(id, 0, 0);

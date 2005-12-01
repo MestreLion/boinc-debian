@@ -6,9 +6,9 @@
 
 @DPATCH@
 
-diff -Naur boinc-5.2.5.orig/clientgui/AccountManagerProcessingPage.cpp boinc-5.2.5/clientgui/AccountManagerProcessingPage.cpp
---- boinc-5.2.5.orig/clientgui/AccountManagerProcessingPage.cpp	2005-10-04 01:14:15.000000000 +0200
-+++ boinc-5.2.5/clientgui/AccountManagerProcessingPage.cpp	2005-11-03 00:03:54.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/AccountManagerProcessingPage.cpp boinc-5.2.13a/clientgui/AccountManagerProcessingPage.cpp
+--- boinc-5.2.13a.orig/clientgui/AccountManagerProcessingPage.cpp   2005-10-04 01:14:15.000000000 +0200
++++ boinc-5.2.13a/clientgui/AccountManagerProcessingPage.cpp    2005-12-01 02:24:53.000000000 +0100
 @@ -215,9 +215,9 @@
              break;
          case ATTACHACCTMGR_ATTACHACCTMGR_EXECUTE:
@@ -31,9 +31,9 @@ diff -Naur boinc-5.2.5.orig/clientgui/AccountManagerProcessingPage.cpp boinc-5.2
                      }
                      ((CWizardAccountManager*)GetParent())->m_CompletionErrorPage->m_ServerMessages->SetLabel(strBuffer);
                  }
-diff -Naur boinc-5.2.5.orig/clientgui/AccountManagerPropertiesPage.cpp boinc-5.2.5/clientgui/AccountManagerPropertiesPage.cpp
---- boinc-5.2.5.orig/clientgui/AccountManagerPropertiesPage.cpp	2005-10-04 01:14:15.000000000 +0200
-+++ boinc-5.2.5/clientgui/AccountManagerPropertiesPage.cpp	2005-11-03 00:03:54.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/AccountManagerPropertiesPage.cpp boinc-5.2.13a/clientgui/AccountManagerPropertiesPage.cpp
+--- boinc-5.2.13a.orig/clientgui/AccountManagerPropertiesPage.cpp   2005-11-29 09:06:44.000000000 +0100
++++ boinc-5.2.13a/clientgui/AccountManagerPropertiesPage.cpp    2005-12-01 02:24:53.000000000 +0100
 @@ -217,7 +217,7 @@
          case ACCTMGRPROP_RETRPROJECTPROPERTIES_EXECUTE:
              // Attempt to retrieve the project's account creation policies
@@ -43,9 +43,9 @@ diff -Naur boinc-5.2.5.orig/clientgui/AccountManagerPropertiesPage.cpp boinc-5.2
              );
   
              // Wait until we are done processing the request.
-diff -Naur boinc-5.2.5.orig/clientgui/BOINCBaseView.cpp boinc-5.2.5/clientgui/BOINCBaseView.cpp
---- boinc-5.2.5.orig/clientgui/BOINCBaseView.cpp	2005-09-30 11:00:47.000000000 +0200
-+++ boinc-5.2.5/clientgui/BOINCBaseView.cpp	2005-11-03 00:03:54.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/BOINCBaseView.cpp boinc-5.2.13a/clientgui/BOINCBaseView.cpp
+--- boinc-5.2.13a.orig/clientgui/BOINCBaseView.cpp  2005-09-30 11:00:47.000000000 +0200
++++ boinc-5.2.13a/clientgui/BOINCBaseView.cpp   2005-12-01 02:24:53.000000000 +0100
 @@ -279,7 +279,7 @@
  wxString CBOINCBaseView::OnListGetItemText(
      long WXUNUSED(item), long WXUNUSED(column)
@@ -85,14 +85,14 @@ diff -Naur boinc-5.2.5.orig/clientgui/BOINCBaseView.cpp boinc-5.2.5/clientgui/BO
      }
  }
  
-diff -Naur boinc-5.2.5.orig/clientgui/BOINCGUIApp.cpp boinc-5.2.5/clientgui/BOINCGUIApp.cpp
---- boinc-5.2.5.orig/clientgui/BOINCGUIApp.cpp	2005-10-01 10:56:37.000000000 +0200
-+++ boinc-5.2.5/clientgui/BOINCGUIApp.cpp	2005-11-03 00:03:54.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/BOINCGUIApp.cpp boinc-5.2.13a/clientgui/BOINCGUIApp.cpp
+--- boinc-5.2.13a.orig/clientgui/BOINCGUIApp.cpp    2005-10-01 10:56:37.000000000 +0200
++++ boinc-5.2.13a/clientgui/BOINCGUIApp.cpp 2005-12-01 02:26:24.000000000 +0100
 @@ -100,7 +100,7 @@
      m_hBOINCCoreProcess = NULL;
      m_hIdleDetectionDll = NULL;
  #endif
--	m_strDefaultWindowStation = wxT("");
+-   m_strDefaultWindowStation = wxT("");
 +    m_strDefaultWindowStation = wxT("");
      m_strDefaultDesktop = wxT("");
      m_strDefaultDisplay = wxT("");
@@ -115,9 +115,9 @@ diff -Naur boinc-5.2.5.orig/clientgui/BOINCGUIApp.cpp boinc-5.2.5/clientgui/BOIN
  #endif 
  
          // We are only interested in the path component of the fully qualified path.
-diff -Naur boinc-5.2.5.orig/clientgui/BOINCGUIApp.h boinc-5.2.5/clientgui/BOINCGUIApp.h
---- boinc-5.2.5.orig/clientgui/BOINCGUIApp.h	2005-10-01 10:56:37.000000000 +0200
-+++ boinc-5.2.5/clientgui/BOINCGUIApp.h	2005-11-03 00:03:54.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/BOINCGUIApp.h boinc-5.2.13a/clientgui/BOINCGUIApp.h
+--- boinc-5.2.13a.orig/clientgui/BOINCGUIApp.h  2005-10-01 10:56:37.000000000 +0200
++++ boinc-5.2.13a/clientgui/BOINCGUIApp.h   2005-12-01 02:24:53.000000000 +0100
 @@ -87,9 +87,9 @@
  
  public:
@@ -131,9 +131,9 @@ diff -Naur boinc-5.2.5.orig/clientgui/BOINCGUIApp.h boinc-5.2.5/clientgui/BOINCG
  
      bool            OnInit();
  
-diff -Naur boinc-5.2.5.orig/clientgui/DlgAbout.cpp boinc-5.2.5/clientgui/DlgAbout.cpp
---- boinc-5.2.5.orig/clientgui/DlgAbout.cpp	2005-10-04 01:14:13.000000000 +0200
-+++ boinc-5.2.5/clientgui/DlgAbout.cpp	2005-11-03 00:03:54.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/DlgAbout.cpp boinc-5.2.13a/clientgui/DlgAbout.cpp
+--- boinc-5.2.13a.orig/clientgui/DlgAbout.cpp   2005-10-04 01:14:13.000000000 +0200
++++ boinc-5.2.13a/clientgui/DlgAbout.cpp    2005-12-01 02:24:53.000000000 +0100
 @@ -73,7 +73,7 @@
  
  bool CDlgAbout::Create(wxWindow* parent, wxWindowID id, const wxString& caption, const wxPoint& pos, const wxSize& size, long style) {
@@ -143,62 +143,37 @@ diff -Naur boinc-5.2.5.orig/clientgui/DlgAbout.cpp boinc-5.2.5/clientgui/DlgAbou
  ////@end CDlgAbout member initialisation
  
  ////@begin CDlgAbout creation
-diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/MainDocument.cpp
---- boinc-5.2.5.orig/clientgui/MainDocument.cpp	2005-10-17 21:36:38.000000000 +0200
-+++ boinc-5.2.5/clientgui/MainDocument.cpp	2005-11-03 00:03:54.000000000 +0100
-@@ -61,7 +61,7 @@
+diff -Naur boinc-5.2.13a.orig/clientgui/MainDocument.cpp boinc-5.2.13a/clientgui/MainDocument.cpp
+--- boinc-5.2.13a.orig/clientgui/MainDocument.cpp   2005-11-29 10:14:20.000000000 +0100
++++ boinc-5.2.13a/clientgui/MainDocument.cpp    2005-12-01 02:24:53.000000000 +0100
+@@ -63,7 +63,7 @@
              buf[n] = 0;
          }
      }
--    passwd = buf;
-+    passwd = wxString(buf, wxConvUTF8);
+-    strPassword = buf;
++    strPassword = wxString(buf, wxConvUTF8);
  }
  
  // TODO: get rid of "reconnecting" stuff
-@@ -81,11 +81,11 @@
-                 // look for password in file
-                 get_password_from_file(m_strNewComputerPassword);
+@@ -86,7 +86,7 @@
+                 m_bUseDefaultPassword = FALSE;
              }
+ 
 -            retval = m_pDocument->rpc.authorize(m_strNewComputerPassword.c_str());
 +            retval = m_pDocument->rpc.authorize(m_strNewComputerPassword.mb_str());
              if (!retval) {
                  wxLogTrace(wxT("Function Status"), wxT("CNetworkConnection::Poll - Connection Success"));
--                std::string host = m_strNewComputerName.c_str();
--                std::string pwd = m_strNewComputerPassword.c_str();
-+                std::string host = (const char*)m_strNewComputerName.mb_str();
-+                std::string pwd = (const char*)m_strNewComputerPassword.mb_str();
-                 SetStateSuccess(host, pwd);
-             } else if (ERR_AUTHENTICATOR == retval) {
-                 wxLogTrace(wxT("Function Status"), wxT("CNetworkConnection::Poll - RPC Authorization - ERR_AUTHENTICATOR"));
-@@ -109,12 +109,12 @@
-         if (!IsConnected()) {
-             // determine computer name and password to use.
-             if (!m_strNewComputerName.empty()) {
--                strComputer = m_strNewComputerName;
--                strComputerPassword = m_strNewComputerPassword;
-+                strComputer = (const char*)m_strNewComputerName.mb_str();
-+                strComputerPassword = (const char*)m_strNewComputerPassword.mb_str();
+                 SetStateSuccess(m_strNewComputerName, m_strNewComputerPassword);
+@@ -127,7 +127,7 @@
+             if (IsComputerNameLocal(strComputer)) {
+                 retval = m_pDocument->rpc.init_asynch(NULL, 60., true);
              } else {
-                 if (!m_strConnectedComputerName.empty()) {
--                    strComputer = m_strConnectedComputerName.c_str();
--                    strComputerPassword = m_strConnectedComputerPassword.c_str();
-+                    strComputer = (const char*)m_strConnectedComputerName.mb_str();
-+                    strComputerPassword = (const char*)m_strConnectedComputerPassword.mb_str();
-                 }
+-                retval = m_pDocument->rpc.init_asynch(strComputer.c_str(), 60., false);
++                retval = m_pDocument->rpc.init_asynch(strComputer.mb_str(), 60., false);
              }
  
-@@ -223,8 +223,8 @@
-         m_bConnected = true;
-         m_bReconnecting = false;
-         m_bReconnectOnError = true;
--        m_strConnectedComputerName = strComputer.c_str();
--        m_strConnectedComputerPassword = strComputerPassword.c_str();
-+        m_strConnectedComputerName = wxString(strComputer.c_str(), wxConvUTF8);
-+        m_strConnectedComputerPassword = wxString(strComputerPassword.c_str(), wxConvUTF8);
-         m_strNewComputerName = wxEmptyString;
-         m_strNewComputerPassword = wxEmptyString;
- 
-@@ -308,7 +308,7 @@
+             if (!retval) {
+@@ -326,7 +326,7 @@
          m_dtCachedStateTimestamp = m_dtCachedStateLockTimestamp;
          retval = rpc.get_state(state);
          if (retval) {
@@ -207,7 +182,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
              m_pNetworkConnection->SetStateDisconnected();
          }
  
-@@ -316,7 +316,7 @@
+@@ -334,7 +334,7 @@
  
          retval = rpc.get_host_info(host);
          if (retval) {
@@ -216,7 +191,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
              m_pNetworkConnection->SetStateDisconnected();
          }
  
-@@ -563,7 +563,7 @@
+@@ -590,7 +590,7 @@
      if (IsConnected()) {
          iRetVal = rpc.get_project_status(project_status);
          if (iRetVal) {
@@ -225,7 +200,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
              m_pNetworkConnection->SetStateDisconnected();
          }
  
-@@ -612,7 +612,7 @@
+@@ -639,7 +639,7 @@
  
  
  int CMainDocument::ProjectAttach(const wxString& strURL, const wxString& strAccountKey) {
@@ -234,7 +209,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  }
  
  
-@@ -623,7 +623,7 @@
+@@ -650,7 +650,7 @@
      pProject = project(iIndex);
  
      if (pProject)
@@ -243,7 +218,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -636,7 +636,7 @@
+@@ -663,7 +663,7 @@
      pProject = project(iIndex);
  
      if (pProject)
@@ -252,7 +227,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -649,7 +649,7 @@
+@@ -676,7 +676,7 @@
      pProject = project(iIndex);
  
      if (pProject)
@@ -261,7 +236,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -662,7 +662,7 @@
+@@ -689,7 +689,7 @@
      pProject = project(iIndex);
  
      if (pProject)
@@ -270,7 +245,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -675,7 +675,7 @@
+@@ -702,7 +702,7 @@
      pProject = project(iIndex);
  
      if (pProject)
@@ -279,7 +254,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -687,7 +687,7 @@
+@@ -714,7 +714,7 @@
      pProject = project(iIndex);
  
      if (pProject)
@@ -288,7 +263,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -699,7 +699,7 @@
+@@ -726,7 +726,7 @@
      pProject = project(iIndex);
  
      if (pProject)
@@ -297,7 +272,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -711,7 +711,7 @@
+@@ -738,7 +738,7 @@
      if (IsConnected()) {
          iRetVal = rpc.get_results(results);
          if (iRetVal) {
@@ -306,7 +281,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
              m_pNetworkConnection->SetStateDisconnected();
          }
      }
-@@ -764,7 +764,7 @@
+@@ -791,7 +791,7 @@
      if (pResult) {
          pStateResult = state.lookup_result(pResult->project_url, pResult->name);
          if (pStateResult) {
@@ -315,7 +290,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
          } else {
              ForceCacheUpdate();
          }
-@@ -784,7 +784,7 @@
+@@ -811,7 +811,7 @@
      if (pResult) {
          pStateResult = state.lookup_result(pResult->project_url, pResult->name);
          if (pStateResult) {
@@ -324,7 +299,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
          } else {
              ForceCacheUpdate();
          }
-@@ -827,7 +827,7 @@
+@@ -854,7 +854,7 @@
      if (pResult) {
          pStateResult = state.lookup_result(pResult->project_url, pResult->name);
          if (pStateResult) {
@@ -333,34 +308,16 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
          } else {
              ForceCacheUpdate();
          }
-@@ -854,7 +854,7 @@
- 
-         retval = rpc.get_messages(m_iMessageSequenceNumber, new_msgs);
+@@ -874,7 +874,7 @@
+     if (IsConnected()) {
+         retval = rpc.get_messages(m_iMessageSequenceNumber, messages);
          if (retval) {
 -            wxLogTrace(wxT("Function Status"), "CMainDocument::CachedMessageUpdate - Get Messages Failed '%d'", retval);
 +            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedMessageUpdate - Get Messages Failed '%d'"), retval);
              m_pNetworkConnection->SetStateDisconnected();
              goto done;
          }
-@@ -867,7 +867,7 @@
-                 if (m_iMessageSequenceNumber) {
-                     pFrame->ShowAlert(
-                         _("BOINC error"),
--                        mp->body.c_str(),
-+                        wxString(mp->body.c_str(), wxConvUTF8),
-                         wxICON_ERROR
-                     );
-                 }
-@@ -877,7 +877,7 @@
-                 if (m_iMessageSequenceNumber) {
-                     pFrame->ShowAlert(
-                         _("BOINC info"),
--                        mp->body.c_str(),
-+                        wxString(mp->body.c_str(), wxConvUTF8),
-                         wxICON_INFORMATION
-                     );
-                 }
-@@ -943,7 +943,7 @@
+@@ -935,7 +935,7 @@
      if (IsConnected()) {
          iRetVal = rpc.get_file_transfers(ft);
          if (iRetVal) {
@@ -369,7 +326,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
              m_pNetworkConnection->SetStateDisconnected();
          }
      }
-@@ -993,7 +993,7 @@
+@@ -985,7 +985,7 @@
      pFT = file_transfer(iIndex);
  
      if (pFT)
@@ -378,7 +335,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -1006,7 +1006,7 @@
+@@ -998,7 +998,7 @@
      pFT = file_transfer(iIndex);
  
      if (pFT)
@@ -387,7 +344,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
  
      return iRetVal;
  }
-@@ -1018,7 +1018,7 @@
+@@ -1010,7 +1010,7 @@
      if (IsConnected()) {
          iRetVal = rpc.get_disk_usage(resource_status);
          if (iRetVal) {
@@ -396,7 +353,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
              m_pNetworkConnection->SetStateDisconnected();
          }
      }
-@@ -1069,7 +1069,7 @@
+@@ -1061,7 +1061,7 @@
      if (IsConnected()) {
          iRetVal = rpc.get_statistics(statistics_status);
          if (iRetVal) {
@@ -405,7 +362,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
              m_pNetworkConnection->SetStateDisconnected();
          }
      }
-@@ -1120,7 +1120,7 @@
+@@ -1112,7 +1112,7 @@
  
      iRetVal = rpc.get_proxy_settings(proxy_info);
      if (iRetVal) {
@@ -414,7 +371,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
      }
  
      return iRetVal;
-@@ -1139,7 +1139,7 @@
+@@ -1131,7 +1131,7 @@
  
      iRetVal = rpc.set_proxy_settings(proxy_info);
      if (iRetVal) {
@@ -423,34 +380,34 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainDocument.cpp boinc-5.2.5/clientgui/Mai
      }
  
      return iRetVal;
-diff -Naur boinc-5.2.5.orig/clientgui/MainFrame.cpp boinc-5.2.5/clientgui/MainFrame.cpp
---- boinc-5.2.5.orig/clientgui/MainFrame.cpp	2005-10-21 04:16:11.000000000 +0200
-+++ boinc-5.2.5/clientgui/MainFrame.cpp	2005-11-03 00:03:54.000000000 +0100
-@@ -977,9 +977,9 @@
-         CDlgAccountManagerStatus* pDlgStatus = new CDlgAccountManagerStatus(this);
+diff -Naur boinc-5.2.13a.orig/clientgui/MainFrame.cpp boinc-5.2.13a/clientgui/MainFrame.cpp
+--- boinc-5.2.13a.orig/clientgui/MainFrame.cpp  2005-11-29 09:06:47.000000000 +0100
++++ boinc-5.2.13a/clientgui/MainFrame.cpp   2005-12-01 02:24:53.000000000 +0100
+@@ -984,9 +984,9 @@
+             CDlgAccountManagerStatus* pDlgStatus = new CDlgAccountManagerStatus(this);
  
-         strTitle = pDlgStatus->GetTitle();
--        strTitle += wxT(" - ") + wxString(ami.acct_mgr_name.c_str());
--        pDlgStatus->SetAcctManagerName(ami.acct_mgr_name.c_str());
--        pDlgStatus->SetAcctManagerURL(ami.acct_mgr_url.c_str());
-+        strTitle += wxT(" - ") + wxString(ami.acct_mgr_name.c_str(), wxConvUTF8);
-+        pDlgStatus->SetAcctManagerName(wxString(ami.acct_mgr_name.c_str(), wxConvUTF8));
-+        pDlgStatus->SetAcctManagerURL(wxString(ami.acct_mgr_url.c_str(), wxConvUTF8));
-         pDlgStatus->SetTitle(strTitle);
+             strTitle = pDlgStatus->GetTitle();
+-            strTitle += wxT(" - ") + wxString(ami.acct_mgr_name.c_str());
+-            pDlgStatus->SetAcctManagerName(ami.acct_mgr_name.c_str());
+-            pDlgStatus->SetAcctManagerURL(ami.acct_mgr_url.c_str());
++            strTitle += wxT(" - ") + wxString(wxString(ami.acct_mgr_name.c_str(), wxConvUTF8));
++            pDlgStatus->SetAcctManagerName(wxString(ami.acct_mgr_name.c_str(), wxConvUTF8));
++            pDlgStatus->SetAcctManagerURL(wxString(ami.acct_mgr_url.c_str(), wxConvUTF8));
+             pDlgStatus->SetTitle(strTitle);
  
-         iAnswer = pDlgStatus->ShowModal();
-@@ -995,8 +995,8 @@
-         wxString strURL = wxEmptyString;
-         bool bCredentialsCached = false;
-         if (ID_UPDATE == iAnswer) {
--            strName = ami.acct_mgr_name.c_str();
--            strURL = ami.acct_mgr_url.c_str();
-+            strName = wxString(ami.acct_mgr_name.c_str(), wxConvUTF8);
-+            strURL = wxString(ami.acct_mgr_url.c_str(), wxConvUTF8);
-             bCredentialsCached = ami.have_credentials;
-         }
-         pWizard->Run( strName, strURL, bCredentialsCached );
-@@ -1125,17 +1125,17 @@
+             iAnswer = pDlgStatus->ShowModal();
+@@ -1002,8 +1002,8 @@
+             wxString strURL = wxEmptyString;
+             bool bCredentialsCached = false;
+             if (ID_UPDATE == iAnswer) {
+-                strName = ami.acct_mgr_name.c_str();
+-                strURL = ami.acct_mgr_url.c_str();
++                strName = wxString(ami.acct_mgr_name.c_str(), wxConvUTF8);
++                strURL = wxString(ami.acct_mgr_url.c_str(), wxConvUTF8);
+                 bCredentialsCached = ami.have_credentials;
+             }
+             pWizard->Run( strName, strURL, bCredentialsCached );
+@@ -1144,17 +1144,17 @@
      }
  
      pDlg->m_EnableHTTPProxyCtrl->SetValue(pDoc->proxy_info.use_http_proxy);
@@ -474,7 +431,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainFrame.cpp boinc-5.2.5/clientgui/MainFr
  
      strBuffer.Printf(wxT("%d"), pDoc->proxy_info.socks_server_port);
      pDlg->m_SOCKSPortCtrl->SetValue(strBuffer);
-@@ -1164,18 +1164,18 @@
+@@ -1183,18 +1183,18 @@
          // Proxy Tabs
          if (bRetrievedProxyConfiguration) {
              pDoc->proxy_info.use_http_proxy = pDlg->m_EnableHTTPProxyCtrl->GetValue();
@@ -499,7 +456,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainFrame.cpp boinc-5.2.5/clientgui/MainFr
  
              strBuffer = pDlg->m_SOCKSPortCtrl->GetValue();
              strBuffer.ToLong((long*)&iBuffer);
-@@ -1333,8 +1333,8 @@
+@@ -1356,8 +1356,8 @@
          pDoc->rpc.acct_mgr_info(ami);
          if (ami.acct_mgr_url.size()) {
              pAMWizard = new CWizardAccountManager(this);
@@ -510,7 +467,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainFrame.cpp boinc-5.2.5/clientgui/MainFr
              if (ami.have_credentials) {
                  pAMWizard->Run(strName, strURL, true);
              } else {
-@@ -1343,8 +1343,8 @@
+@@ -1366,8 +1366,8 @@
          } else {
              pAPWizard = new CWizardAttachProject(this);
              pDoc->rpc.get_project_init_status(pis);
@@ -521,7 +478,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainFrame.cpp boinc-5.2.5/clientgui/MainFr
              if (pis.url.length() && pis.has_account_key) {
                  pAPWizard->Run(strName, strURL, true);
              } else {
-@@ -1733,7 +1733,7 @@
+@@ -1756,7 +1756,7 @@
                      wxString strComputerName = wxEmptyString;
                      wxString strStatusText = wxEmptyString;
                      wxString strTitle = m_strBaseTitle;
@@ -530,9 +487,9 @@ diff -Naur boinc-5.2.5.orig/clientgui/MainFrame.cpp boinc-5.2.5/clientgui/MainFr
       
                      if (pDoc->IsReconnecting())
                          pDoc->GetConnectingComputerName(strComputerName);
-diff -Naur boinc-5.2.5.orig/clientgui/ProjectProcessingPage.cpp boinc-5.2.5/clientgui/ProjectProcessingPage.cpp
---- boinc-5.2.5.orig/clientgui/ProjectProcessingPage.cpp	2005-10-04 01:14:19.000000000 +0200
-+++ boinc-5.2.5/clientgui/ProjectProcessingPage.cpp	2005-11-03 00:03:55.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/ProjectProcessingPage.cpp boinc-5.2.13a/clientgui/ProjectProcessingPage.cpp
+--- boinc-5.2.13a.orig/clientgui/ProjectProcessingPage.cpp  2005-10-04 01:14:19.000000000 +0200
++++ boinc-5.2.13a/clientgui/ProjectProcessingPage.cpp   2005-12-01 02:24:53.000000000 +0100
 @@ -366,25 +366,25 @@
              ai->clear();
              ao->clear();
@@ -604,9 +561,9 @@ diff -Naur boinc-5.2.5.orig/clientgui/ProjectProcessingPage.cpp boinc-5.2.5/clie
                      }
                  }
              } else {
-diff -Naur boinc-5.2.5.orig/clientgui/ProjectPropertiesPage.cpp boinc-5.2.5/clientgui/ProjectPropertiesPage.cpp
---- boinc-5.2.5.orig/clientgui/ProjectPropertiesPage.cpp	2005-10-04 01:14:19.000000000 +0200
-+++ boinc-5.2.5/clientgui/ProjectPropertiesPage.cpp	2005-11-03 00:03:55.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/ProjectPropertiesPage.cpp boinc-5.2.13a/clientgui/ProjectPropertiesPage.cpp
+--- boinc-5.2.13a.orig/clientgui/ProjectPropertiesPage.cpp  2005-11-29 09:06:47.000000000 +0100
++++ boinc-5.2.13a/clientgui/ProjectPropertiesPage.cpp   2005-12-01 02:24:53.000000000 +0100
 @@ -373,7 +373,7 @@
          case PROJPROP_RETRPROJECTPROPERTIES_EXECUTE:
              // Attempt to retrieve the project's account creation policies
@@ -625,9 +582,9 @@ diff -Naur boinc-5.2.5.orig/clientgui/ProjectPropertiesPage.cpp boinc-5.2.5/clie
                      ""
                  ));
                  if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTALREADYATTACHED)) {
-diff -Naur boinc-5.2.5.orig/clientgui/ProxyPage.cpp boinc-5.2.5/clientgui/ProxyPage.cpp
---- boinc-5.2.5.orig/clientgui/ProxyPage.cpp	2005-10-04 01:14:20.000000000 +0200
-+++ boinc-5.2.5/clientgui/ProxyPage.cpp	2005-11-03 00:03:55.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/ProxyPage.cpp boinc-5.2.13a/clientgui/ProxyPage.cpp
+--- boinc-5.2.13a.orig/clientgui/ProxyPage.cpp  2005-10-04 01:14:20.000000000 +0200
++++ boinc-5.2.13a/clientgui/ProxyPage.cpp   2005-12-01 02:24:53.000000000 +0100
 @@ -299,16 +299,16 @@
      if (event.GetDirection() == true) {
          // Moving from the previous page, get state
@@ -676,38 +633,43 @@ diff -Naur boinc-5.2.5.orig/clientgui/ProxyPage.cpp boinc-5.2.5/clientgui/ProxyP
  
          strBuffer = m_ProxySOCKSPortCtrl->GetValue();
          strBuffer.ToLong((long*)&iBuffer);
-diff -Naur boinc-5.2.5.orig/clientgui/ValidateURL.cpp boinc-5.2.5/clientgui/ValidateURL.cpp
---- boinc-5.2.5.orig/clientgui/ValidateURL.cpp	2005-09-28 13:59:26.000000000 +0200
-+++ boinc-5.2.5/clientgui/ValidateURL.cpp	2005-11-03 00:03:55.000000000 +0100
-@@ -63,12 +63,12 @@
+diff -Naur boinc-5.2.13a.orig/clientgui/ValidateURL.cpp boinc-5.2.13a/clientgui/ValidateURL.cpp
+--- boinc-5.2.13a.orig/clientgui/ValidateURL.cpp    2005-11-29 09:06:48.000000000 +0100
++++ boinc-5.2.13a/clientgui/ValidateURL.cpp 2005-12-01 02:24:53.000000000 +0100
+@@ -63,7 +63,7 @@
      bool ok = TRUE;
      std::string canonicalize_url;
  
 -    canonicalize_url = control->GetValue().Trim().Trim(false).c_str();  // trim spaces before and after
-+    canonicalize_url = (const char*)control->GetValue().Trim().Trim(false).mb_str();  // trim spaces before and after
-     canonicalize_master_url(canonicalize_url);
++    canonicalize_url = control->GetValue().Trim().Trim(false).mb_str();  // trim spaces before and after
  
--    wxURI uri(canonicalize_url.c_str());
--    wxURL url(canonicalize_url.c_str());
--    wxString strURL(canonicalize_url.c_str());
-+    wxURI uri(wxString(canonicalize_url.c_str(), wxConvUTF8));
-+    wxURL url(wxString(canonicalize_url.c_str(), wxConvUTF8));
-+    wxString strURL(canonicalize_url.c_str(), wxConvUTF8);
-     wxString strServer(uri.GetServer());
-     int iServerDotLocation = strServer.Find(wxT("."));
-     int iFirstPart = strServer.Mid(0, iServerDotLocation).Length();
-@@ -126,7 +126,7 @@
-         );
+     if (canonicalize_url.size() == 0) {
+         ok = FALSE;
+@@ -71,9 +71,9 @@
+         m_errormsg = _("Please specify a URL.\nFor example:\nhttp://www.example.com/");
+     } else {
+         canonicalize_master_url(canonicalize_url);
+-        wxURI uri(canonicalize_url.c_str());
+-        wxURL url(canonicalize_url.c_str());
+-        wxString strURL(canonicalize_url.c_str());
++        wxURI uri(wxString(canonicalize_url.c_str(), wxConvUTF8));
++        wxURL url(wxString(canonicalize_url.c_str(), wxConvUTF8));
++        wxString strURL(canonicalize_url.c_str(), wxConvUTF8);
+         wxString strServer(uri.GetServer());
+         int iServerDotLocation = strServer.Find(wxT("."));
+         int iFirstPart = strServer.Mid(0, iServerDotLocation).Length();
+@@ -129,7 +129,7 @@
      }
  
--    control->SetValue(canonicalize_url.c_str());
-+    control->SetValue(wxString(canonicalize_url.c_str(), wxConvUTF8));
+     if (ok) {
+-        control->SetValue(canonicalize_url.c_str());
++        control->SetValue(wxString(canonicalize_url.c_str(), wxConvUTF8));
+     }
  
      return ok;
- }
-diff -Naur boinc-5.2.5.orig/clientgui/ViewMessages.cpp boinc-5.2.5/clientgui/ViewMessages.cpp
---- boinc-5.2.5.orig/clientgui/ViewMessages.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.5/clientgui/ViewMessages.cpp	2005-11-03 00:03:55.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/ViewMessages.cpp boinc-5.2.13a/clientgui/ViewMessages.cpp
+--- boinc-5.2.13a.orig/clientgui/ViewMessages.cpp   2005-09-06 08:18:36.000000000 +0200
++++ boinc-5.2.13a/clientgui/ViewMessages.cpp    2005-12-01 02:24:53.000000000 +0100
 @@ -287,7 +287,7 @@
      MESSAGE* message = wxGetApp().GetDocument()->message(item);
  
@@ -726,10 +688,10 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewMessages.cpp boinc-5.2.5/clientgui/Vie
      }
  
      strBuffer.Replace(wxT("\n"), wxT(""), true);
-diff -Naur boinc-5.2.5.orig/clientgui/ViewProjects.cpp boinc-5.2.5/clientgui/ViewProjects.cpp
---- boinc-5.2.5.orig/clientgui/ViewProjects.cpp	2005-10-09 23:44:32.000000000 +0200
-+++ boinc-5.2.5/clientgui/ViewProjects.cpp	2005-11-03 00:03:55.000000000 +0100
-@@ -601,9 +601,9 @@
+diff -Naur boinc-5.2.13a.orig/clientgui/ViewProjects.cpp boinc-5.2.13a/clientgui/ViewProjects.cpp
+--- boinc-5.2.13a.orig/clientgui/ViewProjects.cpp   2005-11-02 19:36:03.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewProjects.cpp    2005-12-01 02:24:53.000000000 +0100
+@@ -609,9 +609,9 @@
  
                  // Default project url
                  pItem = new CTaskItem(
@@ -741,7 +703,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewProjects.cpp boinc-5.2.5/clientgui/Vie
                      ID_TASK_PROJECT_WEB_PROJDEF_MIN
                  );
                  pGroup->m_Tasks.push_back(pItem);
-@@ -612,9 +612,9 @@
+@@ -620,9 +620,9 @@
                  // Project defined urls
                  for (i=0;(i<project->gui_urls.size())&&(i<=ID_TASK_PROJECT_WEB_PROJDEF_MAX);i++) {
                      pItem = new CTaskItem(
@@ -754,7 +716,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewProjects.cpp boinc-5.2.5/clientgui/Vie
                          ID_TASK_PROJECT_WEB_PROJDEF_MIN + 1 + i
                      );
                      pGroup->m_Tasks.push_back(pItem);
-@@ -636,7 +636,7 @@
+@@ -644,7 +644,7 @@
  
      if (project) {
          project->get_name(project_name);
@@ -763,7 +725,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewProjects.cpp boinc-5.2.5/clientgui/Vie
      }
  
      return 0;
-@@ -647,7 +647,7 @@
+@@ -655,7 +655,7 @@
      PROJECT* project = wxGetApp().GetDocument()->project(item);
  
      if (project) {
@@ -772,7 +734,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewProjects.cpp boinc-5.2.5/clientgui/Vie
      }
  
      return 0;
-@@ -658,7 +658,7 @@
+@@ -666,7 +666,7 @@
      PROJECT* project = wxGetApp().GetDocument()->project(item);
  
      if (project) {
@@ -781,10 +743,10 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewProjects.cpp boinc-5.2.5/clientgui/Vie
      }
  
      return 0;
-diff -Naur boinc-5.2.5.orig/clientgui/ViewResources.cpp boinc-5.2.5/clientgui/ViewResources.cpp
---- boinc-5.2.5.orig/clientgui/ViewResources.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.5/clientgui/ViewResources.cpp	2005-11-03 00:03:55.000000000 +0100
-@@ -207,7 +207,7 @@
+diff -Naur boinc-5.2.13a.orig/clientgui/ViewResources.cpp boinc-5.2.13a/clientgui/ViewResources.cpp
+--- boinc-5.2.13a.orig/clientgui/ViewResources.cpp  2005-11-02 19:36:03.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewResources.cpp   2005-12-01 02:24:53.000000000 +0100
+@@ -215,7 +215,7 @@
          state_project = doc->state.lookup_project(resource->master_url);
          if (state_project) {
              state_project->get_name(project_name);
@@ -793,10 +755,10 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewResources.cpp boinc-5.2.5/clientgui/Vi
          }
      }
  
-diff -Naur boinc-5.2.5.orig/clientgui/ViewStatistics.cpp boinc-5.2.5/clientgui/ViewStatistics.cpp
---- boinc-5.2.5.orig/clientgui/ViewStatistics.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.5/clientgui/ViewStatistics.cpp	2005-11-03 00:03:55.000000000 +0100
-@@ -143,7 +143,7 @@
+diff -Naur boinc-5.2.13a.orig/clientgui/ViewStatistics.cpp boinc-5.2.13a/clientgui/ViewStatistics.cpp
+--- boinc-5.2.13a.orig/clientgui/ViewStatistics.cpp 2005-11-15 00:27:11.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewStatistics.cpp  2005-12-01 02:30:16.000000000 +0100
+@@ -144,7 +144,7 @@
                  state_project = pDoc->state.lookup_project(statistic->master_url);
                  if (state_project) {
                      state_project->get_name(project_name);
@@ -805,71 +767,71 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewStatistics.cpp boinc-5.2.5/clientgui/V
                  }
              }
  
-@@ -187,23 +187,23 @@
+@@ -188,23 +188,23 @@
  
  
- 			wxCoord w_temp, h_temp, des_temp, lead_temp;
--			dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
-+			dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+            wxCoord w_temp, h_temp, des_temp, lead_temp;
+-           dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++           dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
  
- 			rectangle_x_start=x_start+w_temp+2;
- 			rectangle_y_start=y_start+heading_height+2;
- 			rectangle_x_end=x_end-2;
- 			rectangle_y_end=y_end-2-h_temp;
+            rectangle_x_start=x_start+w_temp+2;
+            rectangle_y_start=y_start+heading_height+2;
+            rectangle_x_end=x_end-2;
+            rectangle_y_end=y_end-2-h_temp;
  
--			dc.GetTextExtent("days", &w_temp, &h_temp, &des_temp, &lead_temp);
-+			dc.GetTextExtent(wxT("days"), &w_temp, &h_temp, &des_temp, &lead_temp);
- 			rectangle_x_end-=w_temp;
+-           dc.GetTextExtent("days", &w_temp, &h_temp, &des_temp, &lead_temp);
++           dc.GetTextExtent(wxT("days"), &w_temp, &h_temp, &des_temp, &lead_temp);
+            rectangle_x_end-=w_temp;
  
--			dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
-+			dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
- 			dc.DrawRectangle(rectangle_x_start,rectangle_y_start,rectangle_x_end-rectangle_x_start,rectangle_y_end-rectangle_y_start);	
--			dc.DrawText(wxString::Format("%.0f", max_val),x_start,rectangle_y_start-h_temp);
-+			dc.DrawText(wxString::Format(wxT("%.0f"), max_val),x_start,rectangle_y_start-h_temp);
+-           dc.GetTextExtent(wxString::Format("%.0f", max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++           dc.GetTextExtent(wxString::Format(wxT("%.0f"), max_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+            dc.DrawRectangle(rectangle_x_start,rectangle_y_start,rectangle_x_end-rectangle_x_start,rectangle_y_end-rectangle_y_start);  
+-           dc.DrawText(wxString::Format("%.0f", max_val),x_start,rectangle_y_start-h_temp);
++           dc.DrawText(wxString::Format(wxT("%.0f"), max_val),x_start,rectangle_y_start-h_temp);
  
--			dc.GetTextExtent(wxString::Format("%.0f", min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
--			dc.DrawText(wxString::Format("%.0f", min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
--			dc.DrawText("days", rectangle_x_end, rectangle_y_end);
-+			dc.GetTextExtent(wxString::Format(wxT("%.0f"), min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
-+			dc.DrawText(wxString::Format(wxT("%.0f"), min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
-+			dc.DrawText(wxT("days"), rectangle_x_end, rectangle_y_end);
+-           dc.GetTextExtent(wxString::Format("%.0f", min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
+-           dc.DrawText(wxString::Format("%.0f", min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
+-           dc.DrawText("days", rectangle_x_end, rectangle_y_end);
++           dc.GetTextExtent(wxString::Format(wxT("%.0f"), min_val), &w_temp, &h_temp, &des_temp, &lead_temp);
++           dc.DrawText(wxString::Format(wxT("%.0f"), min_val),rectangle_x_start-w_temp-2,rectangle_y_end-h_temp);
++           dc.DrawText(wxT("days"), rectangle_x_end, rectangle_y_end);
  
- 			//Draw day numbers and lines marking the days
- 			wxCoord xpos=rectangle_x_start;
-@@ -211,7 +211,7 @@
- 				double day=dday()-j->day;
- 				day=day/(60*60*24);
- 				dc.SetPen(wxPen(wxColour (0 , 0 , 0) , 1 , wxSOLID));
--				if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format("-%.0f", day),xpos,rectangle_y_end);
-+				if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format(wxT("-%.0f"), day),xpos,rectangle_y_end);
- 				if (j!=(--(*i)->statistics.end()) && j!=(*i)->statistics.begin()) {
- 					dc.SetPen(wxPen(wxColour (200 , 200 , 200) , 1 , wxSOLID));
- 					dc.DrawLine(xpos,rectangle_y_start+1,xpos,rectangle_y_end-1);
-@@ -302,7 +302,7 @@
+            //Draw day numbers and lines marking the days
+            wxCoord xpos=rectangle_x_start;
+@@ -212,7 +212,7 @@
+                double day=dday()-j->day;
+                day=day/(60*60*24);
+                dc.SetPen(wxPen(wxColour (0 , 0 , 0) , 1 , wxSOLID));
+-               if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format("-%.0f", day),xpos,rectangle_y_end);
++               if (j!=(--(*i)->statistics.end())) dc.DrawText(wxString::Format(wxT("-%.0f"), day),xpos,rectangle_y_end);
+                if (j!=(--(*i)->statistics.end()) && j!=(*i)->statistics.begin()) {
+                    dc.SetPen(wxPen(wxColour (200 , 200 , 200) , 1 , wxSOLID));
+                    dc.DrawLine(xpos,rectangle_y_start+1,xpos,rectangle_y_end-1);
+@@ -308,7 +308,7 @@
      m_pTaskPane = new CBOINCTaskCtrl(this, ID_TASK_STATISTICSVIEW, DEFAULT_TASK_FLAGS);
      wxASSERT(m_pTaskPane);
  
--	m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0);
-+	m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0, wxEmptyString);
- 	wxASSERT(m_PaintStatistics);
+-   m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0);
++   m_PaintStatistics = new CPaintStatistics(this, ID_LIST_STATISTICSVIEW, wxDefaultPosition, wxSize(-1, -1), 0, wxEmptyString);
+    wxASSERT(m_PaintStatistics);
  
      itemFlexGridSizer->Add(m_pTaskPane, 1, wxGROW|wxALL, 1);
-diff -Naur boinc-5.2.5.orig/clientgui/ViewStatistics.h boinc-5.2.5/clientgui/ViewStatistics.h
---- boinc-5.2.5.orig/clientgui/ViewStatistics.h	2005-09-02 23:03:36.000000000 +0200
-+++ boinc-5.2.5/clientgui/ViewStatistics.h	2005-11-03 00:26:29.000000000 +0100
+diff -Naur boinc-5.2.13a.orig/clientgui/ViewStatistics.h boinc-5.2.13a/clientgui/ViewStatistics.h
+--- boinc-5.2.13a.orig/clientgui/ViewStatistics.h   2005-11-15 00:27:11.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewStatistics.h    2005-12-01 02:30:44.000000000 +0100
 @@ -32,7 +32,7 @@
  {
  public:
- 	CPaintStatistics();
--	CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = "panel");
-+	CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = wxT("panel"));
- 	
- 	wxInt32                 m_SelectedStatistic;
- 	wxString                heading;
-diff -Naur boinc-5.2.5.orig/clientgui/ViewTransfers.cpp boinc-5.2.5/clientgui/ViewTransfers.cpp
---- boinc-5.2.5.orig/clientgui/ViewTransfers.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.5/clientgui/ViewTransfers.cpp	2005-11-03 00:03:55.000000000 +0100
-@@ -360,7 +360,7 @@
+    CPaintStatistics();
+-   CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = "panel");
++   CPaintStatistics(wxWindow* parent, wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = wxT("panel"));
+ 
+     wxInt32                 m_SelectedStatistic;
+    wxString                heading;
+diff -Naur boinc-5.2.13a.orig/clientgui/ViewTransfers.cpp boinc-5.2.13a/clientgui/ViewTransfers.cpp
+--- boinc-5.2.13a.orig/clientgui/ViewTransfers.cpp  2005-11-02 19:36:03.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewTransfers.cpp   2005-12-01 02:24:53.000000000 +0100
+@@ -368,7 +368,7 @@
      FILE_TRANSFER* transfer = wxGetApp().GetDocument()->file_transfer(item);
  
      if (transfer) {
@@ -878,7 +840,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewTransfers.cpp boinc-5.2.5/clientgui/Vi
      }
      return 0;
  }
-@@ -370,7 +370,7 @@
+@@ -378,7 +378,7 @@
      FILE_TRANSFER* transfer = wxGetApp().GetDocument()->file_transfer(item);
  
      if (transfer) {
@@ -887,23 +849,23 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewTransfers.cpp boinc-5.2.5/clientgui/Vi
      }
      return 0;
  }
-diff -Naur boinc-5.2.5.orig/clientgui/ViewWork.cpp boinc-5.2.5/clientgui/ViewWork.cpp
---- boinc-5.2.5.orig/clientgui/ViewWork.cpp	2005-09-06 08:18:36.000000000 +0200
-+++ boinc-5.2.5/clientgui/ViewWork.cpp	2005-11-03 00:03:55.000000000 +0100
-@@ -222,9 +222,9 @@
-             pDoc->WorkShowGraphics(
-                 m_pListPane->GetFirstSelected(),
-                 false,
--                wxGetApp().m_strDefaultWindowStation,
--                wxGetApp().m_strDefaultDesktop,
--                wxGetApp().m_strDefaultDisplay
-+                (const char*)wxGetApp().m_strDefaultWindowStation.mb_str(),
-+                (const char*)wxGetApp().m_strDefaultDesktop.mb_str(),
-+                (const char*)wxGetApp().m_strDefaultDisplay.mb_str()
-             );
-         }
+diff -Naur boinc-5.2.13a.orig/clientgui/ViewWork.cpp boinc-5.2.13a/clientgui/ViewWork.cpp
+--- boinc-5.2.13a.orig/clientgui/ViewWork.cpp   2005-11-27 02:58:37.000000000 +0100
++++ boinc-5.2.13a/clientgui/ViewWork.cpp    2005-12-01 02:24:53.000000000 +0100
+@@ -220,9 +220,9 @@
+         pDoc->WorkShowGraphics(
+             m_pListPane->GetFirstSelected(),
+             false,
+-            wxGetApp().m_strDefaultWindowStation,
+-            wxGetApp().m_strDefaultDesktop,
+-            wxGetApp().m_strDefaultDisplay
++            (const char*)wxGetApp().m_strDefaultWindowStation.mb_str(),
++            (const char*)wxGetApp().m_strDefaultDesktop.mb_str(),
++            (const char*)wxGetApp().m_strDefaultDisplay.mb_str()
+         );
+     }
  
-@@ -476,7 +476,7 @@
+@@ -479,7 +479,7 @@
          state_result = doc->state.lookup_result(result->project_url, result->name);
          if (state_result) {
              state_result->project->get_name(project_name);
@@ -912,7 +874,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewWork.cpp boinc-5.2.5/clientgui/ViewWor
          } else {
              doc->ForceCacheUpdate();
          }
-@@ -497,14 +497,14 @@
+@@ -500,14 +500,14 @@
      if (result) {
          state_result = doc->state.lookup_result(result->project_url, result->name);
          if (state_result) {
@@ -929,7 +891,7 @@ diff -Naur boinc-5.2.5.orig/clientgui/ViewWork.cpp boinc-5.2.5/clientgui/ViewWor
          } else {
              doc->ForceCacheUpdate();
          }
-@@ -520,7 +520,7 @@
+@@ -523,7 +523,7 @@
      wxASSERT(result);
  
      if (result) {
