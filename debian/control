@@ -22,7 +22,7 @@ Description: BOINC core client
  dynamically download the projects application's program to be then
  wrapped by the BOINC core client.
  .
- Homepage: http://boinc.berkeley.edu
+  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-manager
 Section: x11
@@ -37,7 +37,7 @@ Description: control and monitor utility for the BOINC core client
  This package contains the BOINC manager, a graphical monitoring utility
  for the BOINC core client.
  .
- Homepage: http://boinc.berkeley.edu
+  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-dev
 Section: devel
@@ -51,7 +51,7 @@ Description: BOINC development files
  This package contains static libraries and header files needed to develop
  and compile applications which utilize the BOINC infrastructure.
  .
- Homepage: http://boinc.berkeley.edu
+  Homepage: http://boinc.berkeley.edu
 
 #Package: boinc-server
 #Section: net
@@ -65,5 +65,5 @@ Description: BOINC development files
 # This package contains the daemons and tools to create and run BOINC
 # projects.
 # .
-# Homepage: http://boinc.berkeley.edu
+#  Homepage: http://boinc.berkeley.edu
 #
