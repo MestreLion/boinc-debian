@@ -1,19 +1,2 @@
-Things that need to be done before uploading to unstable:
-=========================================================
- - Implement a working solution for boinc-client and boinc-app-* packages.
- - Use "test/test_sanity.py" to check runtime dependencies of the boinc-server
-   package.
-
-General major TODOs:
-====================
- - Write expressive long descriptions for boinc-manager, boinc-dev,
-   boinc-server. 
-
-General minor TODOs:
-====================
- - Explain in boinc-client's manpage/README how to restrict GUI RPC access by
-   changing the permission of the gui_rpc_auth.cfg file. 
- - Revise all manpages.
-
-TODOs for the next upstream release:
-====================================
+The to-do list for developers of the BOINC Debian packages is here:
+  http://wiki.debian.org/BOINC#TODO
