@@ -3,12 +3,19 @@
 
 set -e
 
+BOINC_DIR=/var/lib/boinc-client
+
 case "$1" in
     purge)
-        rm -rf /var/lib/boinc-client
-
-        deluser --quiet boinc 2>/dev/null || true
-        delgroup --quiet boinc 2>/dev/null || true
+        if [ -d $BOINC_DIR ]; then
+            rm -r $BOINC_DIR
+        fi
+        if getent passwd boinc >/dev/null; then
+            deluser boinc
+        fi
+        if getent group boinc >/dev/null; then
+            delgroup boinc
+        fi
     ;;
 
     remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)

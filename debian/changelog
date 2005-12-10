@@ -1,11 +1,14 @@
-boinc (5.2.13a-2) UNRELEASED; urgency=low
+boinc (5.2.13a-2) experimental; urgency=low
 
   * NOT RELEASED YET
+  [ Frank S. Thomas ]
   * debian/control:
     - Add an extra space before the "Homepage" pseudo field according to the
       Developer's Reference, Section 6.2.4.
+  * debian/boinc-client.postrm:
+    - Be more verbose when removing the "boinc" user/group.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  1 Dec 2005 16:12:50 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 10 Dec 2005 13:40:56 +0100
 
 boinc (5.2.13a-1) experimental; urgency=low
 
