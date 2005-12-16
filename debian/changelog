@@ -7,8 +7,10 @@ boinc (5.2.13a-2) experimental; urgency=low
       Developer's Reference, Section 6.2.4.
   * debian/boinc-client.postrm:
     - Be more verbose when removing the "boinc" user/group.
+  * Created symlinks of headers and static libraries, which are required to
+    build the SETI@home application, in "/usr/share/boinc-dev/".
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 10 Dec 2005 13:40:56 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 16 Dec 2005 18:09:56 +0100
 
 boinc (5.2.13a-1) experimental; urgency=low
 
