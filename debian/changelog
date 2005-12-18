@@ -2,11 +2,13 @@ boinc (5.2.13a-2) experimental; urgency=low
 
   * NOT RELEASED YET
   [ Frank S. Thomas ]
+  * debian/boinc-client.postrm:
+    - Be more verbose when removing the "boinc" user/group.
   * debian/control:
     - Add an extra space before the "Homepage" pseudo field according to the
       Developer's Reference, Section 6.2.4.
-  * debian/boinc-client.postrm:
-    - Be more verbose when removing the "boinc" user/group.
+  * debian/copyright:
+    - Added more copyright and license information for various files.
   * Created symlinks of headers and static libraries, which are required to
     build the SETI@home application, in "/usr/share/boinc-dev/".
 
@@ -15,7 +17,7 @@ boinc (5.2.13a-2) experimental; urgency=low
 boinc (5.2.13a-1) experimental; urgency=low
 
   * New upstream release.
-  
+
   [ Frank S. Thomas ]
   * debian/patches/:
     - Updated 01_amd64-gcc4-fixes.dpatch for the new release. 
@@ -64,12 +66,12 @@ boinc (5.2.4-1) experimental; urgency=low
     - Use a versioned dependency for lsb-base (>= 3.0-6) to ensure that the
       log_progress_msg function is available. (fixes: Alioth bug #302179)
   * debian/copyright:
-    - Added copyright and license informations for various PHP libraries
+    - Added copyright and license information for various PHP libraries
       found in html/inc/.
     - Added the full text of the Mozilla Public License 1.0 since stripchart
       is distributed under the MPL.
-    - Removed RSAEuro and GLUT copyright and license informations since this
-      code was removed upstream. 
+    - Removed RSAEuro and GLUT copyright and license information since this
+      code was removed upstream.
   * debian/rules:
     - Rewrote debian/rules without CDBS. CFLAGS and CXXFLAGS are now forwarded
       to the build process.
@@ -146,7 +148,7 @@ boinc (4.71-1) experimental; urgency=low
     - Added libxmu-dev and freeglut3-dev (instead of the virtual package
       freeglut-dev) to Build-Depends. Both are needed for the graphical parts
       of the BOINC API library.
-      
+
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 20 Jul 2005 23:54:37 +0200
 
 boinc (4.70-1) experimental; urgency=low
@@ -205,7 +207,7 @@ boinc (4.27-1) experimental; urgency=low
   * debian/rules:
     - The BOINC_BUILD_TYPE environment variable can be used to specify
       DEB_BUILD_GNU_TYPE in debian/rules. This is an interim solution for
-      the "platform '...' not found" problem. 
+      the "platform '...' not found" problem.
     - Create symlinks of BOINC libraries and header files under
       /usr/share/boinc/ in the boinc-dev package.
 
@@ -231,7 +233,7 @@ boinc (4.25-1) experimental; urgency=low
     are now created with the docbook2x-man tool.
   * debian/control: 
     - Added build dependences on libmysqlclient-dev, freeglut-dev,
-      libwxgtk2.4-dev and docbook2x.  
+      libwxgtk2.4-dev and docbook2x.
     - Added build conflict with automake1.4.
     - Changed section from "science" to "net" (boinc-client), "x11" (boinc-gui)
       and "devel" (boinc-dev).
@@ -242,7 +244,7 @@ boinc (4.19-1) experimental; urgency=low
 
   * New upstream release.
   * Cleaned up the debian directory and rewrote debian/rules for cdbs. 
-  
+
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 27 Jan 2005 15:51:54 +0100
 
 boinc (4.18-1) experimental; urgency=low
