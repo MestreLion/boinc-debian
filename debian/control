@@ -34,8 +34,8 @@ Description: control and monitor utility for the BOINC core client
  software platform for distributed computing using volunteered computer
  resources.
  .
- This package contains the BOINC manager, a graphical monitoring utility
- for the BOINC core client.
+ This package contains the BOINC Manager, a graphical monitor and control
+ utility for the BOINC core client.
  .
   Homepage: http://boinc.berkeley.edu
 
@@ -43,7 +43,7 @@ Package: boinc-dev
 Section: devel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libc6-dev, libstdc++6-4.0-dev, libssl-dev, libmysqlclient15-dev
-Description: BOINC development files
+Description: BOINC platform for distributed computing (development files)
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
  resources.
