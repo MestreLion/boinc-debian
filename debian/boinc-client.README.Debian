@@ -1,9 +1,9 @@
 BOINC core client for Debian
 ============================
 
-This README file discusses some topics that are specific to Debian's default
-configuration of the BOINC core client. Additional information is available
-on the Debian Wiki:
+This README file discusses some topics that are specific to Debian's
+default configuration of the BOINC core client. Additional information
+is available on the Debian Wiki:
 
   http://wiki.debian.org/BOINC
 
@@ -14,11 +14,12 @@ Configuring the BOINC core client
 On Debian systems the BOINC core client is started by default after
 boot by the '/etc/init.d/boinc-client' init script. In the default
 configuration the BOINC core client uses '/var/lib/boinc-client' as
-BOINC home and for security reasons it is executed as the system user
-'boinc' which only has write access in the BOINC home directory.
+BOINC data directory and for security reasons it is executed as the
+system user 'boinc' which only has write access in the BOINC data
+directory.
 
 Edit the file '/etc/default/boinc-client' to configure the init
-script, to change the BOINC home directory or the user used to execute
+script, to change the BOINC data directory or the user used to execute
 the core client or to disable the automatic start of the BOINC core
 client at boot time.
 
@@ -28,21 +29,26 @@ the 'boinc_cmd' console program or the graphical BOINC Manager
 for more information.
 
 
-Moving a BOINC home directory to /var/lib/boinc-client
+Moving a BOINC data directory to /var/lib/boinc-client
 ------------------------------------------------------
 
-To move an existing BOINC home directory to Debian's default directory
+To move an existing BOINC data directory to Debian's default directory
 follow these instructions:
 
  1. Stop the BOINC core client:
-    % /etc/init.d/boinc-client stop
+     % /etc/init.d/boinc-client stop
  
- 2. Copy the entire content of your old BOINC home directory to
+ 2. Copy the entire content of your old BOINC data directory to
     '/var/lib/boinc-client'.
  
  3. Make all files in that directory writeable by the user and group
     boinc:
-    % chown -R boinc:boinc /var/lib/boinc-client
+     % chown -R boinc:boinc /var/lib/boinc-client
 
- 4. Start the BOINC core client again:
-    % /etc/init.d/boinc-client start
+ 4. Move configuration files to /etc/boinc-client/ and create symlinks
+    for the core client:
+     % mv -f /var/lib/boinc-client/gui_rpc_auth.cfg /etc/boinc-client/
+     % ln -s /etc/boinc-client/gui_rpc_auth.cfg /var/lib/boinc-client/gui_rpc_auth.cfg
+
+ 5. Start the BOINC core client again:
+     % /etc/init.d/boinc-client start

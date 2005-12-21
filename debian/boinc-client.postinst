@@ -9,22 +9,23 @@ case "$1" in
     configure)
         if ! getent passwd boinc >/dev/null; then
             adduser --quiet --system --group --home $BOINC_DIR \
-             --gecos "BOINC Core Client" boinc
+             --gecos "BOINC core client" boinc
         fi
 
-        # make sure the /var/lib/boinc-client dir exists and
-        # is owned by the boinc user
+        # Make sure the /var/lib/boinc-client directory exists and
+        # is owned by the boinc user.
         mkdir $BOINC_DIR 2>/dev/null || true
         chown boinc:boinc $BOINC_DIR 2>/dev/null || true
-	
-        # If there is no gui_rpc_auth.cfg file create one and make it
-        # readable by everyone. This allows every user on the same host
-        # to control the boinc-client.
-        if [ ! -f $BOINC_DIR/gui_rpc_auth.cfg ]; then
-            touch $BOINC_DIR/gui_rpc_auth.cfg
-            chown boinc:boinc $BOINC_DIR/gui_rpc_auth.cfg
-            chmod 0664 $BOINC_DIR/gui_rpc_auth.cfg
+
+        # Move old gui_rpc_auth.cfg files to /etc/boinc-client/ and create
+        # a symlink for the BOINC core client.
+        if [ ! -L $BOINC_DIR/gui_rpc_auth.cfg -a \
+               -f $BOINC_DIR/gui_rpc_auth.cfg ]; then
+          mv -f $BOINC_DIR/gui_rpc_auth.cfg /etc/boinc-client/gui_rpc_auth.cfg
         fi
+        
+        ln -sf /etc/boinc-client/gui_rpc_auth.cfg $BOINC_DIR/gui_rpc_auth.cfg
+        chown boinc:boinc $BOINC_DIR/gui_rpc_auth.cfg
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

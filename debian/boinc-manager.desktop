@@ -2,6 +2,7 @@
 Type=Application
 Encoding=UTF-8
 Exec=/usr/bin/boincmgr
+Path=/var/lib/boinc-client
 Icon=boincmgr-32.xpm
 Categories=Monitor;Utility;GTK
 Name=BOINC Manager

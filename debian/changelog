@@ -2,8 +2,12 @@ boinc (5.2.13a-2) experimental; urgency=low
 
   * NOT RELEASED YET
   [ Frank S. Thomas ]
-  * debian/boinc-client.postrm:
+  * debian/boinc-client.postrm: 
     - Be more verbose when removing the "boinc" user/group.
+  * debian/boinc-manager.desktop:
+    - Added "Path: /var/lib/boinc-client" so that the BOINC Manager can find
+      the "gui_rpc_auth.cfg" file and does not ask for a password. This should
+      be removed when the BOINC Manager is able store passwords in its config.
   * debian/control:
     - Add an extra space before the "Homepage" pseudo field according to the
       Developer's Reference, Section 6.2.4.
@@ -11,6 +15,9 @@ boinc (5.2.13a-2) experimental; urgency=low
     - Added more copyright and license information for various files.
   * Created symlinks of headers and static libraries, which are required to
     build the SETI@home application, in "/usr/share/boinc-dev/".
+  * Ship a default "gui_rpc_auth.cfg" file in "/etc/boinc-client/" and create
+    a symlink in "/var/lib/boinc-client" to this file. Old "gui_rpc_auth.cfg"
+    files are moved to "/etc/boinc-client/" before creating the symlink.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 16 Dec 2005 18:09:56 +0100
 
