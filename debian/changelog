@@ -1,6 +1,5 @@
-boinc (5.2.13a-2) experimental; urgency=low
+boinc (5.2.13a-2) unstable; urgency=low
 
-  * NOT RELEASED YET
   [ Frank S. Thomas ]
   * debian/boinc-client.postrm: 
     - Be more verbose when removing the "boinc" user/group.
@@ -9,8 +8,9 @@ boinc (5.2.13a-2) experimental; urgency=low
       the "gui_rpc_auth.cfg" file and does not ask for a password. This should
       be removed when the BOINC Manager is able store passwords in its config.
   * debian/control:
-    - Add an extra space before the "Homepage" pseudo field according to the
+    - Added an extra space before the "Homepage" pseudo field according to the
       Developer's Reference, Section 6.2.4.
+    - Added Christoph Martin <chrism@debian.org> to Uploaders.
   * debian/copyright:
     - Added more copyright and license information for various files.
   * Created symlinks of headers and static libraries, which are required to
@@ -18,8 +18,9 @@ boinc (5.2.13a-2) experimental; urgency=low
   * Ship a default "gui_rpc_auth.cfg" file in "/etc/boinc-client/" and create
     a symlink in "/var/lib/boinc-client" to this file. Old "gui_rpc_auth.cfg"
     files are moved to "/etc/boinc-client/" before creating the symlink.
+  * Uploaded to Debian (closes: #281890).
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 16 Dec 2005 18:09:56 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 24 Dec 2005 08:02:33 +0100
 
 boinc (5.2.13a-1) experimental; urgency=low
 
