@@ -10,7 +10,7 @@ boinc (5.2.13a-2) unstable; urgency=low
   * debian/control:
     - Added an extra space before the "Homepage" pseudo field according to the
       Developer's Reference, Section 6.2.4.
-    - Added Christoph Martin <chrism@debian.org> to Uploaders.
+    - Added Christoph Martin <christoph.martin@uni-mainz.de> to Uploaders.
   * debian/copyright:
     - Added more copyright and license information for various files.
   * Created symlinks of headers and static libraries, which are required to
