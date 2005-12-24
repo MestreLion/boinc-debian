@@ -6,7 +6,8 @@ boinc (5.2.13a-2) unstable; urgency=low
   * debian/boinc-manager.desktop:
     - Added "Path: /var/lib/boinc-client" so that the BOINC Manager can find
       the "gui_rpc_auth.cfg" file and does not ask for a password. This should
-      be removed when the BOINC Manager is able store passwords in its config.
+      be removed when the BOINC Manager is able to store passwords in its
+      config file.
   * debian/control:
     - Added an extra space before the "Homepage" pseudo field according to the
       Developer's Reference, Section 6.2.4.
@@ -20,7 +21,7 @@ boinc (5.2.13a-2) unstable; urgency=low
     files are moved to "/etc/boinc-client/" before creating the symlink.
   * Uploaded to Debian (closes: #281890).
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 24 Dec 2005 08:02:33 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 24 Dec 2005 10:41:59 +0100
 
 boinc (5.2.13a-1) experimental; urgency=low
 
