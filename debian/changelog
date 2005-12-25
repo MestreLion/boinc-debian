@@ -1,4 +1,6 @@
-boinc (5.2.13a-2) unstable; urgency=low
+boinc (5.2.15-1) unstable; urgency=low
+
+  * New upstream release.
 
   [ Frank S. Thomas ]
   * debian/boinc-client.postrm: 
