@@ -1,6 +1,7 @@
 boinc (5.2.15-1) unstable; urgency=low
 
   * New upstream release.
+  * Uploaded to Debian (closes: #281890).
 
   [ Frank S. Thomas ]
   * debian/boinc-client.postrm: 
@@ -21,9 +22,8 @@ boinc (5.2.15-1) unstable; urgency=low
   * Ship a default "gui_rpc_auth.cfg" file in "/etc/boinc-client/" and create
     a symlink in "/var/lib/boinc-client" to this file. Old "gui_rpc_auth.cfg"
     files are moved to "/etc/boinc-client/" before creating the symlink.
-  * Uploaded to Debian (closes: #281890).
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 24 Dec 2005 10:41:59 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 25 Dec 2005 05:18:31 +0100
 
 boinc (5.2.13a-1) experimental; urgency=low
 
