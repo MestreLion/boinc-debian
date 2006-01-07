@@ -1,5 +1,5 @@
 debian/tmp/usr/include/BOINC/*  usr/include/BOINC
-debian/tmp/usr/lib/*            usr/lib
+debian/tmp/usr/lib/lib*         usr/lib
 
 api/graphics_data.h             usr/include/BOINC/api
 api/reduce.h                    usr/include/BOINC/api
