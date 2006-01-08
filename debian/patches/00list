@@ -4,3 +4,4 @@
 04_sched-makefile.am.dpatch
 05_correct-php-shebang.dpatch
 06_remove-python-shebang.dpatch
+07_use-sensible-browser.dpatch
