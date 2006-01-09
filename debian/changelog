@@ -1,9 +1,13 @@
-boinc (5.2.15-1) unstable; urgency=low
+boinc (5.2.15-1) experimental; urgency=low
 
   * New upstream release.
-  * Uploaded to Debian (closes: #281890).
 
   [ Frank S. Thomas ]
+  * debian/patches/:
+    - Added 07_use-sensible-browser.dpatch. The BOINC Manager now uses
+      "sensible-browser", which is part of the debianutils package, as
+      fallback if wxWidgets' method to determine the default browser fails.
+      Thanks to Olek Wojnar for the report and his helpful investigations.
   * debian/boinc-client.postrm: 
     - Be more verbose when removing the "boinc" user/group.
   * debian/boinc-manager.desktop:
@@ -14,7 +18,8 @@ boinc (5.2.15-1) unstable; urgency=low
   * debian/control:
     - Added an extra space before the "Homepage" pseudo field according to the
       Developer's Reference, Section 6.2.4.
-    - Added Christoph Martin <christoph.martin@uni-mainz.de> to Uploaders.
+    - Added Christoph Martin <christoph.martin@uni-mainz.de> and
+      Greg Norris <adric@debian.org> to Uploaders.
   * debian/copyright:
     - Added more copyright and license information for various files.
   * Created symlinks of headers and static libraries, which are required to
@@ -23,7 +28,7 @@ boinc (5.2.15-1) unstable; urgency=low
     a symlink in "/var/lib/boinc-client" to this file. Old "gui_rpc_auth.cfg"
     files are moved to "/etc/boinc-client/" before creating the symlink.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 25 Dec 2005 05:18:31 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  9 Jan 2006 18:16:41 +0100
 
 boinc (5.2.13a-1) experimental; urgency=low
 
