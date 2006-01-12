@@ -1,2 +1,3 @@
-debian/extra/gui_rpc_auth.cfg   etc/boinc-client
-debian/tmp/usr/bin/boinc_cmd    usr/bin
+debian/extra/gui_rpc_auth.cfg       etc/boinc-client
+debian/extra/boinc_mk_app_links.py  usr/bin
+debian/tmp/usr/bin/boinc_cmd        usr/bin

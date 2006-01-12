@@ -1,3 +1,12 @@
+boinc (5.2.15-2) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+  
+  [ Frank S. Thomas ]
+  * added first draft of boinc_mk_app_links.py
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  9 Jan 2006 19:32:28 +0100
+
 boinc (5.2.15-1) experimental; urgency=low
 
   * New upstream release.
