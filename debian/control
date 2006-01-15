@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 5), dpatch, python, libmysqlclient15-dev, zlib1g-de
 Package: boinc-client
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, adduser, lsb-base (>= 3.0-6)
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6)
 Suggests: boinc-manager | kboincspy
 Description: BOINC core client
  This package contains the BOINC core client program, that is required to
