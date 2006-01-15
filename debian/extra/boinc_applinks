@@ -14,46 +14,51 @@ import optparse
 import os
 import sys
 
-app_info_dir = '/usr/share/boinc-client/app_info/'
+APPS_INFO_DIR = '/usr/share/boinc-apps/info/'
 
 def main():
-    if not os.path.isdir(app_info_dir):
+    if not os.path.isdir(APPS_INFO_DIR):
         sys.exit(0)
 
     opts = parse_options()
 
     projects = {}
 
-    for file in os.listdir(app_info_dir):
+    for file in os.listdir(APPS_INFO_DIR):
         if file.endswith('.py'):
-            if opts.project == '' or file == opts.project+'.py':
-                execfile(app_info_dir + file)
+            if opts.project == '' or file[:-3] == opts.project:
+                execfile(APPS_INFO_DIR + file)
 
     for project in projects:
         for url in projects[project]['urls']:
             project_dir = opts.data_dir + '/projects/' + url + '/'
+            my_makedirs(project_dir, opts.create)
+            my_symlink(projects[project]['app_info'],
+                project_dir + 'app_info.xml', opts.create)
 
-            if opts.create_symlink == True:
-                try:
-                    os.makedirs(project_dir)
-                except OSError:
-                    pass
-
-            renew_or_remove_symlink(projects[project]['app_info'],
-                project_dir + 'app_info.xml', opts.create_symlink)
-
-            for app in projects[project]['apps']:
-                renew_or_remove_symlink(app,
-                    project_dir + os.path.basename(app), opts.create_symlink)
+            for app_src in projects[project]['apps']:
+                app_dst = project_dir + os.path.basename(app_src)
+                my_symlink(app_src, app_dst, opts.create)
     return
 
-def renew_or_remove_symlink(src, dst, create_symlink):
+def my_makedirs(path, bool):
+    if bool == False:
+        return
+
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+
+    return
+
+def my_symlink(src, dst, bool):
     if os.path.isfile(dst) and not os.path.islink(dst):
         return
     elif os.path.islink(dst):
         os.remove(dst)
 
-    if create_symlink == True:
+    if bool == True:
         os.symlink(src, dst)
 
     return
@@ -61,27 +66,19 @@ def renew_or_remove_symlink(src, dst, create_symlink):
 def parse_options():
     parser = optparse.OptionParser()
 
-    parser.add_option('--create', action='store_true',
-        dest='create_symlink',
-        help='create symlinks and project directories')
+    parser.add_option('--create', action='store_true', dest='create',
+        default=True, help='create symlinks and project directories')
 
-    parser.add_option('--remove', action='store_false',
-        dest='create_symlink', help='remove symlinks')
+    parser.add_option('--remove', action='store_false', dest='create',
+        help='remove symlinks')
 
-    parser.add_option('--data-dir', dest='data_dir',
-        default='', metavar='DIR',
+    parser.add_option('--data-dir', dest='data_dir', default='', metavar='DIR',
         help='destination directory for the symlinks')
 
-    parser.add_option('--project', dest='project',
-        default='', metavar='PROJECT',
-        help='create only symlinks for project PROJECT')
+    parser.add_option('--project', dest='project', default='',
+        metavar='PROJECT', help='create only symlinks for project PROJECT')
 
-    parser.set_defaults(create_symlink=True)
     (opts, args) = parser.parse_args()
-
-    if opts.data_dir == '':
-        parser.error("option '--data-dir' is mandatory")
-
     return opts
 
 if __name__ == '__main__':

@@ -1,11 +1,13 @@
-boinc (5.2.15-2) UNRELEASED; urgency=low
+boinc (5.2.15-2) unstable; urgency=low
 
   * NOT RELEASED YET
+  * Uploaded to Debian (closes #281890).
   
   [ Frank S. Thomas ]
-  * added first draft of boinc_mk_app_links.py
+  * Added boinc-manager.README.Debian to explain how to set the web browser
+    that the BOINC Manager uses.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  9 Jan 2006 19:32:28 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 15 Jan 2006 12:54:19 +0100
 
 boinc (5.2.15-1) experimental; urgency=low
 

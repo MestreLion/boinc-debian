@@ -11,7 +11,7 @@ BOINC_USER="boinc"
 BOINC_DIR="/var/lib/boinc-client"
 
 # This is the location of the BOINC core client, that the init script uses. 
-# If you do not want use the client program provided by the boinc-client
+# If you do not want to use the client program provided by the boinc-client
 # package, you can specify here an alternative client program.
 #BOINC_CLIENT="/usr/local/bin/boinc_4.25"
 BOINC_CLIENT="/usr/bin/boinc_client"

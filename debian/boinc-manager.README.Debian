@@ -8,8 +8,8 @@ the Debian Wiki:
   http://wiki.debian.org/BOINC
 
 
-Selecting the default web browser 
----------------------------------
+Setting the default web browser 
+-------------------------------
 
 Debian's BOINC Manager uses a more reliable way to determine the web
 browser by using the sensible-browser program. To change the default
