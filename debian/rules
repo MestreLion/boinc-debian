@@ -151,14 +151,14 @@ install-arch: build
 # "BOINC Manager.mo" is empty and useless. 
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	
-#	#
-#	# boinc-server
-#	#
-## Fix some file permissions.
-#	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php
-#	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php
-#	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php
-#	chmod +x debian/boinc-server/usr/share/boinc-server/tools/watch_tcp
+	#
+	# boinc-server
+	#
+# Fix some file permissions.
+	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php
+	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php
+	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php
+	chmod +x debian/boinc-server/usr/share/boinc-server/tools/watch_tcp
 
 binary-arch: build install-arch
 	dh_testdir -a
