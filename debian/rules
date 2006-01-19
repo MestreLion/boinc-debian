@@ -37,7 +37,7 @@ CFGFLAGS = \
   --build=$(DEB_BUILD_GNU_TYPE) \
   --prefix=/usr \
   --enable-client \
-  --enable-server \
+  --disable-server \
   --with-ssl \
   CFLAGS="$(CFLAGS)" \
   CXXFLAGS="$(CXXFLAGS)"
@@ -150,15 +150,6 @@ install-arch: build
 # The en_US po file is actually a po template, thus the corresponding
 # "BOINC Manager.mo" is empty and useless. 
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
-	
-#	#
-#	# boinc-server
-#	#
-## Fix some file permissions.
-#	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php
-#	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php
-#	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php
-#	chmod +x debian/boinc-server/usr/share/boinc-server/tools/watch_tcp
 
 binary-arch: build install-arch
 	dh_testdir -a
