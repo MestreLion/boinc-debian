@@ -7,7 +7,7 @@
  This file is licensed under the terms of the GNU General Public License,
  Version 2 or any later version published by the Free Software Foundation.
 
- Copyright © 2005 Debian BOINC Maintainers
+ Copyright © 2005-2006 Debian BOINC Maintainers
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
@@ -21,7 +21,7 @@
   <!ENTITY dhemail     "<email>frank@thomas-alfeld.de</email>">
 
   <!ENTITY dhbinary    "boinc_cmd">
-  <!ENTITY dhdate      "<date>July 14, 2005</date>">
+  <!ENTITY dhdate      "<date>January 19, 2006</date>">
   
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -38,7 +38,7 @@
       &dhsurname;
     </author>
     <copyright>
-      <year>2005</year>
+      <year>2005-2006</year>
       <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
@@ -58,6 +58,9 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhbinary;</command>
+      <arg>--host <replaceable>hostname</replaceable></arg>
+      <arg>--passwd <replaceable>passwd</replaceable></arg>
+      <arg choice="plain"><replaceable>command</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
   
