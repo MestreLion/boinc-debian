@@ -51,8 +51,7 @@
   
   <refnamediv>
     <refname>&dhbinary;</refname> 
-    <refpurpose>A command tool that provides an interactive command-line
-      interface to the BOINC core client.</refpurpose>
+    <refpurpose>command line interface to the BOINC core client</refpurpose>
   </refnamediv>
 
   <refsynopsisdiv>
@@ -62,6 +61,11 @@
       <arg>--passwd <replaceable>passwd</replaceable></arg>
       <arg choice="plain"><replaceable>command</replaceable></arg>
     </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhbinary;</command>
+      <arg>-hV</arg>
+    </cmdsynopsis>
+    <para></para>
   </refsynopsisdiv>
   
   <refsect1>
@@ -71,26 +75,95 @@
   
   <refsect1>
     <title>OPTIONS</title>
-    <para>A full summary of options is included below.</para>
 
     <variablelist>
       <varlistentry>
-        <term><option>--help</option></term>
+        <term>
+          <option>--host <replaceable>hostname</replaceable></option>
+        </term>
         <listitem>
-          <para>Show all options.</para>
+          <para></para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term><option>--quit</option></term>
+        <term>
+          <option>--passwd <replaceable>passwd</replaceable></option>
+        </term>
         <listitem>
-          <para>Stop the BOINC client.</para>
+          <para></para>
+        </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+        <term><option>-h, --help</option></term>
+        <listitem>
+          <para>Show a help message and all commands.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-V, --version</option></term>
+        <listitem>
+          <para>Show the version of the program.</para>
         </listitem>
       </varlistentry>
       
     </variablelist>
   </refsect1>
-  
+
+  <refsect1>
+    <title>COMMANDS</title>
+    <para></para>
+    
+    <variablelist>
+      <varlistentry>
+        <term><option>--get_state</option></term>
+        <listitem>
+          <para>Show entire core client state.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_results</option></term>
+        <listitem>
+          <para>Show all results.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_file_transfers</option></term>
+        <listitem>
+          <para>Show all current file transfers.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_project_status</option></term>
+        <listitem>
+          <para>Show status of all projects.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_disk_usage</option></term>
+        <listitem>
+          <para>Show disk usage of all projects.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--result
+            <replaceable>url</replaceable>
+            <replaceable>result_name</replaceable>
+            {suspend | resume | abort | graphics_window | graphics_fullscreen}
+          </option>
+        </term>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
   <refsect1>
     <title>SEE ALSO</title>
     <para><ulink url="http://boinc.berkeley.edu/client_unix.php"
