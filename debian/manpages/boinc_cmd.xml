@@ -21,8 +21,8 @@
   <!ENTITY dhemail     "<email>frank@thomas-alfeld.de</email>">
 
   <!ENTITY dhbinary    "boinc_cmd">
-  <!ENTITY dhdate      "<date>January 19, 2006</date>">
-  
+  <!ENTITY dhdate      "<date>January 20, 2006</date>">
+
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
@@ -48,7 +48,7 @@
     <refentrytitle>&dhbinary;</refentrytitle>
     <manvolnum>1</manvolnum>
   </refmeta>
-  
+
   <refnamediv>
     <refname>&dhbinary;</refname> 
     <refpurpose>command line interface to the BOINC core client</refpurpose>
@@ -57,7 +57,8 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhbinary;</command>
-      <arg>--host <replaceable>hostname</replaceable></arg>
+      <arg>--host <replaceable>hostname</replaceable><arg
+        >:<replaceable>port</replaceable></arg></arg>
       <arg>--passwd <replaceable>passwd</replaceable></arg>
       <arg choice="plain"><replaceable>command</replaceable></arg>
     </cmdsynopsis>
@@ -65,24 +66,28 @@
       <command>&dhbinary;</command>
       <arg>-hV</arg>
     </cmdsynopsis>
-    <para></para>
+    <para>Notice that the order of the options is important. The --host and
+      --passwd options must precede any command.</para>
   </refsynopsisdiv>
-  
+
   <refsect1>
     <title>DESCRIPTION</title>
-    <para></para>
+    <para>The BOINC command tool (<command>boinc_cmd</command>) provides
+      a command line interface to a running BOINC core client.</para>
   </refsect1>
-  
+
   <refsect1>
     <title>OPTIONS</title>
 
     <variablelist>
       <varlistentry>
         <term>
-          <option>--host <replaceable>hostname</replaceable></option>
+          <option>--host <replaceable>hostname</replaceable><optional
+            >:<replaceable>port</replaceable></optional></option>
         </term>
         <listitem>
-          <para></para>
+          <para>Connect to the host <replaceable>hostname</replaceable>.
+            The default host is localhost.</para>
         </listitem>
       </varlistentry>
 
@@ -91,10 +96,11 @@
           <option>--passwd <replaceable>passwd</replaceable></option>
         </term>
         <listitem>
-          <para></para>
+          <para>Use <replaceable>passwd</replaceable> as password for RPC
+            authentication.</para>
         </listitem>
       </varlistentry>
-      
+
       <varlistentry>
         <term><option>-h, --help</option></term>
         <listitem>
@@ -108,14 +114,14 @@
           <para>Show the version of the program.</para>
         </listitem>
       </varlistentry>
-      
+
     </variablelist>
   </refsect1>
 
   <refsect1>
     <title>COMMANDS</title>
     <para></para>
-    
+
     <variablelist>
       <varlistentry>
         <term><option>--get_state</option></term>
@@ -161,21 +167,173 @@
           </option>
         </term>
       </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--project
+            <replaceable>url</replaceable>
+            {reset | detach | update | suspend | resume | nomorework 
+            | allowmorework}
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--project_attach
+            <replaceable>url</replaceable>
+            <replaceable>auth</replaceable>
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--file_transfer {retry | abort}
+            <replaceable>url</replaceable>
+            <replaceable>filename</replaceable>
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_run_mode</option></term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--set_run_mode {always | auto | never}</option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--get_network_mode</option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--set_network_mode {always | auto | never}</option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--get_proxy_settings</option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--set_proxy_settings</option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--get_messages <replaceable>seqno</replaceable></option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--get_host_info</option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--acct_mgr_rpc
+            <replaceable>url</replaceable>
+            <replaceable>name</replaceable>
+            <replaceable>password</replaceable>
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--run_benchmarks</option></term>
+        <listitem>
+          <para>Run CPU benchmarks.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_screensaver_mode</option></term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--set_screensaver_mode {on | off}
+            <replaceable>blank_time</replaceable>
+            {desktop window_station}
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--get_project_config
+            <replaceable>url</replaceable>
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_project_config_poll</option></term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--lookup_account
+            <replaceable>url</replaceable>
+            <replaceable>email</replaceable>
+            <replaceable>passwd</replaceable>
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--lookup_account_poll</option></term>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <option>--create_account
+            <replaceable>url</replaceable>
+            <replaceable>email</replaceable>
+            <replaceable>passwd</replaceable>
+            <replaceable>name</replaceable>
+          </option>
+        </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--create_account_poll</option></term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--quit</option></term>
+        <listitem>
+          <para>Stop the running BOINC core client.</para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://boinc.berkeley.edu/client_unix.php"
-      >http://boinc.berkeley.edu/client_unix.php</ulink></para>
+    <para><ulink url="http://boinc.berkeley.edu/boinc_cmd.php"
+      >http://boinc.berkeley.edu/boinc_cmd.php</ulink></para>
   </refsect1>
 
   <refsect1>
     <title>AUTHOR</title>
-    <para>This manual page was written by &dhusername; &lt;&dhemail;&gt; for
-      the &debian; project (but may be used by others). Permission is granted 
-      to copy, distribute and/or modify this document under the terms of the
-      &gnu; General Public License, Version 2 or any later version published 
+    <para>This manual page was written by &dhusername; for the &debian;
+      project (but may be used by others). Permission is granted to copy,
+      distribute and/or modify this document under the terms of the &gnu;
+      General Public License, Version 2 or any later version published 
       by the Free Software Foundation.</para>
   </refsect1>
 </refentry>
