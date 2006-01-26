@@ -4,6 +4,7 @@
 set -e
 
 BOINC_DIR=/var/lib/boinc-client
+CONF_DIR=/etc/boinc-client
 
 case "$1" in
     configure)
@@ -17,15 +18,24 @@ case "$1" in
         mkdir $BOINC_DIR 2>/dev/null || true
         chown boinc:boinc $BOINC_DIR 2>/dev/null || true
 
-        # Move old gui_rpc_auth.cfg files to /etc/boinc-client/ and create
-        # a symlink for the BOINC core client.
+        # Move old gui_rpc_auth.cfg and remote_hosts.cfg files to
+        # /etc/boinc-client/ and create symlinks for the BOINC core client.
+        
         if [ ! -L $BOINC_DIR/gui_rpc_auth.cfg -a \
                -f $BOINC_DIR/gui_rpc_auth.cfg ]; then
-          mv -f $BOINC_DIR/gui_rpc_auth.cfg /etc/boinc-client/gui_rpc_auth.cfg
+          mv -f $BOINC_DIR/gui_rpc_auth.cfg $CONF_DIR/gui_rpc_auth.cfg
+        fi
+
+        if [ ! -L $BOINC_DIR/remote_hosts.cfg -a \
+               -f $BOINC_DIR/remote_hosts.cfg ]; then
+          mv -f $BOINC_DIR/remote_hosts.cfg $CONF_DIR/remote_hosts.cfg
         fi
         
-        ln -sf /etc/boinc-client/gui_rpc_auth.cfg $BOINC_DIR/gui_rpc_auth.cfg
-        chown boinc:boinc $BOINC_DIR/gui_rpc_auth.cfg
+        ln -sf $CONF_DIR/gui_rpc_auth.cfg $BOINC_DIR/gui_rpc_auth.cfg
+        ln -sf $CONF_DIR/remote_hosts.cfg $BOINC_DIR/remote_hosts.cfg
+        
+        chown boinc:boinc $BOINC_DIR/gui_rpc_auth.cfg \
+                          $BOINC_DIR/remote_hosts.cfg
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
