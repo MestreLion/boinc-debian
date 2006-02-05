@@ -3,12 +3,24 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# Include dpatch makefile.
 include /usr/share/dpatch/dpatch.make
 
+DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-# Most BOINC projects only provide applications for i686.
+ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+  TYPE_FLAGS = --build $(DEB_HOST_GNU_TYPE)
+else
+  TYPE_FLAGS = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+endif
+
+# Most BOINC projects only provide their applications for i686-pc-linux-gnu.
+# If the core client reports that it was built for i486-pc-linux-gnu it won't
+# download any application or work units, so we use i686-linux-gnu as argument
+# for configure's --build and --host switches on i386 hosts.
+ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
+  DEB_HOST_GNU_TYPE = i686-linux-gnu
+endif
 ifeq ($(DEB_BUILD_GNU_TYPE), i486-linux-gnu)
   DEB_BUILD_GNU_TYPE = i686-linux-gnu
 endif
@@ -20,21 +32,21 @@ CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-  DEB_OPT_FLAG = -O0
-  DEB_OPT_FLAG_boinc-client = -O0
+  DEB_OPT_FLAGS = -O0
+  DEB_OPT_FLAGS_boinc-client = -O0
 else
-  DEB_OPT_FLAG = -O2
-  DEB_OPT_FLAG_boinc-client = -O3 -ffast-math
+  DEB_OPT_FLAGS = -O2
+  DEB_OPT_FLAGS_boinc-client = -O3 -ffast-math
 endif
 
-CFLAGS += $(DEB_OPT_FLAG)
-CXXFLAGS += $(DEB_OPT_FLAG)
+CFLAGS += $(DEB_OPT_FLAGS)
+CXXFLAGS += $(DEB_OPT_FLAGS)
 
-CFLAGS_boinc-client += $(DEB_OPT_FLAG_boinc-client)
-CXXFLAGS_boinc-client += $(DEB_OPT_FLAG_boinc-client)
+CFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
+CXXFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
 
 CFGFLAGS = \
-  --build=$(DEB_BUILD_GNU_TYPE) \
+  $(TYPE_FLAGS) \
   --prefix=/usr \
   --enable-client \
   --disable-server \
@@ -43,7 +55,7 @@ CFGFLAGS = \
   CXXFLAGS="$(CXXFLAGS)"
 
 CFGFLAGS_boinc-client = \
-  --build=$(DEB_BUILD_GNU_TYPE) \
+  $(TYPE_FLAGS) \
   --enable-client \
   --disable-server \
   --with-ssl \

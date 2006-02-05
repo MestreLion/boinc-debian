@@ -1,6 +1,14 @@
+boinc (5.2.15-3) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * Call configure properly with the --build and --host switches as described
+    in autotools-dev's README.Debian.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun,  5 Feb 2006 20:35:05 +0100
+
 boinc (5.2.15-2) unstable; urgency=low
 
-  * Uploaded to Debian (closes #281890).
+  * Uploaded to Debian (closes: #281890).
   
   [ Frank S. Thomas ]
   * Added boinc-manager.README.Debian to explain how to set the web browser
