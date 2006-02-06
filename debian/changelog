@@ -1,14 +1,16 @@
 boinc (5.2.15-3) unstable; urgency=low
 
   [ Frank S. Thomas ]
-  * debian/control:
+  * debian/rules:
     - Call configure properly with the --build and --host switches as
       described in autotools-dev's README.Debian.
     - Remove *.unmodified binaries in the clean target, because those files
       are not removed by make distclean. This is needed to rebuild the
       packages in an already used source tree.
+    - Update config.guess and config.sub from the autotools-dev package to add
+      support for GNU/k*BSD.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  6 Feb 2006 12:19:04 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  6 Feb 2006 23:51:50 +0100
 
 boinc (5.2.15-2) unstable; urgency=low
 
