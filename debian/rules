@@ -96,6 +96,12 @@ clean-patched: clean-boinc-client
 	-$(MAKE) distclean
 	
 	dh_clean \
+	  client/boinc.unmodified \
+	  clientgui/boincmgr.unmodified \
+	  lib/boinccmd \
+	  lib/boinccmd.unmodified
+	
+	dh_clean \
 	  boinc_client.1 \
 	  boinc_cmd.1 \
 	  boincmgr.1
