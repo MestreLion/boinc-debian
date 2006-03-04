@@ -197,18 +197,25 @@
 
       <varlistentry>
         <term><option>--get_run_mode</option></term>
+        <listitem>
+          <para>Show current run mode.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
         <term>
           <option>--set_run_mode {always | auto | never}</option>
         </term>
+        <listitem>
+          <para>Set run mode.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term>
-          <option>--get_network_mode</option>
-        </term>
+        <term><option>--get_network_mode</option></term>
+        <listitem>
+          <para>Show current network mode.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -233,6 +240,10 @@
         <term>
           <option>--get_messages <replaceable>seqno</replaceable></option>
         </term>
+        <listitem>
+          <para>Show messages with sequence numbers beyond
+            <replaceable>seqno</replaceable>.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
