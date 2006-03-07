@@ -54,6 +54,7 @@ CFGFLAGS_boinc-client = \
 pre-build: patch pre-build-stamp
 pre-build-stamp:
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
+	docbook2x-man debian/manpages/boinc_applinks.xml
 	docbook2x-man debian/manpages/boinc_client.xml
 	docbook2x-man debian/manpages/boinc_cmd.xml
 	docbook2x-man debian/manpages/boincmgr.xml
@@ -84,6 +85,7 @@ clean-patched: clean-boinc-client
 	-$(MAKE) distclean
 	
 	dh_clean \
+	  boinc_applinks.1 \
 	  boinc_client.1 \
 	  boinc_cmd.1 \
 	  boincmgr.1

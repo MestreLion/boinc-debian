@@ -1,5 +1,7 @@
 boinc (5.2.15-2) unstable; urgency=low
 
+  * Added boinc_applinks.1 and updated boinc_applinks.
+
   * NOT RELEASED YET
   * Uploaded to Debian (closes #281890).
   
