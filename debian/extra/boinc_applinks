@@ -17,42 +17,58 @@ import sys
 APPS_INFO_DIR = '/usr/share/boinc-apps/info/'
 
 def main():
+    opts = parse_options()
+
     if not os.path.isdir(APPS_INFO_DIR):
         sys.exit(0)
 
-    opts = parse_options()
-
     projects = {}
 
+    # Include all files in APPS_INFO_DIR that ends with .py.
     for file in os.listdir(APPS_INFO_DIR):
         if file.endswith('.py'):
-            if opts.project == '' or file[:-3] == opts.project:
-                execfile(APPS_INFO_DIR + file)
+            execfile(APPS_INFO_DIR + file)
 
+    # Show list of all available projects.
+    if opts.list_projects == True:
+        for project in projects:
+            print project
+
+    # Manage symbolic links and directories.
+    if opts.create == None:
+        return
+ 
     for project in projects:
-        for url in projects[project]['urls']:
-            project_dir = opts.data_dir + '/projects/' + url + '/'
-            my_makedirs(project_dir, opts.create)
-            my_symlink(projects[project]['app_info'],
-                project_dir + 'app_info.xml', opts.create)
+        if opts.project == '' or project == opts.project:
+            for url in projects[project]['urls']:
+                project_dir = opts.data_dir + '/projects/' + url + '/'
+                manage_dirs(project_dir, opts.create)
+                manage_symlink(projects[project]['app_info'],
+                    project_dir + 'app_info.xml', opts.create)
 
-            for app_src in projects[project]['apps']:
-                app_dst = project_dir + os.path.basename(app_src)
-                my_symlink(app_src, app_dst, opts.create)
+                for app_src in projects[project]['apps']:
+                    app_dst = project_dir + os.path.basename(app_src)
+                    manage_symlink(app_src, app_dst, opts.create)
+
+                # Try to remove project directories again. os.removedirs will
+                # fail silently in the previous invocation if the symlinks are
+                # still present.
+                if opts.create == False:
+                    manage_dirs(project_dir, False)
     return
 
-def my_makedirs(path, bool):
-    if bool == False:
-        return
-
+def manage_dirs(path, bool):
     try:
-        os.makedirs(path)
+        if bool == False:
+            os.removedirs(path)
+        else:
+            os.makedirs(path)
     except OSError:
         pass
 
     return
 
-def my_symlink(src, dst, bool):
+def manage_symlink(src, dst, bool):
     if os.path.isfile(dst) and not os.path.islink(dst):
         return
     elif os.path.islink(dst):
@@ -67,16 +83,20 @@ def parse_options():
     parser = optparse.OptionParser()
 
     parser.add_option('--create', action='store_true', dest='create',
-        default=True, help='create symlinks and project directories')
+        help='create symlinks and project directories')
 
     parser.add_option('--remove', action='store_false', dest='create',
-        help='remove symlinks')
+        help='remove symlinks and empty project directories')
 
-    parser.add_option('--data-dir', dest='data_dir', default='', metavar='DIR',
-        help='destination directory for the symlinks')
+    parser.add_option('--data-dir', dest='data_dir', default='.',
+        metavar='DIR', help='destination directory for the symlinks')
 
     parser.add_option('--project', dest='project', default='',
         metavar='PROJECT', help='create only symlinks for project PROJECT')
+
+    parser.add_option('--list-projects', action='store_true',
+        dest='list_projects', default=False,
+        help='list all available projects')
 
     (opts, args) = parser.parse_args()
     return opts

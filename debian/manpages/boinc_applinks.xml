@@ -65,8 +65,8 @@
     <para>&dhbinary; creates (or removes) symbolic links for anonymous BOINC
       applications and their associated app_info.xml files in a given BOINC
       data directory.</para>
-    <para>Note: &dhbinary; is an extension for Debian users and is only
-      available in Debian's boinc-client package.</para>
+    <para>Note: &dhbinary; is an extension for &debian; users and is only
+      available in &debian;'s boinc-client package.</para>
   </refsect1>
 
   <refsect1>
@@ -85,14 +85,14 @@
       <varlistentry>
         <term><option>--create</option></term>
         <listitem>
-          <para>Create symbolic links.</para>
+          <para>Create symbolic links and project directories.</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
         <term><option>--remove</option></term>
         <listitem>
-          <para>Remove symbolic links.</para>
+          <para>Remove symbolic links and empty project directories.</para>
         </listitem>
       </varlistentry>
 
