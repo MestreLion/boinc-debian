@@ -7,20 +7,17 @@
  Version 2 or any later version published by the Free Software Foundation.
 
  Copyright © 2004 Steffen Moeller
+             2005, 2006 Debian BOINC Maintainers
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
 
   <!ENTITY dhgroupname "Debian BOINC Maintainers">
-  
-  <!ENTITY dhfirstname "<firstname>Steffen</firstname>">
-  <!ENTITY dhsurname   "<surname>Moeller</surname>">
-  <!ENTITY dhusername  "Steffen Moeller">
-  <!ENTITY dhemail     "<email>moeller@pzr.uni-rostock.de</email>">
+  <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
   
   <!ENTITY dhbinary    "boinc_client">
-  <!ENTITY dhdate      "<date>June 26, 2005</date>">
+  <!ENTITY dhdate      "<date>January 27, 2006</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -30,15 +27,28 @@
 <refentry>
   <refentryinfo>
     <address>
-      &dhemail;
+      &dhgroupmail;
     </address>
-    <author>
-      &dhfirstname;
-      &dhsurname;
-    </author>
+    <authorgroup>
+      <author>
+        <firstname>Steffen</firstname>
+        <lastname>Moeller</lastname>
+        <email>moeller@pzr.uni-rostock.de</email>
+      </author>
+
+      <author>
+        <firstname>Frank</firstname>
+        <lastname>Thomas</lastname>
+        <email>frank@thomas-alfeld.de</email>
+      </author>
+    </authorgroup>
     <copyright>
       <year>2004</year>
-      <holder>&dhusername;</holder>
+      <holder>Steffen Moeller</holder>
+      
+      <year>2005</year>
+      <year>2006</year>
+      <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
   </refentryinfo>
@@ -177,6 +187,13 @@
           <para>use given dir as BOINC home</para>
         </listitem>
       </varlistentry>
+      
+      <varlistentry>
+        <term><option>-no_gui_rpc</option></term>
+        <listitem>
+          <para>don't allow GUI RPC, don't make socket</para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 
@@ -189,18 +206,16 @@
   
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://setiweb.ssl.berkeley.edu"
-      >http://setiweb.ssl.berkeley.edu</ulink></para>
-    <para><ulink url="http://boinc.berkeley.edu"
-      >http://boinc.berkeley.edu</ulink></para>
+    <para><ulink url="http://boinc.berkeley.edu/client_unix.php"
+      >http://boinc.berkeley.edu/client_unix.php</ulink></para>
   </refsect1>
   
   <refsect1>
     <title>AUTHOR</title>
-    <para>This manual page was written by &dhusername; &lt;&dhemail;&gt; for the
-      &debian; project (but may be used by others). Permission is granted to
-      copy, distribute and/or modify this document under the terms of the &gnu;
-      General Public License, Version 2 or any later version published by the
-      Free Software Foundation.</para>
+    <para>This manual page was written by the &dhgroupname;
+      &lt;&dhgroupmail;&gt; for the &debian; project (but may be used by
+      others). Permission is granted to copy, distribute and/or modify this
+      document under the terms of the &gnu; General Public License, Version 2
+      or any later version published by the Free Software Foundation.</para>
   </refsect1>
 </refentry>

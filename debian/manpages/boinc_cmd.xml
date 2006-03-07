@@ -7,18 +7,14 @@
  This file is licensed under the terms of the GNU General Public License,
  Version 2 or any later version published by the Free Software Foundation.
 
- Copyright © 2005-2006 Debian BOINC Maintainers
+ Copyright © 2005, 2006 Debian BOINC Maintainers
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
 
-  <!ENTITY dhgroupname "Debian BOINC Maintainers">  
-
-  <!ENTITY dhfirstname "<firstname>Frank</firstname>">
-  <!ENTITY dhsurname   "<surname>Thomas</surname>">
-  <!ENTITY dhusername  "Frank S. Thomas">
-  <!ENTITY dhemail     "<email>frank@thomas-alfeld.de</email>">
+  <!ENTITY dhgroupname "Debian BOINC Maintainers">
+  <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "boinc_cmd">
   <!ENTITY dhdate      "<date>January 20, 2006</date>">
@@ -31,14 +27,16 @@
 <refentry>
   <refentryinfo>
     <address>
-      &dhemail;
+      &dhgroupmail;
     </address>
     <author>
-      &dhfirstname;
-      &dhsurname;
+      <firstname>Frank</firstname>
+      <lastname>Thomas</lastname>
+      <email>frank@thomas-alfeld.de</email>
     </author>
     <copyright>
-      <year>2005-2006</year>
+      <year>2005</year>
+      <year>2006</year>
       <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
@@ -78,6 +76,7 @@
 
   <refsect1>
     <title>OPTIONS</title>
+    <para></para>
 
     <variablelist>
       <varlistentry>
@@ -198,18 +197,25 @@
 
       <varlistentry>
         <term><option>--get_run_mode</option></term>
+        <listitem>
+          <para>Show current run mode.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
         <term>
           <option>--set_run_mode {always | auto | never}</option>
         </term>
+        <listitem>
+          <para>Set run mode.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term>
-          <option>--get_network_mode</option>
-        </term>
+        <term><option>--get_network_mode</option></term>
+        <listitem>
+          <para>Show current network mode.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -234,12 +240,18 @@
         <term>
           <option>--get_messages <replaceable>seqno</replaceable></option>
         </term>
+        <listitem>
+          <para>Show messages with sequence numbers beyond
+            <replaceable>seqno</replaceable>.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term>
-          <option>--get_host_info</option>
-        </term>
+        <term><option>--get_host_info</option></term>
+        <listitem>
+          <para>Show system information about the host where the BOINC core
+            client is running.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -330,10 +342,10 @@
 
   <refsect1>
     <title>AUTHOR</title>
-    <para>This manual page was written by &dhusername; for the &debian;
-      project (but may be used by others). Permission is granted to copy,
-      distribute and/or modify this document under the terms of the &gnu;
-      General Public License, Version 2 or any later version published 
-      by the Free Software Foundation.</para>
+    <para>This manual page was written by the &dhgroupname; 
+      &lt;&dhgroupmail;&gt; for the &debian; project (but may be used by
+      others). Permission is granted to copy, distribute and/or modify this
+      document under the terms of the &gnu; General Public License, Version 2
+      or any later version published by the Free Software Foundation.</para>
   </refsect1>
 </refentry>
