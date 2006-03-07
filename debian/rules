@@ -49,7 +49,7 @@ CFGFLAGS = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
   --enable-client \
-  --disable-server \
+  --enable-server \
   --with-ssl \
   CFLAGS="$(CFLAGS)" \
   CXXFLAGS="$(CXXFLAGS)"
