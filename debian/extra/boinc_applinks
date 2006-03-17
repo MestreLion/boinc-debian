@@ -37,46 +37,34 @@ def main():
     # Manage symbolic links and directories.
     if opts.create == None:
         return
- 
     for project in projects:
         if opts.project == '' or project == opts.project:
             for url in projects[project]['urls']:
                 project_dir = opts.data_dir + '/projects/' + url + '/'
-                manage_dirs(project_dir, opts.create)
                 manage_symlink(projects[project]['app_info'],
                     project_dir + 'app_info.xml', opts.create)
 
                 for app_src in projects[project]['apps']:
                     app_dst = project_dir + os.path.basename(app_src)
                     manage_symlink(app_src, app_dst, opts.create)
-
-                # Try to remove project directories again. os.removedirs will
-                # fail silently in the previous invocation if the symlinks are
-                # still present.
-                if opts.create == False:
-                    manage_dirs(project_dir, False)
-    return
-
-def manage_dirs(path, bool):
-    try:
-        if bool == False:
-            os.removedirs(path)
-        else:
-            os.makedirs(path)
-    except OSError:
-        pass
-
     return
 
 def manage_symlink(src, dst, bool):
-    if os.path.isfile(dst) and not os.path.islink(dst):
-        return
-    elif os.path.islink(dst):
-        os.remove(dst)
+    dirname = os.path.dirname(dst)
 
-    if bool == True:
-        os.symlink(src, dst)
+    try:
+        if bool == True:
+            os.makedirs(dirname)
+            os.symlink(src, dst)
+        else:
+            if os.path.isfile(dst) and not os.path.islink(dst):
+                return
+            elif os.path.islink(dst):
+                os.remove(dst)
 
+            os.removedirs(dirname)
+    except OSError:
+        pass
     return
 
 def parse_options():
