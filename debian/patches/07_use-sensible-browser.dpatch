@@ -8,29 +8,46 @@
 ## DP: we don't loose functionality here.
 
 @DPATCH@
-
---- boinc-5.2.15.orig/clientgui/hyperlink.cpp	2005-10-19 23:16:28.000000000 +0200
-+++ boinc-5.2.15/clientgui/hyperlink.cpp	2006-01-08 13:35:08.000000000 +0100
-@@ -212,28 +212,9 @@
+diff -urNad boinc-5.3.27~/clientgui/hyperlink.cpp boinc-5.3.27/clientgui/hyperlink.cpp
+--- boinc-5.3.27~/clientgui/hyperlink.cpp	2006-03-09 11:21:07.000000000 +0100
++++ boinc-5.3.27/clientgui/hyperlink.cpp	2006-03-21 11:24:27.000000000 +0100
+@@ -196,45 +196,9 @@
  
  #if defined(__WXGTK__) || defined(__WXMOTIF__)
      if (!mime_type_found) {
 -        cmd = ::wxGetenv(wxT("BROWSER"));
 -        if(cmd.IsEmpty()) {
--            wxString strBuffer = wxEmptyString;
--            strBuffer.Printf(
--                _("BOINC could not determine what your default browser is.\n"
--                "Please verify that you have either the 'mailcap' package installed or\n"
--                "'mime' package installed, and that the 'text/html' mime type is\n"
--                "configured for your favorite browser. Another method is to set the\n"
--                "BROWSER environment variable to point to whatever your favorite\n"
--                "web browser is.  Please open a browser window to the following URL:\n\n"
--                "%s"),
--                strLink.c_str()
+-            wxString strDialogTitle = wxEmptyString;
+-            wxString strDialogMessage = wxEmptyString;
+-
+-            // %s is the application name
+-            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
+-            strDialogTitle.Printf(
+-                _("%s - Can't find web browser"),
+-                wxGetApp().GetBrand()->GetApplicationName().c_str()
 -            );
+-
+-            // 1st %s is the application name
+-            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
+-            // 2nd %s is the URL that the browser is supposed to
+-            //    open.
+-            // 3rd %s is the application name
+-            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
+-            strDialogMessage.Printf(
+-                _("%s tried to display the web page\n"
+-                "\t%s\n"
+-                "but couldn't find a web browser.\n"
+-                "To fix this, set the environment variable\n"
+-                "BROWSER to the path of your web browser,\n"
+-                "then restart the %s."),
+-                wxGetApp().GetBrand()->GetApplicationName().c_str(),
+-                strLink.c_str(),
+-                wxGetApp().GetBrand()->GetApplicationName().c_str()
+-            );
+-
 -            ::wxMessageBox(
--                strBuffer,
--                _("BOINC Manager"),
+-                strDialogMessage,
+-                strDialogTitle,
 -                wxOK | wxICON_INFORMATION
 -            );
 -        } else {

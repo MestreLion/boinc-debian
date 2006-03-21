@@ -1,15 +1,21 @@
-boinc (5.2.15-2) unstable; urgency=low
-
-  * Added boinc_applinks.1 and updated boinc_applinks.
+boinc (5.3.27-1) experimental; urgency=low
 
   * NOT RELEASED YET
-  * Uploaded to Debian (closes #281890).
+  * New experimental upstream release.
   
   [ Frank S. Thomas ]
+  * debian/patches/:
+    - Removed 01_amd64-gcc4-fixes.dpatch, included upstream.
+    - Updated 03_wx2.6-with-unicode.dpatch and 07_use-sensible-browser.dpatch
+      for the new upstream release.
+  * Added the boinc_applinks tool that creates symlinks to "anonymous" BOINC
+    applications and their app_info.xml files in a given data directory.
+    The "anonymous" applications and their app_info.xml files are provided
+    by boinc-app-* packages (e.g.: boinc-app-seti).
   * Added boinc-manager.README.Debian to explain how to set the web browser
     that the BOINC Manager uses.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 15 Jan 2006 12:54:19 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 21 Mar 2006 11:38:03 +0100
 
 boinc (5.2.15-1) experimental; urgency=low
 
