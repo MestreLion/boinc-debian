@@ -9,8 +9,12 @@ boinc (5.2.15-3) unstable; urgency=low
       packages in an already used source tree.
     - Update config.guess and config.sub from the autotools-dev package to add
       support for GNU/k*BSD.
+  * debian/patches/:
+    - Added 10_exclude-sea.dpatch to prevent building the self-extracting
+      archive, since we don't need it in any case and this fixes a FTBFS on
+      non-Linux hosts.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon,  6 Feb 2006 23:51:50 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 21 Mar 2006 19:23:30 +0100
 
 boinc (5.2.15-2) unstable; urgency=low
 
