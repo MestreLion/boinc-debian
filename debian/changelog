@@ -13,8 +13,10 @@ boinc (5.2.15-3) unstable; urgency=low
     - Added 10_exclude-sea.dpatch to prevent building the self-extracting
       archive, since we don't need it in any case and this fixes a FTBFS on
       non-Linux hosts.
+    - Modified 03_wx2.6-with-unicode.dpatch to fix Alioth bug #303021.
+      Thanks to Steven Altermatt for the bug report.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 21 Mar 2006 19:23:30 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 22 Mar 2006 18:14:39 +0100
 
 boinc (5.2.15-2) unstable; urgency=low
 
