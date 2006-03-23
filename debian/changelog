@@ -5,9 +5,9 @@ boinc (5.3.28-1) experimental; urgency=low
   
   [ Frank S. Thomas ]
   * debian/patches/:
-    - Removed 01_amd64-gcc4-fixes.dpatch, included upstream.
-    - Updated 03_wx2.6-with-unicode.dpatch and 07_use-sensible-browser.dpatch
-      for the new upstream release.
+    - Removed 01_amd64-gcc4-fixes.dpatch and 03_wx2.6-with-unicode.dpatch,
+      these were included upstream.
+    - Updated 07_use-sensible-browser.dpatch for the new upstream release.
   * Added the boinc_applinks tool that creates symlinks to "anonymous" BOINC
     applications and their app_info.xml files in a given data directory.
     The "anonymous" applications and their app_info.xml files are provided
@@ -15,7 +15,7 @@ boinc (5.3.28-1) experimental; urgency=low
   * Added boinc-manager.README.Debian to explain how to set the web browser
     that the BOINC Manager uses.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 21 Mar 2006 11:38:03 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 23 Mar 2006 11:10:59 +0100
 
 boinc (5.2.15-1) experimental; urgency=low
 

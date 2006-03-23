@@ -1,5 +1,4 @@
 02_wx2.6-configure.ac.dpatch
-03_wx2.6-with-unicode.dpatch
 04_sched-makefile.am.dpatch
 05_correct-php-shebang.dpatch
 06_remove-python-shebang.dpatch
