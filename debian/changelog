@@ -15,8 +15,9 @@ boinc (5.2.15-3) unstable; urgency=low
       non-Linux hosts.
     - Modified 03_wx2.6-with-unicode.dpatch to fix Alioth bug #303021.
       Thanks to Steven Altermatt for the bug report.
+  * Fixed FTBFS with G++ 4.1, thanks to Martin Michlmayr. (closes: 358650)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 22 Mar 2006 18:14:39 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 23 Mar 2006 21:26:01 +0100
 
 boinc (5.2.15-2) unstable; urgency=low
 
