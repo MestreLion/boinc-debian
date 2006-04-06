@@ -1,8 +1,10 @@
 boinc (5.2.15-4) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
+  * debian/control:
+    - Improved the short description of all three packages. (closes: #359332)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 31 Mar 2006 14:53:50 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  6 Apr 2006 09:24:13 +0200
 
 boinc (5.2.15-3) unstable; urgency=low
 
@@ -21,7 +23,7 @@ boinc (5.2.15-3) unstable; urgency=low
       non-Linux hosts.
     - Modified 03_wx2.6-with-unicode.dpatch to fix Alioth bug #303021.
       Thanks to Steven Altermatt for the bug report.
-  * Fixed FTBFS with G++ 4.1, thanks to Martin Michlmayr. (closes: 358650)
+  * Fixed FTBFS with G++ 4.1, thanks to Martin Michlmayr. (closes: #358650)
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 23 Mar 2006 21:26:01 +0100
 
