@@ -12,15 +12,15 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6)
 Suggests: boinc-manager | kboincspy
 Description: core client for the BOINC distributed computing infrastructure
- This package contains the BOINC core client program, that is required to
- participate in any project that uses BOINC.
- .
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
- software platform for distributed computing. A central server
- distributes work units and collects results via this client.
- When attaching a local machine to a project, this client will also 
- dynamically download the projects application's program to be then
- wrapped by the BOINC core client.
+ software platform for distributed computing.
+ .
+ This package contains the BOINC core client program that is required to
+ participate in any project that uses BOINC.  A central server distributes
+ work units and collects results via this client.  When attaching a
+ local machine to a project, this client will also dynamically download
+ the projects application's program to be then wrapped by the BOINC
+ core client.
  .
   Homepage: http://boinc.berkeley.edu
 
@@ -35,7 +35,9 @@ Description: GUI to control and monitor the BOINC core client
  resources.
  .
  This package contains the BOINC Manager, a graphical monitor and control
- utility for the BOINC core client.
+ utility for the BOINC core client. For active participation in any BOINC
+ project the recommended client package, not the manager, is required for
+ every machine contributing.
  .
   Homepage: http://boinc.berkeley.edu
 
