@@ -1,10 +1,14 @@
-boinc (5.2.15-4) UNRELEASED; urgency=low
+boinc (5.4.0-1) UNRELEASED; urgency=low
 
-  * NOT RELEASED YET
+  * New upstream release.
+    - BOINC Manager: Allow a connection request to reset a connection attempt
+      to the local computer or another computer. (closes: #360143)
+  
+  [ Frank S. Thomas ]
   * debian/control:
     - Improved the short description of all three packages. (closes: #359332)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  6 Apr 2006 09:24:13 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 11 Apr 2006 10:50:15 +0200
 
 boinc (5.2.15-3) unstable; urgency=low
 
