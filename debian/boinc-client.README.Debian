@@ -50,10 +50,8 @@ follow these instructions:
      % mv -f /var/lib/boinc-client/gui_rpc_auth.cfg /etc/boinc-client/
      % ln -s /etc/boinc-client/gui_rpc_auth.cfg /var/lib/boinc-client/gui_rpc_auth.cfg
 
-    If your old BOINC data directory contains a 'remote_hosts.cfg' file, move
-    this file to /etc/boinc-client/, too:
-     % mv -f /var/lib/boinc-client/remote_hosts.cfg /etc/boinc-client/
-     % ln -s /etc/boinc-client/remote_hosts.cfg /var/lib/boinc-client/remote_hosts.cfg
+    Repeat the last step for the configuration files 'global_prefs_override.xml'
+    and 'remote_hosts.cfg' if they exist in your old BOINC data directory.
 
  5. Start the BOINC core client again:
      % /etc/init.d/boinc-client start

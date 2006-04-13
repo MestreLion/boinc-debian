@@ -1,11 +1,10 @@
 boinc (5.4.2-1) unstable; urgency=low
 
+  [ Frank S. Thomas ]
   * New upstream release.
     - BOINC Manager: Allow a connection request to reset a connection attempt
       to the local computer or another computer. Thanks to Zlatko Calusic for
       the report. (closes: #360143)
-  
-  [ Frank S. Thomas ]
   * debian/control:
     - Improved the short description of all three packages. Thanks to
       Martin Schulze for his suggestions. (closes: #359332)
@@ -17,8 +16,11 @@ boinc (5.4.2-1) unstable; urgency=low
   * Added conffile /etc/boinc-client/global_prefs_override.xml which can be
     used to edit preferences locally. For more information about this file,
     see http://boinc.berkeley.edu/prefs_override.php
+  * Clarified and expanded the explanation of the -no_gui_rpc option in
+    boinc_client's manpage based on Steffen's suggestion. Thanks to
+    David Coe for the report. (closes: #362257)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 13 Apr 2006 12:04:30 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 13 Apr 2006 16:33:57 +0200
 
 boinc (5.2.15-3) unstable; urgency=low
 
