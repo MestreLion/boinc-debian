@@ -48,10 +48,10 @@ if [ -z "$BOINC_USER" ]; then
   exit 7
 fi
 
-PIDFILE=/var/run/boinc.pid
+PIDFILE=/var/run/boinc_client.pid
 DESC="BOINC core client"
 NAME=`basename $BOINC_CLIENT`
-BOINC_OPTS="-daemon -redirectio -dir $BOINC_DIR $BOINC_OPTS"
+BOINC_OPTS="-redirectio -dir $BOINC_DIR $BOINC_OPTS"
 
 is_running()
 {

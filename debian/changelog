@@ -12,7 +12,6 @@ boinc (5.4.2-1) unstable; urgency=low
     - Removed 01_amd64-gcc4-fixes.dpatch, it was applied upstream.
     - Updated 03_wx2.6-with-unicode.dpatch and 07_use-sensible-browser.dpatch
       for the new upstream release.
-  * Added -daemon option to boinc-client's init script. 
   * Added conffile /etc/boinc-client/global_prefs_override.xml which can be
     used to edit preferences locally. For more information about this file,
     see http://boinc.berkeley.edu/prefs_override.php
