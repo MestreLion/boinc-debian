@@ -175,6 +175,15 @@
       </varlistentry>
       
       <varlistentry>
+        <term>
+          <option>-gui_rpc_port <replaceable>port</replaceable></option>
+        </term>
+        <listitem>
+          <para>port for GUI RPCs</para>
+        </listitem>
+      </varlistentry>
+      
+      <varlistentry>
         <term><option>-redirectio</option></term>
         <listitem>
           <para>redirect stdout and stderr to log files</para>
@@ -191,7 +200,17 @@
       <varlistentry>
         <term><option>-no_gui_rpc</option></term>
         <listitem>
-          <para>don't allow GUI RPC, don't make socket</para>
+          <para>Omits creation of a socket as required for the remote control
+            of the client. Consequently the client cannot be controlled by
+            external tools like GUIs (<command>boincmgr</command> etc.) or the
+            console command tool (<command>boinc_cmd</command>).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-daemon</option></term>
+        <listitem>
+          <para>run as daemon</para>
         </listitem>
       </varlistentry>
     </variablelist>
