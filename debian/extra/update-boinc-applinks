@@ -10,6 +10,7 @@
 #
 # $Id$
 
+import ConfigParser
 import optparse
 import os
 import sys
@@ -22,12 +23,7 @@ def main():
     if not os.path.isdir(APPS_INFO_DIR):
         sys.exit(0)
 
-    projects = {}
-
-    # Include all files in APPS_INFO_DIR that ends with .py.
-    for file in os.listdir(APPS_INFO_DIR):
-        if file.endswith('.py'):
-            execfile(APPS_INFO_DIR + file)
+    projects = parse_app_info_files()
 
     # Show list of all available projects.
     if opts.list_projects == True:
@@ -48,6 +44,38 @@ def main():
                     app_dst = project_dir + os.path.basename(app_src)
                     manage_symlink(app_src, app_dst, opts.create)
     return
+
+def get_list(res):
+    """ convert a space separated option value to a list """
+    res = res.replace('\n', ' ')
+    if ' ' in res:
+        res = res.split(' ')
+    else:
+        res = [res]
+    while '' in res:
+        res.remove('')
+    return res
+
+
+def parse_app_info_files():
+    projects = {}
+
+    for file in os.listdir(APPS_INFO_DIR):
+        if file.endswith('.cfg'):
+            cfg = ConfigParser.ConfigParser()
+            cfg.readfp(open(APPS_INFO_DIR + file))
+
+            project = cfg.get('DEFAULT', 'project')
+            cfg.remove_option('DEFAULT', 'project')
+
+            projects[project] = {}
+            list_options = ['apps', 'urls']
+            for item in cfg.items('DEFAULT'):
+                if item[0] in list_options:
+                    projects[project][item[0]] = get_list(item[1])
+                else:
+                    projects[project][item[0]] = item[1]
+    return projects
 
 def manage_symlink(src, dst, bool):
     dirname = os.path.dirname(dst)

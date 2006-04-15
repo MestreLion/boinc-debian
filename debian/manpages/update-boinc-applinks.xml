@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <!--
- This is the manual page for boinc_applinks, a tool that creates/removes
+ This is the manual page for update-boinc-applinks, a tool that creates/removes
  symlinks for anonymous platform applications and their associated app_info.xml
  files in a given BOINC data directory.
 
@@ -17,7 +17,7 @@
   <!ENTITY dhgroupname "Debian BOINC Maintainers">
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
-  <!ENTITY dhbinary    "boinc_applinks">
+  <!ENTITY dhbinary    "update-boinc-applinks">
   <!ENTITY dhdate      "<date>March 05, 2006</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">

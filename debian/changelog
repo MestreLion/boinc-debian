@@ -2,8 +2,8 @@ boinc (5.4.3-1exp1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * Synchronized with pkg-boinc/trunk/boinc, revision 399.
-  * Added the boinc_applinks tool that creates symlinks to "anonymous" BOINC
-    applications and their app_info.xml files in a given data directory.
+  * Added the update-boinc-applinks tool that creates symlinks to "anonymous"
+    BOINC applications and their app_info.xml files in a given data directory.
     The "anonymous" applications and their app_info.xml files are provided
     by boinc-app-* packages (e.g.: boinc-app-seti).
 

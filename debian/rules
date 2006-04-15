@@ -69,10 +69,10 @@ pre-build-stamp:
 	cp -f /usr/share/misc/config.sub config.sub
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	
-	docbook2x-man debian/manpages/boinc_applinks.xml
 	docbook2x-man debian/manpages/boinc_client.xml
 	docbook2x-man debian/manpages/boinc_cmd.xml
 	docbook2x-man debian/manpages/boincmgr.xml
+	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	touch $@
 
 build: pre-build build-stamp
@@ -106,11 +106,11 @@ clean-patched: clean-boinc-client
 	  lib/boinccmd.unmodified
 	
 	dh_clean \
-	  boinc_applinks.1 \
 	  boinc_client.1 \
 	  boinc_cmd.1 \
-	  boincmgr.1
-	  
+	  boincmgr.1 \
+	  update-boinc-applinks.1
+	
 	dh_clean \
 	  api/Makefile.in \
 	  apps/Makefile.in \
