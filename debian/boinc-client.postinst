@@ -4,6 +4,16 @@
 set -e
 
 BOINC_DIR=/var/lib/boinc-client
+CONF_DIR=/etc/boinc-client
+
+move_configfile_and_symlink()
+{
+    if [ ! -L $BOINC_DIR/$1 -a -f $BOINC_DIR/$1 ]; then
+        mv -f $BOINC_DIR/$1 $CONF_DIR/$1
+    fi
+    ln -sf $CONF_DIR/$1 $BOINC_DIR/$1
+    chown boinc:boinc $BOINC_DIR/$1
+}
 
 case "$1" in
     configure)
@@ -17,15 +27,11 @@ case "$1" in
         mkdir $BOINC_DIR 2>/dev/null || true
         chown boinc:boinc $BOINC_DIR 2>/dev/null || true
 
-        # Move old gui_rpc_auth.cfg files to /etc/boinc-client/ and create
-        # a symlink for the BOINC core client.
-        if [ ! -L $BOINC_DIR/gui_rpc_auth.cfg -a \
-               -f $BOINC_DIR/gui_rpc_auth.cfg ]; then
-          mv -f $BOINC_DIR/gui_rpc_auth.cfg /etc/boinc-client/gui_rpc_auth.cfg
-        fi
-        
-        ln -sf /etc/boinc-client/gui_rpc_auth.cfg $BOINC_DIR/gui_rpc_auth.cfg
-        chown boinc:boinc $BOINC_DIR/gui_rpc_auth.cfg
+        # Move old configuration files to /etc/boinc-client/ and
+        # create symlinks for the BOINC core client.
+        move_configfile_and_symlink global_prefs_override.xml
+        move_configfile_and_symlink gui_rpc_auth.cfg
+        move_configfile_and_symlink remote_hosts.cfg
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

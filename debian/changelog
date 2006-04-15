@@ -1,21 +1,69 @@
-boinc (5.3.31-1) experimental; urgency=low
+boinc (5.4.3-1exp1) experimental; urgency=low
 
-  * NOT RELEASED YET
-  * New experimental upstream release.
-  
   [ Frank S. Thomas ]
-  * debian/patches/:
-    - Removed 01_amd64-gcc4-fixes.dpatch and 03_wx2.6-with-unicode.dpatch,
-      these were included upstream.
-    - Updated 07_use-sensible-browser.dpatch for the new upstream release.
+  * Synchronized with pkg-boinc/trunk/boinc, revision 399.
   * Added the boinc_applinks tool that creates symlinks to "anonymous" BOINC
     applications and their app_info.xml files in a given data directory.
     The "anonymous" applications and their app_info.xml files are provided
     by boinc-app-* packages (e.g.: boinc-app-seti).
-  * Added boinc-manager.README.Debian to explain how to set the web browser
-    that the BOINC Manager uses.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 23 Mar 2006 11:10:59 +0100
+
+boinc (5.4.3-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - BOINC Manager: Allow a connection request to reset a connection attempt
+      to the local computer or another computer. Thanks to Zlatko Calusic for
+      the report. (closes: #360143)
+  * debian/control:
+    - Improved the short description of all three packages. Thanks to
+      Martin Schulze for his suggestions. (closes: #359332)
+  * debian/patches/:
+    - Removed 01_amd64-gcc4-fixes.dpatch, it was applied upstream.
+    - Updated 03_wx2.6-with-unicode.dpatch and 07_use-sensible-browser.dpatch
+      for the new upstream release.
+  * Added conffile /etc/boinc-client/global_prefs_override.xml which can be
+    used to edit preferences locally. For more information about this file,
+    see http://boinc.berkeley.edu/prefs_override.php
+  * Clarified and expanded the explanation of the -no_gui_rpc option in
+    boinc_client's manpage based on Steffen's suggestion. Thanks to
+    David Coe for the report. (closes: #362257)
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 13 Apr 2006 16:33:57 +0200
+
+boinc (5.2.15-3) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * debian/rules:
+    - Call configure properly with the --build and --host switches as
+      described in autotools-dev's README.Debian.
+    - Remove *.unmodified binaries in the clean target, because those files
+      are not removed by make distclean. This is needed to rebuild the
+      packages in an already used source tree.
+    - Update config.guess and config.sub from the autotools-dev package to add
+      support for GNU/k*BSD.
+  * debian/patches/:
+    - Added 10_exclude-sea.dpatch to prevent building the self-extracting
+      archive, since we don't need it in any case and this fixes a FTBFS on
+      non-Linux hosts.
+    - Modified 03_wx2.6-with-unicode.dpatch to fix Alioth bug #303021.
+      Thanks to Steven Altermatt for the bug report.
+  * Fixed FTBFS with G++ 4.1, thanks to Martin Michlmayr. (closes: #358650)
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 23 Mar 2006 21:26:01 +0100
+
+boinc (5.2.15-2) unstable; urgency=low
+
+  * Uploaded to Debian (closes: #281890).
+
+  [ Frank S. Thomas ]
+  * Added boinc-manager.README.Debian to explain how to set the web browser
+    that the BOINC Manager uses.
+  * Added the conffile "remote_hosts.cfg" to "/etc/boinc-client/". Old files
+    are handled the same way as old "gui_rpc_auth.cfg" files.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 26 Jan 2006 19:25:20 +0100
 
 boinc (5.2.15-1) experimental; urgency=low
 
@@ -150,7 +198,7 @@ boinc (4.72-1) experimental; urgency=low
 
   * The "You are a credit junkie!" release.
   * New upstream release.
-  
+
   [ Frank S. Thomas ]
   * debian/rules:
     - Set default C/C++ compiler flags to "-g -O3 -ffast-math".

@@ -8,9 +8,9 @@
 ## DP: we don't loose functionality here.
 
 @DPATCH@
-diff -urNad boinc-5.3.27~/clientgui/hyperlink.cpp boinc-5.3.27/clientgui/hyperlink.cpp
---- boinc-5.3.27~/clientgui/hyperlink.cpp	2006-03-09 11:21:07.000000000 +0100
-+++ boinc-5.3.27/clientgui/hyperlink.cpp	2006-03-21 11:24:27.000000000 +0100
+diff -urNad boinc-5.4.1~/clientgui/hyperlink.cpp boinc-5.4.1/clientgui/hyperlink.cpp
+--- boinc-5.4.1~/clientgui/hyperlink.cpp	2006-03-09 11:21:07.000000000 +0100
++++ boinc-5.4.1/clientgui/hyperlink.cpp	2006-04-13 08:12:19.000000000 +0200
 @@ -196,45 +196,9 @@
  
  #if defined(__WXGTK__) || defined(__WXMOTIF__)

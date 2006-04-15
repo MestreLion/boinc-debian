@@ -38,7 +38,7 @@ if [ ! -x "$BOINC_CLIENT" ]; then
 fi
 
 if [ ! -d "$BOINC_DIR" ]; then
-  log_failure_msg "BOINC working directory '$BOINC_DIR' does not exist."
+  log_failure_msg "BOINC data directory '$BOINC_DIR' does not exist."
   exit 3
 fi
 
@@ -48,7 +48,7 @@ if [ -z "$BOINC_USER" ]; then
   exit 7
 fi
 
-PIDFILE=/var/run/boinc.pid
+PIDFILE=/var/run/boinc_client.pid
 DESC="BOINC core client"
 NAME=`basename $BOINC_CLIENT`
 BOINC_OPTS="-redirectio -dir $BOINC_DIR $BOINC_OPTS"

@@ -5,3 +5,4 @@
 06_remove-python-shebang.dpatch
 07_use-sensible-browser.dpatch
 08_boinc-path-config.dpatch
+10_exclude-sea.dpatch
