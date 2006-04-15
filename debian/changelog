@@ -18,8 +18,13 @@ boinc (5.4.3-1) unstable; urgency=low
   * Clarified and expanded the explanation of the -no_gui_rpc option in
     boinc_client's manpage based on Steffen's suggestion. Thanks to
     David Coe for the report. (closes: #362257)
+  * Added the update-boinc-applinks tool that creates (or removes) symlinks to
+    "anonymous" BOINC applications and their app_info.xml files in a given
+    data directory. The "anonymous" applications and their app_info.xml files
+    are provided by boinc-app-* packages (e.g. boinc-app-seti). Note that
+    currently there are no boinc-app-* packages in the Debian archive.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 13 Apr 2006 16:33:57 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 16 Apr 2006 00:29:41 +0200
 
 boinc (5.2.15-3) unstable; urgency=low
 
@@ -187,7 +192,7 @@ boinc (4.72-1) experimental; urgency=low
 
   * The "You are a credit junkie!" release.
   * New upstream release.
-  
+
   [ Frank S. Thomas ]
   * debian/rules:
     - Set default C/C++ compiler flags to "-g -O3 -ffast-math".
