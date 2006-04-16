@@ -1,4 +1,4 @@
-#!/usr/bin/python2.3
+#!/usr/bin/python2.4
 # -*- coding: utf-8 -*-
 #
 # This script creates symlinks for anonymous BOINC applications.
@@ -56,7 +56,6 @@ def get_list(res):
         res.remove('')
     return res
 
-
 def parse_app_info_files():
     projects = {}
 
@@ -82,14 +81,14 @@ def manage_symlink(src, dst, bool):
 
     try:
         if bool == True:
-            os.makedirs(dirname)
+            if not os.path.isdir(dirname):
+                os.makedirs(dirname)
             os.symlink(src, dst)
         else:
             if os.path.isfile(dst) and not os.path.islink(dst):
                 return
             elif os.path.islink(dst):
                 os.remove(dst)
-
             os.removedirs(dirname)
     except OSError:
         pass
