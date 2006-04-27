@@ -1,10 +1,13 @@
-boinc (5.4.5-1) unstable; urgency=low
+boinc (5.4.6-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
+    - Really fix the connection to a remote machine bug. (closes: #360143)
   * Removed watch file because upstream stopped providing nightly tarballs.
+  * debian/control:
+    - Bumped Standards-Version from 3.6.2 to 3.7.0, no changes required.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 21 Apr 2006 10:12:43 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 25 Apr 2006 16:18:11 +0200
 
 boinc (5.4.3-1) unstable; urgency=low
 
