@@ -8,13 +8,43 @@
 ## DP: we don't loose functionality here.
 
 @DPATCH@
-diff -urNad boinc-5.4.1~/clientgui/hyperlink.cpp boinc-5.4.1/clientgui/hyperlink.cpp
---- boinc-5.4.1~/clientgui/hyperlink.cpp	2006-03-09 11:21:07.000000000 +0100
-+++ boinc-5.4.1/clientgui/hyperlink.cpp	2006-04-13 08:12:19.000000000 +0200
-@@ -196,45 +196,9 @@
+diff -urNad boinc-5.4.9~/clientgui/hyperlink.cpp boinc-5.4.9/clientgui/hyperlink.cpp
+--- boinc-5.4.9~/clientgui/hyperlink.cpp	2006-03-09 11:21:07.000000000 +0100
++++ boinc-5.4.9/clientgui/hyperlink.cpp	2006-05-06 16:10:25.000000000 +0200
+@@ -166,77 +166,9 @@
+ // private functions
  
- #if defined(__WXGTK__) || defined(__WXMOTIF__)
-     if (!mime_type_found) {
+ void wxHyperLink::ExecuteLink (const wxString &strLink) {
+-    wxString cmd;
+-    wxString strMimeType = wxEmptyString;
+-    bool mime_type_found = false;
+-
+-    if      (strLink.StartsWith(wxT("http://")))
+-        strMimeType = wxT("text/html");
+-    else if (strLink.StartsWith(wxT("ftp://")))
+-        strMimeType = wxT("text/html");
+-    else if (strLink.StartsWith(wxT("mailto:")))
+-        strMimeType = wxT("message/rfc822");
+-    else
+-        return;
+-
+-    wxFileType* ft = wxTheMimeTypesManager->GetFileTypeFromMimeType(strMimeType);
+-    if (ft) {
+-        if (ft->GetOpenCommand(&cmd, wxFileType::MessageParameters(strLink))) {
+-#ifdef __WXMAC__
+-            cmd.Replace(wxT("<"), wxEmptyString);
+-            cmd.Prepend(wxT("open ")); 
+-#else
+-            cmd.Replace(wxT("file://"), wxEmptyString);
+-#endif
+-            mime_type_found = true;
+-            ::wxExecute(cmd);
+-        }
+-        delete ft;
+-    }
+-
+-#if defined(__WXGTK__) || defined(__WXMOTIF__)
+-    if (!mime_type_found) {
 -        cmd = ::wxGetenv(wxT("BROWSER"));
 -        if(cmd.IsEmpty()) {
 -            wxString strDialogTitle = wxEmptyString;
@@ -54,9 +84,11 @@ diff -urNad boinc-5.4.1~/clientgui/hyperlink.cpp boinc-5.4.1/clientgui/hyperlink
 -            cmd += wxT(" ") + strLink;
 -			::wxExecute(cmd,wxEXEC_ASYNC);
 -        }
-+        cmd = wxT("sensible-browser");
-+        cmd += wxT(" ") + strLink;
-+        ::wxExecute(cmd,wxEXEC_ASYNC);
-     }
- #endif
+-    }
+-#endif
++    wxString cmd = wxT("sensible-browser");
++    cmd += wxT(" ") + strLink;
++    ::wxExecute(cmd,wxEXEC_ASYNC);
  }
+ 
+ const char *BOINC_RCSID_d587835b7e="$Id: hyperlink.cpp,v 1.11 2006/03/09 10:21:07 rwalton Exp $";
