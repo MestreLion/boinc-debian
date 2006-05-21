@@ -1,9 +1,12 @@
 debian/tmp/usr/include/BOINC/*  usr/include/BOINC
 debian/tmp/usr/lib/lib*         usr/lib
 
-api/boinc_gl.h                  usr/include/BOINC/api
 api/graphics_data.h             usr/include/BOINC/api
 api/reduce.h                    usr/include/BOINC/api
+api/boinc_gl.h                  usr/include/BOINC/api
+api/txf_util.h                  usr/include/BOINC/api
 lib/error_numbers.h             usr/include/BOINC/lib
 lib/std_fixes.h                 usr/include/BOINC/lib
 Makefile.am                     usr/share/boinc-dev
+config.h                        usr/share/boinc-dev
+version.h                       usr/share/boinc-dev
