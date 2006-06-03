@@ -1,0 +1,33 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03_wx2.6-with-unicode.dpatch by Frank S. Thomas <frank@thomas-alfeld.de>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: No description.
+
+@DPATCH@
+diff -urNad boinc-5.4.9~/clientgui/MainFrame.cpp boinc-5.4.9/clientgui/MainFrame.cpp
+--- boinc-5.4.9~/clientgui/MainFrame.cpp	2006-06-03 23:21:46.000000000 +0200
++++ boinc-5.4.9/clientgui/MainFrame.cpp	2006-06-03 23:24:41.000000000 +0200
+@@ -366,11 +366,11 @@
+     } else {
+         strMenuName.Printf(
+             _("&Synchronize with %s"), 
+-            ami.acct_mgr_name.c_str()
++            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+         );
+         strMenuDescription.Printf(
+             _("Get current settings from %s"), 
+-            ami.acct_mgr_name.c_str()
++            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+         );
+         menuTools->Append(
+             ID_TOOLSAMUPDATENOW, 
+@@ -448,7 +448,7 @@
+     if (is_acct_mgr_detected) {
+         strMenuName.Printf(
+             _("&Defect from %s"), 
+-            ami.acct_mgr_name.c_str()
++            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+         );
+         menuAdvanced->Append(
+             ID_ADVANCEDAMDEFECT, 

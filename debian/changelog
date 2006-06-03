@@ -7,8 +7,11 @@ boinc (5.4.9-2) unstable; urgency=low
     - Really bumped the Standards-Version to 3.7.2.
   * Added the boinc_gl.h header to the boinc-dev package. This file is needed
     to compile SETI@home's graphics component.
+  * debian/patches/:
+    - Added new 03_wx2.6-with-unicode.dpatch to display the AM name correctly.
+      See also Ubuntu bug #48246.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 17 May 2006 00:13:46 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  3 Jun 2006 23:34:13 +0200
 
 boinc (5.4.9-1) unstable; urgency=low
 
