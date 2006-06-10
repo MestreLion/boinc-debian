@@ -6,8 +6,8 @@
 
 @DPATCH@
 diff -urNad boinc-5.4.9~/clientgui/MainFrame.cpp boinc-5.4.9/clientgui/MainFrame.cpp
---- boinc-5.4.9~/clientgui/MainFrame.cpp	2006-06-03 23:21:46.000000000 +0200
-+++ boinc-5.4.9/clientgui/MainFrame.cpp	2006-06-03 23:24:41.000000000 +0200
+--- boinc-5.4.9~/clientgui/MainFrame.cpp	2006-06-10 17:25:55.000000000 +0200
++++ boinc-5.4.9/clientgui/MainFrame.cpp	2006-06-10 17:27:03.000000000 +0200
 @@ -366,11 +366,11 @@
      } else {
          strMenuName.Printf(
@@ -31,3 +31,23 @@ diff -urNad boinc-5.4.9~/clientgui/MainFrame.cpp boinc-5.4.9/clientgui/MainFrame
          );
          menuAdvanced->Append(
              ID_ADVANCEDAMDEFECT, 
+@@ -1220,7 +1220,7 @@
+ 
+         strTitle.Printf(
+             _("BOINC Manager - Detach from %s"), 
+-            ami.acct_mgr_name.c_str()
++            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+         );
+         strMessage.Printf(
+             _("If you defect from %s,\n"
+@@ -1228,8 +1228,8 @@
+               "but you'll have to manage projects manually.\n"
+               "\n"
+               "Do you want to defect from %s?"), 
+-            ami.acct_mgr_name.c_str(),
+-            ami.acct_mgr_name.c_str()
++            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str(),
++            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+         );
+ 
+         iAnswer = ::wxMessageBox(

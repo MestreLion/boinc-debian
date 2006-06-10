@@ -10,8 +10,11 @@ boinc (5.4.9-2) unstable; urgency=low
   * debian/patches/:
     - Added new 03_wx2.6-with-unicode.dpatch to display the AM name correctly.
       See also Ubuntu bug #48246.
+  * Added a hint to use "update-alternatives --set x-www-browser [...]" to
+    manually set the x-www-browser alternative to boinc-manager's
+    README.Debian. See Ubuntu bug #48766 for more details.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  3 Jun 2006 23:34:13 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 10 Jun 2006 17:01:19 +0200
 
 boinc (5.4.9-1) unstable; urgency=low
 
