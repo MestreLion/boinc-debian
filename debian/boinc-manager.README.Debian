@@ -8,7 +8,7 @@ the Debian Wiki:
   http://wiki.debian.org/BOINC
 
 
-Setting the default web browser 
+Setting the default web browser
 -------------------------------
 
 Debian's BOINC Manager uses a more reliable way to determine the web
@@ -17,4 +17,7 @@ web browser, run as root:
   
   % update-alternatives --config x-www-browser
   
-and select your favorite.
+and select your favorite. If this does not work, set the alternative
+manually (Firefox is used in this example):
+
+  % update-alternatives --set x-www-browser /usr/bin/firefox
