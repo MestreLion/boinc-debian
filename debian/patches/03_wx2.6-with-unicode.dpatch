@@ -6,8 +6,8 @@
 
 @DPATCH@
 diff -urNad boinc-5.4.9~/clientgui/MainFrame.cpp boinc-5.4.9/clientgui/MainFrame.cpp
---- boinc-5.4.9~/clientgui/MainFrame.cpp	2006-06-10 17:25:55.000000000 +0200
-+++ boinc-5.4.9/clientgui/MainFrame.cpp	2006-06-10 17:27:03.000000000 +0200
+--- boinc-5.4.9~/clientgui/MainFrame.cpp	2006-05-02 20:17:44.000000000 +0200
++++ boinc-5.4.9/clientgui/MainFrame.cpp	2006-06-11 12:45:37.000000000 +0200
 @@ -366,11 +366,11 @@
      } else {
          strMenuName.Printf(
@@ -51,3 +51,15 @@ diff -urNad boinc-5.4.9~/clientgui/MainFrame.cpp boinc-5.4.9/clientgui/MainFrame
          );
  
          iAnswer = ::wxMessageBox(
+diff -urNad boinc-5.4.9~/clientgui/ViewTransfers.cpp boinc-5.4.9/clientgui/ViewTransfers.cpp
+--- boinc-5.4.9~/clientgui/ViewTransfers.cpp	2006-04-18 02:49:47.000000000 +0200
++++ boinc-5.4.9/clientgui/ViewTransfers.cpp	2006-06-11 12:49:00.000000000 +0200
+@@ -188,7 +188,7 @@
+         _("Are you sure you want to abort this file transfer '%s'?\n"
+           "NOTE: Aborting a transfer will invalidate a task and you\n"
+           "will not receive credit for it."), 
+-        pDoc->file_transfer(m_pListPane->GetFirstSelected())->name.c_str()
++        wxString(pDoc->file_transfer(m_pListPane->GetFirstSelected())->name.c_str(), wxConvUTF8).c_str()
+     );
+ 
+     iAnswer = ::wxMessageBox(
