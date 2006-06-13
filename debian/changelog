@@ -40,7 +40,7 @@ boinc (5.4.9-1) unstable; urgency=low
     - Removed 02_wx2.6-configure.ac.dpatch and 03_wx2.6-with-unicode.dpatch,
       both were included upstream.
     - Updated 07_use-sensible-browser.dpatch to use sensible-browser only,
-      because upstream's attempt to start a browser fails miserably. 
+      because upstream's attempt to start a browser fails miserably.
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  6 May 2006 16:41:01 +0200
 
