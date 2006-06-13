@@ -17,8 +17,14 @@ move_configfile_and_symlink()
 
 case "$1" in
     configure)
+        # Create boinc group if it doesn't already exist.
+        if ! getent group boinc >/dev/null; then
+            addgroup --quiet --system boinc
+        fi
+
+        # Create boinc user if it doesn't already exist.
         if ! getent passwd boinc >/dev/null; then
-            adduser --quiet --system --group --home $BOINC_DIR \
+            adduser --quiet --system --ingroup boinc --home $BOINC_DIR \
              --gecos "BOINC core client" boinc
         fi
 
