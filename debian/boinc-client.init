@@ -5,7 +5,9 @@
 # Required-Stop:     $local_fs $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start BOINC core client.
+# Short-Description: BOINC core client
+# Description:       core client for the BOINC distributed computing
+#                    infrastructure
 ### END INIT INFO
 
 # Debian init.d script for the BOINC core client
@@ -34,18 +36,18 @@ test "$ENABLED" != "0" || exit 0
 if [ ! -x "$BOINC_CLIENT" ]; then
   log_failure_msg "BOINC client '$BOINC_CLIENT' does not exist or is not " \
     "executable."
-  exit 2
+  exit 5
 fi
 
 if [ ! -d "$BOINC_DIR" ]; then
   log_failure_msg "BOINC data directory '$BOINC_DIR' does not exist."
-  exit 3
+  exit 6
 fi
 
 if [ -z "$BOINC_USER" ]; then
   log_failure_msg "BOINC_USER variable is empty. Set it to a user to run " \
     "the BOINC core client."
-  exit 7
+  exit 6
 fi
 
 PIDFILE=/var/run/boinc_client.pid
