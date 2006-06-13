@@ -25,6 +25,15 @@ ifeq ($(DEB_BUILD_GNU_TYPE), i486-linux-gnu)
   DEB_BUILD_GNU_TYPE = i686-linux-gnu
 endif
 
+# This is the same as above, but only for compatibility with sarge's version
+# of dpkg-architecture.
+ifeq ($(DEB_HOST_GNU_TYPE), i386-linux)
+  DEB_HOST_GNU_TYPE = i686-linux-gnu
+endif
+ifeq ($(DEB_BUILD_GNU_TYPE), i386-linux)
+  DEB_BUILD_GNU_TYPE = i686-linux-gnu
+endif
+
 CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall
 

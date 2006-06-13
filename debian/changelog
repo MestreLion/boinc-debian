@@ -15,9 +15,13 @@ boinc (5.4.9-2) unstable; urgency=low
     README.Debian. See Ubuntu bug #48766 for more details.
   * Use /usr/bin/python as interpreter for update-boinc-applinks instead of
     /usr/bin/python2.4 and make boinc-client depend on "python (>= 2.3)" to
-    remove the unnecessary strict dependency on python2.4.
+    avoid the unnecessary strict dependency on Python 2.4.
+  * Made debian/rules compatible with sarge's version of dpkg-architecture and
+    added libcurl-ssl-dev as alternative for the libcurl3-openssl-dev build
+    dependency. These changes aid in backporting BOINC to sarge. Thanks to
+    Robert Millan for the patch. (closes: #373089)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 13 Jun 2006 08:21:04 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 13 Jun 2006 10:47:30 +0200
 
 boinc (5.4.9-1) unstable; urgency=low
 
