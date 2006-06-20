@@ -1,3 +1,15 @@
+boinc (5.4.10-2) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+  [ Frank S. Thomas ]
+  * Added conffile /etc/boinc-client/log_flags.xml which can be used to turn
+    on/off logging and debugging messages. For a detailed list of messages
+    that can be turned on/off, see http://boinc.berkeley.edu/client_msgs.php
+    Note that this file was renamed to cc_config.xml in BOINC (>= 5.5.2).
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 20 Jun 2006 22:38:01 +0200
+
 boinc (5.4.10-1) unstable; urgency=low
 
   [ Frank S. Thomas ]

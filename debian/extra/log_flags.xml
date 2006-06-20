@@ -1,0 +1,20 @@
+<log_flags>
+  <task>1</task>
+  <file_xfer>1</file_xfer>
+  <sched_ops>1</sched_ops>
+
+  <state_debug>0</state_debug>
+  <cpu_sched_detail>0</cpu_sched_detail>
+  <task_debug>0</task_debug>
+  <file_xfer_debug>0</file_xfer_debug>
+  <sched_op_debug>0</sched_op_debug>
+  <http_debug>0</http_debug>
+  <proxy_debug>0</proxy_debug>
+  <time_debug>0</time_debug>
+  <net_xfer_debug>0</net_xfer_debug>
+  <measurement_debug>0</measurement_debug>
+  <poll_debug>0</poll_debug>
+  <guirpc_debug>0</guirpc_debug>
+  <sched_cpu_debug>0</sched_cpu_debug>
+  <scrsave_debug>0</scrsave_debug>
+</log_flags>

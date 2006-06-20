@@ -37,6 +37,7 @@ case "$1" in
         # create symlinks for the BOINC core client.
         move_configfile_and_symlink global_prefs_override.xml
         move_configfile_and_symlink gui_rpc_auth.cfg
+        move_configfile_and_symlink log_flags.xml
         move_configfile_and_symlink remote_hosts.cfg
     ;;
 
