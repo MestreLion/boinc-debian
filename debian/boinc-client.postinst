@@ -29,6 +29,7 @@ case "$1" in
 
         # Move old configuration files to /etc/boinc-client/ and
         # create symlinks for the BOINC core client.
+        move_configfile_and_symlink cc_config.xml
         move_configfile_and_symlink global_prefs_override.xml
         move_configfile_and_symlink gui_rpc_auth.cfg
         move_configfile_and_symlink remote_hosts.cfg
