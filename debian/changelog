@@ -1,13 +1,58 @@
-boinc (5.4.3-1exp1) experimental; urgency=low
+boinc (5.4.10-2) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
 
   [ Frank S. Thomas ]
-  * Synchronized with pkg-boinc/trunk/boinc, revision 399.
-  * Added the update-boinc-applinks tool that creates symlinks to "anonymous"
-    BOINC applications and their app_info.xml files in a given data directory.
-    The "anonymous" applications and their app_info.xml files are provided
-    by boinc-app-* packages (e.g.: boinc-app-seti).
+  * Added conffile /etc/boinc-client/log_flags.xml which can be used to turn
+    on/off logging and debugging messages. For a detailed list of messages
+    that can be turned on/off, see http://boinc.berkeley.edu/client_msgs.php
+    Note that this file was renamed to cc_config.xml in BOINC (>= 5.5.2).
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 23 Mar 2006 11:10:59 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 20 Jun 2006 22:38:01 +0200
+
+boinc (5.4.10-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - Display Account Manager names correctly in BOINC Manager. This fixes
+      Ubuntu bug #48246.
+  * debian/control: 
+    - Really bumped the Standards-Version to 3.7.2.
+  * Added the boinc_gl.h header to the boinc-dev package. This file is needed
+    to compile SETI@home's graphics component.
+  * Added a hint to use "update-alternatives --set x-www-browser [...]" to
+    manually set the x-www-browser alternative to boinc-manager's
+    README.Debian. See Ubuntu bug #48766 for more details.
+  * Use /usr/bin/python as interpreter for update-boinc-applinks instead of
+    /usr/bin/python2.4 and make boinc-client depend on "python (>= 2.3)" to
+    avoid the unnecessary strict dependency on Python 2.4.
+  * Made debian/rules compatible with sarge's version of dpkg-architecture and
+    added libcurl-ssl-dev as alternative for the libcurl3-openssl-dev build
+    dependency. These changes aid in backporting BOINC to sarge. Thanks to
+    Robert Millan for the patch. (closes: #373089)
+  * debian/boinc-client.postinst:
+    - Make sure that the group boinc exists before trying to create the user
+      boinc. Thanks to Christoph Martin for the report. (closes: #372950)
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 17 Jun 2006 21:09:15 +0200
+
+boinc (5.4.9-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - Really fix the connection to a remote machine bug. (closes: #360143)
+    - Fix another FTBFS bug with G++ 4.1, thanks again to Martin Michlmayr.
+      (closes: #358650)
+  * Removed watch file because upstream stopped providing nightly tarballs.
+  * debian/control:
+    - Bumped Standards-Version from 3.6.2 to 3.7.2, no changes required.
+  * debian/patches/:
+    - Removed 02_wx2.6-configure.ac.dpatch and 03_wx2.6-with-unicode.dpatch,
+      both were included upstream.
+    - Updated 07_use-sensible-browser.dpatch to use sensible-browser only,
+      because upstream's attempt to start a browser fails miserably.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  6 May 2006 16:41:01 +0200
 
 boinc (5.4.3-1) unstable; urgency=low
 
@@ -29,8 +74,13 @@ boinc (5.4.3-1) unstable; urgency=low
   * Clarified and expanded the explanation of the -no_gui_rpc option in
     boinc_client's manpage based on Steffen's suggestion. Thanks to
     David Coe for the report. (closes: #362257)
+  * Added the update-boinc-applinks tool that creates (or removes) symlinks to
+    "anonymous" BOINC applications and their app_info.xml files in a given
+    data directory. The "anonymous" applications and their app_info.xml files
+    are provided by boinc-app-* packages (e.g. boinc-app-seti). Note that
+    currently there are no boinc-app-* packages in the Debian archive.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 13 Apr 2006 16:33:57 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 16 Apr 2006 00:29:41 +0200
 
 boinc (5.2.15-3) unstable; urgency=low
 

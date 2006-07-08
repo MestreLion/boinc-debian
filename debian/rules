@@ -183,10 +183,11 @@ install-arch: build
 	    usr/share/boinc-server/sched/`basename $$i`; \
 	done;
 # Fix some file permissions.
-	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php
-	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php
-	chmod +x debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php
-	chmod +x debian/boinc-server/usr/share/boinc-server/tools/watch_tcp
+	SRV_PREFIX=debian/boinc-server/usr/share/boinc-server
+	chmod +x $(SRV_PREFIX)/html/ops/db_update.php
+	chmod +x $(SRV_PREFIX)/html/ops/watchdogs.php
+	chmod +x $(SRV_PREFIX)/html/ops/wd_nresults_changing.php
+	chmod +x $(SRV_PREFIX)/tools/watch_tcp
 
 binary-arch: build install-arch
 	dh_testdir -a
@@ -202,6 +203,7 @@ binary-arch: build install-arch
 	dh_strip -a
 	dh_compress -a
 	dh_fixperms -a
+	dh_pysupport -a 
 	dh_python -a
 	dh_installdeb -a
 	dh_shlibdeps -a
