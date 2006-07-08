@@ -29,11 +29,19 @@
     <address>
       &dhgroupmail;
     </address>
-    <author>
-      <firstname>Frank</firstname>
-      <lastname>Thomas</lastname>
-      <email>frank@thomas-alfeld.de</email>
-    </author>
+    <authorgroup>
+      <author>
+        <firstname>Frank</firstname>
+        <lastname>Thomas</lastname>
+        <email>frank@thomas-alfeld.de</email>
+      </author>
+
+      <author>
+        <firstname>Peter</firstname>
+        <lastname>Bailis</lastname>
+        <email>pbailis@gmail.com</email>
+      </author>
+    </authorgroup>
     <copyright>
       <year>2005</year>
       <year>2006</year>
@@ -96,7 +104,7 @@
         </term>
         <listitem>
           <para>Use <replaceable>passwd</replaceable> as password for RPC
-            authentication.</para>
+            authentication.  (default: boinc_cmd will look for a file 'gui_rpc_auth.cfg' and use the password it contains).</para>
         </listitem>
       </varlistentry>
 
@@ -162,9 +170,17 @@
           <option>--result
             <replaceable>url</replaceable>
             <replaceable>result_name</replaceable>
-            {suspend | resume | abort | graphics_window | graphics_fullscreen}
+            {suspend | resume | abort | graphics_window | graphics_fullscreen} {--window_station ws} {--desktop dt} {--display dp}
           </option>
         </term>
+        <listitem>
+          <para>Do operation on a result.
+	   suspend: temporarily stop work on a result;
+	   resume: allow work on a result;
+                     abort: permanently stop work on result;
+	   graphics_window: open graphics in a window. The optional desktop/window_station (Windows) or display (X11) arguments specify the display.;
+	   graphics_fullscreen: open graphics fullscreen</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -175,6 +191,16 @@
             | allowmorework}
           </option>
         </term>
+        <listitem>
+          <para>Do operation on a project.
+	   reset: delete current work and get more;
+	   detach: delete current work and don't get more;
+                     update: contact scheduling server;
+	   suspend: stop work for project;
+	   resume: resume work for project;
+	   nomorework: finish current work but don't get more;
+	   allowmorework: undo nomorework</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -184,6 +210,9 @@
             <replaceable>auth</replaceable>
           </option>
         </term>
+        <listitem>
+          <para>Attach to an account via <replaceable>auth</replaceable>, the authorization key from the project.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -207,7 +236,10 @@
           <option>--set_run_mode {always | auto | never}</option>
         </term>
         <listitem>
-          <para>Set run mode.</para>
+          <para>Set run mode.
+	   always: do work (network + CPU) always
+	   auto: do work only when allowed by preferences
+	   never: don't do work (same as suspending all projects)</para>
         </listitem>
       </varlistentry>
 
@@ -222,6 +254,9 @@
         <term>
           <option>--set_network_mode {always | auto | never}</option>
         </term>
+        <listitem>
+          <para>Set network mode.  Like set_run_mode but applies only to network transfers.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -232,8 +267,11 @@
 
       <varlistentry>
         <term>
-          <option>--set_proxy_settings</option>
+          <option>--set_proxy_settings <replaceable>http_server_name</replaceable> <replaceable>http_server_port</replaceable> <replaceable>http_user_name</replaceable> <replaceable>http_user_passwd</replaceable> <replaceable>socks_server_name</replaceable> <replaceable>socks_server_port</replaceable> <replaceable>socks_version socks5_user_name</replaceable> <replaceable>socks5_user_passwd</replaceable></option>
         </term>
+        <listitem>
+          <para>Set proxy settings.  All fields are mandantory.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -261,7 +299,11 @@
             <replaceable>name</replaceable>
             <replaceable>password</replaceable>
           </option>
+        <listitem>
+          <para>Instruct core client to contact an account manager server.</para>
+        </listitem>
         </term>
+
       </varlistentry>
 
       <varlistentry>
@@ -279,9 +321,12 @@
         <term>
           <option>--set_screensaver_mode {on | off}
             <replaceable>blank_time</replaceable>
-            {desktop window_station}
+            {--desktop desktop} {--window_station window_station} {--display display}
           </option>
         </term>
+        <listitem>
+          <para>Tell the core client to start or stop doing fullscreen graphics, and going to black after blank_time seconds. The optional arguments specify which desktop/windows_station (Windows) or display (X11) to use. </para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -290,10 +335,20 @@
             <replaceable>url</replaceable>
           </option>
         </term>
+        <listitem>
+          <para>Fetch configuration at project located at <replaceable>url</replaceable>.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
         <term><option>--get_project_config_poll</option></term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--read_global_prefs_override</option></term>
+        <listitem>
+          <para>Tell the core client to read the global_prefs_override.xml file and incorporate any global preferences indicated there.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>

@@ -25,6 +25,15 @@ ifeq ($(DEB_BUILD_GNU_TYPE), i486-linux-gnu)
   DEB_BUILD_GNU_TYPE = i686-linux-gnu
 endif
 
+# This is the same as above, but only for compatibility with sarge's version
+# of dpkg-architecture.
+ifeq ($(DEB_HOST_GNU_TYPE), i386-linux)
+  DEB_HOST_GNU_TYPE = i686-linux-gnu
+endif
+ifeq ($(DEB_BUILD_GNU_TYPE), i386-linux)
+  DEB_BUILD_GNU_TYPE = i686-linux-gnu
+endif
+
 CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall
 
@@ -183,11 +192,11 @@ install-arch: build
 	    usr/share/boinc-server/sched/`basename $$i`; \
 	done;
 # Fix some file permissions.
-	SRV_PREFIX=debian/boinc-server/usr/share/boinc-server
-	chmod +x $(SRV_PREFIX)/html/ops/db_update.php
-	chmod +x $(SRV_PREFIX)/html/ops/watchdogs.php
-	chmod +x $(SRV_PREFIX)/html/ops/wd_nresults_changing.php
-	chmod +x $(SRV_PREFIX)/tools/watch_tcp
+	chmod +x \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php \
+	  debian/boinc-server/usr/share/boinc-server/tools/watch_tcp
 
 binary-arch: build install-arch
 	dh_testdir -a
