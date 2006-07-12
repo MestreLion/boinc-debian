@@ -174,14 +174,36 @@
           </option>
         </term>
         <listitem>
-          <para>Do operation on a result.
-	   suspend: temporarily stop work on a result;
-	   resume: allow work on a result;
-                     abort: permanently stop work on result;
-	   graphics_window: open graphics in a window. The optional desktop/window_station (Windows) or display (X11) arguments specify the display.;
-	   graphics_fullscreen: open graphics fullscreen</para>
-        </listitem>
-      </varlistentry>
+        <para>Do operation on a result.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term><option>suspend</option></term>
+	<listitem><para>temporarily stop work on a result</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>resume</option></term>
+	<listitem><para>allow work on a result</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>abort</option></term>
+	<listitem><para>permanently stop work on result</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>graphics_window</option></term>
+	<listitem><para>open graphics in a window. The optional desktop/window_station (Windows) or display (X11) arguments specify the display</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>graphics_fullscreen</option></term>
+	<listitem><para>open graphics fullscreen</para></listitem>
+	</varlistentry>
+	
+	</variablelist>
+	</listitem>
 
       <varlistentry>
         <term>
@@ -192,16 +214,46 @@
           </option>
         </term>
         <listitem>
-          <para>Do operation on a project.
-	   reset: delete current work and get more;
-	   detach: delete current work and don't get more;
-                     update: contact scheduling server;
-	   suspend: stop work for project;
-	   resume: resume work for project;
-	   nomorework: finish current work but don't get more;
-	   allowmorework: undo nomorework</para>
-        </listitem>
-      </varlistentry>
+          <para>Do operation on a project.</para>
+
+	<variablelist>
+	<varlistentry>
+	<term><option>reset</option></term>
+	<listitem><para>delete current work and get more</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>detach</option></term>
+	<listitem><para>delete current work and don't get more</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>update</option></term>
+	<listitem><para>contact scheduling server</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>suspend</option></term>
+	<listitem><para>stop work for project</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>resume</option></term>
+	<listitem><para>resume work for project</para></listitem>
+	</varlistentry>
+	
+	<varlistentry>
+	<term><option>nomorework</option></term>
+	<listitem><para>finish current work but don't get more</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>allowmorework</option></term>
+	<listitem><para>undo nomorework</para></listitem>
+	</varlistentry>
+
+	</variablelist>
+	</listitem>
 
       <varlistentry>
         <term>
@@ -236,12 +288,25 @@
           <option>--set_run_mode {always | auto | never}</option>
         </term>
         <listitem>
-          <para>Set run mode.
-	   always: do work (network + CPU) always
-	   auto: do work only when allowed by preferences
-	   never: don't do work (same as suspending all projects)</para>
-        </listitem>
-      </varlistentry>
+          <para>Set run mode.</para>
+
+	<varlistentry>
+	<term><option>always</option></term>
+	<listitem><para>do work (network + CPU) always</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>auto</option></term>
+	<listitem><para>do work only when allowed by preferences</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term><option>never</option></term>
+	<listitem><para>don't do work (same as suspending all projects)</para></listitem>
+	</varlistentry>
+	
+	</variablelist>
+	</listitem>
 
       <varlistentry>
         <term><option>--get_network_mode</option></term>
