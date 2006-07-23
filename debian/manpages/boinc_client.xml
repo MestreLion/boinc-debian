@@ -73,7 +73,9 @@
   <refsect1>
     <title>DESCRIPTION</title>
     <para><command>&dhbinary;</command> starts a client for communication with
-      the Berkeley Open Infrastructure for Network Computing.  For a graphical interface to the BOINC client, use BOINC manager.  For a command-line interface to the BOINC client, use boinc_cmd.</para>
+      the Berkeley Open Infrastructure for Network Computing. For a graphical
+      interface to the BOINC client, use BOINC Manager. For a command-line
+      interface to the BOINC client, use boinc_cmd.</para>
   </refsect1>
   
   <refsect1>

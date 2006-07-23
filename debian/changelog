@@ -1,14 +1,15 @@
-boinc (5.4.10-2) UNRELEASED; urgency=low
-
-  * NOT RELEASED YET
+boinc (5.4.10-2) unstable; urgency=high
 
   [ Frank S. Thomas ]
+  * Removed -ffast-math from the client's optimization flags because it causes
+    a floating point exception on Alpha when the client is started.
+    (closes: #379137)
   * Added conffile /etc/boinc-client/log_flags.xml which can be used to turn
     on/off logging and debugging messages. For a detailed list of messages
     that can be turned on/off, see http://boinc.berkeley.edu/client_msgs.php
     Note that this file was renamed to cc_config.xml in BOINC (>= 5.5.2).
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 20 Jun 2006 22:38:01 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 23 Jul 2006 11:11:28 +0200
 
 boinc (5.4.10-1) unstable; urgency=low
 

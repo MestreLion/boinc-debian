@@ -45,7 +45,7 @@ ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
   DEB_OPT_FLAGS_boinc-client = -O0
 else
   DEB_OPT_FLAGS = -O2
-  DEB_OPT_FLAGS_boinc-client = -O3 -ffast-math
+  DEB_OPT_FLAGS_boinc-client = -O3
 endif
 
 CFLAGS += $(DEB_OPT_FLAGS)
@@ -119,7 +119,7 @@ clean-patched: clean-boinc-client
 	  boinc_cmd.1 \
 	  boincmgr.1 \
 	  update-boinc-applinks.1
-	  
+	
 	dh_clean \
 	  api/Makefile.in \
 	  apps/Makefile.in \
