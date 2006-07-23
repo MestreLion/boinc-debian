@@ -10,8 +10,10 @@ boinc (5.4.10-2) unstable; urgency=high
     Note that this file was renamed to cc_config.xml in BOINC (>= 5.5.2).
   * Applied patches from Peter Bailis <pbailis@gmail.com> for the boinc_cmd
     manual page. Thanks again Peter!
+  * debian/control:
+    - Added boinc-app-seti to boinc-client's Suggests field.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 23 Jul 2006 13:56:02 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 23 Jul 2006 16:44:45 +0200
 
 boinc (5.4.10-1) unstable; urgency=low
 
