@@ -8,8 +8,10 @@ boinc (5.4.10-2) unstable; urgency=high
     on/off logging and debugging messages. For a detailed list of messages
     that can be turned on/off, see http://boinc.berkeley.edu/client_msgs.php
     Note that this file was renamed to cc_config.xml in BOINC (>= 5.5.2).
+  * Applied patches from Peter Bailis <pbailis@gmail.com> for the boinc_cmd
+    manual page. Thanks again Peter!
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 23 Jul 2006 11:11:28 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 23 Jul 2006 13:56:02 +0200
 
 boinc (5.4.10-1) unstable; urgency=low
 
