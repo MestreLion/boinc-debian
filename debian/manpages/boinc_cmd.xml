@@ -17,7 +17,7 @@
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "boinc_cmd">
-  <!ENTITY dhdate      "<date>January 20, 2006</date>">
+  <!ENTITY dhdate      "<date>July 24, 2006</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -104,7 +104,9 @@
         </term>
         <listitem>
           <para>Use <replaceable>passwd</replaceable> as password for RPC
-            authentication.  (default: boinc_cmd will look for a file 'gui_rpc_auth.cfg' and use the password it contains).</para>
+            authentication. If the current working directory contains a file
+            'gui_rpc_auth.cfg', <command>boinc_cmd</command> will read the
+            password from this file.</para>
         </listitem>
       </varlistentry>
 
@@ -121,7 +123,6 @@
           <para>Show the version of the program.</para>
         </listitem>
       </varlistentry>
-
     </variablelist>
   </refsect1>
 
@@ -170,16 +171,51 @@
           <option>--result
             <replaceable>url</replaceable>
             <replaceable>result_name</replaceable>
-            {suspend | resume | abort | graphics_window | graphics_fullscreen} {--window_station ws} {--desktop dt} {--display dp}
+            {suspend | resume | abort | graphics_window | graphics_fullscreen}
+            {--window_station ws} {--desktop dt} {--display dp}
           </option>
         </term>
         <listitem>
-          <para>Do operation on a result.
-	   suspend: temporarily stop work on a result;
-	   resume: allow work on a result;
-                     abort: permanently stop work on result;
-	   graphics_window: open graphics in a window. The optional desktop/window_station (Windows) or display (X11) arguments specify the display.;
-	   graphics_fullscreen: open graphics fullscreen</para>
+          <para>Do operation on a result.</para>
+
+          <variablelist>
+	        <varlistentry>
+	          <term><option>suspend</option></term>
+	          <listitem>
+                <para>Temporarily stop work on a result.</para>
+              </listitem>
+	        </varlistentry>
+
+            <varlistentry>
+              <term><option>resume</option></term>
+              <listitem>
+                <para>Allow work on a result.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>abort</option></term>
+              <listitem>
+                <para>Permanently stop work on result.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>graphics_window</option></term>
+              <listitem>
+                <para>Open graphics in a window. The optional desktop /
+                  window_station (Windows) or display (X11) arguments
+                  specify the display.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>graphics_fullscreen</option></term>
+              <listitem>
+                <para>Open graphics fullscreen.</para>
+              </listitem>
+            </varlistentry>
+	      </variablelist>
         </listitem>
       </varlistentry>
 
@@ -192,14 +228,58 @@
           </option>
         </term>
         <listitem>
-          <para>Do operation on a project.
-	   reset: delete current work and get more;
-	   detach: delete current work and don't get more;
-                     update: contact scheduling server;
-	   suspend: stop work for project;
-	   resume: resume work for project;
-	   nomorework: finish current work but don't get more;
-	   allowmorework: undo nomorework</para>
+          <para>Do operation on a project.</para>
+
+          <variablelist>
+            <varlistentry>
+              <term><option>reset</option></term>
+              <listitem>
+                <para>Delete current work and get more.</para>
+              </listitem>
+	        </varlistentry>
+
+            <varlistentry>
+              <term><option>detach</option></term>
+              <listitem>
+                <para>Delete current work and don't get more.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>update</option></term>
+              <listitem>
+                <para>Contact scheduling server.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>suspend</option></term>
+              <listitem>
+                <para>Stop work for project.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>resume</option></term>
+              <listitem>
+                <para>Resume work for project.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>nomorework</option></term>
+              <listitem>
+                <para>Finish current work but don't get more.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>allowmorework</option></term>
+              <listitem>
+                <para>Undo <option>nomorework</option>.</para>
+              </listitem>
+            </varlistentry>
+          </variablelist>
         </listitem>
       </varlistentry>
 
@@ -211,7 +291,8 @@
           </option>
         </term>
         <listitem>
-          <para>Attach to an account via <replaceable>auth</replaceable>, the authorization key from the project.</para>
+          <para>Attach to an account via <replaceable>auth</replaceable>, the
+            authorization key from the project.</para>
         </listitem>
       </varlistentry>
 
@@ -236,10 +317,30 @@
           <option>--set_run_mode {always | auto | never}</option>
         </term>
         <listitem>
-          <para>Set run mode.
-	   always: do work (network + CPU) always
-	   auto: do work only when allowed by preferences
-	   never: don't do work (same as suspending all projects)</para>
+          <para>Set run mode.</para>
+
+          <variablelist>
+            <varlistentry>
+	          <term><option>always</option></term>
+	          <listitem>
+                <para>Do work (network + CPU) always.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>auto</option></term>
+              <listitem>
+                <para>Do work only when allowed by preferences.</para>
+              </listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>never</option></term>
+              <listitem>
+                <para>Don't do work (same as suspending all projects).</para>
+              </listitem>
+            </varlistentry>
+          </variablelist>
         </listitem>
       </varlistentry>
 
@@ -255,7 +356,8 @@
           <option>--set_network_mode {always | auto | never}</option>
         </term>
         <listitem>
-          <para>Set network mode.  Like set_run_mode but applies only to network transfers.</para>
+          <para>Set network mode. Like <option>--set_run_mode</option> but
+            applies only to network transfers.</para>
         </listitem>
       </varlistentry>
 
@@ -267,10 +369,20 @@
 
       <varlistentry>
         <term>
-          <option>--set_proxy_settings <replaceable>http_server_name</replaceable> <replaceable>http_server_port</replaceable> <replaceable>http_user_name</replaceable> <replaceable>http_user_passwd</replaceable> <replaceable>socks_server_name</replaceable> <replaceable>socks_server_port</replaceable> <replaceable>socks_version socks5_user_name</replaceable> <replaceable>socks5_user_passwd</replaceable></option>
+          <option>--set_proxy_settings
+            <replaceable>http_server_name</replaceable>
+            <replaceable>http_server_port</replaceable>
+            <replaceable>http_user_name</replaceable>
+            <replaceable>http_user_passwd</replaceable>
+            <replaceable>socks_server_name</replaceable>
+            <replaceable>socks_server_port</replaceable>
+            <replaceable>socks_version</replaceable>
+            <replaceable>socks5_user_name</replaceable>
+            <replaceable>socks5_user_passwd</replaceable>
+          </option>
         </term>
         <listitem>
-          <para>Set proxy settings.  All fields are mandantory.</para>
+          <para>Set proxy settings. All fields are mandantory.</para>
         </listitem>
       </varlistentry>
 
@@ -299,11 +411,11 @@
             <replaceable>name</replaceable>
             <replaceable>password</replaceable>
           </option>
-        <listitem>
-          <para>Instruct core client to contact an account manager server.</para>
-        </listitem>
         </term>
-
+        <listitem>
+          <para>Instruct core client to contact an account manager
+            server.</para>
+        </listitem>
       </varlistentry>
 
       <varlistentry>
@@ -321,11 +433,16 @@
         <term>
           <option>--set_screensaver_mode {on | off}
             <replaceable>blank_time</replaceable>
-            {--desktop desktop} {--window_station window_station} {--display display}
+            {--desktop desktop} {--window_station window_station}
+            {--display display}
           </option>
         </term>
         <listitem>
-          <para>Tell the core client to start or stop doing fullscreen graphics, and going to black after blank_time seconds. The optional arguments specify which desktop/windows_station (Windows) or display (X11) to use. </para>
+          <para>Tell the core client to start or stop doing fullscreen
+            graphics, and going to black after
+            <replaceable>blank_time</replaceable> seconds. The optional
+            arguments specify which desktop / windows_station (Windows) or
+            display (X11) to use.</para>
         </listitem>
       </varlistentry>
 
@@ -336,7 +453,8 @@
           </option>
         </term>
         <listitem>
-          <para>Fetch configuration at project located at <replaceable>url</replaceable>.</para>
+          <para>Fetch configuration at project located at
+            <replaceable>url</replaceable>.</para>
         </listitem>
       </varlistentry>
 
@@ -347,7 +465,8 @@
       <varlistentry>
         <term><option>--read_global_prefs_override</option></term>
         <listitem>
-          <para>Tell the core client to read the global_prefs_override.xml file and incorporate any global preferences indicated there.</para>
+          <para>Tell the core client to read the global_prefs_override.xml file
+            and incorporate any global preferences indicated there.</para>
         </listitem>
       </varlistentry>
 
