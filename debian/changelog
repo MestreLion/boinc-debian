@@ -1,8 +1,13 @@
-boinc (5.4.10-3) UNRELEASED; urgency=low
+boinc (5.4.11-1) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed,  2 Aug 2006 10:48:36 +0200
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/control:
+    - Removed Greg Norris <adric@debian.org> from the Uploaders field.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  5 Aug 2006 16:14:00 +0200
 
 boinc (5.4.10-2) unstable; urgency=medium
 
