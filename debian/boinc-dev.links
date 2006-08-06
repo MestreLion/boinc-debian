@@ -18,6 +18,7 @@ usr/include/BOINC/prefs.h           usr/share/boinc-dev/lib/prefs.h
 usr/include/BOINC/proxy_info.h      usr/share/boinc-dev/lib/proxy_info.h
 usr/include/BOINC/util.h            usr/share/boinc-dev/lib/util.h
 
+usr/include/BOINC/api/boinc_gl.h        usr/share/boinc-dev/api/boinc_gl.h
 usr/include/BOINC/api/graphics_data.h   usr/share/boinc-dev/api/graphics_data.h
 usr/include/BOINC/api/reduce.h          usr/share/boinc-dev/api/reduce.h
 usr/include/BOINC/lib/error_numbers.h   usr/share/boinc-dev/lib/error_numbers.h

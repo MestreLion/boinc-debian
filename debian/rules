@@ -45,7 +45,7 @@ ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
   DEB_OPT_FLAGS_boinc-client = -O0
 else
   DEB_OPT_FLAGS = -O2
-  DEB_OPT_FLAGS_boinc-client = -O3 -ffast-math
+  DEB_OPT_FLAGS_boinc-client = -O3
 endif
 
 CFLAGS += $(DEB_OPT_FLAGS)

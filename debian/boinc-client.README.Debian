@@ -7,9 +7,14 @@ is available on the Debian Wiki:
 
   http://wiki.debian.org/BOINC
 
+Contents:
+  1. Configuring the BOINC core client
+  2. Installing and configuring BOINC application packages
+  3. Moving a BOINC data directory to /var/lib/boinc-client
 
-Configuring the BOINC core client
----------------------------------
+
+1. Configuring the BOINC core client
+------------------------------------
 
 On Debian systems the BOINC core client is started by default after
 boot by the '/etc/init.d/boinc-client' init script. In the default
@@ -29,8 +34,33 @@ the 'boinc_cmd' console program or the graphical BOINC Manager
 for more information.
 
 
-Moving a BOINC data directory to /var/lib/boinc-client
-------------------------------------------------------
+2. Installing and configuring BOINC application packages
+--------------------------------------------------------
+
+Normally the BOINC core client downloads project's applications itself
+if they are available for the platform (e.g. i686-pc-linux-gnu) the
+client was build for. If this is not the case, one can install Debian
+packages of these applications. These packages are called
+'boinc-app-<project>' where <project> is an abbreviation of the project
+name, e.g. 'boinc-app-seti' or 'boinc-app-einstein'. To get a list of
+all available application packages run:
+
+    % apt-cache search boinc-app-*
+
+If you are using the default BOINC data directory
+'/var/lib/boinc-client' just installing 'boinc-app-<project>' packages
+is enough. If you are not using the default data directory you have to
+create some symbolic links manually. E.g if your BOINC data directory
+is '/home/john/boinc' just run
+
+    % update-boinc-applinks --create --data-dir=/home/john/boinc
+
+after the installation of the 'boinc-app-<project>' package and restart
+your BOINC core client.
+
+
+3. Moving a BOINC data directory to /var/lib/boinc-client
+---------------------------------------------------------
 
 To move an existing BOINC data directory to Debian's default directory
 follow these instructions:
@@ -50,8 +80,9 @@ follow these instructions:
      % mv -f /var/lib/boinc-client/gui_rpc_auth.cfg /etc/boinc-client/
      % ln -s /etc/boinc-client/gui_rpc_auth.cfg /var/lib/boinc-client/gui_rpc_auth.cfg
 
-    Repeat the last step for the configuration files 'global_prefs_override.xml'
-    and 'remote_hosts.cfg' if they exist in your old BOINC data directory.
+    Repeat the last step for the following configuration files if they exist in
+    your old BOINC data directory: 'global_prefs_override.xml', 'log_flags.xml',
+    and 'remote_hosts.cfg'
 
  5. Start the BOINC core client again:
      % /etc/init.d/boinc-client start
