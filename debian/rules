@@ -179,8 +179,8 @@ install-arch: build
 	      "debian/boinc-manager/usr/share/locale/$$i/LC_MESSAGES/BOINC Manager.mo"; \
 	  fi; \
 	done; 
-# The en_US po file is actually a po template, thus the corresponding
-# "BOINC Manager.mo" is empty and useless. 
+	# The en_US po file is actually a po template, thus the corresponding
+	# "BOINC Manager.mo" is empty and useless. 
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	
 	#
@@ -191,12 +191,37 @@ install-arch: build
 	    usr/lib/boinc-server/sched/`basename $$i` \
 	    usr/share/boinc-server/sched/`basename $$i`; \
 	done;
-# Fix some file permissions.
+	
+	# Fix some file permissions.
 	chmod +x \
 	  debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php \
 	  debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php \
 	  debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php \
 	  debian/boinc-server/usr/share/boinc-server/tools/watch_tcp
+	chmod -x \
+	  debian/boinc-server/usr/share/boinc-server/html/user/forum_search.php \
+	  debian/boinc-server/usr/share/boinc-server/html/user/forum_search_action.php \
+	  debian/boinc-server/usr/share/boinc-server/html/user/forum_thread_status.php \
+	  debian/boinc-server/usr/share/boinc-server/html/user/forum_thread_vote.php
+	
+	# Fix PHP shebang for executable PHP scripts.
+	sed -i -e '1 s/\/usr\/local\/bin\/php/\/usr\/bin\/php/' \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/make_fake_tables.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/migrate_tables.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/mungetest.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/update_forum_activities.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/update_profile_pages.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/update_uotd.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php \
+	  debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php
+	
+	# Remove Python shebang from Boinc module files that are not scripts.
+	sed -i -e '1 d' \
+	  debian/boinc-server/usr/share/python-support/Boinc/add_util.py \
+	  debian/boinc-server/usr/share/python-support/Boinc/boincxml.py \
+	  debian/boinc-server/usr/share/python-support/Boinc/configxml.py \
+	  debian/boinc-server/usr/share/python-support/Boinc/projectxml.py
 
 binary-arch: build install-arch
 	dh_testdir -a
