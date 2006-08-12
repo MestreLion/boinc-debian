@@ -8,87 +8,28 @@
 ## DP: we don't loose functionality here.
 
 @DPATCH@
-diff -urNad boinc-5.4.9~/clientgui/hyperlink.cpp boinc-5.4.9/clientgui/hyperlink.cpp
---- boinc-5.4.9~/clientgui/hyperlink.cpp	2006-03-09 11:21:07.000000000 +0100
-+++ boinc-5.4.9/clientgui/hyperlink.cpp	2006-05-06 16:10:25.000000000 +0200
-@@ -166,77 +166,9 @@
- // private functions
+diff -urNad boinc-5.5.12~/clientgui/hyperlink.cpp boinc-5.5.12/clientgui/hyperlink.cpp
+--- boinc-5.5.12~/clientgui/hyperlink.cpp	2006-07-22 02:58:19.000000000 +0200
++++ boinc-5.5.12/clientgui/hyperlink.cpp	2006-08-12 11:36:06.000000000 +0200
+@@ -213,20 +213,7 @@
+         //      variable.
+         // 2. Try to find something to use.
  
- void wxHyperLink::ExecuteLink (const wxString &strLink) {
--    wxString cmd;
--    wxString strMimeType = wxEmptyString;
--    bool mime_type_found = false;
--
--    if      (strLink.StartsWith(wxT("http://")))
--        strMimeType = wxT("text/html");
--    else if (strLink.StartsWith(wxT("ftp://")))
--        strMimeType = wxT("text/html");
--    else if (strLink.StartsWith(wxT("mailto:")))
--        strMimeType = wxT("message/rfc822");
--    else
--        return;
--
--    wxFileType* ft = wxTheMimeTypesManager->GetFileTypeFromMimeType(strMimeType);
--    if (ft) {
--        if (ft->GetOpenCommand(&cmd, wxFileType::MessageParameters(strLink))) {
--#ifdef __WXMAC__
--            cmd.Replace(wxT("<"), wxEmptyString);
--            cmd.Prepend(wxT("open ")); 
--#else
--            cmd.Replace(wxT("file://"), wxEmptyString);
--#endif
--            mime_type_found = true;
--            ::wxExecute(cmd);
--        }
--        delete ft;
--    }
--
--#if defined(__WXGTK__) || defined(__WXMOTIF__)
--    if (!mime_type_found) {
 -        cmd = ::wxGetenv(wxT("BROWSER"));
 -        if(cmd.IsEmpty()) {
--            wxString strDialogTitle = wxEmptyString;
--            wxString strDialogMessage = wxEmptyString;
--
--            // %s is the application name
--            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
--            strDialogTitle.Printf(
--                _("%s - Can't find web browser"),
--                wxGetApp().GetBrand()->GetApplicationName().c_str()
--            );
--
--            // 1st %s is the application name
--            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
--            // 2nd %s is the URL that the browser is supposed to
--            //    open.
--            // 3rd %s is the application name
--            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
--            strDialogMessage.Printf(
--                _("%s tried to display the web page\n"
--                "\t%s\n"
--                "but couldn't find a web browser.\n"
--                "To fix this, set the environment variable\n"
--                "BROWSER to the path of your web browser,\n"
--                "then restart the %s."),
--                wxGetApp().GetBrand()->GetApplicationName().c_str(),
--                strLink.c_str(),
--                wxGetApp().GetBrand()->GetApplicationName().c_str()
--            );
--
--            ::wxMessageBox(
--                strDialogMessage,
--                strDialogTitle,
--                wxOK | wxICON_INFORMATION
--            );
--        } else {
--            cmd += wxT(" ") + strLink;
--			::wxExecute(cmd,wxEXEC_ASYNC);
+-            fprintf(stderr, "User defined browser not found...\n");
+-            if (       wxFile::Exists(wxT("/usr/bin/firefox"))) {
+-		fprintf(stderr, "Firefox found...\n");
+-                cmd = wxT("/usr/bin/firefox");
+-            } else if (wxFile::Exists(wxT("/usr/bin/konqueror"))) {
+-		fprintf(stderr, "Konqueror found...\n");
+-                cmd = wxT("/usr/bin/konqueror");
+-            } else if (wxFile::Exists(wxT("/usr/bin/mozilla"))) {
+-		fprintf(stderr, "Mozilla found...\n");
+-                cmd = wxT("/usr/bin/mozilla");
+-            }
 -        }
--    }
--#endif
-+    wxString cmd = wxT("sensible-browser");
-+    cmd += wxT(" ") + strLink;
-+    ::wxExecute(cmd,wxEXEC_ASYNC);
- }
++        cmd = wxT("sensible-browser");
  
- const char *BOINC_RCSID_d587835b7e="$Id: hyperlink.cpp,v 1.11 2006/03/09 10:21:07 rwalton Exp $";
+         cmd += wxT(" ") + strLink;
+         if (!::wxExecute(cmd, wxEXEC_ASYNC)) {

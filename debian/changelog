@@ -1,11 +1,16 @@
-boinc (5.5.10-1) experimental; urgency=low
+boinc (5.5.12-1) experimental; urgency=low
 
   * NOT RELEASED YET
 
   [ Frank S. Thomas ]
   * New experimental upstream release.
+  * Updates for the new Python policy:
+    - Added python-support (>= 0.4) to Build-Depends.
+    - Replaced dh_python with dh_pysupport in debian/rules.
+  * debian/patches/:
+    - Updated 07_use-sensible-browser.dpatch for the new release.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 20 Jun 2006 22:38:01 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 12 Aug 2006 11:37:31 +0200
 
 boinc (5.4.10-2) unstable; urgency=medium
 
