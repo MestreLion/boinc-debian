@@ -3,4 +3,4 @@ debian/extra/gui_rpc_auth.cfg           etc/boinc-client
 debian/extra/log_flags.xml              etc/boinc-client
 debian/extra/remote_hosts.cfg           etc/boinc-client
 debian/extra/update-boinc-applinks      usr/bin
-debian/tmp/usr/bin/boinc_cmd            usr/bin
+lib/boinc_cmd                           usr/bin
