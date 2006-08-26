@@ -1,7 +1,5 @@
 boinc (5.4.11-1) unstable; urgency=low
 
-  * NOT RELEASED YET
-
   [ Frank S. Thomas ]
   * New upstream release.
   * Added the header file lib/gui_rpc_client.h to the boinc-dev package as
@@ -21,8 +19,12 @@ boinc (5.4.11-1) unstable; urgency=low
       client was compiled for and it also sets the platform name from
       client_state.xml as the valid platform name which will be used for
       scheduler requests. This patch only affects AMD64. (related to: #366741)
+  * Explain in boinc-client's README.Debian how to modify the BOINC core
+    client so that it downloads 32bit applications on AMD64. The
+    01_amd64-disable-platform-reset.dpatch patch is mandatory for this
+    procedure to work correctly. (also related to: #366741, LP#51948)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 26 Aug 2006 14:39:01 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 26 Aug 2006 16:33:00 +0200
 
 boinc (5.4.10-2) unstable; urgency=medium
 
