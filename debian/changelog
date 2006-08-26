@@ -9,12 +9,20 @@ boinc (5.4.11-1) unstable; urgency=low
   * debian/control:
     - Removed Greg Norris <adric@debian.org> from the Uploaders field.
   * debian/rules:
-    - Applied patch from Robert Millan which simplifies the platform override
-      for i386. We are now using --target instead of the --build and --host
-      switches. This also needed some changes in boinc-client.install and
-      boinc-manager.install. Thanks Robert for the patch. (closes: #383871)
+    - Applied patch from Robert Millan <rmh@aybabtu.com> which simplifies the
+      platform override for i386. We are now using --target instead of the
+      --build and --host switches. This also needed some changes in
+      boinc-client.install and boinc-manager.install. Thanks Robert for the
+      patch. (closes: #383871)
+  * debian/patches/:
+    - Added 01_amd64-disable-platform-reset.dpatch from Robert Millan
+      <rmh@aybabtu.com>. This patch prevents that projects are reset when the
+      platform name in client_state.xml does not match the platform name the
+      client was compiled for and it also sets the platform name from
+      client_state.xml as the valid platform name which will be used for
+      scheduler requests. This patch only affects AMD64. (related to: #366741)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 24 Aug 2006 22:27:59 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 26 Aug 2006 14:39:01 +0200
 
 boinc (5.4.10-2) unstable; urgency=medium
 
