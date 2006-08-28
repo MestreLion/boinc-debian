@@ -1,4 +1,4 @@
-boinc (5.5.12-1) experimental; urgency=low
+boinc (5.5.16-1) experimental; urgency=low
 
   * NOT RELEASED YET
 
@@ -10,7 +10,7 @@ boinc (5.5.12-1) experimental; urgency=low
   * debian/patches/:
     - Updated 07_use-sensible-browser.dpatch for the new release.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 12 Aug 2006 11:37:31 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 27 Aug 2006 23:27:43 +0200
 
 boinc (5.4.10-2) unstable; urgency=medium
 
