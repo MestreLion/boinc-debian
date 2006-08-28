@@ -170,8 +170,8 @@ install-arch: build
 	      "debian/boinc-manager/usr/share/locale/$$i/LC_MESSAGES/BOINC Manager.mo"; \
 	  fi; \
 	done; 
-# The en_US po file is actually a po template, thus the corresponding
-# "BOINC Manager.mo" is empty and useless. 
+	# The en_US po file is actually a po template, thus the corresponding
+	# "BOINC Manager.mo" is empty and useless. 
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 
 binary-arch: build install-arch
