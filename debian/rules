@@ -143,6 +143,8 @@ clean-patched: clean-boinc-client
 	  aclocal.m4 \
 	  config.h.in \
 	  configure
+	
+	debconf-updatepo
 
 clean-boinc-client:
 	dh_testdir
@@ -228,6 +230,7 @@ binary-arch: build install-arch
 	dh_testroot
 	dh_installchangelogs -a
 	dh_installdocs -a
+	dh_installdebconf -a
 	dh_installmenu -a
 	dh_desktop -a
 	dh_installinit -a

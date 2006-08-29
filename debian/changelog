@@ -4,13 +4,15 @@ boinc (5.5.16-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * New experimental upstream release.
+  * Use debconf to ask whether the BOINC data directory should be removed
+    while purging the boinc-client package.
   * Updates for the new Python policy:
     - Added python-support (>= 0.4) to Build-Depends.
     - Replaced dh_python with dh_pysupport in debian/rules.
   * debian/patches/:
     - Updated 07_use-sensible-browser.dpatch for the new release.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 27 Aug 2006 23:27:43 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 29 Aug 2006 22:40:47 +0200
 
 boinc (5.4.10-2) unstable; urgency=medium
 

@@ -1,0 +1,4 @@
+Template: boinc-client/remove_boinc_dir
+Type: boolean
+Default: false
+_Description: Remove the BOINC data directory?

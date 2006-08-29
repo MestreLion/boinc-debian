@@ -3,6 +3,9 @@
 
 set -e
 
+# Source the debconf shell library.
+. /usr/share/debconf/confmodule
+
 BOINC_DIR=/var/lib/boinc-client
 CONF_DIR=/etc/boinc-client
 

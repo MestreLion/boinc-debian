@@ -3,18 +3,31 @@
 
 set -e
 
+# Source the debconf shell library.
+. /usr/share/debconf/confmodule
+
 BOINC_DIR=/var/lib/boinc-client
+
+remove_boinc_dir_and_user()
+{
+    if [ -d $BOINC_DIR ]; then
+        rm -r $BOINC_DIR
+    fi
+    if getent passwd boinc >/dev/null; then
+        deluser boinc
+    fi
+    if getent group boinc >/dev/null; then
+        delgroup boinc
+    fi
+}
 
 case "$1" in
     purge)
-        if [ -d $BOINC_DIR ]; then
-            rm -r $BOINC_DIR
-        fi
-        if getent passwd boinc >/dev/null; then
-            deluser boinc
-        fi
-        if getent group boinc >/dev/null; then
-            delgroup boinc
+        db_input high boinc-client/remove_boinc_dir || true
+        db_go
+        db_get boinc-client/remove_boinc_dir || true
+        if [ "$RET" = "true" ]; then
+            remove_boinc_dir_and_user
         fi
     ;;
 
