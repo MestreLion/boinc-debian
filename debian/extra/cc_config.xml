@@ -25,5 +25,6 @@
     <poll_debug>0</poll_debug>
     <guirpc_debug>0</guirpc_debug>
     <scrsave_debug>0</scrsave_debug>
+    <app_msg_debug>0</app_msg_debug>
   </log_flags>
 </cc_config>
