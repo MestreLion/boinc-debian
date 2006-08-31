@@ -1,3 +1,11 @@
+boinc (5.4.11-2) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+  * debian/copyright:
+    - Added copyright note about the Debian packaging.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 28 Aug 2006 18:37:13 +0200
+
 boinc (5.4.11-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
