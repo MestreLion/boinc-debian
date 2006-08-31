@@ -16,22 +16,16 @@ endif
 
 # Most BOINC projects only provide their applications for i686-pc-linux-gnu.
 # If the core client reports that it was built for i486-pc-linux-gnu it won't
-# download any application or work units, so we use i686-linux-gnu as argument
-# for configure's --build and --host switches on i386 hosts.
+# download any application or work units, so we use --target i686-linux-gnu
+# to override it on i386 hosts.
 ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
-  DEB_HOST_GNU_TYPE = i686-linux-gnu
-endif
-ifeq ($(DEB_BUILD_GNU_TYPE), i486-linux-gnu)
-  DEB_BUILD_GNU_TYPE = i686-linux-gnu
+  TYPE_FLAGS += --target i686-linux-gnu
 endif
 
 # This is the same as above, but only for compatibility with sarge's version
 # of dpkg-architecture.
 ifeq ($(DEB_HOST_GNU_TYPE), i386-linux)
-  DEB_HOST_GNU_TYPE = i686-linux-gnu
-endif
-ifeq ($(DEB_BUILD_GNU_TYPE), i386-linux)
-  DEB_BUILD_GNU_TYPE = i686-linux-gnu
+  TYPE_FLAGS += --target i686-linux-gnu
 endif
 
 CFLAGS += -g -Wall
@@ -172,9 +166,6 @@ install-arch: build
 	#
 	# boinc-manager
 	#
-	install -D debian/tmp/usr/bin/boinc_gui \
-	  debian/boinc-manager/usr/bin/boincmgr
-	
 	for i in `ls locale/client`; do \
 	  if [ -f "locale/client/$$i/BOINC Manager.mo" ]; then \
 	    install -D -m644 "locale/client/$$i/BOINC Manager.mo" \
@@ -231,6 +222,7 @@ binary-arch: build install-arch
 	dh_installchangelogs -a
 	dh_installdocs -a
 	dh_installdebconf -a
+	dh_installexamples -a
 	dh_installmenu -a
 	dh_desktop -a
 	dh_installinit -a

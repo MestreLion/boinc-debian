@@ -1,7 +1,7 @@
-debian/extra/cc_config.xml              etc/boinc-client
-debian/extra/global_prefs_override.xml  etc/boinc-client
-debian/extra/gui_rpc_auth.cfg           etc/boinc-client
-debian/extra/remote_hosts.cfg           etc/boinc-client
-debian/extra/update-boinc-applinks      usr/bin
-debian/tmp/usr/bin/boinc_cmd            usr/bin
-debian/overrides/boinc-client           usr/share/lintian/overrides
+debian/conffiles/cc_config.xml              etc/boinc-client
+debian/conffiles/global_prefs_override.xml  etc/boinc-client
+debian/conffiles/gui_rpc_auth.cfg           etc/boinc-client
+debian/conffiles/remote_hosts.cfg           etc/boinc-client
+debian/extra/update-boinc-applinks  usr/bin
+debian/overrides/boinc-client       usr/share/lintian/overrides
+lib/boinc_cmd                       usr/bin

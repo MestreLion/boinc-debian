@@ -11,6 +11,7 @@ Contents:
   1. Configuring the BOINC core client
   2. Installing and configuring BOINC application packages
   3. Moving a BOINC data directory to /var/lib/boinc-client
+  4. Making the BOINC core client usable on AMD64
 
 
 1. Configuring the BOINC core client
@@ -75,14 +76,50 @@ follow these instructions:
     boinc:
      % chown -R boinc:boinc /var/lib/boinc-client
 
- 4. Move configuration files to /etc/boinc-client/ and create symlinks
+ 4. Move configuration files to '/etc/boinc-client/' and create symlinks
     for the core client:
      % mv -f /var/lib/boinc-client/gui_rpc_auth.cfg /etc/boinc-client/
      % ln -s /etc/boinc-client/gui_rpc_auth.cfg /var/lib/boinc-client/gui_rpc_auth.cfg
 
-    Repeat the last step for the following configuration files if they exist in
-    your old BOINC data directory: 'global_prefs_override.xml', 'cc_config.xml',
-    and 'remote_hosts.cfg'
+    Repeat the last step for the following configuration files if they
+    exist in your old BOINC data directory: 'global_prefs_override.xml',
+    'log_flags.xml', and 'remote_hosts.cfg'
 
  5. Start the BOINC core client again:
+     % /etc/init.d/boinc-client start
+
+
+4. Making the BOINC core client usable on AMD64
+-----------------------------------------------
+
+Most BOINC projects do not support AMD64 and do not provide
+applications for it. You know that a project does not support AMD64
+when your client receives a message from the BOINC server which looks
+like this:
+
+    "Message from server: platform 'x86_64-pc-linux-gnu' not found"
+
+If you still want to use the AMD64 BOINC core client you can now
+install 'boinc-app-*' packages (see paragraph 2.) which use the
+anonymous platform mechanism or additionally modify the core client to
+donwload 32bit applications which are available for almost all
+projects. The following instructions explains the latter option:
+
+ 1. Install the libc6-i386 package (the 32bit GNU C library for AMD64)
+    since the BOINC core client will download and run 32bit
+    applications:
+     % apt-get install libc6-i386
+
+ 2. Stop the BOINC core client:   
+     % /etc/init.d/boinc-client stop
+
+ 3. Replace the string 'x86_64-pc-linux-gnu' with 'i686-pc-linux-gnu'
+    in the XML element <platform_name> in your client state file
+    '/var/lib/boinc-client/client_state.xml'. You can use this sed
+    snippet to do this for you:
+     % sed -i -e \
+         's/<platform_name>x86_64-pc-linux-gnu<\/platform_name>/<platform_name>i686-pc-linux-gnu<\/platform_name>/' \
+         /var/lib/boinc-client/client_state.xml
+
+ 4. Start the BOINC core client again:
      % /etc/init.d/boinc-client start

@@ -22,6 +22,7 @@ usr/include/BOINC/api/boinc_gl.h        usr/share/boinc-dev/api/boinc_gl.h
 usr/include/BOINC/api/graphics_data.h   usr/share/boinc-dev/api/graphics_data.h
 usr/include/BOINC/api/reduce.h          usr/share/boinc-dev/api/reduce.h
 usr/include/BOINC/lib/error_numbers.h   usr/share/boinc-dev/lib/error_numbers.h
+usr/include/BOINC/lib/gui_rpc_client.h  usr/share/boinc-dev/lib/gui_rpc_client.h
 usr/include/BOINC/lib/std_fixes.h       usr/share/boinc-dev/lib/std_fixes.h
 
 usr/lib/libboinc.a                  usr/share/boinc-dev/lib/libboinc.a
