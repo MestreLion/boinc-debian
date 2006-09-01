@@ -1,6 +1,5 @@
 <cc_config>
   <options>
-    <save_stats_days>365</save_stats_days>
   </options>
   <log_flags>
     <task>1</task>
@@ -26,5 +25,7 @@
     <guirpc_debug>0</guirpc_debug>
     <scrsave_debug>0</scrsave_debug>
     <app_msg_debug>0</app_msg_debug>
+    <mem_usage_debug>0</mem_usage_debug>
+    <network_status_debug>0</network_status_debug>
   </log_flags>
 </cc_config>

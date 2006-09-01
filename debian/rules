@@ -146,6 +146,8 @@ clean-boinc-client:
 	rm -f build-stamp-boinc-client
 	dh_clean client/boinc_client.optimized
 
+BOINC_SERVER_DIR=debian/boinc-server/usr/share/boinc-server
+
 install: install-arch
 install-arch: build
 	dh_testdir
@@ -187,27 +189,27 @@ install-arch: build
 	
 	# Fix some file permissions.
 	chmod +x \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php \
-	  debian/boinc-server/usr/share/boinc-server/tools/watch_tcp
+	  $(BOINC_SERVER_DIR)/html/ops/db_update.php \
+	  $(BOINC_SERVER_DIR)/html/ops/watchdogs.php \
+	  $(BOINC_SERVER_DIR)/html/ops/wd_nresults_changing.php \
+	  $(BOINC_SERVER_DIR)/tools/watch_tcp
 	chmod -x \
-	  debian/boinc-server/usr/share/boinc-server/html/user/forum_search.php \
-	  debian/boinc-server/usr/share/boinc-server/html/user/forum_search_action.php \
-	  debian/boinc-server/usr/share/boinc-server/html/user/forum_thread_status.php \
-	  debian/boinc-server/usr/share/boinc-server/html/user/forum_thread_vote.php
+	  $(BOINC_SERVER_DIR)/html/user/forum_search.php \
+	  $(BOINC_SERVER_DIR)/html/user/forum_search_action.php \
+	  $(BOINC_SERVER_DIR)/html/user/forum_thread_status.php \
+	  $(BOINC_SERVER_DIR)/html/user/forum_thread_vote.php
 	
 	# Fix PHP shebang for executable PHP scripts.
 	sed -i -e '1 s/\/usr\/local\/bin\/php/\/usr\/bin\/php/' \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/db_update.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/make_fake_tables.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/migrate_tables.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/mungetest.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/update_forum_activities.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/update_profile_pages.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/update_uotd.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/watchdogs.php \
-	  debian/boinc-server/usr/share/boinc-server/html/ops/wd_nresults_changing.php
+	  $(BOINC_SERVER_DIR)/html/ops/db_update.php \
+	  $(BOINC_SERVER_DIR)/html/ops/make_fake_tables.php \
+	  $(BOINC_SERVER_DIR)/html/ops/migrate_tables.php \
+	  $(BOINC_SERVER_DIR)/html/ops/mungetest.php \
+	  $(BOINC_SERVER_DIR)/html/ops/update_forum_activities.php \
+	  $(BOINC_SERVER_DIR)/html/ops/update_profile_pages.php \
+	  $(BOINC_SERVER_DIR)/html/ops/update_uotd.php \
+	  $(BOINC_SERVER_DIR)/html/ops/watchdogs.php \
+	  $(BOINC_SERVER_DIR)/html/ops/wd_nresults_changing.php
 	
 	# Remove Python shebang from Boinc module files that are not scripts.
 	sed -i -e '1 d' \
@@ -219,7 +221,7 @@ install-arch: build
 binary-arch: build install-arch
 	dh_testdir -a
 	dh_testroot
-	dh_installchangelogs -a
+	dh_installchangelogs -a -k checkin_notes
 	dh_installdocs -a
 	dh_installdebconf -a
 	dh_installexamples -a

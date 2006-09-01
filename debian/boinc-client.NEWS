@@ -1,0 +1,17 @@
+boinc (5.6.1-1) experimental; urgency=low
+
+    The configuration file "log_flags.xml" of the BOINC 5.4 series was renamed
+    during the development of the 5.6 series to "cc_config.xml". Also the
+    syntax of this file was changed.
+    
+    If you have made local changes to /etc/boinc-client/log_flags.xml you may
+    want to migrate those changes to the new /etc/boinc-client/cc_config.xml.
+    See http://boinc.berkeley.edu/client_msgs.php for full list of available
+    configuration options and a description of it's format.
+
+    After updating the new /etc/boinc-client/cc_config.xml file, it is safe to
+    remove the old /etc/boinc-client/log_flags.xml.dpkg-bak from your system.
+    If you did not changed the old configuration file locally, it will be
+    removed from your system automatically by the boinc-client package.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  1 Sep 2006 15:29:18 +0200

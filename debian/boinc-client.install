@@ -5,3 +5,4 @@ debian/conffiles/remote_hosts.cfg           etc/boinc-client
 debian/extra/update-boinc-applinks  usr/bin
 debian/overrides/boinc-client       usr/share/lintian/overrides
 debian/tmp/usr/bin/boinc_cmd        usr/bin
+debian/tmp/usr/bin/switcher         usr/lib/boinc-client
