@@ -19,13 +19,13 @@ endif
 # download any application or work units, so we use --target i686-linux-gnu
 # to override it on i386 hosts.
 ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
-  TYPE_FLAGS += --target i686-linux-gnu
+  TYPE_FLAGS += --target i686-linux-gnu --program-prefix=""
 endif
 
 # This is the same as above, but only for compatibility with sarge's version
 # of dpkg-architecture.
 ifeq ($(DEB_HOST_GNU_TYPE), i386-linux)
-  TYPE_FLAGS += --target i686-linux-gnu
+  TYPE_FLAGS += --target i686-linux-gnu --program-prefix=""
 endif
 
 CFLAGS += -g -Wall
