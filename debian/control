@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <steffen_moeller@gmx.de>, Frank S. Thomas <frank@thomas-alfeld.de>, Christoph Martin <christoph.martin@uni-mainz.de>
 Standards-Version: 3.7.2
-Build-Depends: debhelper (>= 5), dpatch, python-support (>= 0.4), po-debconf, libmysqlclient15-dev, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.13.2) | libcurl-ssl-dev, freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), autotools-dev, docbook2x, docbook-xml, dh-buildinfo
+Build-Depends: debhelper (>= 5), dpatch, python-support (>= 0.4.2), po-debconf, dh-buildinfo, docbook2x, docbook-xml, autotools-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), libmysqlclient15-dev, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.13.2) | libcurl-ssl-dev, freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
 
 Package: boinc-client
 Section: net
@@ -58,7 +58,7 @@ Description: development files to build applications for BOINC projects
 Package: boinc-server
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python, python-mysqldb, mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php4 | php5, php4-cli | php5-cli, php4-mysql | php5-mysql
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python-mysqldb, mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php4 | php5, php4-cli | php5-cli, php4-mysql | php5-mysql
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
