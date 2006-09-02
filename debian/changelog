@@ -7,6 +7,9 @@ boinc (5.6.1-1) experimental; urgency=low
   * Updates for the new Python policy:
     - Added python-support (>= 0.4.2) to Build-Depends.
     - Replaced dh_python with dh_pysupport in debian/rules.
+  * debian/control:
+    - Added "csh | c-shell" to boinc-server's Depends field to since two
+      scripts in boinc-server use csh as interpreter.
 
   +++ Changes suitable for the trunk branch:
 
@@ -28,11 +31,11 @@ boinc (5.6.1-1) experimental; urgency=low
     they are now handled and installed by the upstream makefiles.
   * Added debian/boinc-client.preinst which removes the obsolete conffile
     /etc/boinc-client/log_flags.xml if it wasn't modified locally.
-  * Added debian/boinc-client.NEWS which informs the user that the conffile 
+  * Added debian/boinc-client.NEWS which informs the user that the conffile
     /etc/boinc-client/log_flags.xml is now obsolete and is superseded by the
     new conffile /etc/boinc-client/cc_config.xml.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  2 Sep 2006 13:12:55 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  2 Sep 2006 15:58:04 +0200
 
 boinc (5.4.11-1) unstable; urgency=low
 
