@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: pkg-boinc-devel@lists.alioth.debian.org\n"
-"POT-Creation-Date: 2006-08-29 22:39+0200\n"
+"POT-Creation-Date: 2006-09-02 12:10+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,5 +19,25 @@ msgstr ""
 #. Type: boolean
 #. Description
 #: ../boinc-client.templates:1001
-msgid "Remove the BOINC data directory?"
+msgid "Do you want to remove the BOINC data directory?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../boinc-client.templates:1001
+msgid ""
+"The BOINC data directory /var/lib/boinc-client contains the information to "
+"which projects the BOINC core client is attached, the work unit cache and "
+"several other data.  If you no longer need this data, this is your chance to "
+"remove them."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../boinc-client.templates:1001
+msgid ""
+"If no longer have need of the data being stored in the BOINC data directory, "
+"you should choose this option.  If you want to hold this data for another "
+"time, or if you would rather handle this process manually, you should refuse "
+"this option."
 msgstr ""
