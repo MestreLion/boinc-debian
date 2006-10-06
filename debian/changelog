@@ -1,6 +1,9 @@
 boinc (5.4.11-2) unstable; urgency=low
 
-  * NOT RELEASED YET
+  * Use debconf to ask whether the default BOINC data directory
+    /var/lib/boinc-client should be removed while purging the boinc-client
+    package. The wording of the template was taken from the
+    dbconfig-common/purge template.
   * debian/control:
     - Added po-debconf to Build-Depends because debconf-updatepo is called in
       the clean target of debian/rules.
@@ -15,7 +18,7 @@ boinc (5.4.11-2) unstable; urgency=low
   * debian/copyright:
     - Added copyright note about the Debian packaging.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  6 Oct 2006 09:34:28 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  6 Oct 2006 10:23:19 +0200
 
 boinc (5.4.11-1) unstable; urgency=low
 

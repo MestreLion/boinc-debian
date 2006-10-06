@@ -1,0 +1,13 @@
+Template: boinc-client/remove_boinc_dir
+Type: boolean
+Default: false
+_Description: Do you want to remove the BOINC data directory?
+ The BOINC data directory /var/lib/boinc-client contains the information to
+ which projects the BOINC core client is attached, the work unit cache and
+ several other data.  If you no longer need this data, this is your chance to
+ remove them.
+ .
+ If no longer have need of the data being stored in the BOINC data directory,
+ you should choose this option.  If you want to hold this data for another
+ time, or if you would rather handle this process manually, you should refuse
+ this option.
