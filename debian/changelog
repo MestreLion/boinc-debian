@@ -1,10 +1,21 @@
-boinc (5.4.11-2) UNRELEASED; urgency=low
+boinc (5.4.11-2) unstable; urgency=low
 
   * NOT RELEASED YET
+  * debian/control:
+    - Added po-debconf to Build-Depends because debconf-updatepo is called in
+      the clean target of debian/rules.
+    - Added XS-Vcs-Svn field to the source stanza.
+    - Changed order of Build-Depends: List packages that are needed for the
+      packaging first, then list packages that are needed to compile the
+      upstream source.
+  * debian/rules:
+    - When using the --target configure option also append --program-prefix=""
+      to avoid that programs are prefixed with "i686-pc-linux-gnu-".
+    - Install the checkin_notes file as upstream changelog.
   * debian/copyright:
     - Added copyright note about the Debian packaging.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 28 Aug 2006 18:37:13 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  6 Oct 2006 09:34:28 +0200
 
 boinc (5.4.11-1) unstable; urgency=low
 
