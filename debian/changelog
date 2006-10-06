@@ -1,5 +1,6 @@
 boinc (5.4.11-2) unstable; urgency=low
 
+  [ Frank S. Thomas ]
   * Use debconf to ask whether the default BOINC data directory
     /var/lib/boinc-client should be removed while purging the boinc-client
     package. The wording of the template was taken from the
@@ -18,7 +19,7 @@ boinc (5.4.11-2) unstable; urgency=low
   * debian/copyright:
     - Added copyright note about the Debian packaging.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  6 Oct 2006 10:23:19 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  6 Oct 2006 10:35:17 +0200
 
 boinc (5.4.11-1) unstable; urgency=low
 
