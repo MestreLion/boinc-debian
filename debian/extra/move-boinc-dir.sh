@@ -26,13 +26,13 @@ fi
 BOINC_DIR=/var/lib/boinc-client
 CONF_DIR=/etc/boinc-client
 
-move_configfile_and_symlink()
+mv_conffile()
 {
-    if [ ! -L $BOINC_DIR/$1 -a -f $BOINC_DIR/$1 ]; then
-        mv -f $BOINC_DIR/$1 $CONF_DIR/$1
+    if [ ! -L "$BOINC_DIR/$1" -a -f "$BOINC_DIR/$1" ]; then
+        mv -f "$BOINC_DIR/$1" "$CONF_DIR/$1"
     fi
-    ln -sf $CONF_DIR/$1 $BOINC_DIR/$1
-    chown boinc:boinc $BOINC_DIR/$1 || true
+    ln -sf "$CONF_DIR/$1" "$BOINC_DIR/$1"
+    chown boinc:boinc "$BOINC_DIR/$1" || true
 }
 
 # Stop the BOINC core client.
@@ -48,10 +48,10 @@ chown -R boinc:boinc $BOINC_DIR || true
 
 # Move old configuration files to /etc/boinc-client/ and
 # create symlinks for the BOINC core client.
-move_configfile_and_symlink global_prefs_override.xml
-move_configfile_and_symlink gui_rpc_auth.cfg
-move_configfile_and_symlink log_flags.xml
-move_configfile_and_symlink remote_hosts.cfg
+mv_conffile global_prefs_override.xml
+mv_conffile gui_rpc_auth.cfg
+mv_conffile log_flags.xml
+mv_conffile remote_hosts.cfg
 
 # Start the BOINC core client again.
 invoke-rc.d boinc-client start
