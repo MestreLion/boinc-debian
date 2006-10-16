@@ -1,3 +1,11 @@
+boinc (5.4.11-3) unstable; urgency=low
+
+  [ Debconf translations ]
+  * Added French (fr.po) by Cyril Brulebois
+    <cyril.brulebois@enst-bretagne.fr>. (closes: #393499)
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 16 Oct 2006 20:07:37 +0200
+
 boinc (5.4.11-2) unstable; urgency=low
 
   [ Frank S. Thomas ]
