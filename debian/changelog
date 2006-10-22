@@ -1,15 +1,16 @@
 boinc (5.4.11-3) unstable; urgency=low
 
   [ Frank S. Thomas ]
-  * clientgui/ValidateEmailAddress.cpp: Bugfix to validate e-mail addresses
-    that contain '+' in the local-part. Patch has been taken from upstream
-    CVS. (closes: #393948)
+  * clientgui/ValidateEmailAddress.cpp: Use a much simpler regex to validate
+    e-mail addresses. This also allows addresses that contain '+' in their
+    local-part. This regex is also used in BOINC's PHP function
+    is_valid_email_address() in html/inc/email.inc. (closes: #393948)
 
   [ Debconf translations ]
   * Added French (fr.po) by Cyril Brulebois
     <cyril.brulebois@enst-bretagne.fr>. (closes: #393499)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 20 Oct 2006 12:39:15 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 22 Oct 2006 17:58:01 +0200
 
 boinc (5.4.11-2) unstable; urgency=low
 
