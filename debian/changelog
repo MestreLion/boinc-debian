@@ -1,12 +1,11 @@
-boinc (5.4.11-4) UNRELEASED; urgency=low
-
-  * NOT RELEASED YET
+boinc (5.4.11-4) unstable; urgency=low
 
   [ Debconf translations ]
   * Added German (de.po) by Matthias Julius <mdeb@julius-net.net>.
     (closes: #400228)
+  * Added Czech (cs.po) by Jakub Kasparec <mr.k@centrum.cz>. (closes: #401923)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 27 Nov 2006 17:28:32 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed,  6 Dec 2006 23:07:26 +0100
 
 boinc (5.4.11-3) unstable; urgency=low
 

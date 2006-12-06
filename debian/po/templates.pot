@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: pkg-boinc-devel@lists.alioth.debian.org\n"
-"POT-Creation-Date: 2006-09-02 12:10+0200\n"
+"POT-Creation-Date: 2006-11-27 18:06+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,12 +18,20 @@ msgstr ""
 
 #. Type: boolean
 #. Description
+#. HINT: The wording of this template is similar to the wording of the
+#. dbconfig-common/purge template. Please have a look at the translation for
+#. the dbconfig-common/purge template first before translating this template,
+#. thanks.
 #: ../boinc-client.templates:1001
 msgid "Do you want to remove the BOINC data directory?"
 msgstr ""
 
 #. Type: boolean
 #. Description
+#. HINT: The wording of this template is similar to the wording of the
+#. dbconfig-common/purge template. Please have a look at the translation for
+#. the dbconfig-common/purge template first before translating this template,
+#. thanks.
 #: ../boinc-client.templates:1001
 msgid ""
 "The BOINC data directory /var/lib/boinc-client contains the information to "
@@ -34,6 +42,10 @@ msgstr ""
 
 #. Type: boolean
 #. Description
+#. HINT: The wording of this template is similar to the wording of the
+#. dbconfig-common/purge template. Please have a look at the translation for
+#. the dbconfig-common/purge template first before translating this template,
+#. thanks.
 #: ../boinc-client.templates:1001
 msgid ""
 "If no longer have need of the data being stored in the BOINC data directory, "
