@@ -8,7 +8,7 @@ set -e
 
 BOINC_DIR=/var/lib/boinc-client
 
-remove_boinc_dir_and_user()
+rm_boinc_dir()
 {
     if [ -d $BOINC_DIR ]; then
         rm -r $BOINC_DIR
@@ -27,7 +27,7 @@ case "$1" in
         db_go
         db_get boinc-client/remove_boinc_dir || true
         if [ "$RET" = "true" ]; then
-            remove_boinc_dir_and_user
+            rm_boinc_dir
         fi
     ;;
 

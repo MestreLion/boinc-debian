@@ -8,28 +8,15 @@
 ## DP: we don't loose functionality here.
 
 @DPATCH@
-diff -urNad boinc-5.5.12~/clientgui/hyperlink.cpp boinc-5.5.12/clientgui/hyperlink.cpp
---- boinc-5.5.12~/clientgui/hyperlink.cpp	2006-07-22 02:58:19.000000000 +0200
-+++ boinc-5.5.12/clientgui/hyperlink.cpp	2006-08-12 11:36:06.000000000 +0200
-@@ -213,20 +213,7 @@
-         //      variable.
-         // 2. Try to find something to use.
+--- boinc-5.7.4.orig/clientgui/hyperlink.cpp	2006-10-27 12:26:55.000000000 +0200
++++ boinc-5.7.4/clientgui/hyperlink.cpp	2006-11-17 15:59:10.000000000 +0100
+@@ -171,7 +171,8 @@
+ }
  
--        cmd = ::wxGetenv(wxT("BROWSER"));
--        if(cmd.IsEmpty()) {
--            fprintf(stderr, "User defined browser not found...\n");
--            if (       wxFile::Exists(wxT("/usr/bin/firefox"))) {
--		fprintf(stderr, "Firefox found...\n");
--                cmd = wxT("/usr/bin/firefox");
--            } else if (wxFile::Exists(wxT("/usr/bin/konqueror"))) {
--		fprintf(stderr, "Konqueror found...\n");
--                cmd = wxT("/usr/bin/konqueror");
--            } else if (wxFile::Exists(wxT("/usr/bin/mozilla"))) {
--		fprintf(stderr, "Mozilla found...\n");
--                cmd = wxT("/usr/bin/mozilla");
--            }
--        }
-+        cmd = wxT("sensible-browser");
+ void wxHyperLink::ExecuteLink (const wxString &strLink) {
+-    if (!wxLaunchDefaultBrowser(strLink)) {
++    wxString cmd = wxT("sensible-browser ") + strLink;
++    if (!::wxExecute(cmd, wxEXEC_ASYNC)) {
+         wxString strDialogTitle = wxEmptyString;
+         wxString strDialogMessage = wxEmptyString;
  
-         cmd += wxT(" ") + strLink;
-         if (!::wxExecute(cmd, wxEXEC_ASYNC)) {

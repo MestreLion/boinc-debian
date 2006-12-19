@@ -1,4 +1,4 @@
-boinc (5.6.1-1) experimental; urgency=low
+boinc (5.8.0-1) experimental; urgency=low
 
   * NOT RELEASED YET
 
@@ -13,20 +13,17 @@ boinc (5.6.1-1) experimental; urgency=low
 
   +++ Changes suitable for the trunk branch:
 
+  * debian/control:
+    - Bumped versioned Build-Depends on libcurl3-openssl-dev to >= 7.15.5
+      which is required for the bandwith-throttling feature. Also removed the
+      alternative on libcurl-ssl-dev, because this was only added to aid
+      backporting BOINC to sarge, but sarge has only libcurl3-dev/7.13.2.
+    - Added XS-Vcs-Browser field to the source stanza.
+  * debian/rules:
+    - Since backporting to sarge is not possible any more, also removed the
+      compatibility code for sarge's dpkg-architecture.
   * debian/patches/:
     - Updated 07_use-sensible-browser.dpatch for the new release.
-  * debian/control:
-    - Reordered Build-Depends: First list all packages that are needed for the
-      Debian packaging, then list all packages that are needed to compile the
-      upstream source.
-    - Added po-debconf to Build-Depends.
-  * debian/rules:
-    - When using the configure option --target also append --program-prefix=""
-      to avaoid that programs are prefixed with "i686-pc-linux-gnu-".
-    - Install the checkin_notes file as upstream changelog.
-  * Use debconf to ask whether the BOINC data directory should be removed
-    while purging the boinc-client package. The wording for the template
-    was taken from the dbconfig-common/purge template.
   * Don't install some headers manually into the boinc-dev package because
     they are now handled and installed by the upstream makefiles.
   * Added debian/boinc-client.preinst which removes the obsolete conffile
@@ -34,8 +31,61 @@ boinc (5.6.1-1) experimental; urgency=low
   * Added debian/boinc-client.NEWS which informs the user that the conffile
     /etc/boinc-client/log_flags.xml is now obsolete and is superseded by the
     new conffile /etc/boinc-client/cc_config.xml.
+  * Added /usr/bin/run-boincmgr shell script to the boinc-manager package.
+    This script sources /etc/default/boinc-client and changes into $BOINC_DIR
+    before starting boincmgr so that the BOINC Manager can read the password
+    from $BOINC_DIR/gui_rpc_auth.cfg. See Ubuntu bug #48768 for more details.
+  * Added ca-certificates to boinc-client's Depends and create the
+    ca-bundle.crt symlink (which points to /etc/ssl/certs/ca-certificates) in
+    the BOINC data directory in boinc-client.postinst.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  2 Sep 2006 15:58:04 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 19 Dec 2006 16:15:30 +0100
+
+boinc (5.4.11-4) unstable; urgency=low
+
+  [ Debconf translations ]
+  * Added German (de.po) by Matthias Julius <mdeb@julius-net.net>.
+    (closes: #400228)
+  * Added Czech (cs.po) by Jakub Kasparec <mr.k@centrum.cz>. (closes: #401923)
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed,  6 Dec 2006 23:07:26 +0100
+
+boinc (5.4.11-3) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * clientgui/ValidateEmailAddress.cpp: Use a much simpler regex to validate
+    e-mail addresses. This also allows addresses that contain '+' in their
+    local-part. This regex is also used in BOINC's PHP function
+    is_valid_email_address() in html/inc/email.inc. (closes: #393948)
+
+  [ Debconf translations ]
+  * Added French (fr.po) by Cyril Brulebois
+    <cyril.brulebois@enst-bretagne.fr>. (closes: #393499)
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 22 Oct 2006 17:58:01 +0200
+
+boinc (5.4.11-2) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * Use debconf to ask whether the default BOINC data directory
+    /var/lib/boinc-client should be removed while purging the boinc-client
+    package. The wording of the template was taken from the
+    dbconfig-common/purge template.
+  * debian/control:
+    - Added po-debconf to Build-Depends because debconf-updatepo is called in
+      the clean target of debian/rules.
+    - Added XS-Vcs-Svn field to the source stanza.
+    - Changed order of Build-Depends: List packages that are needed for the
+      packaging first, then list packages that are needed to compile the
+      upstream source.
+  * debian/rules:
+    - When using the --target configure option also append --program-prefix=""
+      to avoid that programs are prefixed with "i686-pc-linux-gnu-".
+    - Install the checkin_notes file as upstream changelog.
+  * debian/copyright:
+    - Added copyright note about the Debian packaging.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  6 Oct 2006 10:35:17 +0200
 
 boinc (5.4.11-1) unstable; urgency=low
 

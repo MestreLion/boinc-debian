@@ -1,5 +1,6 @@
 #01_amd64-disable-platform-reset.dpatch
+#03_wx2.6-with-unicode.dpatch
 04_sched-makefile.am.dpatch
 07_use-sensible-browser.dpatch
-08_boinc-path-config.dpatch
+#08_boinc-path-config.dpatch
 10_exclude-sea.dpatch

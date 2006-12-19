@@ -22,12 +22,6 @@ ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
   TYPE_FLAGS += --target i686-linux-gnu --program-prefix=""
 endif
 
-# This is the same as above, but only for compatibility with sarge's version
-# of dpkg-architecture.
-ifeq ($(DEB_HOST_GNU_TYPE), i386-linux)
-  TYPE_FLAGS += --target i686-linux-gnu --program-prefix=""
-endif
-
 CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall
 
@@ -191,6 +185,7 @@ install-arch: build
 	# Fix some file permissions.
 	chmod +x \
 	  $(BOINC_SERVER_DIR)/html/ops/db_update.php \
+	  $(BOINC_SERVER_DIR)/html/ops/mass_email_script.php \
 	  $(BOINC_SERVER_DIR)/html/ops/watchdogs.php \
 	  $(BOINC_SERVER_DIR)/html/ops/wd_nresults_changing.php \
 	  $(BOINC_SERVER_DIR)/tools/watch_tcp
@@ -203,9 +198,6 @@ install-arch: build
 	# Fix PHP shebang for executable PHP scripts.
 	sed -i -e '1 s/\/usr\/local\/bin\/php/\/usr\/bin\/php/' \
 	  $(BOINC_SERVER_DIR)/html/ops/db_update.php \
-	  $(BOINC_SERVER_DIR)/html/ops/make_fake_tables.php \
-	  $(BOINC_SERVER_DIR)/html/ops/migrate_tables.php \
-	  $(BOINC_SERVER_DIR)/html/ops/mungetest.php \
 	  $(BOINC_SERVER_DIR)/html/ops/update_forum_activities.php \
 	  $(BOINC_SERVER_DIR)/html/ops/update_profile_pages.php \
 	  $(BOINC_SERVER_DIR)/html/ops/update_uotd.php \
