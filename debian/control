@@ -5,7 +5,7 @@ Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <steffen_moeller@gmx.de>, Frank S. Thomas <frank@thomas-alfeld.de>, Christoph Martin <christoph.martin@uni-mainz.de>
 Standards-Version: 3.7.2
 Build-Depends: debhelper (>= 5), dpatch, python-support (>= 0.4.2), po-debconf, dh-buildinfo, docbook2x, docbook-xml, autotools-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), libmysqlclient15-dev, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.15.5), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
-XS-Vcs-Svn: svn://svn.debian.org/svn/pkg-boinc/trunk/boinc
+XS-Vcs-Svn: svn://svn.debian.org/pkg-boinc/trunk/boinc
 XS-Vcs-Browser: http://svn.debian.org/wsvn/pkg-boinc/trunk/boinc
 
 Package: boinc-client
