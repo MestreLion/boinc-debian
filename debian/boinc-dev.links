@@ -8,7 +8,6 @@ usr/include/BOINC/boinc_win.h       usr/share/boinc-dev/lib/boinc_win.h
 usr/include/BOINC/crypt.h           usr/share/boinc-dev/lib/crypt.h
 usr/include/BOINC/diagnostics.h     usr/share/boinc-dev/lib/diagnostics.h
 usr/include/BOINC/error_numbers.h   usr/share/boinc-dev/lib/error_numbers.h
-usr/include/BOINC/exception.h       usr/share/boinc-dev/lib/exception.h
 usr/include/BOINC/filesys.h         usr/share/boinc-dev/lib/filesys.h
 usr/include/BOINC/gui_rpc_client.h  usr/share/boinc-dev/lib/gui_rpc_client.h
 usr/include/BOINC/hostinfo.h        usr/share/boinc-dev/lib/hostinfo.h
@@ -26,6 +25,7 @@ usr/include/BOINC/version.h         usr/share/boinc-dev/version.h
 usr/include/BOINC/api/boinc_gl.h        usr/share/boinc-dev/api/boinc_gl.h
 usr/include/BOINC/api/graphics_data.h   usr/share/boinc-dev/api/graphics_data.h
 usr/include/BOINC/api/reduce.h          usr/share/boinc-dev/api/reduce.h
+usr/include/BOINC/lib/md5_file.h        usr/share/boinc-dev/lib/md5_file.h
 
 usr/lib/libboinc.a                  usr/share/boinc-dev/lib/libboinc.a
 usr/lib/libboinc_api.a              usr/share/boinc-dev/api/libboinc_api.a
