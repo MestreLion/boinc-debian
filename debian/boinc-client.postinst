@@ -15,7 +15,9 @@ mv_conffile()
         mv -f "$BOINC_DIR/$1" "$CONF_DIR/$1"
     fi
     ln -sf "$CONF_DIR/$1" "$BOINC_DIR/$1"
-    chown boinc:boinc "$BOINC_DIR/$1"
+
+    chmod 0640 "$CONF_DIR/$1"
+    chown root:boinc "$CONF_DIR/$1"
 }
 
 case "$1" in

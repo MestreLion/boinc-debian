@@ -1,4 +1,4 @@
-boinc (5.8.6-1) experimental; urgency=low
+boinc (5.8.11-1) experimental; urgency=low
 
   * NOT RELEASED YET
 
@@ -31,15 +31,18 @@ boinc (5.8.6-1) experimental; urgency=low
   * Added debian/boinc-client.NEWS which informs the user that the conffile
     /etc/boinc-client/log_flags.xml is now obsolete and is superseded by the
     new conffile /etc/boinc-client/cc_config.xml.
-  * Added /usr/bin/run-boincmgr shell script to the boinc-manager package.
-    This script sources /etc/default/boinc-client and changes into $BOINC_DIR
-    before starting boincmgr so that the BOINC Manager can read the password
-    from $BOINC_DIR/gui_rpc_auth.cfg. See Ubuntu bug #48768 for more details.
+  * Added the run-boincmgr shell script as example to the boinc-manager
+    package. This script sources /etc/default/boinc-client and changes into
+    $BOINC_DIR before starting boincmgr so that the BOINC Manager can read the
+    password from $BOINC_DIR/gui_rpc_auth.cfg. See Ubuntu bug #48768 for more
+    details.
   * Added ca-certificates to boinc-client's Depends and create the
     ca-bundle.crt symlink (which points to /etc/ssl/certs/ca-certificates) in
     the BOINC data directory in boinc-client.postinst.
+  * Change the permissions of boinc-client's conffiles in it's postinst to
+    0640 root:boinc instead of 0644 boinc:boinc. (closes: #407678)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 27 Jan 2007 13:41:59 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 11 Feb 2007 15:28:14 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
