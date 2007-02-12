@@ -20,11 +20,12 @@
     <proxy_debug>0</proxy_debug>
     <time_debug>0</time_debug>
     <http_xfer_debug>0</http_xfer_debug>
-    <measurement_debug>0</measurement_debug>
+    <benchmark_debug>0</benchmark_debug>
     <poll_debug>0</poll_debug>
     <guirpc_debug>0</guirpc_debug>
     <scrsave_debug>0</scrsave_debug>
-    <app_msg_debug>0</app_msg_debug>
+    <app_msg_send>0</app_msg_send>
+    <app_msg_receive>0</app_msg_receive>
     <mem_usage_debug>0</mem_usage_debug>
     <network_status_debug>0</network_status_debug>
   </log_flags>

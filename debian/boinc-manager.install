@@ -1,4 +1,3 @@
 clientgui/boincmgr              usr/bin
-debian/extra/run-boincmgr       usr/bin
 debian/icons/boincmgr-*.xpm     usr/share/pixmaps
 debian/boinc-manager.desktop    usr/share/applications
