@@ -44,13 +44,13 @@ case "$1" in
 
         # Set reasonable permissions for boinc-client's conffiles, see #407678.
         chmod 0644 "$CONF_DIR/cc_config.xml"
-        chmod 0644 "$CONF_DIR/clobal_prefs_override.xml"
+        chmod 0644 "$CONF_DIR/global_prefs_override.xml"
         chmod 0640 "$CONF_DIR/gui_rpc_auth.cfg"
         chmod 0644 "$CONF_DIR/remote_hosts.cfg"
 
         chown root:boinc \
             "$CONF_DIR/cc_config.xml" \
-            "$CONF_DIR/clobal_prefs_override.xml" \
+            "$CONF_DIR/global_prefs_override.xml" \
             "$CONF_DIR/gui_rpc_auth.cfg" \
             "$CONF_DIR/remote_hosts.cfg"
 
