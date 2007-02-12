@@ -15,9 +15,6 @@ mv_conffile()
         mv -f "$BOINC_DIR/$1" "$CONF_DIR/$1"
     fi
     ln -sf "$CONF_DIR/$1" "$BOINC_DIR/$1"
-
-    chmod 0640 "$CONF_DIR/$1"
-    chown root:boinc "$CONF_DIR/$1"
 }
 
 case "$1" in
@@ -44,6 +41,18 @@ case "$1" in
         mv_conffile global_prefs_override.xml
         mv_conffile gui_rpc_auth.cfg
         mv_conffile remote_hosts.cfg
+
+        # Set reasonable permissions for boinc-client's conffiles, see #407678.
+        chmod 0644 "$CONF_DIR/cc_config.xml"
+        chmod 0644 "$CONF_DIR/clobal_prefs_override.xml"
+        chmod 0640 "$CONF_DIR/gui_rpc_auth.cfg"
+        chmod 0644 "$CONF_DIR/remote_hosts.cfg"
+
+        chown root:boinc \
+            "$CONF_DIR/cc_config.xml" \
+            "$CONF_DIR/clobal_prefs_override.xml" \
+            "$CONF_DIR/gui_rpc_auth.cfg" \
+            "$CONF_DIR/remote_hosts.cfg"
 
         # Make a symlink to ca-certificates certs file. BOINC's original file
         # is in curl/ca-bundle.crt (which is not in our tarball, because the
