@@ -3,9 +3,8 @@
 ##
 ## All lines beginning with `## DP:' are a description of the patch.
 ## DP: This patch is Debian specific. Don't use it for non Debian
-## DP: packages. The program "sensible-browser", which is part of the
-## DP: essential package debianutils, also uses the BROWSER variable, so
-## DP: we don't loose functionality here.
+## DP: packages. The program "sensible-browser" is part of the essential
+## DP: package debianutils.
 
 @DPATCH@
 --- boinc-5.7.4.orig/clientgui/hyperlink.cpp	2006-10-27 12:26:55.000000000 +0200
