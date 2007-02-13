@@ -206,10 +206,17 @@ install-arch: build
 	
 	# Remove Python shebang from Boinc module files that are not scripts.
 	sed -i -e '1 d' \
-	  debian/boinc-server/usr/share/python-support/boinc-server/Boinc/add_util.py \
-	  debian/boinc-server/usr/share/python-support/boinc-server/Boinc/boincxml.py \
-	  debian/boinc-server/usr/share/python-support/boinc-server/Boinc/configxml.py \
-	  debian/boinc-server/usr/share/python-support/boinc-server/Boinc/projectxml.py
+	  $(BOINC_SERVER_DIR)/py/Boinc/add_util.py \
+	  $(BOINC_SERVER_DIR)/py/Boinc/boincxml.py \
+	  $(BOINC_SERVER_DIR)/py/Boinc/configxml.py \
+	  $(BOINC_SERVER_DIR)/py/Boinc/projectxml.py
+	
+	sed -i -e 's/boinc_path_config/Boinc.boinc_path_config/' \
+	  $(BOINC_SERVER_DIR)/py/Boinc/database.py \
+	  $(BOINC_SERVER_DIR)/py/Boinc/setup_project.py \
+	  $(BOINC_SERVER_DIR)/tools/add \
+	  $(BOINC_SERVER_DIR)/tools/make_project \
+	  $(BOINC_SERVER_DIR)/tools/upgrade
 
 binary-arch: build install-arch
 	dh_testdir -a

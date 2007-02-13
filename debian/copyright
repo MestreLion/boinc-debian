@@ -8,7 +8,7 @@ Upstream Authors: Dr. David P. Anderson <davea@ssl.berkeley.edu>
                   Rom Walton <rwalton@ssl.berkeley.edu>
                   and others, see http://boinc.berkeley.edu/contact.php
 
-Copyright © 2005 University of California at Berkeley
+Copyright © 2002-2007 University of California at Berkeley
 
 BOINC is licensed under the terms of the LGPL:
 
@@ -32,6 +32,28 @@ Public License can be found in `/usr/share/common-licenses/LGPL'.
 
 
 Copyright and license notices for additional software included in this package:
+
+clientgui/common/wxFlatNotebook*
+================================
+
+Author: Eran Ifrah <eranif@bezeqint.net>
+
+Copyright © 2005 Eran Ifrah
+
+License: wxWindows Licence
+(a copy of this license is included below)
+
+
+clientgui/common/wxPieCtrl.cpp, clientgui/common/wxPieCtrl.h
+============================================================
+
+Author: Volodymir (T-Rex) Tryapichko
+
+Copyright © 2005 Volodymir (T-Rex) Tryapichko
+
+License: wxWindows Licence
+(a copy of this license is included below)
+
 
 clientgui/msw/taskbar.cpp, clientgui/msw/taskbar.h
 ==================================================
@@ -176,8 +198,8 @@ On Debian systems, the complete text of the GNU General
 Public License can be found in `/usr/share/common-licenses/GPL'.
 
 
-html/inc/paypal_global_config.inc
-=================================
+html/inc/paypal_global_config.inc, html/user/payment_process.php
+================================================================
 
 PHP Toolkit for PayPal v0.50 - http://www.paypal.com/pdn
 
