@@ -1,4 +1,4 @@
-#01_amd64-disable-platform-reset.dpatch
+01_amd64-disable-platform-reset.dpatch
 04_sched-makefile.am.dpatch
 07_use-sensible-browser.dpatch
 10_exclude-sea.dpatch

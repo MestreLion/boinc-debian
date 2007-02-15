@@ -1,4 +1,4 @@
-boinc (5.8.11-1) experimental; urgency=low
+boinc (5.8.12-1) experimental; urgency=low
 
   * NOT RELEASED YET
 
@@ -42,7 +42,7 @@ boinc (5.8.11-1) experimental; urgency=low
   * Change the permissions of boinc-client's conffiles in it's postinst to
     0640 root:boinc instead of 0644 boinc:boinc. (closes: #407678)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 11 Feb 2007 15:28:14 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 15 Feb 2007 11:04:43 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
