@@ -28,5 +28,6 @@
     <app_msg_receive>0</app_msg_receive>
     <mem_usage_debug>0</mem_usage_debug>
     <network_status_debug>0</network_status_debug>
+    <checkpoint_debug>0</checkpoint_debug>
   </log_flags>
 </cc_config>

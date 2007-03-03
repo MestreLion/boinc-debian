@@ -61,7 +61,12 @@ CFGFLAGS_boinc-client = \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)"
 
-pre-build: patch pre-build-stamp
+unit-test:
+	xmllint --noout \
+	  debian/conffiles/cc_config.xml \
+	  debian/conffiles/global_prefs_override.xml
+
+pre-build: unit-test patch pre-build-stamp
 pre-build-stamp:
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
@@ -88,11 +93,14 @@ build-stamp-boinc-client:
 	touch $@
 
 clean: clean-patched unpatch
-clean-patched: clean-boinc-client
+clean-patched:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp
 	rm -f pre-build-stamp
+	rm -f build-stamp
+	rm -f build-stamp-boinc-client
+	
+	dh_clean client/boinc_client.optimized
 	
 	-$(MAKE) clean
 	-$(MAKE) distclean
@@ -134,12 +142,6 @@ clean-patched: clean-boinc-client
 	  configure
 	
 	debconf-updatepo
-
-clean-boinc-client:
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp-boinc-client
-	dh_clean client/boinc_client.optimized
 
 BOINC_SERVER_DIR=debian/boinc-server/usr/share/boinc-server
 
@@ -242,5 +244,5 @@ binary-arch: build install-arch
 	dh_builddeb -a
 
 binary: binary-arch
-.PHONY: build clean clean-patched binary-arch binary install install-arch \
-  patch unpatch
+.PHONY: patch unpatch unit-test pre-build build clean clean-patched install \
+  install-arch binary-arch binary
