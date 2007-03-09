@@ -1,4 +1,4 @@
-boinc (5.8.16-1) experimental; urgency=low
+boinc (5.8.17-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -43,15 +43,21 @@ boinc (5.8.16-1) experimental; urgency=low
     ca-bundle.crt symlink (which points to /etc/ssl/certs/ca-certificates) in
     the BOINC data directory in boinc-client.postinst.
 
+  [ Debconf translations ]
+  * Added Galician (gl.po) by Jacobo Tarrio <jtarrio@trasno.net>.
+    (closes: #413461)
+  * Added Dutch (nl.po) by cobaco (aka Bart Cornelis) <cobaco@skolelinux.no>.
+    (closes: #413887)
+
   +++ Changes unsuitable for the trunk branch:
-  
+
   * Updates for the new Python policy:
     - Added python-support (>= 0.4.2) to Build-Depends.
     - Replaced dh_python with dh_pysupport in debian/rules.
   * debian/control: Added "csh | c-shell" to boinc-server's Depends field
     since tools/db_query and tools/watch_tcp use /bin/csh as interpreter.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat,  3 Mar 2007 05:19:45 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  9 Mar 2007 20:28:53 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
