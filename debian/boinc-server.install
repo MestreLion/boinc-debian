@@ -15,7 +15,7 @@ html/ops                            usr/share/boinc-server/html
 html/project.sample                 usr/share/boinc-server/html
 html/user                           usr/share/boinc-server/html
 py/Boinc/*.py                       usr/share/python-support/boinc-server/Boinc
-debian/extra/boinc_path_config.py   usr/share/python-support/boinc-server
+debian/extra/boinc_path_config.py   usr/share/python-support/boinc-server/Boinc
 tools/add                           usr/share/boinc-server/tools
 tools/db_query                      usr/share/boinc-server/tools
 tools/dbcheck_files_exist           usr/share/boinc-server/tools
