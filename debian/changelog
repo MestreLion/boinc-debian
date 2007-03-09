@@ -42,6 +42,8 @@ boinc (5.8.17-1) experimental; urgency=low
   * Added ca-certificates to boinc-client's Depends field and create the
     ca-bundle.crt symlink (which points to /etc/ssl/certs/ca-certificates) in
     the BOINC data directory in boinc-client.postinst.
+  * Fixed FTBFS with GCC 4.3, thanks to Martin Michlmayr <tbm@cyrius.com>.
+    (closes: #413307)
 
   [ Debconf translations ]
   * Added Galician (gl.po) by Jacobo Tarrio <jtarrio@trasno.net>.
@@ -57,7 +59,7 @@ boinc (5.8.17-1) experimental; urgency=low
   * debian/control: Added "csh | c-shell" to boinc-server's Depends field
     since tools/db_query and tools/watch_tcp use /bin/csh as interpreter.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  9 Mar 2007 20:28:53 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  9 Mar 2007 23:35:19 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
