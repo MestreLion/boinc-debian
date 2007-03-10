@@ -9,11 +9,13 @@
 @DPATCH@
 diff -urNad boinc-5.4.11~/client/client_state.C boinc-5.4.11/client/client_state.C
 --- boinc-5.4.11~/client/client_state.C	2006-08-03 10:31:03.000000000 +0200
-+++ boinc-5.4.11/client/client_state.C	2006-08-26 14:01:36.000000000 +0200
-@@ -331,6 +331,9 @@
++++ boinc-5.4.11/client/client_state.C	2007-03-10 08:42:17.000000000 +0100
+@@ -330,7 +330,10 @@
+     // Has platform name changed?  If so reset all.
      // This could happen e.g. if user copies files from PPC to Intel Mac
      //
-     if (strcmp(platform_name, statefile_platform_name.c_str())) {
+-    if (strcmp(platform_name, statefile_platform_name.c_str())) {
++    if (statefile_platform_name.size() && strcmp(platform_name, statefile_platform_name.c_str())) {
 +#ifdef __x86_64__
 +        platform_name = strdup(statefile_platform_name.c_str());
 +#else
