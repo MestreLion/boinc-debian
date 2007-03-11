@@ -58,8 +58,10 @@ boinc (5.8.17-1) experimental; urgency=low
     - Replaced dh_python with dh_pysupport in debian/rules.
   * debian/control: Added "csh | c-shell" to boinc-server's Depends field
     since tools/db_query and tools/watch_tcp use /bin/csh as interpreter.
+  * debian/boinc-server.README.Debian: Added README.Debian which is at the
+    moment only a pointer to http://wiki.debian.org/BOINC/Server.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  9 Mar 2007 23:35:19 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 11 Mar 2007 13:27:47 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
