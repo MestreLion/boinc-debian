@@ -3,7 +3,8 @@ boinc (5.4.11-5) unstable; urgency=low
   [ Frank S. Thomas ]
   * debian/patches/:
     - 01_amd64-disable-platform-reset.dpatch: Only reset projects if the
-      platform name in the statefile is not empty. (closes: #407461)
+      platform name in the statefile is not empty. This bugfix has been
+      backported from BOINC 5.8. (closes: #407461)
 
   [ Debconf translations ]
   * Added Galician (gl.po) by Jacobo Tarrio <jtarrio@trasno.net>.
@@ -11,7 +12,7 @@ boinc (5.4.11-5) unstable; urgency=low
   * Added Dutch (nl.po) by cobaco (aka Bart Cornelis) <cobaco@skolelinux.no>.
     (closes: #413887)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 12 Mar 2007 15:18:09 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 12 Mar 2007 15:38:54 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
