@@ -1,4 +1,3 @@
 01_amd64-disable-platform-reset.dpatch
 07_use-sensible-browser.dpatch
 10_exclude-sea.dpatch
-14_cpuinfo-sparc.dpatch
