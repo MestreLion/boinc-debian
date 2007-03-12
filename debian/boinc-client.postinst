@@ -33,7 +33,7 @@ case "$1" in
         # Make sure the /var/lib/boinc-client directory exists and
         # is owned by the boinc user.
         mkdir $BOINC_DIR 2>/dev/null || true
-        chown boinc:boinc $BOINC_DIR 2>/dev/null || true
+        chown -h boinc:boinc $BOINC_DIR 2>/dev/null || true
 
         # Move old configuration files to /etc/boinc-client/ and
         # create symlinks for the BOINC core client.

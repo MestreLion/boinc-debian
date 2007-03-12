@@ -44,6 +44,9 @@ boinc (5.8.17-1) experimental; urgency=low
     the BOINC data directory in boinc-client.postinst.
   * Fixed FTBFS with GCC 4.3, thanks to Martin Michlmayr <tbm@cyrius.com>.
     (closes: #413307)
+  * debian/boinc-client.README.Debian: Added paragraph "Mass deployment of
+    boinc-client that automatically attach to an Account Manager" which points
+    (at the moment) to T-Bone's post on the pkg-boinc-devel mailing list.
 
   [ Debconf translations ]
   * Added Galician (gl.po) by Jacobo Tarrio <jtarrio@trasno.net>.
@@ -61,7 +64,7 @@ boinc (5.8.17-1) experimental; urgency=low
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 11 Mar 2007 13:27:47 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 12 Mar 2007 14:46:59 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
