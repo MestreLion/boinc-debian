@@ -2,8 +2,6 @@ boinc (5.8.17-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
-    - In client/client_state.C only reset projects if the platform name in the
-      statefile is not empty. (closes: #407461)
   * debian/control:
     - Bumped versioned Build-Depends on libcurl3-openssl-dev to >= 7.15.5
       which is required for the bandwith-throttling feature. Also removed the
@@ -48,12 +46,6 @@ boinc (5.8.17-1) experimental; urgency=low
     boinc-client that automatically attach to an Account Manager" which points
     (at the moment) to T-Bone's post on the pkg-boinc-devel mailing list.
 
-  [ Debconf translations ]
-  * Added Galician (gl.po) by Jacobo Tarrio <jtarrio@trasno.net>.
-    (closes: #413461)
-  * Added Dutch (nl.po) by cobaco (aka Bart Cornelis) <cobaco@skolelinux.no>.
-    (closes: #413887)
-
   +++ Changes unsuitable for the trunk branch:
 
   * Updates for the new Python policy:
@@ -64,7 +56,7 @@ boinc (5.8.17-1) experimental; urgency=low
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 12 Mar 2007 14:46:59 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 13 Mar 2007 16:03:19 +0100
 
 boinc (5.4.11-4) unstable; urgency=low
 
