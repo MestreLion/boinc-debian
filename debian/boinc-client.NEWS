@@ -1,9 +1,9 @@
-boinc (5.6.1-1) experimental; urgency=low
+boinc (5.8.15-1) experimental; urgency=low
 
     The configuration file "log_flags.xml" of the BOINC 5.4 series was renamed
     during the development of the 5.6 series to "cc_config.xml". Also the
     syntax of this file was changed.
-    
+
     If you have made local changes to /etc/boinc-client/log_flags.xml you may
     want to migrate those changes to the new /etc/boinc-client/cc_config.xml.
     See http://boinc.berkeley.edu/client_msgs.php for full list of available
@@ -14,4 +14,4 @@ boinc (5.6.1-1) experimental; urgency=low
     If you did not changed the old configuration file locally, it will be
     removed from your system automatically by the boinc-client package.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri,  1 Sep 2006 15:29:18 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 14 Mar 2007 12:57:01 +0100
