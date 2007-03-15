@@ -23,9 +23,10 @@ boinc (5.8.15-1) experimental; urgency=low
       lib/std_fixes.h, config.h and version.h manually because they are now
       installed by the upstream makefiles.
     - Added lib/md5_file.h to boinc-dev as requested by Alex Owen.
-  * Change the permissions and ownership of boinc-client's conffiles in it's
-    postinst from 0644 boinc:boinc to 0640 root:boinc for gui_rpc_auth.cfg and
-    to 0644 root:boinc for the rest. (closes: #407678)
+  * debian/boinc-client.postinst: Change the permissions and ownership of
+    boinc-client's conffiles from 0644 boinc:boinc to 0640 root:boinc for
+    gui_rpc_auth.cfg and to 0644 root:boinc for the rest but only if no
+    'stat override' exists. (closes: #407678)
   * Replaced the conffile log_flags.xml with cc_config.xml:
     - Added debian/boinc-client.preinst which removes the obsolete conffile
       /etc/boinc-client/log_flags.xml if it was not modified locally.
@@ -56,7 +57,7 @@ boinc (5.8.15-1) experimental; urgency=low
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 14 Mar 2007 12:33:21 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 15 Mar 2007 09:37:42 +0100
 
 boinc (5.4.11-5) unstable; urgency=low
 
