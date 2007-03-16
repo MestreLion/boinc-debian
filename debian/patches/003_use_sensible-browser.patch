@@ -1,4 +1,4 @@
-This patch is Debian specific. Don't use it for non Debian packages. The
+This patch is Debian-specific. Don't use it for non Debian packages. The
 program "sensible-browser" is part of the essential package debianutils.
 
 Index: boinc-5.8.15/clientgui/hyperlink.cpp
