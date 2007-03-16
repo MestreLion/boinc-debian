@@ -1,0 +1,14 @@
+Index: boinc-5.8.15/sched/Makefile.am
+===================================================================
+--- boinc-5.8.15.orig/sched/Makefile.am	2007-03-16 18:07:19.000000000 +0100
++++ boinc-5.8.15/sched/Makefile.am	2007-03-16 18:08:15.000000000 +0100
+@@ -2,7 +2,8 @@
+ 
+ include $(top_srcdir)/Makefile.incl
+ 
+-noinst_PROGRAMS =                               \
++scheddir=$(libdir)/BOINC/sched
++sched_PROGRAMS =                                \
+     cgi                                         \
+     feeder                                      \
+     db_dump                                     \

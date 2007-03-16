@@ -7,7 +7,6 @@ boinc (5.8.15-1) experimental; urgency=low
       which is required for the bandwith-throttling feature. Also removed the
       alternative on libcurl-ssl-dev because this was only added to aid
       backporting BOINC to sarge but sarge has only libcurl3-dev/7.13.2.
-    - Added XS-Vcs-Browser field to the source stanza.
     - Added libxml2-utils to Build-Depends for xmllint which is used in the
       unit-test target in debian/rules.
   * debian/rules:
@@ -16,8 +15,10 @@ boinc (5.8.15-1) experimental; urgency=low
     - Since backporting to sarge is not possible any more, also removed the
       compatibility code for sarge's version of dpkg-architecture.
   * debian/patches/:
-    - Updated 01_amd64-disable-platform-reset.dpatch for the new release.
-    - Updated 07_use-sensible-browser.dpatch for the new release.
+    - Updated 001_amd64_disable_platform_reset.patch for the new release.
+    - Updated 003_use_sensible-browser.patch for the new release.
+    - Added 101_gcc_4.3_fixes.patch that fixes a FTBFS with GCC 4.3, thanks to
+      Martin Michlmayr <tbm@cyrius.com>. (closes: #413307)
   * debian/boinc-dev.{install,links}:
     - Don't install lib/error_numbers.h, lib/gui_rpc_client.h,
       lib/std_fixes.h, config.h and version.h manually because they are now
@@ -41,11 +42,10 @@ boinc (5.8.15-1) experimental; urgency=low
   * Added ca-certificates to boinc-client's Depends field and create the
     ca-bundle.crt symlink (which points to /etc/ssl/certs/ca-certificates) in
     the BOINC data directory in boinc-client.postinst.
-  * Fixed FTBFS with GCC 4.3, thanks to Martin Michlmayr <tbm@cyrius.com>.
-    (closes: #413307)
   * debian/boinc-client.README.Debian: Added paragraph "Mass deployment of
     boinc-client that automatically attach to an Account Manager" which points
     (at the moment) to T-Bone's post on the pkg-boinc-devel mailing list.
+  * Changed from dpatch to the quilt patch system.
 
   +++ Changes unsuitable for the trunk branch:
 
@@ -57,7 +57,7 @@ boinc (5.8.15-1) experimental; urgency=low
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 15 Mar 2007 09:37:42 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 16 Mar 2007 18:13:27 +0100
 
 boinc (5.4.11-5) unstable; urgency=low
 

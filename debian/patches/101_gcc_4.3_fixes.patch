@@ -1,0 +1,24 @@
+Index: boinc-5.8.15/client/client_state.h
+===================================================================
+--- boinc-5.8.15.orig/client/client_state.h	2007-03-16 18:09:44.000000000 +0100
++++ boinc-5.8.15/client/client_state.h	2007-03-16 18:09:54.000000000 +0100
+@@ -21,6 +21,7 @@
+ #define _CLIENT_STATE_
+ 
+ #ifndef _WIN32
++#include <string>
+ #include <vector>
+ #include <ctime>
+ #endif
+Index: boinc-5.8.15/lib/boinc_cmd.C
+===================================================================
+--- boinc-5.8.15.orig/lib/boinc_cmd.C	2007-03-16 18:09:59.000000000 +0100
++++ boinc-5.8.15/lib/boinc_cmd.C	2007-03-16 18:10:20.000000000 +0100
+@@ -35,6 +35,7 @@
+ #endif
+ 
+ #include <vector>
++#include <string>
+ using std::vector;
+ using std::string;
+ 

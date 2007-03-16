@@ -1,0 +1,17 @@
+This patch is Debian specific. Don't use it for non Debian packages. The
+program "sensible-browser" is part of the essential package debianutils.
+
+Index: boinc-5.8.15/clientgui/hyperlink.cpp
+===================================================================
+--- boinc-5.8.15.orig/clientgui/hyperlink.cpp	2007-03-16 18:07:18.000000000 +0100
++++ boinc-5.8.15/clientgui/hyperlink.cpp	2007-03-16 18:08:16.000000000 +0100
+@@ -171,7 +171,8 @@
+ }
+ 
+ void wxHyperLink::ExecuteLink (const wxString &strLink) {
+-    if (!wxLaunchDefaultBrowser(strLink)) {
++    wxString cmd = wxT("sensible-browser ") + strLink;
++    if (!::wxExecute(cmd, wxEXEC_ASYNC)) {
+         wxString strDialogTitle = wxEmptyString;
+         wxString strDialogMessage = wxEmptyString;
+ 
