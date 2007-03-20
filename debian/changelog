@@ -2,6 +2,9 @@ boinc (5.8.15-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
+    - BOINC Manager:
+      - Display project names in "Reset Project" dialog correctly. (LP: #83708)
+      - Fixed run mode entries in "Activity" menu. (LP: #93850)
   * debian/control:
     - Bumped versioned Build-Depends on libcurl3-openssl-dev to >= 7.15.5
       which is required for the bandwith-throttling feature. Also removed the
@@ -57,7 +60,7 @@ boinc (5.8.15-1) experimental; urgency=low
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 16 Mar 2007 18:13:27 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 20 Mar 2007 23:30:20 +0100
 
 boinc (5.4.11-5) unstable; urgency=low
 
