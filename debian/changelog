@@ -55,12 +55,14 @@ boinc (5.8.15-1) experimental; urgency=low
   * Updates for the new Python policy:
     - Added python-support (>= 0.4.2) to Build-Depends.
     - Replaced dh_python with dh_pysupport in debian/rules.
-  * debian/control: Added "csh | c-shell" to boinc-server's Depends field
+  * debian/control: Added "tcsh | c-shell" to boinc-server's Depends field
     since tools/db_query and tools/watch_tcp use /bin/csh as interpreter.
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
+  * boinc-server.install: Added new tools db/init_db, tools/cleanlogs.sh,
+    tools/makelog.sh, tools/run_in_ops and tools/updater.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 20 Mar 2007 23:30:20 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 21 Mar 2007 11:12:08 +0100
 
 boinc (5.4.11-5) unstable; urgency=low
 
