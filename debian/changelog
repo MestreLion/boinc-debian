@@ -31,6 +31,8 @@ boinc (5.8.15-1) experimental; urgency=low
     boinc-client's conffiles from 0644 boinc:boinc to 0640 root:boinc for
     gui_rpc_auth.cfg and to 0644 root:boinc for the rest but only if no
     'stat override' exists. (closes: #407678)
+  * debian/boinc-client.postrm: Changed postrm so it does not fail if debconf
+    is not available. (closes: #416663)
   * Replaced the conffile log_flags.xml with cc_config.xml:
     - Added debian/boinc-client.preinst which removes the obsolete conffile
       /etc/boinc-client/log_flags.xml if it was not modified locally.
@@ -65,7 +67,7 @@ boinc (5.8.15-1) experimental; urgency=low
     tools/run_in_ops and tools/updater. Some of them were required by the
     tools/make_project script.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 21 Mar 2007 14:29:43 +0100
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 29 Mar 2007 22:07:35 +0200
 
 boinc (5.4.11-5) unstable; urgency=low
 
