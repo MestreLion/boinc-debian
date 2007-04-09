@@ -7,7 +7,7 @@
  This file is licensed under the terms of the GNU General Public License,
  Version 2 or any later version published by the Free Software Foundation.
 
- Copyright © 2005, 2006 Debian BOINC Maintainers
+ Copyright © 2005, 2006, 2007 Debian BOINC Maintainers
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
@@ -17,7 +17,7 @@
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "boinc_cmd">
-  <!ENTITY dhdate      "<date>July 24, 2006</date>">
+  <!ENTITY dhdate      "<date>March 02, 2007</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -45,6 +45,7 @@
     <copyright>
       <year>2005</year>
       <year>2006</year>
+      <year>2007</year>
       <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
@@ -306,13 +307,6 @@
       </varlistentry>
 
       <varlistentry>
-        <term><option>--get_run_mode</option></term>
-        <listitem>
-          <para>Show current run mode.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
         <term>
           <option>--set_run_mode {always | auto | never}</option>
         </term>
@@ -341,13 +335,6 @@
               </listitem>
             </varlistentry>
           </variablelist>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>--get_network_mode</option></term>
-        <listitem>
-          <para>Show current network mode.</para>
         </listitem>
       </varlistentry>
 
@@ -481,10 +468,6 @@
       </varlistentry>
 
       <varlistentry>
-        <term><option>--lookup_account_poll</option></term>
-      </varlistentry>
-
-      <varlistentry>
         <term>
           <option>--create_account
             <replaceable>url</replaceable>
@@ -493,10 +476,6 @@
             <replaceable>name</replaceable>
           </option>
         </term>
-      </varlistentry>
-
-      <varlistentry>
-        <term><option>--create_account_poll</option></term>
       </varlistentry>
 
       <varlistentry>

@@ -1,3 +1,65 @@
+boinc (5.8.17) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - BM: Display project names in the "Reset Project" dialog correctly.
+      (LP: #83708)
+    - BM: Fixed run mode entries in the "Activity" menu. (LP: #93850)
+  * debian/control:
+    - Bumped versioned Build-Depends on libcurl3-openssl-dev to >= 7.15.5
+      which is required for the bandwith-throttling feature. Also removed the
+      alternative on libcurl-ssl-dev because this was only added to aid
+      backporting BOINC to sarge but sarge has only libcurl3-dev/7.13.2.
+    - Added libxml2-utils to Build-Depends for xmllint which is used in the
+      unit-test target in debian/rules.
+  * debian/rules:
+    - Added the unit-test target which uses xmllint to check if the XML
+      conffiles cc_config.xml and global_prefs_override.xml are well-formed.
+    - Since backporting to sarge is not possible any more, also removed the
+      compatibility code for sarge's version of dpkg-architecture.
+  * Switched patch system from dpatch to quilt.
+  * debian/patches/:
+    - Updated 001_amd64_disable_platform_reset.patch for the new release.
+    - Updated 003_use_sensible-browser.patch for the new release.
+    - Added 101_gcc_4.3_fixes.patch that fixes a FTBFS with GCC 4.3, thanks to
+      Martin Michlmayr <tbm@cyrius.com>. (closes: #413307)
+  * debian/boinc-client.postinst: Change the permission and ownership of
+    boinc-client's conffiles from 0644 boinc:boinc to 0640 root:boinc for
+    gui_rpc_auth.cfg and to 0644 root:boinc for the rest but only if no
+    "stat override" exists. (closes: #407678)
+  * debian/boinc-client.postrm: Changed postrm so it does not fail if debconf
+    is not available. (closes: #416663)
+  * Replaced the log_flags.xml conffile with cc_config.xml:
+    - Added debian/boinc-client.preinst which removes the obsolete conffile
+      /etc/boinc-client/log_flags.xml if it was not modified locally or
+      renames it to /etc/boinc-client/log_flags.xml.dpkg-bak if it was.
+    - Added debian/boinc-client.NEWS which explains that the conffile
+      /etc/boinc-client/log_flags.xml is now obsolete and is superseded by
+      /etc/boinc-client/cc_config.xml.
+  * Added the run-boincmgr shell script as example to the boinc-manager
+    package. This script sources /etc/default/boinc-client and chdir into
+    $BOINC_DIR before starting boincmgr so that the BOINC Manager can read the
+    password from $BOINC_DIR/gui_rpc_auth.cfg file. See Ubuntu bug #48768 for
+    more details.
+  * debian/boinc-client.README.Debian: Added paragraph "Mass deployment of
+    boinc-client that automatically attach to an Account Manager" which points
+    (at the moment) to T-Bone's post on the pkg-boinc-devel mailing list.
+  * debian/boinc-client.install: Install the switcher binary into
+    /usr/lib/boinc-client/.
+  * debian/boinc-dev.{install,links}:
+    - Don't install lib/error_numbers.h, lib/gui_rpc_client.h,
+      lib/std_fixes.h, config.h and version.h manually because they are now
+      installed by the upstream makefiles.
+    - Added lib/md5_file.h to boinc-dev as requested by Alex Owen.
+  * Added ca-certificates to boinc-client's Depends field and create the
+    ca-bundle.crt symlink (which points to /etc/ssl/certs/ca-certificates) in
+    Debian's default BOINC data directory (/var/lib/boinc-client/) in
+    boinc-client.postinst.
+  * Updated boinc_cmd's and boincmgr's manual pages for the new release.
+  * Updated debian/copyright for the new release.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 10 Apr 2007 00:04:36 +0200
+
 boinc (5.4.11-5) unstable; urgency=low
 
   [ Frank S. Thomas ]

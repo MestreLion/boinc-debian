@@ -1,0 +1,13 @@
+Index: boinc-5.8.15/Makefile.am
+===================================================================
+--- boinc-5.8.15.orig/Makefile.am	2007-03-16 18:07:17.000000000 +0100
++++ boinc-5.8.15/Makefile.am	2007-03-16 18:08:16.000000000 +0100
+@@ -17,7 +17,7 @@
+ endif
+ 
+ if BUILD_CLIENTGUI
+-   CLIENTGUI_SUBDIRS = clientgui sea
++   CLIENTGUI_SUBDIRS = clientgui
+ endif
+ 
+ # ORDER MATTERS below.  One must build dependencies FIRST, then things

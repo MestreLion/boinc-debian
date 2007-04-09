@@ -12,6 +12,8 @@ Contents:
   2. Installing and configuring BOINC application packages
   3. Moving a BOINC data directory to /var/lib/boinc-client
   4. Making the BOINC core client usable on AMD64
+  5. Mass deployment of boinc-client that automatically attach to an
+     Account Manager
 
 
 1. Configuring the BOINC core client
@@ -82,8 +84,8 @@ follow these instructions:
      % ln -s /etc/boinc-client/gui_rpc_auth.cfg /var/lib/boinc-client/gui_rpc_auth.cfg
 
     Repeat the last step for the following configuration files if they
-    exist in your old BOINC data directory: 'global_prefs_override.xml',
-    'log_flags.xml', and 'remote_hosts.cfg'
+    exist in your old BOINC data directory: 'cc_config.xml',
+    'global_prefs_override.xml' and 'remote_hosts.cfg'
 
  5. Start the BOINC core client again:
      % /etc/init.d/boinc-client start
@@ -123,3 +125,18 @@ projects. The following instructions explains the latter option:
 
  4. Start the BOINC core client again:
      % /etc/init.d/boinc-client start
+
+
+5. Mass deployment of boinc-client that automatically attach to an
+------------------------------------------------------------------
+   Account Manager
+   ---------------
+
+With small modifications to the boinc-client package it is possible
+to make it automatically attach to an Account Manager which aids in
+mass deployment of the BOINC client over a network of hosts.
+
+For specific instructions consult this message and the attached
+cookdiff.patch:
+  
+  http://lists.alioth.debian.org/pipermail/pkg-boinc-devel/2007-March/000553.html

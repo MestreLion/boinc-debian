@@ -17,7 +17,7 @@
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "boincmgr">
-  <!ENTITY dhdate      "<date>January 27, 2006</date>">
+  <!ENTITY dhdate      "<date>August 12, 2006</date>">
   
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -88,6 +88,13 @@
         <listitem>
           <para>Startup BOINC Manager so only the system tray icon is
             visible.</para>
+        </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+        <term><option>-insecure, --insecure</option></term>
+        <listitem>
+          <para>Disable BOINC security users and permissions.</para>
         </listitem>
       </varlistentry>
     </variablelist>

@@ -1,0 +1,26 @@
+See these mailing lists post for a description of this patch:
+http://lists.alioth.debian.org/pipermail/pkg-boinc-devel/2006-August/000352.html
+http://lists.alioth.debian.org/pipermail/pkg-boinc-devel/2006-August/000350.html
+
+Index: boinc-5.8.15/client/client_state.C
+===================================================================
+--- boinc-5.8.15.orig/client/client_state.C	2007-03-16 18:07:20.000000000 +0100
++++ boinc-5.8.15/client/client_state.C	2007-03-16 18:08:13.000000000 +0100
+@@ -318,6 +318,9 @@
+     // This could happen e.g. if user copies files from PPC to Intel Mac
+     //
+     if (statefile_platform_name.size() && strcmp(platform_name, statefile_platform_name.c_str())) {
++#ifdef __x86_64__
++        platform_name = strdup(statefile_platform_name.c_str());
++#else
+         msg_printf(NULL, MSG_INFO,
+             "Platform changed from %s to %s - resetting projects",
+             statefile_platform_name.c_str(), platform_name
+@@ -326,6 +329,7 @@
+             p = projects[i];
+             reset_project(p);
+         }
++#endif
+     }
+ 
+ #if (defined(SANDBOX) && ! defined(_WIN32))

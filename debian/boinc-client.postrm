@@ -3,8 +3,10 @@
 
 set -e
 
-# Source the debconf shell library.
-. /usr/share/debconf/confmodule
+# Source the debconf shell library if it is available.
+if [ -f /usr/share/debconf/confmodule ]; then
+    . /usr/share/debconf/confmodule
+fi
 
 BOINC_DIR=/var/lib/boinc-client
 
@@ -24,7 +26,7 @@ rm_boinc_dir()
 case "$1" in
     purge)
         db_input high boinc-client/remove_boinc_dir || true
-        db_go
+        db_go || true
         db_get boinc-client/remove_boinc_dir || true
         if [ "$RET" = "true" ]; then
             rm_boinc_dir
