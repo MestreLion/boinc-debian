@@ -17,6 +17,8 @@ boinc (5.8.17-1) unstable; urgency=low
       conffiles cc_config.xml and global_prefs_override.xml are well-formed.
     - Since backporting to sarge is not possible any more, also removed the
       compatibility code for sarge's version of dpkg-architecture.
+    - On ppc64 use ppc64-linux-gnu as BOINC platform (which is the official
+      BOINC platform) instead of powerpc64-unknown-linux-gnu.
   * Switched patch system from dpatch to quilt.
   * debian/patches/:
     - Updated 001_amd64_disable_platform_reset.patch for the new release.
@@ -58,7 +60,7 @@ boinc (5.8.17-1) unstable; urgency=low
   * Updated boinc_cmd's and boincmgr's manual pages for the new release.
   * Updated debian/copyright for the new release.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 10 Apr 2007 00:04:36 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 10 Apr 2007 12:15:57 +0200
 
 boinc (5.4.11-5) unstable; urgency=low
 

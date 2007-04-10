@@ -14,12 +14,21 @@ else
   TYPE_FLAGS = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
 endif
 
-# Most BOINC projects only provide their applications for i686-pc-linux-gnu.
-# If the core client reports that it was built for i486-pc-linux-gnu it won't
-# download any application or work units, so we use --target i686-linux-gnu
-# to override it on i386 hosts.
+# On some architectures it is required to override the target type so that the
+# core client uses the official BOINC platform for this architecture otherwise
+# it would not download any applications because projects mostly provide only
+# applications for official BOINC platforms.
+# See http://boinc.berkeley.edu/platform.php for the list of official BOINC
+# platforms.
+
+# change BOINC platform i486-pc-linux-gnu to i686-pc-linux-gnu 
 ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
   TYPE_FLAGS += --target i686-linux-gnu --program-prefix=""
+endif
+
+# change BOINC platform powerpc64-unknown-linux-gnu to ppc64-linux-gnu
+ifeq ($(DEB_HOST_GNU_TYPE), powerpc64-linux-gnu)
+  TYPE_FLAGS += --target ppc64-linux-gnu --program-prefix=""
 endif
 
 CFLAGS += -g -Wall
