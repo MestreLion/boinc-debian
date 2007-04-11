@@ -14,5 +14,5 @@ Subversion repository:
 
   http://svn.debian.org/wsvn/pkg-boinc/scripts/export-boinc?op=file
 
-For example, to obtain the .orig.tar.gz tarball for BOINC version 4.71 this
-script is invoked as: $ export-boinc -r 4.71
+For example, to obtain the .orig.tar.gz tarball for BOINC version 5.8.17 this
+script is invoked as: $ export-boinc -r 5.8.17
