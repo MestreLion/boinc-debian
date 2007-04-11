@@ -2,9 +2,11 @@ boinc (5.8.17-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
-    - BM: Display project names in the "Reset Project" dialog correctly.
-      (LP: #83708)
-    - BM: Fixed run mode entries in the "Activity" menu. (LP: #93850)
+    - BOINC Manager:
+      - Broadened "Options" dialog so that labels does not get truncated.
+        (closes: #389840)
+      - Display project names in "Reset Project" dialog correctly. (LP: #83708)
+      - Fixed run mode entries in "Activity" menu. (LP: #93850)
   * debian/control:
     - Bumped versioned Build-Depends on libcurl3-openssl-dev to >= 7.15.5
       which is required for the bandwith-throttling feature. Also removed the
@@ -60,7 +62,7 @@ boinc (5.8.17-1) unstable; urgency=low
   * Updated boinc_cmd's and boincmgr's manual pages for the new release.
   * Updated debian/copyright for the new release.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 10 Apr 2007 12:15:57 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 11 Apr 2007 10:57:56 +0200
 
 boinc (5.4.11-5) unstable; urgency=low
 
