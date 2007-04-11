@@ -7,7 +7,7 @@
  Version 2 or any later version published by the Free Software Foundation.
 
  Copyright © 2004 Steffen Moeller
-             2005, 2006 Debian BOINC Maintainers
+             2005, 2006, 2007 Debian BOINC Maintainers
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
@@ -17,7 +17,7 @@
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
   
   <!ENTITY dhbinary    "boinc_client">
-  <!ENTITY dhdate      "<date>January 27, 2006</date>">
+  <!ENTITY dhdate      "<date>April 11, 2007</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -48,6 +48,7 @@
       
       <year>2005</year>
       <year>2006</year>
+      <year>2007</year>
       <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
@@ -84,35 +85,35 @@
       
     <variablelist>
       <varlistentry>
-        <term><option>-help</option></term>
+        <term><option>--help</option></term>
         <listitem>
           <para>show options</para>
         </listitem>
       </varlistentry>
       
       <varlistentry>
-        <term><option>-version</option></term>
+        <term><option>--version</option></term>
         <listitem>
           <para>show version info</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term><option>-exit_when_idle</option></term>
+        <term><option>--exit_when_idle</option></term>
         <listitem>
           <para>get/process/report work, then exit</para>
         </listitem>
       </varlistentry>
       
       <varlistentry>
-        <term><option>-show_projects</option></term>
+        <term><option>--show_projects</option></term>
         <listitem>
           <para>show attached projects</para>
         </listitem>
       </varlistentry>
       
       <varlistentry>
-        <term><option>-return_results_immediately</option></term>
+        <term><option>--return_results_immediately</option></term>
         <listitem>
           <para>contact server when have results</para>
         </listitem>
@@ -120,7 +121,7 @@
       
       <varlistentry>
         <term>
-          <option>-detach_project <replaceable>URL</replaceable></option>
+          <option>--detach_project <replaceable>URL</replaceable></option>
         </term>
         <listitem>
           <para>detach from a project</para>
@@ -129,7 +130,7 @@
       
       <varlistentry>
         <term>
-          <option>-reset_project <replaceable>URL</replaceable></option>
+          <option>--reset_project <replaceable>URL</replaceable></option>
         </term>
         <listitem>
           <para>reset (clear) a project</para>
@@ -138,7 +139,7 @@
       
       <varlistentry>
         <term>
-          <option>-attach_project <replaceable>URL</replaceable> 
+          <option>--attach_project <replaceable>URL</replaceable> 
             <replaceable>key</replaceable></option>
         </term>
         <listitem>
@@ -148,7 +149,7 @@
       
       <varlistentry>
         <term>
-          <option>-update_prefs <replaceable>URL</replaceable></option>
+          <option>--update_prefs <replaceable>URL</replaceable></option>
         </term>
         <listitem>
           <para>contact a project to update preferences</para>
@@ -156,21 +157,21 @@
       </varlistentry>
       
       <varlistentry>
-        <term><option>-run_cpu_benchmarks</option></term>
+        <term><option>--run_cpu_benchmarks</option></term>
         <listitem>
           <para>run the CPU benchmarks</para>
         </listitem>
       </varlistentry>
       
       <varlistentry>
-        <term><option>-check_all_logins</option></term>
+        <term><option>--check_all_logins</option></term>
         <listitem>
           <para>for idle detection, check remote logins too</para>
         </listitem>
       </varlistentry>
       
       <varlistentry>
-        <term><option>-allow_remote_gui_rpc</option></term>
+        <term><option>--allow_remote_gui_rpc</option></term>
         <listitem>
           <para>allow remote GUI RPC connections</para>
         </listitem>
@@ -178,7 +179,7 @@
       
       <varlistentry>
         <term>
-          <option>-gui_rpc_port <replaceable>port</replaceable></option>
+          <option>--gui_rpc_port <replaceable>port</replaceable></option>
         </term>
         <listitem>
           <para>port for GUI RPCs</para>
@@ -186,21 +187,21 @@
       </varlistentry>
       
       <varlistentry>
-        <term><option>-redirectio</option></term>
+        <term><option>--redirectio</option></term>
         <listitem>
           <para>redirect stdout and stderr to log files</para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term><option>-dir <replaceable>path</replaceable></option></term>
+        <term><option>--dir <replaceable>path</replaceable></option></term>
         <listitem>
           <para>use given dir as BOINC home</para>
         </listitem>
       </varlistentry>
       
       <varlistentry>
-        <term><option>-no_gui_rpc</option></term>
+        <term><option>--no_gui_rpc</option></term>
         <listitem>
           <para>Omits creation of a socket as required for the remote control
             of the client. Consequently the client cannot be controlled by
@@ -210,9 +211,23 @@
       </varlistentry>
 
       <varlistentry>
-        <term><option>-daemon</option></term>
+        <term><option>--daemon</option></term>
         <listitem>
           <para>run as daemon</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--insecure</option></term>
+        <listitem>
+          <para>disable BOINC security users and permissions</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--launched_by_manager</option></term>
+        <listitem>
+          <para>core client was launched by Manager</para>
         </listitem>
       </varlistentry>
     </variablelist>
