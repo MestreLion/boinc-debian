@@ -1,4 +1,4 @@
-boinc (5.8.15-1) experimental; urgency=low
+boinc (5.8.17-1) unstable; urgency=low
 
     The configuration file "log_flags.xml" of the BOINC 5.4 series was renamed
     during the development of the 5.6 series to "cc_config.xml". Also the
