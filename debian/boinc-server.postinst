@@ -1,0 +1,25 @@
+#!/bin/sh
+# postinst script for boinc-server
+
+set -e
+
+case "$1" in
+    configure)
+        # Create boincadm group if it doesn't already exist.
+        if ! getent group boincadm >/dev/null; then
+            addgroup --quiet --system boincadm
+        fi
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
