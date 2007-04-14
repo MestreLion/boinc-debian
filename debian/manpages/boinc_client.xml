@@ -7,7 +7,7 @@
  Version 2 or any later version published by the Free Software Foundation.
 
  Copyright © 2004 Steffen Moeller
-             2005, 2006 Debian BOINC Maintainers
+             2005, 2006, 2007 Debian BOINC Maintainers
 -->
 
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
@@ -17,7 +17,7 @@
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
   
   <!ENTITY dhbinary    "boinc_client">
-  <!ENTITY dhdate      "<date>January 27, 2006</date>">
+  <!ENTITY dhdate      "<date>April 14, 2007</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -48,6 +48,7 @@
       
       <year>2005</year>
       <year>2006</year>
+      <year>2007</year>
       <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
@@ -233,10 +234,10 @@
   
   <refsect1>
     <title>AUTHOR</title>
-    <para>This manual page was written by the &dhgroupname;
-      &lt;&dhgroupmail;&gt; for the &debian; project (but may be used by
-      others). Permission is granted to copy, distribute and/or modify this
-      document under the terms of the &gnu; General Public License, Version 2
-      or any later version published by the Free Software Foundation.</para>
+    <para>This manual page was written by the &dhgroupname; &dhgroupmail;
+      for the &debian; project (but may be used by others). Permission is
+      granted to copy, distribute and/or modify this document under the terms
+      of the &gnu; General Public License, Version 2 or any later version
+      published by the Free Software Foundation.</para>
   </refsect1>
 </refentry>
