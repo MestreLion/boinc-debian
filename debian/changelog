@@ -41,6 +41,8 @@ boinc (5.8.17-1) unstable; urgency=low
       backporting BOINC to sarge but sarge has only libcurl3-dev/7.13.2.
     - Added libxml2-utils to Build-Depends for xmllint which is used in the
       unit-test target in debian/rules.
+    - Added xsltproc to Build-Depends because it is apparently needed by
+      docbook2x-man (>> 0.8.3-1) to create our manpages.
   * debian/rules:
     - Added the unit-test target which uses xmllint to check if the XML
       conffiles cc_config.xml and global_prefs_override.xml are well-formed.
@@ -89,7 +91,7 @@ boinc (5.8.17-1) unstable; urgency=low
   * Updated boinc_cmd's and boincmgr's manual pages for the new release.
   * Updated debian/copyright for the new release.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 11 Apr 2007 10:57:56 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 19 Apr 2007 19:57:34 +0200
 
 boinc (5.4.11-5) unstable; urgency=low
 
