@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <steffen_moeller@gmx.de>, Frank S. Thomas <frank@thomas-alfeld.de>, Christoph Martin <christoph.martin@uni-mainz.de>
 Standards-Version: 3.7.2
-Build-Depends: debhelper (>= 5), quilt (>= 0.40), po-debconf, dh-buildinfo, docbook2x, docbook-xml, xsltproc, autotools-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), libxml2-utils, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.15.5), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
+Build-Depends: debhelper (>= 5), quilt (>= 0.40), po-debconf, dh-buildinfo, docbook2x (>= 0.8.8-4), docbook-xml, autotools-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), libxml2-utils, zlib1g-dev, libssl-dev, libcurl3-openssl-dev (>= 7.15.5), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
 XS-Vcs-Svn: svn://svn.debian.org/pkg-boinc/trunk/boinc/
 XS-Vcs-Browser: http://svn.debian.org/wsvn/pkg-boinc/trunk/boinc/
 

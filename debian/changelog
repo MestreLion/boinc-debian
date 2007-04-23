@@ -14,8 +14,9 @@ boinc (5.8.17-1) unstable; urgency=low
       backporting BOINC to sarge but sarge has only libcurl3-dev/7.13.2.
     - Added libxml2-utils to Build-Depends for xmllint which is used in the
       unit-test target in debian/rules.
-    - Added xsltproc to Build-Depends because it is apparently needed by
-      docbook2x-man (>> 0.8.3-1) to create our manpages.
+    - Use versioned docbook2x (>= 0.8.8-4) build dependency because previous
+      versions (>> 0.8.3-1 && << 0.8.8-4) lacked the dependency on xsltproc,
+      which resulted in FTBFS.
   * debian/rules:
     - Added the unit-test target which uses xmllint to check if the XML
       conffiles cc_config.xml and global_prefs_override.xml are well-formed.
