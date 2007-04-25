@@ -1,4 +1,3 @@
-001_amd64_disable_platform_reset.patch
 002_sched_makefile.am.patch
 003_use_sensible-browser.patch
 004_exclude_sea.patch
