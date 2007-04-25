@@ -1,4 +1,4 @@
-boinc (5.9.3-1) experimental; urgency=low
+boinc (5.9.4-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -23,7 +23,7 @@ boinc (5.9.3-1) experimental; urgency=low
     tools/run_in_ops and tools/updater. Some of them were required by the
     tools/make_project script.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 12 Apr 2007 15:34:22 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 25 Apr 2007 08:07:53 +0200
 
 boinc (5.8.17-1) unstable; urgency=low
 
@@ -41,9 +41,6 @@ boinc (5.8.17-1) unstable; urgency=low
       backporting BOINC to sarge but sarge has only libcurl3-dev/7.13.2.
     - Added libxml2-utils to Build-Depends for xmllint which is used in the
       unit-test target in debian/rules.
-    - Use versioned docbook2x (>= 0.8.8-4) build dependency because previous
-      versions (>> 0.8.3-1 && << 0.8.8-4) lacked the dependency on xsltproc,
-      which resulted in FTBFS.
   * debian/rules:
     - Added the unit-test target which uses xmllint to check if the XML
       conffiles cc_config.xml and global_prefs_override.xml are well-formed.
