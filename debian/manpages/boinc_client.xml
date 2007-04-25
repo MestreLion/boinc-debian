@@ -230,6 +230,13 @@
           <para>core client was launched by Manager</para>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term><option>--run_by_updater</option></term>
+        <listitem>
+          <para>set by updater</para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 
