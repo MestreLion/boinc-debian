@@ -195,10 +195,6 @@ install-arch: build
 	
 	# Fix some file permissions.
 	chmod +x \
-	  $(BOINC_SERVER_DIR)/html/ops/db_update.php \
-	  $(BOINC_SERVER_DIR)/html/ops/mass_email_script.php \
-	  $(BOINC_SERVER_DIR)/html/ops/watchdogs.php \
-	  $(BOINC_SERVER_DIR)/html/ops/wd_nresults_changing.php \
 	  $(BOINC_SERVER_DIR)/tools/watch_tcp
 	chmod -x \
 	  $(BOINC_SERVER_DIR)/html/user/forum_search.php \
