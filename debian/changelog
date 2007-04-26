@@ -25,14 +25,16 @@ boinc (5.9.4-1) experimental; urgency=low
     since tools/db_query and tools/watch_tcp use /bin/csh as interpreter.
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
-  * boinc-server.install: Added new files: db/init_db, sched/db_dump_spec.xml,
-    test/uc_result, test/uc_wu_nodelete, tools/cleanlogs.sh,
-    tools/create_work_example, tools/makelog.sh, tools/project.xml,
-    tools/run_in_ops and tools/updater. Some of them were required by the
-    tools/make_project script.
-  * 
+  * debian/boinc-server.install: Added new files: db/init_db,
+    sched/db_dump_spec.xml, test/uc_result, test/uc_wu_nodelete,
+    tools/cleanlogs.sh, tools/create_work_example, tools/makelog.sh,
+    tools/project.xml, tools/run_in_ops and tools/updater. Some of them were
+    required by the tools/make_project script.
+  * debian/rules:
+    - Don't fix PHP shebang and execute permissions of files in html/ops/
+      since these were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 25 Apr 2007 10:19:56 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 26 Apr 2007 23:12:29 +0200
 
 boinc (5.8.17-1) unstable; urgency=low
 
