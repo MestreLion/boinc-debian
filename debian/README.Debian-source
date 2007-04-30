@@ -6,8 +6,8 @@ they are tagged in the BOINC Subversion repository. Anonymous Subversion access
 is available at http://boinc.berkeley.edu/svn/. The branch for the BOINC source
 is trunk/boinc, tagged releases are in tags/. For more information see:
 
-  http://boinc.berkeley.edu/source_code.php
- 
+  http://boinc.berkeley.edu/trac/wiki/SourceCode
+
 To obtain the source from Subversion and package it as .orig.tar.gz the Debian
 BOINC Maintainers use a script called 'export-boinc' which is available in our
 pkg-boinc Subversion repository:

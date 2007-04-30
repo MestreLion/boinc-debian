@@ -180,12 +180,12 @@
           <para>Do operation on a result.</para>
 
           <variablelist>
-	        <varlistentry>
-	          <term><option>suspend</option></term>
-	          <listitem>
+            <varlistentry>
+              <term><option>suspend</option></term>
+              <listitem>
                 <para>Temporarily stop work on a result.</para>
               </listitem>
-	        </varlistentry>
+            </varlistentry>
 
             <varlistentry>
               <term><option>resume</option></term>
@@ -216,7 +216,7 @@
                 <para>Open graphics fullscreen.</para>
               </listitem>
             </varlistentry>
-	      </variablelist>
+          </variablelist>
         </listitem>
       </varlistentry>
 
@@ -237,7 +237,7 @@
               <listitem>
                 <para>Delete current work and get more.</para>
               </listitem>
-	        </varlistentry>
+            </varlistentry>
 
             <varlistentry>
               <term><option>detach</option></term>
@@ -315,8 +315,8 @@
 
           <variablelist>
             <varlistentry>
-	          <term><option>always</option></term>
-	          <listitem>
+              <term><option>always</option></term>
+              <listitem>
                 <para>Do work (network + CPU) always.</para>
               </listitem>
             </varlistentry>
@@ -496,8 +496,8 @@
 
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://boinc.berkeley.edu/boinc_cmd.php"
-      >http://boinc.berkeley.edu/boinc_cmd.php</ulink></para>
+    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/BoincCmd"
+      >http://boinc.berkeley.edu/trac/wiki/BoincCmd</ulink></para>
   </refsect1>
 
   <refsect1>

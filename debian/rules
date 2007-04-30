@@ -18,8 +18,8 @@ endif
 # core client uses the official BOINC platform for this architecture otherwise
 # it would not download any applications because projects mostly provide only
 # applications for official BOINC platforms.
-# See http://boinc.berkeley.edu/platform.php for the list of official BOINC
-# platforms.
+# See http://boinc.berkeley.edu/trac/wiki/BoincPlatforms for the list of
+# official BOINC platforms.
 
 # change BOINC platform i486-pc-linux-gnu to i686-pc-linux-gnu 
 ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
