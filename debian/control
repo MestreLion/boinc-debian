@@ -36,10 +36,19 @@ Description: GUI to control and monitor the BOINC core client
  software platform for distributed computing using volunteered computer
  resources.
  .
- This package contains the BOINC Manager, a graphical monitor and control
- utility for the BOINC core client. For active participation in any BOINC
- project the recommended client package, not the manager, is required for
- every machine contributing.
+ This package contains the BOINC Manager, a graphical monitor and
+ control utility for the BOINC core client. It gives a detailed
+ overview of the state of the client it is monitoring, for example it
+ shows attached projects, running tasks or file transfers between the
+ client and project servers. It also shows statistics about granted
+ credits and disk usage of the client and the projects. The BOINC
+ Manager has two modes of operation, the "Simple View" in which it only
+ displays the most important information and the "Advanced View" in
+ which all information and all control elements are available.
+ .
+ For active participation in any BOINC project the recommended
+ boinc-client package, not the boinc-manager, is required for every
+ machine contributing.
  .
   Homepage: http://boinc.berkeley.edu
 
@@ -60,7 +69,7 @@ Description: development files to build applications for BOINC projects
 Package: boinc-server
 Section: net
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python-mysqldb, mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php4 | php5, php4-cli | php5-cli, php4-mysql | php5-mysql, tcsh | c-shell
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python-mysqldb, mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php5, php5-cli, php5-mysql, tcsh | c-shell
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
