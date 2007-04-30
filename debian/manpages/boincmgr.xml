@@ -13,12 +13,12 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
 
-  <!ENTITY dhgroupname "Debian BOINC Maintainers">  
+  <!ENTITY dhgroupname "Debian BOINC Maintainers">
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "boincmgr">
   <!ENTITY dhdate      "<date>April 14, 2006</date>">
-  
+
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
@@ -46,7 +46,7 @@
     <refentrytitle>&dhbinary;</refentrytitle>
     <manvolnum>1</manvolnum>
   </refmeta>
-  
+
   <refnamediv>
     <refname>&dhbinary;</refname> 
     <refpurpose>The graphical BOINC manager for the core client.</refpurpose>
@@ -57,7 +57,7 @@
       <command>&dhbinary;</command>
     </cmdsynopsis>
   </refsynopsisdiv>
-  
+
   <refsect1>
     <title>DESCRIPTION</title>
     <para>The BOINC manager (<command>&dhbinary;</command>) is a controling
@@ -90,7 +90,7 @@
             visible.</para>
         </listitem>
       </varlistentry>
-      
+
       <varlistentry>
         <term><option>-insecure, --insecure</option></term>
         <listitem>
@@ -102,8 +102,8 @@
 
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://boinc.berkeley.edu/manager.php"
-      >http://boinc.berkeley.edu/manager.php</ulink></para>
+    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced"
+      >http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced</ulink></para>
   </refsect1>
 
   <refsect1>
