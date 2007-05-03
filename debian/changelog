@@ -1,4 +1,4 @@
-boinc (5.9.4-1) experimental; urgency=low
+boinc (5.9.6-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -25,7 +25,7 @@ boinc (5.9.4-1) experimental; urgency=low
     - Added "tcsh | c-shell" to boinc-server's Depends field since
       tools/db_query and tools/watch_tcp use /bin/csh as interpreter.
     - Removed all php4 packages from boinc-server's Depends because php4
-      will not be supported during lenny's life cycle. 
+      will not be supported during lenny's life cycle.
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
   * debian/boinc-server.install: Added new files: db/init_db,
@@ -37,17 +37,20 @@ boinc (5.9.4-1) experimental; urgency=low
     - Don't fix PHP shebang and execute permissions of files in html/ops/
       since these were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 28 Apr 2007 11:12:25 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed,  2 May 2007 15:58:33 +0200
 
-boinc (5.8.17-2) UNRELEASED; urgency=low
+boinc (5.8.17-2) unstable; urgency=low
 
   * NOT RELEASED YET
   * debian/control:
     - Extended boinc-manager's long description.
   * Updated all BOINC URLs to point to their new location in the official
     BOINC wiki according to http://boinc.berkeley.edu/trac/wiki/FileList.
+  * debian/boinc-dev.{install,links}: Install lib/common_defs.h header to fix
+    a FTBFS of boinc-app-seti with boinc-dev/5.8.17-1. This was discovered by
+    Lucas Nussbaum's archive rebuild.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 30 Apr 2007 18:51:16 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu,  3 May 2007 03:35:16 +0200
 
 boinc (5.8.17-1) unstable; urgency=low
 
