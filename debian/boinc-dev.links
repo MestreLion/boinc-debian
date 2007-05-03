@@ -25,6 +25,7 @@ usr/include/BOINC/version.h         usr/share/boinc-dev/version.h
 usr/include/BOINC/api/boinc_gl.h        usr/share/boinc-dev/api/boinc_gl.h
 usr/include/BOINC/api/graphics_data.h   usr/share/boinc-dev/api/graphics_data.h
 usr/include/BOINC/api/reduce.h          usr/share/boinc-dev/api/reduce.h
+usr/include/BOINC/lib/common_defs.h     usr/share/boinc-dev/lib/common_defs.h
 usr/include/BOINC/lib/md5_file.h        usr/share/boinc-dev/lib/md5_file.h
 
 usr/lib/libboinc.a                  usr/share/boinc-dev/lib/libboinc.a
