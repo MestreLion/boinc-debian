@@ -28,16 +28,17 @@ boinc (5.9.6-1) experimental; urgency=low
       will not be supported during lenny's life cycle.
   * debian/boinc-server.README.Debian: Added README.Debian which is at the
     moment only a pointer to http://wiki.debian.org/BOINC/Server.
-  * debian/boinc-server.install: Added new files: db/init_db,
-    sched/db_dump_spec.xml, test/uc_result, test/uc_wu_nodelete,
-    tools/cleanlogs.sh, tools/create_work_example, tools/makelog.sh,
-    tools/project.xml, tools/run_in_ops and tools/updater. Some of them were
-    required by the tools/make_project script.
+  * debian/boinc-server.install:
+    - Added: db/init_db, sched/db_dump_spec.xml, test/uc_result,
+      test/uc_wu_nodelete, tools/cleanlogs.sh, tools/create_work_example,
+      tools/makelog.sh, tools/project.xml, tools/run_in_ops and tools/updater.
+      Some of them were required by the tools/make_project script.
+    - Removed: tools/add (long deprecated upstream).
   * debian/rules:
     - Don't fix PHP shebang and execute permissions of files in html/ops/
       since these were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed,  2 May 2007 15:58:33 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 14 May 2007 11:06:54 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 

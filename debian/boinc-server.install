@@ -21,7 +21,6 @@ debian/extra/boinc_path_config.py   usr/share/python-support/boinc-server/Boinc
 sched/db_dump_spec.xml              usr/share/boinc-server/sched
 test/uc_result                      usr/share/boinc-server/test
 test/uc_wu_nodelete                 usr/share/boinc-server/test
-tools/add                           usr/share/boinc-server/tools
 tools/cleanlogs.sh                  usr/share/boinc-server/tools
 tools/create_work_example           usr/share/boinc-server/tools
 tools/db_query                      usr/share/boinc-server/tools

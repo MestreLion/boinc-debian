@@ -212,7 +212,6 @@ install-arch: build
 	sed -i -e 's/boinc_path_config/Boinc.boinc_path_config/' \
 	  $(BOINC_SERVER_DIR)/py/Boinc/database.py \
 	  $(BOINC_SERVER_DIR)/py/Boinc/setup_project.py \
-	  $(BOINC_SERVER_DIR)/tools/add \
 	  $(BOINC_SERVER_DIR)/tools/make_project \
 	  $(BOINC_SERVER_DIR)/tools/upgrade
 
