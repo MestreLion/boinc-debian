@@ -13,7 +13,7 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
 
-  <!ENTITY dhgroupname "Debian BOINC Maintainers">  
+  <!ENTITY dhgroupname "Debian BOINC Maintainers">
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "boincmgr">
@@ -110,8 +110,9 @@
 
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced"
-      >http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced</ulink></para>
+    <para>
+      <ulink url="http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced"/>
+    </para>
   </refsect1>
 
   <refsect1>
