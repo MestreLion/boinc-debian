@@ -102,8 +102,9 @@
 
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced"
-      >http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced</ulink></para>
+    <para>
+      <ulink url="http://boinc.berkeley.edu/trac/wiki/ManagerAdvanced"/>
+    </para>
   </refsect1>
 
   <refsect1>

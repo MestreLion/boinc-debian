@@ -1,6 +1,6 @@
 boinc (5.8.17-2) unstable; urgency=low
 
-  * NOT RELEASED YET
+  [ Frank S. Thomas ]
   * debian/control:
     - Extended boinc-manager's long description.
     - Added libcurl4-openssl-dev to Build-Depends because the libcurl packages
@@ -11,8 +11,10 @@ boinc (5.8.17-2) unstable; urgency=low
   * debian/boinc-dev.{install,links}: Install lib/common_defs.h header to fix
     a FTBFS of boinc-app-seti with boinc-dev/5.8.17-1. This was discovered by
     Lucas Nussbaum's archive rebuild. (closes: #422643)
+  * debian/manpages/*.xml: Made <ulink> elements empty if their content was
+    the same as the content of their url attribute.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 16 May 2007 10:56:53 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 19 May 2007 12:21:05 +0200
 
 boinc (5.8.17-1) unstable; urgency=low
 

@@ -237,7 +237,7 @@
               <listitem>
                 <para>Delete current work and get more.</para>
               </listitem>
-	        </varlistentry>
+            </varlistentry>
 
             <varlistentry>
               <term><option>detach</option></term>
@@ -489,8 +489,7 @@
 
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/BoincCmd"
-      >http://boinc.berkeley.edu/trac/wiki/BoincCmd</ulink></para>
+    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/BoincCmd"/></para>
   </refsect1>
 
   <refsect1>

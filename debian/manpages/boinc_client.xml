@@ -228,8 +228,7 @@
 
   <refsect1>
     <title>SEE ALSO</title>
-    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/UnixClient"
-      >http://boinc.berkeley.edu/trac/wiki/UnixClient</ulink></para>
+    <para><ulink url="http://boinc.berkeley.edu/trac/wiki/UnixClient"/></para>
   </refsect1>
 
   <refsect1>
