@@ -5,7 +5,8 @@ boinc (5.8.17-2) unstable; urgency=low
     - Extended boinc-manager's long description.
     - Added libcurl4-openssl-dev to Build-Depends because the libcurl packages
       have bumped sonames. The B-D on libcurl3-openssl-dev remains as
-      alternative dependency to ease backporting to etch. (closes: #424501)
+      alternative dependency to ease backporting to etch.
+      (closes: #424501, #425225)
   * Updated all BOINC URLs to point to their new location in the official
     BOINC wiki according to http://boinc.berkeley.edu/trac/wiki/FileList.
   * debian/boinc-dev.{install,links}: Install lib/common_defs.h header to fix
@@ -13,8 +14,11 @@ boinc (5.8.17-2) unstable; urgency=low
     Lucas Nussbaum's archive rebuild. (closes: #422643)
   * debian/manpages/*.xml: Made <ulink> elements empty if their content was
     the same as the content of their url attribute.
+  
+  [ Steffen Moeller ]
+  * debian/control: Extended boinc-client's long description.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 19 May 2007 12:21:05 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 20 May 2007 12:09:40 +0200
 
 boinc (5.8.17-1) unstable; urgency=low
 
