@@ -1,20 +1,6 @@
 boinc (5.10.0-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
-  * New upstream release.
-    - Fixed wrong CPU information on alpha, hppa, ia64, ppc and sparc.
-      (closes: #406853)
-    - Use i686-pc-linux-gnu as alternative platform name for
-      x86_64-pc-linux-gnu to get i386 binaries on amd64. (closes: #366741)
-      Hence all traces to our own mechanism to override the platform name on
-      amd64 have been removed:
-      - debian/patches/001_amd64_disable_platform_reset.patch
-      - debian/extra/use-32bit-on-amd64.sh
-      - the associated paragraph from debian/boinc-client.README.Debian
-  * Updated boinc_client's, boinc_cmd's and boincmgr's manual pages for the
-    new release.
-  * debian/boinc-client.{init,default}: Use two dashes for boinc_client's
-    command line options instead of one because that is it's default now.
 
   +++ Changes unsuitable for the trunk branch:
 
@@ -40,6 +26,28 @@ boinc (5.10.0-1) experimental; urgency=low
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 30 May 2007 11:08:14 +0200
 
+boinc (5.10.0-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - Fixed wrong CPU information on alpha, hppa, ia64, ppc and sparc.
+      (closes: #406853)
+    - Use i686-pc-linux-gnu as alternative platform name for
+      x86_64-pc-linux-gnu to get i386 binaries on amd64. (closes: #366741)
+      Hence all traces to our own mechanism to override the platform name on
+      amd64 have been removed:
+      - debian/patches/001_amd64_disable_platform_reset.patch
+      - debian/extra/use-32bit-on-amd64.sh
+      - the associated paragraph from debian/boinc-client.README.Debian
+  * Updated boinc_client's, boinc_cmd's and boincmgr's manual pages for the
+    new release.
+  * debian/boinc-client.{init,default}: Use two dashes for boinc_client's
+    command line options instead of one because that is it's default now.
+  * debian/boinc-client.postinst: Use "[ ... ] && [ ... ]" instead of
+    "[ ... -a ... ]" because these constructs are much easier to read.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 30 May 2007 14:50:07 +0200
+
 boinc (5.8.17-2) unstable; urgency=low
 
   [ Frank S. Thomas ]
@@ -47,7 +55,8 @@ boinc (5.8.17-2) unstable; urgency=low
     - Extended boinc-manager's long description.
     - Added libcurl4-openssl-dev to Build-Depends because the libcurl packages
       have bumped sonames. The B-D on libcurl3-openssl-dev remains as
-      alternative dependency to ease backporting to etch. (closes: #424501)
+      alternative dependency to ease backporting to etch.
+      (closes: #424501, #425225)
   * Updated all BOINC URLs to point to their new location in the official
     BOINC wiki according to http://boinc.berkeley.edu/trac/wiki/FileList.
   * debian/boinc-dev.{install,links}: Install lib/common_defs.h header to fix
@@ -56,7 +65,10 @@ boinc (5.8.17-2) unstable; urgency=low
   * debian/manpages/*.xml: Made <ulink> elements empty if their content was
     the same as the content of their url attribute.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 19 May 2007 12:21:05 +0200
+  [ Steffen Moeller ]
+  * debian/control: Extended boinc-client's long description.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 20 May 2007 12:09:40 +0200
 
 boinc (5.8.17-1) unstable; urgency=low
 
