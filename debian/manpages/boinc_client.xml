@@ -17,7 +17,7 @@
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "boinc_client">
-  <!ENTITY dhdate      "<date>April 14, 2007</date>">
+  <!ENTITY dhdate      "<date>May 30, 2007</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -101,7 +101,7 @@
       <varlistentry>
         <term><option>--exit_when_idle</option></term>
         <listitem>
-          <para>get/process/report work, then exit</para>
+          <para>exit when there are no results</para>
         </listitem>
       </varlistentry>
 
@@ -214,6 +214,20 @@
         <term><option>--daemon</option></term>
         <listitem>
           <para>run as daemon</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--exit_before_start</option></term>
+        <listitem>
+          <para>exit right before starting a job</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--exit_after_finish</option></term>
+        <listitem>
+          <para>exit right after finishing a job</para>
         </listitem>
       </varlistentry>
 
