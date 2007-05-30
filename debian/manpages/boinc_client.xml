@@ -234,7 +234,7 @@
       <varlistentry>
         <term><option>--insecure</option></term>
         <listitem>
-          <para>disable BOINC security users and permissions</para>
+          <para>disable app sandboxing</para>
         </listitem>
       </varlistentry>
 
