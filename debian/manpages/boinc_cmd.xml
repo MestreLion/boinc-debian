@@ -450,14 +450,6 @@
       </varlistentry>
 
       <varlistentry>
-        <term><option>--read_global_prefs_override</option></term>
-        <listitem>
-          <para>Tell the core client to read the global_prefs_override.xml file
-            and incorporate any global preferences indicated there.</para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
         <term>
           <option>--lookup_account
             <replaceable>url</replaceable>
@@ -476,6 +468,29 @@
             <replaceable>name</replaceable>
           </option>
         </term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--read_global_prefs_override</option></term>
+        <listitem>
+          <para>Tell the core client to read the global_prefs_override.xml file
+            and incorporate any global preferences indicated there.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--read_cc_config</option></term>
+         <listitem>
+          <para>Reread the configuration file (cc_config.xml).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--network_available</option></term>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--get_cc_status</option></term>
       </varlistentry>
 
       <varlistentry>

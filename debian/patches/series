@@ -1,4 +1,3 @@
-001_amd64_disable_platform_reset.patch
+001_dont_install_ca-bundle.crt.patch
 003_use_sensible-browser.patch
 004_exclude_sea.patch
-101_gcc_4.3_fixes.patch

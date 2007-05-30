@@ -1,3 +1,25 @@
+boinc (5.10.0-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - Fixed wrong CPU information on alpha, hppa, ia64, ppc and sparc.
+      (closes: #406853)
+    - Use i686-pc-linux-gnu as alternative platform name for
+      x86_64-pc-linux-gnu to get i386 binaries on amd64. (closes: #366741)
+      Hence all traces to our own mechanism to override the platform name on
+      amd64 have been removed:
+      - debian/patches/001_amd64_disable_platform_reset.patch
+      - debian/extra/use-32bit-on-amd64.sh
+      - the associated paragraph from debian/boinc-client.README.Debian
+  * Updated boinc_client's, boinc_cmd's and boincmgr's manual pages for the
+    new release.
+  * debian/boinc-client.{init,default}: Use two dashes for boinc_client's
+    command line options instead of one because that is it's default now.
+  * debian/boinc-client.postinst: Use "[ ... ] && [ ... ]" instead of
+    "[ ... -a ... ]" because these constructs are much easier to read.
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 30 May 2007 14:50:07 +0200
+
 boinc (5.8.17-2) unstable; urgency=low
 
   [ Frank S. Thomas ]
@@ -14,7 +36,7 @@ boinc (5.8.17-2) unstable; urgency=low
     Lucas Nussbaum's archive rebuild. (closes: #422643)
   * debian/manpages/*.xml: Made <ulink> elements empty if their content was
     the same as the content of their url attribute.
-  
+
   [ Steffen Moeller ]
   * debian/control: Extended boinc-client's long description.
 
