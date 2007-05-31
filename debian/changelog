@@ -17,8 +17,11 @@ boinc (5.10.0-1) unstable; urgency=low
     command line options instead of one because that is it's default now.
   * debian/boinc-client.postinst: Use "[ ... ] && [ ... ]" instead of
     "[ ... -a ... ]" because these constructs are much easier to read.
+  * debian/boinc-client.preinst: Use dpkg-query instead of poking directly
+    into the dpkg status file. See this thread for more information:
+    http://lists.debian.org/debian-devel/2007/05/msg01070.html
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 30 May 2007 14:50:07 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 31 May 2007 19:55:35 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 
