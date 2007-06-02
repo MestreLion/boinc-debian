@@ -1,18 +1,29 @@
 README.Debian-source for BOINC
 ==============================
 
-The BOINC project does not distribute source code releases as tarballs, but
-they are tagged in the BOINC Subversion repository. Anonymous Subversion access
-is available at http://boinc.berkeley.edu/svn/. The branch for the BOINC source
-is trunk/boinc, tagged releases are in tags/. For more information see:
+It is the policy for every Debian package outside the non-free
+distribution to have the sources readily available to allow users of
+the distribution the recompilation and patching. This also holds for
+all packages associated with BOINC. However, the subversion server does
+not manage that code directly, it only holds patches and the additional
+files for the Debian packages. This separation of upstream sources and
+the packaging effort eases subsequent updates to new upstream releases.
+Upstream's sources must hence be downloaded separately.
+
+The BOINC project does not distribute source code releases as tarballs,
+but they are tagged in the BOINC Subversion repository. Anonymous
+Subversion access is available at http://boinc.berkeley.edu/svn/. The
+branch for the BOINC source is trunk/boinc, tagged releases are in
+tags/. For more information see:
 
   http://boinc.berkeley.edu/trac/wiki/SourceCode
 
-To obtain the source from Subversion and package it as .orig.tar.gz the Debian
-BOINC Maintainers use a script called 'export-boinc' which is available in our
-pkg-boinc Subversion repository:
+To obtain the source from Subversion and package it as .orig.tar.gz the
+Debian BOINC Maintainers use a script called 'export-boinc' which is
+available in our pkg-boinc Subversion repository:
 
   http://svn.debian.org/wsvn/pkg-boinc/scripts/export-boinc?op=file
 
-For example, to obtain the .orig.tar.gz tarball for BOINC version 5.8.17 this
-script is invoked as: $ export-boinc -r 5.8.17
+For example, to obtain the .orig.tar.gz tarball for BOINC version
+5.8.17 this script is invoked as:
+  $ export-boinc -r 5.8.17
