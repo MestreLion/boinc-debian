@@ -1,4 +1,4 @@
-boinc (5.10.0-1) unstable; urgency=low
+boinc (5.10.4-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -24,7 +24,11 @@ boinc (5.10.0-1) unstable; urgency=low
   [ Steffen Moeller ]
   * Smallish changes to Debian READMEs and man pages
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 31 May 2007 19:55:35 +0200
+  [ Debconf translations ]
+  * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
+    (closes: #428278)
+
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 10 Jun 2007 13:14:48 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 
