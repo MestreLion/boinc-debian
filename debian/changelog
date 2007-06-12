@@ -1,4 +1,4 @@
-boinc (5.10.4-1) unstable; urgency=low
+boinc (5.10.5-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -20,6 +20,9 @@ boinc (5.10.4-1) unstable; urgency=low
   * debian/boinc-client.preinst: Use dpkg-query instead of poking directly
     into the dpkg status file. See this thread for more information:
     http://lists.debian.org/debian-devel/2007/05/msg01070.html
+  * debian/conffiles/{cc_config.xml,global_prefs_override.xml}: Added comments
+    which explain the purpose of each configuration file and which contain
+    URLs to upstream documentation for each of them.
 
   [ Steffen Moeller ]
   * Smallish changes to Debian READMEs and man pages
@@ -28,7 +31,7 @@ boinc (5.10.4-1) unstable; urgency=low
   * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
     (closes: #428278)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 10 Jun 2007 13:14:48 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 12 Jun 2007 11:27:43 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 
