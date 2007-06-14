@@ -2,7 +2,9 @@ This package was debianized by Steffen Moeller <moeller@pzr.uni-rostock.de> on
 Sat, 13 Nov 2004 23:28:53 +0100. Since Wed, 26 Jan 2005 it is maintained by the
 Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>.
 
-It was downloaded via CVS from alien.ssl.berkeley.edu.
+It was downloaded via Subversion from http://boinc.berkeley.edu/svn/. For more
+details about obtaining the upstream source see debian/README.Debian-source in
+the boinc source package.
 
 Upstream Authors: Dr. David P. Anderson <davea@ssl.berkeley.edu>
                   Rom Walton <rwalton@ssl.berkeley.edu>
