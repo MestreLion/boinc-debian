@@ -1,4 +1,4 @@
-boinc (5.10.6-1) unstable; urgency=low
+boinc (5.10.7-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -25,6 +25,9 @@ boinc (5.10.6-1) unstable; urgency=low
     URLs to upstream documentation for each of them.
   * debian/copyright: State that the source code is obtained via Subversion
     (and not via CVS) and added a pointer to debian/README.Debian-source.
+  * Added /usr/share/bug/boinc-client/script which pastes boinc-client's
+    init script configuration file (/etc/default/boinc-client) into bug
+    reports because this might be helpful for debugging.
 
   [ Steffen Moeller ]
   * Smallish changes to Debian READMEs and man pages
@@ -33,7 +36,7 @@ boinc (5.10.6-1) unstable; urgency=low
   * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
     (closes: #428278)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 14 Jun 2007 14:04:40 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 19 Jun 2007 17:58:45 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 

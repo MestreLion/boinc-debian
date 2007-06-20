@@ -1,3 +1,4 @@
+debian/bug/boinc-client/script      usr/share/bug/boinc-client
 debian/conffiles/cc_config.xml              etc/boinc-client
 debian/conffiles/global_prefs_override.xml  etc/boinc-client
 debian/conffiles/gui_rpc_auth.cfg           etc/boinc-client
