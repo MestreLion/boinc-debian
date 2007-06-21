@@ -28,6 +28,7 @@ boinc (5.10.7-1) unstable; urgency=low
   * Added /usr/share/bug/boinc-client/script which pastes boinc-client's
     init script configuration file (/etc/default/boinc-client) into bug
     reports because this might be helpful for debugging.
+  * extra/bash/boinc_cmd: Added bash completion for boinc_cmd.
 
   [ Steffen Moeller ]
   * Smallish changes to Debian READMEs and man pages.
@@ -36,7 +37,7 @@ boinc (5.10.7-1) unstable; urgency=low
   * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
     (closes: #428278)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 21 Jun 2007 16:39:27 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 21 Jun 2007 18:32:41 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 

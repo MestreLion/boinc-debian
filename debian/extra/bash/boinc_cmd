@@ -1,0 +1,16 @@
+_boinc_cmd()
+{
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="$(boinc_cmd --help 2>&1 | sed -r 's/^[[:space:]](--[a-z_]*).*/\1/' | grep '^--')"
+
+    if [[ "${cur}" == -* ]]; then
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+        return 0
+    fi
+
+}
+complete -F _boinc_cmd boinc_cmd
+# vim: syntax=sh
