@@ -30,13 +30,13 @@ boinc (5.10.7-1) unstable; urgency=low
     reports because this might be helpful for debugging.
 
   [ Steffen Moeller ]
-  * Smallish changes to Debian READMEs and man pages
+  * Smallish changes to Debian READMEs and man pages.
 
   [ Debconf translations ]
   * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
     (closes: #428278)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 19 Jun 2007 17:58:45 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 21 Jun 2007 16:39:27 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 

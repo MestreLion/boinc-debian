@@ -1,14 +1,11 @@
 README.Debian-source for BOINC
 ==============================
 
-It is the policy for every Debian package outside the non-free
-distribution to have the sources readily available to allow users of
-the distribution the recompilation and patching. This also holds for
-all packages associated with BOINC. However, the subversion server does
-not manage that code directly, it only holds patches and the additional
-files for the Debian packages. This separation of upstream sources and
-the packaging effort eases subsequent updates to new upstream releases.
-Upstream's sources must hence be downloaded separately.
+The pkg-boinc Subversion repository does not manage upstream sources
+directly, it only holds patches and the additional files for the Debian
+packages. This separation of upstream sources and the packaging effort
+eases subsequent updates to new upstream releases. Upstream's sources
+must hence be downloaded separately.
 
 The BOINC project does not distribute source code releases as tarballs,
 but they are tagged in the BOINC Subversion repository. Anonymous
@@ -26,4 +23,5 @@ available in our pkg-boinc Subversion repository:
 
 For example, to obtain the .orig.tar.gz tarball for BOINC version
 5.8.17 this script is invoked as:
+
   $ export-boinc -r 5.8.17
