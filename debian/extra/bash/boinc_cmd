@@ -1,16 +1,36 @@
 _boinc_cmd()
 {
-    local cur prev opts
+    local cur prev opts cmds
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="$(boinc_cmd --help 2>&1 | sed -r 's/^[[:space:]](--[a-z_]*).*/\1/' | grep '^--')"
 
-    if [[ "${cur}" == -* ]]; then
-        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+    opts="--host --passwd -h --help -V --version"
+    cmds="$(boinc_cmd --help 2>&1 | sed -r 's/^[[:space:]](--[a-z_]*).*/\1/' \
+        | grep '^--')"
+
+    # The following if construct assures that:
+    # - no command follows if one of $opts or $cmds was given
+    # - after --host follows only one command or --passwd and one command
+    # - after --passwd follows only one command
+    if [[ $COMP_CWORD -eq 1 ]]; then
+        COMPREPLY=( $(compgen -W "$opts $cmds" -- "$cur") )
         return 0
+    elif [[ "${COMP_WORDS[@]}" =~ ".* --passwd .*" ]]; then
+        if [[ "$prev" == --passwd ]]; then
+            return 0
+        elif [[ $COMP_CWORD -lt 6 ]]; then
+            COMPREPLY=( $(compgen -W "$cmds" -- "$cur") )
+            return 0
+        fi
+    elif [[ "${COMP_WORDS[@]}" =~ ".* --host .*" ]]; then
+        if [[ "$prev" == --host ]]; then
+            _known_hosts
+        elif [[ $COMP_CWORD -lt 4 ]]; then
+            COMPREPLY=( $(compgen -W "--passwd $cmds" -- "$cur") )
+            return 0
+        fi
     fi
-
 }
 complete -F _boinc_cmd boinc_cmd
 # vim: syntax=sh
