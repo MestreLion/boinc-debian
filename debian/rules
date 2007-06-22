@@ -98,7 +98,7 @@ build-stamp-boinc-client:
 	dh_testdir
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
-	cp client/boinc_client client/boinc_client.optimized
+	cp client/boinc.unmodified client/boinc_client.optimized
 	touch $@
 
 clean: clean-patched unpatch
@@ -168,9 +168,15 @@ install-arch: build
 	install -D client/boinc_client.optimized \
 	  debian/boinc-client/usr/bin/boinc_client
 	
+	install -D lib/boinccmd.unmodified \
+	  debian/boinc-client/usr/bin/boinc_cmd
+	
 	#
 	# boinc-manager
 	#
+	install -D clientgui/boincmgr.unmodified \
+	  debian/boinc-manager/usr/bin/boincmgr
+	
 	for i in `ls locale/client`; do \
 	  if [ -f "locale/client/$$i/BOINC Manager.mo" ]; then \
 	    install -D -m644 "locale/client/$$i/BOINC Manager.mo" \

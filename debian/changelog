@@ -29,7 +29,11 @@ boinc (5.10.7-1) unstable; urgency=low
     init script configuration file (/etc/default/boinc-client) into bug
     reports because this might be helpful for debugging.
   * extra/bash/boinc_cmd: Added bash completion for boinc_cmd.
-  * debian/rules: Don't ignore $(MAKE) distclean errors to make lintian happy.
+  * debian/rules:
+    - Don't ignore $(MAKE) distclean errors to make lintian happy.
+    - Install unstripped versions of boinc_client, boinc_cmd and boincmgr
+      and let dh_strip do this job for us. Now building BOINC with
+      DEB_BUILD_OPTIONS="nostrip" actually does what it should do.
 
   [ Steffen Moeller ]
   * Smallish changes to Debian READMEs and man pages.
@@ -38,7 +42,7 @@ boinc (5.10.7-1) unstable; urgency=low
   * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
     (closes: #428278)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 22 Jun 2007 12:10:03 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 22 Jun 2007 13:04:24 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 
