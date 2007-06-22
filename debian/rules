@@ -111,8 +111,7 @@ clean-patched:
 	
 	dh_clean client/boinc_client.optimized
 	
-	-$(MAKE) clean
-	-$(MAKE) distclean
+	[ ! -f Makefile ] || $(MAKE) distclean
 	
 	dh_clean \
 	  client/boinc.unmodified \
