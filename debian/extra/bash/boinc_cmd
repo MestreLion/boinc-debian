@@ -31,6 +31,19 @@ _boinc_cmd()
             return 0
         fi
     fi
+
+    # complete single commands
+    case "$prev" in
+        --set_run_mode|--set_network_mode)
+            COMPREPLY=( $(compgen -W "always auto never" -- "$cur") )
+            return 0
+        ;;
+
+        --set_screensaver_mode)
+            COMPREPLY=( $(compgen -W "on off" -- "$cur") )
+            return 0
+        ;;
+    esac
 }
 complete -F _boinc_cmd boinc_cmd
 # vim: syntax=sh
