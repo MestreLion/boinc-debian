@@ -299,16 +299,19 @@
 
       <varlistentry>
         <term>
-          <option>--file_transfer {retry | abort}
+          <option>--file_transfer
             <replaceable>url</replaceable>
             <replaceable>filename</replaceable>
+            {retry | abort}
           </option>
         </term>
       </varlistentry>
 
       <varlistentry>
         <term>
-          <option>--set_run_mode {always | auto | never}</option>
+          <option>--set_run_mode {always | auto | never}
+            [<replaceable>duration</replaceable>]
+          </option>
         </term>
         <listitem>
           <para>Set run mode.</para>
@@ -340,7 +343,9 @@
 
       <varlistentry>
         <term>
-          <option>--set_network_mode {always | auto | never}</option>
+          <option>--set_network_mode {always | auto | never}
+            [<replaceable>duration</replaceable>]
+          </option>
         </term>
         <listitem>
           <para>Set network mode. Like <option>--set_run_mode</option> but
