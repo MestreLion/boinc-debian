@@ -38,6 +38,8 @@ boinc (5.10.8-1) unstable; urgency=low
     hardcoded compiler flags from client/Makefile.am and to make debian/rules
     the only place again where compiler flags are defined.
     (probably closes: #427661)
+  * New boinc-dbg package added to provide debugging symbols for BOINC
+    binaries.
 
   [ Steffen Moeller ]
   * Smallish changes to Debian READMEs and man pages.
@@ -46,7 +48,7 @@ boinc (5.10.8-1) unstable; urgency=low
   * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
     (closes: #428278)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 26 Jun 2007 09:34:20 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Tue, 26 Jun 2007 12:17:44 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 

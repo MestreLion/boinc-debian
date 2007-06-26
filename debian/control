@@ -15,17 +15,18 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3), adduser, lsb-base 
 Suggests: boinc-app-seti, boinc-manager | kboincspy
 Description: core client for the BOINC distributed computing infrastructure
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
- software platform for distributed computing: several initiatives of various
- scientific disciplines all compete for the idle time of desktop computers.
- The developers' web site at the University of Berkeley serves as a common
- portal to the otherwise independently run projects.
+ software platform for distributed computing: several initiatives of
+ various scientific disciplines all compete for the idle time of
+ desktop computers. The developers' web site at the University of
+ Berkeley serves as a common portal to the otherwise independently run
+ projects.
  .
- This package contains the BOINC core client program that is required to
- participate in any project that uses BOINC.  A central server distributes
- work units and collects results via this client.  When attaching a
- local machine to a project, this client will also dynamically download
- the projects application's program to be then wrapped by the BOINC
- core client.
+ This package contains the BOINC core client program that is required
+ to participate in any project that uses BOINC. A central server
+ distributes work units and collects results via this client. When
+ attaching a local machine to a project, this client will also
+ dynamically download the projects application's program to be then
+ wrapped by the BOINC core client.
  .
   Homepage: http://boinc.berkeley.edu
 
@@ -64,7 +65,25 @@ Description: development files to build applications for BOINC projects
  software platform for distributed computing using volunteered computer
  resources.
  .
- This package contains header files and static libraries that are needed
- to develop and compile applications which utilizes the BOINC infrastructure.
+ This package contains header files and static libraries that are
+ needed to develop and compile applications which utilizes the BOINC
+ infrastructure.
+ .
+  Homepage: http://boinc.berkeley.edu
+
+Package: boinc-dbg
+Section: devel
+Priority: extra
+Architecture: any
+Suggests: libcurl3-dbg, libssl0.9.8-dbg, libwxgtk2.6-dbg
+Description: debugging symbols for BOINC binaries
+ The Berkeley Open Infrastructure for Network Computing (BOINC) is a
+ software platform for distributed computing using volunteered computer
+ resources.
+ .
+ This package contains unstripped versions of all binaries included in
+ the BOINC packages. It is provided primarily to provide a backtrace
+ with names in a debugger, this makes it somewhat easier to interpret
+ core dumps.
  .
   Homepage: http://boinc.berkeley.edu
