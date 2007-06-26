@@ -1,10 +1,10 @@
 This patch is Debian-specific. Don't use it for non Debian packages. The
 program "sensible-browser" is part of the essential package debianutils.
 
-Index: boinc-5.10.0/clientgui/hyperlink.cpp
+Index: boinc-5.10.8/clientgui/hyperlink.cpp
 ===================================================================
---- boinc-5.10.0.orig/clientgui/hyperlink.cpp	2006-10-27 12:26:56.000000000 +0200
-+++ boinc-5.10.0/clientgui/hyperlink.cpp	2007-05-30 08:59:31.000000000 +0200
+--- boinc-5.10.8.orig/clientgui/hyperlink.cpp	2006-10-27 12:26:56.000000000 +0200
++++ boinc-5.10.8/clientgui/hyperlink.cpp	2007-06-26 08:57:37.000000000 +0200
 @@ -171,7 +171,8 @@
  }
  

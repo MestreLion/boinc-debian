@@ -1,7 +1,7 @@
-Index: boinc-5.10.0/client/Makefile.am
+Index: boinc-5.10.8/client/Makefile.am
 ===================================================================
---- boinc-5.10.0.orig/client/Makefile.am	2007-05-30 08:58:52.000000000 +0200
-+++ boinc-5.10.0/client/Makefile.am	2007-05-30 08:59:08.000000000 +0200
+--- boinc-5.10.8.orig/client/Makefile.am	2007-06-26 08:55:11.000000000 +0200
++++ boinc-5.10.8/client/Makefile.am	2007-06-26 08:57:25.000000000 +0200
 @@ -66,7 +66,7 @@
  boinc_client_LDADD = -L../lib -lboinc $(PTHREAD_LIBS)
  
