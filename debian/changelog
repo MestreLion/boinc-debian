@@ -42,6 +42,9 @@ boinc (5.10.8-1) unstable; urgency=low
     (probably closes: #427661)
   * New boinc-dbg package added to provide debugging symbols for BOINC
     binaries.
+  * debian/boinc-dev.{install,links}:
+    - Don't install lib/common_defs.h manually, "make install" does this now.
+    - Create a symlink in /usr/share/boinc-dev/lib/ to the new str_util.h.
 
   [ Steffen Moeller ]
   * Smallish changes to Debian READMEs and man pages.
@@ -50,7 +53,7 @@ boinc (5.10.8-1) unstable; urgency=low
   * Added Portuguese (pt.po) by Miguel Figueiredo <elmig@debianpt.org>.
     (closes: #428278)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 27 Jun 2007 10:31:41 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 01 Jul 2007 11:43:53 +0200
 
 boinc (5.8.17-2) unstable; urgency=low
 
