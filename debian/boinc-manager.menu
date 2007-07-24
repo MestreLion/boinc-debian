@@ -1,7 +1,7 @@
 ?package(boinc-manager):\
     needs="X11"\
-    section="Apps/Tools"\
-    hints="BOINC,Science,Monitoring"\
+    section="Applications/System/Monitoring"\
+    hints="BOINC,Science"\
     title="BOINC Manager"\
     longtitle="monitoring utility for the BOINC core client"\
     icon16x16="/usr/share/pixmaps/boincmgr-16.xpm"\
