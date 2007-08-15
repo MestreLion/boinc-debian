@@ -5,13 +5,14 @@ boinc (5.10.8-2) unstable; urgency=low
   [ Frank S. Thomas ]
   * debian/boinc-manager.menu: Changed section for the new menu hierarchy from
     "Apps/Tools" to "Applications/System/Monitoring".
+  * debian/icons/: Updated icons to the new BOINC logo.
 
   [ Debconf translations ]
   * Added Spanish (es.po) by Javier Fernández-Sanguino Peña
     <jfs@computer.org>. (closes: #437379)
   * Added Slovak (sk.po) by helix84 <helix84@centrum.sk>. (closes: #437670)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 13 Aug 2007 19:18:14 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 15 Aug 2007 09:11:46 +0200
 
 boinc (5.10.8-1) unstable; urgency=low
 
