@@ -12,7 +12,7 @@ Package: boinc-client
 Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3), adduser, lsb-base (>= 3.0-6), ca-certificates
-Suggests: boinc-app-seti, boinc-manager | kboincspy
+Suggests: boinc-app-seti, boinc-manager | kboincspy, schedtool
 Description: core client for the BOINC distributed computing infrastructure
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing: several initiatives of
