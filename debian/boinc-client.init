@@ -97,44 +97,29 @@ stop()
 schedule()
 {
   log_begin_msg "Setting up scheduling for $DESC and children:"
-
   if ! is_running; then
-    log_progress_msg "not running"
-    log_end_msg 0
+    log_progress_msg "$NAME not running"
   else
-    if [ -z $pid ]; then
-      log_failure_msg "unable to find pid to do scheduling."
-      return 1
-    fi
-
     if [ ! -x "`which ionice 2>/dev/null`" ]; then
-      log_progress_msg "no ionice in the path,"
+      log_progress_msg "ionice not found,"
     else
-      ionice -n 4 -c 3 -p $pid
-      log_progress_msg "ioniced,"
+      ionice -c 3 -p $pid
+      log_progress_msg "idle,"
     fi
 
     if [ ! -x "`which schedtool 2>/dev/null`" ]; then
-      log_progress_msg "no schedtool in the path"
+      log_progress_msg "schedtool not found"
     else
-      max=5
-      while [ "x$children" = "x" ] && [ $max -ge 0 ]; do
-        children=$(ps --ppid $pid -opid= | tr '\n' ' ' || true)
-        [ "x$children" = "x" ] && sleep 1
-        max=$(expr $max - 1)
-      done
-
-      if [ "x$children" != "x" ]; then
-        ( schedtool -n 19 -D $pid $children >/dev/null && log_progress_msg "idleprio") || \
-         (schedtool -n 19 -B $pid $children >/dev/null && log_progress_msg "batch" ) || \
-         (schedtool -n 19    $pid $children            && log_progress_msg "only niced")
-      else
-        log_progress_msg "unable to find any children"
-      fi
+      children=`ps --ppid $pid -o pid= | tr -d '\n'`
+      (schedtool -n 19 -D $pid $children >/dev/null \
+        && log_progress_msg "idleprio") || \
+      (schedtool -n 19 -B $pid $children >/dev/null \
+        && log_progress_msg "batch") || \
+      (schedtool -n 19 -N $pid $children >/dev/null \
+        && log_progress_msg "normal")
     fi
-
-    log_end_msg 0
   fi
+  log_end_msg 0
 }
 
 status()
@@ -146,7 +131,7 @@ status()
       log_success_msg "Scheduling of $DESC:"
       schedtool $pid
       log_success_msg "Scheduling of $DESC's children:"
-      schedtool $(ps --ppid $pid -o pid=)
+      schedtool `ps --ppid $pid -o pid= | tr -d '\n'`
     fi
   else
     log_success_msg "$STATUS stopped."
