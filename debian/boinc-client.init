@@ -110,7 +110,7 @@ schedule()
     if [ ! -x "`which schedtool 2>/dev/null`" ]; then
       log_progress_msg "schedtool not found"
     else
-      children=`ps --ppid $pid -o pid= | tr -d '\n'`
+      children=`ps --ppid $pid -o pid= | tr '\n' ' '`
       (schedtool -n 19 -D $pid $children >/dev/null \
         && log_progress_msg "idleprio") || \
       (schedtool -n 19 -B $pid $children >/dev/null \
@@ -131,7 +131,7 @@ status()
       log_success_msg "Scheduling of $DESC:"
       schedtool $pid
       log_success_msg "Scheduling of $DESC's children:"
-      schedtool `ps --ppid $pid -o pid= | tr -d '\n'`
+      schedtool `ps --ppid $pid -o pid= | tr '\n' ' '`
     fi
   else
     log_success_msg "$STATUS stopped."
