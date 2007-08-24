@@ -14,13 +14,15 @@ boinc (5.10.8-2) unstable; urgency=low
   * debian/control: Added schedtool, which if installed can be used for
     advanced scheduling in boinc-client's init script, to boinc-client's
     Suggest field.
+  * debian/rules: Added --with-boinc-platform=... to TYPE_FLAGS being another
+    attempt to get the right platform name on ppc64.
 
   [ Debconf translations ]
   * Added Spanish (es.po) by Javier Fernández-Sanguino Peña
     <jfs@computer.org>. (closes: #437379)
   * Added Slovak (sk.po) by helix84 <helix84@centrum.sk>. (closes: #437670)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 18 Aug 2007 14:38:24 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 24 Aug 2007 03:16:28 +0200
 
 boinc (5.10.8-1) unstable; urgency=low
 

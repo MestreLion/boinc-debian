@@ -23,12 +23,14 @@ endif
 
 # change BOINC platform i486-pc-linux-gnu to i686-pc-linux-gnu 
 ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
-  TYPE_FLAGS += --target i686-linux-gnu --program-prefix=""
+  TYPE_FLAGS += --target i686-linux-gnu --program-prefix="" \
+    --with-boinc-platform=i686-pc-linux-gnu
 endif
 
 # change BOINC platform powerpc64-unknown-linux-gnu to ppc64-linux-gnu
 ifeq ($(DEB_HOST_GNU_TYPE), powerpc64-linux-gnu)
-  TYPE_FLAGS += --target ppc64-linux-gnu --program-prefix=""
+  TYPE_FLAGS += --target ppc64-linux-gnu --program-prefix="" \
+    --with-boinc-platform=ppc64-linux-gnu
 endif
 
 CFLAGS += -g -Wall
