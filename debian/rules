@@ -34,10 +34,12 @@ ifeq ($(DEB_HOST_GNU_TYPE), i486-kfreebsd-gnu)
     --with-boinc-platform=i686-pc-kfreebsd-gnu
 endif
 
-# change BOINC platform powerpc64-unknown-linux-gnu to ppc64-linux-gnu
+# change BOINC platform powerpc64-unknown-linux-gnu to ppc64-linux-gnu and
+# declare powerpc-unknown-linux-gnu as alternate platform
 ifeq ($(DEB_HOST_GNU_TYPE), powerpc64-linux-gnu)
   TYPE_FLAGS += --target ppc64-linux-gnu --program-prefix="" \
-    --with-boinc-platform=ppc64-linux-gnu
+    --with-boinc-platform=ppc64-linux-gnu \
+    --with-boinc-alt-platform=powerpc-unknown-linux-gnu
 endif
 
 # declare i686-pc-kfreebsd-gnu as alternate BOINC platform for

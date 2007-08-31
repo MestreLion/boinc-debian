@@ -1,7 +1,6 @@
-boinc (5.10.20-1) unstable; urgency=low
+boinc (5.10.8-2) unstable; urgency=low
 
   [ Frank S. Thomas ]
-  * New upstream release.
   * debian/boinc-manager.menu: Changed section for the new menu hierarchy from
     "Apps/Tools" to "Applications/System/Monitoring".
   * debian/icons/: Updated icons to the new BOINC logo.
@@ -20,6 +19,7 @@ boinc (5.10.20-1) unstable; urgency=low
       i686-pc-kfreebsd-gnu to be consistent with the platform name for i386
       and made i686-pc-kfreebsd-gnu an alternate platform for
       x86_64-pc-kfreebsd-gnu.
+    - Set powerpc-unknown-linux-gnu as alternate platform for ppc64-linux-gnu.
   * debian/boinc-client.postrm: Use the --system option for deluser/delgroup
     to ensure that we are removing system accounts only and mask the
     deluser/delgroup calls because adduser is not essential and we can't rely
@@ -31,7 +31,7 @@ boinc (5.10.20-1) unstable; urgency=low
     <jfs@computer.org>. (closes: #437379)
   * Added Slovak (sk.po) by helix84 <helix84@centrum.sk>. (closes: #437670)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 31 Aug 2007 12:32:38 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 01 Sep 2007 00:39:12 +0200
 
 boinc (5.10.8-1) unstable; urgency=low
 
