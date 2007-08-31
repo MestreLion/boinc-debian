@@ -19,14 +19,19 @@ boinc (5.10.20-1) unstable; urgency=low
     - Changed the BOINC platform on kfreebsd-i386 from i486-pc-kfreebsd-gnu to
       i686-pc-kfreebsd-gnu to be consistent with the platform name for i386
       and made i686-pc-kfreebsd-gnu an alternate platform for
-      x86_64-pc-kfreebsd-gnu. 
+      x86_64-pc-kfreebsd-gnu.
+  * debian/boinc-client.postrm: Use the --system option for deluser/delgroup
+    to ensure that we are removing system accounts only and mask the
+    deluser/delgroup calls because adduser is not essential and we can't rely
+    on non-essential packages to be present during the purge phase. This would
+    be a Policy violation, see section 7.2.
 
   [ Debconf translations ]
   * Added Spanish (es.po) by Javier Fernández-Sanguino Peña
     <jfs@computer.org>. (closes: #437379)
   * Added Slovak (sk.po) by helix84 <helix84@centrum.sk>. (closes: #437670)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 24 Aug 2007 17:47:16 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 31 Aug 2007 12:32:38 +0200
 
 boinc (5.10.8-1) unstable; urgency=low
 

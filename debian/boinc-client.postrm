@@ -16,10 +16,20 @@ rm_boinc_dir()
         rm -r $BOINC_DIR
     fi
     if getent passwd boinc >/dev/null; then
-        deluser boinc
+        if [ -x "`which deluser 2>/dev/null`" ]; then
+            deluser --system boinc
+        else
+            echo >&2 "Not removing \`boinc' system account" \
+              "because deluser command was not found."
+        fi
     fi
     if getent group boinc >/dev/null; then
-        delgroup boinc
+        if [ -x "`which delgroup 2>/dev/null`" ]; then
+            delgroup --system boinc
+        else
+            echo >&2 "Not removing \`boinc' system group" \
+              "because delgroup command was not found."
+        fi
     fi
 }
 
