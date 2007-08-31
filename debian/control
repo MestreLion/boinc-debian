@@ -75,6 +75,7 @@ Package: boinc-dbg
 Section: devel
 Priority: extra
 Architecture: any
+Depends: boinc-client (= ${binary:Version}) | boinc-manager (= ${binary:Version})
 Suggests: libcurl3-dbg, libssl0.9.8-dbg, libwxgtk2.6-dbg
 Description: debugging symbols for BOINC binaries
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a

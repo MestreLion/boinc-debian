@@ -9,9 +9,12 @@ boinc (5.10.8-2) unstable; urgency=low
     advanced scheduling is disabled by default. Invoke the init script with
     the schedule option to enable it. Thanks to Omen Wild
     <dbug4.flibble@mandarb.com> for the patch. (closes: #423259)
-  * debian/control: Added schedtool, which if installed can be used for
-    advanced scheduling in boinc-client's init script, to boinc-client's
-    Suggest field.
+  * debian/control:
+    - Added schedtool, which if installed can be used for advanced scheduling
+      in boinc-client's init script, to boinc-client's Suggest field.
+    - Made boinc-dbg dependent on "boinc-client (= ${binary:Version})" or
+      "boinc-manager (= ${binary:Version})" to ensure that the versions
+      between the debug and program packages do not differ.
   * debian/rules:
     - Added --with-boinc-platform=... to TYPE_FLAGS being another attempt to
       get the right platform name on ppc64.
@@ -31,7 +34,7 @@ boinc (5.10.8-2) unstable; urgency=low
     <jfs@computer.org>. (closes: #437379)
   * Added Slovak (sk.po) by helix84 <helix84@centrum.sk>. (closes: #437670)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 01 Sep 2007 00:39:12 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 01 Sep 2007 00:59:29 +0200
 
 boinc (5.10.8-1) unstable; urgency=low
 
