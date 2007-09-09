@@ -11,7 +11,7 @@
 ### END INIT INFO
 
 # Debian init.d script for the BOINC core client
-# Copyright © 2005, 2006
+# Copyright © 2005, 2006, 2007
 # Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 #
 # This file is licensed under the terms of the GNU General Public License,
@@ -20,6 +20,9 @@
 set -e
 
 ENABLED=0
+BOINC_USER=boinc
+BOINC_DIR=/var/lib/boinc-client
+BOINC_CLIENT=/usr/bin/boinc_client
 
 . /lib/lsb/init-functions
 
@@ -31,7 +34,9 @@ fi
 # Quit quietly, if $ENABLED is 0.
 test "$ENABLED" != "0" || exit 0
 
-if [ ! -x "$BOINC_CLIENT" ]; then
+if [ "$BOINC_CLIENT" = "/usr/bin/boinc_client" ]; then
+  test -x "$BOINC_CLIENT" || exit 0
+elif [ ! -x "$BOINC_CLIENT" ]; then
   log_failure_msg "BOINC client '$BOINC_CLIENT' does not exist or is not" \
     "executable."
   exit 5

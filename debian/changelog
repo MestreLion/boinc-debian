@@ -4,11 +4,16 @@ boinc (5.10.8-2) unstable; urgency=low
   * debian/boinc-manager.menu: Changed section for the new menu hierarchy from
     "Apps/Tools" to "Applications/System/Monitoring".
   * debian/icons/: Updated icons to the new BOINC logo.
-  * debian/boinc-client.init: Added patch to use advanced scheduling for the
-    client and it's children using the schedtool and ionice utilities. For now
-    advanced scheduling is disabled by default. Invoke the init script with
-    the schedule option to enable it. Thanks to Omen Wild
-    <dbug4.flibble@mandarb.com> for the patch. (closes: #423259)
+  * debian/boinc-client.init:
+    - Added patch to use advanced scheduling for the client and it's children
+      using the schedtool and ionice utilities. For now advanced scheduling is
+      disabled by default. Invoke the init script with the schedule option to
+      enable it. Thanks to Omen Wild <dbug4.flibble@mandarb.com> for the
+      patch. (closes: #423259)
+    - Specified default values for the variables of the /etc/default file and
+      changed script to exit quietly if the default $BOINC_CLIENT is used but
+      not present so that it does not fail if the boinc-client package was
+      removed but not purged. Both is required by the Debian Policy.
   * debian/control:
     - Added schedtool, which if installed can be used for advanced scheduling
       in boinc-client's init script, to boinc-client's Suggest field.
@@ -36,7 +41,7 @@ boinc (5.10.8-2) unstable; urgency=low
     <jfs@computer.org>. (closes: #437379)
   * Added Slovak (sk.po) by helix84 <helix84@centrum.sk>. (closes: #437670)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 02 Sep 2007 09:43:31 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 09 Sep 2007 09:47:27 +0200
 
 boinc (5.10.8-1) unstable; urgency=low
 
