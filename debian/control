@@ -5,8 +5,9 @@ Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <steffen_moeller@gmx.de>, Frank S. Thomas <frank@thomas-alfeld.de>, Christoph Martin <christoph.martin@uni-mainz.de>
 Standards-Version: 3.7.2
 Build-Depends: debhelper (>= 5), quilt (>= 0.40), po-debconf, dh-buildinfo, docbook2x, docbook-xml, autotools-dev, automake1.9 (>= 1.9.3), autoconf (>= 2.59), libxml2-utils, zlib1g-dev, libssl-dev, libcurl4-openssl-dev | libcurl3-openssl-dev (>= 7.15.5), freeglut3-dev, libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
-XS-Vcs-Svn: svn://svn.debian.org/pkg-boinc/trunk/boinc/
-XS-Vcs-Browser: http://svn.debian.org/wsvn/pkg-boinc/trunk/boinc/
+Homepage: http://boinc.berkeley.edu
+Vcs-Svn: svn://svn.debian.org/pkg-boinc/trunk/boinc/
+Vcs-Browser: http://svn.debian.org/wsvn/pkg-boinc/trunk/boinc/
 
 Package: boinc-client
 Section: net
@@ -27,8 +28,6 @@ Description: core client for the BOINC distributed computing infrastructure
  attaching a local machine to a project, this client will also
  dynamically download the projects application's program to be then
  wrapped by the BOINC core client.
- .
-  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-manager
 Section: x11
@@ -53,8 +52,6 @@ Description: GUI to control and monitor the BOINC core client
  For active participation in any BOINC project the recommended
  boinc-client package, not the boinc-manager, is required for every
  machine contributing.
- .
-  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-dev
 Section: devel
@@ -68,8 +65,6 @@ Description: development files to build applications for BOINC projects
  This package contains header files and static libraries that are
  needed to develop and compile applications which utilizes the BOINC
  infrastructure.
- .
-  Homepage: http://boinc.berkeley.edu
 
 Package: boinc-dbg
 Section: devel
@@ -86,5 +81,3 @@ Description: debugging symbols for BOINC binaries
  the BOINC packages. It is provided primarily to provide a backtrace
  with names in a debugger, this makes it somewhat easier to interpret
  core dumps.
- .
-  Homepage: http://boinc.berkeley.edu
