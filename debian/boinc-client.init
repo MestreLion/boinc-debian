@@ -135,8 +135,12 @@ status()
     if [ -x "`which schedtool 2>/dev/null`" ]; then
       log_success_msg "Scheduling of $DESC:"
       schedtool $pid
-      log_success_msg "Scheduling of $DESC's children:"
-      schedtool `ps --ppid $pid -o pid= | tr '\n' ' '`
+
+      children=`ps --ppid $pid -o pid= | tr '\n' ' '`
+      if [ ! -z "$children" ]; then
+        log_success_msg "Scheduling of $DESC's children:"
+        schedtool $children
+      fi
     fi
   else
     log_success_msg "$STATUS stopped."
