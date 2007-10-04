@@ -8,6 +8,7 @@ is available on the Debian Wiki:
   http://wiki.debian.org/BOINC
 
 Contents:
+
   1. Configuring the BOINC core client
   2. Installing and configuring BOINC application packages
   3. Moving a BOINC data directory to /var/lib/boinc-client
@@ -21,8 +22,8 @@ Contents:
 On Debian systems the BOINC core client is started by default after
 boot by the '/etc/init.d/boinc-client' init script. In the default
 configuration the BOINC core client uses '/var/lib/boinc-client' as
-BOINC data directory and for security reasons it is executed as the
-system user 'boinc' which only has write access in the BOINC data
+BOINC data directory. For security reasons it is executed as the
+system user 'boinc' which only has write access to the BOINC data
 directory.
 
 Edit the file '/etc/default/boinc-client' to configure the init
@@ -96,8 +97,9 @@ follow these instructions:
    ---------------
 
 With small modifications to the boinc-client package it is possible
-to make it automatically attach to an Account Manager which aids in
-mass deployment of the BOINC client over a network of hosts.
+to make it automatically attach to an Account Manager. This features
+supports the mass deployment of the BOINC client throughout a larger
+network of hosts.
 
 For specific instructions consult this message and the attached
 cookdiff.patch:

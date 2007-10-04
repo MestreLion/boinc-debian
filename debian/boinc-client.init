@@ -11,7 +11,7 @@
 ### END INIT INFO
 
 # Debian init.d script for the BOINC core client
-# Copyright © 2005, 2006
+# Copyright © 2005, 2006, 2007
 # Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 #
 # This file is licensed under the terms of the GNU General Public License,
@@ -20,6 +20,9 @@
 set -e
 
 ENABLED=0
+BOINC_USER=boinc
+BOINC_DIR=/var/lib/boinc-client
+BOINC_CLIENT=/usr/bin/boinc_client
 
 . /lib/lsb/init-functions
 
@@ -31,8 +34,10 @@ fi
 # Quit quietly, if $ENABLED is 0.
 test "$ENABLED" != "0" || exit 0
 
-if [ ! -x "$BOINC_CLIENT" ]; then
-  log_failure_msg "BOINC client '$BOINC_CLIENT' does not exist or is not " \
+if [ "$BOINC_CLIENT" = "/usr/bin/boinc_client" ]; then
+  test -x "$BOINC_CLIENT" || exit 0
+elif [ ! -x "$BOINC_CLIENT" ]; then
+  log_failure_msg "BOINC client '$BOINC_CLIENT' does not exist or is not" \
     "executable."
   exit 5
 fi
@@ -43,7 +48,7 @@ if [ ! -d "$BOINC_DIR" ]; then
 fi
 
 if [ -z "$BOINC_USER" ]; then
-  log_failure_msg "BOINC_USER variable is empty. Set it to a user to run " \
+  log_failure_msg "BOINC_USER variable is empty. Set it to a user to run" \
     "the BOINC core client."
   exit 6
 fi
@@ -73,8 +78,8 @@ start()
     log_progress_msg "already running"
   else
     start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
-      --make-pidfile --user $BOINC_USER --chuid $BOINC_USER --chdir $BOINC_DIR \
-      --exec $BOINC_CLIENT -- $BOINC_OPTS
+      --make-pidfile --user $BOINC_USER --chuid $BOINC_USER \
+      --chdir $BOINC_DIR --exec $BOINC_CLIENT -- $BOINC_OPTS
   fi
   log_end_msg 0
 }
@@ -94,11 +99,49 @@ stop()
   log_end_msg 0
 }
 
+schedule()
+{
+  log_begin_msg "Setting up scheduling for $DESC and children:"
+  if ! is_running; then
+    log_progress_msg "$NAME not running"
+  else
+    if [ ! -x "`which ionice 2>/dev/null`" ]; then
+      log_progress_msg "ionice not found,"
+    else
+      ionice -c 3 -p $pid
+      log_progress_msg "idle,"
+    fi
+
+    if [ ! -x "`which schedtool 2>/dev/null`" ]; then
+      log_progress_msg "schedtool not found"
+    else
+      children=`ps --ppid $pid -o pid= | tr '\n' ' '`
+      (schedtool -n 19 -D $pid $children >/dev/null \
+        && log_progress_msg "idleprio") || \
+      (schedtool -n 19 -B $pid $children >/dev/null \
+        && log_progress_msg "batch") || \
+      (schedtool -n 19 -N $pid $children >/dev/null \
+        && log_progress_msg "normal")
+    fi
+  fi
+  log_end_msg 0
+}
+
 status()
 {
   STATUS="Status of $DESC:"
   if is_running; then
     log_success_msg "$STATUS running."
+    if [ -x "`which schedtool 2>/dev/null`" ]; then
+      log_success_msg "Scheduling of $DESC:"
+      schedtool $pid
+
+      children=`ps --ppid $pid -o pid= | tr '\n' ' '`
+      if [ ! -z "$children" ]; then
+        log_success_msg "Scheduling of $DESC's children:"
+        schedtool $children
+      fi
+    fi
   else
     log_success_msg "$STATUS stopped."
   fi
@@ -123,8 +166,12 @@ case "$1" in
     status
     ;;
 
+  schedule)
+    schedule
+    ;;
+
   *)
-    log_success_msg "Usage: $0 {start|stop|restart|force-reload|status}" >&2
+    log_success_msg "Usage: $0 {start|stop|restart|force-reload|status|schedule}" >&2
     exit 1
     ;;
 esac

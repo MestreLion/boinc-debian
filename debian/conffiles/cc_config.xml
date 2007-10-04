@@ -1,3 +1,8 @@
+<!--
+This is the configuration file cc_config.xml of the BOINC core client.
+For a complete list of all available options and logging flags and their
+meaning see: http://boinc.berkeley.edu/trac/wiki/ClientMessages
+-->
 <cc_config>
   <options>
   </options>

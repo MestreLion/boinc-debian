@@ -1,4 +1,5 @@
 001_dont_install_ca-bundle.crt.patch
-002_sched_makefile.am.patch
+002_remove_hardcoded_optimization.patch
 003_use_sensible-browser.patch
 004_exclude_sea.patch
+005_sched_makefile.am.patch
