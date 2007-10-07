@@ -8,6 +8,9 @@ boinc (6.1.0-1) experimental; urgency=low
     - Don't clean lib/boinccmd and *.unmodified files by hand in the
       clean-patched target, since they are now removed by upstream's
       makefiles on "make clean".
+  * Removed the man pages for boinc_client, boinc_cmd, and boincmgr from the
+    Debian-diff because they are now included in the upstream source and also
+    handled by upstream's makefiles.
 
   +++ Changes unsuitable for the trunk branch:
 
@@ -31,7 +34,7 @@ boinc (6.1.0-1) experimental; urgency=low
     - Don't fix PHP shebang and execute permissions of files in html/ops/
       since these were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 04 Oct 2007 12:16:13 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 07 Oct 2007 14:46:53 +0200
 
 boinc (5.10.8-3) unstable; urgency=low
 
