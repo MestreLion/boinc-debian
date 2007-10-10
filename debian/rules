@@ -203,15 +203,6 @@ install-arch: build
 	    usr/share/boinc-server/sched/`basename $$i`; \
 	done;
 	
-	# Fix some file permissions.
-	chmod +x \
-	  $(BOINC_SERVER_DIR)/tools/watch_tcp
-	chmod -x \
-	  $(BOINC_SERVER_DIR)/html/user/forum_search.php \
-	  $(BOINC_SERVER_DIR)/html/user/forum_search_action.php \
-	  $(BOINC_SERVER_DIR)/html/user/forum_thread_status.php \
-	  $(BOINC_SERVER_DIR)/html/user/forum_thread_vote.php
-	
 	# Remove Python shebang from Boinc module files that are not scripts.
 	sed -i -e '1 d' \
 	  $(BOINC_SERVER_DIR)/py/Boinc/add_util.py \

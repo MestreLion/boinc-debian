@@ -31,10 +31,10 @@ boinc (6.1.0-1) experimental; urgency=low
       Some of them were required by the tools/make_project script.
     - Removed: tools/add (long deprecated upstream).
   * debian/rules:
-    - Don't fix PHP shebang and execute permissions of files in html/ops/
-      since these were fixed upstream.
+    - Don't fix PHP shebangs of files in html/ops/ and removed other
+      permission fixes, because they were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 07 Oct 2007 14:46:53 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 10 Oct 2007 11:25:33 +0200
 
 boinc (5.10.8-3) unstable; urgency=low
 
