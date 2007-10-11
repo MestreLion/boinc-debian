@@ -141,8 +141,6 @@ clean-patched:
 	  py/Makefile.in \
 	  py/Boinc/Makefile.in \
 	  sched/Makefile.in \
-	  sched/status \
-	  sched/stop \
 	  sea/Makefile.in \
 	  test/Makefile.in \
 	  tools/Makefile.in \
