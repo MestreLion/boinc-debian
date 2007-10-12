@@ -6,7 +6,6 @@ debian/tmp/usr/bin/create_work      usr/lib/boinc-server/bin
 debian/tmp/usr/bin/dir_hier_move    usr/lib/boinc-server/bin
 debian/tmp/usr/bin/dir_hier_path    usr/lib/boinc-server/bin
 debian/tmp/usr/bin/sign_executable  usr/lib/boinc-server/bin
-debian/tmp/usr/bin/updater          usr/lib/boinc-server/bin
 debian/tmp/usr/bin/start            usr/share/boinc-server/bin
 debian/tmp/usr/lib/BOINC/sched      usr/lib/boinc-server
 db/*.sql                            usr/share/boinc-server/db

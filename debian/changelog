@@ -27,14 +27,14 @@ boinc (6.1.0-1) experimental; urgency=low
   * debian/boinc-server.install:
     - Added: db/init_db, sched/db_dump_spec.xml, test/uc_result,
       test/uc_wu_nodelete, tools/cleanlogs.sh, tools/create_work_example,
-      tools/makelog.sh, tools/project.xml, tools/run_in_ops and tools/updater.
+      tools/makelog.sh, tools/project.xml and tools/run_in_ops.
       Some of them were required by the tools/make_project script.
     - Removed: tools/add (long deprecated upstream).
   * debian/rules:
     - Don't fix PHP shebangs of files in html/ops/ and removed other
       permission fixes, because they were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 11 Oct 2007 15:33:06 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 12 Oct 2007 22:00:27 +0200
 
 boinc (5.10.8-3) unstable; urgency=low
 
