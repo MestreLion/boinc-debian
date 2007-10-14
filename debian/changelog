@@ -11,6 +11,8 @@ boinc (6.1.0-1) experimental; urgency=low
   * Removed the man pages for boinc_client, boinc_cmd, and boincmgr from the
     Debian-diff because they are now included in the upstream source and also
     handled by upstream's makefiles.
+  * Rewrote debian/copyright in the format which is described in this wiki
+    page: http://wiki.debian.org/Proposals/CopyrightFormat
 
   +++ Changes unsuitable for the trunk branch:
 
@@ -34,7 +36,7 @@ boinc (6.1.0-1) experimental; urgency=low
     - Don't fix PHP shebangs of files in html/ops/ and removed other
       permission fixes, because they were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 12 Oct 2007 22:00:27 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 14 Oct 2007 23:55:32 +0200
 
 boinc (5.10.8-3) unstable; urgency=low
 
