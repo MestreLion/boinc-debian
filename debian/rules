@@ -135,6 +135,7 @@ clean-patched:
 	  client/Makefile.in \
 	  clientgui/Makefile.in \
 	  db/Makefile.in \
+	  doc/Makefile.in \
 	  doc/manpages/Makefile.in \
 	  lib/Makefile.in \
 	  m4/Makefile.in \
