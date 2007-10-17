@@ -1,8 +1,7 @@
 BOINC server for Debian
 =======================
 
-The preparation of a package for a server in the BOINC is still in its
-infancy.  A wiki page at http://wiki.debian.org/BOINC/Server is intended
-to serve as a main communicator for the development of the package and
-general priniples for the setup of the server system.
-
+The preparation of a BOINC server package is still in its infancy.
+A wiki page at http://wiki.debian.org/BOINC/Server is intended to
+serve as a main communicator for the development of the package and
+general principles for the setup of the server system.
