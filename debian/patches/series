@@ -3,3 +3,4 @@
 003_use_sensible-browser.patch
 004_exclude_sea.patch
 201_specify_alt_platform_in_cc_config.patch
+202_use_uid_if_username_is_empty.patch

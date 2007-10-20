@@ -1,6 +1,7 @@
-diff -Naur boinc-5.10.8.orig/client/cs_platforms.C boinc-5.10.8/client/cs_platforms.C
---- boinc-5.10.8.orig/client/cs_platforms.C	2007-05-07 21:38:27.000000000 +0200
-+++ boinc-5.10.8/client/cs_platforms.C	2007-10-11 13:00:17.000000000 +0200
+Index: boinc-5.10.25/client/cs_platforms.C
+===================================================================
+--- boinc-5.10.25.orig/client/cs_platforms.C
++++ boinc-5.10.25/client/cs_platforms.C
 @@ -93,6 +93,8 @@
  
  #endif
@@ -10,25 +11,27 @@ diff -Naur boinc-5.10.8.orig/client/cs_platforms.C boinc-5.10.8/client/cs_platfo
      if (config.no_alt_platform) {
          PLATFORM p = platforms[0];
          platforms.clear();
-diff -Naur boinc-5.10.8.orig/client/log_flags.C boinc-5.10.8/client/log_flags.C
---- boinc-5.10.8.orig/client/log_flags.C	2007-06-11 23:30:26.000000000 +0200
-+++ boinc-5.10.8/client/log_flags.C	2007-10-11 13:05:37.000000000 +0200
-@@ -216,6 +216,7 @@
+Index: boinc-5.10.25/client/log_flags.C
+===================================================================
+--- boinc-5.10.25.orig/client/log_flags.C
++++ boinc-5.10.25/client/log_flags.C
+@@ -219,6 +219,7 @@
          if (xp.parse_bool(tag, "disallow_attach", disallow_attach)) continue;
          if (xp.parse_bool(tag, "os_random_only", os_random_only)) continue;
          if (xp.parse_bool(tag, "no_alt_platform", no_alt_platform)) continue;
 +        if (xp.parse_str(tag, "alt_platform", alt_platform, sizeof(alt_platform))) continue;
-         msg_printf(NULL, MSG_USER_ERROR, "Unparsed tag in %s: <%s>\n",
-             CONFIG_FILE, tag
-         );
-diff -Naur boinc-5.10.8.orig/client/log_flags.h boinc-5.10.8/client/log_flags.h
---- boinc-5.10.8.orig/client/log_flags.h	2007-05-07 21:38:27.000000000 +0200
-+++ boinc-5.10.8/client/log_flags.h	2007-10-11 13:02:23.000000000 +0200
-@@ -91,6 +91,7 @@
+         if (xp.parse_bool(tag, "simple_gui_only", simple_gui_only)) continue;
+         if (xp.parse_bool(tag, "dont_contact_ref_site", dont_contact_ref_site)) continue;
+         if (xp.parse_str(tag, "data_dir", path, sizeof(path))) {
+Index: boinc-5.10.25/client/log_flags.h
+===================================================================
+--- boinc-5.10.25.orig/client/log_flags.h
++++ boinc-5.10.25/client/log_flags.h
+@@ -92,6 +92,7 @@
      bool disallow_attach;
      bool os_random_only;
      bool no_alt_platform;
 +    char alt_platform[256];
+     bool simple_gui_only;
+     bool dont_contact_ref_site;
  
-     CONFIG();
-     void defaults();

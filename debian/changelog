@@ -1,5 +1,7 @@
-boinc (5.10.8-3) unstable; urgency=low
+boinc (5.10.25-1) unstable; urgency=low
 
+  [ Frank S. Thomas ]
+  * New upstream release.
   * debian/control:
     - Moved Homepage pseudo field in the long descriptions to the source stanza
       because this is now a propper debian/control field supported by dpkg.
@@ -8,12 +10,16 @@ boinc (5.10.8-3) unstable; urgency=low
   * debian/boinc-client.init: Print the scheduling status of boinc_client's
     children only if there are any present, otherwise schedtool would be
     called without arguments and would print its usage text.
-  * debian/patches/: Added 201_specify_alt_platform_in_cc_config.patch which
-    allows to set the alternate platform of the BOINC client in its
-    cc_config.xml file using the <alt_platform> element within the <options>
-    element. (closes: 437326)
+  * debian/patches/:
+    - Added 201_specify_alt_platform_in_cc_config.patch which allows to set
+      the alternate platform of the BOINC client in its cc_config.xml file
+      using the <alt_platform> element within the <options> element.
+      (closes: #437326)
+    - Added 202_use_uid_if_username_is_empty.patch which checks at account
+      creation if wxGetUserName() returns an empty string and calls
+      wxGetUserId() if it is empty. (closes: #447320)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 18 Oct 2007 11:20:35 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 20 Oct 2007 11:44:38 +0200
 
 boinc (5.10.8-2) unstable; urgency=low
 
