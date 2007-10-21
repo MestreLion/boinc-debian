@@ -2,6 +2,8 @@ boinc (5.10.25-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
+    - Handles change in /proc/cpuinfo on powerpc introduced in Linux 2.6.23.
+      (closes: #437459)
   * debian/control:
     - Moved Homepage pseudo field in the long descriptions to the source stanza
       because this is now a propper debian/control field supported by dpkg.
@@ -19,7 +21,7 @@ boinc (5.10.25-1) unstable; urgency=low
       creation if wxGetUserName() returns an empty string and calls
       wxGetUserId() if it is empty. (closes: #447320)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sat, 20 Oct 2007 11:44:38 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 21 Oct 2007 11:10:01 +0200
 
 boinc (5.10.8-2) unstable; urgency=low
 
