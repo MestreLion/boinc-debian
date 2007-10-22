@@ -1,10 +1,13 @@
-boinc (5.10.25-1) unstable; urgency=low
+boinc (5.10.26-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
     - Handles change in /proc/cpuinfo on powerpc introduced in Linux 2.6.23.
       Thanks to Thibaut VARENE <varenet@debian.org> for the patch.
       (closes: #437459)
+    - Allows to set arbitrary many alternate platforms in the client's config
+      file cc_config.xml with the <alt_platform> element which is a direct
+      child of the <options> element. (closes: #437326)
   * debian/control:
     - Moved Homepage pseudo field in the long descriptions to the source stanza
       because this is now a propper debian/control field supported by dpkg.
@@ -19,7 +22,7 @@ boinc (5.10.25-1) unstable; urgency=low
     Thanks to Morita Sho <morita-pub-en-debian@inz.sakura.ne.jp> for the
     excellent bug report. (closes: #447320)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Sun, 21 Oct 2007 12:34:24 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Mon, 22 Oct 2007 22:01:24 +0200
 
 boinc (5.10.8-2) unstable; urgency=low
 
