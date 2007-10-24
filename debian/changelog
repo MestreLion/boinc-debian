@@ -17,10 +17,10 @@ boinc (5.10.26-1) unstable; urgency=low
     children only if there are any present, otherwise schedtool would be
     called without arguments and would print its usage text.
   * debian/patches/: Added 101_use_uid_if_username_is_empty.patch which checks
-    at account creation if wxGetUserName() returns an empty string and calls
-    wxGetUserId() if it is empty.
-    Thanks to Morita Sho <morita-pub-en-debian@inz.sakura.ne.jp> for the
-    excellent bug report. (closes: #447320)
+    at account creation if wxGetUserName() returned an empty string and if it
+    did uses the output of wxGetUserId() instead. Thanks to Morita Sho
+    <morita-pub-en-debian@inz.sakura.ne.jp> for the excellent bug report.
+    (closes: #447320)
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 24 Oct 2007 09:54:47 +0200
 
