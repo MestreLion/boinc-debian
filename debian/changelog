@@ -1,13 +1,17 @@
-boinc (5.10.26-1) unstable; urgency=low
+boinc (5.10.27-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
-  * New upstream release.
+  * New upstream release. (closes: #447929)
     - Handles change in /proc/cpuinfo on powerpc introduced in Linux 2.6.23.
       Thanks to Thibaut VARENE <varenet@debian.org> for the patch.
       (closes: #437459)
     - Allows to set arbitrary many alternate platforms in the client's config
       file cc_config.xml with the <alt_platform> element which is a direct
       child of the <options> element. (closes: #437326)
+    - BOINC Manager: At account creation check if wxGetUserName() returned an
+      empty string and if it did use the output of wxGetUserId() instead.
+      Thanks to Morita Sho <morita-pub-en-debian@inz.sakura.ne.jp> for the
+      excellent bug report. (closes: #447320)
   * debian/control:
     - Moved Homepage pseudo field in the long descriptions to the source stanza
       because this is now a propper debian/control field supported by dpkg.
@@ -16,14 +20,9 @@ boinc (5.10.26-1) unstable; urgency=low
   * debian/boinc-client.init: Print the scheduling status of boinc_client's
     children only if there are any present, otherwise schedtool would be
     called without arguments and would print its usage text.
-  * debian/patches/: Added 101_use_uid_if_username_is_empty.patch which checks
-    at account creation if wxGetUserName() returned an empty string and if it
-    did uses the output of wxGetUserId() instead. Thanks to Morita Sho
-    <morita-pub-en-debian@inz.sakura.ne.jp> for the excellent bug report.
-    (closes: #447320)
   * debian/icons/: Use icons with transparent background.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 24 Oct 2007 17:08:58 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 24 Oct 2007 23:22:47 +0200
 
 boinc (5.10.8-2) unstable; urgency=low
 
