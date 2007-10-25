@@ -21,8 +21,15 @@ boinc (5.10.27-1) unstable; urgency=low
     children only if there are any present, otherwise schedtool would be
     called without arguments and would print its usage text.
   * debian/icons/: Use icons with transparent background.
+  * debian/boinc-manager.desktop:
+    - Addded Portuguese translations for GenericName and Comment, thanks to
+      Marco Rodrigues <gothicx@sapo.pt>.
+    - Monitor is a subcategory of the System main category, so use System
+      instead of Utility.
+    - Removed the Encoding key since it is deprecated in the Desktop Entry
+      Specification 1.0 and added the Version key.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 24 Oct 2007 23:22:47 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 25 Oct 2007 20:54:09 +0200
 
 boinc (5.10.8-2) unstable; urgency=low
 
