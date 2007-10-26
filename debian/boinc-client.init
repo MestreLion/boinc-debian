@@ -137,7 +137,7 @@ status()
       schedtool $pid
 
       children=`ps --ppid $pid -o pid= | tr '\n' ' '`
-      if [ ! -z "$children" ]; then
+      if [ -n "$children" ]; then
         log_success_msg "Scheduling of $DESC's children:"
         schedtool $children
       fi
