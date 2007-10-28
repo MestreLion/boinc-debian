@@ -19,12 +19,13 @@
 
 set -e
 
+. /lib/lsb/init-functions
+
+# Default values for the variables that are also set in the defaults file.
 ENABLED=0
 BOINC_USER=boinc
 BOINC_DIR=/var/lib/boinc-client
 BOINC_CLIENT=/usr/bin/boinc_client
-
-. /lib/lsb/init-functions
 
 # Source defaults file. Edit that file to configure this script.
 if [ -e /etc/default/boinc-client ]; then
