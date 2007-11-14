@@ -23,6 +23,7 @@ set -e
 
 # Default values for the variables that are also set in the defaults file.
 ENABLED=0
+SCHEDULE=0
 BOINC_USER=boinc
 BOINC_DIR=/var/lib/boinc-client
 BOINC_CLIENT=/usr/bin/boinc_client
@@ -83,6 +84,10 @@ start()
       --chdir $BOINC_DIR --exec $BOINC_CLIENT -- $BOINC_OPTS
   fi
   log_end_msg 0
+
+  if [ "$SCHEDULE" = "1" ]; then
+    schedule
+  fi
 }
 
 stop()
