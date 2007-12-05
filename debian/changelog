@@ -1,19 +1,20 @@
 boinc (5.10.30-1) unstable; urgency=low
 
-  * NOT RELEASED YET
-
   [ Frank S. Thomas ]
   * New upstream release.
   * debian/boinc-client.default: Removed --return_results_immediately from the
     example BOINC_OPTS variable, because this command line option is not
     implemented and won't be available in BOINC >= 6.1, see upstream r14280.
+  * debian/control:
+    - Bumped Standards-Version from 3.7.2 to 3.7.3, no changes required.
+    - Changed my maintainer address to fst@debian.org.
 
   [ Thibaut VARENE ]
   * debian/boinc-client.{init,default}: Added option to enable advanced
     scheduling of the client and its sub-processes by default.
     (closes: #449015)
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Fri, 23 Nov 2007 12:26:00 +0100
+ -- Frank S. Thomas <fst@debian.org>  Wed, 05 Dec 2007 03:02:28 +0100
 
 boinc (5.10.27-1) unstable; urgency=low
 
