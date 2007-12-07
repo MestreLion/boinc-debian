@@ -227,5 +227,15 @@ binary-arch: build install-arch
 	dh_builddeb -a
 
 binary: binary-arch
+
+get-orig-source:
+	(LATEST_VERSION=`svn list http://boinc.berkeley.edu/svn/tags/ | \
+	  sed 's/boinc_core_release_\(.*\)\//\1/' | \
+	  sort -g -t_ -k1 -k2 -k3 | sed 's/_/./g' | tail -n 1 | tr -d '\n'`; \
+	EXB=/tmp/export-boinc; \
+	svn export svn://svn.debian.org/pkg-boinc/scripts/export-boinc $$EXB; \
+	$$EXB -r $$LATEST_VERSION; \
+	rm -f $$EXB)
+
 .PHONY: patch unpatch unit-test pre-build build clean clean-patched install \
-  install-arch binary-arch binary
+  install-arch binary-arch binary get-orig-source
