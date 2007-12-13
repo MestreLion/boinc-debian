@@ -1,0 +1,123 @@
+Index: boinc/db/db_base.h
+===================================================================
+--- boinc/db/db_base.h	(revision 14381)
++++ boinc/db/db_base.h	(working copy)
+@@ -20,6 +20,9 @@
+ #ifndef _DB_BASE_
+ #define _DB_BASE_
+ 
++#include <cstdlib>
++#include <string>
++
+ #include <mysql.h>
+ 
+ // if SQL columns are not 'not null', you must use these safe_atoi, safe_atof
+Index: boinc/sched/edf_sim.C
+===================================================================
+--- boinc/sched/edf_sim.C	(revision 14381)
++++ boinc/sched/edf_sim.C	(working copy)
+@@ -19,6 +19,7 @@
+ 
+ #include <vector>
+ #include <algorithm>
++#include <cstdio>
+ 
+ #include "edf_sim.h"
+ 
+Index: boinc/sched/edf_sim.h
+===================================================================
+--- boinc/sched/edf_sim.h	(revision 14381)
++++ boinc/sched/edf_sim.h	(working copy)
+@@ -20,6 +20,7 @@
+ #ifndef _EDF_SIM_H
+ #define _EDF_SIM_H
+ 
++#include <cstring>
+ #include <vector>
+ 
+ struct IP_RESULT {
+Index: boinc/sched/validator.C
+===================================================================
+--- boinc/sched/validator.C	(revision 14381)
++++ boinc/sched/validator.C	(working copy)
+@@ -37,6 +37,7 @@
+ 
+ #include "config.h"
+ #include <unistd.h>
++#include <climits>
+ #include <cmath>
+ #include <vector>
+ 
+Index: boinc/sched/sched_locality.C
+===================================================================
+--- boinc/sched/sched_locality.C	(revision 14381)
++++ boinc/sched/sched_locality.C	(working copy)
+@@ -39,6 +39,8 @@
+ #include "sched_locality.h"
+ #include "sched_util.h"
+ 
++#include <algorithm>
++#include <climits>
+ #include <vector>
+ #include <string>
+ #include <cstring>
+Index: boinc/lib/crypt.C
+===================================================================
+--- boinc/lib/crypt.C	(revision 14381)
++++ boinc/lib/crypt.C	(working copy)
+@@ -26,6 +26,7 @@
+ #include <cctype>
+ #include <cstdio>
+ #include <cstdlib>
++#include <cstring>
+ #endif
+ 
+ #include "md5_file.h"
+Index: boinc/lib/parse.h
+===================================================================
+--- boinc/lib/parse.h	(revision 14381)
++++ boinc/lib/parse.h	(working copy)
+@@ -25,6 +25,7 @@
+ #else
+ #include <cstdio>
+ #include <cstdlib>
++#include <cstring>
+ #include <string>
+ #include <math.h>
+ #ifdef solaris
+Index: boinc/lib/procinfo_unix.C
+===================================================================
+--- boinc/lib/procinfo_unix.C	(revision 14381)
++++ boinc/lib/procinfo_unix.C	(working copy)
+@@ -29,6 +29,7 @@
+ 
+ #include <stdio.h>
+ 
++#include <cstring>
+ #include <ctype.h>
+ #include <sys/types.h>
+ #include <dirent.h>
+Index: boinc/client/cs_account.C
+===================================================================
+--- boinc/client/cs_account.C	(revision 14381)
++++ boinc/client/cs_account.C	(working copy)
+@@ -23,6 +23,7 @@
+ 
+ #ifndef _WIN32
+ #include "config.h"
++#include <algorithm>
+ #include <cstdio>
+ #include <cassert>
+ #ifdef HAVE_SYS_STAT_H
+Index: boinc/client/client_msgs.C
+===================================================================
+--- boinc/client/client_msgs.C	(revision 14381)
++++ boinc/client/client_msgs.C	(working copy)
+@@ -22,6 +22,7 @@
+ #else
+ #include "config.h"
+ #include <cstdarg>
++#include <cstring>
+ #include <deque>
+ #endif
+ 

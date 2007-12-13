@@ -3,6 +3,11 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# Uncomment this to compile with gcc-snapshot.
+#export CC  = /usr/lib/gcc-snapshot/bin/gcc
+#export CXX = /usr/lib/gcc-snapshot/bin/g++
+#export CPP = /usr/lib/gcc-snapshot/bin/cpp
+
 include /usr/share/quilt/quilt.make
 
 DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
