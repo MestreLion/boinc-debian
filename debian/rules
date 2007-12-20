@@ -4,9 +4,9 @@
 #export DH_VERBOSE=1
 
 # Uncomment this to compile with gcc-snapshot.
-#export CC  = /usr/lib/gcc-snapshot/bin/gcc
-#export CXX = /usr/lib/gcc-snapshot/bin/g++
-#export CPP = /usr/lib/gcc-snapshot/bin/cpp
+#export  CC=/usr/lib/gcc-snapshot/bin/gcc
+#export CXX=/usr/lib/gcc-snapshot/bin/g++
+#export CPP=/usr/lib/gcc-snapshot/bin/cpp
 
 include /usr/share/quilt/quilt.make
 
