@@ -6,8 +6,11 @@ boinc (5.10.30-3) unstable; urgency=low
   * debian/patches/:
     - Renamed 201_missing_headers_for_gcc4.3.patch to 102_... because it has
       been applied upstream in r14436.
+  * debian/rules:
+    - Pass "LDFLAGS=-Wl,--as-needed" to configure in order to remove
+      unnecessary library dependencies.
 
- -- Frank S. Thomas <fst@debian.org>  Fri, 21 Dec 2007 22:46:55 +0100
+ -- Frank S. Thomas <fst@debian.org>  Sun, 30 Dec 2007 14:59:04 +0100
 
 boinc (5.10.30-2) unstable; urgency=low
 

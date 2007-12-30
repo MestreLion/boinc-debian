@@ -55,6 +55,7 @@ endif
 
 CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall
+LDFLAGS += -Wl,--as-needed
 
 CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
@@ -81,7 +82,8 @@ CFGFLAGS = \
   --enable-unicode \
   --with-ssl \
   CFLAGS="$(CFLAGS)" \
-  CXXFLAGS="$(CXXFLAGS)"
+  CXXFLAGS="$(CXXFLAGS)" \
+  LDFLAGS="$(LDFLAGS)"
 
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
@@ -90,7 +92,8 @@ CFGFLAGS_boinc-client = \
   --with-ssl \
   --without-wx-config \
   CFLAGS="$(CFLAGS_boinc-client)" \
-  CXXFLAGS="$(CXXFLAGS_boinc-client)"
+  CXXFLAGS="$(CXXFLAGS_boinc-client)" \
+  LDFLAGS="$(LDFLAGS)"
 
 unit-test:
 	xmllint --noout \
