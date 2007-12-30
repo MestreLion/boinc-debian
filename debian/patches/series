@@ -4,3 +4,4 @@
 004_exclude_sea.patch
 101_fix_memory_detection_on_kfreebsd.patch
 102_missing_headers_for_gcc4.3.patch
+201_fix_terminal_activity_detection.patch

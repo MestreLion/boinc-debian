@@ -1,17 +1,18 @@
 boinc (5.10.30-3) unstable; urgency=low
 
-  * NOT RELEASED YET
-
   [ Frank S. Thomas ]
-  * debian/patches/: Renamed 201_missing_headers_for_gcc4.3.patch to
-    102_... because it has been applied upstream in r14436.
+  * debian/patches/:
+    - Renamed 201_missing_headers_for_gcc4.3.patch to 102_... because it has
+      been applied upstream in r14436.
+    - Added 201_fix_terminal_activity_detection.patch to fix the activity
+      detection in terminal applications. (closes: #448982)
   * debian/rules: Pass "LDFLAGS=-Wl,--as-needed" to configure in order to
     remove unnecessary library dependencies.
   * debian/boinc-client.postinst: Changed the default permission of the
     global_prefs_override.xml conffile from 0644 to 0664 so that that local
     preferences are saved when GUI RPCs are used to set them. (closes: #458007)
 
- -- Frank S. Thomas <fst@debian.org>  Sun, 30 Dec 2007 20:23:57 +0100
+ -- Frank S. Thomas <fst@debian.org>  Sun, 30 Dec 2007 22:31:28 +0100
 
 boinc (5.10.30-2) unstable; urgency=low
 
