@@ -116,7 +116,7 @@
         <listitem>
           <para>Manage symbolic links only for the given project
             <replaceable>PROJECT</replaceable>.
-            Run <command>&dhbinary;<option>--list-projects</option></command>
+            Run <command>&dhbinary; <option>--list-projects</option></command>
             to get a list of projects for which anonymous applications are
             available and therefore can be replaced with
             <replaceable>PROJECT</replaceable>. If this option is not present,
