@@ -6,8 +6,13 @@ boinc (5.10.30-4) unstable; urgency=low
   * debian/manpages/update-boinc-applinks.xml: Fixed Lintian's informational
     tag "I: hyphen-used-as-minus-sign" by enclosing options in <command>
     elements with the <option> element.
+  * debian/rules:
+    - Changed BOINC platform powerpc-unknown-linux-gnu to powerpc-linux-gnu on
+      powerpc, this is now an official BOINC platform.
+    - Removed the --target and --program-prefix options from TYPE_FLAGS,
+      because they are not required to set the BOINC platform anymore.
 
- -- Frank S. Thomas <fst@debian.org>  Thu, 03 Jan 2008 13:19:16 +0100
+ -- Frank S. Thomas <fst@debian.org>  Thu, 10 Jan 2008 10:18:54 +0100
 
 boinc (5.10.30-3) unstable; urgency=low
 
