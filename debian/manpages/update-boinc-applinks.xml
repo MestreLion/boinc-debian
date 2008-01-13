@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <!--
  This is the manual page for update-boinc-applinks, a tool that creates/removes
@@ -11,14 +11,14 @@
  Copyright © 2006, 2008 Debian BOINC Maintainers
 -->
 
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-"file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+"file:///usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd" [
 
   <!ENTITY dhgroupname "Debian BOINC Maintainers">
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "update-boinc-applinks">
-  <!ENTITY dhdate      "<date>Jan 03, 2008</date>">
+  <!ENTITY dhdate      "<date>13 January 2008</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
