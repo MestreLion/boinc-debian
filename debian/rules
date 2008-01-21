@@ -116,7 +116,7 @@ CFGFLAGS_boinc-client = \
   LDFLAGS="$(LDFLAGS)"
 
 unit-test:
-	xmllint --noout \
+	xmllint --nonet --noout \
 	  debian/conffiles/cc_config.xml \
 	  debian/conffiles/global_prefs_override.xml
 
