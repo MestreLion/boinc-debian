@@ -216,6 +216,8 @@ install-arch: build
 	install -D lib/boinccmd.unmodified \
 	  debian/boinc-client/usr/bin/boinc_cmd
 	
+	chmod 755 debian/boinc-client/usr/share/bug/boinc-client/script
+	
 	#
 	# boinc-manager
 	#
