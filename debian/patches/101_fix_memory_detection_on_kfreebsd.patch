@@ -2,11 +2,11 @@ This patch fixes:
 http://bugs.debian.org/456586
 http://boinc.berkeley.edu/trac/ticket/521
 
-Index: boinc-5.10.30/client/hostinfo_unix.C
+Index: b/client/hostinfo_unix.C
 ===================================================================
---- boinc-5.10.30.orig/client/hostinfo_unix.C	2007-10-24 21:12:05.000000000 +0200
-+++ boinc-5.10.30/client/hostinfo_unix.C	2007-12-20 05:46:30.000000000 +0100
-@@ -105,6 +105,11 @@
+--- a/client/hostinfo_unix.C
++++ b/client/hostinfo_unix.C
+@@ -107,6 +107,11 @@
  #include <machine/cpuconf.h>
  #endif
  
@@ -18,7 +18,7 @@ Index: boinc-5.10.30/client/hostinfo_unix.C
  // functions to get name/addr of local host
  
  // Converts a int ip address to a string representation (i.e. "66.218.71.198")
-@@ -132,7 +137,7 @@
+@@ -134,7 +139,7 @@
      time_data = localtime( &cur_time );
      // tm_gmtoff is already adjusted for daylight savings time
      return time_data->tm_gmtoff;
@@ -27,7 +27,7 @@ Index: boinc-5.10.30/client/hostinfo_unix.C
      return -1*(__timezone);
  #elif defined(__CYGWIN32__)
      return -1*(_timezone);
-@@ -173,7 +178,7 @@
+@@ -175,7 +180,7 @@
    CFRelease(list);
    return(retval);
  
@@ -36,7 +36,7 @@ Index: boinc-5.10.30/client/hostinfo_unix.C
      bool    retval = false;
  
      FILE* fapm = fopen("/proc/apm", "r");
-@@ -237,7 +242,7 @@
+@@ -239,7 +244,7 @@
  #endif
  }
  
@@ -45,7 +45,7 @@ Index: boinc-5.10.30/client/hostinfo_unix.C
  static void parse_meminfo_linux(HOST_INFO& host) {
      char buf[256];
      double x;
-@@ -449,7 +454,7 @@
+@@ -451,7 +456,7 @@
      strlcpy(host.p_model, model_buf, sizeof(host.p_model));
      fclose(f);
  }
@@ -54,7 +54,7 @@ Index: boinc-5.10.30/client/hostinfo_unix.C
  
  #ifdef __APPLE__
  static void get_cpu_info_maxosx(HOST_INFO& host) {
-@@ -520,7 +525,7 @@
+@@ -522,7 +527,7 @@
      get_filesystem_info(d_total, d_free);
  
  ///////////// p_vendor, p_model, p_features /////////////////
@@ -63,7 +63,7 @@ Index: boinc-5.10.30/client/hostinfo_unix.C
      parse_cpuinfo_linux(*this);
  #elif defined( __APPLE__)
      int mib[2];
-@@ -604,7 +609,7 @@
+@@ -606,7 +611,7 @@
          DosQuerySysInfo( QSV_TOTAVAILMEM, QSV_TOTAVAILMEM, &ulMem, sizeof(ulMem));
          m_swap = ulMem;
      }
@@ -72,10 +72,10 @@ Index: boinc-5.10.30/client/hostinfo_unix.C
      parse_meminfo_linux(*this);
  #elif defined(_SC_USEABLE_MEMORY)
      // UnixWare
-Index: boinc-5.10.30/client/main.C
+Index: b/client/main.C
 ===================================================================
---- boinc-5.10.30.orig/client/main.C	2007-11-13 17:47:35.000000000 +0100
-+++ boinc-5.10.30/client/main.C	2007-12-20 05:46:30.000000000 +0100
+--- a/client/main.C
++++ b/client/main.C
 @@ -564,6 +564,8 @@
  int main(int argc, char** argv) {
      int retval = 0;
@@ -108,17 +108,7 @@ Index: boinc-5.10.30/client/main.C
              );
              // from <unistd.h>:
              // Detach from the controlling terminal and run in the background as system daemon.
-@@ -643,9 +652,6 @@
-             break;
-         }
-     }
--#elif defined(__APPLE__)
--    if (getuid() == (uid_t)0)       // If the real user ID is root, we are executing as a daemon
--        gstate.executing_as_daemon = true;
- #endif
- 
-     init_core_client(argc, argv);
-@@ -720,7 +726,7 @@
+@@ -717,7 +726,7 @@
              "To change ownership/permission, reinstall BOINC"
  #ifdef __APPLE__
              " or run\n the shell script Mac_SA_Secure.sh"
@@ -127,10 +117,10 @@ Index: boinc-5.10.30/client/main.C
              " or run\n the shell script secure.sh"
  #endif
              ". (Error code %d)\n", i
-Index: boinc-5.10.30/configure.ac
+Index: b/configure.ac
 ===================================================================
---- boinc-5.10.30.orig/configure.ac	2007-11-13 19:37:02.000000000 +0100
-+++ boinc-5.10.30/configure.ac	2007-12-20 05:46:30.000000000 +0100
+--- a/configure.ac
++++ b/configure.ac
 @@ -230,7 +230,7 @@
  dnl than subtract them.  If you need to remove something from the list above,
  dnl please add it to the lists below...
