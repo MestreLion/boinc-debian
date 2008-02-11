@@ -1,15 +1,14 @@
-boinc (5.10.39-1) unstable; urgency=low
-
-  * NOT RELEASED YET
+boinc (5.10.41-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
-  * debian/rules: Make /usr/share/bug/boinc-client/script executable, because
-    it is a #!/bin/sh script. Thanks Lintian for noticing this.
-  * debian/patches/:
-    - Updated 101_fix_memory_detection_on_kfreebsd.patch for the new release.
+  * debian/rules: Make the scripts /usr/share/bug/boinc-client/script and
+    /usr/share/doc/boinc-manager/examples/run-boincmgr executable because
+    they have a shebang. Thanks Lintian for noticing this.
+  * debian/patches/: Updated 101_fix_memory_detection_on_kfreebsd.patch for
+    the new release.
 
- -- Frank S. Thomas <fst@debian.org>  Thu, 24 Jan 2008 22:46:14 +0100
+ -- Frank S. Thomas <fst@debian.org>  Mon, 11 Feb 2008 16:02:55 +0100
 
 boinc (5.10.30-5) unstable; urgency=low
 
