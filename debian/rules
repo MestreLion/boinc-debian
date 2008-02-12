@@ -3,6 +3,11 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# Uncomment this to compile with gcc-snapshot.
+#export  CC=/usr/lib/gcc-snapshot/bin/gcc
+#export CXX=/usr/lib/gcc-snapshot/bin/g++
+#export CPP=/usr/lib/gcc-snapshot/bin/cpp
+
 include /usr/share/quilt/quilt.make
 
 DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
@@ -14,42 +19,63 @@ else
   TYPE_FLAGS = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
 endif
 
-# On some architectures it is required to override the target type so that the
-# core client uses the official BOINC platform for this architecture otherwise
-# it would not download any applications because projects mostly provide only
-# applications for official BOINC platforms.
-# See http://boinc.berkeley.edu/trac/wiki/BoincPlatforms for the list of
-# official BOINC platforms.
+# On some architectures it is required to change the BOINC platform of the
+# core client (with the --with-boinc-platform configure option) to match the
+# official BOINC platform, otherwise it would not download any applications,
+# because projects mostly provide applications for official BOINC platforms
+# only. See http://boinc.berkeley.edu/trac/wiki/BoincPlatforms for the list
+# of official BOINC platforms.
 
-# change BOINC platform i486-pc-linux-gnu to i686-pc-linux-gnu 
+# Change BOINC platform alpha-unknown-linux-gnu to alpha-hp-linux-gnu and
+# declare alpha-unknown-linux-gnu as alternate platform, because some projects
+# offer applications for it.
+ifeq ($(DEB_HOST_GNU_TYPE), alpha-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=alpha-hp-linux-gnu \
+    --with-boinc-alt-platform=alpha-unknown-linux-gnu
+endif
+
+# Change BOINC platform i486-pc-linux-gnu to i686-pc-linux-gnu.
 ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
-  TYPE_FLAGS += --target i686-linux-gnu --program-prefix="" \
-    --with-boinc-platform=i686-pc-linux-gnu
+  TYPE_FLAGS += --with-boinc-platform=i686-pc-linux-gnu
 endif
 
-# change BOINC platform i486-pc-kfreebsd-gnu to i686-pc-kfreebsd-gnu to be
-# consistent with the official BOINC platform i686-pc-linux-gnu
+# Change BOINC platform i486-pc-kfreebsd-gnu to i686-pc-kfreebsd-gnu to be
+# consistent with the official BOINC platform i686-pc-linux-gnu.
 ifeq ($(DEB_HOST_GNU_TYPE), i486-kfreebsd-gnu)
-  TYPE_FLAGS += --target i686-kfreebsd-gnu --program-prefix="" \
-    --with-boinc-platform=i686-pc-kfreebsd-gnu
+  TYPE_FLAGS += --with-boinc-platform=i686-pc-kfreebsd-gnu
 endif
 
-# change BOINC platform powerpc64-unknown-linux-gnu to ppc64-linux-gnu and
-# declare powerpc-unknown-linux-gnu as alternate platform
+# Change BOINC platform ia64-unknown-linux-gnu to ia64-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), ia64-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=ia64-linux-gnu
+endif
+
+# Change BOINC platform powerpc-unknown-linux-gnu to powerpc-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), powerpc-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=powerpc-linux-gnu
+endif
+
+# Change BOINC platform powerpc64-unknown-linux-gnu to ppc64-linux-gnu and
+# declare powerpc-linux-gnu as alternate platform.
 ifeq ($(DEB_HOST_GNU_TYPE), powerpc64-linux-gnu)
-  TYPE_FLAGS += --target ppc64-linux-gnu --program-prefix="" \
-    --with-boinc-platform=ppc64-linux-gnu \
-    --with-boinc-alt-platform=powerpc-unknown-linux-gnu
+  TYPE_FLAGS += --with-boinc-platform=ppc64-linux-gnu \
+    --with-boinc-alt-platform=powerpc-linux-gnu
 endif
 
-# declare i686-pc-kfreebsd-gnu as alternate BOINC platform for
-# x86_64-pc-kfreebsd-gnu
+# Change BOINC platform sparc-unknown-linux-gnu to sparc-sun-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), sparc-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=sparc-sun-linux-gnu
+endif
+
+# Declare i686-pc-kfreebsd-gnu as alternate platform for
+# x86_64-pc-kfreebsd-gnu.
 ifeq ($(DEB_HOST_GNU_TYPE), x86_64-kfreebsd-gnu)
   TYPE_FLAGS += --with-boinc-alt-platform=i686-pc-kfreebsd-gnu
 endif
 
 CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall
+LDFLAGS += -Wl,--as-needed
 
 CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
@@ -76,7 +102,8 @@ CFGFLAGS = \
   --enable-unicode \
   --with-ssl \
   CFLAGS="$(CFLAGS)" \
-  CXXFLAGS="$(CXXFLAGS)"
+  CXXFLAGS="$(CXXFLAGS)" \
+  LDFLAGS="$(LDFLAGS)"
 
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
@@ -85,10 +112,11 @@ CFGFLAGS_boinc-client = \
   --with-ssl \
   --without-wx-config \
   CFLAGS="$(CFLAGS_boinc-client)" \
-  CXXFLAGS="$(CXXFLAGS_boinc-client)"
+  CXXFLAGS="$(CXXFLAGS_boinc-client)" \
+  LDFLAGS="$(LDFLAGS)"
 
 unit-test:
-	xmllint --noout \
+	xmllint --nonet --noout \
 	  debian/conffiles/cc_config.xml \
 	  debian/conffiles/global_prefs_override.xml
 
@@ -168,18 +196,14 @@ install-arch: build
 	
 	dh_install -a
 	
-	#
-	# boinc-client
-	#
+	# Install files for the boinc-client package.
 	install -D client/boinc_client.optimized \
 	  debian/boinc-client/usr/bin/boinc_client
 	
 	install -D lib/boinccmd.unmodified \
 	  debian/boinc-client/usr/bin/boinc_cmd
 	
-	#
-	# boinc-manager
-	#
+	# Install files for the boinc-manager package.
 	install -D clientgui/boincmgr.unmodified \
 	  debian/boinc-manager/usr/bin/boincmgr
 	
@@ -193,9 +217,7 @@ install-arch: build
 	# "BOINC Manager.mo" is empty and useless.
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	
-	#
-	# boinc-server
-	#
+	# Install files for the boinc-server package.
 	for i in debian/boinc-server/usr/lib/boinc-server/sched/*; do \
 	  dh_link -pboinc-server \
 	    usr/lib/boinc-server/sched/`basename $$i` \
@@ -231,6 +253,9 @@ binary-arch: build install-arch
 	dh_strip -a --dbg-package=boinc-dbg
 	dh_compress -a
 	dh_fixperms -a
+	chmod 755 \
+	  debian/boinc-client/usr/share/bug/boinc-client/script \
+	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 	dh_pysupport -a 
 	dh_installdeb -a
 	dh_shlibdeps -a
@@ -239,5 +264,17 @@ binary-arch: build install-arch
 	dh_builddeb -a
 
 binary: binary-arch
+
+origDir ?= .
+
+get-orig-source:
+	LATEST_VERSION=`svn list http://boinc.berkeley.edu/svn/tags/ | \
+	  sed 's/boinc_core_release_\(.*\)\//\1/' | \
+	  sort -g -t_ -k1 -k2 -k3 | sed 's/_/./g' | tail -n 1 | tr -d '\n'`; \
+	EXB=/tmp/export-boinc; \
+	svn export svn://svn.debian.org/pkg-boinc/scripts/export-boinc $$EXB; \
+	$$EXB -r $$LATEST_VERSION -t $(origDir); \
+	rm -f $$EXB
+
 .PHONY: patch unpatch unit-test pre-build build clean clean-patched install \
-  install-arch binary-arch binary
+  install-arch binary-arch binary get-orig-source

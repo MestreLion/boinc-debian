@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <!--
  This is the manual page for update-boinc-applinks, a tool that creates/removes
@@ -8,17 +8,17 @@
  This file is licensed under the terms of the GNU General Public License,
  Version 2 or any later version published by the Free Software Foundation.
 
- Copyright © 2006 Debian BOINC Maintainers
+ Copyright © 2006, 2008 Debian BOINC Maintainers
 -->
 
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-"file:///usr/share/xml/docbook/schema/dtd/4.2/docbookx.dtd" [
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+"file:///usr/share/xml/docbook/schema/dtd/4.4/docbookx.dtd" [
 
   <!ENTITY dhgroupname "Debian BOINC Maintainers">
   <!ENTITY dhgroupmail "<email>pkg-boinc-devel@lists.alioth.debian.org</email>">
 
   <!ENTITY dhbinary    "update-boinc-applinks">
-  <!ENTITY dhdate      "<date>March 05, 2006</date>">
+  <!ENTITY dhdate      "<date>13 January 2008</date>">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
@@ -37,6 +37,7 @@
     </author>
     <copyright>
       <year>2006</year>
+      <year>2008</year>
       <holder>&dhgroupname;</holder>
     </copyright>
     &dhdate;
@@ -76,7 +77,7 @@
 
     <variablelist>
       <varlistentry>
-        <term><option>-h, --help</option></term>
+        <term><option>-h</option>, <option>--help</option></term>
         <listitem>
           <para>Show help message and all options.</para>
         </listitem>
@@ -115,9 +116,9 @@
         <listitem>
           <para>Manage symbolic links only for the given project
             <replaceable>PROJECT</replaceable>.
-            Run <command>&dhbinary; --list-projects</command> to get a list
-            of projects for which anonymous applications are available and
-            therefore can be replaced with
+            Run <command>&dhbinary; <option>--list-projects</option></command>
+            to get a list of projects for which anonymous applications are
+            available and therefore can be replaced with
             <replaceable>PROJECT</replaceable>. If this option is not present,
             &dhbinary; will manage symbolic links for all available
             projects.</para>
@@ -146,7 +147,7 @@
 
   <refsect1>
     <title>COPYRIGHT</title>
-    <para>Copyright &copy; 2006 &dhgroupname;.</para>
+    <para>Copyright &copy; 2006, 2008 &dhgroupname;.</para>
     <para>
       This is free software; you can redistribute it and/or modify it under the
       terms of the &gnu; General Public License, Version 2 or any later version

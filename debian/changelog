@@ -36,8 +36,121 @@ boinc (6.1.0-1) experimental; urgency=low
 
  -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 24 Oct 2007 14:58:36 +0200
 
-boinc (5.10.8-3) unstable; urgency=low
+boinc (5.10.41-1) unstable; urgency=low
 
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/rules: Make the scripts /usr/share/bug/boinc-client/script and
+    /usr/share/doc/boinc-manager/examples/run-boincmgr executable because
+    they have a shebang. Thanks Lintian for noticing this.
+  * debian/patches/: Updated 101_fix_memory_detection_on_kfreebsd.patch for
+    the new release.
+
+ -- Frank S. Thomas <fst@debian.org>  Mon, 11 Feb 2008 16:02:55 +0100
+
+boinc (5.10.30-5) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * debian/manpages/update-boinc-applinks.xml: Updated from DocBook 4.2 to
+    4.4, which is the latest version in etch.
+  * Added debian/watch file, which uses Subversion's directory listing of the
+    tags directory to determine the upstream version. Therefore this is only
+    useful for version comparison (e.g. for DEHS and DDPO).
+  * Bumped debhelper compat level from V5 to V6 since this is the current
+    recommended level and raised the build dependency to "debhelper (>= 6)".
+  * Removed debian/patches/103_fix_terminal_activity_detection.patch in favor
+    of adding the --check_all_logins option to the default BOINC_OPTS in
+    boinc-client's init script.
+
+  [ Debconf translations ]
+  * Added Swedish (sv.po) by Christer Andersson <klamm@comhem.se>.
+    (closes: #461172)
+
+ -- Frank S. Thomas <fst@debian.org>  Mon, 21 Jan 2008 21:20:52 +0100
+
+boinc (5.10.30-4) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * debian/manpages/update-boinc-applinks.xml: Fixed Lintian's informational
+    tag "I: hyphen-used-as-minus-sign" by enclosing options in <command>
+    elements with the <option> element.
+  * debian/rules:
+    - Official BOINC platforms for some Debian GNU/Linux ports (alpha, ia64,
+      powerpc, and sparc) were assigned upstream and therefore changed these
+      platforms accordingly:
+      -   alpha-unknown-linux-gnu ->  alpha-hp-linux-gnu
+      -    ia64-unknown-linux-gnu ->      ia64-linux-gnu
+      - powerpc-unknown-linux-gnu ->   powerpc-linux-gnu
+      -   sparc-unknown-linux-gnu -> sparc-sun-linux-gnu
+    - Removed the --target and --program-prefix options from TYPE_FLAGS,
+      because they are not required to set the BOINC platform anymore.
+
+ -- Frank S. Thomas <fst@debian.org>  Fri, 11 Jan 2008 11:33:30 +0100
+
+boinc (5.10.30-3) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * debian/patches/:
+    - Renamed 201_missing_headers_for_gcc4.3.patch to 102_... because it has
+      been applied upstream in r14436.
+    - Added 103_fix_terminal_activity_detection.patch to fix the activity
+      detection in terminal applications. (closes: #448982)
+  * debian/rules: Pass "LDFLAGS=-Wl,--as-needed" to configure in order to
+    remove unnecessary library dependencies.
+  * debian/boinc-client.postinst: Changed the default permission of the
+    global_prefs_override.xml conffile from 0644 to 0664 so that local
+    preferences are saved when GUI RPCs are used to set them. (closes: #458007)
+
+ -- Frank S. Thomas <fst@debian.org>  Mon, 31 Dec 2007 10:28:34 +0100
+
+boinc (5.10.30-2) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * debian/rules: Wrote get-orig-source target which fetches the latest tagged
+    BOINC version.
+  * debian/patches/:
+    - Added 201_missing_headers_for_gcc4.3.patch which adds missing C++
+      headers to several source files. This is required to fix a FTBFS with
+      recent GCC 4.3 snapshots. Thanks to Martin Michlmayr <tbm@cyrius.com>
+      for the bug report. (closes: #456041)
+    - Added 101_fix_memory_detection_on_kfreebsd.patch from upstream r14415
+      based on a patch by Andrew Deason <adeason2@uiuc.edu> which fixes memory
+      detection on Debian GNU/kFreeBSD. (closes: #456586)
+
+ -- Frank S. Thomas <fst@debian.org>  Thu, 20 Dec 2007 06:23:54 +0100
+
+boinc (5.10.30-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/boinc-client.default: Removed --return_results_immediately from the
+    example BOINC_OPTS variable, because this command line option is not
+    implemented and won't be available in BOINC >= 6.1, see upstream r14280.
+  * debian/control:
+    - Bumped Standards-Version from 3.7.2 to 3.7.3, no changes required.
+    - Changed my maintainer address to fst@debian.org.
+
+  [ Thibaut VARENE ]
+  * debian/boinc-client.{init,default}: Added option to enable advanced
+    scheduling of the client and its sub-processes by default.
+    (closes: #449015)
+
+ -- Frank S. Thomas <fst@debian.org>  Wed, 05 Dec 2007 03:02:28 +0100
+
+boinc (5.10.27-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release. (closes: #447929)
+    - Handles change in /proc/cpuinfo on powerpc introduced in Linux 2.6.23.
+      Thanks to Thibaut VARENE <varenet@debian.org> for the patch.
+      (closes: #437459)
+    - Allows to set arbitrary many alternate platforms in the client's config
+      file cc_config.xml with the <alt_platform> element which is a direct
+      child of the <options> element. (closes: #437326)
+    - BOINC Manager: At account creation check if wxGetUserName() returned an
+      empty string and if it did use the output of wxGetUserId() instead.
+      Thanks to Morita Sho <morita-pub-en-debian@inz.sakura.ne.jp> for the
+      excellent bug report. (closes: #447320)
   * debian/control:
     - Moved Homepage pseudo field in the long descriptions to the source stanza
       because this is now a propper debian/control field supported by dpkg.
@@ -46,8 +159,16 @@ boinc (5.10.8-3) unstable; urgency=low
   * debian/boinc-client.init: Print the scheduling status of boinc_client's
     children only if there are any present, otherwise schedtool would be
     called without arguments and would print its usage text.
+  * debian/icons/: Use icons with transparent background.
+  * debian/boinc-manager.desktop:
+    - Addded Portuguese translations for GenericName and Comment, thanks to
+      Marco Rodrigues <gothicx@sapo.pt>.
+    - Monitor is a subcategory of the System main category, so use System
+      instead of Utility.
+    - Removed the Encoding key since it is deprecated in the Desktop Entry
+      Specification 1.0 and added the Version key.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 26 Sep 2007 13:36:13 +0200
+ -- Frank S. Thomas <frank@thomas-alfeld.de>  Thu, 25 Oct 2007 20:54:09 +0200
 
 boinc (5.10.8-2) unstable; urgency=low
 

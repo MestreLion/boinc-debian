@@ -19,12 +19,14 @@
 
 set -e
 
+. /lib/lsb/init-functions
+
+# Default values for the variables that are also set in the defaults file.
 ENABLED=0
+SCHEDULE=0
 BOINC_USER=boinc
 BOINC_DIR=/var/lib/boinc-client
 BOINC_CLIENT=/usr/bin/boinc_client
-
-. /lib/lsb/init-functions
 
 # Source defaults file. Edit that file to configure this script.
 if [ -e /etc/default/boinc-client ]; then
@@ -56,7 +58,7 @@ fi
 PIDFILE=/var/run/boinc_client.pid
 DESC="BOINC core client"
 NAME=`basename $BOINC_CLIENT`
-BOINC_OPTS="--redirectio --dir $BOINC_DIR $BOINC_OPTS"
+BOINC_OPTS="--check_all_logins --redirectio --dir $BOINC_DIR $BOINC_OPTS"
 
 is_running()
 {
@@ -82,6 +84,10 @@ start()
       --chdir $BOINC_DIR --exec $BOINC_CLIENT -- $BOINC_OPTS
   fi
   log_end_msg 0
+
+  if [ "$SCHEDULE" = "1" ]; then
+    schedule
+  fi
 }
 
 stop()
@@ -137,7 +143,7 @@ status()
       schedtool $pid
 
       children=`ps --ppid $pid -o pid= | tr '\n' ' '`
-      if [ ! -z "$children" ]; then
+      if [ -n "$children" ]; then
         log_success_msg "Scheduling of $DESC's children:"
         schedtool $children
       fi
