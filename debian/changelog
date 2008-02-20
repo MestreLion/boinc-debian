@@ -10,8 +10,10 @@ boinc (5.10.42-1) unstable; urgency=low
   * debian/watch: Only check for versions with an even minor version number.
     Versions with an odd minor version number are test releases which are not
     intended for a wider audience.
+  * Reverted the debhelper compat level bump. It was just unnecessary (boinc
+    does not need V6) and would have made backporting harder.
 
- -- Frank S. Thomas <fst@debian.org>  Wed, 13 Feb 2008 20:51:17 +0100
+ -- Frank S. Thomas <fst@debian.org>  Wed, 20 Feb 2008 16:03:29 +0100
 
 boinc (5.10.30-5) unstable; urgency=low
 
