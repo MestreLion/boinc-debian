@@ -12,8 +12,42 @@ boinc (5.10.42-1) unstable; urgency=low
     intended for a wider audience.
   * Reverted the debhelper compat level bump. It was just unnecessary (boinc
     does not need V6) and would have made backporting harder.
+  * Merged the workaround from Ubuntu's 5.10.30-5ubuntu3 for Linux's new CFS,
+    refer to #461630 for details. Thanks to Daniel Hahler <daniel@thequod.de>.
 
- -- Frank S. Thomas <fst@debian.org>  Wed, 20 Feb 2008 16:03:29 +0100
+ -- Frank S. Thomas <fst@debian.org>  Thu, 21 Feb 2008 13:53:43 +0100
+
+boinc (5.10.30-5ubuntu3) hardy; urgency=low
+
+  * Install /usr/lib/boinc-client/udev-usr_share with correct perms
+    (executable), so that it gets called by udevd.
+
+ -- Daniel Hahler <ubuntu@thequod.de>  Mon, 04 Feb 2008 00:40:08 +0100
+
+boinc (5.10.30-5ubuntu2) hardy; urgency=low
+
+  * Revert changes from ubuntu1 and instead use the uevent udev
+    interface to assign the lowest possible cpu_share to the
+    boinc user. This is still considered to be a workaround.
+    - Add debian/boinc-client.udev
+    - debian/rules: call dh_installudev
+    - Add debian/extra/udev-usr_share, which gets run by udevd
+    - Drop debian/patches/ubuntu_temp_cfs_fix.patch
+  * debian/boinc-client.init: Display cpu_share info for "status"
+    action
+
+ -- Daniel Hahler <ubuntu@thequod.de>  Sat, 02 Feb 2008 23:32:25 +0100
+
+boinc (5.10.30-5ubuntu1) hardy; urgency=low
+
+  * debian/patches/ubuntu_temp_cfs_fix.patch:
+    Temporary workaround for the new CFS Linux scheduler,
+    by adjusting the "boinc" user's cpu_share to the minimum (2)
+    in the init script (LP: #177713)
+  * Modify Maintainer value to match the DebianMaintainerField
+    specification.
+
+ -- Daniel Hahler <ubuntu@thequod.de>  Sat, 02 Feb 2008 02:48:01 +0100
 
 boinc (5.10.30-5) unstable; urgency=low
 
