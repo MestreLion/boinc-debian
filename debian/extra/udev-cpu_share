@@ -11,7 +11,7 @@
 
 set -e
 
-UID=${DEVPATH##*/}
-if [ "$UID" = "$(id -u boinc)" ]; then
+uid=${DEVPATH##*/}
+if [ "$uid" = "$(id -u boinc)" ]; then
     echo 2 > /sys/$DEVPATH/cpu_share
 fi
