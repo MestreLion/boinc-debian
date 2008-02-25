@@ -246,7 +246,7 @@ binary-arch: build install-arch
 	dh_compress -a
 	dh_fixperms -a
 	chmod 755 \
-	  debian/boinc-client/usr/lib/boinc-client/udev-usr_share \
+	  debian/boinc-client/usr/share/boinc-client/udev-cpu_share \
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 	dh_installdeb -a

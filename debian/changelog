@@ -11,11 +11,21 @@ boinc (5.10.42-1) unstable; urgency=low
     Versions with an odd minor version number are test releases which are not
     intended for a wider audience.
   * Reverted the debhelper compat level bump. It was just unnecessary (boinc
-    does not need V6) and would have made backporting harder.
-  * Merged the workaround from Ubuntu's 5.10.30-5ubuntu3 for Linux's new CFS,
-    refer to #461630 for details. Thanks to Daniel Hahler <daniel@thequod.de>.
+    does not need V6) and it would have made backporting harder.
+  * Merged the workaround from Ubuntu's 5.10.30-5ubuntu3 for Linux's new CFS
+    with the following changes:
+    - Renamed debian/extra/udev-usr_share to debian/extra/udev-cpu_share
+      because this name seems to be more appropriate since this script changes
+      the boinc user's cpu_share.
+    - Install udev-cpu_share into /usr/share/boinc-client instead of
+      /usr/lib/boinc-client since it is an architecture-independent shell
+      script.
+    - Use lowercase variables in the init script because UID is set by bash
+      and it complains when trying to overwrite it.
+    Thanks to Daniel Hahler <daniel@thequod.de> for investigating this issue
+    and the patch. (closes: #461630)
 
- -- Frank S. Thomas <fst@debian.org>  Thu, 21 Feb 2008 13:53:43 +0100
+ -- Frank S. Thomas <fst@debian.org>  Mon, 25 Feb 2008 00:53:20 +0100
 
 boinc (5.10.30-5ubuntu3) hardy; urgency=low
 
