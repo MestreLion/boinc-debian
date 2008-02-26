@@ -1,8 +1,10 @@
-boinc (5.10.42-2) UNRELEASED; urgency=low
+boinc (5.10.43-1) unstable; urgency=low
 
-  * NOT RELEASED YET
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - BOINC Manager: Do not crash when closing. (closes: #444339)
 
- -- Frank S. Thomas <fst@debian.org>  Mon, 25 Feb 2008 08:49:52 +0100
+ -- Frank S. Thomas <fst@debian.org>  Tue, 26 Feb 2008 17:58:31 +0100
 
 boinc (5.10.42-1) unstable; urgency=low
 
