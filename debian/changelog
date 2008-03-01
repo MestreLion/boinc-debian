@@ -1,8 +1,11 @@
-boinc (5.10.43-2) UNRELEASED; urgency=low
+boinc (5.10.44-1) unstable; urgency=low
 
-  * NOT RELEASED YET
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - BOINC Manager: Clear all cached messages and resume auto-scrolling when
+      connected host has changed (cp. r14813, r14817). (closes: #468187)
 
- -- Frank S. Thomas <fst@debian.org>  Wed, 27 Feb 2008 01:25:05 +0100
+ -- Frank S. Thomas <fst@debian.org>  Sat, 01 Mar 2008 15:07:05 +0100
 
 boinc (5.10.43-1) unstable; urgency=low
 
