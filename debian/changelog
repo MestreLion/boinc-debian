@@ -1,6 +1,9 @@
-boinc (5.10.44-2) UNRELEASED; urgency=low
+boinc (5.10.45-1) UNRELEASED; urgency=low
 
-  * NOT RELEASED YET
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/rules: Do not declare the patch and unpatch targets as phony,
+    because the included /usr/share/quilt/quilt.make does this already.
 
  -- Frank S. Thomas <fst@debian.org>  Sat, 01 Mar 2008 15:57:07 +0100
 
