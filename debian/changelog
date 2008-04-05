@@ -3,6 +3,10 @@ boinc (5.10.45-2) UNRELEASED; urgency=low
   [ Debconf translations ]
   * Added Finnish (fi.po) by Esko Arajärvi <edu@iki.fi>. (closes: #472558)
 
+  [ Frank S. Thomas ]
+  * debian/control: Updated boinc-dev's dependency on the concrete
+    libstdc++-dev package now that GCC 4.3 is the default compiler.
+
  -- Frank S. Thomas <fst@debian.org>  Fri, 28 Mar 2008 09:06:26 +0100
 
 boinc (5.10.45-1) unstable; urgency=low
