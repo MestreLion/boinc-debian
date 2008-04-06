@@ -6,6 +6,8 @@ boinc (5.10.45-2) UNRELEASED; urgency=low
   [ Frank S. Thomas ]
   * debian/control: Updated boinc-dev's dependency on the concrete
     libstdc++-dev package now that GCC 4.3 is the default compiler.
+  * debian/boinc-manager.desktop: Included Czech translations for GenericName
+    and Comment from the Fedora package.
 
  -- Frank S. Thomas <fst@debian.org>  Fri, 28 Mar 2008 09:06:26 +0100
 
