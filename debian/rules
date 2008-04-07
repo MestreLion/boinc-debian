@@ -248,12 +248,14 @@ binary-arch: build install-arch
 	dh_desktop -a
 	dh_installinit -a
 	dh_installman -a
+	dh_installudev -a
 	dh_buildinfo -a
 	dh_link -a
 	dh_strip -a --dbg-package=boinc-dbg
 	dh_compress -a
 	dh_fixperms -a
 	chmod 755 \
+	  debian/boinc-client/usr/share/boinc-client/udev-cpu_share \
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 	dh_pysupport -a 
@@ -276,5 +278,5 @@ get-orig-source:
 	$$EXB -r $$LATEST_VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: patch unpatch unit-test pre-build build clean clean-patched install \
-  install-arch binary-arch binary get-orig-source
+.PHONY: unit-test pre-build build clean clean-patched install install-arch \
+  binary-arch binary get-orig-source

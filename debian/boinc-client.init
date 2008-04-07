@@ -11,7 +11,7 @@
 ### END INIT INFO
 
 # Debian init.d script for the BOINC core client
-# Copyright © 2005, 2006, 2007
+# Copyright © 2005, 2006, 2007, 2008
 # Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 #
 # This file is licensed under the terms of the GNU General Public License,
@@ -147,6 +147,13 @@ status()
         log_success_msg "Scheduling of $DESC's children:"
         schedtool $children
       fi
+    fi
+
+    # Display $BOINC_USER's cpu_share:
+    uid=`id -u $BOINC_USER`
+    cpu_share_file="/sys/kernel/uids/$uid/cpu_share"
+    if [ -f "$cpu_share_file" ]; then
+      log_success_msg "cpu_share: `cat "$cpu_share_file"`"
     fi
   else
     log_success_msg "$STATUS stopped."
