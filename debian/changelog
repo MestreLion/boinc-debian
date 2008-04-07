@@ -34,7 +34,7 @@ boinc (6.1.12-1) UNRELEASED; urgency=low
     - Don't fix PHP shebangs of files in html/ops/ and removed other
       permission fixes, because they were fixed upstream.
 
- -- Frank S. Thomas <frank@thomas-alfeld.de>  Wed, 24 Oct 2007 14:58:36 +0200
+ -- Frank S. Thomas <fst@debian.org>  Mon, 07 Apr 2008 17:42:13 +0200
 
 boinc (5.10.45-2) unstable; urgency=low
 
