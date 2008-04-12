@@ -11,6 +11,11 @@ boinc (6.1.14-1) UNRELEASED; urgency=low
     handled by upstream's makefiles.
   * Rewrote debian/copyright in the format which is described in this wiki
     page: http://wiki.debian.org/Proposals/CopyrightFormat
+  * debian/control:
+    - BOINC now requires cURL >= 7.17.1 to build, therefore updated the
+      build-dependency on libcurl4-openssl-dev and removed the alternative
+      build-dependency on libcurl3-openssl-dev which cannot satisfy this
+      requirement.
 
   +++ Changes unsuitable for the trunk branch:
 
