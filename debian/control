@@ -81,18 +81,3 @@ Description: debugging symbols for BOINC binaries
  the BOINC packages. It is provided primarily to provide a backtrace
  with names in a debugger, this makes it somewhat easier to interpret
  core dumps.
-
-Package: boinc-server
-Section: net
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python-mysqldb, mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php5, php5-cli, php5-mysql, tcsh | c-shell
-Description: BOINC server applications and data files
- The Berkeley Open Infrastructure for Network Computing (BOINC) is a
- software platform for distributed computing using volunteered computer
- resources. For every scientific problem its own distinct project-server
- must be provided. The users only run a common client with project-specific
- additions (if not self-compiled or available as a Linux distribution's
- package itself) being downloaded from the server.
- .
- This package contains the daemons and tools to create and run BOINC
- projects.
