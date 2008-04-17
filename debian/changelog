@@ -1,3 +1,13 @@
+boinc (6.1.15-2) UNRELEASED; urgency=low
+
+  [ Frank S. Thomas ]
+  * debian/copyright: Added the instructions from debian/README.Debian-source
+    about how repackaged BOINC tarballs can be reproduced because DevRef now
+    recommends to put this here instead of in the afore-mentioned file.
+  * Removed the obsolete debian/README.Debian-source.
+
+ -- Frank S. Thomas <fst@debian.org>  Tue, 15 Apr 2008 15:09:05 +0200
+
 boinc (6.1.15-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
