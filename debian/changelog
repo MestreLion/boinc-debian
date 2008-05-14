@@ -1,9 +1,10 @@
-boinc (5.10.45-3) UNRELEASED; urgency=low
+boinc (5.10.45-3) unstable; urgency=low
 
+  [ Daniel Hahler ]
   * debian/boinc-client.init:
     Do not fail, if ionice/ioprio_set is not allowed (LP: #218468)
 
- -- Daniel Hahler <ubuntu@thequod.de>  Thu, 17 Apr 2008 19:48:33 +0200
+ -- Frank S. Thomas <fst@debian.org>  Wed, 14 May 2008 12:12:06 +0200
 
 boinc (5.10.45-2) unstable; urgency=low
 
