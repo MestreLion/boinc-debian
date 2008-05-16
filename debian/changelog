@@ -1,6 +1,9 @@
-boinc (6.1.15-2) UNRELEASED; urgency=low
+boinc (6.2.2-1) UNRELEASED; urgency=low
 
   [ Frank S. Thomas ]
+  * New upstream release.
+    - BOINC Manager: Redraw disk usage charts immediately after connecting to
+      (different) client. (closes: 463823)
   * debian/copyright: Added the instructions from debian/README.Debian-source
     about how repackaged BOINC tarballs can be reproduced because DevRef now
     recommends to put this here instead of in the afore-mentioned file.
