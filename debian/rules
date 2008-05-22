@@ -126,9 +126,6 @@ pre-build-stamp:
 	cp -f /usr/share/misc/config.sub config.sub
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	
-	docbook2x-man debian/manpages/boinc_client.xml
-	docbook2x-man debian/manpages/boinc_cmd.xml
-	docbook2x-man debian/manpages/boincmgr.xml
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	touch $@
 
@@ -143,7 +140,7 @@ build-stamp-boinc-client:
 	dh_testdir
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
-	cp client/boinc.unmodified client/boinc_client.optimized
+	cp client/boinc.unmodified client/boinc.optimized
 	touch $@
 
 clean: clean-patched unpatch
@@ -154,42 +151,14 @@ clean-patched:
 	rm -f build-stamp
 	rm -f build-stamp-boinc-client
 	
-	dh_clean client/boinc_client.optimized
+	dh_clean client/boinc.optimized
 	
 	[ ! -f Makefile ] || $(MAKE) distclean
 	
-	dh_clean \
-	  client/boinc.unmodified \
-	  clientgui/boincmgr.unmodified \
-	  lib/boinccmd \
-	  lib/boinccmd.unmodified
+	dh_clean update-boinc-applinks.1
 	
 	dh_clean \
-	  boinc_client.1 \
-	  boinc_cmd.1 \
-	  boincmgr.1 \
-	  update-boinc-applinks.1
-	
-	dh_clean \
-	  api/Makefile.in \
-	  apps/Makefile.in \
-	  client/Makefile.in \
-	  clientgui/Makefile.in \
-	  db/Makefile.in \
-	  lib/Makefile.in \
-	  m4/Makefile.in \
-	  py/Makefile.in \
-	  py/Boinc/Makefile.in \
-	  sched/Makefile.in \
-	  sched/status \
-	  sched/stop \
-	  sea/Makefile.in \
-	  test/Makefile.in \
-	  tools/Makefile.in \
-	  zip/Makefile.in \
-	  zip/unzip/Makefile.in \
-	  zip/zip/Makefile.in \
-	  Makefile.in \
+	  `find -name Makefile.in` \
 	  aclocal.m4 \
 	  config.h.in \
 	  configure
@@ -208,11 +177,11 @@ install-arch: build
 	dh_install -a
 	
 	# Install files for the boinc-client package.
-	install -D client/boinc_client.optimized \
-	  debian/boinc-client/usr/bin/boinc_client
+	install -D client/boinc.optimized \
+	  debian/boinc-client/usr/bin/boinc
 	
 	install -D lib/boinccmd.unmodified \
-	  debian/boinc-client/usr/bin/boinc_cmd
+	  debian/boinc-client/usr/bin/boinccmd
 	
 	# Install files for the boinc-manager package.
 	install -D clientgui/boincmgr.unmodified \

@@ -1,3 +1,23 @@
+boinc (6.2.4-1) UNRELEASED; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+    - BOINC Manager: Redraw disk usage charts immediately after connecting to
+      a (different) client. (closes: 463823)
+  * debian/copyright: Added the instructions from debian/README.Debian-source
+    about how repackaged BOINC tarballs can be reproduced because DevRef now
+    recommends to put this here instead of in the afore-mentioned file.
+  * Removed the obsolete debian/README.Debian-source.
+  * For consistency upstream renamed the core client and the command tool
+    ("boinc_client" to "boinc" and "boinc_cmd" to "boinccmd"). Done the same
+    in all packages and created symlinks with the old names for the binaries
+    and man pages. Also added an entry in debian/boinc-client.NEWS explaining
+    this change.
+  * debian/rules: Do not list Makefile.ins in the clean target individually,
+    just remove all that can be found.
+
+ -- Frank S. Thomas <fst@debian.org>  Tue, 15 Apr 2008 15:09:05 +0200
+
 boinc (5.10.45-3) unstable; urgency=low
 
   [ Daniel Hahler ]
@@ -5,6 +25,30 @@ boinc (5.10.45-3) unstable; urgency=low
     Do not fail, if ionice/ioprio_set is not allowed (LP: #218468)
 
  -- Frank S. Thomas <fst@debian.org>  Wed, 14 May 2008 12:12:06 +0200
+
+boinc (6.1.15-1) experimental; urgency=low
+
+  [ Frank S. Thomas ]
+  * New experimental upstream release.
+    - Improved user idle checking on Linux. (closes: #448982)
+  * debian/rules:
+    - Don't clean lib/boinccmd, *.unmodified and other files by hand in the
+      clean-patched target, since they are now removed by upstream's
+      makefiles on "make clean".
+  * Removed the man pages for boinc_client, boinc_cmd, and boincmgr from the
+    Debian-diff because they are now included in the upstream source and also
+    handled by upstream's makefiles.
+  * Rewrote debian/copyright in the format which is described in this wiki
+    page: http://wiki.debian.org/Proposals/CopyrightFormat
+  * debian/control:
+    - BOINC now requires cURL >= 7.17.1 to build, therefore updated the
+      build-dependency on libcurl4-openssl-dev and removed the alternative
+      build-dependency on libcurl3-openssl-dev which cannot satisfy this
+      requirement.
+    - Spread the Build-Depends field over multiple physical lines to make
+      reading diffs easier.
+
+ -- Frank S. Thomas <fst@debian.org>  Tue, 15 Apr 2008 13:42:40 +0200
 
 boinc (5.10.45-2) unstable; urgency=low
 

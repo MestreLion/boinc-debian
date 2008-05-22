@@ -1,3 +1,17 @@
+boinc (6.2.4-1) unstable; urgency=low
+
+    During the development cycle of the 6.2 series the BOINC developers
+    decided to rename the core client from "boinc_client" to just "boinc" and
+    the command tool from "boinc_cmd" to "boinccmd" to have consistent names
+    for BOINC executables on all operating systems.
+
+    If you use the old binary names in local scripts or elsewhere please
+    change them to use the new names. For your convenience, the boinc-client
+    package will contain symbolic links with the old names until after the
+    release of Debian 5.0 codenamed "Lenny".
+
+ -- Frank S. Thomas <fst@debian.org>  Thu, 22 May 2008 10:16:35 +0200
+
 boinc (5.8.17-1) unstable; urgency=low
 
     The configuration file "log_flags.xml" of the BOINC 5.4 series was renamed
