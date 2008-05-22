@@ -114,8 +114,11 @@ schedule()
     if [ ! -x "`which ionice 2>/dev/null`" ]; then
       log_progress_msg "ionice not found,"
     else
-      ionice -c 3 -p $pid
-      log_progress_msg "idle,"
+      if ionice -c 3 -p $pid 2>/dev/null; then
+        log_progress_msg "idle,"
+      else
+        log_progress_msg "ionice failed,"
+      fi
     fi
 
     if [ ! -x "`which schedtool 2>/dev/null`" ]; then
