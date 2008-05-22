@@ -158,25 +158,7 @@ clean-patched:
 	dh_clean update-boinc-applinks.1
 	
 	dh_clean \
-	  api/Makefile.in \
-	  apps/Makefile.in \
-	  client/Makefile.in \
-	  clientgui/Makefile.in \
-	  db/Makefile.in \
-	  doc/Makefile.in \
-	  doc/manpages/Makefile.in \
-	  lib/Makefile.in \
-	  m4/Makefile.in \
-	  py/Makefile.in \
-	  py/Boinc/Makefile.in \
-	  sched/Makefile.in \
-	  sea/Makefile.in \
-	  test/Makefile.in \
-	  tools/Makefile.in \
-	  zip/Makefile.in \
-	  zip/unzip/Makefile.in \
-	  zip/zip/Makefile.in \
-	  Makefile.in \
+	  `find -name Makefile.in` \
 	  aclocal.m4 \
 	  config.h.in \
 	  configure

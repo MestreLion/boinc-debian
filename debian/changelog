@@ -13,6 +13,8 @@ boinc (6.2.4-1) UNRELEASED; urgency=low
     in all packages and created symlinks with the old names for the binaries
     and man pages. Also added an entry in debian/boinc-client.NEWS explaining
     this change.
+  * debian/rules: Do not list Makefile.ins in the clean target individually,
+    just remove all that can be found.
 
  -- Frank S. Thomas <fst@debian.org>  Tue, 15 Apr 2008 15:09:05 +0200
 
