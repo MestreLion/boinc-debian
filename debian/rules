@@ -140,7 +140,7 @@ build-stamp-boinc-client:
 	dh_testdir
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
-	cp client/boinc.unmodified client/boinc_client.optimized
+	cp client/boinc.unmodified client/boinc.optimized
 	touch $@
 
 clean: clean-patched unpatch
@@ -151,7 +151,7 @@ clean-patched:
 	rm -f build-stamp
 	rm -f build-stamp-boinc-client
 	
-	dh_clean client/boinc_client.optimized
+	dh_clean client/boinc.optimized
 	
 	[ ! -f Makefile ] || $(MAKE) distclean
 	
@@ -195,11 +195,11 @@ install-arch: build
 	dh_install -a
 	
 	# Install files for the boinc-client package.
-	install -D client/boinc_client.optimized \
-	  debian/boinc-client/usr/bin/boinc_client
+	install -D client/boinc.optimized \
+	  debian/boinc-client/usr/bin/boinc
 	
 	install -D lib/boinccmd.unmodified \
-	  debian/boinc-client/usr/bin/boinc_cmd
+	  debian/boinc-client/usr/bin/boinccmd
 	
 	# Install files for the boinc-manager package.
 	install -D clientgui/boincmgr.unmodified \

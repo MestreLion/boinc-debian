@@ -1,11 +1,11 @@
-_boinc_client()
+_boinc()
 {
     local cur prev opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    opts="$(boinc_client --help | \
+    opts="$(boinc --help | \
         sed -n -r 's/^[[:space:]]*(--[a-z_]*).*/\1/p')"
 
     # Handle options that require one or more arguments.
@@ -32,9 +32,9 @@ _boinc_client()
         return 0
     fi
 }
-complete -F _boinc_client -o default boinc_client
+complete -F _boinc -o default boinc
 
-_boinc_cmd()
+_boinccmd()
 {
     local cur prev opts cmds
     COMPREPLY=()
@@ -42,7 +42,7 @@ _boinc_cmd()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     opts="--host --passwd -h --help -V --version"
-    cmds="$(boinc_cmd --help 2>&1 | \
+    cmds="$(boinccmd --help 2>&1 | \
         sed -n -r 's/^[[:space:]]*(--[a-z_]*).*/\1/p')"
 
     # The following construct assures that:
@@ -90,5 +90,5 @@ _boinc_cmd()
         ;;
     esac
 }
-complete -F _boinc_cmd boinc_cmd
+complete -F _boinccmd boinccmd
 # vim: syntax=sh
