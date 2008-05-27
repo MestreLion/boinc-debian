@@ -1,12 +1,14 @@
-boinc (6.2.4-1) UNRELEASED; urgency=low
+boinc (6.2.5-1) UNRELEASED; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
     - BOINC Manager: Redraw disk usage charts immediately after connecting to
       a (different) client. (closes: 463823)
-  * debian/copyright: Added the instructions from debian/README.Debian-source
-    about how repackaged BOINC tarballs can be reproduced because DevRef now
-    recommends to put this here instead of in the afore-mentioned file.
+  * debian/copyright:
+    - Added the instructions from debian/README.Debian-source about how
+      repackaged BOINC tarballs can be reproduced because DevRef now
+      recommends to put this here instead of in the afore-mentioned file.
+    - Updated for BOINC version 6.2.5.
   * Removed the obsolete debian/README.Debian-source.
   * For consistency upstream renamed the core client and the command tool
     ("boinc_client" to "boinc" and "boinc_cmd" to "boinccmd"). Done the same
