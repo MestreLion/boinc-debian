@@ -1,16 +1,21 @@
-boinc (6.2.4-1) unstable; urgency=low
+boinc (6.2.7-1) unstable; urgency=low
 
-    During the development cycle of the 6.2 series the BOINC developers
-    decided to rename the core client from "boinc_client" to just "boinc" and
-    the command tool from "boinc_cmd" to "boinccmd" to have consistent names
-    for BOINC executables on all operating systems.
+    During the development cycle of the BOINC 6.2 series it was decided to
+    rename the core client from "boinc_client" to just "boinc" and the command
+    tool from "boinc_cmd" to "boinccmd" to have consistent names for BOINC
+    executables on all operating systems.
+
+    For the boinc-client package this means that the following binary names
+    has been changed:
+      /usr/bin/boinc_client -> /usr/bin/boinc
+      /usr/bin/boinc_cmd    -> /usr/bin/boinccmd
 
     If you use the old binary names in local scripts or elsewhere please
     change them to use the new names. For your convenience, the boinc-client
     package will contain symbolic links with the old names until after the
     release of Debian 5.0 codenamed "Lenny".
 
- -- Frank S. Thomas <fst@debian.org>  Thu, 22 May 2008 10:16:35 +0200
+ -- Frank S. Thomas <fst@debian.org>  Sat, 31 May 2008 08:02:47 +0200
 
 boinc (5.8.17-1) unstable; urgency=low
 

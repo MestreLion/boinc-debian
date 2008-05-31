@@ -1,4 +1,4 @@
-boinc (6.2.5-1) UNRELEASED; urgency=low
+boinc (6.2.7-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -8,7 +8,7 @@ boinc (6.2.5-1) UNRELEASED; urgency=low
     - Added the instructions from debian/README.Debian-source about how
       repackaged BOINC tarballs can be reproduced because DevRef now
       recommends to put this here instead of in the afore-mentioned file.
-    - Updated for BOINC version 6.2.5.
+    - Updated for the new release.
   * Removed the obsolete debian/README.Debian-source.
   * For consistency upstream renamed the core client and the command tool
     ("boinc_client" to "boinc" and "boinc_cmd" to "boinccmd"). Done the same
@@ -18,7 +18,7 @@ boinc (6.2.5-1) UNRELEASED; urgency=low
   * debian/rules: Do not list Makefile.ins in the clean target individually,
     just remove all that can be found.
 
- -- Frank S. Thomas <fst@debian.org>  Tue, 15 Apr 2008 15:09:05 +0200
+ -- Frank S. Thomas <fst@debian.org>  Sat, 31 May 2008 08:02:47 +0200
 
 boinc (5.10.45-3) unstable; urgency=low
 
