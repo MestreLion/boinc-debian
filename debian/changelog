@@ -2,6 +2,8 @@ boinc (6.2.14-3) UNRELEASED; urgency=low
 
   * debian/control:
     - Updated Vcs-* fields since we are now using Git. 
+    - wxWidgets 2.8 is now in unstable, so upgraded the build-dependency from
+      libwxgtk2.6-dev to libwxgtk2.8-dev. (closes: #461581)
 
  -- Frank S. Thomas <fst@debian.org>  Sun, 17 Aug 2008 22:01:26 +0200
 

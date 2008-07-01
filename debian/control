@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 5), quilt (>= 0.40), po-debconf, dh-buildinfo,
  docbook2x, docbook-xml, autotools-dev, automake1.9 (>= 1.9.3),
  autoconf (>= 2.59), libxml2-utils, zlib1g-dev, libssl-dev,
  libcurl4-openssl-dev (>= 7.17.1), freeglut3-dev, libsm-dev, libice-dev,
- libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
+ libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.8-dev
 Homepage: http://boinc.berkeley.edu/
 Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git
 Vcs-Browser: http://git.debian.org/?p=pkg-boinc/boinc.git
