@@ -7,6 +7,8 @@ boinc (6.2.11-1) UNRELEASED; urgency=low
       debian/README.source file to explain that we use quilt and to move the
       paragraph about repackaged upstream source from debian/copyright to this
       new file.
+    - wxWidgets 2.8 is now in unstable, so upgraded the build-dependency from
+      libwxgtk2.6-dev to libwxgtk2.8-dev. (closes: #461581)
 
  -- Frank S. Thomas <fst@debian.org>  Mon, 30 Jun 2008 15:00:20 +0200
 
@@ -15,7 +17,7 @@ boinc (6.2.7-1) unstable; urgency=low
   [ Frank S. Thomas ]
   * New upstream release.
     - BOINC Manager: Redraw disk usage charts immediately after connecting to
-      a (different) client. (closes: 463823)
+      a (different) client. (closes: #463823)
   * debian/copyright:
     - Added the instructions from debian/README.Debian-source about how
       repackaged BOINC tarballs can be reproduced because DevRef now
