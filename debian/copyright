@@ -2,26 +2,6 @@ This package was debianized by Steffen Moeller <moeller@pzr.uni-rostock.de>
 on Sat, 13 Nov 2004 23:28:53 +0100. Since Wed, 26 Jan 2005 it is maintained
 by the Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>.
 
-Repackaged upstream source:
- The BOINC project does not distribute source code releases as tarballs,
- but they are tagged in the BOINC Subversion repository. Anonymous
- Subversion access is available at http://boinc.berkeley.edu/svn/. The
- branch for the BOINC source is trunk/boinc, tagged releases are in tags/.
- For more information see:
-
-   http://boinc.berkeley.edu/trac/wiki/SourceCode
-
- To obtain the source from Subversion and package it as .orig.tar.gz the
- Debian BOINC Maintainers use a script called 'export-boinc' which is
- available in our pkg-boinc Subversion repository:
-
-   http://svn.debian.org/wsvn/pkg-boinc/scripts/export-boinc?op=file
-
- For example, to obtain the .orig.tar.gz tarball for BOINC version 5.8.17
- this script is invoked as:
-
-   $ export-boinc -r 5.8.17
-
 Upstream authors:
  A list of the BOINC project personnel, volunteer developers and testers is
  available at: http://boinc.berkeley.edu/trac/wiki/ProjectPeople

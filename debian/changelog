@@ -1,3 +1,15 @@
+boinc (6.2.11-1) UNRELEASED; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/control:
+    - Bumped Standards-Version from 3.7.3 to 3.8.0. This required to add a
+      debian/README.source file to explain that we use quilt and to move the
+      paragraph about repackaged upstream source from debian/copyright to this
+      new file.
+
+ -- Frank S. Thomas <fst@debian.org>  Mon, 30 Jun 2008 15:00:20 +0200
+
 boinc (6.2.7-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
