@@ -77,7 +77,7 @@ Section: devel
 Priority: extra
 Architecture: any
 Depends: boinc-client (= ${binary:Version}) | boinc-manager (= ${binary:Version})
-Suggests: libcurl3-dbg, libssl0.9.8-dbg, libwxgtk2.6-dbg
+Suggests: libcurl3-dbg, libssl0.9.8-dbg, libwxgtk2.8-dbg
 Description: debugging symbols for BOINC binaries
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
