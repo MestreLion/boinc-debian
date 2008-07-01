@@ -2,6 +2,11 @@ This package was debianized by Steffen Moeller <moeller@pzr.uni-rostock.de>
 on Sat, 13 Nov 2004 23:28:53 +0100. Since Wed, 26 Jan 2005 it is maintained
 by the Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>.
 
+BOINC releases are not distributed as tarballs, but suitable .orig.tar.gz
+files can be constructed by exporting the source code from upstream's VCS.
+Refer to the paragraph "Repackaged upstream source" in debian/README.source
+for how the Debian BOINC Maintainers do this.
+
 Upstream authors:
  A list of the BOINC project personnel, volunteer developers and testers is
  available at: http://boinc.berkeley.edu/trac/wiki/ProjectPeople
