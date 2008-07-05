@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 5), quilt (>= 0.40), po-debconf, dh-buildinfo,
  docbook2x, docbook-xml, autotools-dev, automake1.9 (>= 1.9.3),
  autoconf (>= 2.59), libxml2-utils, zlib1g-dev, libssl-dev,
  libcurl4-openssl-dev (>= 7.17.1), freeglut3-dev, libsm-dev, libice-dev,
- libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.8-dev
+ libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
 Homepage: http://boinc.berkeley.edu/
 Vcs-Svn: svn://svn.debian.org/pkg-boinc/trunk/boinc/
 Vcs-Browser: http://svn.debian.org/wsvn/pkg-boinc/trunk/boinc/
@@ -77,7 +77,7 @@ Section: devel
 Priority: extra
 Architecture: any
 Depends: boinc-client (= ${binary:Version}) | boinc-manager (= ${binary:Version})
-Suggests: libcurl3-dbg, libssl0.9.8-dbg, libwxgtk2.8-dbg
+Suggests: libcurl3-dbg, libssl0.9.8-dbg, libwxgtk2.6-dbg
 Description: debugging symbols for BOINC binaries
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
