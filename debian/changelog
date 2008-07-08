@@ -1,3 +1,11 @@
+boinc (6.2.12-1) UNRELEASED; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/extra/move-boinc-dir.sh: Adjusted code to boinc-client's postinst.
+
+ -- Frank S. Thomas <fst@debian.org>  Sat, 05 Jul 2008 10:39:56 +0200
+
 boinc (6.2.11-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
