@@ -1,3 +1,12 @@
+boinc (6.2.14-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/copyright: Changed one line to not exceed 80 characters and thus
+    making Lintian happy again. 
+
+ -- Frank S. Thomas <fst@debian.org>  Sun, 20 Jul 2008 09:00:33 +0200
+
 boinc (6.2.12-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
