@@ -1,3 +1,12 @@
+boinc (6.2.14-2) unstable; urgency=low
+
+  * Updated translations for the BOINC Manager from the 6.2.16 release:
+    locale/client/{es,fr,it,pl,zh_CN}/BOINC Manager.po
+  * Commented out "#define BOINC_PRERELEASE 1" in version.h.in because 6.2.14
+    was rereleased upstream as first 6.2 public release.
+
+ -- Frank S. Thomas <fst@debian.org>  Tue, 12 Aug 2008 11:01:14 +0200
+
 boinc (6.2.14-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
