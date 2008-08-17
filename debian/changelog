@@ -3,10 +3,11 @@ boinc (6.2.18-1) UNRELEASED; urgency=low
   [ Frank S. Thomas ]
   * New upstream release.
   * debian/control:
-    - Updated Vcs-* fields since we are now using Git. 
+    - Updated Vcs-* fields since we are now using Git.
     - wxWidgets 2.8 is now in unstable, so upgraded the build-dependency from
       libwxgtk2.6-dev to libwxgtk2.8-dev. (closes: #461581) Also let boinc-dbg
       suggest libwxgtk2.8-dbg instead of libwxgtk2.6-dbg.
+  * Removed compatibility symlinks for boinc_client and boinc_cmd.
 
  -- Frank S. Thomas <fst@debian.org>  Sun, 17 Aug 2008 22:01:26 +0200
 
