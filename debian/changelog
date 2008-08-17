@@ -1,5 +1,7 @@
-boinc (6.2.14-3) UNRELEASED; urgency=low
+boinc (6.2.18-1) UNRELEASED; urgency=low
 
+  [ Frank S. Thomas ]
+  * New upstream release.
   * debian/control:
     - Updated Vcs-* fields since we are now using Git. 
     - wxWidgets 2.8 is now in unstable, so upgraded the build-dependency from
