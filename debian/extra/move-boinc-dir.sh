@@ -28,7 +28,7 @@ CONF_DIR=/etc/boinc-client
 
 mv_conffile()
 {
-    if [ ! -L "$BOINC_DIR/$1" -a -f "$BOINC_DIR/$1" ]; then
+    if [ ! -L "$BOINC_DIR/$1" ] && [ -f "$BOINC_DIR/$1" ]; then
         mv -f "$BOINC_DIR/$1" "$CONF_DIR/$1"
     fi
     ln -sf "$CONF_DIR/$1" "$BOINC_DIR/$1"
@@ -54,7 +54,7 @@ mv_conffile remote_hosts.cfg
 
 CA_FILE=/etc/ssl/certs/ca-certificates.crt
 CA_LINK="$BOINC_DIR/ca-bundle.crt"
-if [ ! -e $CA_LINK -a -f $CA_FILE ]; then
+if [ ! -e $CA_LINK ] && [ -f $CA_FILE ]; then
     ln -sf $CA_FILE $CA_LINK
 fi
 

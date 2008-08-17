@@ -1,12 +1,51 @@
-boinc (6.2.4-1) UNRELEASED; urgency=low
+boinc (6.2.14-2) unstable; urgency=low
+
+  * Updated translations for the BOINC Manager from the 6.2.16 release:
+    locale/client/{es,fr,it,pl,zh_CN}/BOINC Manager.po
+  * Commented out "#define BOINC_PRERELEASE 1" in version.h.in because 6.2.14
+    was rereleased upstream as first 6.2 public release.
+
+ -- Frank S. Thomas <fst@debian.org>  Tue, 12 Aug 2008 11:01:14 +0200
+
+boinc (6.2.14-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/copyright: Changed one line to not exceed 80 characters and thus
+    making Lintian happy again. 
+
+ -- Frank S. Thomas <fst@debian.org>  Sun, 20 Jul 2008 09:00:33 +0200
+
+boinc (6.2.12-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/extra/move-boinc-dir.sh: Adjusted code to boinc-client's postinst.
+
+ -- Frank S. Thomas <fst@debian.org>  Tue, 08 Jul 2008 23:57:01 +0200
+
+boinc (6.2.11-1) unstable; urgency=low
+
+  [ Frank S. Thomas ]
+  * New upstream release.
+  * debian/control: Bumped Standards-Version from 3.7.3 to 3.8.0. This
+    required to add a debian/README.source file to explain that we use quilt
+    and to move the paragraph about repackaged upstream source from
+    debian/copyright to this new file.
+
+ -- Frank S. Thomas <fst@debian.org>  Sat, 05 Jul 2008 09:29:13 +0200
+
+boinc (6.2.7-1) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
     - BOINC Manager: Redraw disk usage charts immediately after connecting to
-      a (different) client. (closes: 463823)
-  * debian/copyright: Added the instructions from debian/README.Debian-source
-    about how repackaged BOINC tarballs can be reproduced because DevRef now
-    recommends to put this here instead of in the afore-mentioned file.
+      a (different) client. (closes: #463823)
+  * debian/copyright:
+    - Added the instructions from debian/README.Debian-source about how
+      repackaged BOINC tarballs can be reproduced because DevRef now
+      recommends to put this here instead of in the afore-mentioned file.
+    - Updated for the new release.
   * Removed the obsolete debian/README.Debian-source.
   * For consistency upstream renamed the core client and the command tool
     ("boinc_client" to "boinc" and "boinc_cmd" to "boinccmd"). Done the same
@@ -16,7 +55,7 @@ boinc (6.2.4-1) UNRELEASED; urgency=low
   * debian/rules: Do not list Makefile.ins in the clean target individually,
     just remove all that can be found.
 
- -- Frank S. Thomas <fst@debian.org>  Tue, 15 Apr 2008 15:09:05 +0200
+ -- Frank S. Thomas <fst@debian.org>  Sat, 31 May 2008 08:02:47 +0200
 
 boinc (5.10.45-3) unstable; urgency=low
 
