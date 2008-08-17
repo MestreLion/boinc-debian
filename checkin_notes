@@ -4206,3 +4206,177 @@ Rom    16 July 2008
     /
         configure.ac
         version.h
+
+Charlie 17 July 2008
+    - MGR: Code which tests for reboot required should be Windows-only.
+        
+    clientgui/
+        BOINCGUIApp.cpp
+
+Rom    17 July 2008
+    - SEA: Change references of boinc_cmd to boinccmd
+    
+    sea/
+        Makefile.am
+
+Rom    31 July 2008
+    - SCR: Don't treat CPU throttling as BOINC being suspended.
+        Fixes #706
+    - MGR: If the reminder frequency is 0, then don't show any
+        reminder messages.
+
+    clientgui/
+        BOINCDialupManager.cpp
+    clientscr/
+        screensaver.cpp
+        screensaver_win.cpp
+
+Rom    31 July 2008
+    - Tag for 6.2.15 release, all platforms
+      boinc_core_release_6_2_15
+
+    /
+        configure.ac
+        version.h
+
+Charlie 1 Aug 2008
+    - SCR / CLIENT: fix get_screensaver_tasks RPC so it does not 
+        exclude tasks suspended for CPU throttling.  Fixes the 
+        screensaver problem for V6 graphics.  Checked into 
+        boinc_core_release_6_2_15 tag.
+        
+    client/
+        gui_rpc_server_ops.C
+
+Rom    7 Aug 2008
+    - CLIENT/MGR/TRAY: When installed on Vista and UAC is turned on
+        the user by default cannot create globally shared objects. This
+        becomes a problem when protected application mode is turned off
+        for keyboard and mouse detection.  Basically all of the components
+        would start up and fail to create the shared memory segment
+        and report the error through stderr which most people don't look
+        at by default.
+        
+        The client is now the only component that is allowed to create the
+        shared memory segment, if creating the global segment fails it'll
+        create a local one instead. Both the tray and manager now just attach
+        to the existing segment, first trying the global one then the local
+        one.
+        
+
+    client/
+        main.C
+    clientgui/
+        BOINCGUIApp.cpp, .h
+    clientlib/win/
+        boinc_dll.cpp
+        IdleTracker.cpp
+    clienttray/
+        tray_win.cpp, .h
+    win_build/
+        boinc.sln
+        boinctray.vcproj
+
+Rom    7 Aug 2008
+    - Tag for 6.2.16 release, all platforms
+      boinc_core_release_6_2_16
+
+    /
+        configure.ac
+        version.h
+
+Charlie 13 Aug 2008
+    - Mac Installer: fix bugs in script which converts BOINC installer 
+        to a GridRepublic installer.
+    
+    mac_installer/
+        make_GridRepublic.sh
+
+Rom    13 Aug 2008
+    - Update copyright strings in various Windows resource files.
+    
+    client/win/
+        boinc_cli.rc
+        boinc_cli_2003.rc
+        boinc_cmd.rc
+    clientgui/
+        BOINCGUIApp.rc
+        BOINCGUIApp_2003.rc
+    clientlib/win/
+        boinc_dll.rc
+        boinc_dll_2003.rc
+    clientscr/
+        boinc_ss.rc
+        boinc_ss_2003.rc
+    clienttray/
+        boinc_tray.rc
+
+Rom    14 Aug 2008
+    - WIN: Update OS Detection code.
+    
+        NOTE: Holy cow, Between Vista and Server 2008 there are now
+          26 different SKUs.
+          
+    client/
+        hostinfo_win.C
+
+Rom    14 Aug 2008
+    - WINSCR: Certain checks should be done regularly like keyboard/mouse
+        activity and the notification window check. They should not depend
+        on whether or not the graphics window has been displayed or not.
+        
+    clientscr/
+        screensaver.cpp
+        screensaver_win.cpp, .h
+
+Rom    14 Aug 2008
+    - Tag for 6.2.17 release, all platforms
+      boinc_core_release_6_2_17
+
+    /
+        configure.ac
+        version.h
+
+Rom    15 Aug 2008
+    - WINSETUP: For some reason BOINCTray.exe was only being installed
+        when the 'Protected Applcation Mode' was selected. I don't
+        remember why we did this, so install it on all scenarios.
+        
+    win_build/installerv2/
+        BOINC.ism
+        BOINCx64.sm
+
+David  3 Aug 2008
+    - client: fix crash in this scenario:
+        A file upload sends request.
+        The network is down, and something (e.g. a router)
+        sends a long (> 4KB) error page.
+        This overruns the 4KB buffer of HTTP_OP::req1.
+        Solution: keep track of the size of the buffer,
+        and don't overrun it.
+        Also move the body of a huge for loop into a separate function.
+        From Ian Hay.
+        Fixes #705
+
+    client/
+        file_xfer.C
+        http_curl.C,h
+
+David  16 Aug 2008
+    - client: don't leak handles to shared-mem files
+    - client: don't leak process handles when abort jobs
+    - client: if an app exits or we kill it, always destroy the shmem segment.
+
+    client/
+        app.C,h
+        app_control.C
+        app_start.C
+
+Rom    14 Aug 2008
+    - Tag for 6.2.18 release, all platforms
+      boinc_core_release_6_2_18
+
+    /
+        configure.ac
+        version.h
+

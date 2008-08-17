@@ -111,18 +111,17 @@ int ACTIVE_TASK::get_shmem_seg_name() {
 #ifdef _WIN32
     int i;
     char seg_name[256];
-    HANDLE h = 0;
 
     bool try_global = (sandbox_account_service_token != NULL);
     for (i=0; i<1024; i++) {
         sprintf(seg_name, "%sboinc_%d", SHM_PREFIX, i);
-        h = create_shmem(
+        shm_handle = create_shmem(
             seg_name, sizeof(SHARED_MEM), (void**)&app_client_shm.shm,
             try_global
         );
-        if (h) break;
+        if (shm_handle) break;
     }
-    if (!h) return ERR_SHMGET;
+    if (!shm_handle) return ERR_SHMGET;
     sprintf(shmem_seg_name, "boinc_%d", i);
 #else
     char init_data_path[256];
@@ -499,6 +498,8 @@ int ACTIVE_TASK::start(bool first_time) {
     app_client_shm.reset_msgs();
 
     if (config.run_apps_manually) {
+        // fill in core client's PID so we won't think app has exited
+        //
         pid = GetCurrentProcessId();
         pid_handle = GetCurrentProcess();
         set_task_state(PROCESS_EXECUTING, "start");
@@ -968,4 +969,4 @@ int ACTIVE_TASK::is_native_i386_app(char* exec_path) {
 }
 #endif
 
-const char *BOINC_RCSID_be8bae8cbb = "$Id: app_start.C 15563 2008-07-08 17:38:40Z romw $";
+const char *BOINC_RCSID_be8bae8cbb = "$Id: app_start.C 15866 2008-08-16 22:37:23Z romw $";

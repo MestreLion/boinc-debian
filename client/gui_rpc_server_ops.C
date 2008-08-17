@@ -484,7 +484,9 @@ static void handle_get_screensaver_tasks(MIOFILE& fout) {
     );
     for (i=0; i<gstate.active_tasks.active_tasks.size(); i++) {
         atp = gstate.active_tasks.active_tasks[i];
-        if (atp->task_state() == PROCESS_EXECUTING) {
+        if ((atp->task_state() == PROCESS_EXECUTING) || 
+                ((atp->task_state() == PROCESS_SUSPENDED) && 
+                        (gstate.suspend_reason & SUSPEND_REASON_CPU_USAGE_LIMIT))) {
             atp->result->write_gui(fout);
         }
     }
@@ -1184,4 +1186,4 @@ int GUI_RPC_CONN::handle_rpc() {
 
     return 0;
 }
-const char *BOINC_RCSID_7bf15dcb49="$Id: gui_rpc_server_ops.C 14682 2008-02-06 00:17:13Z davea $";
+const char *BOINC_RCSID_7bf15dcb49="$Id: gui_rpc_server_ops.C 15737 2008-08-01 09:50:15Z charlief $";

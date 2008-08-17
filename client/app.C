@@ -80,9 +80,6 @@ using std::max;
 using std::min;
 
 ACTIVE_TASK::~ACTIVE_TASK() {
-#ifndef SIM
-    cleanup_task();
-#endif
 }
 
 #ifndef SIM
@@ -147,24 +144,14 @@ void ACTIVE_TASK::set_task_state(int val, const char* where) {
     }
 }
 
-#ifdef _WIN32
-
-// call this when a process has exited but will be started again
-// (e.g. suspend via quit, exited but no finish file).
-// In these cases we want to keep the shmem and events
+// called when a process has exited or we've killed it
 //
-void ACTIVE_TASK::close_process_handles() {
+void ACTIVE_TASK::cleanup_task() {
+#ifdef _WIN32
     if (pid_handle) {
         CloseHandle(pid_handle);
         pid_handle = NULL;
     }
-}
-#endif
-
-// called when a process has exited
-//
-void ACTIVE_TASK::cleanup_task() {
-#ifdef _WIN32
     // detach from shared mem.
     // This will destroy shmem seg since we're the last attachment
     //
@@ -200,6 +187,8 @@ void ACTIVE_TASK::cleanup_task() {
     }
 #endif
     
+    free_coprocs();
+
     if (gstate.exit_after_finish) {
         exit(0);
     }
@@ -850,4 +839,4 @@ void ACTIVE_TASK_SET::init() {
 
 #endif
 
-const char *BOINC_RCSID_778b61195e = "$Id: app.C 15250 2008-05-19 17:39:44Z romw $";
+const char *BOINC_RCSID_778b61195e = "$Id: app.C 15866 2008-08-16 22:37:23Z romw $";

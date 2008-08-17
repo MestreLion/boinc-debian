@@ -1,6 +1,6 @@
 dnl -*- autoconf -*-
 
-dnl $Id: configure.ac 15621 2008-07-16 19:44:13Z romw $
+dnl $Id: configure.ac 15867 2008-08-16 22:40:30Z romw $
 
 dnl NOTE: on milkyway.ssl and jill.ssl , need autoconf/automake et al from quarls
 dnl directory; the _autosetup script does this.
@@ -9,7 +9,7 @@ dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.57)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 6.2.14)
+AC_INIT(BOINC, 6.2.18)
 
 AC_ARG_ENABLE(debug, 
     AS_HELP_STRING([--enable-debug],
@@ -105,7 +105,7 @@ or write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ])
 
-AC_REVISION([$Revision: 15621 $])
+AC_REVISION([$Revision: 15867 $])
 
 AC_DEFUN([KC_STRIP_LEADING_ZEROS],[m4_bregexp([$*],[^0*\(..*\)],\1)])
 

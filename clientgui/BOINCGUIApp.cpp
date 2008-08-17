@@ -57,6 +57,8 @@ static bool s_bSkipExitConfirmation = false;
 
 #ifdef __WXMSW__
 EXTERN_C BOOL  ClientLibraryStartup();
+EXTERN_C BOOL  IdleTrackerAttach();
+EXTERN_C void  IdleTrackerDetach();
 EXTERN_C void  ClientLibraryShutdown();
 EXTERN_C DWORD BOINCGetIdleTickCount();
 #endif
@@ -324,7 +326,7 @@ bool CBOINCGUIApp::OnInit() {
         m_pConfig->Read(wxT("Skin"), m_pSkinManager->GetDefaultSkinName())
     );
 
-
+#ifdef __WXMSW__
     // Perform any last minute checks that should keep the manager
     // from starting up.
     wxString strRebootPendingFile = 
@@ -343,7 +345,7 @@ bool CBOINCGUIApp::OnInit() {
         dialog.ShowModal();
         return false;
     }
-
+#endif
 
     // Initialize the main document
     m_pDocument = new CMainDocument();
@@ -399,6 +401,7 @@ bool CBOINCGUIApp::OnInit() {
 
     // Startup the System Idle Detection code
     ClientLibraryStartup();
+    IdleTrackerAttach();
 
 #ifdef __WXMAC__
     s_bSkipExitConfirmation = false;
@@ -452,6 +455,7 @@ bool CBOINCGUIApp::OnInit() {
 
 int CBOINCGUIApp::OnExit() {
     // Shutdown the System Idle Detection code
+    IdleTrackerDetach();
     ClientLibraryShutdown();
 
     if (m_pDocument) {
@@ -615,6 +619,22 @@ int CBOINCGUIApp::ClientLibraryStartup() {
 }
 
 
+int CBOINCGUIApp::IdleTrackerAttach() {
+#ifdef __WXMSW__
+    ::IdleTrackerAttach();
+#endif
+    return 0;
+}
+
+
+int CBOINCGUIApp::IdleTrackerDetach() {
+#ifdef __WXMSW__
+    ::IdleTrackerDetach();
+#endif
+    return 0;
+}
+
+
 int CBOINCGUIApp::ClientLibraryShutdown() {
 #ifdef __WXMSW__
     ::ClientLibraryShutdown();
@@ -771,4 +791,4 @@ int CBOINCGUIApp::ConfirmExit() {
 }
 
 
-const char *BOINC_RCSID_487cbf3018 = "$Id: BOINCGUIApp.cpp 15611 2008-07-16 17:00:15Z romw $";
+const char *BOINC_RCSID_487cbf3018 = "$Id: BOINCGUIApp.cpp 15769 2008-08-07 17:19:38Z romw $";
