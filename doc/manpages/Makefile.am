@@ -1,0 +1,25 @@
+## -*- mode: make; tab-width: 4 -*-
+## $Id: Makefile.am 15100 2008-04-26 13:35:41Z fthomas $
+
+include $(top_srcdir)/Makefile.incl
+
+if ENABLE_CLIENT
+  CLIENT_MANS = boinc.1 boinccmd.1
+endif
+
+if BUILD_CLIENTGUI
+  CLIENTGUI_MANS = boincmgr.1
+endif
+
+if ENABLE_SERVER
+  SERVER_MANS = 
+endif
+
+man_MANS = $(CLIENT_MANS) $(CLIENTGUI_MANS) $(SERVER_MANS)
+
+%.1: %.xml
+	$(DOCBOOK2X_MAN) $<
+
+all-local: $(man_MANS)
+
+CLEANFILES = $(man_MANS)

@@ -1,0 +1,35 @@
+## -*-Makefile -*-
+## $Id: Makefile.incl 14918 2008-03-15 03:26:14Z repr $
+
+# Note: MYSQL_CFLAGS and MYSQL_LIBS set by configure from mysql_config
+
+MYSQL_LIBS = @MYSQL_LIBS@
+MYSQL_CFLAGS = @MYSQL_CFLAGS@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
+
+RSA_LIBS = -lcrypto
+
+AM_CPPFLAGS =					\
+        -I$(top_srcdir)/lib			\
+        -I$(top_srcdir)/api			\
+        -I$(top_srcdir)/db			\
+        -I$(top_srcdir)/client			\
+        -I$(top_srcdir)/tools			\
+        -I$(top_srcdir)/sched			\
+        -I$(top_srcdir)/lib/mac
+
+# dependencies to make sure libs gets compiled before
+# programs linking to them:
+
+LIBSCHED = $(top_builddir)/sched/libsched.a
+$(LIBSCHED):
+	cd $(top_builddir)/sched; ${MAKE} libsched.a
+
+LIBBOINC = $(top_builddir)/lib/libboinc.a
+$(LIBBOINC):
+	cd $(top_builddir)/lib; ${MAKE} libboinc.a
+
+LIBAPI = = $(top_builddir)/api/libboinc_api.a
+$(LIBAPI):
+	cd $(top_builddir)/api; ${MAKE} libboinc_api.a
