@@ -137,6 +137,15 @@ build-stamp:
 	dh_testdir
 	./configure $(CFGFLAGS)
 	$(MAKE)
+	
+	# Generate binary message catalogs of the BOINC Manager.
+	for i in `ls locale/client`; do \
+	  if [ -f "locale/client/$$i/BOINC Manager.po" ]; then \
+	    msgfmt -o "locale/client/$$i/BOINC Manager.mo" \
+	      "locale/client/$$i/BOINC Manager.po"; \
+	  fi; \
+	done;
+	
 	touch $@
 
 build-boinc-client-stamp:
@@ -175,6 +184,7 @@ install-stamp:
 	install -D clientgui/boincmgr.unmodified \
 	  debian/boinc-manager/usr/bin/boincmgr
 	
+	# Install binary message catalogs of the BOINC Manager.
 	for i in `ls locale/client`; do \
 	  if [ -f "locale/client/$$i/BOINC Manager.mo" ]; then \
 	    install -D -m644 "locale/client/$$i/BOINC Manager.mo" \

@@ -11,6 +11,8 @@ boinc (6.2.18-1) UNRELEASED; urgency=low
   * debian/rules:
     - Switched to debhelper V7 (from V5) to minimize rules file. Updated
       build-dependency and compatibility level accordingly.
+    - Regenerate the binary message catalogs for the BOINC Manager from the po
+      files in locale/client/.
 
  -- Frank S. Thomas <fst@debian.org>  Sun, 17 Aug 2008 22:01:26 +0200
 
