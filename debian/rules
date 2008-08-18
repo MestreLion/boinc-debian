@@ -157,7 +157,7 @@ build-boinc-client-stamp:
 
 clean: clean-patched unpatch
 clean-patched:
-	dh clean --before dh_clean
+	dh clean 
 	dh_clean \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
@@ -165,7 +165,6 @@ clean-patched:
 	  aclocal.m4 \
 	  config.h.in \
 	  configure
-	dh clean --remaining
 	debconf-updatepo
 
 install: build install-stamp
