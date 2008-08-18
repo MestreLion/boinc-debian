@@ -8,6 +8,9 @@ boinc (6.2.18-1) UNRELEASED; urgency=low
       libwxgtk2.6-dev to libwxgtk2.8-dev. (closes: #461581) Also let boinc-dbg
       suggest libwxgtk2.8-dbg instead of libwxgtk2.6-dbg.
   * Removed compatibility symlinks for boinc_client and boinc_cmd.
+  * debian/rules:
+    - Switched to debhelper V7 (from V5) to minimize rules file. Updated
+      build-dependency and compatibility level accordingly.
 
  -- Frank S. Thomas <fst@debian.org>  Sun, 17 Aug 2008 22:01:26 +0200
 
