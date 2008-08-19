@@ -140,14 +140,14 @@ status()
 {
   STATUS="Status of $DESC:"
   if is_running; then
-    log_success_msg "$STATUS running."
+    log_success_msg "$STATUS running"
     if [ -x "`which schedtool 2>/dev/null`" ]; then
-      log_success_msg "Scheduling of $DESC:"
+      log_success_msg "Scheduling of $DESC: $pid"
       schedtool $pid
 
       children=`ps --ppid $pid -o pid= | tr '\n' ' '`
       if [ -n "$children" ]; then
-        log_success_msg "Scheduling of $DESC's children:"
+        log_success_msg "Scheduling of $DESC's children: $children"
         schedtool $children
       fi
     fi
@@ -159,7 +159,7 @@ status()
       log_success_msg "cpu_share: `cat "$cpu_share_file"`"
     fi
   else
-    log_success_msg "$STATUS stopped."
+    log_success_msg "$STATUS stopped"
   fi
 }
 
