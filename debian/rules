@@ -128,8 +128,6 @@ pre-build-stamp:
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
-	
-	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	touch $@
 
 build: pre-build build-boinc-client-stamp build-stamp
@@ -137,7 +135,7 @@ build-stamp:
 	dh_testdir
 	./configure $(CFGFLAGS)
 	$(MAKE)
-	
+	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	# Generate binary message catalogs of the BOINC Manager.
 	for i in `ls locale/client`; do \
 	  if [ -f "locale/client/$$i/BOINC Manager.po" ]; then \
@@ -145,7 +143,6 @@ build-stamp:
 	      "locale/client/$$i/BOINC Manager.po"; \
 	  fi; \
 	done;
-	
 	touch $@
 
 build-boinc-client-stamp:
@@ -190,6 +187,7 @@ install-stamp:
 	      "debian/boinc-manager/usr/share/locale/$$i/LC_MESSAGES/BOINC Manager.mo"; \
 	  fi; \
 	done;
+	
 	# The en_US po file is actually a po template, thus the corresponding
 	# "BOINC Manager.mo" is empty and useless.
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
