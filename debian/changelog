@@ -1,4 +1,4 @@
-boinc (6.2.18-1) UNRELEASED; urgency=low
+boinc (6.2.18-1) experimental; urgency=low
 
   [ Frank S. Thomas ]
   * New upstream release.
@@ -15,7 +15,7 @@ boinc (6.2.18-1) UNRELEASED; urgency=low
       files in locale/client/.
   * debian/boinc-client.init: Cosmetic changes of the status action output.
 
- -- Frank S. Thomas <fst@debian.org>  Sun, 17 Aug 2008 22:01:26 +0200
+ -- Frank S. Thomas <fst@debian.org>  Thu, 21 Aug 2008 20:25:31 +0200
 
 boinc (6.2.14-2) unstable; urgency=low
 
