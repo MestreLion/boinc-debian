@@ -24,3 +24,7 @@ Repackaged upstream source:
  this script is invoked as:
 
    $ export-boinc -r 5.8.17
+
+Very recently, the management of the packaging has moved from subversion
+to a git repository. Again, the Wiki pages hold instructions and offer
+references for the current and future contributors - you?
