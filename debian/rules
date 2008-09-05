@@ -165,8 +165,7 @@ clean-patched:
 
 install: build install-stamp
 install-stamp:
-	dh install --after dh_auto_test --before dh_auto_install
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
+	dh install --after dh_auto_test --until dh_install
 	
 	# Install files for the boinc-client package.
 	install -D client/boinc.optimized \
@@ -191,9 +190,9 @@ install-stamp:
 	# "BOINC Manager.mo" is empty and useless.
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	
-	dh install --after dh_auto_install --before dh_installchangelogs
+	dh install --before dh_installchangelogs
 	dh_installchangelogs -k checkin_notes
-	dh install --after dh_installchangelogs --until dh_fixperms
+	dh install --until dh_fixperms
 	chmod 755 \
 	  debian/boinc-client/usr/share/boinc-client/udev-cpu_share \
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
