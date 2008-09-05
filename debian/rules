@@ -115,23 +115,22 @@ CFGFLAGS_boinc-client = \
   CXXFLAGS="$(CXXFLAGS_boinc-client)" \
   LDFLAGS="$(LDFLAGS)"
 
-unit-test-stamp:
+test-stamp:
 	dh_testdir
 	xmllint --nonet --noout \
 	  debian/conffiles/cc_config.xml \
 	  debian/conffiles/global_prefs_override.xml
 	touch $@
 
-pre-build: unit-test-stamp patch pre-build-stamp
-pre-build-stamp:
+autoreconf-stamp: patch
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	touch $@
 
-build: pre-build build-boinc-client-stamp build-stamp
-build-stamp:
+build: test-stamp build-stamp
+build-stamp: autoreconf-stamp build-boinc-client-stamp
 	dh_testdir
 	./configure $(CFGFLAGS)
 	$(MAKE)
@@ -145,7 +144,7 @@ build-stamp:
 	done;
 	touch $@
 
-build-boinc-client-stamp:
+build-boinc-client-stamp: autoreconf-stamp
 	dh_testdir
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
@@ -221,5 +220,4 @@ get-orig-source:
 	$$EXB -r $$LATEST_VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: unit-test pre-build build clean clean-patched install install-arch \
-  binary-arch binary get-orig-source
+.PHONY: build clean clean-patched install binary-arch binary get-orig-source
