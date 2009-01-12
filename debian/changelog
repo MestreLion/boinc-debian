@@ -4,7 +4,31 @@ boinc (6.2.18-2) UNRELEASED; urgency=low
   * debian/rules: Transposed/renamed/removed targets and their prerequisites
     so that building the package with make's parallel execution succeeds.
 
- -- Frank S. Thomas <fst@debian.org>  Wed, 03 Sep 2008 18:18:09 +0200
+  [ Rene Mayorga ]
+  * debian/boinc-client.init: Detect and remove `--daemon' option
+    from etc/default/boinc-client Closes: #504467
+  * debian/control:
+    + add myself to Uploaders, and wrap long lines
+    + add ${misc:Depends} to boinc-client-dbg Depends
+    + remove `Section' from boinc-client package
+  * debian/rules: 
+    + remove boinc/locale/client/ar/BOINC Manager.mo on clean target
+      this file is regenerated on build and FTBFS when the package
+      is built two times in a row
+    + remove config.guess and config.sub on clean, this will
+      prevent that auto-generated changes goes to .diff.gz
+    + remove client/scripts/Makefile, client/scripts/boinc-client
+      and sea/Makefile, to prevent that those files end on 
+      .diff.gz file
+   * debian/po/ja.po added, thanks goes to Hideki Yamane, Closes: #510718
+   * debian/patches: add description, Author and some other info to all
+     patches.
+   * 005_hyphen_as_minus.patch added; Add <option> tag to some options
+     on doc/manpages/boinccmd.xml
+   * debian/manpages/update-boinc-applinks.xml, use <option> tag on --help
+     option referenced on OPTIONS section.
+
+ -- Rene Mayorga <rmayorga@debian.org.sv>  Sun, 11 Jan 2009 15:25:21 -0600
 
 boinc (6.2.18-1) experimental; urgency=low
 

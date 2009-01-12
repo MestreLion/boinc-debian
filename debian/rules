@@ -160,7 +160,13 @@ clean-patched:
 	  `find -name Makefile.in` \
 	  aclocal.m4 \
 	  config.h.in \
-	  configure
+	  configure \
+	  locale/client/ar/BOINC\ Manager.mo \
+	  config.guess \
+	  config.sub \
+	  client/scripts/Makefile \
+	  client/scripts/boinc-client \
+	  sea/Makefile
 	debconf-updatepo
 
 install: build install-stamp

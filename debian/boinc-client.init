@@ -18,7 +18,6 @@
 # Version 2 or any later version published by the Free Software Foundation.
 
 set -e
-
 . /lib/lsb/init-functions
 
 # Default values for the variables that are also set in the defaults file.
@@ -53,6 +52,16 @@ if [ -z "$BOINC_USER" ]; then
   log_failure_msg "BOINC_USER variable is empty. Set it to a user to run" \
     "the BOINC core client."
   exit 6
+fi
+
+if [ ! -z "$BOINC_OPTS" ]; then
+	if [ ! `echo $FOO | grep  -- '--daemon' 1>/dev/null` ]; then
+		log_warning_msg "\`--deamon' option detected \
+			on /etc/default/boinc-client, this \
+			can cause problems on boinc. The option \
+			will be suppressed"
+			BOINC_OPTS=`echo "$BOINC_OPTS" | sed 's/--daemon//'`
+	fi
 fi
 
 PIDFILE=/var/run/boinc.pid

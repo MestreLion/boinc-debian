@@ -73,7 +73,7 @@
   <refsect1>
     <title>OPTIONS</title>
     <para>For a full summary of options, run <command>&dhbinary;
-      --help</command>.</para>
+      <option>--help</option></command>.</para>
 
     <variablelist>
       <varlistentry>
