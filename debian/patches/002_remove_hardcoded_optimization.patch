@@ -1,7 +1,5 @@
-Index: boinc-6.1.0/client/Makefile.am
-===================================================================
---- boinc-6.1.0.orig/client/Makefile.am
-+++ boinc-6.1.0/client/Makefile.am
+--- boinc.orig/client/Makefile.am
++++ boinc/client/Makefile.am
 @@ -61,7 +61,7 @@
      work_fetch.C
  
@@ -9,5 +7,5 @@ Index: boinc-6.1.0/client/Makefile.am
 -boinc_client_CPPFLAGS = -O3 -fomit-frame-pointer -fforce-addr -ffast-math $(AM_CPPFLAGS)
 +boinc_client_CPPFLAGS = $(AM_CPPFLAGS)
  boinc_client_LDFLAGS = -static-libgcc
- boinc_client_LDADD = -L../lib -lboinc $(PTHREAD_LIBS)
+ boinc_client_LDADD = $(LIBBOINC) $(PTHREAD_LIBS)
  

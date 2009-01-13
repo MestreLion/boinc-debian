@@ -1,3 +1,16 @@
+boinc (6.2.14-3) unstable; urgency=low
+
+  * Add debian/patches/101_check_RSA_returned_values.patch 
+    Check the returned values for RSA_public_decrypt and
+    RSA_private_encrypt functions. Change ported by upstream changeset 16883
+    (http://boinc.berkeley.edu/trac/changeset/16883) Closes: #511521
+  * debian/patches
+    001_dont_install_ca-bundle.crt.patch and 
+    002_remove_hardcoded_optimization.patch Refreshed
+  * debian/control - add myself to uploaders
+
+ -- Rene Mayorga <rmayorga@debian.org.sv>  Tue, 13 Jan 2009 14:05:38 -0600
+
 boinc (6.2.14-2) unstable; urgency=low
 
   * Updated translations for the BOINC Manager from the 6.2.16 release:

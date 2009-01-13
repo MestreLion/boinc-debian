@@ -1,0 +1,66 @@
+Author: davea
+Description: Check the returned values for RSA_public_decrypt and
+RSA_private_encrypt functions. Change ported by upstream changeset 16883
+(http://boinc.berkeley.edu/trac/changeset/16883) 
+Bug: #511521
+--- boinc.orig/lib/crypt.C
++++ boinc/lib/crypt.C
+@@ -210,7 +210,7 @@
+ // The output block must be decrypted in its entirety.
+ //
+ int encrypt_private(R_RSA_PRIVATE_KEY& key, DATA_BLOCK& in, DATA_BLOCK& out) {
+-    int n, modulus_len;
++    int n, modulus_len, retval;
+ 
+     modulus_len = (key.bits+7)/8;
+     n = in.len;
+@@ -219,17 +219,27 @@
+     }
+     RSA* rp = RSA_new();
+     private_to_openssl(key, rp);
+-    RSA_private_encrypt(n, in.data, out.data, rp, RSA_PKCS1_PADDING);
++    retval = RSA_private_encrypt(n, in.data, out.data, rp, RSA_PKCS1_PADDING);
++    if (retval < 0) {
++	    RSA_free(rp);
++	    return ERR_CRYPTO;
++    }
+     out.len = RSA_size(rp);
+     RSA_free(rp);
+     return 0;
+ }
+ 
+ int decrypt_public(R_RSA_PUBLIC_KEY& key, DATA_BLOCK& in, DATA_BLOCK& out) {
++    int retval;
+     RSA* rp = RSA_new();
+     public_to_openssl(key, rp);
+-    RSA_public_decrypt(in.len, in.data, out.data, rp, RSA_PKCS1_PADDING);
++    retval = RSA_public_decrypt(in.len, in.data, out.data, rp, RSA_PKCS1_PADDING);
++    if (retval < 0) {
++        RSA_free(rp);
++	return ERR_CRYPTO;
++    }
+     out.len = RSA_size(rp);
++    RSA_free(rp);
+     return 0;
+ }
+ 
+--- boinc.orig/lib/error_numbers.h
++++ boinc/lib/error_numbers.h
+@@ -187,6 +187,7 @@
+ #define ERR_CHILD_FAILED    -228
+ #define ERR_SYMLINK         -229
+ #define ERR_DB_CONN_LOST    -230
++#define ERR_CRYPTO          -231
+ 
+ // PLEASE: add a text description of your error to 
+ // the text description function boincerror() in str_util.C.
+--- boinc.orig/lib/str_util.C
++++ boinc/lib/str_util.C
+@@ -735,6 +735,7 @@
+         case ERR_BAD_FILENAME: return "file name is empty or has '..'";
+         case ERR_TOO_MANY_EXITS: return "application exited too many times";
+         case ERR_RMDIR: return "rmdir() failed";
++	case ERR_CRYPTO: return "encryption/decryption error";
+         case 404: return "HTTP file not found";
+         case 407: return "HTTP proxy authentication failure";
+         case 416: return "HTTP range request error";
