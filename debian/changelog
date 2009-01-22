@@ -3,6 +3,7 @@ boinc (6.2.18-2) UNRELEASED; urgency=low
   [ Frank S. Thomas ]
   * debian/rules: Transposed/renamed/removed targets and their prerequisites
     so that building the package with make's parallel execution succeeds.
+  * debian/control: Removed myself from Uploaders.
 
   [ Rene Mayorga ]
   * debian/boinc-client.init: Detect and remove `--daemon' option

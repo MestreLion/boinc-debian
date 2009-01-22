@@ -3,7 +3,6 @@ Section: net
 Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
 Uploaders: Steffen Moeller <steffen_moeller@gmx.de>, 
- Frank S. Thomas <fst@debian.org>, 
  Christoph Martin <christoph.martin@uni-mainz.de>,
  Rene Mayorga <rmayorga@debian.org.sv>
 Standards-Version: 3.8.0
