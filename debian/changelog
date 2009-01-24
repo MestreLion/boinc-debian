@@ -1,4 +1,4 @@
-boinc (6.2.18-2) UNRELEASED; urgency=low
+boinc (6.2.18-2) unstable; urgency=low
 
   [ Frank S. Thomas ]
   * debian/rules: Transposed/renamed/removed targets and their prerequisites
@@ -28,6 +28,7 @@ boinc (6.2.18-2) UNRELEASED; urgency=low
      on doc/manpages/boinccmd.xml
    * debian/manpages/update-boinc-applinks.xml, use <option> tag on --help
      option referenced on OPTIONS section.
+   * 101_check_RSA_returned_values.patch from unstable, added
 
  -- Rene Mayorga <rmayorga@debian.org.sv>  Sun, 11 Jan 2009 15:25:21 -0600
 
