@@ -30,7 +30,7 @@ boinc (6.2.18-2) experimental; urgency=low
      option referenced on OPTIONS section.
    * 101_check_RSA_returned_values.patch from unstable, added
 
- -- Rene Mayorga <rmayorga@debian.org.sv>  Sun, 11 Jan 2009 15:25:21 -0600
+ -- Rene Mayorga <rmayorga@debian.org>  Sun, 11 Jan 2009 15:25:21 -0600
 
 boinc (6.2.18-1) experimental; urgency=low
 
