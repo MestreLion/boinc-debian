@@ -10,8 +10,8 @@ Build-Depends: debhelper (>= 5), quilt (>= 0.40), po-debconf, dh-buildinfo,
  libcurl4-openssl-dev (>= 7.17.1), freeglut3-dev, libsm-dev, libice-dev,
  libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.6-dev
 Homepage: http://boinc.berkeley.edu/
-Vcs-Svn: svn://svn.debian.org/pkg-boinc/trunk/boinc/
-Vcs-Browser: http://svn.debian.org/wsvn/pkg-boinc/trunk/boinc/
+Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git
+Vcs-Browser: http://git.debian.org/?p=pkg-boinc/boinc.git
 
 Package: boinc-client
 Section: net
