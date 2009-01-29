@@ -1,6 +1,22 @@
 #! /usr/bin/env php
 
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // remind.php [--lapsed | --failed] [--show_email] [--userid ID]
 //
@@ -159,6 +175,7 @@ function read_email_files() {
 function replace($user, $template) {
     $pat = array(
         '/<name\/>/',
+        '/<email\/>/',
         '/<create_time\/>/',
         '/<total_credit\/>/',
         '/<opt_out_url\/>/',
@@ -167,6 +184,7 @@ function replace($user, $template) {
     );
     $rep = array(
         $user->name,
+        $user->email_addr,
         gmdate('d F Y', $user->create_time),
         number_format($user->total_credit, 0),
         URL_BASE."opt_out.php?code=".salted_key($user->authenticator)."&userid=$user->id",

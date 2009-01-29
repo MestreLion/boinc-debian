@@ -1,4 +1,23 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 include_once("../inc/db.inc");
 include_once("../inc/util.inc");
 include_once("../inc/prefs.inc");
@@ -99,5 +118,5 @@ if ($action) {
 echo "<a href=prefs.php?subset=$subset$x$c>Back to preferences</a>\n";
 page_tail();
 
-$cvs_version_tracker[]="\$Id: prefs_edit.php 12786 2007-05-30 21:35:14Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: prefs_edit.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
 ?>

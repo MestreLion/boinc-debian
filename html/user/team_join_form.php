@@ -1,5 +1,20 @@
 <?php
-$cvs_version_tracker[]="\$Id: team_join_form.php 13450 2007-08-24 15:41:01Z Rytis $";  //Generated automatically - do not edit
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/db.inc");
 require_once("../inc/util.inc");
@@ -10,6 +25,9 @@ $user = get_logged_in_user();
 $teamid = get_int("id");
 
 $team = lookup_team($teamid);
+if (!$team->joinable) {
+    error_page("The team is not joinable.");
+}
 $team_name = $team->name;
 page_head("Join $team_name");
 echo " <p><b>Please note:</b>
@@ -27,4 +45,5 @@ echo "
 ";
 page_tail();
 
+$cvs_version_tracker[]="\$Id: team_join_form.php 16160 2008-10-08 16:48:11Z davea $";  //Generated automatically - do not edit
 ?>

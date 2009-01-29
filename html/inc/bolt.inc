@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // Bolt course document API
 
@@ -7,9 +23,14 @@ ini_set('display_errors', true);
 ini_set('display_startup_errors', true);
 
 abstract class BoltUnit {
-    public $name;   // logical name.
+    public $name;
+        // Logical name.  Changing this makes it a different unit.
+        // For items, this is the filename with query string;
+        // for structures, it must be specified with name()
     public $title;
+        // Optional; used when showing course history outline.
     public $is_item;
+	public $attrs;		// course-defined
 
     abstract function walk(&$iter, $incr, &$frac_done);
         // multi-purpose function for traversing a course.
@@ -27,7 +48,7 @@ abstract class BoltUnit {
 class BoltItem extends BoltUnit {
     public $filename;
     public $query_string;
-    function __construct($name, $title, $filename) {
+    function __construct($filename, $title, $attrs) {
         $p = strpos($filename, '?');
         if ($p === false) {
             $this->filename = $filename;
@@ -36,9 +57,10 @@ class BoltItem extends BoltUnit {
             $this->filename = substr($filename, 0, $p);
             $this->query_string = substr($filename, $p+1);
         }
-        $this->name = $name;
+        $this->name = $filename;
         $this->title = $title;
         $this->is_item = true;
+		$this->attrs = $attrs;
     }
     function begin() {
         return array(new BoltFrame($this));
@@ -55,6 +77,19 @@ class BoltLesson extends BoltItem {
 }
 
 class BoltExercise extends BoltItem {
+    public $callback;
+        // called as func($student, $score, $query_string) after scoring
+    public $weight;
+    public $has_answer_page;
+
+    function __construct(
+        $filename, $title, $attrs, $callback, $weight, $has_answer_page
+    ) {
+        parent::__construct($filename, $title, $attrs);
+        $this->callback = $callback;
+        $this->weight = $weight;
+        $this->has_answer_page = $has_answer_page;
+    }
     function is_exercise() {
         return true;
     }
@@ -82,15 +117,16 @@ class BoltExercise extends BoltItem {
 //
 class BoltSet extends BoltUnit {
     public $units;
-    function __construct($name, $units, $ntoshow) {
+    function __construct($name, $units, $ntoshow, $attrs) {
         $this->name = $name;
         $this->is_item = false;
         $this->units = $units;
         $this->ntoshow = $ntoshow;
         $this->ordered = false;
+		$this->attrs = $attrs;
     }
 
-    // restart this unit
+    // restart this unit - set its state record to an initial state
     //
     function restart(&$iter) {
         $state_rec = $iter->state[$this->name];
@@ -226,57 +262,115 @@ function filename($n) {
     return array('filename', $n);
 }
 
+function has_answer_page($n) {
+    return array('has_answer_page', $n);
+}
+
+function attrs($n) {
+    return array('attrs', $n);
+}
+
+function callback($n) {
+    return array('callback', $n);
+}
+
 function lesson() {
-    $name = "";
-    $file = "";
+    $filename = "";
     $title = "";
+	$attrs = null;
+
     $args = func_get_args();
     foreach ($args as $arg) {
         if (is_array($arg)) {
             switch ($arg[0]) {
-            case 'name': $name = $arg[1]; break;
             case 'title': $title = $arg[1]; break;
-            case 'filename': $file = $arg[1]; break;
-            default: echo "Unrecognized array arg: ", $arg[0], "\n"; break;
+            case 'filename': $filename = $arg[1]; break;
+            case 'attrs': $attrs = $arg[1]; break;
+            default: echo "Unrecognized lesson parameter: ", $arg[0], "\n"; break;
             }
         } else {
             echo "unprocessed arg of class ".get_class($arg);
         }
     }
-    if (!$name) {
-        $name = $file;
-    }
     if (!$title) {
-        $title = $name;
+        $title = $filename;
     }
-    if (!$file) {
+    if (!$filename) {
         error_page("Missing filename in lesson");
     }
-    return new BoltLesson($name, $title, $file);
+    return new BoltLesson($filename, $title, $attrs);
 }
 
 function exercise() {
-    $name = "";
-    $file = "";
+    $filename = "";
     $title = "";
+	$attrs = null;
+    $weight = 1;
+    $has_answer_page = true;
+
     $args = func_get_args();
+    $callback = null;
     foreach ($args as $arg) {
         if (is_array($arg)) {
             switch ($arg[0]) {
-            case 'name': $name = $arg[1]; break;
             case 'title': $title = $arg[1]; break;
-            case 'filename': $file = $arg[1]; break;
-            default: echo "Unrecognized array arg: ", $arg[0], "\n"; break;
+            case 'filename': $filename = $arg[1]; break;
+            case 'attrs': $attrs = $arg[1]; break;
+            case 'callback': $callback = $arg[1]; break;
+            case 'weight': $weight = $arg[1]; break;
+            case 'has_answer_page': $has_answer_page = $arg[1]; break;
+            default: echo "Unrecognized exercise parameter: ", $arg[0], "\n"; break;
             }
         }
     }
-    if (!$name) {
-        $name = $file;
+    if (!$title) {
+        $title = $filename;
     }
-    if (!$file) {
+    if (!$filename) {
         error_page("Missing filename in lesson");
     }
-    return new BoltExercise($name, $title, $file);
+    return new BoltExercise(
+        $filename, $title, $attrs, $callback, $weight, $has_answer_page
+    );
+}
+
+function item_attrs() {
+    global $item;
+    return $item->attrs;
+}
+
+function student_sex() {
+    global $user;
+    return $user->bolt->sex;
+}
+
+function student_age() {
+    global $user;
+    if (!$user->bolt->birth_year) return -1;
+    $date = getdate();
+    $this_year = $date["year"];
+    return $this_year - $user->bolt->birth_year;
+}
+
+function student_country() {
+    global $user;
+    return $user->country;
+}
+
+function student_name() {
+    global $user;
+    return $user->name;
+}
+
+function student_attrs() {
+    global $user;
+    return unserialize($user->bolt->attrs);
+}
+
+function set_student_attrs($attrs) {
+    global $user;
+    $attrs = serialize($attrs);
+    $user->bolt->update("attrs='$attrs'");
 }
 
 require_once('../inc/bolt_seq.inc');

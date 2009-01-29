@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // display the threads in a forum.
 
@@ -65,6 +81,7 @@ case 1:
 
 echo '
     <p>
+    <form action="forum_forum.php" method="get">
     <table width="100%" cellspacing="0" cellpadding="0">
     <tr valign="top">
     <td colspan=2>
@@ -72,13 +89,17 @@ echo '
 
 show_button("forum_post.php?id=$id", "New thread", "Add a new thread to this forum");
 
-echo " <br><br></td>";
-echo '<td valign=top align="right">';
-echo '    <form action="forum_forum.php" method="get">
-    <input type="hidden" name="id" value="'.$forum->id.'">';
+echo "</td>
+	<td valign=top align=\"right\">
+    <input type=\"hidden\" name=\"id\" value=\"$forum->id\">
+";
 echo select_from_array("sort", $forum_sort_styles, $sort_style);
-echo '<input type="submit" value="Sort"></form></td>';
-echo "</tr></table>";
+echo "<input type=\"submit\" value=\"Sort\">
+	</td>
+	</tr>
+	</table>
+	</form>
+";
 
 show_forum($forum, $start, $sort_style, $user);
 
@@ -177,9 +198,9 @@ function show_forum($forum, $start, $sort_style, $user) {
 
         echo '
             <td>'.($thread->replies+1).'</td>
-            <td align="left"><div class="authorcol">'.user_links($owner).'</div></td>
+            <td>'.user_links($owner).'</td>
             <td>'.$thread->views.'</td>
-            <td style="text-align:right">'.time_diff_str($thread->timestamp, time()).'</td>
+            <td class=\"lastpost\">'.time_diff_str($thread->timestamp, time()).'</td>
             </tr>
         ';
         flush();

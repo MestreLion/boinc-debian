@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/util.inc");
 require_once("../inc/team.inc");
@@ -21,7 +37,6 @@ $team_name = process_user_text(strip_tags(post_str("name")));
 $team_name_lc = strtolower($team_name);
 
 $tnh = post_str("name_html", true);
-if (get_magic_quotes_gpc()) $tnh = stripslashes($tnh);
 $team_name_html = sanitize_html($tnh);
 
 $team_name_html = process_user_text($team_name_html);
@@ -35,6 +50,7 @@ if ($country == "") {
 if (!is_valid_country($country)) {
     error_page("bad country");
 }
+$joinable = post_str('joinable', true)?1:0;
 
 $t = BoincTeam::lookup("name='$team_name'");
 if ($t && $t->id != $teamid) {
@@ -53,14 +69,16 @@ $clause = sprintf(
     url = '%s',
     description = '%s',
     type = %d,
-    country='%s'",
+    country='%s',
+    joinable=%d",
     $team_name,
     $team_name_lc,
     $team_name_html,
     $team_url,
     $team_description,
     $type,
-    $country
+    $country,
+    $joinable
 );
 
 $ret = $team->update($clause);

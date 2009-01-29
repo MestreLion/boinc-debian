@@ -1,4 +1,24 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+
 // rss_main.php:
 // RSS 2.0 feed for BOINC default server installation.
 // Channel Main show the current news on project mainpage 
@@ -60,27 +80,35 @@ echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>
 // write news items
 //
 $tot = count($project_news);
-$news = min( $tot, $news);
-for( $item=0; $item < $news; $item++ ) {
-    $j = $tot - $item;
-    if( count($project_news[$item]) >= 2) {
-        $d = strtotime($project_news[$item][0]);
-        $news_date=gmdate('D, d M Y H:i:s',$d) . ' GMT';
-        $unique_url=URL_BASE."all_news.php#$j";
-        if (isset($project_news[$item][2])) {
-            $title = strip_tags($project_news[$item][2]);
-        } else {
-            $title = "Project News ".strip_tags($project_news[$item][0]);
-        }
-        echo "<item>
-            <title>".$title."</title>
-            <link>$unique_url</link>
-            <guid isPermaLink=\"true\">$unique_url</guid>
-            <description><![CDATA[".strip_tags($project_news[$item][1])."]]></description>
-            <pubDate>$news_date</pubDate>
-            </item>
+$news = min($tot, $news);
+for ($i=0; $i < $news; $i++) {
+    $j = $tot - $i;
+    $item = $project_news[$i];
+    if (count($item) < 2) continue;
+    $d = strtotime($item[0]);
+    $news_date=gmdate('D, d M Y H:i:s',$d) . ' GMT';
+    $unique_url=URL_BASE."all_news.php#$j";
+    if (isset($item[2])) {
+        $title = strip_tags($item[2]);
+    } else {
+        $title = "Project News ".strip_tags($$item[0]);
+    }
+    echo "<item>
+        <title>".$title."</title>
+        <link>$unique_url</link>
+        <guid isPermaLink=\"true\">$unique_url</guid>
+        <description><![CDATA[".strip_tags($item[1])."]]></description>
+        <pubDate>$news_date</pubDate>
+    ";
+    if (isset($item[3])) {
+        $category = $item[3];
+        echo "
+            <category>$category</category>
         ";
     }
+    echo "
+        </item>
+    ";
 }
 
 // Close XML content

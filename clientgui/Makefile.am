@@ -1,5 +1,5 @@
 ## -*- mode: make; tab-width: 4 -*-
-## $Id: Makefile.am 14918 2008-03-15 03:26:14Z repr $
+## $Id: Makefile.am 16451 2008-11-10 16:27:14Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -27,7 +27,6 @@ bin_PROGRAMS = boinc_gui
 
 boinc_gui_SOURCES = \
     AccountInfoPage.cpp \
-    AccountKeyPage.cpp \
     AccountManagerInfoPage.cpp \
     AccountManagerProcessingPage.cpp \
     AccountManagerPropertiesPage.cpp \
@@ -45,7 +44,7 @@ boinc_gui_SOURCES = \
     BOINCTaskCtrl.cpp \
     BOINCGridCtrl.cpp	\
     BOINCGridCtrl.h		\
-    browser.C \
+    browser.cpp \
     CompletionErrorPage.cpp \
     CompletionPage.cpp \
     common/wxPieCtrl.cpp \
@@ -53,6 +52,7 @@ boinc_gui_SOURCES = \
     DlgAbout.cpp 		\
     DlgAdvPreferences.cpp \
     DlgAdvPreferencesBase.cpp \
+    DlgExitMessage.cpp \
     DlgGenericMessage.cpp \
     DlgOptions.cpp \
     DlgSelectComputer.cpp \
@@ -82,6 +82,7 @@ boinc_gui_SOURCES = \
     sg_ViewTabPage.cpp \
     SkinManager.cpp \
     stdwx.cpp \
+    TermsOfUsePage.cpp \
     UnavailablePage.cpp \
     ValidateAccountKey.cpp \
     ValidateEmailAddress.cpp \

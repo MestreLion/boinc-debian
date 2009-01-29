@@ -1,4 +1,22 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+
 // display the contents of a thread.
 
 require_once('../inc/util.inc');
@@ -66,6 +84,7 @@ $is_subscribed = $logged_in_user && BoincSubscription::lookup($logged_in_user->i
 
 show_forum_header($logged_in_user);
 
+echo "<p>";
 switch ($forum->parent_type) {
 case 0:
     $category = BoincCategory::lookup_id($forum->category);
@@ -103,65 +122,66 @@ if ($forum->parent_type == 0) {
 
 echo "
     <p>
+    <form action=\"forum_thread.php\">
     <table width=\"100%\" cellspacing=0 cellpadding=0>
-    <tr>
-    <td align=\"left\">
+    <tr class=\"forum_toplinks\">
+    <td><ul class=\"actionlist\">
 ";
 
 $reply_url = "";
 if (can_reply($thread, $forum, $logged_in_user)) {        
     $reply_url = "forum_reply.php?thread=".$thread->id."#input";
-    show_button($reply_url, tra("Post to thread"), "Add a new message to this thread");
+    show_actionlist_button($reply_url, tra("Post to thread"), "Add a new message to this thread");
 }
 
 if ($is_subscribed) {
     $type = NOTIFY_SUBSCRIBED_POST;
     BoincNotify::delete_aux("userid=$logged_in_user->id and type=$type and opaque=$thread->id");
     $url = "forum_subscribe.php?action=unsubscribe&thread=".$thread->id."$tokens";
-    show_button($url, tra("Unsubscribe"), "You are subscribed to this thread.  Click here to unsubscribe.");
+    show_actionlist_button($url, tra("Unsubscribe"), "You are subscribed to this thread.  Click here to unsubscribe.");
 } else {
     $url = "forum_subscribe.php?action=subscribe&thread=".$thread->id."$tokens";
-    show_button($url, tra("Subscribe"), "Click to get email when there are new posts in this thread");
+    show_actionlist_button($url, tra("Subscribe"), "Click to get email when there are new posts in this thread");
 }
 
 //If the logged in user is moderator enable some extra features
 //
 if (is_moderator($logged_in_user, $forum)) {
     if ($thread->hidden){
-        show_button("forum_moderate_thread_action.php?action=unhide&thread=".$thread->id."$tokens", "Unhide", "Unhide this thread");
+        show_actionlist_button("forum_moderate_thread_action.php?action=unhide&thread=".$thread->id."$tokens", "Unhide", "Unhide this thread");
     } else {
-        show_button("forum_moderate_thread.php?action=hide&thread=".$thread->id, "Hide", "Hide this thread");
+        show_actionlist_button("forum_moderate_thread.php?action=hide&thread=".$thread->id, "Hide", "Hide this thread");
     }
     if ($thread->sticky){
-        show_button("forum_moderate_thread_action.php?action=desticky&thread=".$thread->id."$tokens", "Make unsticky", "Make this thread not sticky");
+        show_actionlist_button("forum_moderate_thread_action.php?action=desticky&thread=".$thread->id."$tokens", "Make unsticky", "Make this thread not sticky");
     } else {
-        show_button("forum_moderate_thread_action.php?action=sticky&thread=".$thread->id."$tokens", "Make sticky", "Make this thread sticky");
+        show_actionlist_button("forum_moderate_thread_action.php?action=sticky&thread=".$thread->id."$tokens", "Make sticky", "Make this thread sticky");
     }
     if ($thread->locked) {
-        show_button("forum_moderate_thread_action.php?action=unlock&amp;thread=".$thread->id."$tokens", "Unlock", "Unlock this thread");
+        show_actionlist_button("forum_moderate_thread_action.php?action=unlock&amp;thread=".$thread->id."$tokens", "Unlock", "Unlock this thread");
     } else {
-        show_button("forum_moderate_thread.php?action=lock&thread=".$thread->id."$tokens", "Lock", "Lock this thread");
+        show_actionlist_button("forum_moderate_thread.php?action=lock&thread=".$thread->id."$tokens", "Lock", "Lock this thread");
     }
     if ($forum->parent_type == 0) {
-        show_button("forum_moderate_thread.php?action=move&thread=".$thread->id."$tokens", "Move", "Move this thread to a different forum");
+        show_actionlist_button("forum_moderate_thread.php?action=move&thread=".$thread->id."$tokens", "Move", "Move this thread to a different forum");
     }
-    show_button("forum_moderate_thread.php?action=title&thread=".$thread->id."$tokens", "Edit title", "Edit thread title");
+    show_actionlist_button("forum_moderate_thread.php?action=title&thread=".$thread->id."$tokens", "Edit title", "Edit thread title");
 }
+echo "</ul>"; //End of action list
 
 // Display a box that allows the user to select sorting of the posts
-echo "</td><td align=right style=\"border:0px\">
-    <form action=\"forum_thread.php\">
+echo "</td><td align=\"right\">
     <input type=\"hidden\" name=\"id\" value=\"", $thread->id, "\">
     Sort 
 ";
 echo select_from_array("sort", $thread_sort_styles, $sort_style);
 echo "<input type=submit value=Sort>
-    </form>
-    </td></tr></table>
+    
+    </td></tr></table></form>
 ";
 
 // Here is where the actual thread begins.
-$headings = array(array(tra("Author"),"authorcol"), array(tra("Message"),"",2));
+$headings = array(array(tra("Author"),"authorcol"), array(tra("Message"),""));
 
 start_forum_table($headings, "id=\"thread\" width=100%");
 show_posts($thread, $forum, $sort_style, $filter, $logged_in_user, true);
@@ -184,5 +204,5 @@ case 1:
 $thread->update("views=views+1");
 
 page_tail();
-$cvs_version_tracker[]="\$Id: forum_thread.php 14735 2008-02-13 19:02:44Z davea $";
+$cvs_version_tracker[]="\$Id: forum_thread.php 16078 2008-09-27 10:08:16Z jbk $";
 ?>

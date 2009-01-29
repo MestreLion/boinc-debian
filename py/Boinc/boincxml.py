@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: boincxml.py 15176 2008-05-12 20:25:35Z romw $
+# $Id: boincxml.py 15168 2008-05-09 20:54:52Z davea $
 
 # boincxml.py - xml utilities for boinc
 

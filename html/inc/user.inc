@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/credit.inc");
 require_once("../inc/email.inc");
@@ -14,9 +30,6 @@ function parse_project($f) {
     while (!feof($f)) {
         $buf = fgets($f);
         if (strstr($buf, "</project>")) break;
-        if ($x = parse_element($buf, "<name>")) {
-            $p->name = $x;
-        }
         if ($x = parse_element($buf, "<name>")) {
             $p->name = $x;
         }
@@ -80,9 +93,9 @@ function show_project($project) {
     }
     echo "<tr>
         <td>$x</td>
-        <td align=right>".number_format($project->total_credit, 0)."</td>
-        <td align=right>".number_format($project->expavg_credit, 0)."</td>
-        <td align=right>".date_str($project->create_time)."</td>
+        <td align=\"right\">".number_format($project->total_credit, 0)."</td>
+        <td align=\"right\">".number_format($project->expavg_credit, 0)."</td>
+        <td align=\"right\">".date_str($project->create_time)."</td>
         </tr>
     ";
 }
@@ -96,13 +109,13 @@ function show_other_projects($user, $personal) {
     if (count($user->projects) > 1) {
         usort($user->projects, "cmp");
         if ($personal) {
-            echo "<h3>Projects in which you are participating</h3>";
+            echo "<h3>".tra("Projects in which you are participating")."</h3>";
         } else {
-            echo "<h3>Projects in which $user->name is participating</h3>";
+            echo "<h3>".tra("Projects in which %1 is participating", $user->name)."</h3>";
         }
         start_table();
         row_heading_array(array(
-            "Project<br><span class=note>Click for user page</span>", "Total credit", "Average credit", "Since"
+            tra("Project")."<br/><span class=\"note\">".tra("Click for user page")."</span>", tra("Total credit"), tra("Average credit"), tra("Since")
         ));
         foreach($user->projects as $project) {
             show_project($project);
@@ -132,9 +145,7 @@ function show_user_stats_private($user) {
     if (parse_bool($config, "show_results")) {
         row2(tra("Pending credit"), "<a href=\"pending.php\">".tra("View")."</a>");
     }
-    row2(tra("Computers on this account"),
-        "<a href=\"hosts_user.php\">".tra("View")."</a>"
-    );
+    row2(tra("Computers on this account"), "<a href=\"hosts_user.php\">".tra("View")."</a>");
     row2(tra("Tasks"), "<a href=\"results.php?userid=$user->id\">".tra("View")."</a>");
     $cpid = md5($user->cross_project_id . $user->email_addr);
     $x = "";
@@ -142,10 +153,16 @@ function show_user_stats_private($user) {
     foreach ($cpid_stats_sites as $site) {
         $name = $site[0];
         $y = sprintf($site[1], $cpid);
-        $x .= "<a href=\"$y\">$name</a><br>";
+        $x .= "<a href=\"$y\">$name</a><br/>";
     }
-    $x .= "<br><span class=\"smalltext\">".tra("Cross-project ID").": $cpid</span>\n";
+    $x .= "<br/><span class=\"smalltext\">".tra("Cross-project ID").": $cpid</span>\n";
     row2(tra("Cross-project statistics"), $x);
+    $x = "<a href=cert1.php>Account</a>";
+    if ($user->teamid) {
+        $x .= " | <a href=cert_team.php>Team</a>";
+    }
+    $x .= " | <a href=cert_all.php>Cross-project</a>";
+    row2(tra("Certificate"), $x);
     row2(tra("Stats on your cell phone"), URL_BASE."userw.php?id=$user->id");
 }
 
@@ -181,31 +198,36 @@ function show_user_info_private($user) {
     row2(tra("Name"), $user->name);
     row2(tra("Email address"), $email_text);
     if (strlen($user->url)) {
-        $x = "http://$user->url";
-    } else {
-        $x = "none";
+        $x = "<a href=http://$user->url>http://$user->url</a>";
+        row2(tra("URL"), $x);
     }
-    row2(tra("URL"), $x);
     row2(tra("Country"), $user->country);
     row2(tra("Postal code"), $user->postal_code);
     row2(tra("%1 member since", PROJECT), date_str($user->create_time));
-    row2(tra("Change"), "<a href=\"edit_email_form.php\">".tra("email address")."</a> | <a href=\"edit_passwd_form.php\">".tra("password")."</a> | <a href=\"edit_user_info_form.php\">".tra("other account info")."</a>");
-    row2("", "<a href=\"logout.php?".url_tokens($user->authenticator)."\">".tra("Log out")."</a>");
-    row2("User ID<br><span class=note>Used in community functions</span>", $user->id);
-    row2("Account key<br><span class=note>Provides full access to your account</span>", $user->authenticator);
-    row2("Weak account key<br><span class=note>Provides <a href=weak_auth.php> limited access</a> to your account</span>", weak_auth($user));
+    $url_tokens = url_tokens($user->authenticator);
+    row2(tra("Change"), "<a href=\"edit_email_form.php\">".tra("email address")."</a> | <a href=\"edit_passwd_form.php\">".tra("password")."</a> | <a href=\"edit_user_info_form.php?$url_tokens\">".tra("other account info")."</a>");
+    row2("", "<a href=\"logout.php?$url_tokens\">".tra("Log out")."</a>");
+    row2(tra("User ID")."<br/><span class=\"note\">".tra("Used in community functions")."</span>", $user->id);
+    if (!no_computing()) {
+        row2(tra("Account key")."<br/><span class=\"note\">".tra("Provides full access to your account")."</span>", $user->authenticator);
+        row2(tra("Weak account key")."<br/><span class=\"note\">".tra("Provides")." <a href=\"weak_auth.php\">".tra("limited access")."</a> ".tra("to your account")."</span>", weak_auth($user));
+    }
 
     row1("<a name=\"prefs\"></a>".tra("Preferences"));
-    row2(
-        tra("When and how BOINC uses your computer"),
-        "<a href=\"prefs.php?subset=global\">".tra("Computing preferences")."</a>"
-    );
+    if (!no_computing()) {
+        row2(
+            tra("When and how BOINC uses your computer"),
+            "<a href=\"prefs.php?subset=global\">".tra("Computing preferences")."</a>"
+        );
+    }
     row2(tra("Message boards and private messages"),
         "<a href=\"edit_forum_preferences_form.php\">".tra("Community preferences")."</a>"
     );
-    row2(tra("Resource share and graphics"),
-        "<a href=\"prefs.php?subset=project\">".tra("%1 preferences", PROJECT)."</a>"
-    );
+    if (!no_computing()) {
+        row2(tra("Resource share and graphics"),
+            "<a href=\"prefs.php?subset=project\">".tra("%1 preferences", PROJECT)."</a>"
+        );
+    }
 }
 
 function show_community_private($user) {
@@ -219,7 +241,7 @@ function show_community_private($user) {
     row2(tra("Profile"), $x);
     $tot = total_posts($user);
     if ($tot) {
-        row2(tra("Message boards"), "<a href=".URL_BASE."forum_user_posts.php?userid=$user->id>".tra("%1 posts", $tot)."</a>");
+        row2(tra("Message boards"), "<a href=\"".URL_BASE."forum_user_posts.php?userid=$user->id\">".tra("%1 posts", $tot)."</a>");
     }
     
     row2(tra("Private messages"), pm_notification($user).pm_email_remind($user));
@@ -230,8 +252,8 @@ function show_community_private($user) {
         foreach ($notifies as $notify) {
             $x .= "&bull; ".notify_description($notify)."<br>";
         }
-        $x .= "<a href=".notify_rss_url($user)."><img vspace=4 border=0 src=img/rss_icon.gif alt=RSS></a>";
-        row2("Notifications", $x);
+        $x .= "<a href=\"".notify_rss_url($user)."\"><img vspace=\"4\" border=\"0\" src=\"img/rss_icon.gif\" alt=\"RSS\" /></a>";
+        row2(tra("Notifications"), $x);
     }
 
     if ($user->teamid) {
@@ -245,7 +267,7 @@ function show_community_private($user) {
         // if there's a foundership request, notify the founder
         //
         if ($user->id==$team->userid && $team->ping_user >0) {
-            $x .= " <font color=red>(foundership change request pending)</font>";
+            $x .= "<span style=\"color:red;\">".tra("(foundership change request pending)")."</span>";
         }
         row2(tra("Member of team"), $x);
     } else {
@@ -258,23 +280,23 @@ function show_community_private($user) {
             $x = "<a href=\"team_display.php?teamid=$team->id\">$team->name</a>";
             $x .= "| <a href=\"team_manage.php?teamid=".$team->id."\">".tra("Administer")."</a>";
             if ($team->ping_user > 0) {
-                $x .= " <font color=red>(foundership change request pending)</font>";
+                $x .= "<span style=\"color:red;\">".tra("(foundership change request pending)")."</span>";
             }
             row2(tra("Founder but not member of"), $x);
         }
     }
 
     $friends = BoincFriend::enum("user_src=$user->id and reciprocated=1");
-    $x = "<a href=user_search.php>Find friends</a><br>\n";
+    $x = "<a href=\"user_search.php\">".tra("Find friends")."</a><br\>\n";
     $n = count($friends);
     if ($n) {
         foreach($friends as $friend) {
             $fuser = BoincUser::lookup_id($friend->user_dest);
             $x .= friend_links($fuser);
         }
-        row2("Friends ($n)", $x);
+        row2(tra("Friends")." ($n)", $x);
     } else {
-        row2("Friends", $x);
+        row2(tra("Friends"), $x);
     }
 }
 
@@ -282,50 +304,51 @@ function show_community_private($user) {
 //
 function show_user_summary_public($user) {
     global $g_logged_in_user;
-    row2(PROJECT." member since", date_str($user->create_time));
-    row2("Country", $user->country);
+    row2(tra("%1 member since", PROJECT), date_str($user->create_time));
+    row2(tra("Country"), $user->country);
     if (strlen($user->url)) {
-        row2("URL", "<a href=\"http://$user->url\">http://$user->url</a>");
+        row2(tra("URL"), "<a href=\"http://$user->url\">http://$user->url</a>");
     }
-    show_credit($user);
+    if (!no_computing()) {
+        show_credit($user);
 
-    if ($user->show_hosts) {
-        row2("Computers", "<a href=\"".URL_BASE."hosts_user.php?userid=$user->id\">View</a>");
-    } else {
-        row2("Computers", "hidden");
+        if ($user->show_hosts) {
+            row2(tra("Computers"), "<a href=\"".URL_BASE."hosts_user.php?userid=$user->id\">".tra("View")."</a>");
+        } else {
+            row2(tra("Computers"), tra("hidden"));
+        }
     }
     if ($user->donated == 1) { 
         if (file_exists("../project/donations.inc")) {
             require_once("../project/donations.inc");
             $x .= DONATION_LINK;
-            row2("Donor",$x);
+            row2(tra("Donor"), $x);
         }
     }
-    
 }
 
 function community_links($user) {
     global $g_logged_in_user;
     if ($user->teamid && ($team = lookup_team($user->teamid))) {
-        row2("Team", "<a href=\"".URL_BASE."team_display.php?teamid=$team->id\">$team->name</a>");
+        row2(tra("Team"), "<a href=\"".URL_BASE."team_display.php?teamid=$team->id\">$team->name</a>");
     } else {
-        row2("Team", "None");
+        row2(tra("Team"), tra("None"));
     }
     $tot = total_posts($user);
     if ($tot) {
-        row2("Message boards", "<a href=\"".URL_BASE."forum_user_posts.php?userid=$user->id\">$tot posts</a>");
+        row2(tra("Message boards"), "<a href=\"".URL_BASE."forum_user_posts.php?userid=$user->id\">".tra("%1 posts", $tot)."</a>");
     }
     if ($g_logged_in_user && $g_logged_in_user->id != $user->id) {
-        row2("Contact", "<a href=\"pm.php?action=new&userid=".$user->id."\">Send private message</a>");
+        row2(tra("Contact"), "<a href=\"pm.php?action=new&userid=".$user->id."\">".tra("Send private message")."</a>");
         $friend = BoincFriend::lookup($g_logged_in_user->id, $user->id);
         if ($friend && $friend->reciprocated) {
-            row2("This person is a friend", 
-                "<a href=friend.php?action=cancel_confirm&userid=$user->id>Cancel friendship</a>"
+            row2(tra("This person is a friend"), 
+                "<a href=\"friend.php?action=cancel_confirm&userid=$user->id\">".tra("Cancel friendship")."</a>"
             );
         } else if ($friend) {
-            row2("Friends", "<a href=friend.php?action=add&userid=$user->id>Request pending</a>");
+            row2(tra("Friends"),  "<a href=\"friend.php?action=add&userid=$user->id\">".tra("Request pending")."</a>");
         } else {
-            row2("Friends", "<a href=friend.php?action=add&userid=$user->id>Add as friend</a>");
+            row2(tra("Friends"),  "<a href=\"friend.php?action=add&userid=$user->id\">".tra("Add as friend")."</a>");
         }
     }
     $friends = BoincFriend::enum("user_src=$user->id and reciprocated=1");
@@ -336,17 +359,18 @@ function community_links($user) {
             $fuser = BoincUser::lookup_id($friend->user_dest);
             $x .= friend_links($fuser);
         }
-        row2("Friends ($n)", $x);
+        row2(tra("Friends")." ($n)", $x);
     }
-
 }
 
 function show_profile_link($user) {
     if ($user->has_profile) {
-        row2("Profile", "<a href=\"view_profile.php?userid=$user->id\">View</a>");
+        row2(tra("Profile"), "<a href=\"view_profile.php?userid=$user->id\">".tra("View")."</a>");
     }
 }
 
+// the following DB-escapes its args
+//
 function make_user(
     $email_addr, $name, $passwd_hash,
     $country=null, $postal_code=null, $project_prefs=null, $teamid=0
@@ -356,20 +380,23 @@ function make_user(
     $cross_project_id = random_string();
     $now = time();
     if (!is_valid_country($country)) return null;
+
+    $email_addr = process_user_text($email_addr);
+    $name = process_user_text($name);
+    $passwd_hash = process_user_text($passwd_hash);
+
     $country = BoincDb::escape_string($country);
     $postal_code = strip_tags(process_user_text($postal_code));
 
-    $ret = BoincUser::insert("(create_time, email_addr, name, authenticator, country, postal_code, total_credit, expavg_credit, expavg_time, project_prefs, teamid,  send_email, show_hosts, cross_project_id, passwd_hash) values($now, '$email_addr', '$name', '$authenticator', '$country', '$postal_code', 0, 0, unix_timestamp(), '$project_prefs', $teamid, 1, 1, '$cross_project_id', '$passwd_hash')");
+    $uid = BoincUser::insert("(create_time, email_addr, name, authenticator, country, postal_code, total_credit, expavg_credit, expavg_time, project_prefs, teamid,  send_email, show_hosts, cross_project_id, passwd_hash) values($now, '$email_addr', '$name', '$authenticator', '$country', '$postal_code', 0, 0, unix_timestamp(), '$project_prefs', $teamid, 1, 1, '$cross_project_id', '$passwd_hash')");
 
-    if ($ret) {
-        $db = BoincDb::get();
-        $id = $db->insert_id();
-        return BoincUser::lookup_id($id);
+    if ($uid) {
+        return BoincUser::lookup_id($uid);
     } else {
         return null;
     }
 }
 
-$cvs_version_tracker[]="\$Id: user.inc 15070 2008-04-21 14:04:01Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: user.inc 16228 2008-10-17 16:47:02Z boincadm $";  //Generated automatically - do not edit
 
 ?>

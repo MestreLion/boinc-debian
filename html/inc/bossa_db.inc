@@ -1,11 +1,23 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/db_conn.inc");
-require_once("../inc/util.inc");
-
-define ('VALIDATE_STATE_INIT', 0);
-define ('VALIDATE_STATE_VALID', 1);
-define ('VALIDATE_STATE_INVALID', 2);
+require_once("../inc/util_basic.inc");
 
 class BossaDb extends DbConn {
     public static $instance;
@@ -36,6 +48,30 @@ class BossaDb extends DbConn {
     static function escape_string($string) {
         $db = self::get();
         return $db->base_escape_string($string);
+    }
+    static function start_transaction() {
+        //echo "start transaction\n";
+        return;
+        $db = BossaDb::get();
+        $db->do_query("start transaction");
+    }
+    static function commit() {
+        //echo "commit\n";
+        return;
+        $db = BossaDb::get();
+        $db->do_query("commit");
+    }
+}
+
+// use this as a local to ensure that transaction is committed
+// regardless of exceptions
+//
+class BossaTransaction {
+    function __construct() {
+        BossaDb::start_transaction();
+    }
+    function __destruct() {
+        BossaDb::commit();
     }
 }
 
@@ -69,17 +105,27 @@ class BossaUser {
         $clause = "$clause where user_id=$this->user_id";
         return $db->update_aux('bossa_user', $clause);
     }
+
+    // app-callable:
+    //
+    function get_opaque_data() {
+        return unserialize($this->info);
+    }
+    function set_opaque_data($info) {
+        $info = serialize($info);
+        $this->update("info='$info'");
+    }
 }
 
 class BossaApp {
-    function insert($clause) {
+    static function insert($clause) {
         $db = BossaDb::get();
         return $db->insert('bossa_app', $clause);
     }
 
-    static function lookup_short_name($name) {
+    static function lookup($clause) {
         $db = BossaDb::get();
-        return $db->lookup('bossa_app', 'BossaApp', "short_name='$name'");
+        return $db->lookup('bossa_app', 'BossaApp', $clause);
     }
 
     static function lookup_id($id) {
@@ -97,19 +143,19 @@ class BossaApp {
     }
 }
 
+// values for bossa_job.state
+//
+define("BOSSA_JOB_EMBARGOED", 0);
+define("BOSSA_JOB_IN_PROGRESS", 1);
+define("BOSSA_JOB_DONE", 2);
+define("BOSSA_JOB_INCONCLUSIVE", 3);
+
 class BossaJob {
-    function insert() {
+    static function insert($clause) {
         $db = BossaDb::get();
-        $now = time();
-        $int_max = 2147483647;
-        $query = "insert into DBNAME.bossa_job (create_time, name, app_id, info, batch, time_estimate, time_limit, conf_needed, transition_time) values ($now, '$this->name', $this->app_id, '$this->info', $this->batch, $this->time_estimate, $this->time_limit, $this->conf_needed, $int_max)";
-        $result = $db->do_query($query);
-        if (!$result) {
-            echo "$query\n";
-            return false;
-        }
-        $this->id = $db->insert_id();
-        return true;
+        $ret = $db->insert('bossa_job', $clause);
+        if (!$ret) return 0;
+        return $db->insert_id();
     }
     function update($clause) {
         $db = BossaDb::get();
@@ -123,20 +169,36 @@ class BossaJob {
         $db = BossaDb::get();
         return $db->enum('bossa_job', 'BossaJob', $clause);
     }
+    static function count($clause) {
+        $db = BossaDb::get();
+        return $db->count('bossa_job', $clause);
+    }
+
+    // app-callable:
+    //
+    function get_opaque_data() {
+        return unserialize($this->info);
+    }
+    function set_priority($x) {
+        return $this->update("priority_0=$x");
+    }
+    function get_instances() {
+        return BossaJobInst::enum("job_id = $this->id");
+    }
+    function get_finished_instances() {
+        return BossaJobInst::enum("job_id = $this->id and finish_time>0");
+    }
+    function set_state($s) {
+        $this->update("state=$s");
+    }
 }
 
 class BossaJobInst {
-    function insert() {
+    function insert($clause) {
         $db = BossaDb::get();
-        $now = time();
-        $query = "insert into DBNAME.bossa_job_inst (create_time, job_id, user_id, confidence) values ($now, $this->job_id, $this->user_id, $this->confidence)";
-        $result = $db->do_query($query);
-        if (!$result) {
-            echo "$query\n";
-            return false;
-        }
-        $this->id = $db->insert_id();
-        return true;
+        $ret = $db->insert('bossa_job_inst', $clause);
+        if (!$ret) return 0;
+        return $db->insert_id();
     }
 
     static function lookup_id($id) {
@@ -157,48 +219,83 @@ class BossaJobInst {
     // Returns the job instance or NULL.
     //
     static function assign($app, $user) {
-        // this query skips jobs for which this user
-        // has already been assigned an instance
-        //
-        // TODO: put the following in a transaction
         $db = BossaDb::get();
-        $query = "select * from DBNAME.bossa_job where (select count(*) from DBNAME.bossa_job_inst where job_id=bossa_job.id and user_id=$user->id) = 0 limit 1";
+
+        // first look for unfinished jobs previously assigned to this user
+        //
+        $query = "select * from DBNAME.bossa_job_inst where app_id=$app->id and user_id=$user->id and finish_time=0 limit 1";
         $result = $db->do_query($query);
-        if (!$result) return null;
-        $job = mysql_fetch_object($result, 'BossaJob');
-        if (!$job) return null;
-        mysql_free_result($result);
-
-        $ji = new BossaJobInst();
-        $ji->user_id = $user->id;
-        $ji->job_id = $job->id;
-        $ji->confidence = $user->conf;
-
-        if (!$ji->insert()) {
-            echo mysql_error();
-            return null;
+        if ($result) {
+            $ji = mysql_fetch_object($result, 'BossaJobInst');
+            mysql_free_result($result);
+            if ($ji) return $ji;
         }
 
-        $job->update("conf_needed=conf_needed-$user->conf");
-        return $ji;
-    }
-
-    // The given job instance has completed
-    //
-    function completed($job) {
-        $this->finish_time = time();
-        $this->update("finish_time=$this->finish_time, info='$this->info'");
+        if ($app->calibration_frac && drand() < $app->calibration_frac) {
+            $query = "select * from DBNAME.bossa_job where app_id=$app->id and (select count(*) from DBNAME.bossa_job_inst where job_id=bossa_job.id and user_id=$user->id) = 0 and state=1 and calibration=1 order by priority_0 desc limit 1";
+            $result = $db->do_query($query);
+            if (!$result) return null;
+            $job = mysql_fetch_object($result, 'BossaJob');
+            if (!$job) return null;
+            $job->update("priority_0=priority_0-1");
+            mysql_free_result($result);
+        } else {
+            if (isset($user->bossa->category)) {
+                $prio = "priority_".$user->bossa->category;
+            } else {
+                $prio = "priority_0";
+            }
+            // skips jobs for which this user
+            // has already been assigned an instance
+            //
+            $query = "select * from DBNAME.bossa_job where app_id=$app->id and (select count(*) from DBNAME.bossa_job_inst where job_id=bossa_job.id and user_id=$user->id) = 0 and state=1 and calibration=0 order by $prio desc limit 1";
+            $result = $db->do_query($query);
+            if (!$result) return null;
+            $job = mysql_fetch_object($result, 'BossaJob');
+            if (!$job) return null;
+            mysql_free_result($result);
+        }
 
         $now = time();
-        return $job->update("transition_time=$now");
+        $clause = "(create_time, app_id, job_id, user_id, batch_id, calibration) values ($now, $app->id, $job->id, $user->id, $job->batch_id, $job->calibration)";
+        $id = BossaJobInst::insert($clause);
+        return BossaJobInst::lookup_id($id);
+    }
+    function delete_aux($clause) {
+        $db = BossaDb::get();
+        return $db->delete_aux('bossa_job_inst', $clause);
     }
 
-    // The given job instance has timed out.
+    // app-callable functions
     //
-    function timed_out($job) {
-        $job->npending--;
-        $job->more_needed = ($job->npending+$job->nsuccess < $job->nsuccess_needed);
-        return $job->update("npending=$job->npending, more_needed=$job->more_needed");
+    function set_opaque_data($info) {
+        $info = serialize($info);
+        return $this->update("info='$info'");
+    }
+    function get_opaque_data() {
+        return unserialize($this->info);
+    }
+    function get_user() {
+        $user = BoincUser::lookup_id($this->user_id);
+        BossaUser::lookup($user);
+        return $user;
+    }
+}
+
+class BossaBatch {
+    function insert($clause) {
+        $db = BossaDb::get();
+        $ret = $db->insert('bossa_batch', $clause);
+        if (!$ret) return 0;
+        return $db->insert_id();
+    }
+    static function enum($clause) {
+        $db = BossaDb::get();
+        return $db->enum('bossa_batch', 'BossaBatch', $clause);
+    }
+    static function lookup_id($id) {
+        $db = BossaDb::get();
+        return $db->lookup_id($id, 'bossa_batch', 'BossaBatch');
     }
 }
 

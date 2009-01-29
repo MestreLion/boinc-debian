@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
@@ -174,15 +190,25 @@ function get_profile_summary($profile) {
 //
 function show_profile($user, $logged_in_user, $screen_mode = false) {
     BoincForumPrefs::lookup($user);
+    $profile = BoincProfile::lookup("userid = $user->id");
+    if (!$profile) {
+        error_page("No user profile exists for that user ID.");
+        $user->update("has_profile = 0");
+    }
+
+    $is_logged_in = isset($logged_in_user);
+
+    $can_edit = isset($logged_in_user) && $logged_in_user && $user->id == $logged_in_user->id;
+
+    $min_credit = parse_config(get_config(), "<profile_min_credit>");
+    if ((!$is_logged_in) && $min_credit && $user->expavg_credit < $min_credit ) {
+        error_page(
+           "To prevent spam, profiles of users with an average credit of less than $min_credit will only be displayed to users who are logged in to their accounts.  We appologize for this inconvenience."
+        );
+    }
     if (is_banished($user)) {
         error_page("User is banished");
     }
-    $profile = get_profile($user->id);
-    if (!$profile) {
-        error_page("No user profile exists for that user ID.");
-    }
-
-    $can_edit = isset($logged_in_user) && $logged_in_user && $user->id == $logged_in_user->id;
 
     if ($can_edit) {
         row1("<a href=create_profile.php>Edit your profile</a>");
@@ -218,9 +244,9 @@ function show_profile($user, $logged_in_user, $screen_mode = false) {
     $options = get_output_options($logged_in_user);
 
     row1(show_profile_heading1());
-    row1(output_transform($profile->response1,$options), 2, "foobar");
+    row1(output_transform($profile->response1, $options), 2, "foobar");
     row1(show_profile_heading2());
-    row1(output_transform($profile->response2,$options), 2, "foobar");
+    row1(output_transform($profile->response2, $options), 2, "foobar");
 
     if (!$can_edit and !$screen_mode) {
         row1("Your feedback on this profile");
@@ -235,6 +261,6 @@ function show_profile($user, $logged_in_user, $screen_mode = false) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile.inc 14866 2008-03-07 04:38:06Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: profile.inc 16338 2008-10-28 21:59:25Z davea $";  //Generated automatically - do not edit
 
 ?>

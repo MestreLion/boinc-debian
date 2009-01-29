@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // Forum index
 // shows the categories and the forums in each category
@@ -6,7 +22,6 @@
 require_once('../inc/forum.inc');
 require_once('../inc/pm.inc');
 require_once('../inc/time.inc');
-
 
 $user = get_logged_in_user(false);
 
@@ -22,7 +37,7 @@ if ((get_int("read", true) == 1)) {
     }
 }
 
-function show_forum_summary($forum) {
+function show_forum_summary($forum, $i) {
     switch ($forum->parent_type) {
     case 0:
         $t = $forum->title;
@@ -36,17 +51,18 @@ function show_forum_summary($forum) {
         if (!strlen($d)) $d = "Discussion among members of $team->name";
         break;
     }
+    $j = $i % 2;
     echo "
-        <tr class=\"row1\">
+        <tr class=\"row$j\">
         <td>
             <em>
-            <a href=\"forum_forum.php?id=$forum->id\">$t
-            </a></em>
+            <a href=\"forum_forum.php?id=$forum->id\">$t</a>
+            </em>
             <br><span class=\"smalltext\">$d</span>
         </td>
-        <td>$forum->threads</td>
-        <td>$forum->posts</td>
-        <td>".time_diff_str($forum->timestamp, time())."</td>
+        <td class=\"numbers\">$forum->threads</td>
+        <td class=\"numbers\">$forum->posts</td>
+        <td class=\"lastpost\">".time_diff_str($forum->timestamp, time())."</td>
     </tr>";
 }
 
@@ -67,9 +83,10 @@ $first = true;
 foreach ($categories as $category) {
     if ($first) {
         $first = false;
+	echo "<p>";
         show_forum_title($category, NULL, NULL);
-        show_mark_as_read_button($user);
         echo "<p>";
+        show_mark_as_read_button($user);
         start_forum_table(
             array(tra("Topic"), tra("Threads"), tra("Posts"), tra("Last post"))
         );
@@ -82,15 +99,16 @@ foreach ($categories as $category) {
         ';
     }
     $forums = BoincForum::enum("parent_type=0 and category=$category->id order by orderID");
+    $i = 0;
     foreach ($forums as $forum) {
-        show_forum_summary($forum);
+        show_forum_summary($forum, $i++);
     }
 }
 
 if ($user && $user->teamid) {
     $forum = BoincForum::lookup("parent_type=1 and category=$user->teamid");
     if ($forum) {
-        show_forum_summary($forum);
+        show_forum_summary($forum, $i++);
     }
 }
 end_table();
@@ -98,8 +116,9 @@ end_table();
 if ($user) {
     $subs = BoincSubscription::enum("userid=$user->id");
     if (count($subs)) {
-        echo "<h3>Subscribed threads</h2>";
+        echo "<p><span class=title>Subscribed threads</span><p>";
         show_thread_and_context_header();
+        $i = 0;
         foreach ($subs as $sub) {
             $thread = BoincThread::lookup_id($sub->threadid);
             if (!$thread) {
@@ -107,7 +126,7 @@ if ($user) {
                 continue;
             }
             if ($thread->hidden) continue;
-            show_thread_and_context($thread, $user);
+            show_thread_and_context($thread, $user, $i++);
         }
         end_table();
     }
@@ -117,5 +136,5 @@ page_tail();
 flush();
 BoincForumLogging::cleanup();
 
-$cvs_version_tracker[]="\$Id: forum_index.php 15070 2008-04-21 14:04:01Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_index.php 16075 2008-09-27 08:19:30Z jbk $";  //Generated automatically - do not edit
 ?>

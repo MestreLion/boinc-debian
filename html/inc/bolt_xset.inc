@@ -1,23 +1,51 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 class BoltExerciseSet extends BoltRandom {
     public $repeats;
-    function __construct($name, $units, $number, $repeats) {
-        parent::__construct($name, $units, $number);
+    public $refresh;
+    public $weight;
+    public $callback;
+
+    function __construct(
+        $name, $units, $number, $repeats, $refresh, $attrs, $callback, $weight
+    ) {
+        parent::__construct($name, $units, $number, $attrs);
+
         $this->repeats = $repeats;
+        $this->refresh = $refresh;
+        $this->callback = $callback;
+        $this->weight = $weight;
     }
 
     // called when an exercise in this set has just been graded.
     // - record the score in our state structure
-    // - return a structure saying what navigation info to show:
+    // - return true if this was last exercise in the set
+    // - if so, also return a structure saying what navigation info to show:
     //   - review
     //   - repeat now
     //   - next
     //
-    function xset_callback(&$iter, $score, $view_id, &$avg_score, &$repeat) {
+    function xset_record_score(
+        &$iter, $score, $view_id, &$avg_score, &$repeat
+    ) {
         global $course;
         global $user;
-        global $refresh;
 
         $nav_info = null;
         $state_rec = $iter->state[$this->name];
@@ -104,11 +132,6 @@ class BoltExerciseSet extends BoltRandom {
         }
         return false;
     }
-
-    function start_repeat(&$iter) {
-        $this->restart($iter);
-    }
-
 }
 
 class BoltRefresh{
@@ -146,14 +169,20 @@ function exercise_set() {
     $units = array();
     $repeats = array();
     $refresh = null;
+    $callback = null;
     $name = "";
-    $number = 1;
+    $number = 0;
+	$attrs = null;
+    $weight = 1;
     foreach ($args as $arg) {
         if (is_array($arg)) {
             switch ($arg[0]) {
             case 'name': $name = $arg[1]; break;
             case 'title': $title = $arg[1]; break;
             case 'number': $number = $arg[1]; break;
+            case 'attrs': $attrs = $arg[1]; break;
+            case 'callback': $callback = $arg[1]; break;
+            case 'weight': $weight = $arg[1]; break;
             default: echo "Unrecognized array arg: ", $arg[0], "\n"; break;
             }
         } else if (is_object($arg)) {
@@ -166,9 +195,15 @@ function exercise_set() {
             } else {
                 echo "Can't include object of type ".get_class($arg)." within an exercise set.";
             }
+        } else {
+            echo "Unexpected arg to exercise_set(): "; print_r($arg);
         }
     }
-    return new BoltExerciseSet($name, $units, $number, $repeats, $refresh);
+
+    if ($number == 0) $number = count($units);
+    return new BoltExerciseSet(
+        $name, $units, $number, $repeats, $refresh, $attrs, $callback, $weight
+    );
 }
 
 ?>

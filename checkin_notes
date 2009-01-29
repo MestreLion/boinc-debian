@@ -187,7 +187,7 @@ Charlie Jan 7 2008
         5.10.34 or later and Mac OS 10.4 or later.
 
     clientgui/
-        BOINCGUIApp.cpp,h
+        BOINCGUIApp.cpp,.h
     mac_build/
         Make_BOINC_Service.sh
 
@@ -281,7 +281,7 @@ Charlie Jan 10 2008
             if we implement that in the future.
         
     clientgui/
-        sg_DlgMessages.cpp,h
+        sg_DlgMessages.cpp,.h
         ViewMessages.cpp
 
 David Jan 10 2008
@@ -1175,7 +1175,7 @@ David  Feb 5 2008
 
     clientgui/
         AdvancedFrame.cpp
-        MainDocument.cpp,h
+        MainDocument.cpp,.h
     lib/
         gui_rpc_client.C,h
 
@@ -1273,7 +1273,7 @@ Charlie Feb 7 2008
     - MGR: If user shuts down connected client, don't auto-relaunch it.
     
     clientgui/
-        MainDocument.cpp,h
+        MainDocument.cpp,.h
         AdvancedFrame.cpp
 
 David  Feb 8 2008
@@ -1827,9 +1827,9 @@ Charlie Mar 4 2008
     - MGR: Disallow multiple selections in grid views.
 
     clientgui/
-        ViewProjectsGrid.cpp,h
-        ViewTransfersGrid.cpp,h
-        ViewWorkGrid.cpp,h
+        ViewProjectsGrid.cpp,.h
+        ViewTransfersGrid.cpp,.h
+        ViewWorkGrid.cpp,.h
 
 David  Mar 4 2008
     - web: fixed typo that cause bad (and slow) query
@@ -1886,7 +1886,7 @@ Charlie Mar 4 2008
         not updated to reflect the new selection.
 
     clientgui/
-        BOINCGridCtrl.cpp,h
+        BOINCGridCtrl.cpp,.h
         ViewMessagesGrid.cpp
         ViewProjectsGrid.cpp
         ViewTransfersGrid.cpp
@@ -1904,11 +1904,11 @@ Charlie Mar 5 2008
 
     clientgui/
         BOINCGridtrl.cpp
-        MainDocument.cpp,h
+        MainDocument.cpp,.h
         ViewMessagesGrid.cpp
-        ViewProjectsGrid.cpp,h
-        ViewTransfersGrid.cpp,h
-        ViewWorkGrid.cpp,h
+        ViewProjectsGrid.cpp,.h
+        ViewTransfersGrid.cpp,.h
+        ViewWorkGrid.cpp,.h
 
 David  Mar 5 2008
     - server: debugged single-job submission feature.
@@ -1978,8 +1978,8 @@ Charlie Mar 6 2008
             these as true to restrict that tab to single-selections.
     
     clientgui/
-        ViewProjectsGrid.cpp,h
-        ViewWorkGrid.cpp,h
+        ViewProjectsGrid.cpp,.h
+        ViewWorkGrid.cpp,.h
 
 Rom    6 Mar 2008
     - CLI: Make the CreateProcessAsUser process work again on Windows.
@@ -3433,18 +3433,18 @@ Rom    April 30 2008
         graphics2_win.C
 
 David  April 30 2008
-	- client: Win: fix CUDA detection:
-		look in the registry to find the CUDA install directory,
-		and look for cudart.dll in that dir.
-	- client: for CUDA, don't confuse coproc.name ("CUDA")
-		from coproc.prop.name (e.g., "Device Emulation (CPU)" on my PC,
-		which doesn't have a recent-enough GPU)
-	- client: if no coprocessors present, say so in startup messages
+    - client: Win: fix CUDA detection:
+        look in the registry to find the CUDA install directory,
+        and look for cudart.dll in that dir.
+    - client: for CUDA, don't confuse coproc.name ("CUDA")
+        from coproc.prop.name (e.g., "Device Emulation (CPU)" on my PC,
+        which doesn't have a recent-enough GPU)
+    - client: if no coprocessors present, say so in startup messages
 
-	client/
-		client_state.C
-	lib/
-		coproc.C
+    client/
+        client_state.C
+    lib/
+        coproc.C
 
 Rom    April 30 2008
     - API: Fix build break from my last check-in.
@@ -3538,14 +3538,6 @@ Rom    May 2 2008 (HEAD)
         configure.ac
         version.h
 
-Rom    May 2 2008
-    - Tag for 6.2.0 release, all platforms
-      boinc_core_release_6_2_0
-
-    /
-        configure.ac
-        version.h
-
 David  May 2 2008
     - scheduler: clean up message log.
         Merge redundant messages.
@@ -3562,13 +3554,13 @@ David  May 2 2008
         sched_send.C
         server_types.C,h
 
-Rom    May 2 2008
-    - Tag for 6.2.1 release, all platforms
-      boinc_core_release_6_2_1
+David  May 2 2008
+    - web: improve error messages if login link fails
+        (URL may have been truncated in email reader)
 
-    /
-        configure.ac
-        version.h
+    html/user/
+        login_action.php
+        white.css
 
 David  May 4 2008
     - client: if we request that an app exit,
@@ -3606,6 +3598,67 @@ Charlie May 5 2008
     clientgui/
         MainDocument.cpp
 
+David  May 5 2008
+    - Added command-completion script for bash
+
+    client/scripts/
+        boinc.bash
+    sched/
+        sched_send.C
+    html/user/
+        profile_rate.php
+
+Eric K  May 6 2008
+    - Added implementation of setenv() for systems without it. 
+    - Fixed bug in x_opengl.C.  On systems where putenv() adds the string to the
+      environment rather than copies it, the environment would end up containing
+      a random peice of the stack where the DISPLAY variable had been
+      temporarily stored.
+
+     configure.ac
+     lib/
+         unix_util.[Ch]
+     api/
+         x_opengl.C
+
+David  May 6 2008
+    - scheduler: add preliminary support for "job size matching"
+        (attempt to send big jobs to fast hosts, small jobs to slow hosts).
+        - have "census" compute mean/stdev of host speeds,
+            write it to a file perf_info.txt
+        - have feeder compute mean/stdev of sizes of jobs in shmem
+        - have feeder read perf_info.txt into shmem
+    - scheduler: add some debugging messages for app version selection
+    - Add LGPL license to a few files
+    - upgrade/setup scripts: copy census to bin/
+
+    py/Boinc/
+        setup_project.py
+    sched/
+        assimilate_handler.C
+        census.C
+        feeder.C
+        hr_info.C,h
+        sched_array.h
+        sched_config.C,h
+        sched_plan.C
+        sched_resend.h
+        sched_shmem.h
+        sched_timezone.h
+        server_types.C
+        single_job_assimilator.C
+        validate_util2.h
+        validator.h
+
+David  May 6 2008
+    - scheduler: finished support for job size matching.
+        Let x be the host speed (expressed in stdevs from mean)
+        Let y be the job size (expressed in stdevs from mean)
+        Decrement score by (x-y)^2
+
+    sched/
+        sched_send.C
+
 Charlie May 7 2008
     - MGR: Statistics and Disk tab panes: clear when disconnected from Client, 
         update quickly when connecting to a (different) Client.
@@ -3634,11 +3687,35 @@ David  May 7 2008
         coproc.C
         unix_util.C,h
 
+David  May 7 2008
+    - client: added some file_xfer_debug messages for file upload
+
+    client/
+        file_xfer.C
+
 Charlie May 7 2008
     - client: Fix compiler warning.
 
     lib/
         coproc.C
+
+David  May 8 2008
+    - scheduler: add new log flags debug_edf_sim_workload, debug_edf_sim_details
+        for getting info on EDF simulation;
+        change output from seconds to hours
+    - API: remove extern "C" from graphics API
+        (convince me it's needed before restoring)
+
+    api/
+        graphics2.h
+    client/
+        makefile_sim
+    lib/
+        diagnostics.C
+    sched/
+        edf_sim.C
+        sched_array.C
+        sched_config.C,h
 
 Rom    May 8 2008
     - LIB: Windows 9X doesn't like it when you specify a security descriptor, so
@@ -3678,6 +3755,47 @@ Charlie May 8 2008
     mac_build/
         HowToBuildBOINC_XCode.rtf
 
+Rom    May 9 2008
+    - DIAG: Include the list of libraries loaded as well as their locations
+        when the runtime debugger is engaged.
+        
+    lib/
+        stackwalker_win.cpp
+
+David  May 9 2008
+    - client: increase <abort> timeout from 5 sec to 60;
+        this gives the diagnostic system time to download
+        symbol files (which may be several MB) and write a stack trace.
+
+    client/
+        app.C
+        app_control.C
+        app_start.C
+
+Rytis  May 9 2008
+    - ops pages: add missing error numbers.
+    
+    html/inc/
+        db_ops.inc
+
+David  May 9 2008
+    - client (Unix): when running app, open fd 0 to /dev/null
+        rather than just closing it (from Gabor Gombas)
+
+    client/
+        app_start.C
+
+Rom    May 9 2008
+    - DIAG: Include the PDB filename that is linked to the EXE at
+        compile time to the module information dumped during a crash.
+        
+      NOTE: This should give a project admin a tickle that the PDB
+        and EXE names need to be set before compiling and not renamed
+        after the fact.
+        
+    lib/
+        stackwalker_win.cpp
+
 David  May 9 2008
     - client and server: in coprocessor records, change "name" to "type"
         to avoid confusion with "name" field of CUDA.
@@ -3704,13 +3822,138 @@ David  May 9 2008
     lib/
         coproc.h
 
-Rom    May 2 2008
-    - Tag for 6.2.2 release, all platforms
-      boinc_core_release_6_2_2
+David  May 9 2008
+    - tools: performance enhancement to crypt functions,
+        and have crypt_prog exit nonzero on failure
+        (from Nicolas Alvarez)
 
-    /
-        configure.ac
-        version.h
+    lib/
+        crypt.C
+        crypt_prog.C
+
+David  May 9 2008
+    - scheduler: performance optimization for EDF simulation.
+        Keep track of the "easiest" job that has been rejected by EDF sim.
+        Any jobs harder than this one can be rejected without doing the sim.
+
+    sched/
+        sched_send.C
+        server_types.h
+
+David  May 11 2008
+    - Client (Windows) change the way core/app shmem segs are created.
+        Old: get_shmem_seg_name() tries names of the form shm_boinc_N
+            until it finds one for which creating succeeds.
+            Then it detaches (deletes) the segment and records the name.
+            Later, the segment is created again.
+            This creates a race condition if two core clients
+            are running on the same host.
+            It's also kind of silly.
+        New: get_shmem_seg_name() doesn't detach the segment,
+            and we dont have to create it again later.
+            
+    client/
+        app_start.C
+    lib/
+        shmem.C
+
+Eric K May 12 2008
+    - Fixes to init script.
+    - Commands in Makefile.am to install init scripts
+    - Initial checkin of sample configuration file boinc-client.conf
+
+    client/
+        scripts/
+            Makefile.am
+            boinc-client.in
+            boinc-client.conf
+
+Rom    May 12 2008
+    - WINSETUP: Add the ability for the users in 'boinc_projects' 
+        to be able to read/execute the DLLs needed in the diagnostics
+        framework.
+        (dbghelp.dll, srcsrv.dll, symsrv.dll, symsrv.yes)
+    
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.def
+        boinccas.vcproj
+        CASetPermissionBOINCDiagnostics.cpp, .h (added)
+
+Rom    May 12 2008
+    - WINSETUP: Exclude the skins, and locale directory from data
+        migration.
+    
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CAMigrateBOINCData.cpp, .h
+
+David  May 12 2008
+    - client (win): bug fixes to yesterday's checkin
+
+    client/
+        app_start.C
+    lib/
+        shmem.C,h
+
+David  May 12 2008
+    - client: add <allow_multiple_clients> cc_config.xml option
+    - client: remove stress_shmem code
+
+    client/
+        client_state.C
+        log_flags.C,h
+        main.C
+    lib/
+        shmem.C,h
+
+David  May 12 2008
+    - client: change --allow_multiple_clients to a command line option
+        (it can't go in the config file)
+
+    client/
+        cs_cmdline.C
+        log_flags.C
+        main.C
+
+David  May 13 2008
+    - Added <d_allowed> element to get_disk_usage GUI RPC
+
+    client/
+        gui_rpc_server_ops.C
+        hostinfo_win.C
+    clientgui/
+        ViewResources.cpp
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.C
+
+David  May 13 2008
+    - manager: in disk tab, divide free space into
+        available/unavailable to BOINC
+
+    client/
+        gui_rpc_server_ops.C
+    clientgui/
+        ViewResources.cpp
+
+David  May 13 2008
+    - make some strings in user.inc translatable (from Simek)
+    - close fd 1, not 0, for apps
+
+    client/
+        app_start.C
+    html/
+        inc/
+            user.inc
+        languages/translations/
+            en.po
+
+David  May 13 2008
+    - validator: canonical_credit was being set incorrectly
+        when -max_granted_credit used.
+        
+    sched/
+        sched_send.C
+        validator.C
 
 Charlie May 14 2008
     - Mac: revise build scripts for c-ares and cURL to work when there are 
@@ -3720,6 +3963,33 @@ Charlie May 14 2008
     mac_build/
         buildc-ares.sh
         buildcurl.sh
+
+David  May 13 2008
+    - manager: fix disk display
+
+    clientgui/
+        ViewResources.cpp
+
+Rom    May 14 2008
+    - Tag for 6.3.0 release, all platforms
+      boinc_core_release_6_3_0
+
+    /
+        configure.ac
+        version.h
+
+David  May 14 2008
+    - API: compile fix
+
+    api/
+        graphics2_util.C
+
+Rom    May 14 2008 (HEAD)
+    - Bump version to 6.3.1
+
+    /
+        configure.ac
+        version.h
 
 Rom    May 14 2008
     - MGR: Fix trace statements in StartupBOINC()
@@ -3736,12 +4006,38 @@ Rom    May 14 2008
     clientgui/
         BOINCClientManager.cpp
 
-Rom    May 14 2008
-    - MGR: --insecure isn't supported on Linux yet. It is only
-        supported on the Mac.
+Charlie May 15 2008
+    MGR: Adjust pie control slices so small wedges are visible if at 
+        all possible,
         
     clientgui/
-        BOINCClientManager.cpp
+        common/
+            wxPieCtrl.cpp
+
+David  May 15 2008
+    - client: added some http_debug messages in case where
+        POST2 temp file can't be opened or read
+    - client: don't show --sandbox option if it's not available
+
+    client/
+        http_curl.C
+        cs_cmdline.C
+        cs_scheduler.C
+
+Rom    May 15 2008
+    - Tag for 6.3.1 release, all platforms
+      boinc_core_release_6_3_1
+
+    /
+        configure.ac
+        version.h
+
+Rom    May 15 2008 (HEAD)
+    - Bump version to 6.3.2
+
+    /
+        configure.ac
+        version.h
 
 Rom    May 15 2008
     - SCR: BOINC's screensaver module in preview mode only displays
@@ -3751,6 +4047,21 @@ Rom    May 15 2008
         
     clientscr/
         screensaver_win.cpp
+
+David  May 15 2008
+    - web: add <no_computing> option to config.xml.
+        If present, don't show anything related to computing.
+        Use this for Bossa/Bolt projects, and the BOINC message boards.
+
+    html/
+        inc/
+            team.inc
+            user.inc
+            util.inc
+        user/
+            home.php
+    py/Boinc
+        setup_project.py
 
 David  May 15 2008
     - client: If a scheduler reply doesn't include <host_venue>
@@ -3770,35 +4081,31 @@ David  May 15 2008
     client/
         client_types.C
 
+David  May 15 2008
+    - scheduler: there were several situations where the scheduler
+        would send a reply without having looked up the user and team
+        in the DB; e.g.:
+        - client version# is too low
+        - DB is down
+        - host is blacklisted
+        It would then send a full scheduler reply,
+        including a blank team name and other missing info.
+        
+        Fix this by setting reply.nucleus_only initially
+        (this causes a minimal reply to be sent)
+        and clearing it only if the host/user/team lookup succeeds.
+        Fixes #417, #633 (I think)
+
+    sched/
+        handle_request.C
+        server_types.C
+
 Rom    May 16 2008
     - MGR: Fix a casting issue that was causing crashes on x64 platforms.
       fixes# 658 (From: bbaetz)
     
     clientgui/
         SkinManager.cpp
-
-Rom    May 19 2008
-    - client: fix command line parsing bug. Parse the command line before
-        initializing the diagnostics framework.
-        
-    client/
-        cs_cmdlinc.C
-        main.C
-
-Rom    May 19 2008
-    - WINSETUP: Block installing on domain controllers for this release.
-        I'll fix this for the next release cycle, or a future 6.2 release.
-    
-    win_build/installerv2/
-        BOINC.ism
-
-Rom    May 19 2008
-    - Tag for 6.2.3 release, all platforms
-      boinc_core_release_6_2_3
-
-    /
-        configure.ac
-        version.h
 
 David  May 16 2008
     - client: JM7 was seeing repeated file upload failures.
@@ -3830,22 +4137,6 @@ David  May 16 2008
         app_control.C
         app_start.C
 
-Rom    May 19 2008
-    - Tag for 6.2.4 release, all platforms
-      boinc_core_release_6_2_4
-
-    /
-        configure.ac
-        version.h
-
-Charlie May 15 2008
-    MGR: Adjust pie control slices so small wedges are visible if at 
-        all possible,
-        
-    clientgui/
-        common/
-            wxPieCtrl.cpp
-
 Charlie May 19 2008
     MGR: Don't enlarge pie control slices if value is zero.
         
@@ -3863,6 +4154,75 @@ David  May 19 2008
         scheduler_op.C
     languages/translations/
         en.po
+
+David  May 20 2008
+    - web: fix for cross-site scripting vulnerability
+        (from Nicolas Alvarez)
+
+    html/
+        inc/
+            team.inc
+        user/
+            team_search.php
+
+David  May 20 2008
+    - web: fix bugs introduced by recent tra() changes.
+        PLEASE CHECK THESE CHANGES BEFORE SUBMITTING THEM
+
+    html/
+        inc/
+            host.inc
+            user.inc
+        user/
+            cert1.php
+
+David  May 20 2008
+    - Add alternative stylesheet for project web
+    - Tweak error messages in client and server
+
+    client/
+        app_start.C
+    html/user/
+        style2.css
+    sched/
+        sched_send.C
+
+David  May 20 2008
+    - fix FCGI compile
+
+    sched/
+        feeder.C
+        hr_info.C
+
+Rom    May 20 2008
+    - DIAG: For Windows, lookup and store the install directory
+        location so that the diagnostics framework can use the
+        debugger libraries.
+        
+        NOTE: This is only a problem for applications running
+          under the v6 clients.
+        
+    lib/
+        diagnostics.C, .h
+        diagnostics_win.C
+        
+David  May 21 2008
+    - web: fix errors in translation changes
+
+    html/inc/
+        user.inc
+
+David  May 21 2008
+    - web: remove separate blockquote style; fixes #668
+
+    html/user/
+        white.css
+
+David  May 21 2008
+    - scheduler: if client has bad code sign key, don't send work
+
+    sched/
+        handle_request.C
 
 David  May 21 2008
     - boinccmd (Windows): chdir to the data directory (from registry)
@@ -3885,25 +4245,299 @@ David  May 22 2008
     client/
         cs_scheduler.C
 
-Rom    May 23 2008
-    - fix build breaks for Windows x64 builds.
-    
-    client/
-        main.C
-    lib/
-        boinc_cmd.C
-    win_build/
-        boincmgr_curl.vcproj
-    win_build/installerv2/
-        BOINCx64.ism
+David  May 22 2008
+    - client: print a message at startup if computation is suspended
 
-Rom    May 19 2008
-    - Tag for 6.2.5 release, all platforms
-      boinc_core_release_6_2_5
+    client/
+        client_state.C,h
+        cpu_sched.C
+        cs_prefs.C
+
+David  May 23 2008
+    - scheduler: added
+        - config option <matchmaker> for matchmaker scheduling
+        - config options <mm_min_slots>, <mm_max_slots>, <job_size_matching>
+            to control matchmaker scheduling
+    - scheduler: tweaks to matchmaker scheduling from Kevin Reed
+    - web: fixes to alternative stylesheet from Simek
+
+    html/user/
+        style2.css
+    sched/
+        sched_config.C,h
+        sched_send.C
+
+David  May 23 2008
+    - client: if GUI RPC auth error, close the socket.
+        This prevents a DoS by sending <auth1> over and over,
+        filling the send buffer and eventually causing the client to block.
+    - Unix build: if m4 missing, check for gm4
+
+    _autosetup
+    client/
+        gui_rpc_server.C,h
+        gui_rpc_server_ops.C
+
+David  May 23 2008
+    - client: shuffle to code to give an abstraction (RR_SIM_STATUS)
+        of a project's state during round-robin simulation
+        (first step to handling coprocs in RR sim)
+
+    client/
+        client_types.C,h
+        cpu_sched.C
+        work_fetch.C
+
+David  May 23 2008
+    - client: shuffle code to abstract coprocessor reservation
+
+    client/
+        app.C
+        client_state.h
+        cpu_sched.C
+    lib/
+        coproc.h
+
+David  May 23 2008
+    - client: handle coprocs in RR simulation.  Not tested.
+        TODO: handle multithread apps in RR simulation; should be easy now.
+
+    client/
+        client_types.h
+        cpu_sched.C
+    lib/
+        coproc.h
+
+David  May 23 2008
+    - client: test the above; compile fixes for Win
+
+    client/
+        client_types.h
+        cpu_sched.C
+        sim_util.C
+
+David  May 24 2008
+    - client: reduce min CPU time for valid benchmark from 3 to 2
+
+    client/
+        cs_benchmark.C
+
+Rom    May 27 2008
+    - DIAG: When an application crashes, dump out the install and data
+        directory as part of the crash report.
+        
+    lib/
+        diagnostics_win.C
+
+David  May 27 2008
+    - web: team transfer request was being rejected if email to founder failed,
+        so there was no way of rescuing a team with invalid founder email.
+        I changed it to record the request anyway.
+        This is potentially hazardous - if the founder's email server
+        is temporarily down, the request would go through
+        without the founder being notified.
+        To offset this, I added a notification via private message.
+
+    html/
+        inc/
+            email.inc
+        user/
+            team_founder_transfer_action.php
+
+Rom    May 27 2008
+    - WINSETUP: The call to GetFreeDiskSpaceEx was failing becuase the path
+        didn't exist yet, so all the values in the returned data structures
+        was random junk. If the directory had never been created before
+        then it was returning 27/57 bytes free. If the drectory had existed
+        at one time then the return values were several gigabytes.
+        
+        If the first request to GetFreeDiskSpaceEx fails, then check for the
+        parent directory, if that fails pass a NULL value which means check
+        the default volume.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.def
+        boinccas.rc
+        boinccas.vcproj
+        CAMigrateBOINCData.cpp
+        CASetPermissionBOINCDiagnostics.cpp, .h (deleted)
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+Eric   May 27 2008
+    - clientgui:  renamed locale files from "BOINC Manager.*" to
+        "BOINC-Manager.*"
+    - Added Makefile to locale/client to install the BOINC Manager.po files
+        into $(datadir)/locale (typically $(prefix)/share/locale)
+
+    clientgui/
+        BOINCGUIApp.cpp
+    locale/
+        client/
+            Makefile.am
+            */
+                BOINC Manager.po (renamed BOINC-Manager.po)
+                BOINC Manager.mo (renamed BOINC-Manager.mo)
+
+Eric    May 27 2008
+    - Makefiles: 
+        added client/scripts to default client build
+        removed sea from the default clientgui build
+        added locale/client to the default clientgui build
+        moved installed header from $(includedir) to $(pkgincludedir) which
+            is $(includedir)/boinc by default.
+        removed redefinitions of $(includedir) from makefiles.
+    - configure:
+        added locale/client/Makefile to AC_CONFIG_FILES
+    
+    configure.ac
+    Makefile.am
+    api/
+        Makefile.am
+    db/
+        Makefile.am
+    sched/
+        Makefile.am
+    lib/
+        Makefile.am
+    zip/
+        Makefile.am
+
+Eric    May 27 2008
+    - configure:
+        added LIBBOINC_VERSION definition for libtool use.
+
+    configure.ac
+
+Eric    May 27 2008
+    - fixed problem with missing includes and missing namespace notations
+
+    clientgui/
+        common/
+            wxPieCtrl.cpp
+
+Eric    May 28 2008
+    - moved icons from sea into clientgui/icons
+    - added Makefile to clientgui/icons to install them in $(pkgdatadir) which
+      is usually $(prefix)/share/boinc.
+    - Even though these icons are packaged with the sea, they don't appear
+      to be referenced in any code and don't appear to ever be used.
+
+    configure.ac
+    Makefile.am
+    clientgui/
+        icons/
+            Makefile.am
+            boincmgr.{16x16,32x32,48x48}.png
+
+Eric    May 28 2008
+    - Added a stage target for staging a distribution.
+      Executing "make stage" will "make all" and will install the client
+      under the stage directory (i.e. binaries is stage/$(prefix)/bin, libraries
+      in stage/$(prefix)/lib, etc)
+
+    Makefile.am
+
+David  May 28 2008
+    - web: style tweaks; fixes #667
+
+    client/
+        cs_account.C
+    html/user/
+        forum_forum.php
+        white.css
+
+Eric    May 28 2008
+    - Added database table credit_multiplier and script to be run daily
+      (calculate_credit_multiplier) to determine what factor to multiply claimed
+      credit by before insertion into the database.  Changes to scheduler to
+      implement have not yet been checked in.
+
+    tools/
+        Makefile.am
+    calculate_credit_multiplier
+    db/
+        schema.sql
+
+Rom    May 28 2008
+    - Tag for 6.3.2 release, all platforms
+      boinc_core_release_6_3_2
 
     /
         configure.ac
         version.h
+
+Rom    May 28 2008 (HEAD)
+    - Bump version to 6.3.3
+
+    /
+        configure.ac
+        version.h
+
+David  May 28 2008
+    - client: on startup, detect when the system clock has been set backwards,
+        and clear all timeout variables.
+        This should fix the situation where, say:
+        1) the user sets the system clock forward by a year;
+        2) all projects get their min_rpc_time set;
+        3) the user sets the system clock back to the correct time.
+        Previously, BOINC would not do anything for a year.
+
+        Note: a restart of BOINC is required to fix things.
+        It would be harder to do this on the fly.
+
+    client/
+        client_state.C,h
+        client_types.h
+        pers_file_xfer.h
+        time_stats.h
+
+David  May 28 2008
+    - web: add project.inc variables to customize certificates;
+        add team certificate;
+        add links to certificates from user page
+
+    html/
+        inc/
+            cert.inc
+            user.inc
+        user/
+            cert_team.php (new)
+            cert1.php
+
+Eric    May 28 2008
+    - have been told clientgui/res is the appropriate place for icons so have
+      moved clientgui/icons/* clientgui/res
+
+    Makefile.am
+    configure.ac
+    clientgui/
+        icons/
+            Makefile.am  moved to clientgui/res
+            boincmgr.{16x16,32x32,48x48}.png  moved to clientgui/res
+
+Rom    May 28 2008
+    - WINSETUP: Fix a struct alignment issue when dumping the base64 encoded
+        password for boinc_project to a file.
+        
+        ATL's string conversion functions act of a class and not a buffer
+        which makes memory management easier but doesn't interop well with
+        fprintf unless you specify the buffer name directly.
+        
+    win_build/installerv2/
+        BOINC.ism
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CACreateClientAuthFile.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
 
 Charlie May 28 2008
     - Mac Installer: delete old locale directory to remove "boinc manager.mo" 
@@ -3912,13 +4546,20 @@ Charlie May 28 2008
     mac_installer/
         preinstall
 
-Rom    May 28 2008
-    - Tag for 6.2.6 release, all platforms
-      boinc_core_release_6_2_6
+David  May 29 2008
+    - Validator framework: change get_output_file_path()
+        to return a struct FILE_INFO (including "optional")
+        instead of just the filename.
+        This lets you avoid erroring out if optional file is missing.
+    - Sample bitwise validator: support > 1 output file correctly
 
-    /
-        configure.ac
-        version.h
+    sched/
+        sample_assimilator.C
+        sample_bitwise_validator.C
+        sample_dummy_assimilator.C
+        single_job_assimilator.C
+        validate_util.C,h
+        validator.C
 
 Charlie May 29 2008
     - MGR: eliminate spurious --graphics argument when showing V6 graphics.
@@ -3926,25 +4567,270 @@ Charlie May 29 2008
     clientgui/
         MainDocument.cpp
 
-Rom    May 30 2008
-    - Tag for 6.2.7 release, all platforms
-      boinc_core_release_6_2_7
+David  May 29 2008
+    - Redo the above so that get_output_file_path() is unchanged;
+        add new functions get_output_file_info();
+    - change get_output_file_path() to look at the result's
+        xml_doc_in rather than its xml_doc_out;
+        this is the one that will have <optional/>
+    - fix crashing bug in the above
 
-    /
-        configure.ac
-        version.h
+    sched/
+        sample_assimilator.C
+        sample_bitwise_validator.C
+        sample_dummy_assimilator.C
+        sched_util.C
+        single_job_assimilator.C
+        validate_util.C,h
+        validator.C
+
+David  May 29 2008
+    - validator/assimilator: parse <file_ref>s rather than <file_info>s;
+        the latter is where the <optional/> flag is.
+
+    sched/
+        validate_util.C
+    sched/
+        validate_util.C
+
+David  May 31 2008
+    - server: added -simulation option to feeder, validator, and assimilator
+        (for use in server simulator)
+
+    client/
+        cs_scheduler.C
+    sched
+        feeder.C
+        transitioner.C
+        validator.C
+
+David  2 June 2008
+    - Add cross-project certificate
+
+    html/
+        inc/
+            user.inc
+        user/
+            cert_all.php (new)
+            img/boinc_fade_600.png
+
+David  2 June 2008
+    - validator/assimilator: get_output_file_info()
+        was looking at the wrong XML field
+
+    sched/
+        validate_util.C
+
+David  4 June 2008
+    - Back end: add adaptive validation feature
+        (DB update required)
+    - Fixed typo in Eric's 5/28 checkin
+
+    db/
+        boinc_db.C,h
+        schema.sql
+    html/
+        ops/
+            db_update.php
+        user/
+            forum_post.php
+    py/Boinc/
+        database.py
+    sched/
+        sched_send.C
+        server_types.C
+        validator.C
+
+David  4 June 2008
+    - make_project: when it's done it prints out a bunch of instructions.
+        These are more than 24 lines, so in the VMWare BOINC VM
+        they scroll off the window and are lost.
+        Instead, write them to a file (project/project.readme).
+        Also, only write the message about example app if -test_app
+
+    tools/
+        make_project
 
 Charlie 4 June 2008
     - MGR: Fix help menus in Simple GUI (not applicable on Windows).
         
     clientgui/
-        sg_BoincSimpleGUI.cpp,h
+        sg_BoincSimpleGUI.cpp,.h
+
+David  4 June 2008
+    - web: fixed a couple of references to "global $logged_in_user".
+        It's $g_logged_in_user.
+
+    html/
+        inc/
+            pm.inc
+        user/
+            forum_reply.php
+
+David  5 June 2008
+    - validator/assimilator: fix bug in 2 June checkin
+        (xml_doc_in wasn't included in DB query)
+
+    db/
+        boinc_db.C
+    tools/
+        make_project
+
+David  5 June 2008
+    - web: clean up stuff related to stripslashes():
+        1) it's not correct to apply stripslashes() to all form input.
+            That should be done only if magic quotes is on.
+            I fixed this by adding a function undo_magic_quotes()
+            that does the right thing.
+        2) There's no reason to strip backslashes from user-supplied text
+            (forum titles and bodies, private messages, passwords etc.)
+            I'm not sure why this was being done.
+            It prevented messages from containing backslashes.
+
+    html/
+        inc/
+            db.inc
+            db_ops.inc
+            forum.inc
+            forum_email.inc
+            pm.inc
+            text_transform.inc
+            translation.inc
+            util.inc
+        user/
+            create_account_action.php
+            create_profile.php
+            donation_ipn.php
+            edit_forum_preferences_action.php
+            edit_forum_preferences_form.php
+            edit_passwd_action.php
+            forum_edit.php
+            forum_moderate_thread.php
+            forum_post.php
+            forum_reply.php
+            login_action.php
+            pm.php
+            team_edit_action.php
+            team_search.php
+
+David  5 June 2008
+    - manager: fix messages: "shut down" is 2 wds etc.
+
+    clientgui/
+        AdvancedFrame.cpp
+
+David  5 June 2008
+    - web: moved some basic utility functions to a separate file
+        that doesn't need to include all sorts of crap
+
+    html/inc/
+        boinc_db.inc
+        util.inc
+        util_basics.inc (new)
+        xml.inc
 
 David  6 June 2008
     - client (Win) look for CUDA as nvcuda.dll
 
     lib/
         coproc.C
+
+Rom    8 June 2008
+    - Tag for 6.3.3 release, all platforms
+      boinc_core_release_6_3_3
+
+    /
+        configure.ac
+        version.h
+
+David  8 June 2008
+    - Fix emacs mode line in Makefile.am's
+
+Rom    9 June 2008
+    - DIAG: Fix 2 year old bug when projects are using a symstore.
+        CC was writing 'symstore' in the init_data.xml and the diagnostic
+        code was looking for 'project_symstore'. Why did it take
+        so long to find? Oh well, make it obvious if it ever
+        happens again by dumping the symstore url in the crash
+        report.
+        
+        Ugh...
+        
+    lib/
+        diagnostics.C
+        diagnostics_win.C
+
+David  10 June 2008
+    - web: change order of includes
+
+    html/inc/
+        util.inc
+    sched/
+        sched_shmem.C
+
+David  10 June 2008
+    - make_project: allow account creation initially.
+        Otherwise it's another nit-picky little step
+        in the project "quick start" process.
+
+    py/Boinc/
+        setup_project.py
+
+David  12 June 2008
+    - added Free-DC CPID stats
+
+    html/inc/
+        stats_sites.inc
+
+David  12 June 2008
+    - web: fixes
+
+    html/
+        inc/
+            results.inc
+        user/
+            workunit.php
+
+David  12 June 2008
+    - web: cleaned up logic of string processing.
+        There are two aspects:
+        1) undoing magic quotes (if it's being used).
+            This must be done for all GET and POST string inputs.
+            It is now done automatically by get_str() and post_str().
+            The places that refer to $_GET and $_POST directly
+            must do it themselves using undo_magic_quotes().
+        2) Escaping user-supplied strings before using them in DB queries.
+            This is done by process_user_text()
+            (which should be renamed db_escape_string()).
+            The new principle:
+            call process_user_text() in the function that does the DB query
+            (not at any higher level).
+
+    html/ many files
+
+David  12 June 2008
+    - web: add $prefix arg to sample project_header(), project_footer()
+        (fix links on profile-index pages)
+    - web: use cache-control "no-store" only for home.php.
+        This makes it so that, e.g. if you scroll to the middle of a long page,
+        follow a link, then click Back,
+        you'll go back the original scroll position rather than top of page.
+
+    html/
+        inc/
+            util.inc
+        ops/
+            update_profile_pages.php
+        project.sample/
+            project.inc
+        user/
+            home.php
+
+David  12 June 2008
+    - web: handle magic quotes correctly in profile create/edit
+
+    html/user/
+        create_profile.php
 
 David  12 June 2008
     - API/runtime system: remove "fraction done update period" stuff.
@@ -3958,7 +4844,7 @@ David  12 June 2008
     lib/
         app_ipc.C,h
 
-David  13 June 2008
+David  12 June 2008
     - client/API: add "computation_deadline" to APP_INIT_DATA.
         This supports apps that can do variable amounts of computing;
         they can boinc_finish() if their deadline is near.
@@ -3969,7 +4855,26 @@ David  13 June 2008
         client_types.h
     lib/
         app_ipc.C,h
-        
+
+David  13 June 2008
+    - web: fixed numerous bugs in team founder transfer mechanism
+
+    html/
+        inc/
+            team.inc
+        user/
+            team_founder_transfer_form.php
+            team_founder_transfer_action.php
+            team_display.php
+
+David  14 June 2008
+    - manager: fix some strings ("comm" is not an OK abbrev.)
+        Also got rid of references to Yahoo.
+
+    clientgui/
+        WelcomePage.cpp,.h
+        BOINCWizards.h
+
 David  16 June 2008
     - client: fix crashing bug when detach from project.
         The problem: the variable ordered_scheduled_results
@@ -3983,13 +4888,132 @@ David  16 June 2008
     client/
         client_state.C
 
-Rom    17 June 2008
-    - Tag for 6.2.8 release, all platforms
-      boinc_core_release_6_2_8
+David  17 June 2008
+    - scheduler: if host.n_bwdown is zero, skip the bandwidth check;
+        the host hasn't been measured yet.
 
-    /
-        configure.ac
-        version.h
+    sched/
+        sched_send.C
+
+David  17 June 2008
+    - web: shuffle code to eliminate redundancy
+
+    html/inc/
+        boinc_db.inc
+        bossa_db.inc
+        util.inc
+
+David  18 June 2008
+    - change EXIT_ABORTED_VIA_GUI to EXIT_ABORTED_BY_CLIENT
+    - change ERR_CHILD_FAILED TO EXIT_CHILD_FAILED
+        (it's an exit code, not a function error code)
+    - client: reduce severity of benchmark error
+    - scheduler: compile fix
+
+    api/
+        boinc_api.C
+    client/
+        cs_benchmark.C
+    lib/
+        str_util.C
+        error_numbers.h
+    sched/
+        sched_send.C
+
+Rom    18 June 2008
+    - WINSETUP: Validate that the installed executables are
+        the ones we are expecting.
+    - WINSETUP: Do not allow the data directory and install
+        directory to be the same directory.
+    - WINSETUP: Reduce the amount of time allocated to
+        shutdown the BOINC Manager from 30 secs to 5 secs
+        before killing it. Otherwise the user thinks the
+        install process is hung.
+    - WINSETUP: Change text for describing the protected
+        mode install
+    - WINSETUP: Add text describing the reason for a reboot
+    - WINSETUP: Add text describing the need to run a repair
+        in the case where a third party BOINC CC was installed
+        or a private drop of the CC was used.
+        
+    win_build/installerv2/
+        BOINC.ism
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.rc
+        boinccas.vcproj
+        boinccas95.def
+        boinccas95.vcproj
+        CAShutdownBOINCManager.cpp
+        CAValidateInstall.cpp, .h (added)
+        CAVerifyInstallDirectories.cpp, .h (added)
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+David  18 June 2008
+    - web: in team remove-user form, link names and show IDs
+
+    html/user/
+        team_remove_inactive_form.php
+
+David  18 June 2008
+    - If a hidden post is deleted, don't decrement its thread's post count;
+        it was already decremented when the post was hidden
+    - Added a function to forum_repair.php to fix inconsistencies
+        due to the above bug
+
+    html/
+        inc/
+            forum.inc
+        ops/
+            forum_repair.php
+
+Rom    19 June 2008
+    - WINSETUP: Properties that are changed during the execution phase
+        of setup do NOT bubble back up to the UI phase of setup when
+        completed. Create some custom actions that store those properties
+        in the registry and then read them back after we are back in the
+        UI phase. Without them we cannot control what text is displayed
+        in the setup completion dialog.
+        
+    win_build/installerv2/
+        BOINC.ism
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.cpp
+        boinccas95.def
+        boinccas95.vcproj
+        CARestoreExecutionState.cpp, .h (Added)
+        CASaveExecutionState.cpp, .h (Added)
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+Rom    19 June 2008
+    - WINSETUP: Suppress the reboot prompt and just reboot, since we
+        have already informed the user it is needed on the conformation
+        screen
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+       
+David  19 June 2008
+    - diagnostics library: in signal handler, use _exit() instead of exit();
+        an atexit() function might have been what caused the signal
+
+    lib/
+        diagnostics.C
 
 David  20 June 2008
     - client (Win): if running as service, and service is suspended/resumed,
@@ -4012,6 +5036,28 @@ David  20 June 2008
     lib/
         proc_control.C
         shmem.C,h
+
+David  22 June 2008
+    - scheduler: change message if bad auth (fixes #685)
+
+    client/
+        hostinfo_unix.C
+    sched/
+        handle_request.C
+
+David  22 June 2008
+    - client: print msgs if can't find CUDA libs
+
+    client/
+        client_state.C
+    lib/
+        coproc.C,h
+
+David  23 June 2008
+    - API: compile fix
+
+    api/
+        reduce_main.C
 
 Rom    23 June 2008
     - MGR: Fix the Alt-Tab icon on Windows XP. Fixes# 586.
@@ -4036,16 +5082,52 @@ Rom    23 June 2008
     clientgui/msw/
         taskbarex.cpp, .h
 
+David  23 June 2008
+    - API, Unix: when boinc_finish(x) is called, exit with code x
+        even if signals happen in the atexit() handling
+    - API: don't print XML parse warnings for init_data.xml file
+
+    api/
+        boinc_api.C
+    lib/
+        app_ipc.C
+        diagnostics.C,h
+
 Charlie 23 June 2008
-    - client: Fix build break on Mac.
     - MGR: Fix build breaks on Mac.
-    
-    client/
-        client_state.C
+        
     clientgui/
         BOINCTaskBar.cpp, h
         mac/
-            MacSysMenu.cpp,h
+            MacSysMenu.cpp,.h
+
+David  23 June 2008
+    - web: insert() functions return ID
+
+    html/inc/
+        user.inc
+        team.inc
+
+Rom    25 June 2008
+    - WINSETUP: Store and cleanup a set of flags to avoid repeatedly
+        migrating data back and forth.
+    - WINSETUP: If the migration uninstall routine detects a newer
+        version of BOINC being installed, skip the uninstall process.
+
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.rc
+        boinccas95.def
+        boinccas95.vcproj
+        CAMigrateBOINCData.cpp
+        CAMigrateBOINCDataCleanup.cpp, .h (Added)
+        CAMigrateBOINCDataVersion.cpp, .h (Added)
+        CAValidateInstall.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
 
 Rom    25 June 2008
     - MGR: If more than two active tasks are running then tell the
@@ -4057,29 +5139,105 @@ Rom    25 June 2008
     clientgui/
         BOINCTaskBar.cpp
 
-Rom    25 June 2008
-    - Tag for 6.2.9 release, all platforms
-      boinc_core_release_6_2_9
+David  25 June 2008
+    - client: improve error messages when can't copy files
+    - client: change CUDA detection on Linux and Mac.
+        Look for libcuda.so in /usr/lib/nvidia and /usr/lib64/nvidia.
+        If we find it, assume that libcudart is bundled with the app.
+
+    client/
+        app_start.C
+    lib/
+        coproc.C
+
+David  26 June 2008
+    - client, CUDA detection: look in /usr/lib, not /usr/lib/nvidia/
+
+    lib/
+        coproc.C
+
+Rom    26 June 2008
+    - Tag for 6.3.4 release, all platforms
+      boinc_core_release_6_3_4
 
     /
         configure.ac
         version.h
 
 Rom    26 June 2008
-    - Tag for 6.2.10 release, all platforms
-      boinc_core_release_6_2_10
+    - Include missing include file on Linux.
+    
+    lib/
+        diagnostics.C
 
-    /
-        configure.ac
-        version.h
+David  26 June 2008
+    - client: fix battery detection on newer Linux
+        (from Roberto Virga)
 
-Rom    26 June 2008
-    - Tag for 6.2.11 release, all platforms
-      boinc_core_release_6_2_11
+    client/
+        hostinfo_unix.C
 
-    /
-        configure.ac
-        version.h
+David  26 June 2008
+    - fix gcc warnings
+
+    lib/
+        coproc.C,h
+
+David  26 June 2008
+    - more gcc fixes
+
+    client/
+        client_state.C
+        sandbox.C,h
+        hostinfo_unix.C
+
+David  26 June 2008
+    - back-end code: fix compiler warnings (and maybe bugs);
+        do some retentive code cleanup
+
+    sched/
+        feeder.C
+        sched_send.C
+        transitioner.C
+        trickle_handler.C
+        validator.C
+        validate_util.C
+
+Charlie 27 June 2008
+    -MGR: Add all features of Grid Views to Accessible Views Projects Tab, 
+        Tasks Tab and Tranfers Tab, including: progress bars, light gray 
+        stripes on alternate rows, sorting, multiple selections.  
+        For those fields where it is practical to do so, store data in native  
+        form for better efficiency comparing, sorting and updating cached  
+        data;format data only when needed for list display.  Add a separate 
+        array of integers which are indexes into the list; sort only this 
+        array to make sorting faster & more efficient, and to maintain 
+        associations with underlying data after sorting (view's data struct 
+        at index X always corresponds to result at index X).
+        Refresh only those rows with changed values or which have moved due to 
+        sorting.  Restore previous sorting settings when relaunching Manager.
+        
+    clientgui/
+        BOINCBaseView.cpp,.h
+        BOINCListCtrl.cpp,.h
+        ViewProjects.cpp,.h
+        ViewTransfers.cpp,.h
+        ViewWork.cpp,.h
+
+David  27 June 2008
+    - make_project: change the --test_app option so that it gets the
+        app executable from boinc_samples/example_app/uc2,
+        rather than boinc/apps/upper_case.
+        (boinc_samples must be installed in the same dir as boinc).
+
+        The reason: the BOINC autoconf-based build process
+        produces executables that have zillions of shared library dependencies,
+        and generally won't run on machines other than
+        the one where they were built.
+        Executables built in boinc_samples/ don't have this problem.
+
+    tools/
+        make_project
 
 David  29 June 2008
     - client: add "Suspending computation" messages for
@@ -4088,6 +5246,31 @@ David  29 June 2008
 
     client/
         cs_prefs.C
+
+David  30 June 2008
+    - server: add optional <no_validate> element to output file <file_ref>s.
+        This tells the sample bitwise validator to ignore this file.
+    - client: parse the above field (avoid "unparsed XML" msgs)
+
+    client/
+        client_types.C
+    sched/
+        sample_bitwise_validator.C
+        validate_util.C,h
+
+David  30 June 2008
+    - scheduler: fix bug where a pointer to a 32-bit time field
+        was being cast to a pointer to 64-bit time field
+        (this caused wrong results on 64-bit servers)
+        From Sharov Artyom.
+
+    html/inc/
+        db_conn.inc
+    sched/
+        handle_request.C
+        sched_send.C
+    tools/
+        process_results_template.C
 
 Charlie 30 June 2008
     - MGR: Reset messages whenever connecting or reconnecting to client.  Fixes 2 
@@ -4101,10 +5284,30 @@ Charlie 30 June 2008
         a Connection Failed balloon if minimized.
         
     clientgui/
-        BOINCBaseFrame.cpp,h
+        BOINCBaseFrame.cpp,.h
         MainDocument.cpp
 
-Eric	1 July 2008
+Charlie 1 July 2008
+    - MGR: Fix build break on Linux.
+    
+    clientgui/
+        ViewWork.cpp
+
+David  1 July 2008
+    - web: when hide/unhide/delete posts,
+        set the timestamp of the thread to the timetamp of
+        the latest non-hidden post (rather than to now).
+        Same thing for forum timestamp.
+    - scheduler: return more informative message to user in case of
+        request message parse error
+
+    html/inc/
+        forum.inc
+    sched/
+        handle_request.C
+        server_types.C
+
+Eric  1 July 2008
     - client: Fixes ticket Fixes ticket #537. Forces use of small 
       files in zlib.h and when /proc filesystem is used on solaris.
 
@@ -4119,13 +5322,271 @@ Eric	1 July 2008
         parse.h
         procinfo_unix.C
 
-Rom    8 July 2008
-    - Tag for 6.2.12 release, all platforms
-      boinc_core_release_6_2_12
+David  1 July 2008
+    - web: don't check for the stop_web file in BoincDb::get().
+        That forces that file to include a bunch of unnecessary stuff.
+        Do the check at a higher level.
 
-    /
-        configure.ac
-        version.h
+    html/
+        inc/
+            boinc_db.inc
+            util.inc
+        user/
+            forum_index.php
+
+David  1 July 2008
+    - create_work: couldn't connect to database because it had
+        an automatic var SCHED_CONFIG (hence nonzero)
+    - make_project: include xadd in list of instructions
+    - boinc_submit: fix bugs in --stdin
+        
+    tools/
+        boinc_submit
+        create_work.C
+        dir_hier_path.C
+        kill_wu.C
+        make_project
+        poll_wu.C
+
+Charlie 2 July 2008
+    - MGR: New tasks and projects properties displays from Frank Weiler.
+    
+    clientgui/
+        DlgItemProperties.cpp,.h (new)
+        Events.h
+        ViewProjects.cpp,.h
+        ViewWork.cpp,.h
+        Makefile.am
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    win_build/
+        boincmgr_curl.vcproj
+
+David  2 July 2008
+    - server code: at some point I made a global var "SCHED_CONFIG config",
+        mostly so that the parse function could assume
+        that everything was initially zero.
+        However, various back-end functions pass around SCHED_CONFIG&
+        as an argument (also named "config").
+        This creates a shadow, which is always bad.
+        Worse is the possibility that some projects have back-end programs
+        that have a SCHED_CONFIG variable that's automatic,
+        and therefore isn't zero initially,
+        and therefore isn't parsing correctly.
+
+        To fix this, I changed the 2 vectors in SCHED_CONFIG into pointers,
+        and have the parse routine zero the structure.
+        I was tempted to remove the SCHED_CONFIG& args to back-end functions,
+        but this would have broken some projects' code.
+        I did, however, change the name from config to config_loc
+        to avoid shadowing.
+
+        Also fixed various other compiler warnings.
+
+    api/
+        boinc_api.C
+    apps/
+        upper_case.C
+    lib/
+        shmem.C,h
+    sched/
+        handle_request.C
+        sched_array.C
+        sched_assign.C
+        sched_config.C,h
+        sched_send.C
+        server_types.C
+    tools/
+        backend_lib.C,h
+        process_result_template.C
+
+David  2 July 2008
+    - typo in make_project
+
+    tools/
+        make_project
+
+David  2 July 2008
+    - client and server: the client includes global_prefs.xml
+        in scheduler request messages, without checking its contents.
+        One user had apparently edited global_prefs.xml with an XML editor;
+        it had an <?xml tag at the start,
+        and had been collapsed into a single line with no newlines,
+        and no newline at the end.
+        This caused all scheduler requests from that client to get
+        "Incomplete request" responses.
+
+        The long-term fix is for the client to verify global_prefs.xml,
+        and for the scheduler to parse it with XML_PARSER.
+        As a short-term fix, I made these changes:
+        - If the scheduler reads a line that's too long, it ignores it.
+        - The scheduler ignores <?xml
+
+    sched/
+        server_types.C
+
+Rom    3 July 2008
+    - WINSETUP: Change the custom action descriptions for those custom
+        actions that deal with user rights and privileges and user
+        accounts.
+    - WINSETUP: Add some basic benchmarking code for user rights and
+        privileges
+
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CACreateBOINCAccounts.cpp
+        CACreateBOINCGroups.cpp
+        CAGrantBOINCAdminsRights.cpp
+        CAGrantBOINCMasterRights.cpp
+        CAGrantBOINCProjectRights.cpp
+        CAGrantBOINCProjectsRights.cpp
+        CAGrantBOINCUsersRights.cpp
+        CAMigrateBOINCData.cpp
+
+David  3 July 2008
+    - boinc_submit: add --jobs and --abort options
+
+    html/inc/
+        boinc_db.inc
+    tools/
+        boinc_submit
+
+David  3 July 2008
+    - API: read heartbeat messages only if options.check_heartbest is set.
+        Otherwise, in compound apps we'll have both monitor and worker
+        reading the messages; this is a race condition
+        and will lead to spurious "no heartbeat" exits.
+
+    api/
+        boinc_api.C
+
+David  4 July 2008
+    - Improvements to single-job submission:
+        1) the assimilator creates a job_summary_WUID file saying
+            - what host did the job
+            - error status if any
+            - info about missing output files
+        2) all output files are now optional.
+        3) the assimilator deletes temp files (templates, job dir file)
+
+    client/
+        app_start.C
+    sched/
+        single_job_assimilator.C
+    tools/
+        boinc_submit
+
+David  4 July 2008
+    - web: check profile text with Akismet if enabled
+    - web: in get_logged_in_user(), check for bad user agent types
+        (a bit of spam-resistance)
+
+    html/
+        inc/
+            akismet.inc
+            profile.inc
+            util.inc
+        user/
+            create_profile.php
+
+David  6 July 2008
+    - web: include "reason" field in emails for thread moderation
+
+    html/
+        inc/
+            forum_email.inc
+        user/
+            forum_moderate_thread.php
+            forum_modearte_thread_action.php
+
+Charlie 8 July 2008
+    - MGR: Add "Show only this project" button to messages tab; filters 
+        message display to show only messages for the selected project.
+    - MGR: Fix problem of rows with equal values in the sort column 
+        changing places randomly with each re-sort.  wxArrayInt::Sort() 
+        uses std::sort(), which is not stable in such cases.  The 
+        solution is to use std::stable_sort() instea
+         
+    
+    clientgui/
+        Events.h
+        BOINCBaseView.cpp,.h
+        ViewMessages.cpp,.h
+        ViewProjects.cpp
+        ViewTransfers.cpp
+        ViewWork.cpp
+
+Rytis 8 July 2008
+    - user web: fix forum preferences saving (empty signatures were not
+        allowed).
+    
+    html/user/
+        edit_forum_preferences_action.php
+
+Rom    8 July 2008
+    - WINSETUP: Prevent certain special paths from being used for either
+        the install directory or the data directory. Prevent this from
+        both the UI component of setup, and if the situation is detected
+        from the migration custom action, skip migration.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.rc
+        CAMigrateBOINCData.cpp
+        CAVerifyInstallDirectories.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+   
+Eric K    8 July 2008
+    - Fix for unicode compiles in DlgItemProperties.cpp
+    - Fix for compilers that can't concatenate a normal character string
+      to a wide character string.  For example L"Hi "  "There" works in GCC
+      but not in some compilers because L"Hi " has a different type than
+      "There". This primarily shows up in SunStudio compilers.  The fix is
+      ugly, but it works.
+
+    clientgui/
+        CompletionPage.cpp
+        AdvancedFrame.cpp
+        ViewMessages.cpp
+        BOINCDialupManager.cpp
+        WelcomePage.cpp
+        ViewProjectsGrid.cpp
+        SkinManager.cpp
+        NotDetectedPage.cpp
+        ViewTransfers.cpp
+        ProxyInfoPage.cpp
+        ViewMessagesGrid.cpp
+        BOINCClientManager.cpp
+        ProjectProcessingPage.cpp
+        AccountManagerInfoPage.cpp
+        AccountKeyPage.cpp
+        ViewTransfersGrid.cpp
+        BOINCBaseFrame.cpp
+        ViewWorkGrid.cpp
+        sg_DlgMessages.cpp
+    DlgItemProperties.cpp
+
+David  8 July 2008
+    - web: if stop_web file is present, don't allow any DB access
+        (I broke this a few days ago)
+    - client: improve message for file upload server errors
+
+    client/
+        file_xfer.C
+    html/inc/
+        boinc_db.inc
+        util.inc
+
+Eric K  8 July 2008
+    - sparc-solaris: detect_platforms() 
+      test if it is possible to run 64-bit apps.
+
+    client/
+        cs_platforms.C
 
 Rom    8 July 2008
     - MGR: Fix the application name for both views.
@@ -4142,8 +5603,10 @@ Rom    8 July 2008
 Charlie 8 July 2008
     - MGR: Fix build breaks from the above changes: pass a C string, not a 
         wxString to the PrintF method.
+    - MGR: better clean up when connection lost while filtering messages.
 
     clientgui/
+        ViewMessages.cpp
         ViewWork.cpp
         ViewWorkGrid.cpp
 
@@ -4154,7 +5617,7 @@ Charlie 9 July 2008
         app_control.C
         cs_benchmark.C
 
-Rom    8 July 2008
+Rom    9 July 2008
     - MGR: Fix the application name for both views.
        (ANSI/Unicode compatible)(VS/GCC compatible)
     
@@ -4162,11 +5625,53 @@ Rom    8 July 2008
         ViewWork.cpp
         ViewWorkGrid.cpp
 
+Rom    9 July 2008
+    - WINSETUP: Normalize the special paths checks.
+    
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CAMigrateBOINCData.cpp
+        CAVerifyInstallDirectories.cpp
+
+Charlie 10 July 2008
+    - MGR: Change wxEVT_DRAW_BARGRAPH from 10000 to 12000 to avoid possible 
+        conflict with wxEVT_FRAME_ALERT.
+        
+    clientgui/
+        BOINCListCtrl.h
+
 Rom    10 July 2008
     - CC: Read the config file before setting the max file sizes.
     
     client/
         main.C
+
+David  10 July 2008
+    - client, Linux: change CUDA probing.
+        libcudart{32,64}.so is bundled with client.
+        client loads it and if successful calls the device-query functions.
+    - client, Linux: append the current directory
+        (i.e., the BOINC data directory) to the LD_LIBRARY_PATH for apps.
+        This goes after the project dir and the slot dir.
+        This lets apps link to libcudartX.so.
+        NOTE: this is not recommended; better to include it with your app.
+    - client: allow for multiple messages from coproc probing
+    - fixed indentation in cs_platforms.C
+
+    win_build/.../boinccas
+        CAVerifyInstallDirectories.cpp
+    client/
+        client_status.C
+        cs_platforms.C
+    lib/
+        coproc.C,h
+        libcudart32.so (put these here for now; can move if needed)
+        libcudart64.so
+
+Charlie 11 July 2008
+    - MGR: Small bug fix in new sortable Accessible Views.
+        
+    clientgui/
+        BOINCBaseView.cpp
 
 Rom    11 July 2008
     - MGR: Fix small bug when displaying the active task count in the
@@ -4174,6 +5679,136 @@ Rom    11 July 2008
         
     clientgui/
         BOINCTaskBar.cpp
+
+Rom    11 July 2008
+    - SEA: Include the CUDA dynamic libraries in the self-extracting
+        archive for Linux bulds.
+        
+    sea/
+        Makefile.am
+
+Rom    11 July 2008
+    - Tag for 6.3.5 release, all platforms
+      boinc_core_release_6_3_5
+
+    /
+        configure.ac
+        version.h
+
+David  12 July 2008
+    - web: fixed opt-out page
+
+    html/user/
+        opt_out.php
+
+David  12 July 2008
+    - small change to mac cuda
+
+    lib/
+        coproc.C
+
+Rytis  13 July 2008
+    - fix the layout of profile_menu.php on table-based websites, and since
+        I'm already editing it, make it translatable.
+
+    html/
+        user/
+            profile_menu.php
+        languages/translations/
+            en.po
+
+David  14 July 2008
+    - web: fix bugs that cause backslashes to be introduced
+        in global prefs update via account manager RPC
+
+    html/user/
+        am_set_info.php
+        account_finish_action.php
+        account_finish.php
+    sched/
+        sched_send.C
+
+David  14 July 2008
+    - scheduler: fix infinite loop in matchmaker sched (from Artyom Sharov)
+
+    sched/
+        sched_send.C
+
+Rom    14 July 2008
+    - WINSETUP: Create a flag file that can be used to keep either the
+        manager or the CC from starting until a reboot has been
+        performed.  Flag the file for deletion after a reboot has been
+        performed.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.cpp
+        boinccas.rc
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+David  14 July 2008
+    - scheduler: add constructor for HOST_USAGE structure
+        (otherwise get random crap in cmdline)
+
+    sched/
+        sched_send.C
+        server_types.h
+
+Rom    15 July 2008
+    - WINSETUP: Don't create the flag file until after the migration phase
+        has been completed.
+    - WINSETUP: Use real quotes around the delete file command instead of
+        tick marks, the Windows shell throws an error
+    - WINSETUP: Instead of calling the Windows API to determinethe various
+        special folders, use the MSI properties which match the 'choose folder'
+        dialog. We can skip the step if doing a case insensitive compare.
+        Plus it appears that MSI normalizes the paths for us.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.cpp
+        boinccas95.def
+        boinccas95.vcproj
+        CAMigrateBOINCData.cpp
+        CAValidateRebootRequest.cpp, .h (Added)
+        CAVerifyInstallDirectories.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+David  15 July 2008
+    - scheduler: Add a notion of "hard app" for SETI@home.
+        If an app is hard, the scheduler always does the deadline check,
+        even if the client has no other jobs for this project.
+        And the estimated wallclock duration is multiplied by 1.3,
+        to avoid sending jobs to hosts that will barely make the deadline.
+
+        Hard apps are marked by setting weight = -1.
+        This is a total kludge, to avoid adding another field to app.
+
+    sched/
+        sched_send.C
+
+David  15 July 2008
+    - scheduler: with matchmaker scheduling, avoid infinite loop
+        if result not in DB
+        (from Artyom Sharov, DerMeister)
+
+    sched/
+        sched_send.C
+
+David  15 July 2008
+    - scheduler: fix logic to not send plan-class apps to clients
+        that don't know about plan class
+
+    sched/
+        sched_send.C
 
 Rom    16 July 2008
     - MGR: Detect when a reboot is required for BOINC and display an error
@@ -4183,12 +5818,11 @@ Rom    16 July 2008
         BOINCGUIApp.cpp, .h
 
 Rom    16 July 2008
-    - Tag for 6.2.13 release, all platforms
-      boinc_core_release_6_2_13
-
-    /
-        configure.ac
-        version.h
+    - WINSETUP: Revamp the various strings used.
+    
+    win_build/installerv2/
+        BOINC.ism
+        BOINCx64.ism
 
 Rom    16 July 2008
     - WINSETUP: Don't execute the custom action that creates the
@@ -4199,25 +5833,216 @@ Rom    16 July 2008
         BOINC.ism
         BOINCx64.ism
 
-Rom    16 July 2008
-    - Tag for 6.2.14 release, all platforms
-      boinc_core_release_6_2_14
-
-    /
-        configure.ac
-        version.h
-
 Charlie 17 July 2008
     - MGR: Code which tests for reboot required should be Windows-only.
         
     clientgui/
         BOINCGUIApp.cpp
 
-Rom    17 July 2008
-    - SEA: Change references of boinc_cmd to boinccmd
+David  17 July 2008
+    - scheduler: in matchmaker scheduler, if find a "locked" array slot,
+        which whether we're the process that locked it (from Artyom Sharov)
+
+    sched/
+        sched_send.C
+
+Rom    18 July 2008
+    - WINSETUP: Make sure we kill the manager on WinNT based systems instead
+        of requesting a graceful exit first.  For some reason, every once
+        and awhile the installer gets stuck in the call to SendMessage()
+        which in turn is waiting on the manager to come out of whatever
+        event processing code it is stuck in. I don't know if the manager
+        is stuck in wxWidget code or not, but the installer shouldn't
+        ever get stuck waiting on a hung app.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CAShutdownBOINCManager.cpp
+
+David  18 July 2008
+    - web: fiddle around with style2.css and sample front page;
+        change font, etc.
+
+    html/
+        project.sample/
+            project.inc
+        user/
+            sample_index.php
+            style2.css
+            weak_auth.php
+            white.css
+
+Rytis  19 July 2008
+    - forums: add support for Globally Recognized Avatars.
     
-    sea/
+    html/user/
+            edit_forum_preferences_form.php
+            edit_forum_preferences_action.php
+
+David  20 July 2008
+    - manager: fix typo
+
+    clientgui/
+        DlgAdvPreferencesBase.cpp
+
+David  21 July 2008
+    - client: if an app is using CUDA coprocessors,
+        pass it additional command line arg(s) "--device X" (X=0,1,...)
+        to tell it which GPU(s) to use.
+
+    client/
+        app.C
+        app_start.C
+        cpu_sched.C
+    lib/
+        coproc.h
+
+David  21 July 2008
+    - client: bug fixes to the above
+    - client: better messages reporting coprocessors
+    - manager: bounds checks to avoid wxwidgets asserts
+        when job CPU estimates are absurdly large
+
+    client/
+        app_start.C
+        client_state.C
+    clientgui/
+        ViewWorkGrid.cpp
+    lib/
+        coproc.C,h
+
+David  21 July 2008
+    - manager: display days w/ 2 decimals
+
+    clientgui/
+        DlgAdvPreferences.cpp
+        ViewWork.cpp
+
+David  21 July 2008
+    - server compile fix for gcc 4.3
+
+    sched/
+        sched_config.h
+
+Eric  22 July 2008
+    - Implementation of automatic credit leveling for cpu based projects that
+      wish to use it.
+    - The script calculate_credit_multiplier (expected to be run daily as
+      a config.xml task) looks at the ratio of granted credit to CPU time 
+      for recent results for each app.  Multiplier is calculated to cause 
+      median hosts granted credit per cpu second to equal to equal that 
+      expected from its benchmarks.  This is 30-day exponentially averaged 
+      with the previous value of the multplier and stored in the table 
+      credit_multplier.
+    - When a result is received the server adjusts claimed credit by the
+      value the multiplier had when the result was sent.
+
+    tools/
+        calculate_credit_multiplier
+    db/
+        boinc_db.[Ch]
+    db/
+        schema.sql
+    sched/
+        sched_util.[Ch]
+    sched_result.C
+
+David  24 July 2008
+    - web: fix profile rate
+
+    html/user/
+        profile_rate.php
+
+David  24 July 2008
+    - client: report all errors in parsing app_info.xml files
+        Fixes #703
+
+    client/
+        cs_statefile.C
+
+Rom    25 July 2008
+    - Tag for 6.3.6 release, all platforms
+      boinc_core_release_6_3_6
+
+    /
+        configure.ac
+        version.h
+
+David  25 July 2008
+    - back-end stuff to support Python MW (from Adam Kornafeld)
+        Not complete.
+
+    py/Boinc/
+        projectxml.py
+    sched/
+        assimilate_handler.h
+        assimilator.C
+    tools/
+        pymw_setup
+
+David  25 July 2008
+    - web: escape text on edit thread title
+
+    html/user/
+        forum_moderate_thread_action.php
+
+David  27 July 2008
+    - API: small additions to graphics stderr messages
+
+    api/
+        graphics2.h
+        graphics2_unix.C
+        graphics2_win.C
+
+David  28 July 2008
+    - ops: add script to fix backslashes in posts etc.
+    - DB: add db_update.php entry for Eric's new table
+
+    db/
+        boinc_db.C
+    html/ops/
+        repair_forums.php
+        db_update.php
+
+Eric  28 July 2008
+    - modified the credit multiplier calculation to make it more stable.
+
+    tools/
+        calculate_credit_multiplier
+
+David  28 July 2008
+    - server: add assimilator for Python Master/Worker system,
+        and change setup script to copy its files
+
+    py/Boinc/
+        setup_project.py
+    sched/
         Makefile.am
+        pymw_assimilator.C
+
+David  28 July 2008
+    - web: allow profiles to have blank text fields
+
+    html/user/
+        create_profile.php
+
+David  30 July 2008
+    - client: show proxy info in messages at startup and when changed
+        fixes #704
+    - web: fix the am_set_info.php RPC
+        (most args are optional, not mandatory)
+
+    client/
+        client_state.C,h
+        gui_rpc_server_ops.C
+    html/user/
+        am_set_info.php
+
+David  30 July 2008
+    - client: show message if no proxy
+        fixes #704
+
+    client/
+        client_state.C
 
 Rom    31 July 2008
     - SCR: Don't treat CPU throttling as BOINC being suspended.
@@ -4231,14 +6056,6 @@ Rom    31 July 2008
         screensaver.cpp
         screensaver_win.cpp
 
-Rom    31 July 2008
-    - Tag for 6.2.15 release, all platforms
-      boinc_core_release_6_2_15
-
-    /
-        configure.ac
-        version.h
-
 Charlie 1 Aug 2008
     - SCR / CLIENT: fix get_screensaver_tasks RPC so it does not 
         exclude tasks suspended for CPU throttling.  Fixes the 
@@ -4247,6 +6064,183 @@ Charlie 1 Aug 2008
         
     client/
         gui_rpc_server_ops.C
+
+David  1 Aug 2008
+    - move boinc_samples into boinc/samples
+    - fix Makefiles in samples/
+
+    samples/*/Makefile*
+
+David  1 Aug 2008
+    - client (Unix): fix bugs in setting LD_LIBRARY_PATH.
+        We need to add paths relative to the slot directory,
+        not the BOINC directory (doh!!).
+
+    client/
+        app_start.C
+
+David  3 Aug 2008
+    - client: fix crash in this scenario:
+        A file upload sends request.
+        The network is down, and something (e.g. a router)
+        sends a long (> 4KB) error page.
+        This overruns the 4KB buffer of HTTP_OP::req1.
+        Solution: keep track of the size of the buffer,
+        and don't overrun it.
+        Also move the body of a huge for loop into a separate function.
+        From Ian Hay.
+        Fixes #705
+
+    client/
+        file_xfer.C
+        http_curl.C,h
+
+Rytis  4 Aug 2008
+    - developer tools: a script to build en.po from PHP files to ease
+        translation. Usage: build_po.pl [PROJECT_PATH]
+    
+    tools/
+        build_po.pl
+
+Rytis  4 Aug 2008
+    - user web: make team.inc translatable, and update en.po using the
+        new script (fix #661)
+    
+    html/
+        inc/
+            team.inc
+        languages/translations/
+            en.po
+
+David  4 Aug 2008
+    - scheduler: added a debug msg for anonymous platform
+
+    sched/
+        sched_send.C,h
+
+Bruce  5 Aug 2008
+    - scheduler: in resending lost results, must copy core
+      client version.  David -- this can probably be done
+      better and might indicate that some other info is not
+      being properly copied.  Please review and fix if needed.
+      Before this fix, scheduler.log was complaining about
+      outdated core clients version 0 < min needed core 413.
+
+    - tools for scheduler logging: change cgi.log.X to scheduler.log.X
+      in script that creates on-line logs for users to read
+      to help diagnose problems.
+
+    tools/
+        makelog.sh
+    sched/
+        sched_send.C
+        handle_request.C
+
+David  5 Aug 2008
+    - web: stylesheet fixes
+        fixes #708
+    - sched: slightly revise Bruce's fix
+
+    html/
+        inc/
+            util.inc
+        user/
+            style2.css
+            white.css
+    sched/
+        handle_request.C
+        sched_send.C
+
+David  5 Aug 2008
+    - XML parsing: when parsing ints, check for errno == ERANGE.
+        This means the int was too big.
+        Ignore it - the XML was corrupted.
+        This should fix a problem reported by Kevin where the
+        mod_time in a user's global prefs was 100 years in the future,
+        causing those prefs to irrevocably propagate.
+
+    lib/
+        parse.C,h
+
+David  5 Aug 2008
+    - client: if fail to parse global_prefs.xml,
+        delete it and reset global prefs
+        (which may have been modified by the attempt at parsing)
+
+    client/
+        cs_prefs.C
+    lib/
+        prefs.C,h
+
+David  5 Aug 2008
+    - XML parsing: when parsing int/double/bool and fail to find end tag,
+        don't modify the reference arg.
+    - scheduler: improved messages for preferences
+
+    sched/
+        handle_request.C
+    lib/
+        parse.C
+
+David  5 Aug 2008
+    - web: added copyright and license info to PHP files
+
+    html/
+        ops/*.php
+        inc/*.inc
+        user/*.php
+
+David  5 Aug 2008
+    - added copyright and license info to some C files
+
+    client/
+        hostinfo_unix_test.C
+        sim.h
+        rrsim_test.C
+    lib/
+        msg_queue.h
+        procinfo_win.C
+
+David  6 Aug 2008
+    - added copyright and license info to .C, .cpp, .h files
+    - scheduler: fix bug in adaptive replication:
+        if send an unreplicated job to untrusted host,
+        set both wu.target_nresults and wu.min_quorum to app.target_nresults.
+
+    */*.C,cpp,h
+
+David  6 Aug 2008
+    - file_deleter: add -delete_antiques_now options
+
+    sched/
+        file_deleter.C
+
+
+David  6 Aug 2008
+    - API (Windows): call mouse-handling functions with
+        coords relative to window, not screen
+
+    api/
+
+David  6 Aug 2008
+    - scheduler: fix bug that caused jobs to be sent to clients
+        using anonymous platform
+        even if they don't have the necessary app version.
+        Also, send an explanatory message in this case.
+
+    sched/
+        edf_sim.C
+        sched_send.C
+
+David  6 Aug 2008
+    - scheduler: make credit_multiplier stuff conditional on
+        <use_credit_multiplier> flag in config.xml
+
+    db/
+        schema.sql
+    sched/
+        sched_config.C,h
+        sched_result.C
 
 Rom    7 Aug 2008
     - CLIENT/MGR/TRAY: When installed on Vista and UAC is turned on
@@ -4276,14 +6270,191 @@ Rom    7 Aug 2008
     win_build/
         boinc.sln
         boinctray.vcproj
-
+        
 Rom    7 Aug 2008
-    - Tag for 6.2.16 release, all platforms
-      boinc_core_release_6_2_16
+    - CLIENT: Initial checkin for CUDART support for Win32
+    
+    coprocs/CUDA/mswin/Win32/Debug/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/Win32/Release/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/Win32/ReleaseSigned/bin/
+        cudart.dll
+    win_build/
+        boinc_post_bld_rules.cmd
+    
+David  7 Aug 2008
+    - web: improve white.css, and make corresponding PHP changes
+        (mostly from Simek)
+        fixes #716
+    - validator: tweak the way host error rate is computed,
+        e.g. on error bump rate by .1 instead of .05
+
+    html/
+        inc/
+            forum.inc
+            prefs.inc
+            result.inc
+            util.inc
+        user/
+            create_profile.php
+            forum_index.php
+            forum_search_action.php
+            forum_thread.php
+            pm.php
+            profile_menu.php
+            profile_search_action.php
+            results.php
+            team_search.php
+            white.css
+            workunit.php
+            img/
+                gray_gradient.png
+    sched/
+        validator.C
+
+David  7 Aug 2008
+    - web: add -webkit-border-radius so that rounded corners work on Safari
+
+    html/user/
+        white.css
+
+David  7 Aug 2008
+    - web: add table.noborder class for S@h
+
+    html/user/
+        forum_forum.php
+        white.css
+
+David  7 Aug 2008
+    - validator: get_credit_from_wu() returns an error, rather than exiting,
+        if WU doesn't have <credit> element
+
+    html/
+        ops/
+            bossa_admin.php
+        user/
+            white.css
+    sched/
+        validator.C
+        validate_util.C,h
+
+David  7 Aug 2008
+    - web: forum tweak
+
+    html/inc/
+        forum.inc
+
+Rom    8 Aug 2008
+    - Tag for 6.3.7 release, all platforms
+      boinc_core_release_6_3_7
 
     /
         configure.ac
         version.h
+
+Rom    8 Aug 2008
+    - client: Changes references of nvcuda.dll to cudart.dll.  Someday NVidia
+        might include it in its driver pack for Windows, until then we have
+        to include it as part of BOINC.
+        
+    lib/
+        coproc.C
+
+Rom    8 Aug 2008
+    - Tag for 6.3.8 release, all platforms
+      boinc_core_release_6_3_8
+
+    /
+        configure.ac
+        version.h
+
+David  9 Aug 2008
+    - client: don't use fixed-size buffer when looking for app files
+        in project prefs (avoid buffer overrun)
+    - web: don't show credit info if no_computing flag set
+
+    client/
+        cs_prefs.C
+    html/inc/
+        forum.inc
+
+Rytis  9 Aug 2008
+    - web: fix thread being marked as unread after posting to it (fix #506)
+    
+    html/inc/
+        forum.inc
+
+Rom    9 Aug 2008
+    - CLIENT: checkin for CUDART support for Win32
+    
+    coprocs/CUDA/mswin/x64/Debug/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/x64/Release/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/x64/ReleaseSigned/bin/
+        cudart.dll
+
+David  9 Aug 2008
+    - web: forum tweaks (from Simek)
+
+    html/
+        inc/
+            forum.inc
+        user/
+            forum_forum.php
+            white.css
+
+Charlie 10 Aug 2008
+    - client: fix compiler warning.
+
+    client/
+        http_curl.C
+
+David  12 Aug 2008
+    - web: stylesheet tweaks (from Simek)
+
+    html/
+        inc/
+            forum.inc
+            prefs.inc
+            util.inc
+        user/
+            forum_index.php
+            team_members.php
+            white.css
+
+David  12 Aug 2008
+    - scheduler: don't send jobs for "hard apps" (weight==-1)
+        to hosts with total_credit=0
+    - client: add a buffer size check
+
+    client/
+        client_msgs.C
+        main.C
+    sched/
+        sched_send.C
+
+David  12 Aug 2008
+    - web: improve sample project_specific_prefs.inc
+        to add "allow_non_preferred_apps pref
+        and remove frame rate pref
+
+    html/project/
+        project_specific_prefs.inc
+
+Charlie 12 Aug 2008
+    - client: fix compile error.
+
+    client/
+        client_msgs.C
+
+David  12 Aug 2008
+    - fix bug that made email address validation worthless
+        (from Janus K.).  Fixes #718
+
+    html/user/
+        validate_email_addr.php
 
 Charlie 13 Aug 2008
     - Mac Installer: fix bugs in script which converts BOINC installer 
@@ -4291,6 +6462,74 @@ Charlie 13 Aug 2008
     
     mac_installer/
         make_GridRepublic.sh
+
+David  13 Aug 2008
+    - client and server: add "len" arg to xml_escape() and xml_unescape()
+        (prevent buffer overrun).
+        Also remove 1024 char limit for team description in db_dump.
+
+    client/
+        client_types.C
+    lib/
+        app_ipc.C
+        parse.C,h
+        proxy_info.C
+    sched/
+        db_dump.C
+        db_purge.C
+        server_types.C
+
+David  13 Aug 2008
+    - client and server: add "len" arg to xml_escape() and xml_unescape()
+        (prevent buffer overrun).
+        Also remove 1024 char limit for team description in db_dump.
+
+    client/
+        client_types.C
+    lib/
+        app_ipc.C
+        parse.C,h
+        proxy_info.C
+    sched/
+        db_dump.C
+        db_purge.C
+        server_types.C
+
+Rom    13 Aug 2008
+    - SAMPLES: Add all the samples to the BOINC solution and delete the
+        old solution.
+    - LIB: Clean up a bunch of warnings.
+    
+    api/
+        texfont.C
+    lib/
+        crypt.C
+    lib/
+        filesys.C
+    samples/wrapper/
+        wrapper.C
+    win_build/
+        boinc.sln
+        glut.vcproj
+        image_libs.vcproj
+        jpeglib.vcproj
+        libboinc_staticcrt.vcproj
+        libboincapi.vcproj
+        libboincapi_staticcrt.vcproj
+        libgraphics2.vcproj
+        multi_thread.vcproj
+        sleeper.vcproj
+        uc2.vcproj
+        uc2_graphics.vcproj
+        upper_case.vcproj
+        worker.vcproj
+        wrapper.vcproj
+
+Rom    13 Aug 2008
+    - WIN: Remove deprecated v5 graphics files from the solution.
+    
+    win_build/
+        libboincapi_staticcrt.vcproj
 
 Rom    13 Aug 2008
     - Update copyright strings in various Windows resource files.
@@ -4311,6 +6550,56 @@ Rom    13 Aug 2008
     clienttray/
         boinc_tray.rc
 
+Rom    13 Aug 2008
+    - WIN: Remove Visual Studio 2003 solution and project files
+    - WIN: Fix build files so all build configurations work again
+    - WIN: Create the 'Samples - Debug' and 'Samples - Release'
+        configurations to build sample files.  Leave the previous
+        configurations to build just the client software.
+    - WIN: Remove Seed project files
+        
+    client/win/
+        boinc.exe.manifest
+        boinc_cli_2003.rc
+        boinc_cmd_2003.rc
+        boinccmd.exe.manifest
+    clientgui/
+        BOINCGUIApp_2003.rc
+        boincmgr.exe.manifest
+    clientlib/win/
+        boinc.dll.manifest
+        boinc_dll_2003.rc
+    clientscr/
+        boinc.scr.manifest
+        boinc_ss_2003.rc
+    samples/win_build/
+        samples_2003.sln
+    win_build/
+        boinc.sln
+        boinc_2003.sln
+        seed.sln
+        <Various .vcproj files>
+
+Rom    13 Aug 2008
+    - WIN: Remove any remaining references to Seed and CPDNBBC.
+    
+    client/win/
+        boinc_cli.rc
+        boinc_cmd.rc
+    clientgui/
+        BOINCGUIApp.rc
+    clientgui/res/
+        seed16.xpm
+        seed32.xpm
+        seedamwizard.xpm
+        seedapwizard.xpm
+    clientlib/win/
+        boinc_dll.rc
+    clientscr/
+        boinc_ss.rc
+    clientscr/res/
+        seed.bmp
+
 Rom    14 Aug 2008
     - WIN: Update OS Detection code.
     
@@ -4321,6 +6610,15 @@ Rom    14 Aug 2008
         hostinfo_win.C
 
 Rom    14 Aug 2008
+    - WIN: Finish up the fixes to the project files. Everything should
+        build, and all output files should end up in the win_build/build
+        directory.
+        
+    win_build/
+        boinc.sln
+        *.vcproj
+
+Rom    14 Aug 2008
     - WINSCR: Certain checks should be done regularly like keyboard/mouse
         activity and the notification window check. They should not depend
         on whether or not the graphics window has been displayed or not.
@@ -4329,13 +6627,83 @@ Rom    14 Aug 2008
         screensaver.cpp
         screensaver_win.cpp, .h
 
-Rom    14 Aug 2008
-    - Tag for 6.2.17 release, all platforms
-      boinc_core_release_6_2_17
+David  14 Aug 2008
+    - scheduler: fixed bug that caused spurious messages
+        saying "no work was available for the apps you requested"
+        with locality scheduling (i.e. Einstein@home)
+        even if the user hasn't select apps.
 
-    /
-        configure.ac
-        version.h
+        Note: the logic for printing these messages won't work
+        for matchmaker scheduling.
+
+    sched/
+        sched_send.C
+        server_types.h
+
+Rom    15 Aug 2008
+    - WIN: remove accelerators from the HOST_INFO class.  It doesn't appear
+        to be used by anybody, and was only meant as a stop-gap until
+        we had some formal way to deal with co-processors.
+        
+    client/
+        hostinfo_win.C
+    lib/
+        hostinfo.C, .h
+
+Charlie 15 Aug 2008
+    - MGR: async GUI RPCs: Merge GUI RPC code from private workspace into trunk.
+        All RPCs now go through separate thread.  There are two categories:
+          - Periodic RPCs are called from a timer event and optionally generate 
+            a secondary event upon completion.
+          - Demand RPCs are run one at a time and don't return to requesting 
+            call until each RPC is completed. 
+    - MGR: async GUI RPCs: don't perform preiodic RPCs in Advanced View when 
+        hidden / minimized.
+    - MGR: async GUI RPCs: FireRefreshView() runs preiodic RPCs before posting 
+        wxEVT_FRAME_REFRESHVIEW event.
+    - MGR: Under SimpleGUI, call acct_mgr_info RPC every 10 minutes
+    - MGR: eliminate Grid views, since all their functionality is now implemented 
+        in List Views.  View menu now has 2 choices: Simple and Advanced.
+        NOTE: The Grid View source files still should be removed from makefiles 
+        for Linux, etc. and possibly from SVN trunk.
+
+    clientgui/
+        AdvancedFrame.cpp,.h
+        AsyncRPC.cpp,.h  (Added)
+        BOINCBaseFrame.cpp,.h
+        BOINCBaseView.cpp,.h
+        BOINCDialupManager.cpp
+        BOINCGUIApp.cpp,.h
+        BOINCTaskBar.cpp
+        Events.h
+        MainDocument.cpp,.h
+        Makefile.am
+        sg_BoincSimpleGUI.cpp,.h
+        sg_DlgMessages.cpp,.h
+        sg_ProjectsComponent.cpp,.h
+        ViewWork.cpp
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    win_build/
+        boincmgr_curl.vcproj
+
+David  15 Aug 2008
+    - web: start working towards the goal of passing the
+        "HTML 4.01 Transitional" test.
+        The BOINC home page, project home page, and forum index now pass.
+    - web: .po files need to have CHARSET, LANG_NAME_NATIVE,
+        and LANG_NAME_INTERNATIONAL
+
+    html/
+        inc/
+            uotd.inc
+            forum.inc
+            util.inc
+        languates/translations/
+            en.po
+        user/
+            sample_index.php
 
 Rom    15 Aug 2008
     - WINSETUP: For some reason BOINCTray.exe was only being installed
@@ -4346,37 +6714,3124 @@ Rom    15 Aug 2008
         BOINC.ism
         BOINCx64.sm
 
-David  3 Aug 2008
-    - client: fix crash in this scenario:
-        A file upload sends request.
-        The network is down, and something (e.g. a router)
-        sends a long (> 4KB) error page.
-        This overruns the 4KB buffer of HTTP_OP::req1.
-        Solution: keep track of the size of the buffer,
-        and don't overrun it.
-        Also move the body of a huge for loop into a separate function.
-        From Ian Hay.
-        Fixes #705
+David  15 Aug 2008
+    - web: fix bugs in translation system
+        (language_select.php wasn't working)
+    - tr.po had some syntax error, and was way out of date.
+        replaced it with en.po
 
-    client/
-        file_xfer.C
-        http_curl.C,h
+    html/
+        inc/
+            translation.inc
+        languages/translations/
+            en.po
+            tr.po
+        user/
+            language_select.php
+
+Rom    15 Aug 2008
+    - WINBUILD: Remove 'Samples - Debug' and 'Samples - Release'
+        build configurations.
+        
+    win_build/
+        BOINC.sln
 
 David  16 Aug 2008
     - client: don't leak handles to shared-mem files
     - client: don't leak process handles when abort jobs
     - client: if an app exits or we kill it, always destroy the shmem segment.
+    - web: more HTML 4.01 Transitional conformity changes
 
     client/
         app.C,h
         app_control.C
         app_start.C
+    html/
+        inc/
+            util.inc
+            team.inc
+        user/
+            team.phhp
+            white.css
 
-Rom    14 Aug 2008
-    - Tag for 6.2.18 release, all platforms
-      boinc_core_release_6_2_18
+Rom    17 Aug 2008
+    - WINSCR: Comment updates from Nicolas Alvarez
+    
+    clientscr/
+        screensaver_win.cpp
+
+Bruce   18 Aug 2008
+    - User web pages, scheduler logs: link was missing because of incorrect path
+
+    html/
+        inc/
+            host.inc
+
+Rom    18 Aug 2008
+    - client: Update the Windows version detection code to account for
+        Windows 7 and Windows Server 2008 "R2".
+        
+    client/
+        hostinfo_win.C
+
+Rom & Charlie    18 Aug 2008
+    - SCR: Fix 8/14 checkin that causes the CPU util to spike on Macs and
+        possibly Windows.
+        
+    clientscr/
+        screensaver.cpp
+
+Eric    18 Aug 2008
+    - Fixed potential memory leak and other minor problems with
+      APP_INIT_DATA.
+
+    lib/
+      app_ipc.[Ch]
+
+Charlie 18 Aug 2008
+    - MGR: async GUI RPCs: Fix show_graphics RPC.
+    
+    clientgui/
+        AsyncRPC.h
+
+David  18 Aug 2008
+    - scheduler: add <debug_resend> config option to enable messages
+        about job resending
+
+    sched/
+        sched_send.C
+        sched_config.C,h
+        sched_resend.C
+        sched_assign.C
+        sched_util.C
+
+Charlie 18 Aug 2008
+    - MGR: async GUI RPCs: Bug fix.
+    
+    clientgui/
+        AsyncRPC.cpp
+
+David  19 Aug 2008
+    - lib: added string_substitute() function
+    - lib: changed boinc_copy() to replace " " with "\ " in its args
+        (to allow pathnames containing spaces).
+        From Tolu Aina
+
+    lib/
+        filesys.C
+        str_util.C,h
+
+Charlie 19 Aug 2008
+    - lib: changed boinc_copy() to enclose path strings in quotes instead 
+        of escaping spaces.
+    - Mac lib: set visibility of symbols to hidden by default.
+    - Mac Samples: adjust XCode project for new SVN tree layout, set 
+        visibility of symbols to hidden by default.
+        
+    lib/
+        filesys.C
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    samples/
+        mac_build/
+            UpperCase2.xcodeproj
+
+Charlie 20 Aug 2008
+    - MGR: async GUI RPCs: Create SafeMessageBox function to suspend
+        periodic RPCs during modal dialogs.
+    
+    clientgui/
+        AccountInfoPage.cpp
+        AdvancedFrame.cpp
+        BOINCBaseFrame.cpp
+        BOINCDialupManager.cpp
+        BOINCGUIApp.cpp,.h
+        BOINCTaskBar.cpp
+        DlgAdvPreferences.cpp
+        hyperlink.cpp
+        MainDocument.cpp
+        sg_StatImageLoader.cpp
+        sg_ViewTabPage.cpp
+        ValidateAccountKey.cpp
+        ValidateEmailAddress.cpp
+        ValidateURL.cpp
+        ViewProjects.cpp
+        ViewTransfers.cpp
+        ViewWork.cpp
+        WizardAccountManager.cpp
+        WizardAttachProject.cpp
+        common/
+            wxFlatNotebook.cpp
+
+David  20 Aug 2008
+    - lib: fix typo
+
+    lib/
+        filesys.C
+
+David  20 Aug 2008
+    - client: fix CPU scheduling logic related to coprocessors
+        Old: when checking whether an app can be run,
+            check for sufficient coprocessors relative to
+            the current coprocessor usage.
+            Bug: it there are 2 CUDA jobs,
+            the scheduler will decide to run both.
+            enforce_scheduler() will only be able to run one,
+            and the other CPU will be idle.
+        New: include coprocessor usage (along with RAM and CPUs)
+            in the check, and do a simulated reservation.
+            In the above scenario, the scheduler will select
+            one CUDA app and one non-CUDA app.
+
+    client/
+        cpu_sched.C
+        app.C
+    lib/
+        coproc.h
+
+David  20 Aug 2008
+    - fix compile warnings and Manager error
+
+    client/
+        client_state.C
+    clientgui/
+        AsyncRPC.cpp
+        BOINCBaseFrame.cpp
+    lib/
+        boinc_cmd.C
+        str_util.C
+    samples/multi_thread/
+        multi_thread.C
+
+Rom    20 Aug 2008
+    - web: fix a parsing error in sample_index.php which would
+        cause new projects to report an error when they first
+        attempt to start up.
+    - tools: Add the missing x86_64-apple-darwin platform type
+        used for 64-bit Mac OS X applications.  I used the
+        description from the alpha project.
+    - MGR: delete obselete make files.
+    
+
+    clientgui/
+        Makefile.linux.fedora
+        Makefile.linux.suse
+        Makefile.linux.ubuntu
+    html/user/
+        sample_index.php
+    tools/
+        project.xml
+
+David  20 Aug 2008
+    - make_project: fix --test_app
+    - fix formatting (no long indents)
+
+    clientgui/
+        AsynchRPC.cpp
+    tools/
+        make_project
+    html/
+        ops/
+            create_forums.php
+        user/
+            team_search.php
+
+Charlie 20 Aug 2008
+    - lib: remove unused variable char cmd_esc[1024].
+
+    lib/
+        filesys.C
+
+David  20 Aug 2008
+    - client: if the host has two CUDA GPUs,
+        they were being recorded as two COPROC structures of type CUDA.
+        Unfortunately, the logic doesn't handle this correctly;
+        it expects there to be a single structure with count==2.
+        Change things to do this.
+
+        Unfortunately this means that if the two GPUs are different,
+        that difference will get lost.
+        This is a design flaw, and would take some work to fix.
+
+    lib/
+        coproc.C
+
+Rom    21 Aug 2008
+    - WINSETUP: For safety sake, disable the logon via terminal services
+        user right for both boinc_master and boinc_project.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CAGrantBOINCMasterRights.cpp
+        CAGrantBOINCProjectRights.cpp
+
+Rom    21 Aug 2008
+    - Tag for 6.3.9 release, all platforms
+      boinc_core_release_6_3_9
 
     /
         configure.ac
         version.h
 
+David  21 Aug 2008
+    - validator: add a global variable WORKUNIT* g_wup;
+        that points to the workunit being processed;
+        you can use this in your init_result(), compare_result() etc.
+        if you need it.
+
+    sched/
+        main.C
+        validator.C,h
+
+David  21 Aug 2008
+    - client: in GUI RPC, allow <auth1> and <auth2> if the peer
+        is already authenticated.
+        This is needed to make BOINCView work;
+        it authenticates before every operation for some reason.
+
+    client/
+        gui_rpc_server_ops.C
+
+David  21 Aug 2008
+    - client: if <app_send_msg> is set, log heartbeats too
+
+    client/
+        app_control.C
+
+Rom    22 Aug 2008
+    - client: Both Windows x86 and Windows x64 CUDA Runtime libraries
+        should be 2.0.  This avoids crashes related to data structure
+        changes in the Runtime.
+        
+    coprocs/CUDA/mswin/Win32/Debug/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/Win32/Release/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/Win32/ReleaseSigned/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/x64/Debug/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/x64/Release/bin/
+        cudart.dll
+    coprocs/CUDA/mswin/x64/ReleaseSigned/bin/
+        cudart.dll
+    lib/
+        coproc.C, .h
+
+Rom    23 Aug 2008
+    - Tag for 6.3.10 release, all platforms
+      boinc_core_release_6_3_10
+
+    /
+        configure.ac
+        version.h
+
+Rom    24 Aug 2008
+    - win_build: Finally figured out what the problem was with how I
+        was previously configuring pre-compiled headers.  Visual Studio
+        automaticaaly specifies the stdafx.cpp as the source file that
+        is supposed to create the pre-compiled header for auto generated
+        project files.  The project is just configured to use a pre-compiled
+        header.  All I had done in the past was enable pre-compiled
+        headers, but didn't create a stub cpp file to create the pre-compiled
+        header with.  Now all the client projects are configured to use
+        pre-compiled headers.  BOINC now compiles in 20 seconds. BOINC Manager
+        in a minute. Everything else builds in 5 seconds or less.
+        
+        After sync'ing up Rebuild the solution.
+        
+    lib/
+        boinc_win.cpp
+    win_build/
+        boinc.sln
+        boinc_cli_curl.vcproj
+        boinc_dll.vcproj
+        boinc_ss.vcproj
+        boinccmd.vcproj
+        boincmgr_curl.vcproj
+        boinctray.vcproj
+        libboinc.vcproj
+        libboinc_staticcrt.vcproj
+        libboincapi_staticcrt.vcproj
+        libgraphics2.vcproj
+        multi_thread.vcproj
+        sim.vcproj
+        sleeper.vcproj
+        uc2.vcproj
+        uc2_graphics.vcproj
+        updater.vcproj
+        worker.vcproj
+        wrapper.vcproj
+
+Rom    26 Aug 2008
+    - SEA: Grab the libcudart.so from a directory based on the detected
+        platform, so we can support multiple posix compatible platforms.
+
+    coprocs/CUDA/posix/i686-pc-linux-gnu
+        libcudart.so
+    coprocs/CUDA/posix/i686-pc-linux-gnu
+        libcudart.so
+    lib/
+        coproc.C
+        libcudart32.so
+        libcudart64.so
+    sea/
+        Makefile.am
+
+David  26 Aug 2008
+    - client: get BOINCView to work again;
+        allow one auth failure before closing connection.
+
+    client/
+        gui_rpc_server.C,h
+        gui_rpc_server_ops.C
+
+David  28 Aug 2008
+    - client (Unix): don't assume that LD_LIBRARY_PATH is defined
+
+    client/
+        app_start.C
+
+Rom    29 Aug 2008
+    - winsetup: Change the delete file after reboot code to use
+        MoveFileEx instead of the RunOnce registry key.  It does what
+        I was originally trying to do directly to:
+        HKLM\SYSTEM\CurrentControlSet\Control\
+        Session Manager\PendingFileRenameOperations
+        But I ran into issues across various versions of Windows.
+        
+        Thanks to Nicolas Alvarez for pointing out the API.
+    - scrsave: Some more screensaver clean-up.
+    - lib: Fix an infinate loop problem in get_exit_status,
+        luckly BOINC wasn't using it.
+        
+    clientscr/
+        screensaver.cpp
+    lib/
+        util.C
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CAValidateRebootRequest.cpp
+
+Eric    2 Sep 2007
+    - calculate_credit_multiplier:  fixed bug that caused credit multiplier
+      overshoot.  Added check of replica database gap,  use main database if
+      replica is more than a day behind.
+
+    tools/
+        calculate_credit_multiplier
+
+Charlie 2 Sep 2008
+    switcher: update comment on calling API.
+    
+    client/
+        switcher.C
+
+David  3 Sept 2008
+    - web: improve stylesheet for quoted messages (from Michael Roberts)
+
+    html/user/
+        white.css
+
+Charlie 3 Sep 2008
+    MGR: Fix Async GUI RPC bugs when connecting to a different host.
+    
+    clientgui/
+        AdvancedFrame.cpp
+        AsyncRPC.cpp
+        MainDocument.cpp
+
+Charlie 3 Sep 2008
+    Mac Installer: add COPYING.LESSER to release packages.
+    
+    mac_installer/
+        release_boinc.sh
+        release_GridRepublic.sh
+
+David  4 Sep 2008
+    - web: stylesheet tweak
+
+    html/user/
+        white.css
+
+David  4 Sep 2008
+    - DB interface: in update(), check that 1 row was updated
+    - API: in APP_INIT_DATA, enclose project preferences in tags
+        so that it's legal XML
+    - scheduler: add <multiple_clients_per_host> option.
+        Use this if your project runs on Condor or grids
+        and (to use multicore machines) you're running
+        multiple clients per host.
+        This will skip the host lookup based on IP address.
+
+    db/
+        db_base.C
+    lib/
+        app_ipc.C
+        parse.C,h
+    sched/
+        handle_request.C
+        sched_config.C,h
+
+David  4 Sep 2008
+    - Add support for code-signing using x509 certificates
+        (from Attila Marosi)
+
+    client/
+        client_types.C,h
+        cs_files.C
+        log_flags.C,h
+    lib/
+        Makefile.am
+        cert_sig.C,h (new)
+        crypt.C,h
+
+Charlie 4 Sep 2008
+    MGR: Save and restore selected items by key values when refreshing, to 
+        prevent wrong items from becoming selected when projects, tasks or
+        transfers are added to or deleted from the list in Advanced View.
+    
+    clientgui/
+        AdvancedFrame.cpp,.h
+        AsyncRPC.cpp
+        BOINCBaseFrame.cpp,.h
+        BOINCBaseView.cpp,.h
+        BOINCListCtrl.cpp,.h
+        ViewProjects.cpp,.h
+        ViewTransfers.cpp,.h
+        ViewWork.cpp,.h
+
+Charlie 4 Sep 2008
+    Mac: Add new files cert_sig.C,h to XCode project.
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  4 Sep 2008
+    - added some code for generating x.509 signatures
+
+    client/
+        cs_files.C
+    lib/
+        crypt.C,h
+        crypt_prog.C
+
+Charlie 4 Sep 2008
+    SCR: Fix trace statements in screensaver.cpp; enable diagnostics in 
+        Mac screensaver.
+
+    clientscr/
+        mac_saver_module.cpp
+        Mac_Saver_Module.h
+        Mac_Saver_ModuleView.m
+        screensaver.cpp
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 4 Sep 2008
+    MGR: Fix updates of Statistics tab when pressng buttons or connecting 
+        to a different host under async GUI RPCs.
+    
+    clientgui/
+        AdvancedFrame.cpp
+        BOINCBaseFrame.cpp
+        MainDocument.cpp,.h
+
+Charlie 5 Sep 2008
+    MGR: Eliminate flicker in list controls due to Freeze() / Thaw() calls.
+    clientgui/
+        BOINCBaseView.cpp
+
+David  6 Sept 2008
+    client: CPU scheduler keeps trying to schedule jobs if either
+        not all CPUs are used or not all coprocessors are used
+        (avoid GPU idleness)
+
+    client/
+        cpu_sched.C
+
+David  6 Sept 2008
+    - scheduler: fix typos in CUDA parsing
+
+    lib/
+        coproc.C
+
+Rytis  6 Sept 2008
+    - web: significantly reduce file size of blue_gradient.png to reduce
+        loading times (more dialup friendly).
+    
+    html/user/img/
+        blue_gradient.png
+
+David  7 Sept 2008
+    - web: various security fixes
+
+    html/
+        inc/
+            db_ops.inc
+        ops/
+            db_form.php
+            db_action.php
+        user/
+            forum_search_action.php
+            hosts_user.php
+            login_form.php
+            top_users.php
+
+Charlie 8 Sep 2008
+    MGR: Make formatting of List Views more efficient; fix bug which showed 
+        progress bars in wrong rows in transfers tab.
+    MGR: Use item attributes to create gray backgroound stripes in List 
+        Views instead of overlaying them in CBOINCListCtrl::DrawBarGraphs(); 
+        this eliminates most remaining flicker on Windows.
+
+    clientgui/
+        BOINCBaseView.cpp,.h
+        BOINCListCtrl.cpp
+        ViewMessages.cpp,.h
+        ViewProjects.cpp,.h
+        ViewTransfers.cpp,.h
+        ViewWork.cpp,.h
+
+David  8 Sept 2008
+    - web: fix bug in host list page
+
+    html/user/
+        hosts_user.php
+
+David  9 Sept 2008
+    - web: report error correctly
+
+    html/user/
+        show_user.php
+
+Charlie 8 Sep 2008
+    MGR: Draw only those progress bars which are actually needed, further 
+        reducing flicker and improving efficiency.
+
+    clientgui/
+        BOINCBaseView.cpp
+        BOINCListCtrl.cpp,.h
+        ViewProjects.cpp
+        ViewTransfers.cpp
+        ViewWork.cpp
+
+Rytis  9 Sep 2008
+    Web: fix David's fix from Sep 7.
+    
+    html/user/
+        forum_search_action.php
+
+Eric K 10 Sep 2008
+    - Fixed fcgi builds to use an installed version of fcgi_stdio.h rather than
+      a modified boinc version.
+    - Added new header "boinc_fcgi.h" to be used instead of "fcgi_stdio.h".
+      This header defines I/O functions in the namespace FCGI rather than using
+      redefined functions the way "fcgi_stdio.h" does.  This was causing a lot
+      of headaches when both <cstdio> and "fcgi_stdio.h" was called.  Using
+      overloaded functions fixes this problem, except when the only difference
+      between functions is the return type (for example ::fopen() returns FILE*
+      and FCGI::fopen() returns FCGI_FILE*).
+    - Fixed some missing "#ifdef _WIN32" blocks in filesys.C
+
+    tools/
+        backend_lib.C
+    sched/
+    Makefile.am
+    edf_sim.C
+    fcgi_stdio.h  (removed)
+    file_upload_handler.C
+    handle_request.C
+    hr_info.C
+    main.C
+    sched_array.C
+    sched_config.C
+    sched_hr.C
+    sched_msgs.h
+    sched_resend.C
+        sched_send.C
+    server_types.C
+    sched_shmem.C
+    sched_timezone.C
+    sched_util.C
+    time_stats_log.C
+    lib/
+    Makefile.am
+    base64.C
+    boinc_fcgi.[Ch]  (new files)
+        coproc.h
+    crypt.C
+    filesys.C
+    md5_file.C
+    miofile.[Ch]
+    msg_log.[Ch]
+    parse.C
+    shmem.C
+        str_util.C
+    synch.C
+    util.C
+
+Charlie 11 Sep 2008
+    MGR: Fix bugs when connection to client is lost or reestablished under 
+        async GUI RPCs.
+    MGR: Fix Simple GUI messages window; faster display of messages (don't 
+        reset messages twice on connect).
+
+    clientgui/
+        AsyncRPC.cpp
+        BOINCBaseFrame.cpp
+        BOINCGUIApp.cpp
+        MainDocument.cpp
+        sg_BoincSimpleGUI.cpp
+
+Charlie 12 Sep 2008
+    MGR: To reduce flicker when saving & restoring selections, select 
+        or deselect rows only if their selection status changed.
+    MGR: Disable Show Graphics button if task is "Waiting to Run."
+
+    clientgui/
+        BOINCBaseView.cpp
+        ViewWork.cpp
+
+David  12 Sept 2008
+    - web: if user requests foundership of a team with userid=0
+        (which in theory shouldn't happen, but apparently can)
+        immediately make them the founder
+
+    html/user/
+        team_founder_transfer_form.php
+
+Charlie 12 Sep 2008
+    MGR: Restore focus to ListCtrl after user clicks on a button and 
+        after each refresh so selection highlighting is maintained on 
+        Windows.
+
+    clientgui/
+        BOINCBaseView.cpp
+        ViewMessages.cpp
+        ViewProjects.cpp
+        ViewTransfers.cpp
+        ViewWork.cpp
+
+Charlie 13 Sep 2008
+    MGR: To minimize flicker, UpdateSelections() sets each button only 
+        once to its final desired state.
+    MGR: Restore focus to ListCtrl after each refresh only when 
+        application is active.
+
+    clientgui/
+        BOINCBaseView.cpp
+        ViewProjects.cpp
+        ViewWork.cpp
+
+Charlie 14 Sep 2008
+    - MGR: Async GUI RPCs: Finish processing event handling for each RPC 
+        before starting next RPC, because the 2 RPCs may write into the 
+        same buffer, especially when switching between Simple and Advanced
+        GUIs.
+    - MGR: Simplify Messages display logic; fix "Show all messages" button 
+        tooltip.
+    - MGR: Call Clear() instead of Empty() to fix possible memory leaks.
+
+    clientgui/
+        AsyncRPC.cpp
+        BOINCBaseFrame.cpp,.h
+        BOINCBaseView.cpp
+        BOINCListCtrl.cpp
+        MainDocument.cpp
+        sg_BoincSimpleGUI.cpp
+        ViewMessages.cpp
+
+Rom    15 Sept 2008
+    - SCR: Fix GDI/Memory leak in the screen saver. Pointed out by David
+        Barnard.
+        
+    clientscr/
+        screensaver_win.cpp
+
+Eric  16 Sept 2008
+    -  Added additional spam fighting measure to profile.inc.  Profiles for
+       users with RAC less than <profile_min_credit> with only be displayed if
+       the viewing user is logged in.
+
+David  16 Sept 2008
+    - client: ignore CUDA devices with major versions > 100
+        (apparently some report 9999)
+    - web: security changes: sanitize some params; escape some strings
+
+    html/
+        inc/
+            pm.inc
+        user/
+            language_select.php
+            profile_search_action.php
+            top_hosts.php
+            top_teams.php
+            user_search.php
+    lib/
+        coproc.C
+    sched/
+        census.C
+        hr_info.C
+
+Charlie 16 Sep 2008
+    MGR: Reverse change of 9/12, 9/13: do not force focus changes because  
+        it interferes with disability access via alternate input devices.
+
+    clientgui/
+        BOINCBaseView.cpp
+        ViewMessages.cpp
+        ViewProjects.cpp
+        ViewTransfers.cpp
+        ViewWork.cpp
+
+David  17 Sept 2008
+    - feeder: fix bug from changset 15984 that changed "r" to "w",
+        causing the feeder to truncate hr_info.txt on startup
+
+    html/user/
+        language_select.php
+    sched/
+        hr_info.C
+
+David  17 Sept 2008
+    - back end programs: optional BOINC_CONFIG_XML environment variable
+        specifies path of config file (default: ../config.xml)
+
+    sched/
+        sched_config.C
+
+Charlie 17 Sep 2008
+    lib: - Remove incorrect "#ifdef _WIN32" blocks added 9/10/08 to 
+        filesys.C.
+
+    lib/
+        filesys.C
+
+Charlie 17 Sep 2008
+    Mac branding: fix bugs in make_GridRepublic.sh script which converts 
+        standard BOINC installers to GridRepublic installers.
+    
+    mac_installer/
+        make_GridRepublic.sh
+
+David  17 Sept 2008
+    - scheduler: various bug fixes in score-based schedule;
+        get rid of no_darwin_6 option
+
+    lib/
+        cert_sig.C,h
+    sched/
+        sched_config.C,h
+        sched_send.C
+        validate_util2.C
+
+Charlie 18 Sep 2008
+    Mac branding: make_GridRepublic.sh script copy acct_mgr_url.xml file 
+        to BOINC Data directory so BOINC will connect to GridRepublic 
+        account manager automatically.
+     
+    mac_installer/
+        make_GridRepublic.sh
+
+David  18 Sept 2008
+    - typo
+
+    sched/
+        sched_config.C
+
+Charlie 18 Sep 2008
+    Mgr: Ignore GetSelectedItemCount()if message count <= 0 to fix 
+    crash bug.
+     
+    clientgui/
+        ViewMessages.cpp
+
+David  18 Sept 2008
+    - client: print error msg if missing acct mgr info
+    - manager: last arg to acct_mgr_rpc is bool, not bool*
+
+    client/
+        gui_rpc_server_ops.C
+    clientgui/
+        AsyncRPC.cpp,h
+
+Charlie 19 Sep 2008
+    Mgr: Add control of Periodic RPC timer and Document Poll Timer to 
+        StopTimers() and StartTimers().
+    Mgr: The system handles timer events during modal dialogs, such as 
+        while the RPC Wait dialog is shown. This may cause unintended 
+        recursion and repeatedly posting the same RPC requests from 
+        timer routines while waitung for the first one to complete, so 
+        ignore timer events during that dialog.
+    Mgr: Fix a rare crash bug in CTaskBarIcon::OnMouseMove() if it is 
+        called when exiting Manager after CmainDocument deleted.
+     
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCTaskBar.cpp
+        MainDocument.cpp,.h
+        sg_BoincSimpleGUI.cpp
+
+David  19 Sept 2008
+    - lib: change XML_PARSER to handle attributes and spaces in tags.
+        e.g. it handles <foo /> correctly,
+        and handles <foo attr="x">
+        (it doesn't return the attributes, but it doesn't choke on them).
+    - GUI RPC client lib:
+        use XML_PARSER to process authorization replies,
+        e.g. so that it handles <authorized />
+
+        TODO: use XML_PARSER to parse all GUI RPC requests and replies
+
+    - web: add a CSS entry for news item titles
+    - web (news items): add an optional "category" field to news items:
+        suggested values: "server status", "news", "emergency".
+        These are not used to display the items,
+        but are passed in the RSS feed and could be used by news aggregators.
+    - manager: replace "BOINC-based account managers" with "account managers"
+
+    clientgui/
+        AccountManagerInfoPage.cpp
+    html/
+        inc/
+            news.inc
+        project.sample/
+            project_news.inc
+        user/
+            sample_rss_main.php
+            white.css
+    lib/
+        gui_rpc_client.C
+        parse.C
+
+Rom   19 Sept 2008
+    - MGR: Add support for simulating somebody hitting the cancel button in
+        the wizards.  This is needed for a WCG feature.
+        
+    clientgui/
+        BOINCBaseWizard.cpp, .h
+        wizardex.cpp, .h
+
+Rom    22 Sep 2008
+    - Tag for 6.3.11 release, all platforms
+      boinc_core_release_6_3_11
+
+    /
+        configure.ac
+        version.h
+
+David  22 Sept 2008
+    - web: sub_sentence() went into an infinite loop
+        for a particular (non-ASCII) profile text.
+        Not sure why, but I rewrote sub_sentence() in
+        less obscure way and it works now
+    - web: slight cleanup of translation code.
+        Can we please replace this with gettext()??
+
+    html/
+        inc/
+            translation.inc
+            util.inc
+        ops/
+            update_profile_pages.php
+        user/
+            language_select.php
+
+David  22 Sept 2008
+    - API: in boinc_exit(), release the lockfile only if
+        we're the main program (otherwise we didn't lock it in
+        the first place, and a crash results).  From Artyom Sharov.
+    - scheduler: add support for the GCL simulator,
+        which uses special versions of backend programs
+        that use virtual time,
+        and that wait for signals instead of sleep()ing.
+
+        To compile:
+            make clean
+            configure CXXFLAGS="-DGCL_SIMULATOR"
+            make
+
+    api/
+        boinc_api.C
+    db/
+        boinc_db.C,h
+    lib/
+        util.C,h
+    sched/
+        feeder.C
+        hr_info.C
+        pymw_assimilator.C
+        sched_util.C,h
+        transitioner.C
+        trickle_handler.C
+        validator.C
+    tools/
+        backend_lib.C
+
+Charlie 22 Sep 2008
+    Mgr: Simplify Async GUI RPC refresh event logic; if a 
+        Periodic RPC completes while waiting for a Demand RPC, 
+        defer the refresh until all Demand RPCs have also 
+        finished to prevent possible undesirable recursion, 
+        because refresh code could request another Demand RPC.
+
+    clientgui/
+        AsyncRPC.cpp,.h
+        MainDocument.cpp,.h
+
+
+David  24 Sept 2008
+    - client: add <sandbox> element to scheduler request.
+        Some projects (GPUgrid, QCN) don't work on some platforms
+        if sandboxing is used.
+        Better to send an error message than send jobs.
+    - get rid of a few compiler warnings
+
+    client/
+        app_start.C
+        client_state.C
+        cpu_sched.C
+        cs_scheduler.C
+        hostinfo_unix.C
+    lib/
+        crypt.C,h
+
+David  24 Sept 2008
+    - client: attempt to fix CPU sched bug in the presence of GPUs
+        (if there was an idle GPU, it would run unboundedly many CPU jobs)
+
+    client/
+        client_types.h
+        cpu_sched.C
+    lib/
+        coproc.h
+
+David  24 Sept 2008
+    - client/manager: show # CPUs and coprocessors in task display
+
+    client/
+        app.C
+    clientgui/
+        ViewWork.cpp
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.C
+
+Rom    25 Sep 2008
+    - Tag for 6.3.12 release, all platforms
+      boinc_core_release_6_3_12
+
+    /
+        configure.ac
+        version.h
+
+David  25 Sept 2008
+    - web: don't send an email after account is created via web;
+        it serves no purpose and some people apparently view it as spam.
+
+    html/
+        inc/
+            email.inc
+        user/
+            create_account_action.php
+            mail_passwd.php
+
+David  25 Sept 2008
+    - Add the ability to exclude certain URLs from the use of proxies.
+        E.g. if you're running a project locally,
+        while attached to outside projects via a proxy.
+        Currently accessible only via the Manager's Options dialog.
+        From Frank Weiler.
+
+    client/
+        http_curl.C,h
+    clientgui/
+        AdvancedFrame.cpp
+        DlgOptions.cpp,h
+        gui_rpc_client.h
+        gui_rpc_client_ops.C
+        proxy_info.C,h
+
+Janus  25 Sept 2008
+    - web: Changed javascript generated input buttons into normal links with
+        css that makes them look like buttons
+    - css: Fixed some (of many) incompatibility issue with IE series of browsers
+    - css: Added forum_toplinks class. Describes links at the top of forum pages
+    - forum: You can now either reply to a post or quote a post
+
+    html/
+        inc/
+        forum.inc
+        util.inc
+    user/
+        white.css
+        forum_thread.php
+        forum_reply.php
+
+David  25 Sept 2008
+    - boinc_cmd: add no_proxy item to --set_proxy_settings args
+        (from Frank Weiler)
+
+    lib/
+        gui_rpc_client_print.C
+        boinc_cmd.C
+
+David  25 Sept 2008
+    - rename .C files to .cpp so that Doxygen will work
+
+David  25 Sept 2008
+    - update .vcproj files accordingly
+
+David  25 Sept 2008
+    - client: don't lower priority of apps that use >0 coprocessors and <1 CPU.
+        Otherwise they don't run efficiently.
+
+    client/
+        app_start.C
+        client_state.C
+
+David  25 Sept 2008
+    - web: remove check on user agent
+
+    html/inc/
+        util.inc
+
+David  28 Sept 2008
+    - another .cpp
+
+    lib/mac/
+        mac_backtrace.cpp
+
+David  28 Sept 2008
+    - prepare for "don't run while playing game" feature
+
+    lib/
+        procinfo.h
+        procinfo_unix.cpp
+        procinfo_win.cpp
+
+Charlie 29 Sep 2008
+    Mgr: Fix XCode project for all .C files renamed to .cpp.
+    lib: Fix error in RPC_CLIENT::set_proxy_settings() changes of 9/25/08.
+
+    clientgui/
+        AdvancedFrame.cpp
+        DlgOptions.cpp,h
+        gui_rpc_client.h
+        gui_rpc_client_ops.C
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  29 Sept 2008
+    - client: add "exclusive app" feature.  If you put
+        <exclusive_app>foo.exe</exclusive_app>
+        in your cc_config.xml, BOINC will suspend computing
+        whenever foo.exe is running (e.g., a game).
+
+        Eventually we might want to put the interface in preferences
+        instead of cc_config.xml
+
+    client/
+        app.h,cpp
+        log_flags.h,cpp
+    clientgui/
+        ViewWork.cpp
+    lib/
+        common_defs.h
+        procinfo_unix.cpp
+
+Charlie 29 Sep 2008
+    Mgr: Fix async GUI RPC handling of RPC_GET_PROJECT_STATUS1 and 
+        RPC_GET_SIMPLE_GUI_INFO2, both of which must replace project 
+        structs in the state struct in place.  We hope this will 
+        also fix a memory leak.
+    Mgr: Fix XCode project for browser.C files renamed to browser.cpp.
+
+    clientgui/
+        AsyncRPC.cpp,.h
+        MainDocument.cpp,.h
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 30 Sep 2008
+        - MGR: async GUI RPCs: eliminate redundant RPC calls in SimpleGUI.
+        - lib: eliminate obsolete RPC_CLIENT::get_project_status(CC_STATE& state), 
+            RPC_CLIENT::get_simple_gui_info(CC_STATE& state, RESULTS& results).
+
+    clientgui/
+        AsyncRPC.cpp
+        MainDocument.cpp,.h
+        sg_BoincSimpleGUI.cpp
+        sg_ClientStateIndicator.cpp
+        sg_ProjectsComponent.cpp
+        sg_StatImageLoader.cpp
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.C
+
+David  30 Sept 2008
+    - add an interface for parsing XML attributes
+
+    html/user/
+        white.css
+    lib/
+        parse.cpp,h
+        prefs.cpp
+
+David  30 Sept 2008
+    - scheduler: #ifdef'd tweaks for server simulator
+
+    sched/
+        feeder.cpp
+        main.cpp
+        sched_util.cpp
+        validator.cpp
+
+David  30 Sept 2008
+    - client: make statefile parsing a bit more efficient
+    - GUI RPC and app_init file: add source project to global prefs
+
+    lib/
+        parse.cpp
+        prefs.cpp
+
+Charlie 30 Sep 2008
+    - client: Update Mac XCode project, build scripts and documentation 
+        for c-ares 1.5.3 and cURL-7.19.0.
+
+     mac_build/
+        buildc-ares.sh
+        buildcurl.sh
+        HowToBuildBOINC_XCode.rtf
+        setupForBOINC.sh
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  1 Oct 2008
+    - scheduler: add <no_vista_sandbox> option.
+        If set, don't send work to sandboxed Vista clients
+        (e.g., because of CUDA issue)
+
+    sched/
+        handle_request.cpp
+        sched_config.cpp,h
+        server_types.cpp,h
+
+David  1 Oct 2008
+    - scheduler: enforce max_wus_to_end, daily_result_quota,
+        and max_wus_in_progress when using score-based scheduling
+
+    sched/
+        sched_send.cpp
+
+David  1 Oct 2008
+    - scheduler: move core_client_version from WORK_REQ to SCHEDULER_REQUEST;
+        WORK_REQ doesn't get initialized in all cases.
+
+    sched/
+        handle_request.cpp
+        main.cpp
+        sched_send.cpp
+        server_types.cpp,h
+
+Rom    1 Oct 2008
+    - Win: Update to OpenSSL 0.9.8i
+    
+    OpenSSL/
+        <Various Files>
+
+Rom    2 Oct 2008
+    - Win: Update to cURL 7.19.0
+    
+    cURL/
+        <Various Files>
+
+David  2 Oct 2008
+    - scheduler: FCGI: use mysql_ping() to check that DB connection
+        is still alive before handling a request.  If not, try to reconnect.
+        This will hopefully make things work better if MySQL goes down and up
+        when using FCGI.
+
+    db/
+        db_base.cpp,h
+    sched/
+        main.cpp
+
+David  2 Oct 2008
+    - scheduler: add a \n after projects_files.xml, in case it doesn't have one
+
+    sched/
+        server_types.cpp
+
+Rom    2 Oct 2008
+    - Tag for 6.3.13 release, all platforms
+      boinc_core_release_6_3_13
+
+    /
+        configure.ac
+        version.h
+
+David  2 Oct 2008
+    - Makefile fix
+    - client: remove extraneous message
+    - wrapper: open stderr/stdout in append mode, not write
+
+    client/
+        app_start.cpp
+    clientgui/
+        Makefile.am
+    samples/wrapper/
+        wrapper.cpp
+
+Charlie 2 Oct 2008
+    - MGR: Fix position of progress bars in Projects and Tasks tabs when 
+        scrolled horizontally.
+    - MGR: Eliminate unnecessary clearing of web site selection buttons 
+        in Projects tab, hoping to fix an occasional drawing problem.
+
+    clientgui/
+        BOINCListCtrl.cpp
+        ViewProjects.cpp
+
+David  3 Oct 2008
+    - Manager: show resource requirements of all jobs, running or not
+    - Back-end programs: start adding --help option to all of them
+
+    clientgui/
+        ViewWork.cpp
+    sched/
+        assimilator.cpp
+        census.cpp
+        db_dump.cpp
+
+David  3 Oct 2008
+    - client: fix bugs in coprocessor scheduling;
+        add new <coproc_debug> log flag
+
+    client/
+        app.cpp
+        cpu_sched.cpp
+        log_flags.cpp,h
+    lib/
+        coproc.h
+
+Charlie 3 Oct 2008
+    - MGR: On Windows, adjust progress bar color for slightly 
+        better appearance when selected.
+
+    clientgui/
+        BOINCListCtrl.cpp
+
+David  4 Oct 2008
+    - client: it a file upload fails for a job that's in progress,
+        abort the task.  Otherwise we end up reporting the job
+        while the app is still running.
+
+    client/
+        client_state.cpp
+        cs_trickle.cpp
+
+David  4 Oct 2008
+    - Unix build system: build samples/example_app/,
+        and change the samples/ makefiles so that they automatically
+        create the symbolic link to libstdc++.a
+        Fixes #725
+
+    Makefile.am
+    samples/*/Makefile
+
+David  4 Oct 2008
+    - changed some comments for Doxygen
+
+    client/*.h
+
+Janus  5 Oct 2008
+    - Projects can override the login form by defining their own replacement
+      print_login_form_aux/print_login_form in their project.inc file
+    - Fixed a case of bad coding where variables where called "1", "2"... instead
+      of something more telling like "role1" etc.
+    - Fixed forum posts display to work even in the case of minor
+      database inconsistencies
+    - Added "Highlight special user"-feature which will highlight special user
+      posts on the forum. (requires database update)
+    - Made the forum post body background 25% transparent in white.css for 
+      browsers that support transparency. This gives a nice effect combined
+      with the highlight-feature.
+
+    html/
+        inc/
+            forum.inc
+            util.inc    
+        ops/
+            db_update.php
+            manage_special_users_action.php
+            manage_special_users.php  
+        user/
+            img/
+                75pct_white.png
+            edit_forum_preferences_action.php
+            edit_forum_preferences_form.php
+            white.css
+            forum_forum.php
+
+David  5 Oct 2008
+    - Added the above DB change to schema.sql
+    - Omit the "after" clause from update.
+    - Web: add missing arg; fixes #749
+    - server: more --help additions
+
+    db/
+        schema.sql
+    sched/
+        db_purge.cpp
+        db_dump.cpp
+    html/
+        ops/
+            db_update.php
+        inc/
+            host.inc
+
+Charlie 6 Oct 2008
+    - MGR: Async GUI RPCs: remove spurious assert.
+    - MGR: Erase under progress bars so they overwrite selection highlight color 
+        and gray stripes for better appearance (color and visibility).
+    
+    clientgui/
+        AsyncRPC.cpp
+        BOINCBaseView.cpp,.h
+        BOINCListCtrl.cpp,.h
+        ViewProjects.cpp,.h
+        ViewTransfers.cpp,.h
+        ViewWork.cpp,.h
+
+Rom    6 Oct 2008
+    - Tag for 6.3.14 release, all platforms
+      boinc_core_release_6_3_14
+
+    /
+        configure.ac
+        version.h
+
+David  6 Oct 2008
+    - add distclean target for samples/ makefiles
+
+David  6 Oct 2008
+    - example_app: make the same Makefile work for both FC and Debian
+
+    samples/example_app/
+        Makefile
+        Makefile.debian (deleted)
+
+David  6 Oct 2008
+    - client: show est CPC time of jobs returned by sched RPC,
+        if sched_op_debug; fixes #256
+
+    client/
+        cs_scheduler.cpp
+
+David  7 Oct 2008
+    - client: use different temp file names for different purposes
+    - client: change logic in a pathological file xfer case
+        (we asked for tail of file, proxy returned whole file)
+        to report fopen() errors correctly, and to close all open files
+
+    client/
+        cs_account.cpp
+        file_names.h
+        file_xfer.cpp
+        time_stats.cpp
+
+David  7 Oct 2008
+    - added a script (from Nicolas) to generate en.po
+
+    html/ops
+        build_po.php
+
+Charlie 8 Oct 2008
+    - MGR: Fix crash in Projects:Properties.
+    - MGR: Always update underlying data when changing tabs, attaching, 
+        detaching, forcing refresh, etc.
+    - client: Fix CUDA detection on Mac.
+
+    client/
+        coproc.cpp
+    clientgui/
+        AdvancedFrame.cpp
+        BOINCBaseFrame.cpp
+        DlgItemProperties.cpp
+        MainDocument.cpp
+        ViewProjects.cpp
+        ViewWork.cpp
+
+David  8 Oct 2008
+    - add a script "upgrade_db.php" that updates project DB structure
+        (after user confirmation).
+        This is called from "upgrade", and can also be run by itself.
+
+        NOTE: this mechanism will handle all DB updates going forward.
+        Older updates must be done the old way (edit and run db_update.php)
+
+    - Web: let teams determine whether they're accepting new members
+
+    html/
+        inc/
+            forum.inc
+            team.inc
+        ops/
+            db_update.php
+            upgrade_db.php
+        user/
+            am_set_info.phph
+            team_edit_action.php
+            team_join.php
+            team_join_action.php
+            team_join_form.php
+            user_search.php
+        sched/
+            feeder.cpp
+        tools/
+            upgrade
+
+David  8 Oct 2008
+    - manager: fix strings in Project Properties
+
+    clientgui/DlgItemProperties.cpp
+
+David  8 Oct 2008
+    - web: in checking if hosts can be merged,
+        do time-overlap check if either host has pending results
+        Fixes #748
+
+    html/inc/
+        host.inc
+
+David  8 Oct 2008
+    - enhancements to upgrade_db.php from Nicolas
+
+    html/ops/
+        upgrade_db.php
+
+Charlie 8 Oct 2008
+    - MGR: Fix build breaks on Linux.
+
+    clientgui/
+        DlgItemProperties.cpp
+        ViewWork.cpp
+
+David  9 Oct 2008
+    - client: show message when suspending because of exclusive app
+    - web: remove file_get_contents() workaround for PHP4
+    - web: If Akismet or ReCaptcha failure,
+        display the form again with a warning message at the top.
+        That way the user doesn't lose the text they just typed.
+
+    client/
+        cs_prefs.cpp
+    html/
+        inc/
+            akismet.inc
+            util_basics.inc
+        user/
+            create_profile.php
+            forum_post.php
+            forum_reply.php
+            pm.php
+
+David  9 Oct 2008
+    - client: major changes to enforce_schedule() to handle GPUs
+
+    client/
+        client_state.h
+        cpu_sched.cpp
+    clientgui/
+        DlgItemProperties.cpp
+    html/ops/
+        db_update.php
+
+Charlie 9 Oct 2008
+    - MGR: Fix SimpleGUI to work with wxWidgets 2.8.7.
+
+    clientgui/
+        sg_BoincSimpleGUI.cpp
+        sg_ViewTabPage.cpp
+
+Charlie 9 Oct 2008
+    - MGR: Fix for (future) compatibility with wxWidgets 2.8.9.
+
+    clientgui/
+        sg_SGUIListControl.cpp,.h
+
+Charlie 10 Oct 2008
+    - MGR: To reduce flicker, redraw only changed cells in List Control 
+        (not entire row) on non-Mac systems.
+    - MGR: Fix flashing red Messages button in SimpleGUI.
+
+    clientgui/
+        BOINCBaseView.cpp
+        BOINCListCtrl.cpp,.h
+        MainDocument.cpp
+
+David  10 Oct 2008
+    - client: print a message, and recompute ncpus, when reread cc_config.xml
+
+    client/
+        gui_rpc_server_ops.cpp
+        log_flags.cpp,h
+        main.cpp
+        sim.cpp
+
+David  10 Oct 2008
+    - client: report job resources even when no active task
+
+    client/
+        app.cpp
+        client_types.cpp
+
+David  10 Oct 2008
+    - client: correctly null-terminate file upload handler reply
+    - web: fix typo
+
+    client/
+        http_curl.cpp
+    html/user/
+        forum_post.php
+
+David  12 Oct 2008
+    - web: avoid error if subscribed user doesn't exist
+
+    html/inc/
+        forum.inc
+
+David  12 Oct 2008
+    - web: fix bug in profile creation.  fixes #755
+
+    html/user/
+        create_profile.php
+
+Charlie 13 Oct 2008
+    - MGR: Multiple fixes to Async GUI RPCs:
+        - Reject most events during RPC Wait dialog.  This should 
+            eliminate most asserts due to undesired recursion in 
+            CMainDocument::RequestRPC().
+        - Always update message list every second, even when in other 
+            view tabs or when manager is minimized.
+        - Eliminate separate task bar update timer, update with other 
+            periodic RPCs.
+        - Always update task information in task bar icon tooltip when 
+            user hovers mouse over task bar icon.
+        - Improve enabling / disabling of task bar icon menu items.
+
+    clientgui/
+        AsyncRPC.cpp,.h
+        BOINCGUIApp.cpp,.h
+        BOINCTaskBar.cpp,.h
+        Events.h
+        MainDocument.cpp,.h
+
+Charlie 14 Oct 2008
+    - MGR: Multiple fixes to Async GUI RPCs:
+        - Don't show RPC Please Wait dialog while BOINC is minimized.
+        - Filter events to block all events while RPC Please Wait dialog 
+            is displayed, except:
+             - Allow "Open BOINC Manager" Taskbar menu command.
+            - Allow Paint and Erase events.
+    - MGR: Use try / catch blocks for all cached data in Projects, Tasks 
+        and Transfers tabs.
+        
+    clientgui/
+        AsyncRPC.cpp
+        BOINCGUIApp.cpp
+        BOINCTaskBar.cpp
+        MainDocument.cpp
+        ViewProjects.cpp,.h
+        ViewTransfers.cpp,.h
+        ViewWork.cpp,.h
+
+David  14 Oct 2008
+    - client: clarify and fix the semantics of "next RPC time".
+        Here's are the new semantics: a scheduler reply can include
+        <next_rpc_delay>
+            Make another RPC ASAP after this amount of time elapses.
+            This is specified by the <next_rpc_delay> element in config.xml.
+        <request_delay>
+            Don't make another RPC until this amount of time elapses.
+            This is sent automatically (and sometimes with large delays)
+            by various parts of the scheduler.
+        next_rpc_delay now "overrides" request_delay in the sense that
+        request_delay is ignored if it's greater than next_rpc_delay.
+
+        In addition: the client maintains a min_rpc_time which is set based
+        on request_delay and also by various exponential backoff schemes.
+        new_rpc_delay now overrides this as well, in the same sense.
+
+    client/
+        cs_scheduler.cpp
+        work_fetch.cpp
+
+David  14 Oct 2008
+    - web: make some things in sample front page translatable.
+        TODO: make them all translatable.
+    - manager: compile fix for Linux
+
+    client/
+        client_types.h
+    clientgui/
+        AsyncRPC.cpp
+    html/
+        inc/
+            translation.inc
+        user/
+            sample_index.php
+
+David  14 Oct 2008
+    - client: new config flags
+        <network_test_url>: where to go to see if network is up
+        <client_version_check_url>: where to get list of client versions
+        <client_download_url>: where to direct user to get new version
+    - manager: some different text for WCG version
+
+    client/
+        acct_setup.cpp
+        gui_rpc_server_ops.cpp
+        log_flags.cpp,h
+        net_stats.cpp
+        win/
+            boinc_cli.rc
+            boinc_cmd.rc
+    clientgui/
+        BOINCWizards.h
+        ProxyInfoPage.cpp
+        WelcomePage.cpp,h
+    clientscr/
+        boinc_ss.rc
+
+Charlie 14 Oct 2008
+    - MGR: discard only Command, Timer and Mouse Moved events during RPC 
+        "Please Wait" dialog; no event processing during first RPC_WAIT_DLG_DELAY 
+        seconds of Demand RPC.
+
+    clientgui/
+        AsyncRPC.cpp
+        BOINCGUIApp.cpp
+
+Charlie 15 Oct 2008
+    - MGR: Fix updating task bar icon on disconnect from Client, fix a crash 
+        on exiting.
+
+    clientgui/
+        BOINCGUIApp.cpp
+        MainDocument.cpp
+
+David  15 Oct 2008
+    - web: prevent a cross-site request forgery attack
+    
+    html/
+        inc/
+            user.inc
+        user/
+            edit_user_info_action.php
+            edit_user_info_form.php
+
+Charlie 16 Oct 2008
+    - MGR: When any project's resource share changes, update all percentages 
+        that have changed (which is probably all of them) in Projects tab.
+
+    clientgui/
+        ViewProjects.cpp,.h
+
+David  17 Oct 2008
+    - web: fix typo
+
+    html/user/
+        edit_user_info_action.php
+
+David  17 Oct 2008
+    - forgot to add team.joinable to schema.sql
+
+    db/
+        schema.sql
+
+David  17 Oct 2008
+    - manager: compile fixes from Nicolas
+
+    clientgui/
+        WelcomePage.cpp
+
+Rom    20 Oct 2008
+    - Tag for 6.3.15 release, all platforms
+      boinc_core_release_6_3_15
+
+    /
+        configure.ac
+        version.h
+
+David  20 Oct 2008
+    - client: if "leave in memory" pref changes, quit suspended tasks
+
+    client/
+        cpu_sched.cpp
+
+David  20 Oct 2008
+    - web: delete all private msgs was broken
+
+    html/user/
+        pm.php
+
+David  21 Oct 2008
+    - manager: fix disk display when talking to pre-6.3 client
+
+    clientgui/
+        ViewProjects.cpp
+        ViewResources.cpp
+
+David  21 Oct 2008
+    - web: add optional $project_http_proxy to project.inc;
+        if project is behind an HTTP proxy,
+        this fixes the SVN fetch in ops/index.php
+
+    html/
+        ops/
+            index.php
+            profile_screen_action.php
+        project.sample/
+            project.inc
+
+David  21 Oct 2008
+    - web: if user tries to edit a BOINC-wide team,
+        warn them that changes will get overwritten.
+
+    html/inc/
+        team.inc
+
+David  21 Oct 2008
+    - make "make distclean" work in all directories
+
+    samples/*/Makefile
+
+David  21 Oct 2008
+    - scheduler: add <have_cuda_apps> config flag.
+        If set the "effective NCPUS" (which is used to scale
+        daily_result_quota and max_wus_in_progress)
+        is max'd with the # of CUDA GPUs.
+
+    sched/
+        sched_array.cpp
+        sched_config.cpp,h
+        sched_locality.cpp
+        sched_send.cpp,h
+        server_types.h
+
+Charlie 21 Oct 2008
+    - MGR: More thorough validity checking to prevent crashes.
+
+    clientgui/
+        ViewProjects.cpp
+        ViewTransfers.cpp
+        ViewWork.cpp
+
+Charlie 21 Oct 2008
+    - Mac branding: fix branding problem with GridRepublic installer.
+     
+    mac_installer/
+        make_GridRepublic.sh
+        PostInstall.cpp
+
+David  21 Oct 2008
+    - admin web: add dbinfo.php (shows row counts and disk usage per table)
+
+    html/ops/
+        dbinfo.php
+        index.php
+
+Charlie 22 Oct 2008
+    - Mac SCR: reinitialize if startanimation() called after stopanimation().
+    - Mac SCR: detect when covered by application graphics under all versions 
+        of OS X and stop displaying the moving logo to reduce CPU usage.
+
+    clientscr/
+        mac_saver_module.cpp
+        Mac_Saver_ModuleView.m
+
+David  22 Oct 2008
+    - web: don't select orphaned profile as UOTD;
+        delete profile when delete user.  Fixes #761
+
+    html/inc/
+        uotd.inc
+        boinc_db.inc
+
+David  22 Oct 2008
+    - client: restore support for max_ncpus preference.
+        This and max_ncpus_pct can both be specified.
+        If both are specified, we take the min.
+
+    client/
+        cpu_sched.cpp
+    html/
+        ops/
+            index.php
+        project.sample/
+            project.inc
+    lib/
+        prefs.cpp,h
+
+Rom    22 Oct 2008
+    - LIB: Fix the windows callstack dump routine for
+        Visual Studio 2008
+        
+    lib/
+        stackwalker_imports.h
+        stackwalker_win.cpp
+
+Rom    22 Oct 2008
+    - WINSETUP: Don't allow parent permissions to be inhertied
+        from the parent directory when we setup the data
+        directories permissions.
+
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CASetPermissionBOINCData.cpp
+        CASetPermissionBOINCDataProjects.cpp
+        CASetPermissionBOINCDataSlots.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+Rom    22 Oct 2008
+    - WINSETUP: Include a fix for the ALLUSERS flag so that
+        based on the user preference, the installation settings
+        are honored
+        (From Kevin Reed)
+        
+    win_build/installerv2/
+        BOINC.ism
+        BOINCx64.ism
+
+Rom    23 Oct 2008
+    - MGR: Have the SkinManager parse the correct spelling
+        of 'organization'.
+    - MGR: Add a new tab status to the Simple GUI for when
+        the client has been instructed to delay starting
+        applications via the <delay_start> option in cc_config.xml
+        (From Kevin Reed)
+
+    clientgui/
+        sg_ImageButton.cpp, .h
+        sg_ViewTabPage.cpp
+        SkinManager.cpp
+
+Rom    23 Oct 2008
+    - WINSETUP: When the shortcut to BOINC Manager remove the
+        minimize flag, it apparently was causing the small
+        manager window.  The '/s' parameter already takes
+        care of minimizing the window.
+        (From Kevin Reed)
+        
+    win_build/installerv2/
+        BOINC.ism
+        BOINCx64.ism
+
+Rom    23 Oct 2008
+    - LIB: The max cpu preferences was named 'max_cpus' and
+        not 'max_ncpus' back in the day.
+        
+    lib/
+        prefs.cpp
+ 
+Rom    23 Oct 2008
+    - client: the max percent needs to be based on the max cpu
+        preference not the total number of CPUs if we are 
+        actually calculating the min of both of them.
+    
+    client/
+        cpu_sched.cpp
+
+Rom    23 Oct 2008
+    - Tag for 6.3.16 release, all platforms
+      boinc_core_release_6_3_16
+
+    /
+        configure.ac
+        version.h
+
+David  23 Oct 2008
+    - client: fix prefs parsing
+
+    lib/
+        prefs.cpp
+
+Rom    23 Oct 2008
+    - Tag for 6.3.17 release, all platforms
+      boinc_core_release_6_3_17
+
+    /
+        configure.ac
+        version.h
+
+David  23 Oct 2008
+    - client: --help: show all options, and alphabetize them
+
+    client/
+        cs_cmdline.cpp
+
+Charlie 24 Oct 2008
+    - MGR: Fix typo in BOINCListCtrl.cpp: remove extra semicolon. 
+    - MGR: Sort compare functions return false if values are equal (to 
+        fix asserts in stable_sort).
+
+    clientgui/
+        BOINCListCtrl.cpp
+        ViewProjects.cpp
+        ViewTransfers.cpp
+
+David  25 Oct 2008
+    - client: ignore max_cpus if max_ncpus_pct is nonzero
+
+    client/
+        cpu_sched.cpp
+
+Rom    27 Oct 2008
+    - Tag for 6.3.18 release, all platforms
+      boinc_core_release_6_3_18
+
+    /
+        configure.ac
+        version.h
+
+David  27 Oct 2008
+    - client: for CPU throttling, don't suspend apps that
+        are non-CPU-intensive or that use < 1 CPU (e.g., CUDA)
+    - client: get rid of spurious "internal error,
+        expected process to be executing" msg
+    - diag: don't check heap on every alloc
+    - fix a few compile warnings
+    client/
+        app_control.cpp
+        cpu_sched.cpp
+        cs_prefs.cpp
+        main.cpp
+        time_stats.cpp
+        work_fetch.cpp
+    clientgui/
+        BOINCBaseView.cpp
+
+David  27 Oct 2008
+    - scheduler: notify user if we're not sending work
+        because we don't have any (matchmaker only).
+    - back end programs: for programs that do enumerations,
+        check for error returns and exit
+        (otherwise we'll get stuck forever if DB fails)
+
+    NOTE: In the course of researching this I came across a bug
+    in the transitioner: if there's a WU with more than 1000 results,
+    the enumeration will always return ERR_DB_NOT_FOUND,
+    and the transitioner won't ever do anything again.
+    Fixing this is a little tricky, so I'm not going to do it right now.
+
+    sched/
+        file_deleter.cpp
+        request_file_list.cpp
+        sched_send.cpp
+        server_types.h
+        transitioner.cpp
+        trickle_handler.cpp
+        update_stats.cpp
+
+David  27 Oct 2008
+    - client: fix crash when sched_op_debug is enabled
+
+    client/
+        cs_scheduler.cpp
+
+Charlie 27 Oct 2008
+    - MGR: If simple_gui_only flag is set in cc_config.xml, trigger call 
+        of CSimpleFrame::OnConnect().
+
+    clientgui/
+        AdvancedFrame.cpp
+
+David  27 Oct 2008
+    - client: accept --insecure flag even if not compiled with -DSANDBOX
+    - manager: pass --insecure flab only if compiled with -DSANDBOX
+        (from Nicolas; fixes #762)
+
+    client/
+        cs_cmdlines.cpp
+    clientgui/
+        BOINCClientManager.cpp
+
+Rom    28 Oct 2008
+    - SCR: Fix the screensaver logo.
+    
+    clientscr/
+        boinc_ss.rc
+
+David  28 Oct 2008
+    - web: make the ordering of profiles in "browse profiles with pictures"
+        deterministic
+
+    html/ops/
+        update_profile_pages.php
+
+Rom    28 Oct 2008
+    - Tag for 6.3.19 release, all platforms
+      boinc_core_release_6_3_19
+
+    /
+        configure.ac
+        version.h
+
+Charlie 28 Oct 2008
+    - MGR: When removing a row in Projects, Tasks and Transfers tabs, refresh 
+        all rows.  Fixes a bug where display was not always properly updated.
+
+    clientgui/
+        BOINCBaseView.cpp
+
+David  28 Oct 2008
+    - client: move round-robin simulation to its own file
+    - web: check for profile existence before trying to show it
+    - file deleter: add some debugging msgs
+
+    client/
+        rr_sim.cpp,h (new)
+        Makefile.am
+        client_state.h
+        client_types.h
+        cpu_sched.cpp
+    html/
+        inc/
+            profile.inc
+        user/
+            view_profile.php
+    sched/
+        file_deleter.cpp
+
+Charlie 29 Oct 2008
+    - MGR: Fix bug introduced yesterday.
+    - MGR: Always sort after a row is added or deleted.
+    - Mac: Add new files rr_sim.cpp,.h to XCode project.
+
+    clientgui/
+        BOINCBaseView.cpp,.h
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 29 Oct 2008
+    - Tag for 6.3.20 release, all platforms
+      boinc_core_release_6_3_20
+
+    /
+        configure.ac
+        version.h
+
+David  29 Oct 2008
+    - client: /proc/N/stat has () around the command name.  Remove these.
+
+    lib/
+        procinfo_unix.cpp
+
+David  29 Oct 2008
+    - client: the preemptability order was wrong
+
+    client/
+        cpu_sched.cpp
+
+David  29 Oct 2008
+    - client: cleaned up CPU scheduler logic somewhat
+
+    client/
+        client_state.h
+        cpu_sched.cpp
+        sim.h
+        
+Rom & Charlie    29 Oct 2008
+    - client: include precompiled header in rr_sim.cpp so memory
+        leak detection will work.
+    - MGR: Have the BaseFrame call a function to determine if the
+        selection list should be saved instead of traversing
+        the application pointer.  Each view just overrides the function
+        returning a true/false value.  We don't have to worry about null
+        pointers and the like.
+    - MGR: BOINCGUIApp should never need to know how either the views
+        work or the document.  Move the code that determines which
+        RPCs should be fired into each of the views.  Have the document
+        look for it there.
+    - MGR: Reduce duplicate code for hiding and showing an application
+    - MGR: Move some Windows and Mac specific code into functions
+        and streamline the application startup and shutdown rountines.
+    - MGR: Move the event processing that was in BOINCGUIApp into the
+        BaseFrame.
+    - MGR: General cleanup.
+    - MGR: Doxygen comments.
+    - MGR: Cleanup some warnings.
+
+    client/
+        rr_sim.cpp
+    clientgui/
+        AdvancedFrame.cpp, .h
+        AsyncRPC.cpp, .h
+        BOINCBaseFrame.cpp, .h
+        BOINCBaseView.cpp, .h
+        BOINCClientManager.cpp, .h
+        BOINCGUIApp.cpp, .h
+        BOINCTaskBar.cpp
+        MainDocument.cpp, .h
+        sg_BoincSimpleGUI.cpp, .h
+        ViewProjects.cpp, .h
+        ViewTransfers.cpp, .h
+        ViewWork.cpp, .h
+        WelcomePage.cpp
+    win_build/installerv2/
+        BOINC.ism
+        BOINCx64.ism
+    win_build/
+        sim.vcproj
+
+Charlie 30 Oct 2008
+    - MGR: Fix show / hide on Mac broken by previous changes.
+
+    clientgui/
+        BOINCBaseFrame.cpp, .h
+        BOINCGUIApp.cpp
+
+David  30 Oct 2008
+    - web: change style sheet so tables are bordered only if class is "bordered"
+    - web: fix error if translation string missing
+
+    html/
+        inc/
+            util.inc
+            translation.inc
+        user/
+            language_select.php
+            white.css
+
+Rom    30 Oct 2008
+    - Rebuild libcurl x86 and x64 (turn off async DNS) for Windows only.
+    
+    curl/
+        <Various Files>
+
+David  30 Oct 2008
+    - client: revise round-robin simulation to take variable avg_ncpus into account
+
+    client/
+        rr_sim.cpp.h
+
+Charlie 31 Oct 2008
+    - Mac SCR: fix some real and potential crash bugs.
+    
+    clientscr/
+        mac_saver_module.cpp
+        Mac_Saver_ModuleView.m,.h
+
+Rom    31 Oct 2008
+    - Tag for 6.3.21 release, all platforms
+      boinc_core_release_6_3_21
+
+    /
+        configure.ac
+        version.h
+
+Rom    31 Oct 2008
+    - MGR: Move the wxWidget version information to the about box.
+        printf and Unicode strings don't play well with one another.
+        
+    clientgui/
+        BOINCGUIApp.cpp
+        DlgAbout.cpp
+
+Rom    31 Oct 2008
+    - MGR: Fix up the OnHelp features of the BOINC Manager so they
+        all point to manager_links.php.
+        
+    clientgui/
+        DlgAdvPreferences.cpp
+        sg_DlgMessages.cpp
+        sg_DlgPreferences.cpp
+
+Charlie 31 Oct 2008
+    - client: fix compiler warning.
+ 
+    client/
+        rr_sim.cpp
+
+Charlie 1 Nov 2008
+    - Mac SCR: eliminate unused argument, add comments.
+    
+    clientscr/
+        mac_saver_module.cpp
+        Mac_Saver_Module.h
+        Mac_Saver_ModuleView.m,h
+
+David  1 Nov 2008
+    - client: fix the updating of CPU time left in RR simulation;
+        don't print msgs about non-CPU-intensive projects.
+
+    client/
+        client_types.h
+        rr_sim.cpp
+
+David  1 Nov 2008
+    - client, scheduler: there were a few places where we had 1e9
+        instead of 1 gig (2^20)
+
+    client/
+        cs_prefs.cpp
+    sched/
+        sched_send.cpp
+
+David  2 Nov 2008
+    - client: fix a long-standing error: if prefs say leave X GB free,
+        and BOINC is using Y GB, and there are Z GB free,
+        the limit on BOINC is Y + Z - X (not Z - X).
+
+    client/
+        client_state.h
+        cs_prefs.cpp
+        gui_rpc_server_ops.cpp
+    clientgui/
+        ViewResources.cpp
+    lib/
+        filesys.cpp
+
+David  2 Nov 2008
+    - web: free result in count().  Fixes #763
+
+    html/inc/
+        db_conn.inc
+
+Charlie 3 Nov 2008
+    - client: fix compiler warning indicating real error in RR simulation.
+    client/
+        rr_sim.cpp
+
+David  3 Nov 2008
+    - client: fix bug that caused occasional assert in pop_heap()
+        for the preemptable_task_list.
+        The problem was that the ordering predicate (more_preemptable())
+        could change on the fly, making the heap inconsistent.
+        Instead, we create a vector, sort it by increasing preemptability,
+        then pop off the end.
+
+    client/
+        cpu_sched.cpp
+
+David  3 Nov 2008
+    - file_deleter: add -input_files_only and -output_files_only options.
+        If you store input and output files on different servers,
+        you can run 2 file_deleters, each one on the same machine
+        as the files it's going to be deleting.
+    - file_deleter: add -help option and usage()
+
+    client/
+        cpu_sched.cpp
+    sched/
+        file_deleter.cpp
+
+Rom    3 Nov 2008
+    - MGR: Use Sleep instead of Yield for the async thread loop.  On Posix
+        systems all Yield translates to is sched_yield but only if
+        HAVE_SCHED_YIELD is defined in the wxWidget config file.  If it isn't
+        defined it becomes a null op. The async thread doesn't really need
+        millisecond response times.  Have it check every 100 milliseconds
+        for an RPC to process.
+        
+    clientgui/
+        AsyncRPC.cpp
+
+David  3 Nov 2008
+    - web: smooth things out a bit for confused users:
+        - add a "forgot email address?" link
+        - change text to say that the authenticator method can be used
+            in case of forgotten email OR forgotten password
+        - if bad password on login, show them the login form again
+            (with email field populated)
+            instead of a harsh failure message
+        - if bad email on login, show login form again instead of harsh message
+        - update authenticator method instructions
+            with new BOINC data directory paths
+
+    html/
+        inc/
+            util.inc
+        user/
+            get_passwd.php
+            login_action.php
+
+David  3 Nov 2008
+    - client: preemptability ordering was messed up
+    client/
+        cpu_sched.cpp
+
+Charlie 3 Nov 2008
+    - MGR: Reverse earlier change in RPC thread logic: restore Yield() because 
+        Sleep(100) caused undesirable latency.  Pause the thread immediately on 
+        receipt of wxEVT_RPC_FINISHED event.  Reduce RPC thread CPU usage while 
+        not connected to a client.
+        
+    clientgui/
+        AsyncRPC.cpp
+
+Rom    4 Nov 2008
+    - MGR: Create an Exit dialog for the Manager.
+    - MGR: Allow the manager to shutdown the CC even when it was installed as
+        a daemon.
+    - MGR: Code cleanup.
+
+    clientgui/
+        AdvancedFrame.cpp, .h
+        BOINCBaseFrame.cpp
+        BOINCClientManager.cpp
+        BOINCGUIApp.cpp, .h
+        DlgExitMessage.cpp, .h (Added)
+        SkinManager.cpp
+    win_build/
+        boincmgr_curl.vcproj
+
+Rom    4 Nov 2008
+    - MGR: Provide a way to enable/disable launching from the BOINC Manager
+        at startup from within the BOINC Manager itself.
+    - MGR: Add a command line argument which specifies that the Manager was
+        launched by the OS.
+    - SCR: Remove the code that checks for the BOINC Manager shortcuts.
+
+    clientgui/
+        AdvancedFrame.cpp
+        BOINCGUIApp.cpp, .h
+        DlgOptions.cpp, .h
+        boinc_ss.h
+        boinc_ss.rc
+        screensaver_win.cpp, .h
+
+Charlie 4 Nov 2008
+    - MGR: Fix Simple_GUI help button URL.
+    - Mac: Add new source files DlgExitMessage.cpp,.h to XCode project.
+    - MGR: On non-Mac and Non-Windows systems, have RPC thread call 
+        nanosleep() for 1 nanosecond instead of wxThread::Yield(), 
+        because some Linux systems may not support POSIX sched_yield(), 
+        in which case wxThread::Yield() returns immediately.
+    - MGR: RPC thread: wait for connection with 1 ms delays initially, 
+        pause RPC thread after creation on non-Windows systems.
+    
+    clientgui/
+        AsyncRPC.cpp
+        MainDocument.cpp
+        sg_ProjectsComponent.cpp
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Rom    4 Nov 2008
+    - MGR: Text cleanup
+    
+    clientgui
+        DlgExitMessage.cpp
+        DlgGenericMessage.cpp
+
+Rom    4 Nov 2008
+    - MGR: Bug fixes for the new Exit dialog.
+    
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCClientManager.h
+        BOINCGUIApp.cpp, .h
+        BOINCTaskBar.cpp
+        screensaver_win.cpp
+
+Rom    4 Nov 2008
+    - MGR: Don't display the 'Run BOINC at startup checkbox' for
+        any platform other than Windows.  It has no effect on Mac
+        since the Mac doesn't automatically start BOINC Manager
+        with any command line arguments.
+        
+    clientgui/
+        DlgOptions.cpp
+
+Rom    4 Nov 2008
+    - MGR: Add DlgExitMessage.cpp to Makefile.am.
+    
+    clientgui/
+        Makefile.am
+
+David  4 Nov 2008
+    - fix makefile typo
+    - fix scheduler error (can't end with \n)
+
+    clientgui/
+        Makefile.am
+    sched/
+        handle_request.cpp
+
+Rom    4 Nov 2008
+    - MGR: Give the option to shutdown the CC even if the manager
+        didn't launch it.  This only applies to when the manager
+        and client are on the same machine.
+        
+    clientgui/
+        BOINCGUIApp.cpp
+
+Rom    4 Nov 2008
+    - MGR: properly save the 'DisplayShutdownClientDialog' setting.
+    
+    clientgui/
+        BOINCGUIApp.cpp
+
+Charlie 4 Nov 2008
+    - MGR: Async RPCs: RPC thread is now a joinable thread which does 
+        one RPC and exits.  Main thread creates a new RPC thread for 
+        each RPC request after waiting for any previous RPC thread to 
+        exit.  This simplifies the logic, eliminates Yield(), Sleep() 
+        and nanosleep() calls from RPC thread and will hopefully 
+        eliminate exess CPU usage on Fedora.
+    
+    clientgui/
+        AsyncRPC.cpp
+        MainDocument.cpp, .h
+
+Charlie 5 Nov 2008
+    - MGR: Async RPCs: fix memory leaks, KillRPCThread() tries to end 
+        thread gracefully before killing it.
+    - MGR: On Mac only, remove checkbox asking whether to shutdown CC.
+    - MGR: Fix crash bug on non_Windows systems in Options dialog.
+    
+     clientgui/
+        AdvancedFrame.cpp
+        AsyncRPC.cpp
+        BOINCGUIApp.cpp, .h
+        DlgExitMessage.cpp
+
+Rom    5 Nov 2008
+    - MGR: Tweak the shutdown logic so that it can still shutdown the
+        BOINC service even though it didn't start it.
+    - MGR: It BOINC Manager starts the BOINC deamon on the mac don't bother
+        trying to shut it down. (reverting to previous behaviour)
+        
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCClientManager.cpp, .h
+        BOINCTaskBar.cpp
+
+Rom    5 Nov 2008
+    - MGR: revise exit dialog text, use the names in the skin file.
+    
+    clientgui/
+        DlgExitMessage.cpp
+
+Rom    5 Nov 2008
+    - MGR: Revise text one more time.
+        From: Kevin Reed
+        
+    clientgui/
+        BOINCGUIApp.cpp
+        DlgExitMessage.cpp
+
+David  5 Nov 2008
+    - client: make host CPID a function of:
+        MAC addresses + hostname + IP addr
+        This means that a given host will generally always get the same CPID.
+        Helpful e.g. on grids where the client gets installed repeatedly.
+        From Artyom Sharov.
+
+    client/
+        hostinfo_network.cpp
+    lib/
+        hostinfo.cpp
+        mac_address.cpp,h
+    win_build/
+        boinc_cli_curl.vcproj
+        libboinc.vcproj
+
+David  5 Nov 2008
+    - client: add OS name into the hash for host CPID
+        (for multi-OS hosts)
+    - scheduler: use sqrt(x) instead of x in stop-checking
+        for single redundancy.
+
+    client/
+        hostinfo_network.cpp
+    lib/
+        Makefile.am
+    sched/
+        sched_send.cpp
+
+Rom    5 Nov 2008
+    - MGR: Only tweak the BOINC was started by us variable on
+        Windows.
+        
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCTaskBar.cpp
+
+Charlie 5 Nov 2008
+    - Mac: Add new source files mac_address.cpp,.h to XCode project.
+    - MGR: Fix compiler warnings on non-Windows builds.
+    - MGR: Filter wxEVT_TASKBAR_MOVE events only on Windows.
+    
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCGUIApp.cpp
+        BOINCTaskBar.cpp
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  6 Nov
+    - API: remove debugging printf from trickly down code
+    - API: use non-verbose option to zip
+    - scheduler: if multiple_client_per_host is set,
+        don't mark results as over if get repeat CPID
+
+    api/
+        boinc_api.C
+    sched/
+        sched_send.cpp
+        handle_request.cpp
+    zip/
+        boinc_zip.cpp
+
+Charlie 7 Nov 2008
+    - MGR: On Mac, restore using original exit dialog text from skin file 
+        or use old default if none in skin file.
+
+    clientgui/
+        SkinManager.cpp
+
+David  7 Nov 2008
+    - MGR: fix verbose text
+
+    clientgui/
+        DlgExitMessage.cpp
+
+David  7 Nov 2008
+    - accelerate dup_element_contents()
+    - manager: truncate task progress bar (display) at 100%
+
+    clientgui/
+        ViewWork.cpp
+    lib/
+        parse.cpp
+
+Rom    10 Nov 2008
+    - MGR: Move the old exit message from the SkinManager file to
+        the new Exit dialog.
+    - MGR: Consolidate the new exit message to one line. Sun Studio
+        doesn't concat the seperate strings together during compilation
+        like the other compilers to when building for Unicode.
+        
+    clientgui/
+        SkinManager.cpp
+        DlgExitMessage.cpp
+
+Rom    10 Nov 2008
+    - MGR: Provide a way to re-enable the Exit Dialog.
+    
+    clientgui/
+        AdvancedFrame.cpp
+        BOINCGUIApp.h
+        DlgOptions.cpp, .h
+
+Rom    10 Nov 2008
+    - Tag for 6.3.22 release, all platforms
+      boinc_core_release_6_3_22
+
+    /
+        configure.ac
+        version.h
+        
+Charlie 10 Nov 2008 (checked into boinc_core_release_6_3_22 tag)
+    - MGR: Fix build break on non_Windows systems.
+    - MGR: Provide a way to re-enable the Exit Dialog on non-Windows 
+        systems, too.
+    - MGR: Remove Exit() from RPC thread to possibly fix occasional crash 
+        on  Windows; KillRPCThread() tries to end thread gracefully on 
+        Windows before killing it.
+        
+    clientgui/
+        AdvancedFrame.cpp
+        AsyncRPC.cpp
+        DlgExitMessage.cpp
+        DlgOptions.cpp
+
+David  11 Nov 2008
+    - client: don't fclose() time_stats_log if it's NULL
+        Fixes #772
+
+    client/
+        time_stats.cpp
+    lib/
+        parse.cpp
+
+David  11 Nov 2008
+    - API: free project prefs before parsing init file
+
+    api/
+        boinc_api.cpp
+
+David  11 Nov 2008
+    - web: don't show misleading message if forum rating disabled
+        fixes #768; from Nicolas
+
+    html/user/
+        forum_report_post.php
+
+David  11 Nov 2008
+    - upgrade: run "upgrade_db.php" correctly when "." not in search path
+        Fixes #769;  from Nicolas
+
+    tools/
+        upgrade
+
+David  11 Nov 2008
+    - example_app: don't build the graphics app by default.
+        Fixes #771
+
+    samples/example_app/
+        Makefile
+
+Charlie 12 Nov 2008
+    - MGR: Erase and refresh entire Tasks panel when selecting a new tab
+        to try to fix cosmetic bug reported by David on Windows.
+
+    clientgui/
+        AdvancedFrame.cpp
+        BOINCBaseView.cpp, .h
+
+David  12 Nov 2008
+    - web: fix team join bug
+        ?? Why does omitting the "$" from a PHP variable
+        cause PHP to emit a blank page?  How about an error memssage?
+
+    html/user/
+        team_join_action.php
+
+Rom    13 Nov 2008
+    - SVCCTRL: Introduce a new binary that is used to start and stop
+        the BOINC service, if it is installed as a service.
+        
+        NOTE: If UAC is turned on in Windows Vista then even an
+          administrator cannot start/stop a service without elevating
+          their priviliages.  The new application includes the
+          requiresAdmin tag in its manifest file to cause the UAC
+          dialog to be displayed when it is launched.
+
+    clientctrl/
+        boincsvcctrl.cpp, .h
+        boincsvcctrl.rc
+        boincsvcctrl.xml
+    win_build/
+        boinc.sln
+        boincsvcctrl.vcproj
+
+Rom    10 Nov 2008
+    - Tag for 6.3.23 release, all platforms
+      boinc_core_release_6_3_23
+
+    /
+        configure.ac
+        version.h
+
+David  14 Nov 2008
+    - client (Unix): if app uses < 1 CPU, run at nice 10 (not 0)
+    - client: suppress specious error message
+
+    client/
+        app_start.cpp
+        rr_sim.cpp
+    lib/
+        util.h
+
+Charlie 15 Nov 08
+    - MGR: Async RPCs: RPC thread is again a detached thread which stays
+        running until Manager exits.  Use wxCondition to block RPC thread 
+        when it is idle.  This still avoids any Yield(), Sleep() and 
+        calls from RPC thread and reduces CPU usage from creating a new 
+        RPC thread for each RPC operation.
+    
+    clientgui/
+        AsyncRPC.cpp, .h
+        MainDocument.cpp, .h
+
+Rom    17 Nov 2008
+      boinc_core_release_6_4
+
+    /
+        configure.ac
+        version.h
+
+Rom    17 Nov 2008
+    - MGR: Delete the new BOINC Manager, we are going to use the 6.2
+        BOINC Manager for the 6.4 release.
+        
+    clientgui/
+        <various files deleted>
+
+Rom    17 Nov 2008
+    - MGR: Add the 6.2 BOINC Manager.
+        
+    clientgui/
+        <various files added>
+
+Rom    17 Nov 2008
+    - CLI: Fix build break after a stable branch creation.
+    - MGR: Make the BOINC Manager compile again on Windows.
+    - MGR: Make the BOINC Manager compile again on Linux.
+    - MGR: Merge changes for the new exit dialog
+    - MGR: Merge changes for the about dialog
+    
+    client/
+        client_state.cpp
+    clientgui/
+        browser.C (deleted)
+        browser.cpp (added)
+        DlgAbout.cpp, .h
+        DlgExitMessage.cpp, .h
+        Makefile.am
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+    win_build/
+        boincmgr_curl.vcproj
+
+Rom    17 Nov 2008
+    - MGR: For each running task, display which processing
+        resources it is using.
+        
+    clientgui/
+        ViewWork.cpp
+        ViewWorkGrid.cpp
+
+Rom    17 Nov 2008
+    - Tag for 6.4.0 release, all platforms
+      boinc_core_release_6_4_0
+
+    /
+        configure.ac
+        version.h
+
+Rom    18 Nov 2008
+    - MGR: Remove 6.5 Manager's localization files.
+    
+    locale/client/
+        <Various files> 
+Rom    18 Nov 2008
+    - MGR: Add 6.2 Manager's localization files.
+    
+    locale/client/
+        <Various files> 
+
+Rom    18 Nov 2008
+    - Tag for 6.4.1 release, all platforms
+      boinc_core_release_6_4_1
+
+    /
+        configure.ac
+        version.h
+
+Charlie 20 Nov 08
+    - Mac: Fix XCode project to build old Manager with Grid Views; 
+        rename SetVersion.C to SetVersion.cpp.
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  24 Nov 2008
+    - client: in round-robin simulation, only increment CPU shortfall
+        (per-project or overall) if there are no pending tasks.
+        This is needed when there are coproc (i.e. CUDA) jobs;
+        CPUs may be idle because pending jobs are waiting for active jobs
+        to release coprocs.
+        In this situation the CPU idleness should not be counted as shortfall;
+        otherwise (if there are only coproc jobs) there will always be a shortfall,
+        and the client will fetch infinite work.
+
+    client/
+        rr_sim.cpp,h
+
+Rom    24 Nov 2008
+    - DIAG: On Windows move the symbol store directory under the
+        BOINC data directory structure.  Depending on the version
+        of Windows, sometimes the temp directory was being set
+        to the system temp directory which is not setup for
+        everyone to use.  It is just best to use out data
+        directory structure.
+        
+    lib/
+        stackwalker_win.cpp
+
+David  24 Nov 2008
+    - GUI RPC: add optional terms_of_use field to project config.
+        If present, the manager will display this text in a yes/no dialog
+        before attachment continues.
+
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+
+Rom    25 Nov 2008
+    - MGR: Make the error message processing work for the
+        get_project_config rpc, use the same scheme as
+        the ACCOUNT_OUT structure.
+    
+    clientgui/
+        ProjectProcessingPage.cpp
+        ProjectPropertiesPage.cpp, .h
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+
+Rom    25 Nov 2008
+    - MGR: Make the error message processing work for the
+        get_project_config rpc, use the same scheme as
+        the ACCOUNT_OUT structure.  I missed the Account
+        Manager scenario in the first checkin.
+        
+    clientgui/
+        AccountManagerPropertiesPage.cpp, .h
+
+David  25 Nov 2008
+    - client, Win: 32-bit client running on a 64-bit machine
+        should report winx64 as primary platform
+
+    client/
+        cs_platforms.cpp
+
+Rom    25 Nov 2008
+    - MGR: Remove the Account Key page from the Wizard.
+    - MGR: Add a Terms of Use page to the Wizard.
+    
+    clientgui/
+        AccountInfoPage.cpp
+        AccountKeyPage.cpp, .h (removed)
+        AccountManagerPropertiesPage.cpp, .h
+        BOINCWizards.h
+        ProjectProcessingPage.cpp
+        ProjectPropertiesPage.cpp, .h
+        ProxyPage.cpp
+        TermsOfUsePage .cpp, .h (added)
+        WizardAccountManager.cpp, .h
+        WizardAttachProject.cpp, .h
+    win_build/
+        boincmgr_curl.vcproj
+
+Rom    25 Nov 2008
+    - MGR: Make the Terms of Use text control read-only
+    
+    clientgui/
+        TermsOfUsePage.cpp
+
+Rom    27 Nov 2008
+    - MGR: fix exit dialog so that both the Mac and Linux clients don't
+        display the 'close core client...' checkbox.
+        
+    clientgui/
+        BOINCGUIApp.cpp
+        DlgExitMessage.cpp
+
+Rom    1 Dec 2008
+    - WININSTALL: Change the default to not use protected application
+        install.
+    - WININSTALL: Change the advanced install text to point out
+        that on Windows Vista CUDA applications won't work with
+        protected application installs.
+        
+    win_build/installerv2/
+        BOINC.ism
+        BOINCx64.ism
+
+Rom    1 Dec 2008
+    - Tag for 6.4.2 release, all platforms
+      boinc_core_release_6_4_2
+
+    /
+        configure.ac
+        version.h
+
+David  1 Dec 2008
+    - client: work-fetch tweak: don't increment overall CPU shortfall
+        if any jobs pending in simulation
+
+    client/
+        rr_sim.cpp
+
+David  1 Dec 2008
+    - client: use FLOPs, rather than CPU time,
+        as the basis for estimating job completion times.
+        This should improve estimates for GPU apps,
+        and prevent the DCF from getting messed up.
+
+    client/
+        app.h
+        client_types.h,cpp
+        cpu_sched.cpp
+        cs_scheduler.cpp
+        rr_sim.cpp
+        work_fetch.cpp
+
+David  2 Dec 2008
+    - client: estimate time to completion based on elapsed time, not CPU time
+        (improves estimates for coproc apps)
+
+    client/
+        app.h,cpp
+        app_control.cpp
+        work_fetch.cpp
+
+David  2 Dec 2008
+    - client: compute duration_correction_factor based on elapsed time, not CPU time
+        (otherwise it doesn't work for coproc or multi-proc apps)
+    - client: in estimate of job completion time,
+        weight the estimate based on fraction done more heavily
+        (quadratic rather than linear)
+
+    client/
+        client_types.h
+        cpu_sched.cpp
+        cs_apps.cpp
+        work_fetch.cpp
+        
+David  3 Dec 2008
+    - Remove the notion of "CPU efficiency" from both client and server.
+        This wasn't being measured correctly for coproc/multithread apps,
+        and its effect is now subsumed in DCF.
+
+    client/
+        app.h,cpp
+        app_start.cpp
+        client_types.h
+        cpu_sched.cpp
+        cs_apps.cpp
+        sim_util.cpp
+        time_stats.h,cpp
+        work_fetch.cpp
+    db/
+        boinc_db.h
+    sched/
+        handle_request.cpp
+        sched_send.cpp
+        server_types.cpp
+
+David  3 Dec 2008
+    - client: fix calculation of CPU shortfall;
+         don't fetch work from projects with zero CPU shortfall
+
+    client/
+        rr_sim.cpp
+        work_fetch.cpp
+
+Charlie 3 Dec 2008
+    - client: fix compiler warning.
+
+    client/
+        rr_sim.cpp
+
+David  3 Dec 2008
+    - client: parse checkpoint_elapsed_time from state file;
+        if missing, use checkpoint CPU time.
+    - client: enforce CPU schedule: if we're running a coproc job,
+        keep CPU utilization strictly less than NCPUS.
+
+    client/
+        app.cpp
+        cpu_sched.cpp
+
+David  4 Dec 2008
+    - client: fix last checkin
+
+    client/
+        cpu_sched.cpp
+
+Rom    4 Dec 2008
+    - Tag for 6.4.3 release, all platforms
+      boinc_core_release_6_4_3
+
+    /
+        configure.ac
+        version.h
+
+Rom    5 Dec 2008
+    - WININSTALL: Disable "Protected Application Execution" mode
+        by default.
+    - WININSTALL: Turn off the check for Internet Explorer 5.x
+
+    win_build/installerv2/
+        BOINC.ism
+        BOINCx64.ism
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+David  5 Dec 2008
+    - client: app_info.xml's are parsed before p_fpops is known,
+        so avp->fpops is zero.
+        Fix this by filling in zero avp->fpops later on.
+
+    client/
+        client_state.cpp
+        cs_scheduler.cpp
+
+Rom    6 Dec 2008
+    - Tag for 6.4.4 release, all platforms
+      boinc_core_release_6_4_4
+
+    /
+        configure.ac
+        version.h
+
+David  7 Dec 2008
+    - client: tweak CPU scheduling policy.  When there's a coproc job:
+        Windows: don't saturate CPUs
+        Unix: saturate CPUs
+
+    client/
+        cpu_sched.cpp
+
+David  8 Dec 2008
+    - client: in round-robin simulation, remove code that sets CPU shortfall
+        for projects with no active results.
+        This is now wrong because there coproc apps might have pending results.
+        Also remove nidle_cpus > 0 conditional that increments CPU shortfall;
+        I think this is vestigial code.
+
+    client/
+        rr_sim.cpp
+
+David  8 Dec 2008
+    - client: include deviceOverlap and multiProcessorCount
+        in XML for CUDA devices.  They were mistakenly omitted.
+
+    lib/
+        coproc.cpp
+
+David  8 Dec 2008
+	- client: in round-robin simulation, don't count a project in
+		total resource share if it has coproc jobs and no CPU jobs.
+
+	client/
+		rr_sim.cpp,h
+
+Rom    9 Dec 2008
+    - MGR: fix the terms of use wizard page.
+    
+    clientgui/
+        TermsOfUsePage.cpp
+
+Rom    9 Dec 2008
+    - Tag for 6.4.5 release, all platforms
+      boinc_core_release_6_4_5
+
+    /
+        configure.ac
+        version.h

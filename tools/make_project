@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: make_project 14468 2008-01-04 22:59:21Z davea $
+# $Id: make_project 15911 2008-08-20 22:09:51Z davea $
 # Creates a new BOINC project.
 
 import boinc_path_config
@@ -289,7 +289,7 @@ if options.test_app:
     filepath = versdir+'/'+dname
     os.mkdir(ucdir)
     os.mkdir(versdir)
-    shutil.copy('../apps/upper_case', filepath)
+    shutil.copy('../samples/example_app/uc2', filepath)
     shutil.copy('uc_result', proot+'/templates/')
     shutil.copy('uc_wu', proot+'/templates/')
     shutil.copy('../tools/create_work_example', proot+'/bin/')
@@ -333,17 +333,35 @@ cronjob_filename = os.path.join(
     )
 print >>open(cronjob_filename,'w'), '''
 0,5,10,15,20,25,30,35,40,45,50,55 * * * * %(proot)s/bin/start --cron
-''' %locals()
+'''%locals()
 
-print '''Done installing files.
+readme_filename = os.path.join(
+    options.project_root,
+    project_shortname+'.readme'
+    )
 
+test_app_msg = ''
+if options.test_app:
+    test_app_msg = '''
+3. The project is configured with a test application.
+    To install this application (recommended) run:
+        cd %(proot)s
+        bin/xadd
+        bin/update_versions
+'''%locals()
+    
+print >>open(readme_filename,'w'), '''
 Steps to complete installation:
 
 1. Change Apache configuration (as root):
 
-   cat %(httpd_conf_template_filename)s >> /etc/apache/httpd.conf && apachectl restart
+   cat %(httpd_conf_template_filename)s >> /etc/apache/httpd.conf
 
    (path to httpd.conf varies)
+   Then restart the web server:
+
+   /usr/sbin/apache2ctl restart
+   (or /usr/sbin/apachectl restart)
 
 2. Add to crontab (as %(USER)s)
 
@@ -351,12 +369,10 @@ Steps to complete installation:
 
    (If cron cannot run "start", try using a helper script to set PATH and
    PYTHONPATH)
+%(test_app_msg)s
 
-3. The project is configured with a test application.
-    To install this application (recommended) run:
-        cd %(proot)s
-        bin/xadd
-        bin/update_versions
+3. In the project home directory (%(proot)s) run
+    bin/xadd
 
 To start, show status, and stop the project, run:
     bin/start
@@ -374,4 +390,10 @@ To use this project for your own computations, you'll need to
 - Develop programs to submit and handle jobs
 See the online documentation at http://boinc.berkeley.edu/
 
+'''%locals()
+
+print '''
+Done installing files.  Please view
+%(readme_filename)s
+for important additional instructions.
 '''%locals()

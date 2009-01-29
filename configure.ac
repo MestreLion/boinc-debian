@@ -1,6 +1,6 @@
 dnl -*- autoconf -*-
 
-dnl $Id: configure.ac 15867 2008-08-16 22:40:30Z romw $
+dnl $Id: configure.ac 16658 2008-12-09 15:27:21Z romw $
 
 dnl NOTE: on milkyway.ssl and jill.ssl , need autoconf/automake et al from quarls
 dnl directory; the _autosetup script does this.
@@ -9,7 +9,10 @@ dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.57)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 6.2.18)
+AC_INIT(BOINC, 6.4.5)
+LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
+AC_SUBST([LIBBOINC_VERSION])
+
 
 AC_ARG_ENABLE(debug, 
     AS_HELP_STRING([--enable-debug],
@@ -82,7 +85,7 @@ dnl generate .tar.gz, .tar.bz2, .zip
 dnl AM_INIT_AUTOMAKE(dist-bzip2 dist-zip)
 AM_INIT_AUTOMAKE(dist-zip)
 
-AC_CONFIG_SRCDIR(lib/shmem.C)
+AC_CONFIG_SRCDIR(lib/shmem.cpp)
 
 AC_COPYRIGHT([
 Berkeley Open Infrastructure for Network Computing
@@ -105,7 +108,7 @@ or write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ])
 
-AC_REVISION([$Revision: 15867 $])
+AC_REVISION([$Revision: 16658 $])
 
 AC_DEFUN([KC_STRIP_LEADING_ZEROS],[m4_bregexp([$*],[^0*\(..*\)],\1)])
 
@@ -445,7 +448,7 @@ AC_LANG_POP
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(alloca _alloca setpriority strlcpy strlcat strcasestr sigaction getutent setutent getisax strdup strdupa daemon stat64)
+AC_CHECK_FUNCS(alloca _alloca setpriority strlcpy strlcat strcasestr sigaction getutent setutent getisax strdup strdupa daemon stat64 putenv setenv)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -662,6 +665,7 @@ AC_CONFIG_FILES([
                  api/Makefile
                  apps/Makefile
                  clientgui/Makefile
+                 clientgui/res/Makefile
                  client/Makefile
                  client/win/boinc_path_config.py:py/Boinc/boinc_path_config.py.in
 		 client/scripts/Makefile
@@ -670,6 +674,7 @@ AC_CONFIG_FILES([
                  doc/Makefile
                  doc/manpages/Makefile
                  lib/Makefile
+		 locale/client/Makefile
                  Makefile
                  py/Boinc/boinc_path_config.py:py/Boinc/boinc_path_config.py.in
                  py/Boinc/Makefile

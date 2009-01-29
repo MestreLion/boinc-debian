@@ -1,48 +1,35 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+require_once("../inc/util_basic.inc");
 require_once("../project/project.inc");
 require_once("../inc/countries.inc");
 require_once("../inc/db.inc");
 require_once("../inc/boinc_db.inc");
 require_once("../inc/translation.inc");
-require_once("../inc/forum.inc");
 require_once("../inc/profile.inc");
 
 ini_set("memory_limit", "64M");
+
 date_default_timezone_set("UTC");
 
 $generating_xml = false;
 $caching = false;
-
-// db_init
-// Connects to database server and selects database as noted in config.xml
-// (Or, in some cases, if only read-only access is necessary, tries instead
-// to connect to replica database server noted in <replica_db_host> tag. If
-// this tag doesn't exist, db_init will revert to connecting to <db_host>.)
-//
-function db_init($try_replica=false) {
-    if (web_stopped()) {
-        page_head("Not available");
-        echo "This page requires database access.
-            Our database server is temporarily shut down for maintenance.
-            Please try again later.
-        ";
-        page_tail();
-        exit();
-    }
-    $retval = db_init_aux($try_replica);
-    if ($retval == 1) {
-        echo "Unable to connect to database - please try again later\n";
-        echo "Error: ", mysql_errno(), mysql_error();
-        exit();
-    }
-    if ($retval == 2) {
-        echo "Unable to select database - please try again later";
-        echo mysql_error();
-        exit();
-    }
-    return 0;
-}
 
 function send_cookie($name, $value, $permanent, $ops=false) {
     // the following allows independent login for projects on the same server
@@ -80,17 +67,13 @@ $g_logged_in_user = null;
 
 function get_logged_in_user($must_be_logged_in=true) {
     global $g_logged_in_user;
-    $g_logged_in_user = null;
-    $login_request = false;
+    if ($g_logged_in_user) return $g_logged_in_user;
+
+	check_web_stopped();
 
     $authenticator = null;
     if (isset($_COOKIE['auth'])) $authenticator = $_COOKIE['auth'];
 
-// leave this out for now
-//    if (!$authenticator) {
-//        $authenticator = get_str('login_auth', true);
-//        if ($authenticator) $login_request = true;
-//    }
     $authenticator = process_user_text($authenticator);
     if ($authenticator) {
         $g_logged_in_user = BoincUser::lookup("authenticator='$authenticator'");
@@ -98,20 +81,19 @@ function get_logged_in_user($must_be_logged_in=true) {
     if ($must_be_logged_in) {
         require_login($g_logged_in_user);
     }
-    if ($g_logged_in_user && $login_request) {
-        send_cookie('auth', $authenticator, true);
-    }
     return $g_logged_in_user;
 }
 
 function show_login($user) {
     if ($user) {
         echo "Logged in as %s.\n", $user->name;
-        echo "<br><a href=login_form.php>Log in as someone else.</a>\n";
+        echo "<br><a href=\"login_form.php\">Log in as someone else.</a>\n";
     } else {
-        echo "Not logged in";
+        echo "Not logged in.";
     }
 }
+
+$cache_control_extra="";
 
 // Page_head() is overridable so that projects that want to integrate BOINC
 // with an existing web framework can more easily do so.
@@ -120,36 +102,40 @@ function show_login($user) {
 if (!function_exists("page_head")){
 function page_head($title, $java_onload=null, $title_plain=null, $prefix="") {
     global $caching;
+    global $cache_control_extra;
 
     $stylesheet = URL_BASE.STYLESHEET;
     $rssname = PROJECT . " RSS 2.0";
     $rsslink = URL_BASE."rss_main.php";
     
-    if (defined("CHARSET")) {
-        header("Content-type: text/html; charset=".tra("CHARSET"));
+    $charset = tra("CHARSET");
+    if ($charset != "CHARSET") {
+        header("Content-type: text/html; charset=$charset");
     }
     if (!$caching) {
         header ("Expires: Mon, 26 Jul 1997 05:00:00 UTC");    // Date in the past
         header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " UTC"); // always modified
-        header ("Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0");  // HTTP/1.1
+        header ("Cache-Control: $cache_control_extra no-cache, must-revalidate, post-check=0, pre-check=0");  // HTTP/1.1
         header ("Pragma: no-cache");                          // HTTP/1.0
     }
     
-    echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd\">\n";
+    echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">
+    ";
+           
     
     if (!$title_plain) {
         echo "<html><head><title>".strip_tags($title)."</title>\n";
     } else {
         echo "<html><head><title>".strip_tags($title_plain)."</title>\n";
     }
-    echo "<link rel=\"stylesheet\" type=\"text/css\" href=\"$stylesheet\">
-        <link rel=\"alternate\" type=\"application/rss+xml\" title=\"$rssname\" href=\"$rsslink\">
+    echo "<link rel=stylesheet type=\"text/css\" href=\"$stylesheet\">
+        <link rel=alternate type=\"application/rss+xml\" title=\"$rssname\" href=\"$rsslink\">
         </head>
     ";
     if ($java_onload){
-        echo "<body bgcolor=\"#ffffff\" onload=\"".$java_onload."\">";
+        echo "<body onload=\"".$java_onload."\">";
     } else {
-        echo "<body bgcolor=\"#ffffff\">";
+        echo "<body>";
     }
     display_cvs_versions();
     project_banner($title, $prefix);
@@ -158,7 +144,9 @@ function page_head($title, $java_onload=null, $title_plain=null, $prefix="") {
 
 function page_tail_aux($show_return, $show_date, $prefix="") {
     project_footer($show_return, $show_date, $prefix);
-    echo "</body>\n</html>";
+    echo "</body>
+        </html>
+    ";
 }
 function page_tail_main($show_date=false) {
     page_tail_aux(false, $show_date);
@@ -184,8 +172,6 @@ function db_error_page() {
     page_head("Database error");
     echo "A database error occurred while handling your request.
         <br>Please try again later.
-        <br>If the error persists, please submit a
-        <a href=bug_report_form.php>problem report</a>.
     ";
     page_tail();
 }
@@ -241,12 +227,13 @@ function time_str($x) {
 function pretty_time_str($x) {
     return time_str($x);
 }
+
 function start_table($extra="width=\"100%\"") {
-    echo "<table border=\"1\" cellpadding=\"5\" $extra>";
+    echo "<table class=bordered $extra>";
 }
 
 function start_table_noborder($width="100%") {
-    echo "<table border=\"0\" cellpadding=\"5\" width=\"$width\">";
+    echo "<table cellpadding=5 width=\"$width\">";
 }
 
 function end_table() {
@@ -297,11 +284,11 @@ function row2($x, $y, $show_error=false) {
         $class1 = 'fieldname';
         $class2 = 'fieldvalue';
     }
-    echo "<tr><td width=\"40%\" class=\"$class1\">$x</td><td class=\"$class2\">$y</td></tr>\n";
+    echo "<tr><td width=\"40%\" class=$class1>$x</td><td class=$class2>$y</td></tr>\n";
 }
 
 function row2_init($x, $y) {
-    echo "<tr><td class=\"fieldname\" width=\"40%\">$x</td><td valign=\"top\"><b>$y\n";
+    echo "<tr><td class=fieldname width=\"40%\">$x</td><td class=fieldvalue>$y\n";
 }
 
 function row2_plain($x, $y) {
@@ -309,12 +296,12 @@ function row2_plain($x, $y) {
 }
 
 function row3($x, $y, $z) {
-    echo "<tr><td width=30% valign=top align=right>$x</td><td>$y</td><td>$z</td></tr>\n";
+    echo "<tr><td width=\"30%\" align=\"right\">$x</td><td>$y</td><td>$z</td></tr>\n";
 }
 
 function row4($xx, $xy, $yx, $yy) {
-    echo "<tr><td width=25% valign=top>$xx</td><td width=25%>$xy</td>"
-        . "<td width=25% >$yx</td><td width=%25>$yy</td></tr>
+    echo "<tr><td width=\"25%\">$xx</td><td width=\"25%\">$xy</td>"
+        . "<td width=\"25%\">$yx</td><td width=\"%25\">$yy</td></tr>
     ";
 }
 
@@ -333,7 +320,7 @@ function row_array($x) {
 function row_heading_array($x) {
     echo "<tr>";
     foreach ($x as $h) {
-        echo "<th class=heading>$h</th>";
+        echo "<th>$h</th>";
     }
     echo "</tr>\n";
 }
@@ -376,122 +363,56 @@ function valid_tokens($auth) {
 function check_tokens($auth) {
     if (valid_tokens($auth)) return;
     error_page(
-        "Link has timed out.  Please click Back, refresh the page,
+        "Link has timed out. Please click Back, refresh the page,
         and try again."
     );
 }
 
-function print_login_form_aux($next_url, $user) {
+if (!function_exists("print_login_form_aux")){
+function print_login_form_aux($next_url, $user, $email_addr="") {
     echo "
-        <form name=f method=post action=login_action.php>
-        <input type=hidden name=next_url value='$next_url'>
+        <form name=\"f\" method=\"post\" action=\"login_action.php\">
+        <input type=\"hidden\" name=\"next_url\" value=\"$next_url\">
     ";
     start_table();
-    row2("Email address:", '<input name="email_addr" size="40" tabindex="1">');
-    row2("Password:<br><font size=-2><a href=get_passwd.php>Forgot password?</a>",
+    row2("Email address:<br><span class=note><a href=get_passwd.php>forgot email address?</a></span>", "<input name=email_addr size=40 tabindex=1 value=\"$email_addr\">");
+    row2("Password:<br><span class=note><a href=get_passwd.php>forgot password?</a></span>",
         '<input type="password" name="passwd" size="40" tabindex="2">'
     );
     row2("Stay logged in on this computer",
-        "<input type=checkbox name=stay_logged_in checked>"
+        '<input type="checkbox" name="stay_logged_in" checked>'
     );
     $x = urlencode($next_url);
     row2("",
-        "<input type=submit name=mode value=\"Log in\" tabindex=\"3\"><br><br>or <a href=create_account_form.php?next_url=$x>create an account</a>"
+        "<input type=\"submit\" name=\"mode\" value=\"Log in\" tabindex=\"3\"><br><br>or <a href=\"create_account_form.php?next_url=$x\">create an account</a>."
     );
     if ($user) {
         row1("Log out");
         row2("You are logged in as $user->name",
-            "<a href=logout.php?".url_tokens($user->authenticator).">Log out</a>"
+            "<a href=\"logout.php?".url_tokens($user->authenticator)."\">Log out</a>"
         );
     }
     end_table();
     echo "
         </form>
-        <script>
+        <script type=\"text/javascript\">
             document.f.email_addr.focus();
         </script>
     ";
 }
+}
 
+if (!function_exists("print_login_form")){
 function print_login_form() {
     page_head("Please log in");
     $next_url = $_SERVER['REQUEST_URI'];
     print_login_form_aux($next_url, null);
     page_tail();
 }
-
-// Look for an element in a line of XML text
-// If it's a single-tag element, and it's present, just return the tag
-//
-function parse_element($xml, $tag) {
-    $element = null;
-    $closetag = "</" . substr($tag,1);
-    $x = strstr($xml, $tag);
-    if ($x) {
-        if (strstr($tag, "/>")) return $tag;
-        $y = substr($x, strlen($tag));
-        $n = strpos($y, $closetag);
-        if ($n) {
-            $element = substr($y, 0, $n);
-        }
-    }
-    return trim($element);
 }
 
-function parse_next_element($xml, $tag, &$cursor) {
-    $element = null;
-    $closetag = "</" . substr($tag,1);
-    $pos = substr($xml,$cursor);
-    $x = strstr($pos, $tag);
-    if ($x) {
-        if (strstr($tag, "/>")) return $tag;
-        $y = substr($x, strlen($tag));
-        $n = strpos($y, $closetag);
-        if ($n) {
-            $element = substr($y, 0, $n);
-        }
-        $cursor = (strlen($xml) - strlen($x)) + strlen($tag) + strlen($closetag) + strlen($element);
-    }
-    return trim($element);
-}
-
-if (!function_exists("file_get_contents")) {
-function file_get_contents($path) {
-    $x = "";
-    $f = fopen($path, "r");
-    if ($f) {
-        while (!feof($f)) $x .= fread($f, 4096);
-        fclose($f);
-    }
-    return $x;
-}
-}
-
-$g_config = null;
-function get_config() {
-    global $g_config;
-    if ($g_config == null) {
-       $g_config = file_get_contents("../../config.xml");
-    }
-    return $g_config;
-}
-
-// look for a particular element in the ../../config.xml file
-//
-function parse_config($config, $tag) {
-    $element = parse_element($config, $tag);
-    return $element;
-}
-
-// return true if XML contains either <tag/> or <tag>1</tag>
-//
-function parse_bool($xml, $tag) {
-    $x = "<$tag/>";
-    if (strstr($xml, $x)) return true;
-    $x = "<$tag>";
-    $y = (int)parse_element($xml, $x);
-    if ($y != 0) return true;
-    return false;
+function no_computing() {
+    return parse_bool(get_config(), "no_computing");
 }
 
 // Generates a legal filename from a parameter string.
@@ -510,21 +431,23 @@ function get_legal_filename($name) {
 function sub_sentence($sentence, $delimiter, $max_chars, $ellipsis=false) {
     $words = explode($delimiter, $sentence);
     $total_chars = 0;
-    $count = 0;
-    $result = '';
+    $trunc = false;
+    $result = null;
 
-    do {
-        if ($count > 0) {
-            $result = $result . ' ' . $words[$count];
-        } else {
-            $result = $result . $words[$count];
+    foreach ($words as $word) {
+        if (strlen($result) + strlen($word) > $max_chars) {
+            $trunc = true;
+            break;
         }
-        $total_chars += strlen($words[$count]) + 1;
-        $count++;
-    } while ($count < count($words) && ($total_chars + strlen($words[$count])) <= $max_chars);
+        if ($result) {
+            $result .= " $word";
+        } else {
+            $result = $word;
+        }
+    }
 
-    if ($ellipsis && ($count < count($words))) {
-        $result = $result . '...';
+    if ($ellipsis && $trunc) {
+        $result .= "...";
     }
 
     return $result;
@@ -542,19 +465,11 @@ function format_credit_large($x) {
     return number_format($x, 0);
 }
 
-function web_stopped() {
-    return file_exists("../../stop_web");
-}
-
-function sched_stopped() {
-    return file_exists("../../stop_sched");
-}
-
 function friend_links($user) {
     if (is_banished($user)) {
         return "";
     }
-    $x = "<table height=100 width=150 border=0 cellpadding=4><tr><td bgcolor=#e8e8e8>";
+    $x = "<table height=\"100\" width=\"150\" border=\"0\" cellpadding=\"4\"><tr><td class=\"friend\">";
     if ($user->has_profile) {
         $profile = BoincProfile::lookup_fields("has_picture", "userid=$user->id");
         if ($profile && $profile->has_picture) {
@@ -562,7 +477,7 @@ function friend_links($user) {
         } else {
             $img_url = URL_BASE."img/head_20.png";
         }
-        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img title="View the profile of '.$user->name.'" border="0" align=top src="'.$img_url.'" alt="Profile"></a><br>';
+        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="View the profile of '.$user->name.'" align="top" src="'.$img_url.'" alt="Profile"></a><br>';
     }
     $x .= " <a href=\"".URL_BASE."show_user.php?userid=".$user->id."\">".$user->name."</a>";
     if ($user->donated == 1) { 
@@ -581,7 +496,7 @@ function user_links($user) {
     $x = "";
     if ($user->has_profile) {
         $img_url = URL_BASE."img/head_20.png";
-        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img title="View the profile of '.$user->name.'" border="0" align=top src="'.$img_url.'" alt="Profile"></a>';
+        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="View the profile of '.$user->name.'" align="top" src="'.$img_url.'" alt="Profile"></a>';
     }
     $x .= " <a href=\"".URL_BASE."show_user.php?userid=".$user->id."\">".$user->name."</a>";
     if ($user->donated == 1) { 
@@ -593,7 +508,7 @@ function user_links($user) {
 
 function host_link($hostid) {
     if ($hostid) {
-        return "<a href=show_host_detail.php?hostid=$hostid>$hostid</a>";
+        return "<a href=\"show_host_detail.php?hostid=$hostid\">$hostid</a>";
     } else {
         return "---";
     }
@@ -614,6 +529,14 @@ function close_output_buffer($filename) {
 
 function html_info() {
     return "<br><a href=\"bbcode.php\" target=\"_new\"><span class=\"smalltext\">".tra("Use BBCode tags to format your text")."</span></a>\n";
+}
+
+// strip slashes if magic quotes in effect
+function undo_magic_quotes($x) {
+    if (get_magic_quotes_gpc()) {
+        return stripslashes($x);
+    }
+    return $x;
 }
 
 function get_int($name, $optional=false) {
@@ -643,12 +566,15 @@ function post_int($name, $optional=false) {
 }
 
 function get_str($name, $optional=false) {
-    $x = null;
-    if (isset($_GET[$name])) $x = $_GET[$name];
-    if (!$x && !$optional) {
-        error_page("missing or bad parameter: $name");
+    if (!isset($_GET[$name])) {
+        if (!$optional) {
+            error_page("missing or bad parameter: $name");
+        }
+        $x = null;
+    } else {
+        $x = $_GET[$name];
     }
-    return $x;
+    return undo_magic_quotes($x);
 }
 
 function get_venue($name) {
@@ -666,7 +592,7 @@ function post_str($name, $optional=false) {
     if (!$x && !$optional) {
         error_page("missing or bad parameter: $name");
     }
-    return $x;
+    return undo_magic_quotes($x);
 }
 
 function is_ascii($str) {
@@ -760,17 +686,29 @@ function current_url() {
     return $url;
 }
 
-function show_button($url, $text, $desc) {
-    $text_esc = addslashes($text);      // for javascript
-    $desc_esc = addslashes($desc);
-    echo "
-        <script>
-        document.write('<input onClick=\"document.location.href=\'$url\'\" class=btn type=button value=\"$text_esc\" title=\"$desc_esc\">')
-        </script>
-        <noscript>
-        <a href=$url title=$desc>$text</a>
-        </noscript>
-    ";
+/**
+ * Show a single link formatted to look like a button.
+ * @param url The destination URL of the button
+ * @param text The text to display on the button
+ * @param desc The title of the destination - typically used as a popup
+ * @param class The optional CSS class of the button. Defaults to a standard button
+ */ 
+function show_button($url, $text, $desc, $class="button") {
+    echo "<a href=\"".$url."\" title=\"".addslashes($desc)."\" class=\"".$class."\">".$text."</a>";
+}
+
+/**
+ * When multiple buttons (or actions) are presented in a list you can
+ * use this convenience method to avoid having to wrap each button in <li></li> elements
+ * @param url The destination URL of the button
+ * @param text The text to display on the button
+ * @param desc The title of the destination - typically used as a popup
+ * @param class The optional CSS class of the button. Defaults to a standard button
+ */
+function show_actionlist_button($url, $text, $desc, $class="button"){
+    echo "<li>";
+    echo show_button($url, $text, $desc, $class);
+    echo "</li>";
 }
 
 function show_image($src, $title, $alt, $height=null) {
@@ -778,9 +716,47 @@ function show_image($src, $title, $alt, $height=null) {
     if ($height) {
         $h = "height=\"$height\"";
     }
-    echo "<img border=0 title=\"$title\" alt=\"$alt\" src=\"$src\" $h>";
+    echo "<img border=\"0\" title=\"$title\" alt=\"$alt\" src=\"$src\" $h>";
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 15089 2008-04-24 16:16:36Z davea $";  //Generated automatically - do not edit
+function check_web_stopped() {
+    global $generating_xml;
+    if (web_stopped()) {
+        if ($generating_xml) {
+            xml_error(-183);
+        } else {
+            page_head("Project down for maintenance");
+            echo "This page requires database access.
+                Our database server is temporarily shut down for maintenance.
+                Please try again later.
+            ";
+            page_tail();
+            exit();
+        }
+    }
+}
+
+// Connects to database server and selects database as noted in config.xml
+// If only read-only access is necessary,
+// tries instead to connect to <replica_db_host> if tag exists.
+// DEPRECATED - use boinc_db.h
+//
+function db_init($try_replica=false) {
+    check_web_stopped();
+    $retval = db_init_aux($try_replica);
+    if ($retval == 1) {
+        echo "Unable to connect to database - please try again later\n";
+        echo "Error: ", mysql_errno(), mysql_error();
+        exit();
+    }
+    if ($retval == 2) {
+        echo "Unable to select database - please try again later";
+        echo mysql_error();
+        exit();
+    }
+    return 0;
+}
+
+$cvs_version_tracker[]="\$Id: util.inc 16399 2008-11-04 00:15:51Z davea $";  //Generated automatically - do not edit
 
 ?>

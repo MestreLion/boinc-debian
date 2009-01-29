@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 class BoincAssignment {
     static function enum($where_clause) {
@@ -189,9 +205,9 @@ class SqlQueryString {
     }
     function addclause($clause) {
         if ($clause) {
-            $c = stripslashes(urldecode($clause));
+            $c = urldecode($clause);
             $this->add("( $c )");
-            $clause = urlencode(stripslashes($clause));
+            $clause = urlencode($clause);
             $this->urlquery .= "&clauses=$clause";
         }
     }
@@ -296,11 +312,8 @@ class SqlQueryString {
         $this->addeq_not_CHOOSE_ALL('outcome');
         $this->addeq_not_CHOOSE_ALL('client_state');
         $this->addeq_not_CHOOSE_ALL('validate_state');
-        if (isset($_GET['clauses'])) {
-            $clauses = $_GET['clauses'];
-        } else {
-            $clauses = null;
-        }
+        $clauses = get_str("clauses", true);
+        if (strstr($clauses, ";")) error_page("bad clause");
         if ($clauses) {
             $this->addclause($clauses);
         }
@@ -423,7 +436,40 @@ function result_error_mask_str($x){
     case -194: return "ERR_ALREADY_RUNNING";
     case -195: return "ERR_NO_APP_VERSION";  
     case -196: return "ERR_WU_USER_RULE";    
-    case -197: return "ERR_ABORTED_VIA_GUI"; 
+    case -197: return "ERR_ABORTED_VIA_GUI";
+    case -198: return "ERR_INSUFFICIENT_RESOURCE";
+    case -199: return "ERR_RETRY";
+    case -200: return "ERR_WRONG_SIZE";
+    case -201: return "ERR_USER_PERMISSION";
+    case -202: return "ERR_SHMEM_NAME";
+    case -203: return "ERR_NO_NETWORK_CONNECTION";
+    case -204: return "ERR_IN_PROGRESS";
+    case -205: return "ERR_BAD_EMAIL_ADDR";
+    case -206: return "ERR_BAD_PASSWD";
+    case -207: return "ERR_NONUNIQUE_EMAIL";
+    case -208: return "ERR_ACCT_CREATION_DISABLED";
+    case -209: return "ERR_ATTACH_FAIL_INIT";
+    case -210: return "ERR_ATTACH_FAIL_DOWNLOAD";
+    case -211: return "ERR_ATTACH_FAIL_PARSE";
+    case -212: return "ERR_ATTACH_FAIL_BAD_KEY";
+    case -213: return "ERR_ATTACH_FAIL_FILE_WRITE";
+    case -214: return "ERR_ATTACH_FAIL_SERVER_ERROR";
+    case -215: return "ERR_SIGNING_KEY";
+    case -216: return "ERR_FFLUSH";
+    case -217: return "ERR_FSYNC";
+    case -218: return "ERR_TRUNCATE";
+    case -219: return "ERR_WRONG_URL";
+    case -220: return "ERR_DUP_NAME";
+    case -221: return "ERR_ABORTED_BY_PROJECT";
+    case -222: return "ERR_GETGRNAM";
+    case -223: return "ERR_CHOWN";
+    case -224: return "ERR_FILE_NOT_FOUND";
+    case -225: return "ERR_BAD_FILENAME";
+    case -226: return "ERR_TOO_MANY_EXITS";
+    case -227: return "ERR_RMDIR";
+    case -228: return "ERR_CHILD_FAILED";
+    case -229: return "ERR_SYMLINK";
+    case -230: return "ERR_DB_CONN_LOST";
     default: return "Unknown error number";
     }
 }
@@ -1392,5 +1438,5 @@ function host_name_by_id($hostid) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: db_ops.inc 14767 2008-02-21 00:47:50Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: db_ops.inc 15975 2008-09-07 07:40:56Z davea $";  //Generated automatically - do not edit
 ?>

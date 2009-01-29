@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/forum.inc");
 require_once("../inc/image.inc"); // Avatar scaling
@@ -57,6 +73,8 @@ if ($avatar_type==0){
         unlink($newfile);
     }
     $avatar_url="";
+} elseif ($avatar_type == 1) {
+    $avatar_url = "http://www.gravatar.com/avatar/".md5($user->email_addr)."?s=100&d=identicon";
 } elseif ($avatar_type==2){
     if (($rpc && (post_str("avatar_url", true) != null)) || ($_FILES['picture']['tmp_name']!="")) {
         if ($_FILES['picture']['tmp_name']!="") {
@@ -87,13 +105,14 @@ $images_as_links = ($_POST["forum_images_as_links"]!="")?1:0;
 $link_popup = ($_POST["forum_link_popup"]!="")?1:0;
 $hide_avatars = ($_POST["forum_hide_avatars"]!="")?1:0;
 $hide_signatures = ($_POST["forum_hide_signatures"]!="")?1:0;
+$highlight_special = ($_POST["forum_highlight_special"]!="")?1:0;
 $jump_to_unread = ($_POST["forum_jump_to_unread"]!="")?1:0;
 $ignore_sticky_posts = ($_POST["forum_ignore_sticky_posts"]!="")?1:0;
 $no_signature_by_default = ($_POST["signature_by_default"]!="")?0:1;
 $pm_notification = post_int("pm_notification");
 //$low_rating_threshold = post_int("forum_low_rating_threshold");
 //$high_rating_threshold = post_int("forum_high_rating_threshold");
-$signature = stripslashes($_POST["signature"]);
+$signature = post_str("signature", true);
 if (strlen($signature)>250) {
     error_page(
         "Your signature was too long, please keep it less than 250 chars"
@@ -111,7 +130,7 @@ if ($display_wrap_postcount<5) $display_wrap_postcount=5;
 
 $signature = BoincDb::escape_string($signature);
 
-$user->prefs->update("images_as_links=$images_as_links, link_popup=$link_popup, hide_avatars=$hide_avatars, hide_signatures=$hide_signatures, jump_to_unread=$jump_to_unread, ignore_sticky_posts=$ignore_sticky_posts, no_signature_by_default=$no_signature_by_default, pm_notification=$pm_notification, avatar='$avatar_url', signature='$signature', forum_sorting=$forum_sort, thread_sorting=$thread_sort, minimum_wrap_postcount=$minimum_wrap_postcount, display_wrap_postcount=$display_wrap_postcount");
+$user->prefs->update("images_as_links=$images_as_links, link_popup=$link_popup, hide_avatars=$hide_avatars, hide_signatures=$hide_signatures, highlight_special=$highlight_special, jump_to_unread=$jump_to_unread, ignore_sticky_posts=$ignore_sticky_posts, no_signature_by_default=$no_signature_by_default, pm_notification=$pm_notification, avatar='$avatar_url', signature='$signature', forum_sorting=$forum_sort, thread_sorting=$thread_sort, minimum_wrap_postcount=$minimum_wrap_postcount, display_wrap_postcount=$display_wrap_postcount");
 
 
 $add_user_to_filter = ($_POST["add_user_to_filter"]!="");

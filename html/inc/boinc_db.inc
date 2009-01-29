@@ -1,27 +1,35 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/db_conn.inc");
-require_once("../inc/util.inc");
+require_once("../inc/util_basic.inc");
 
 class BoincDb extends DbConn {
     static $instance;
 
     static function get($readonly = false) {
-        global $generating_xml;
-        if (web_stopped()) {
-            if ($generating_xml) {
-                xml_error(-183);
-            } else {
-                page_head("Page not available");
-                echo "This page requires database access.
-                    Our database server is temporarily shut down for maintenance.
-                    Please try again later.
-                ";
-                page_tail();
-            }
-            exit();
-        }
         if (!isset($instance)) {
+            if (web_stopped()) {
+                show_page("Project down for maintenence",
+                    "Please check back in a few hours."
+                );
+                exit;
+            }
             $config = get_config();
             $user = parse_config($config, '<db_user>');
             $passwd = parse_config($config, '<db_passwd>');
@@ -88,10 +96,13 @@ class BoincUser {
     }
     static function insert($clause) {
         $db = BoincDb::get();
-        return $db->insert('user', $clause);
+        $ret = $db->insert('user', $clause);
+        if (!$ret) return 0;
+        return $db->insert_id();
     }
     function delete() {
         $db = BoincDb::get();
+        $db->delete_aux('profile', "userid=$this->id");
         return $db->delete($this, 'user');
     }
 }
@@ -100,7 +111,9 @@ class BoincTeam {
     static $cache;
     static function insert($clause) {
         $db = BoincDb::get();
-        return $db->insert('team', $clause);
+        $ret = $db->insert('team', $clause);
+        if (!$ret) return 0;
+        return $db->insert_id();
     }
     static function lookup_id_nocache($id) {
         $db = BoincDb::get();
@@ -189,6 +202,14 @@ class BoincWorkunit {
         $ret = $db->insert('workunit', $clause);
         if (!$ret) return $ret;
         return $db->insert_id();
+    }
+    static function enum($clause) {
+        $db = BoincDb::get();
+        return $db->enum('workunit', 'BoincWorkunit', $clause);
+    }
+    function update($clause) {
+        $db = BoincDb::get();
+        return $db->update($this, 'workunit', $clause);
     }
 }
 
@@ -307,6 +328,10 @@ class BoincPlatform {
     static function enum($clause) {
         $db = BoincDb::get();
         return $db->enum('platform', 'BoincPlatform', $clause);
+    }
+    static function lookup_id($id) {
+        $db = BoincDb::get();
+        return $db->lookup_id($id, 'platform', 'BoincPlatform');
     }
 }
 

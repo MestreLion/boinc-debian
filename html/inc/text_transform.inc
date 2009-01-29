@@ -1,10 +1,29 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once('../inc/sanitize_html.inc');
 
-// This file holds options and functions relating to outputted text.
-// It does things like clean out HTML, convert newlines to <br> tags,
-// and other such niceties.
+// Functions that process user-supplied text (e.g. messages)
+// prior to displaying it to users.
+// Goals:
+// - Security (don't send evil javascript)
+// - obey user preferences
+// - improve formatting (e.g., convert newlines to <br> tags)
 
 class output_options {
     var $bb2html;            // BBCode as HTML? (on)
@@ -14,7 +33,6 @@ class output_options {
     var $nl2br;                // Convert newlines to <br>'s? (on)
     var $htmlitems;            // Convert special chars to HTML entities? (on)
     var $htmlscrub;            // Scrub "bad" HTML tags? (off)
-    var $stripslashes;        // Strip slashes (depends)
     var $highlight_terms;// Array of terms to be highlighted (off)    
 
     // Constructor - set the defaults.
@@ -27,9 +45,6 @@ class output_options {
         $this->nl2br = 1;
         $this->htmlitems = 1;
         $this->htmlscrub = 0;
-        if (get_magic_quotes_gpc()) {
-            $this->stripslashes = 1;
-        }
         $this->highlight_terms = 0;
         return true;
     }
@@ -54,14 +69,13 @@ function output_transform($text, $options = NULL) {
     if (!$options) {
         $options = new output_options; // Defaults in the class definition
     }
-    
-    if ($options->stripslashes) {
-        $text = stripslashes($text);
-    }
     if ($options->htmlitems) {
         //$text = htmlentities($text);
         $text = htmlspecialchars($text);
     }
+    if (is_array($options->highlight_terms)) {
+        $text = highlight_terms($text, $options->highlight_terms);
+    }    
 //    if ($options->htmlscrub) {
 //        $text = sanitize_html($text);
 //    }
@@ -77,9 +91,6 @@ function output_transform($text, $options = NULL) {
     if ($options->link_popup) {
         $text = externalize_links($text);
     }
-    if (is_array($options->highlight_terms)) {
-        $text = highlight_terms($text, $options->highlight_terms);
-    }    
     return $text;
 }
 
@@ -146,7 +157,7 @@ function bb2html($text) {
         "<pre>\\1</pre>",
         "<img src=\"http://\\2\">",
         "<font color=\"\\1\">\\2</font>",
-        "\\1<li>\\2</li>\n\\3",
+        "\\1<li>\\2\n\\3",
         "<span style=\"font-size: \\1px;\">\\2</span>",
         "<div class=\"code\">\\1</div>",
         "<a href=\"mailto:\\1\">\\1</a>",
@@ -260,5 +271,5 @@ function highlight_terms($text, $terms) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: text_transform.inc 14866 2008-03-07 04:38:06Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: text_transform.inc 16193 2008-10-12 17:11:19Z jbk $";  //Generated automatically - do not edit
 ?>

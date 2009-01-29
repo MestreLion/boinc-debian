@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // This page shows basic account details about a given user
 // The page can be output as either XML or HTML.
@@ -7,7 +23,7 @@
 // Object-caching and full-file caching is used to speed up queries
 // for data from this page.
 
-$cvs_version_tracker[]="\$Id: show_user.php 14452 2008-01-01 22:29:10Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: show_user.php 16062 2008-09-26 07:12:01Z jbk $";  //Generated automatically - do not edit
 
 require_once("../inc/cache.inc");
 require_once("../inc/util.inc");
@@ -17,13 +33,14 @@ require_once("../inc/user.inc");
 require_once("../inc/forum.inc");
 require_once("../project/project.inc");
 
-$id = get_int("userid", true);
-$format = get_str("format", true);
 $auth = get_str("auth", true);
+if (!$auth) {
+    $id = get_int("userid");
+}
+$format = get_str("format", true);
 
 if ($format=="xml"){
     // XML doesn't need translating, so use the full-file cache for this
-    //
     $cache_args="userid=".$id."&auth=".$auth;
     start_cache(USER_PAGE_TTL, $cache_args);
     xml_header();
@@ -34,9 +51,6 @@ if ($format=="xml"){
         $show_hosts = true;
     } else {
         $user = lookup_user_id($id);
-        if ($user) {
-            $user = get_other_projects($user);
-        }
         $show_hosts = false;
     }
     if (!$user) xml_error(-136);
@@ -59,7 +73,7 @@ if ($format=="xml"){
         // No data was found, generate new data for the cache and store it
         $user = lookup_user_id($id);
         BoincForumPrefs::lookup($user);
-        $user = get_other_projects($user);
+        $user = @get_other_projects($user);
         set_cache_data(serialize($user), $cache_args);
     }
     if (!$user->id) {

@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 include_once("../inc/boinc_db.inc");
 include_once("../inc/util.inc");
@@ -53,14 +69,16 @@ function show_list($list) {
         <th>Country</th>
         </tr>
     ";
+    $i = 0;
     foreach ($list as $team) {
         $type = team_type_name($team->type);
-        echo "<tr class=bordered>
-            <td class=shaded valign=top><a href=team_display.php?teamid=$team->id>$team->name</a></td>
-            <td class=shaded valign=top><span class=note>".sanitize_html($team->description)."</span></td>
-            <td class=shaded valign=top align=right>".format_credit($team->expavg_credit)."</td>
-            <td class=shaded valign=top>$type</td>
-            <td class=shaded valign=top>$team->country</td>
+        $j = $i++ % 2;
+        echo "<tr class=row$j>
+            <td><a href=team_display.php?teamid=$team->id>$team->name</a></td>
+            <td><span class=note>".sanitize_html($team->description)."</span></td>
+            <td>".format_credit($team->expavg_credit)."</td>
+            <td>$type</td>
+            <td>$team->country</td>
             </tr>
         ";
     }
@@ -71,18 +89,19 @@ function search($params) {
     $list = array();
     $tried = false;
     if (strlen($params->keywords)) {
-        $name_lc = strtolower($params->keywords);
+        $kw = BoincDb::escape_string($params->keywords);
+        $name_lc = strtolower($kw);
         $name_lc = escape_pattern($name_lc);
 
         $list2 = get_teams("name='$name_lc'", $params->active);
         merge_lists($list2, $list, 20);
 
-        $list2 = get_teams("name like '".boinc_real_escape_string($name_lc)."%'", $params->active);
+        $list2 = get_teams("name like '".$name_lc."%'", $params->active);
         merge_lists($list2, $list, 5);
 
-        $list2 = get_teams("match(name) against ('$params->keywords')", $params->active);
+        $list2 = get_teams("match(name) against ('$kw')", $params->active);
         merge_lists($list2, $list, 5);
-        $list2 = get_teams("match(name, description) against ('$params->keywords')", $params->active);
+        $list2 = get_teams("match(name, description) against ('$kw')", $params->active);
         //echo "<br>keyword matches: ",sizeof($list2);
         merge_lists($list2, $list, 3);
         $tried = true;
@@ -130,7 +149,7 @@ function search($params) {
 $user = get_logged_in_user(false);
 if (isset($_GET['submit'])) {
     $params = null;
-    $params->keywords = $_GET['keywords'];
+    $params->keywords = get_str('keywords', true);
     $params->country = $_GET['country'];
     $params->type = $_GET['type'];
     $params->active = get_str('active', true);

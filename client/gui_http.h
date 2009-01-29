@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _GUI_HTTP_
 #define _GUI_HTTP_
@@ -33,10 +31,11 @@ using std::string;
 
 struct GUI_HTTP_OP;
 
-// A "channel" for doing HTTP ops.
-// There's one of these for each GUI RPC connection,
-// and one for the client itself.
-//
+/// A "channel" for doing HTTP ops.
+
+/// There's one of these for each GUI RPC connection,
+/// and one for the client itself.
+
 struct GUI_HTTP {
     int state;
     GUI_HTTP_OP* gui_http_op;
@@ -48,8 +47,8 @@ struct GUI_HTTP {
     bool poll();
 };
 
-// base class for various types of ops
-//
+/// base class for various types of ops
+
 struct GUI_HTTP_OP {
     GUI_HTTP* gui_http;
     virtual void handle_reply(int) {}

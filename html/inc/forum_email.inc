@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/util.inc");
 require_once("../inc/email.inc");
@@ -52,13 +68,13 @@ function send_moderation_email($forum, $post, $thread, $explanation, $action) {
 
     $subject = PROJECT." moderation notice";
 
-    $body = "Your post [ID $post->id] in thread \"$thread->title\"
+    $body = "Your post [ID $post->id] in thread '$thread->title'
 ".URL_BASE."forum_thread.php?id=$thread->id#$post->id
 has been $action by moderator $moderator->name (ID $moderator->id).
 $explanation
 
 The content of your post:
-".$post->content."
+$post->content
 
 For further information and assistance with ".PROJECT." go to ".MASTER_URL;
 
@@ -72,34 +88,31 @@ Subject: $subject
 
 $body
 ";
-    $subject = PROJECT.": post $action in \"$thread->title\"";
+    $subject = PROJECT.": post $action in '$thread->title'";
     $success &= mail_report_list($forum, $subject, $body);
     return $success;
 }
 
 //////////////////// thread hidden/unhidden ///////////
 //
-function send_thread_moderation_email($forum, $thread, $message, $action) {
-    $moderator=get_logged_in_user();
+function send_thread_moderation_email(
+    $forum, $thread, $message, $action_name, $explanation
+) {
+    $moderator = get_logged_in_user();
     $user = BoincUser::lookup_id($thread->owner);
     $body = "";
 
     $subject = PROJECT." forum moderation notice";
-    $body = PROJECT." notification:
-
-This email is sent to inform you that one of your threads in the forum has been affected by moderation in ".PROJECT.":
-    Thread:         ".$thread->title."
-    Link:           ".MASTER_URL."forum_thread.php?id=".$thread->id."
-    Moderator:      ".$moderator->name." (".$moderator->id.")
-    Action:         ".$action."
-
-The moderator gave this explanation to why your thread was moderated:
-".$message;
-$body .= "
+    $body = "Your thread '$thread->title'
+".URL_BASE."forum_thread.php?id=$thread->id
+has been $action_name
+by moderator $moderator->name (ID $moderator->id).
+$explanation
 
 For further information and assistance with ".PROJECT." go to ".MASTER_URL;
 
-    $success = mail_report_list($forum, "THREAD ".$action." REPORT: ".$thread->title, $body);
+    $subject = "THREAD $action REPORT: $thread->title";
+    $success = mail_report_list($forum, $subject, $body);
     $success &= send_email($user, $subject, $body);
     return $success;
 }
@@ -108,10 +121,10 @@ For further information and assistance with ".PROJECT." go to ".MASTER_URL;
 // send them an email notifying them of the reply.
 //
 function send_reply_notification_email($thread, $user){
-    $title = PROJECT . ": A user has posted to '". stripslashes($thread->title) ."'";
+    $title = PROJECT . ": A user has posted to '". $thread->title ."'";
     $link = URL_BASE . "forum_thread.php?id=" . $thread->id;
     $body = "Another " . PROJECT . " user has posted to the thread
-\"" . stripslashes($thread->title) . "\".\n"
+\"" . $thread->title . "\".\n"
            ."To view the updated thread, visit:\n$link
 
 --------------------------
@@ -128,20 +141,20 @@ function send_report_post_email($user, $forum, $thread,  $post, $message) {
     $body = "";
     $owner = BoincUser::lookup_id($post->user);
 
-    $subject = PROJECT." post in '".$thread->title."' reported as offensive";
+    $subject = PROJECT." post in '$thread->title' reported as offensive";
     $body = PROJECT." notification:
 
-This email is sent to inform you that one of the posts in the forum was reported as offensive in ".PROJECT.":
-    Thread:         ".$thread->title."
-    Post:           ".$post->id." by ".$owner->id." (".$owner->name.")
-    Reporting User: ".$user->id." (".$user->name.")
-    Link:           ".URL_BASE."forum_thread.php?id=".$thread->id."#".$post->id."
+A post in the ".PROJECT." forums was reported as offensive.
+    Thread:         $thread->title
+    Post:           $post->id by $owner->id ($owner->name)
+    Reporting User: $user->id ($user->name)
+    Link:           ".URL_BASE."forum_thread.php?id=$thread->id#$post->id
     
-The reporting user gave this explanation to why the post was reported:
-".$message."
+Comments from reporting user:
+$message
 
-This was the contents of the post:
-".$post->content."
+Contents of the post:
+$post->content
 
 For further information and assistance with ".PROJECT." go to ".MASTER_URL;
 
@@ -209,5 +222,4 @@ able to resume posting at that time.
     $success &= mail_report_list($forum, "A banishment vote for ".$user->name." has been started.", $body);
     return $success;
 }
-
 ?>

@@ -9,7 +9,7 @@
 //              Added wxWIZARD_HELP event
 //              Robert Vazan (sizers)
 // Created:     15.08.99
-// RCS-ID:      $Id: wizardex.h 12204 2007-03-09 23:44:34Z rwalton $
+// RCS-ID:      $Id: wizardex.h 16030 2008-09-19 21:16:03Z romw $
 // Copyright:   (c) 1999 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
 // Licence:     wxWindows licence
 ///////////////////////////////////////////////////////////////////////////////
@@ -247,7 +247,8 @@ private:
     // wizard controls
 protected:
     wxButton    *m_btnPrev,     // the "<Back" button
-                *m_btnNext;     // the "Next>" or "Finish" button
+                *m_btnNext,     // the "Next>" or "Finish" button
+                *m_btnCancel;   // the "Cancel" button
 private:
     wxStaticBitmap *m_statbmp;  // the control for the bitmap
 

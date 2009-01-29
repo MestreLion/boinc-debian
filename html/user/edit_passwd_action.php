@@ -1,18 +1,31 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/user.inc");
 
-$auth = process_user_text(post_str("auth", true));
-$email_addr = strtolower(process_user_text(post_str("email_addr", true)));
+$auth = post_str("auth", true);
+$email_addr = strtolower(post_str("email_addr", true));
 
-// Note: don't call process_user_text() on passwords.
-// This is not needed, and will break passwords containing punctuation
-
-$old_passwd = stripslashes(post_str("old_passwd", true));
-$passwd = stripslashes(post_str("passwd"));
-$passwd2 = stripslashes(post_str("passwd2"));
+$old_passwd = post_str("old_passwd", true);
+$passwd = post_str("passwd");
+$passwd2 = post_str("passwd2");
 
 if ($passwd != $passwd2) {
     error_page("New passwords are different");
