@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _PREFS_
 #define _PREFS_
@@ -52,6 +50,7 @@ struct GLOBAL_PREFS_MASK {
     bool work_buf_min_days;
     bool work_buf_additional_days;
     bool max_ncpus_pct;
+    bool max_ncpus;
     bool cpu_scheduling_period_minutes;
     bool disk_interval;
     bool disk_max_used_gb;
@@ -146,6 +145,7 @@ struct GLOBAL_PREFS {
     double work_buf_min_days;
     double work_buf_additional_days;
     double max_ncpus_pct;
+    int max_ncpus;
     double cpu_scheduling_period_minutes;
     double disk_interval;
     double disk_max_used_gb;
@@ -163,6 +163,7 @@ struct GLOBAL_PREFS {
 
     GLOBAL_PREFS();
     void defaults();
+    void init();
     void clear_bools();
     int parse(XML_PARSER&, const char* venue, bool& found_venue, GLOBAL_PREFS_MASK& mask);
     int parse_day(XML_PARSER&);

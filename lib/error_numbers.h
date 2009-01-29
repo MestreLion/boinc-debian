@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _ERROR_NUMBERS_H_
 #define _ERROR_NUMBERS_H_
@@ -27,7 +25,8 @@
 
 #define EXIT_STATEFILE_WRITE    192
 #define EXIT_SIGNAL             193
-#define EXIT_ABORTED_VIA_GUI    194
+#define EXIT_ABORTED_BY_CLIENT  194
+#define EXIT_CHILD_FAILED       195
 
 // Function return values.
 // NOTE:  add new errors to the end of the list and don't change
@@ -184,7 +183,6 @@
 #define ERR_BAD_FILENAME    -225
 #define ERR_TOO_MANY_EXITS  -226
 #define ERR_RMDIR           -227
-#define ERR_CHILD_FAILED    -228
 #define ERR_SYMLINK         -229
 #define ERR_DB_CONN_LOST    -230
 

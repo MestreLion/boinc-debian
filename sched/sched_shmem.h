@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // The structure of the memory segment shared between
 // the feeder and schedulers
@@ -27,6 +25,7 @@
 #define _SCHED_SHMEM_H_
 
 #include "boinc_db.h"
+#include "hr_info.h"
 
 // the following must be at least as large as DB tables
 // (counting only non-deprecated entries for the current major version)
@@ -60,6 +59,7 @@ struct WU_RESULT {
     int resultid;
     int time_added_to_shared_memory;
     int result_priority;
+    double fpops_size;      // measured in stdevs
 };
 
 // this struct is followed in memory by an array of WU_RESULTS
@@ -68,7 +68,7 @@ struct SCHED_SHMEM {
     bool ready;             // feeder sets to true when init done
         // the following fields let the scheduler make sure
         // that the shared mem has the right format
-    int ss_size;            // size of this struct, including array
+    int ss_size;            // size of this struct, including WU_RESULT array
     int platform_size;      // sizeof(PLATFORM)
     int app_size;           // sizeof(APP)
     int app_version_size;   // sizeof(APP_VERSION)
@@ -84,6 +84,7 @@ struct SCHED_SHMEM {
     int max_app_versions;
     int max_assignments;
     int max_wu_results;
+    PERF_INFO perf_info;
     PLATFORM platforms[MAX_PLATFORMS];
     APP apps[MAX_APPS];
     APP_VERSION app_versions[MAX_APP_VERSIONS];

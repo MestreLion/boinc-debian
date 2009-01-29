@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _FILE_NAMES_
 #define _FILE_NAMES_
@@ -65,6 +63,9 @@ extern void send_log_after(const char* filename, double t, MIOFILE& mf);
 #define SCHED_OP_REPLY_BASE         "sched_reply_"
 #define CONFIG_FILE                 "cc_config.xml"
 #define TEMP_FILE_NAME              "temp.xml"
+#define TEMP_STATS_FILE_NAME        "temp_stats.xml"
+#define TEMP_TIME_STATS_FILE_NAME   "temp_time_stats.xml"
+#define TEMP_ACCT_FILE_NAME         "temp_acct.xml"
 #define STDERR_FILE_NAME            "stderr.txt"
 #define STDOUT_FILE_NAME            "stdout.txt"
 #define CPU_BENCHMARKS_FILE_NAME    "cpu_benchmarks"
@@ -89,5 +90,6 @@ extern void send_log_after(const char* filename, double t, MIOFILE& mf);
 #define JOB_LOG_BASE                "job_log_"
 #define CA_BUNDLE_FILENAME          "ca-bundle.crt"
 #define CLIENT_AUTH_FILENAME        "client_auth.xml"
+#define CERTIFICATE_DIRECTORY       "certificates"
 
 #endif

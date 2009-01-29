@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _TASK_
 #define _TASK_
@@ -39,18 +37,14 @@ typedef int PROCESS_ID;
     // to protect against apps that write unbounded amounts.
 
 
-// Represents a task in progress.
-//
-// "CPU time" refers to the sum over all episodes.
-// (not counting the "lost" time after the last checkpoint
-// in episodes before the current one)
-//
-// When an active task is created, it is assigned a "slot"
-// which determines the directory it runs in.
-// This doesn't change over the life of the active task;
-// thus the task can use the slot directory for temp files
-// that BOINC doesn't know about.
-//
+/// Represents a job in progress.
+
+/// When an active task is created, it is assigned a "slot"
+/// which determines the directory it runs in.
+/// This doesn't change over the life of the active task;
+/// thus the task can use the slot directory for temp files
+/// that BOINC doesn't know about.
+
 class ACTIVE_TASK {
     int _task_state;
 public:
@@ -65,7 +59,8 @@ public:
     PROCESS_ID pid;
 	PROCINFO procinfo;
 
-    int slot;   // subdirectory of slots/ where this runs
+        /// subdirectory of slots/ where this runs
+    int slot;
     inline int task_state() {
         return _task_state;
     }
@@ -73,47 +68,64 @@ public:
     int scheduler_state;
     int next_scheduler_state; // temp
     int signal;
+        /// App's estimate of how much of the work unit is done.
+
+        /// Passed from the application via an API call;
+        /// will be zero if the app doesn't use this call
     double fraction_done;
-        // App's estimate of how much of the work unit is done.
-        // Passed from the application via an API call;
-        // will be zero if the app doesn't use this call
-    double debt_interval_start_cpu_time;
-        // CPU time when adjust_debts() last ran
     double episode_start_cpu_time;
-        // CPU time at the start of current episode
+        /// Wall time at the start of the current run interval
     double run_interval_start_wall_time;
-        // Wall time at the start of the current run interval
+        /// CPU at the last checkpoint
+        /// Note: "CPU time" refers to the sum over all episodes.
+        /// (not counting the "lost" time after the last checkpoint
+        /// in episodes before the current one)
+        /// TODO: debt should be based on FLOPs, not CPU time
+        /// CPU time at the start of current episode
     double checkpoint_cpu_time;
-        // CPU at the last checkpoint
+        /// wall time at the last checkpoint
     double checkpoint_wall_time;
-        // wall time at the last checkpoint
+        /// most recent CPU time reported by app
     double current_cpu_time;
-        // most recent CPU time reported by app
+        /// current total elapsed (running) time
+    double elapsed_time;
+        /// elapsed time at last checkpoint
+    double checkpoint_elapsed_time;
+        /// disk used by output files and temp files of this task
     int current_disk_usage(double&);
-        // disk used by output files and temp files of this task
-    char slot_dir[256];      // directory where process runs (relative)
-    char slot_path[512];        // same, absolute
-        // This is used only to run graphics apps
-        // (that way don't have to worry about top-level dirs
-        // being non-readable, etc).
-    double max_cpu_time;    // abort if total CPU exceeds this
-    double max_disk_usage;  // abort if disk usage (in+out+temp) exceeds this
-    double max_mem_usage;   // abort if memory usage exceeds this
+        /// directory where process runs (relative)
+    char slot_dir[256];
+        /// same, absolute
+
+        /// This is used only to run graphics apps
+        /// (that way don't have to worry about top-level dirs
+        /// being non-readable, etc).
+    char slot_path[512];
+        /// abort if total CPU exceeds this
+    double max_cpu_time;
+        /// abort if disk usage (in+out+temp) exceeds this
+    double max_disk_usage;
+        /// abort if memory usage exceeds this
+    double max_mem_usage;
     bool have_trickle_down;
     bool send_upload_file_status;
-    bool too_large;                 // working set too large to run now
+        /// working set too large to run now
+    bool too_large;
     bool needs_shmem;               // waiting for a free shared memory segment
     int want_network;
-        // This task wants to do network comm (for F@h)
-        // this is passed via share-memory message (app_status channel)
+        /// This task wants to do network comm (for F@h)
+
+        /// this is passed via share-memory message (app_status channel)
     double abort_time;
-        // when we sent an abort message to this app
-        // kill it 5 seconds later if it doesn't exit
+        /// when we sent an abort message to this app
+
+        /// kill it 5 seconds later if it doesn't exit
     double quit_time;
-        // when we sent a quit message; kill if still there after 10 sec
+        /// when we sent a quit message; kill if still there after 10 sec
     int premature_exit_count;
 
-    APP_CLIENT_SHM app_client_shm;        // core/app shared mem
+        /// core/app shared mem segment
+    APP_CLIENT_SHM app_client_shm;
     MSG_QUEUE graphics_request_queue;
     MSG_QUEUE process_control_queue;
     bool coprocs_reserved;
@@ -122,8 +134,10 @@ public:
 
     // info related to app's graphics mode (win, screensaver, etc.)
     //
-    int graphics_mode_acked;            // mode acked by app
-    int graphics_mode_before_ss;        // mode before last screensaver request
+        /// mode acked by app
+    int graphics_mode_acked;
+        /// mode before last screensaver request
+    int graphics_mode_before_ss;
     double graphics_mode_ack_timeout;
 
 #ifdef SIM
@@ -159,20 +173,24 @@ public:
         // i.e. by sending a <quit> message
     int request_abort();                // send "abort" message
     bool process_exists();
+        /// Kill process forcibly,
+
+        /// Unix: send a SIGKILL signal, Windows: TerminateProcess()
+		/// if restart is true, arrange for resulted to get restarted;
+		/// otherwise it ends with an error
     int kill_task(bool restart);
-        // Kill process forcibly,
-        // Unix: send a SIGKILL signal, Windows: TerminateProcess()
-		// if restart is true, arrange for resulted to get restarted;
-		// otherwise it ends with an error
+        /// tell a process to stop executing (but stay in mem)
+
+        /// Done by sending it a <suspend> message
     int suspend();
-        // ask a process to stop executing (but stay in mem)
-        // Done by sending it a <suspend> message
+        /// Undo a suspend: send a <resume> message
     int unsuspend();
-        // Undo a suspend: send a <resume> message
+        /// can be called whether or not process exists
     int abort_task(int exit_status, const char*);
-        // can be called whether or not process exists
-    bool has_task_exited();             // return true if this task has exited
-    int preempt(bool quit_task);        // preempt (via suspend or quit) a running task
+        /// return true if this task has exited
+    bool has_task_exited();
+        /// preempt (via suspend or quit) a running task
+    int preempt(bool quit_task);
     int resume_or_start(bool);
     void send_network_available();
 #ifdef _WIN32
@@ -186,7 +204,7 @@ public:
 
     bool get_app_status_msg();
     bool get_trickle_up_msg();
-    double est_cpu_time_to_completion(bool for_work_fetch);
+    double est_time_to_completion(bool for_work_fetch);
     bool read_stderr_file();
     bool finish_file_present();
     bool supports_graphics();
@@ -200,6 +218,8 @@ public:
     int write_gui(MIOFILE&);
     int parse(MIOFILE&);
 };
+
+/// Represents the set of all jobs in progress
 
 class ACTIVE_TASK_SET {
 public:
@@ -234,6 +254,7 @@ public:
     void free_mem();
     bool slot_taken(int);
     void get_memory_usage();
+    bool exclusive_app_running;
 
     // graphics-related functions
     void graphics_poll();

@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 include_once("../inc/boinc_db.inc");
 include_once("../inc/util.inc");
@@ -43,7 +59,7 @@ if ($teamid) {
 }
 
 if(defined('INVITE_CODES')) {
-    $invite_code = process_user_text(post_str("invite_code"));
+    $invite_code = post_str("invite_code");
     if (strlen($invite_code)==0) {
         show_error(tra("You must supply an invitation code to create an account."));
     }
@@ -52,7 +68,7 @@ if(defined('INVITE_CODES')) {
     }
 } 
 
-$new_name = process_user_text(post_str("new_name"));
+$new_name = post_str("new_name");
 if (strlen($new_name)==0) {
     show_error("You must supply a name for your account");
 }
@@ -60,7 +76,7 @@ if ($new_name != strip_tags($new_name)) {
     show_error("HTML tags not allowed in name");
 }
 
-$new_email_addr = process_user_text(post_str("new_email_addr"));
+$new_email_addr = post_str("new_email_addr");
 $new_email_addr = strtolower($new_email_addr);
 if (!is_valid_email_addr($new_email_addr)) {
     show_error("Invalid email address:
@@ -73,8 +89,8 @@ if ($user) {
     show_error("There's already an account with that email address.");
 }
 
-$passwd = stripslashes(post_str("passwd"));
-$passwd2 = stripslashes(post_str("passwd2"));
+$passwd = post_str("passwd");
+$passwd2 = post_str("passwd2");
 if ($passwd != $passwd2) {
     show_error("New passwords are different");
 }
@@ -114,14 +130,12 @@ if (!$user) {
     show_error("Couldn't create account");
 }
 
-// In success case, redirect to a fixed page so that user can
-// return to it without getting "Repost form data" stuff
-
-send_auth_email($user, true, false);
-
 if(defined('INVITE_CODES')) {
     error_log("Account '$new_email_addr' created using invitation code '$invite_code'");
 }
+
+// In success case, redirect to a fixed page so that user can
+// return to it without getting "Repost form data" stuff
 
 $next_url = post_str('next_url', true);
 if ($next_url) {

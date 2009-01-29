@@ -17,6 +17,7 @@
 // or write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
+
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "ProjectPropertiesPage.h"
 #endif
@@ -39,6 +40,8 @@
 #include "WizardAttachProject.h"
 #include "ProjectPropertiesPage.h"
 #include "ProjectInfoPage.h"
+#include "CompletionErrorPage.h"
+#include "TermsOfUsePage.h"
 
 
 ////@begin XPM images
@@ -113,6 +116,8 @@ bool CProjectPropertiesPage::Create( CBOINCBaseWizard* parent )
     m_bProjectAccountCreationDisabled = false;
     m_bProjectClientAccountCreationDisabled = false;
     m_bNetworkConnectionDetected = false;
+    m_bServerReportedError = false;
+    m_bTermsOfUseRequired = true;
     m_iBitmapIndex = 0;
     m_iCurrentState = PROJPROP_INIT;
  
@@ -185,6 +190,9 @@ wxWizardPageEx* CProjectPropertiesPage::GetNext() const
     } else if (GetProjectPropertiesSucceeded() && GetProjectAlreadyAttached()) {
         // Already attach to the project
         return PAGE_TRANSITION_NEXT(ID_ERRALREADYATTACHEDPAGE);
+    } else if (GetProjectPropertiesSucceeded() && GetTermsOfUseRequired()) {
+        // Terms of Use are required before requesting account information
+        return PAGE_TRANSITION_NEXT(ID_TERMSOFUSEPAGE);
     } else if (GetProjectPropertiesSucceeded()) {
         // We were successful in retrieving the project properties
         return PAGE_TRANSITION_NEXT(ID_ACCOUNTINFOPAGE);
@@ -194,6 +202,9 @@ wxWizardPageEx* CProjectPropertiesPage::GetNext() const
     } else if (GetProjectPropertiesURLFailure()) {
         // Not a BOINC based project
         return PAGE_TRANSITION_NEXT(ID_ERRNOTDETECTEDPAGE);
+    } else if (GetServerReportedError()) {
+        // Server reported an error, display the error
+        return PAGE_TRANSITION_NEXT(ID_COMPLETIONERRORPAGE);
     } else {
         // The project must be down for maintenance
         return PAGE_TRANSITION_NEXT(ID_ERRUNAVAILABLEPAGE);
@@ -361,6 +372,7 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
     wxDateTime dtStartExecutionTime;
     wxDateTime dtCurrentExecutionTime;
     wxTimeSpan tsExecutionTime;
+    wxString strBuffer = wxEmptyString;
     bool bPostNewEvent = true;
     bool bSuccessfulCondition = false;
     int  iReturnValue = 0;
@@ -441,9 +453,17 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
                     SetProjectClientAccountCreationDisabled(false);
                 }
  
+                bSuccessfulCondition = !pc->terms_of_use.empty();
+                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRTERMSOFUSEREQUIRED)) {
+                    SetTermsOfUseRequired(true);
+                } else {
+                    SetTermsOfUseRequired(false);
+                }
+ 
                 SetNextState(PROJPROP_CLEANUP);
             } else {
                 SetProjectPropertiesSucceeded(false);
+
                 bSuccessfulCondition = 
                     (!iReturnValue) && (ERR_FILE_NOT_FOUND == pc->error_num) ||
                     (!iReturnValue) && (ERR_GETHOSTBYNAME == pc->error_num) ||
@@ -453,6 +473,25 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
                 } else {
                     SetProjectPropertiesURLFailure(false);
                 }
+
+                bSuccessfulCondition = 
+                    ((!iReturnValue) && (ERR_FILE_NOT_FOUND != pc->error_num)) &&
+                    ((!iReturnValue) && (ERR_GETHOSTBYNAME != pc->error_num)) &&
+                    ((!iReturnValue) && (ERR_XML_PARSE != pc->error_num)) &&
+                    (!iReturnValue);
+                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIESURL)) {
+                    SetServerReportedError(true);
+
+                    strBuffer = pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->GetLabel();
+				    if (pc->error_msg.size()) {
+                        strBuffer += wxString(pc->error_msg.c_str(), wxConvUTF8) + wxString(wxT("\n"));
+                    }
+                    pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->SetLabel(strBuffer);
+
+                } else {
+                    SetServerReportedError(false);
+                }
+
                 SetNextState(PROJPROP_DETERMINENETWORKSTATUS_BEGIN);
             }
             break;
@@ -512,4 +551,3 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
         AddPendingEvent(TransitionEvent);
     }
 }
-

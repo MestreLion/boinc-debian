@@ -1,6 +1,126 @@
 <?
 
 $project_news = array(
+array("November 7, 2008",
+    "On 27-28 November 2008, AlmereGrid and EDGeS will organise a two-day <a href=http://edges-grid.eu/web/userforum/1sttraining>Desktop Grid workshop</a> in Almere, The Netherlands."
+),
+array("October 17, 2008",
+    "Read <a href=\"http://www.isgtw.org/?pid=1001391\">Reaching for the Exa-scale with volunteer computing</a> in International Science Grid This Week."
+),
+array("September 30, 2008",
+    "An <a href=\"http://www.isgtw.org/?pid=1001381\">article on
+    the recent BOINC workshop in Grenoble</a>
+    appeared in International Science Grid This Week."
+),
+array("September 29, 2008",
+    "An article on <a href=\"http://ps3grid.net\">PS3grid.net</a> project,
+    which does scientific computing on Sony Playstations, appeared recently in
+    <a href=\"http://www.sciencemag.org/cgi/content/long/321/5895/1425b\">Science</a>."
+),
+array("September 27, 2008",
+    "See an <a href=\"http://boinc.berkeley.edu/eff.php\">open letter
+    to the Electronic Frontier Foundation</a>."
+),
+array("September 25, 2008",
+    "Read <a href=\"http://www.economist.com/science/displaystory.cfm?story_id=12295198\">an article about Quake Catcher Network</a> in Economist.com."
+),
+array("September 25, 2008",
+    "<a href=\"http://registro.ibercivis.es/\">Ibercivis</a>,
+    a joint project of several Spanish universities and research institutes,
+    is now open to the public.
+    Sign up and support Spanish research."
+),
+array("September 20, 2008",
+    "Welcome back to <a href=http://docking.cis.udel.edu/>Docking@Home</a>,
+    a project at the University of Delaware that studies
+    protein-ligand interactions (and BOINC itself)."
+),
+array("September 15, 2008",
+    "<a href=http://forja.unex.es/projects/ogm>OGM (Organizational Grid Manager)</a>
+    has been released by the University of Extremadura.
+    OGM is a system for grid computing
+    on organizational resources using BOINC."
+),
+array("September 4, 2008",
+    "The talks and tutorials from the upcoming BOINC Workshop
+    (Sept 10-12) will be broadcast
+    <a href=http://boinc.berkeley.edu/trac/wiki/WorkShop08#webcast>live on the Web</a>."
+),
+array("September 4, 2008",
+    "BOINC is featured on the
+    <a href=http://www.udel.edu/udaily/2009/sep/boinc090308.html>University of Delaware news site</a>."
+),
+array("August 26, 2008",
+    "Welcome to the
+    <a href=\"http://nqueens.ing.udec.cl/\">NQueens@home</a> project,
+    from the Universidad de Concepción in Chile,
+    which seeks to find the solutions to the N Queens problem
+    for values of 26 and greater."
+),
+array("August 19, 2008",
+    "LinkedIn users: join a
+    <a href=\"http://www.linkedin.com/groups?gid=678497\">BOINC Users group</a>."
+),
+array("July 30, 2008",
+    "BOINC 6.2 is now the recommended version for all platforms. 
+    <a href=\"http://boinc.berkeley.edu/download.php\">Upgrade now</a>."
+),
+array("July 29, 2008",
+    "The <a href=\"http://qcn.stanford.edu\">Quake Catcher Network</a>
+    detected today's <a href=\"http://qcn.stanford.edu/EVENTS/2008_211/\">
+    magnitude 5.4 earthquake in Los Angeles</a> within 7 seconds."
+),
+array("July 24, 2008",
+    "The <a href=\"http://gcl.cis.udel.edu/EastCoast08/\">First
+    East Coast BOINC Meeting</a>
+    will take place August 29 2008 at the University of Delaware.
+    "
+),
+array("July 17, 2008",
+    "GPU computing has arrived to BOINC!
+    The <a href=\"http://www.gpugrid.net\">GPUGRID.net</a> project
+    from the Barcelona Biomedical Research Park (PRBB)
+    uses CUDA-capable NVIDIA chips
+    to create an infrastructure for biomolecular simulations.
+    (Currently available for Linux64; other platforms to follow soon.
+    To participate, follow the instructions on the web site)."
+),
+array("July 10, 2008",
+    "<a href=\"http://boinc.berkeley.edu/wiki/BOINC_logo_merchandise\">BOINC-logo merchandise</a> (T-shirts, mouse pads) is now available."
+),
+array("July 9, 2008",
+    "New add-on software: <a href=\"http://boinc.berkeley.edu/addon_item.php?platform=web&amp;item=phpBOINCer-1.5.zip\">phpBOINCer</a>,
+    a PHP script to display BOINC stats on a webpage,
+    and store or retrieve these stats to a mySQL database."
+),
+array("June 16, 2008",
+    "<a href=logo/logo_3d>3-D versions of the BOINC logo</a>
+    are now available; thanks to John from Ireland for creating these."
+),
+array("June 2, 2008",
+    "BOINCstats and BAM! are now available in
+    <a href=http://br.boincstats.com/>Brazilian Portuguese</a> and
+    <a href=http://tr.boincstats.com/>Turkish</a>."
+),
+array("May 31, 2008",
+    "The <a href=http://orbit.psi.edu/>Orbit@home</a> project
+    from the <a href=http://www.psi.edu/>Planetary Science Institute</a>
+    is open for public beta test.
+    Orbit@home focuses on celestial mechanics,
+    Their first scientific application, SurveySimulator,
+    simulates the performance of astronomical surveys searching
+    for Near Earth Objects (NEOs) such as asteroids and comets."
+),
+array("May 18, 2008",
+    "The source code for BOINCoid (a port of BOINC to Java and to
+    Google's Android platform, by computer scientists from Technion)
+    has been <a href=http://sourceforge.net/projects/boincoid>released on Sourceforge.net</a>."
+),
+array("May 9, 2008",
+    "BOINC volunteer Werner Klein is
+    <a href=http://www.sternengucker.org/index.php/artikel/interview-seti-ist-heute-bereits-erfolgreich/>interviewed
+    in Sternengucker.org</a> (German)."
+),
 array("May 9, 2008",
     "The <a href=http://boincfaq.mundayweb.com/>BOINC FAQ Service</a>
     is now available in Spanish and French

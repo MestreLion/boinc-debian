@@ -1,5 +1,5 @@
-## -*- mode: make; tab-width: 4 -*-
-## $Id: Makefile.am 13842 2007-10-12 14:31:59Z fthomas $
+## -*- mode: makefile; tab-width: 4 -*-
+## $Id: Makefile.am 16129 2008-10-04 18:51:38Z davea $
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -9,15 +9,15 @@ ACLOCAL_AMFLAGS = -I m4
 API_SUBDIRS = api lib zip
 
 if ENABLE_SERVER
-   SERVER_SUBDIRS = db test py sched apps tools
+   SERVER_SUBDIRS = db test py sched apps tools samples/example_app
 endif
 
 if ENABLE_CLIENT
-   CLIENT_SUBDIRS = client 
+   CLIENT_SUBDIRS = client client/scripts
 endif
 
 if BUILD_CLIENTGUI
-   CLIENTGUI_SUBDIRS = clientgui sea
+   CLIENTGUI_SUBDIRS = clientgui clientgui/res locale/client 
 endif
 
 # ORDER MATTERS below.  One must build dependencies FIRST, then things
@@ -33,10 +33,19 @@ EXTRA_DIST =                                    \
 	stripchart                                  \
     INSTALL										
 
-includedir = ${prefix}/include/BOINC
-include_HEADERS = \
+pkginclude_HEADERS = \
     config.h \
     version.h
+
+# Add a stage target for staging a distribution
+
+clean-generic:
+	rm -rf stage
+
+stage: all
+	if [ ! -d stage ] ; then mkdir stage ; fi
+	rm -rf stage/*
+	$(MAKE) DESTDIR=$(PWD)/stage install
 
 dist-hook:
 	rm -rf `find $(distdir) -name .backup -prune -o -name '*~' -o -name CVS`

@@ -1,6 +1,21 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-$cvs_version_tracker[]="\$Id: profile_menu.php 14254 2007-11-18 22:42:47Z davea $";  //Generated automatically - do not edit
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
@@ -15,24 +30,17 @@ if ($option) {
     exit();
 }
 
-page_head("Profiles");
+page_head(tra("Profiles"));
 
 echo "
-    <p>
-    <b>Profiles</b> let individuals share backgrounds
-    and opinions with the " . PROJECT . " community.
-    Explore the diversity of your fellow volunteers,
-    and contribute your own views for others to enjoy.
-    <p>
-    If you haven't already, you can
-    <a href=create_profile.php>create your own user profile</a>
-    for others to see!
-";
-rowify("<br>");
+    <p>".tra("%1Profiles%2 let individuals share backgrounds and opinions with the %3 community.", "<b>", "</b>", PROJECT)." ".
+    tra("Explore the diversity of your fellow volunteers, and contribute your own views for others to enjoy.")."
+    <p>".tra("If you haven't already, you can %1create your own user profile%2 for others to see!", "<a href=\"create_profile.php\">", "</a>");
+
 start_table_noborder();
 
 $today = getdate(time());
-$UOTD_heading = "User of the Day -- " . $today['month'] . " " . $today['mday'] . ", " . $today['year'];
+$UOTD_heading = tra("User of the Day")." -- " . $today['month'] . " " . $today['mday'] . ", " . $today['year'];
 row1($UOTD_heading);
 echo "<tr><td>";
     $profile = get_current_uotd();
@@ -45,28 +53,26 @@ echo "<tr><td>";
 
 echo "</td></tr>";
 
-rowify("<br>");
-row1("User Profile Explorer");
+row1(tra("User Profile Explorer"));
 echo "<tr><td>
     <ul>
-    <li>View the <a href=\"" . URL_BASE . "user_profile/user_gallery_1.html\">User Picture Gallery</a>.</li>
-    <li>Browse profiles <a href=\"" . URL_BASE . "user_profile/profile_country.html\">by country</a>.</li>
-    <li>Browse profiles <a href=\"?cmd=rand&pic=-1\">at random</a>,
-    <a href=\"?cmd=rand&pic=1\">at random with pictures</a>, or 
-    <a href=\"?cmd=rand&pic=0\">at random without pictures</a>.</li>
+    <li>".tra("View the %1User Picture Gallery%2.", "<a href=\"" . URL_BASE . "user_profile/user_gallery_1.html\">", "</a>")."</li>
+    <li>".tra("Browse profiles %1by country%2.", "<a href=\"" . URL_BASE . "user_profile/profile_country.html\">", "</a>")."</li>
+    <li>".tra("Browse profiles %1at random%2, %3at random with pictures%2, or %4at random without pictures%2.", "<a href=\"?cmd=rand&pic=-1\">", "</a>",
+            "<a href=\"?cmd=rand&pic=1\">", "<a href=\"?cmd=rand&pic=0\">")."</li>
 ";
 if (file_exists(PROFILE_PATH . "profile_alpha.html")) {
-    echo "<li>Alphabetical profile listings:<br>";
+    echo "<li>".tra("Alphabetical profile listings:")."<br>";
 
     include( PROFILE_PATH . "profile_alpha.html" );
 }
 echo "</ul></td></tr>";
 
-row1("Search profile text");
+row1(tra("Search profile text"));
 rowify("
     <form action=\"profile_search_action.php\" method=\"GET\">
     <input name=\"search_string\">
-    <input type=\"submit\" value=\"OK\">
+    <input type=\"submit\" value=\"".tra("Search")."\">
     </form>
 ");
 end_table();
@@ -87,8 +93,8 @@ function select_profile($cmd) {
         }
 
         if (count($profiles) == 0) {
-            page_head("No profiles");
-            echo "No profiles matched your query.<br>";
+            page_head(tra("No profiles"));
+            echo tra("No profiles matched your query.");
             page_tail();
             exit();
         }
@@ -100,4 +106,5 @@ function select_profile($cmd) {
     }
 }
 
+$cvs_version_tracker[]="\$Id: profile_menu.php 15771 2008-08-07 20:43:52Z davea $";  //Generated automatically - do not edit
 ?>

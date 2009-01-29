@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // email-related utilities.
 // Don't put specific message text here.
@@ -40,7 +56,7 @@ function send_email($user, $subject, $body, $body_html=null) {
         $mail->Host = $PHPMAILER_HOST;
         $mail->Mailer = $PHPMAILER_MAILER;
         if (!$mail->Send()) {
-            //echo $mail->ErrorInfo;
+            echo $mail->ErrorInfo;
             return false;
         } else {
             return true;
@@ -66,32 +82,21 @@ function send_email($user, $subject, $body, $body_html=null) {
 // 2) the account was created administratively
 // 3) the user requested account key for existing account
 //
-function send_auth_email($user, $is_new) {
+function send_auth_email($user) {
     global $master_url;
     $body = "";
 
-    if ($is_new) {
-        $subject = PROJECT." account confirmation";
-        $body = "Welcome to ".PROJECT.".
-
-This email confirms your account with ".PROJECT.":
-    Project URL:         $master_url
-    User name:           $user->name
-    E-mail:              $user->email_addr
-";
-    } else {
-        $now = time();
-        $x = md5($user->id.$user->authenticator.$now);
-        $x = substr($x, 0, 16);
-        $subject = PROJECT." account information";
-        $body = "This email was sent in reponse to a request on the ".PROJECT." web site.
+    $now = time();
+    $x = md5($user->id.$user->authenticator.$now);
+    $x = substr($x, 0, 16);
+    $subject = PROJECT." account information";
+    $body = "This email was sent in reponse to a request on the ".PROJECT." web site.
 
 To log in to your ".PROJECT." account, visit:
 ".$master_url."login_action.php?id=$user->id&t=$now&h=$x
 (This link is valid for 1 day).
 After logging in, you can change your account's password or email address.
 ";
-    }
 
 $body .= "
 For further information and assistance with ".PROJECT.", visit

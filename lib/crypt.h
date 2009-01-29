@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef H_CRYPT
 #define H_CRYPT
@@ -24,24 +22,9 @@
 // We use our own data structures (R_RSA_PUBLIC_KEY and R_RSA_PRIVATE_KEY)
 // to store keys in either case.
 
-// Only define these here if they haven't been defined elsewhere
-#if !(defined(USE_OPENSSL) || defined(USE_RSAEURO))
-#define USE_OPENSSL 1
-//#define USE_RSAEURO 1
-#endif
-
 #include <stdio.h>
 #include <string.h>
 
-#ifdef USE_RSAEURO
-#include "rsaeuro.h"
-extern "C" {
-#include "rsa.h"
-}
-
-#endif
-
-#ifdef USE_OPENSSL
 #include <openssl/rsa.h>
 
 #define MAX_RSA_MODULUS_BITS 1024
@@ -73,8 +56,7 @@ extern void openssl_to_keys(
 );
 extern void private_to_openssl(R_RSA_PRIVATE_KEY& priv, RSA* rp);
 extern void public_to_openssl(R_RSA_PUBLIC_KEY& pub, RSA* rp);
-
-#endif
+extern int openssl_to_private(RSA *from, R_RSA_PRIVATE_KEY *to);
 
 struct KEY {
     unsigned short int bits;
@@ -125,9 +107,30 @@ extern int verify_string(
 extern int verify_string2(
     const char* text, const char* signature, const char* key, bool&
 );
+extern int print_raw_data(FILE* f, DATA_BLOCK& x);
+extern int scan_raw_data(FILE *f, DATA_BLOCK& x);
 extern int read_key_file(const char* keyfile, R_RSA_PRIVATE_KEY& key);
 extern int generate_signature(
     char* text_to_sign, char* signature_hex, R_RSA_PRIVATE_KEY& key
 );
 
+//   Check if sfileMsg (of length sfsize) has been created from sha1_md using the
+//   private key beloning to the public key file cFile
+//   Return:
+//    1: YES
+//    0: NO or error
+extern int check_validity_of_cert(
+    const char *cFile, const unsigned char *sha1_md, 
+    unsigned char *sfileMsg, const int sfsize, const char* caPath
+);
+
+extern char *check_validity(const char *certPath, const char *origFile, 
+    unsigned char *signature, char* caPath
+);
+
+class CERT_SIGS;
+
+int cert_verify_file(
+    CERT_SIGS* signatures, const char* origFile, const char* trustLocation
+);
 #endif

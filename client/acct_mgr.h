@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _ACCT_MGR_
 #define _ACCT_MGR_
@@ -28,8 +26,8 @@
 #include "gui_http.h"
 #include "client_types.h"
 
-// represents info stored in acct_mgr_url.xml and acct_mgr_login.xml
-//
+/// represents info stored in acct_mgr_url.xml and acct_mgr_login.xml
+
 struct ACCT_MGR_INFO {
 	// the following used to be std::string but there
 	// were mysterious bugs where setting it to "" didn't work
@@ -37,17 +35,17 @@ struct ACCT_MGR_INFO {
     char acct_mgr_name[256];
     char acct_mgr_url[256];
     char login_name[256];
+        /// md5 of password.lowercase(login_name)
     char password_hash[256];
-        // md5 of password.lowercase(login_name)
+		/// whatever the AMS sends us
 	char opaque[256];
-		// whatever the AMS sends us
     char signing_key[MAX_KEY_LEN];
+        /// the host CPID sent in last RPC
     char previous_host_cpid[64];
-        // the host CPID sent in last RPC
     double next_rpc_time;
+        /// whether to include GUI RPC port and password hash
+        /// in AM RPCs (used for "farm management")
     bool send_gui_rpc_info;
-        // whether to include GUI RPC port and password hash
-        // in AM RPCs (used for "farm management")
     bool password_error;
 
     ACCT_MGR_INFO();

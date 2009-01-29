@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _SERVER_TYPES_
 #define _SERVER_TYPES_
@@ -41,8 +39,8 @@ struct APP_INFO {
 // Details concerning a host
 //
 struct HOST_INFO {
-	int allow_non_preferred_apps;
-	int allow_beta_work;
+	bool allow_non_preferred_apps;
+	bool allow_beta_work;
 	bool reliable;
 	std::vector<APP_INFO> preferred_apps;
 };
@@ -78,7 +76,15 @@ struct HOST_USAGE {
     double flops;
     char cmdline[256];
 
-    void init_seq(double x) {
+
+    HOST_USAGE() {
+        coprocs.coprocs.clear();
+        avg_ncpus = 1;
+        max_ncpus = 1;
+        flops = 0;
+        strcpy(cmdline, "");
+    }
+    void sequential_app(double x) {
         coprocs.coprocs.clear();
         avg_ncpus = 1;
         max_ncpus = 1;
@@ -97,20 +103,47 @@ struct BEST_APP_VERSION {
 };
 
 // summary of a client's request for work, and our response to it
+// Note: this is zeroed out in SCHEDULER_REPLY constructor
 //
 struct WORK_REQ {
     bool infeasible_only;
     bool reliable_only;
     bool user_apps_only;
     bool beta_only;
+        // The above are used by old-style (non-score-based) scheduling
+
     HOST_INFO host_info;
     double seconds_to_fill;
 		// in "normalized CPU seconds"; see
         // http://boinc.berkeley.edu/trac/wiki/ClientSched#NormalizedCPUTime
     double disk_available;
     int nresults;
-    int core_client_version;
     double running_frac;
+    bool trust;     // allow unreplicated jobs to be sent
+
+    // The following keep track of the "easiest" job that was rejected
+    // by EDF simulation.
+    // Any jobs harder than this can be rejected without doing the simulation.
+    //
+    double edf_reject_min_cpu;
+    int edf_reject_max_delay_bound;
+    bool have_edf_reject;
+    void edf_reject(double cpu, int delay_bound) {
+        if (have_edf_reject) {
+            if (cpu < edf_reject_min_cpu) edf_reject_min_cpu = cpu;
+            if (delay_bound> edf_reject_max_delay_bound) edf_reject_max_delay_bound = delay_bound;
+        } else {
+            edf_reject_min_cpu = cpu;
+            edf_reject_max_delay_bound = delay_bound;
+            have_edf_reject = true;
+        }
+    }
+    bool edf_reject_test(double cpu, int delay_bound) {
+        if (!have_edf_reject) return false;
+        if (cpu < edf_reject_min_cpu) return false;
+        if (delay_bound > edf_reject_max_delay_bound) return false;
+        return true;
+    }
 
     RESOURCE disk;
     RESOURCE mem;
@@ -129,8 +162,9 @@ struct WORK_REQ {
     bool daily_result_quota_exceeded;
     int  daily_result_quota; // for this machine: number of cpus * daily_quota/cpu
     bool cache_size_exceeded;
+    bool no_jobs_available;     // project has no work right now
     int nresults_on_host;
-        // How many results from this project are (or should be) on the host.
+        // How many results from this project are in progress on the host.
         // Initially this is the number of "other_results"
         // reported in the request message.
         // If the resend_lost_results option is used,
@@ -230,6 +264,7 @@ struct SCHEDULER_REQUEST {
     int core_client_major_version;
     int core_client_minor_version;
     int core_client_release;
+    int core_client_version;    // 100*major + minor
     int rpc_seqno;
     double work_req_seconds;
 		// in "normalized CPU seconds" (see work_req.php)
@@ -272,10 +307,11 @@ struct SCHEDULER_REQUEST {
     bool have_ip_results_list;
     bool have_time_stats_log;
     bool client_cap_plan_class;
+    int sandbox;    // -1 = don't know
 
     SCHEDULER_REQUEST();
     ~SCHEDULER_REQUEST();
-    int parse(FILE*);
+    const char* parse(FILE*);
     bool has_version(APP& app);
     int write(FILE*); // write request info to file: not complete
 };
@@ -322,13 +358,12 @@ struct SCHEDULER_REPLY {
 
     SCHEDULER_REPLY();
     ~SCHEDULER_REPLY();
-    int write(FILE*);
+    int write(FILE*, SCHEDULER_REQUEST&);
     void insert_app_unique(APP&);
     void insert_app_version_unique(APP_VERSION&);
     void insert_workunit_unique(WORKUNIT&);
     void insert_result(RESULT&);
     void insert_message(USER_MESSAGE&);
-    bool work_needed(bool locality_sched=false);
     void set_delay(double);
     void got_good_result();     // adjust max_results_day
     void got_bad_result();      // adjust max_results_day

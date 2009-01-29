@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // Use this file you can post a reply to a thread.
 // Both input (form) and action take place here.
@@ -43,6 +59,7 @@ if (!$sort_style) {
     $logged_in_user->prefs->update("thread_sorting=$sort_style");
 }
 
+$warning = null;
 if ($content && (!$preview)){
     if (post_str('add_signature',true)=="add_it"){
         $add_signature=true;    // set a flag and concatenate later
@@ -50,9 +67,18 @@ if ($content && (!$preview)){
         $add_signature=false;
     }
     check_tokens($logged_in_user->authenticator);
-    akismet_check($logged_in_user, $content);
-    create_post($content, $parent_post_id, $logged_in_user, $forum, $thread, $add_signature);
-    header('Location: forum_thread.php?id='.$thread->id);
+    if (!akismet_check($logged_in_user, $content)) {
+        $warning = "Your post has been flagged as spam by the Akismet
+            anti-spam system.  Please modify your text and try again.
+        ";
+        $preview = tra("Preview");
+    } else {
+        create_post(
+            $content, $parent_post_id, $logged_in_user, $forum,
+            $thread, $add_signature
+        );
+        header('Location: forum_thread.php?id='.$thread->id);
+    }
 }
 
 page_head(tra("Post to thread"));
@@ -87,7 +113,7 @@ end_table();
 page_tail();
 
 function show_message_row($thread, $parent_post) {
-    global $logged_in_user;
+    global $g_logged_in_user;
     global $content;
     global $preview;
 
@@ -103,14 +129,15 @@ function show_message_row($thread, $parent_post) {
     }
 
     $x2 .= " method=\"post\">\n";
-    $x2 .= form_tokens($logged_in_user->authenticator);
-    $x2 .= "<textarea name=\"content\" rows=\"18\" cols=\"80\">";
+    $x2 .= form_tokens($g_logged_in_user->authenticator);
+    $x2 .= "<textarea name=\"content\" rows=\"18\" cols=\"80\">";        
+    $no_quote = get_int("no_quote", true)==1;
     if ($preview) {
-        $x2 .= stripslashes(htmlspecialchars($content));
-    } else {
-        if ($parent_post) $x2 .= quote_text(stripslashes(htmlspecialchars($parent_post->content)), 80)."\n";
+        $x2 .= htmlspecialchars($content);
+    } else if (!$no_quote) {
+        if ($parent_post) $x2 .= quote_text(htmlspecialchars($parent_post->content), 80)."\n";
     }
-    if (!$logged_in_user->prefs->no_signature_by_default){
+    if (!$g_logged_in_user->prefs->no_signature_by_default){
         $enable_signature="checked=\"true\"";
     } else {
         $enable_signature="";
@@ -132,5 +159,5 @@ function quote_text($text, $cols = 0) {
     $text = "[quote]" . $text . "[/quote]";
     return $text;
 }
-$cvs_version_tracker[]="\$Id: forum_reply.php 14303 2007-11-26 04:12:15Z davea $";
+$cvs_version_tracker[]="\$Id: forum_reply.php 16175 2008-10-09 18:28:55Z davea $";
 ?>

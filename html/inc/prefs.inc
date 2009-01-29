@@ -1,4 +1,22 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+
 // This file contains support functions for display and editing
 // preferences (global and project).
 // Preferences are represented in two ways:
@@ -814,7 +832,7 @@ function prefs_display_venue($prefs, $venue, $subset) {
     if (isset($prefs->$venue)) $x = $prefs->$venue;
 
     if ($x) {
-        row1("Separate preferences for $venue", 2, "heading2");
+        row1("Separate preferences for $venue", 2, "heading");
         echo "<tr><td colspan=2>";
         start_table();
         if ($subset == "global") {
@@ -829,7 +847,7 @@ function prefs_display_venue($prefs, $venue, $subset) {
         echo "</td></tr>\n";
     } else {
         //$x = subset_name($subset);
-        row1("<a href=add_venue.php?venue=$venue&subset=$subset$tokens>Add separate preferences for $venue</a>", 2, "heading2");
+        row1("<a href=add_venue.php?venue=$venue&subset=$subset$tokens>Add separate preferences for $venue</a>", 2, "heading");
     }
 }
 
@@ -840,9 +858,9 @@ function print_prefs_display_project($user, $columns=false) {
     start_table();
     $switch_link = " <font size=\"-2\"><a href=prefs.php?subset=project&cols=". (int)!$columns .">(Switch View)</a></font>";
     if ($columns) {
-        row1("Combined preferences".$switch_link, 2, "heading2");
+        row1("Combined preferences".$switch_link, 2, "heading");
         echo "<tr><td colspan=2>";
-        start_table("width=100% border=4");
+        start_table();
         prefs_show_privacy($user);
         venue_show($user);
         row_top("Project specific settings");
@@ -854,10 +872,10 @@ function print_prefs_display_project($user, $columns=false) {
         echo "</td></tr>\n";
     } else {
         if (isset($project_prefs->home) || isset($project_prefs->work) || isset($project_prefs->school)) {
-            row1("Primary (default) preferences".$switch_link, 2, "heading2");
+            row1("Primary (default) preferences".$switch_link, 2, "heading");
         }
         echo "<tr><td colspan=2>";
-        start_table("width=100% border=4");
+        start_table();
         prefs_show_resource($project_prefs, false);
         if ($project_has_beta) prefs_show_beta($project_prefs, false);
         prefs_show_privacy($user);
@@ -896,19 +914,19 @@ function print_prefs_display_global($user, $columns=false) {
     $switch_link = " <font size=\"-2\"><a href=prefs.php?subset=global&cols=". (int)!$columns .">(Switch View)</a></font>";
     start_table();
     if ($columns) {
-        row1("Combined preferences".$switch_link, 2, "heading2");
+        row1("Combined preferences".$switch_link, 2, "heading");
         echo "<tr><td colspan=2>";
-        start_table("width=100% border=4");
+        start_table();
         prefs_show_columns_global($global_prefs);
         end_table();
         echo "</td></tr>\n";
 
     } else {
         if (isset($global_prefs->home) || isset($global_prefs->work) || isset($global_prefs->school)) {
-            row1("Primary (default) preferences".$switch_link, 2, "heading2");
+            row1("Primary (default) preferences".$switch_link, 2, "heading");
         }
         echo "<tr><td colspan=2>";
-        start_table("width=100% border=4");
+        start_table();
         prefs_show_global($global_prefs);
         $tokens = url_tokens($user->authenticator);
         row2("<br>", "<a href=prefs_edit.php?subset=global$tokens>Edit preferences</a>");

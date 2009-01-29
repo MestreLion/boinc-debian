@@ -453,4 +453,4 @@ EXTERN_C __declspec(dllexport) void IdleTrackerShutdown()
 }
 
 
-const char *BOINC_RCSID_14d432d5b3 = "$Id: IdleTracker.cpp 15769 2008-08-07 17:19:38Z romw $";
+const char *BOINC_RCSID_14d432d5b3 = "$Id: IdleTracker.cpp 15767 2008-08-07 16:59:52Z romw $";

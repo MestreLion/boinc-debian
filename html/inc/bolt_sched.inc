@@ -1,15 +1,31 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // An iterator represents a user's position in a course.
 // Its state is stored in the database,
 // and the course may change underneath it.
 //
-// A state in a course is described by:
-// - an associative array mapping logical names to state structures.
-//   Typically this includes the logical name of the current child
-//   and info such as a sequence index.
-//   This is kind of like a "call stack",
-//   except that it can contain units not currently active.
+// A state in a course is described by an associative array
+// mapping logical names to state structures.
+// Typically this includes the logical name of the current child
+// and info such as a sequence index.
+// This is kind of like a "call stack",
+// except that it can contain units not currently active.
 
 //
 class BoltIter {
@@ -27,11 +43,11 @@ class BoltIter {
     }
 
     function decode_state($encoded_state) {
-        $this->state = json_decode($encoded_state, true);
+        $this->state = unserialize($encoded_state);
     }
 
     function encode_state() {
-        return json_encode($this->state);
+        return serialize($this->state);
     }
 
     // get current item and fraction done

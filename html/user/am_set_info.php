@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/xml.inc");
@@ -37,20 +53,20 @@ xml_header();
 $retval = db_init_xml();
 if ($retval) xml_error($retval);
 
-$auth = process_user_text($_GET["account_key"]);
+$auth = get_str("account_key");
 $user = lookup_user_auth($auth);
 if (!$user) {
     xml_error(-136);
 }
 
-$name = process_user_text($_GET["name"]);
-$country = $_GET["country"];
+$name = process_user_text(get_str("name", true));
+$country = get_str("country", true);
 if ($country && !is_valid_country($country)) {
     xml_error(-1, "invalid country");
 }
-$postal_code = process_user_text($_GET["postal_code"]);
-$global_prefs = process_user_text($_GET["global_prefs"]);
-$project_prefs = process_user_text($_GET["project_prefs"]);
+$postal_code = process_user_text(get_str("postal_code", true));
+$global_prefs = process_user_text(get_str("global_prefs", true));
+$project_prefs = process_user_text(get_str("project_prefs", true));
 
 // Do processing on project prefs so that we don't overwrite project-specific
 // settings if AMS has no idea about them
@@ -62,13 +78,13 @@ if (stripos($project_prefs, "<project_specific>") === false) {
     $project_prefs = str_ireplace("<project_preferences>", "<project_preferences>\n".$orig_project_specific, $project_prefs);
 }
 
-$url = process_user_text($_GET["url"]);
-$send_email = process_user_text($_GET["send_email"]);
-$show_hosts = process_user_text($_GET["show_hosts"]);
+$url = process_user_text(get_str("url", true));
+$send_email = process_user_text(get_str("send_email", true));
+$show_hosts = process_user_text(get_str("show_hosts", true));
 $teamid = get_int("teamid", true);
-$venue = process_user_text($_GET["venue"]);
-$email_addr = strtolower(process_user_text($_GET["email_addr"]));
-$password_hash = process_user_text($_GET["password_hash"]);
+$venue = process_user_text(get_str("venue", true));
+$email_addr = strtolower(process_user_text(get_str("email_addr", true)));
+$password_hash = process_user_text(get_str("password_hash", true));
 
 $query = "";
 if ($name) {
@@ -111,7 +127,7 @@ if (!is_null($teamid)) {
         user_quit_team($user);
     } else {
         $team = lookup_team($teamid);
-        if ($team) {
+        if ($team && $team->joinable) {
             user_join_team($team, $user);
         }
     }

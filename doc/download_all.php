@@ -24,8 +24,7 @@ $type_name = $_GET["type"];
 require_once("versions.inc");
 
 function dl_item($x, $y) {
-    global $light_blue;
-    echo "<tr><td valign=top  align=right width=30% bgcolor=$light_blue>$x</td>
+    echo "<tr><td valign=top  align=right width=\"30%\">$x</td>
         <td>$y</td></tr>
     ";
 }
@@ -92,9 +91,9 @@ function show_version($pname, $i, $v) {
     $status = $v["status"];
     if (is_dev($v)) {
         $status = $status."
-            <br><font color=ff0000><b>
+            <br><span class=dev>
             (MAY BE UNSTABLE - USE ONLY FOR TESTING)
-            </b></font>
+            </span>
         ";
     }
     $path = "dl/$file";
@@ -103,14 +102,11 @@ function show_version($pname, $i, $v) {
     $type = $v["type"];
     $type_text = type_text($type);
     $url = version_url($v);
-    echo "<tr><td width=3%><nobr>
-        $num</td><td> $status
-        </nobr>
-        </td>
-        <td>
-        <a href=$url><b>Download</b></a> ($s MB)
-        </td>
-        <td > $date </td>
+    echo "<tr>
+       <td class=\"rowlineleft\">$num</td>
+        <td class=\"rowline\">$status</td>
+        <td class=\"rowline\"><a href=\"$url\"><b>Download</b></a> ($s MB)</td>
+        <td class=\"rowlineright\">$date</td>
         </tr>
     ";
 }
@@ -122,7 +118,7 @@ function show_platform($short_name, $p, $dev) {
     $description = $p["description"];
     if ($p["url"]) {
         $url = $p["url"];
-        $long_name .= " <a href=$url><font size=-2>details</a>";
+        $long_name .= " <a href=$url><span class=description>details</span></a>";
     }
     list_bar($long_name, $description);
     foreach ($p["versions"] as $i=>$v) {
@@ -136,6 +132,10 @@ function show_platform($short_name, $p, $dev) {
 function show_platform_xml($short_name, $p, $dev) {
     foreach ($p["versions"] as $i=>$v) {
         if (!$dev && is_dev($v)) continue;
+        // show only those builds that have been around for over three days.
+        // Gives us time to address any showstoppers
+        // found by the early adopters
+        if (!$dev && ((time() - strtotime($v["date"])) <= 86400*3)) continue;
         show_version_xml($v, $p);
     }
 }
@@ -162,25 +162,27 @@ if ($pname && $version) {
 
 if ($xml) {
     header('Content-type: text/xml');
-    echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>
-<versions>
+    echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>\n
+<versions>\n
 ";
     foreach($platforms as $short_name=>$p) {
         show_platform_xml($short_name, $p, $dev);
     }
-    echo "</versions>\n";
+    echo "
+</versions>\n
+";
 } else {
     if ($pname) {
         $p = $platforms[$pname];
         $name = $p['name'];
         page_head("Download BOINC client software for $name");
-        echo "<table border=2 cellpadding=4 width=100%>";
+        echo "<table width=\"100%\" cellpadding=4 >";
         show_platform($pname, $p, $dev);
         list_end();
     } else {
         page_head("Download BOINC client software");
         echo "
-            <table border=2 cellpadding=4 width=100%>
+            <table width=\"100%\" cellpadding=4 >
         ";
         foreach($platforms as $short_name=>$p) {
             show_platform($short_name, $p, $dev);
@@ -190,19 +192,19 @@ if ($xml) {
             <h3>Other platforms</h3>
             If your computer is not of one of these types, you can
             <ul>
-            <li> <a href=trac/wiki/AnonymousPlatform>make your own client software</a> or
-            <li> <a href=trac/wiki/DownloadOther>download executables from a third-party site</a>
+            <li> <a href=\"trac/wiki/AnonymousPlatform\">make your own client software</a> or
+            <li> <a href=\"trac/wiki/DownloadOther\">download executables from a third-party site</a>
                 (available for Solaris/Opteron, Linux/Opteron, Linux/PPC, HP-UX, and FreeBSD, and others).
             </ul>
 
-            <h3>Linux info</h2>
+            <h3>Linux info</h3>
         ";
         show_linux_info();
     }
     echo "
         <h3>Customizing this page</h3>
         The information on this page can be
-        <a href=trac/wiki/DownloadInfo>
+        <a href=\"trac/wiki/DownloadInfo\">
         restricted by platform and/or version number,
         or presented  in XML format</a>.
     ";

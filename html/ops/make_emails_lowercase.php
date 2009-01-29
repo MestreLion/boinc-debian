@@ -1,5 +1,20 @@
 <?php
-$cvs_version_tracker[]="\$Id: make_emails_lowercase.php 5373 2005-02-09 18:09:26Z ballen $";  //Generated automatically - do not edit
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // (0) This script corrects email addresses in the user database that are
 //     not completely lowercase.  It also fixes cross_project_id values that
@@ -93,4 +108,5 @@ if ($confirm != "yes" && $update_needed) {
 mysql_free_result($result);
 
 admin_page_tail();
+$cvs_version_tracker[]="\$Id: make_emails_lowercase.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
 ?>

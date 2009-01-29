@@ -143,6 +143,7 @@ $misc_sites = array(
     array("http://www.myboinc.com/", "BOINC Users of the Day"),
     //array("http://groups.myspace.com/BOINConMYSPACE", "BOINC on MySpace"),
     array("http://www.boincuk.com/repository.php", "bunc", "(excellent newsletter produced by BOINC UK)"),
+    array("http://www.linkedin.com/groups?gid=678497", "BOINC Users group on LinkedIn"),
 );
 echo "<ul>";
 foreach ($misc_sites as $m) {
@@ -243,6 +244,7 @@ language("French", array(
 ));
 language("German", array(
     //site("http://www.boinc-gemeinschaft.de/", "BOINC Gemeinschaft"),
+    site("http://www.gridcommunity.de/index.php", "International Grid Community"),
     site("http://www.swissteam.net/", "SwissTeam.net"),
     site("http://www.unitedmacs.com/", "United Macs"),
     site("http://www.rechenkraft.net/", "Rechenkraft"),
@@ -299,6 +301,7 @@ language("Slovak", array(
     site("http://www.boinc.sk/", "www.boinc.sk")
 ));
 language("Spanish", array(
+    site("http://www.easyboinc.org/", "Computación Distribuida"),
     site("http://foro.noticias3d.com/vbulletin/showthread.php?t=192297", "Noticias3D"),
     site("http://elmajo.blogspot.com", "Computación Distribuida"),
     site("http://efren-canarias.blogcindario.com/", "El Pais De La Computacion"),
@@ -328,7 +331,8 @@ If you'd like to add a web site to this list, please
 
 <ul>
 <li> <a href=http://www.liftconference.com/distributed-computing-distributed-thinking> Francois Grey at Lift, Feb 2008</a>
-<li> <a href=http://www.youtube.com/watch?v=8iSRLIK-x6A>David Anderson talks about BOINC</a>
+<li> <a href=http://www.youtube.com/watch?v=8iSRLIK-x6A>David Anderson talks about BOINC</a> (2006)
+<li> <a href=http://video.google.com/videoplay?docid=5863868341014543476&hl=en>David Anderson talks at CPDN Open Day (2004)</a> (33 minutes).
 <li> <a href=http://www.youtube.com/watch?v=GzATbET3g54>David Baker talks about Rosetta@home</a>
 </ul>
 ";

@@ -1,5 +1,20 @@
 <?php
-$cvs_version_tracker[]="\$Id: db_action.php 10249 2006-06-04 12:48:35Z ballen $";  //Generated automatically - do not edit
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/util_ops.inc");
 require_once("../inc/db_ops.inc");
@@ -8,7 +23,14 @@ db_init();
 
 $detail = null;
 $show_aggregate = false;
-parse_str(getenv("QUERY_STRING"));
+
+$nresults = get_int("nresults", true);
+$entries_to_show = get_int("entries_to_show", true);
+$last_pos = get_int("last_pos", true);
+$table = get_str("table", true);
+$detail = get_str("detail", true);
+$clauses = get_str("clauses", true);
+if (strstr($clauses, ";")) error_page("bad clause");
 
 $q = new SqlQueryString();
 $q->process_form_items();
@@ -101,7 +123,6 @@ if ($table == "host") {
     if ($show_aggregate) {
         $query = "select sum(d_total) as tot_sum, sum(d_free) as free_sum, sum(m_nbytes) as tot_mem from host";
         if ($clauses) {
-            $clauses = stripslashes(urldecode($clauses));
             $query .= " WHERE $clauses";
         }
         $result = mysql_query($query);
@@ -207,4 +228,5 @@ if ($result) {
 }
 
 admin_page_tail();
+$cvs_version_tracker[]="\$Id: db_action.php 15975 2008-09-07 07:40:56Z davea $";  //Generated automatically - do not edit
 ?>

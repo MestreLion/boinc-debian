@@ -40,7 +40,9 @@ The colors are based on U.C. Berkeley's blue-and-gold colors.
 <li> <a href=logo/boinc_logo_ai.svg>Scalable Vector Graphics (.svg)</a>
 <li> <a href=logo/boinc_logo.png>1280x535, transparent background (.png)</a>
 <li> <a href=logo/boinc_logo.wmf>Windows meta-file (.wmf)</a>
+<li> <a href=logo/logo_3d>3D versions (various sizes)</a>
 </ul>
+
 Icon:
 <ul>
 <li> Bitmaps (.bmp):
@@ -59,7 +61,14 @@ Installer splash screen:
 </ul>
 'Powered by BOINC' image:
 <p>
-<img src=logo/pb_boinc.gif>
+<a href=http://boinc.berkeley.edu><img src=logo/pb_boinc.gif></a>
+<p>
+(always link this to http://boinc.berkeley.edu)
+<p>
+Monochrome/black:
+<p>
+<img src=logo/boinc_watermark.png>
+
 <p>
 
 Wallpaper:
@@ -112,6 +121,9 @@ art_list_head();
 echo "
 ";
 $logos = array(
+    array("Markus Beck",
+        "<img width=400 src=logos/markus_beck.jpg>"
+    ),
     array("Keijo Simonen",
         "<img src=logos/BOINC_logo_16b.png>
         <img src=logos/BOINC_logo_16c.png>"

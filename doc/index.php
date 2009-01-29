@@ -11,19 +11,18 @@ if ($host == "bolt.berkeley.edu") {
 }
 
 require_once("docutil.php");
-require_once("../html/inc/translation.inc");
+require_once("translation.inc");
 
 function show_participant() {
     $i = rand(0, 99);
     $j = $i+1;
     echo "<table cellpadding=8 cellspacing=0>
-        <tr><td class=heading>
+        <tr><td class=heading_right>
         <center>
         <span class=section_title>Computing power</span>
         <br>
-        <a class=heading href=chart_list.php><b>Top 100</a>
-        &middot; <a class=heading href=http://boinc.netsoft-online.com/e107_plugins/boinc/u_rank.php?list=tc_p1c1><b>Single-computer</a>
-        &middot; <a class=heading href=http://boinc.netsoft-online.com/e107_plugins/boinc/bu_rankselect.php><b>Other lists</a>
+        <a class=heading href=chart_list.php><b>Top 100 volunteers</b></a>
+        &middot; <a class=heading href=\"links.php#stats\"><b>Statistics</b></a>
         </center>
         </td></tr>
         <tr><td>
@@ -52,7 +51,7 @@ function show_totals() {
     $teraflops = number_format($credit_day/100000, 2);
     echo "Active: $users volunteers, $hosts computers.
         <br>24-hour average: $teraflops TeraFLOPS.
-        <hr size=1 width=80%>
+        <hr size=1 width=\"80%\">
     ";
 }
 
@@ -61,11 +60,10 @@ function show_news_items() {
     require_once("../html/inc/news.inc");
     echo "
         <table border=0 cellpadding=8>
-        <tr><td class=heading>
+        <tr><td class=heading_right>
         <center>
         <span class=section_title>News</span>
         </center>
-        <br>
     ";
     $nnews_items = 6;
     show_news($project_news, $nnews_items);
@@ -75,20 +73,20 @@ function show_news_items() {
 
     echo "
         <p><font size=-2>News is available as an
-        <a href=rss_main.php>RSS feed</a> <img src=xml.gif></font>
+        <a href=rss_main.php>RSS feed</a> <img src=xml.gif alt=\"RSS logo\"></font>
         </td></tr></table>
     ";
 }
 
 function show_participate() {
     echo "
-        <tr><td class=heading>
+        <tr><td class=heading_left>
         <center>
         <span class=section_title>".tr(HOME_HEADING1)."</span>
         <br>
         <a class=heading href=download.php><b>".tr(HOME_DOWNLOAD)."</b></a>
-        &middot; <a class=heading href=/wiki/BOINC_Help><b>Help</b></a>
-        &middot; <a class=heading href=wiki/User_manual><b><nobr>Documentation</nobr></b></a> 
+        &middot; <a class=heading href=\"/wiki/BOINC_Help\"><b>Help</b></a>
+        &middot; <a class=heading href=\"wiki/User_manual\"><b><span class=nobr>Documentation</span></b></a> 
         </center>
         </td></tr>
         <tr><td>
@@ -96,38 +94,36 @@ function show_participate() {
         ".sprintf(tr(HOME_P1), "<ol> <li> <a href=projects.php><b>", "</b></a>", "<li> <a href=download.php><b>", "</b></a>", "<li> <b>", "</b>")."
         </ol>
         <p>
-        ".sprintf(tr(HOME_P2), "<a href=trac/wiki/AccountManagers>", "</a>", "<a href=http://www.gridrepublic.org>", "</a>", "<a href=http://bam.boincstats.com/>", "</a>")."
+        ".sprintf(tr(HOME_P2), "<a href=\"trac/wiki/AccountManagers\">", "</a>", "<a href=\"http://www.gridrepublic.org\">", "</a>", "<a href=\"http://bam.boincstats.com/\">", "</a>")."
         </td></tr>
     ";
 }
 
 function show_create() {
     echo "
-        <tr><td class=heading>
+        <tr><td class=heading_left>
         <center>
         <span class=section_title>Compute with BOINC</span>
         <br>
-        <a class=heading href=trac/wiki/CreateProjectOutline>Documentation</a>
-        &middot; <a class=heading href=trac/wiki/ServerUpdates>Updates</a>
-        &middot; <a class=heading href=trac/wiki/ConferenceList>Conferences</a>
+        <a class=heading href=\"trac/wiki/ProjectMain\">Documentation</a>
+        &middot; <a class=heading href=\"trac/wiki/ServerUpdates\">Software updates</a>
         </center>
         </td></tr>
         <tr><td>
-        <b>Scientists</b>: 
+        <ul>
+        <li><b>Scientists</b>: 
         use BOINC to create a
         <a href=volunteer.php>volunteer computing project</a>,
         giving you the computing power of thousands of CPUs.
-        <br>
-        <b>Universities</b>: use BOINC to create a
-        <a href=trac/wiki/VirtualCampusSupercomputerCenter>Virtual Campus Supercomputing Center</a>.
-        <br>
-        <b>Companies</b>:
+        <li><b>Universities</b>: use BOINC to create a
+        <a href=\"trac/wiki/VirtualCampusSupercomputerCenter\">Virtual Campus Supercomputing Center</a>.
+        <li><b>Companies</b>:
         use BOINC for <a href=dg.php>desktop Grid computing</a>.
-        <br>
-        And check out:
+        </ul>
+        Related software:
         <ul>
-            <li> <a href=trac/wiki/BoltIntro>Bolt</a> (software for web-based education and training)</a>
-            <li> <a href=trac/wiki/BossaIntro>Bossa</a> (software for distributed thinking projects)</a>
+            <li> <a href=\"http://bolt.berkeley.edu/\">Bolt</a>: middleware for web-based education and training
+            <li> <a href=\"http://bossa.berkeley.edu/\">Bossa</a>: middleware for distributed thinking projects
         </ul>
         </td></tr>
     ";
@@ -135,21 +131,28 @@ function show_create() {
 
 function show_other() {
     echo "
-        <tr><td class=heading>
+        <tr><td class=heading_left>
         <center>
         <span class=section_title>The BOINC project</span>
         </center>
         </td></tr>
         <tr><td>
             <ul>
-            <li> <a href=trac/wiki/BoincIntro/>Overview</a>
-            <li> <a href=trac/wiki/ProjectPeople>Personnel and contributors</a>
-            <li> <a href=trac/wiki/SoftwareDevelopment>Software development</a>
+            <li> Help wanted!
+            <ul>
+                <li> <a href=\"trac/wiki/DevProjects\">Programming</a>
+                <li> <a href=\"trac/wiki/TranslateIntro\">Translation</a>
+                <li> <a href=\"trac/wiki/AlphaInstructions\">Testing</a>
+                <li> <a href=\"trac/wiki/WikiMeta\">Documentation</a>
+            </ul>
+            <li> <a href=\"trac/wiki/SoftwareDevelopment\">Software development</a>
+            <li> <a href=\"trac/wiki/SoftwareAddon\">APIs for add-on software</a>
+            <li> <a href=\"trac/wiki/ProjectPeople\">Personnel and contributors</a>
+            <li> <a href=\"dev/\">Message boards</a>
             <li> <a href=email_lists.php>Email lists</a>
-            <li> <a href=dev/>Message boards</a>
-            <li> <a href=trac/wiki/BoincEvents>Events</a>
-            <li> <a href=http://boinc.berkeley.edu/trac/wiki/BoincPapers>Papers and talks</a> on BOINC
-            <li> <a href=trac/wiki/TranslateIntro>Translation</a> of web and GUI text
+            <li> <a href=\"trac/wiki/BoincEvents\">Events</a>
+            <li> <a href=\"trac/wiki/ConferenceList\">Conferences</a>
+            <li> <a href=\"trac/wiki/BoincPapers\">Papers and talks</a>
             <li> <a href=logo.php>Logos and graphics</a>
             </ul>
             <br>
@@ -160,9 +163,9 @@ function show_other() {
 function show_nsf() {
     echo "
         <tr><td>
-        <img align=left hspace=8 src=nsf.gif>
+        <img align=left hspace=8 src=nsf.gif alt=\"NSF logo\">
         BOINC is supported by the
-        <a href=http://nsf.gov>National Science Foundation</a>
+        <a href=\"http://nsf.gov\">National Science Foundation</a>
         through awards SCI-0221529, SCI-0438443, SCI-0506411,
                 PHY/0555655, and OCI-0721124.
         <span class=note>
@@ -174,6 +177,9 @@ function show_nsf() {
     ";
 }
 
+// how to add language names:
+// paste into notepad++, select ANSI format,
+// then copy/paste into here
 function language_form() {
     echo "
         <table><tr><td>
@@ -185,6 +191,7 @@ function language_form() {
         <option value=be>Беларускі
         <option value=bg>Български
         <option value=ca>Català
+        <option value=cs>Čeština
         <option value=de>Deutsch
         <option value=en>English
         <option value=es>Espa&ntilde;ol
@@ -200,32 +207,31 @@ function language_form() {
         <option value=zh_CN>简体中文
         </select>
         </form>
-        <script>
+        <script type=\"text/javascript\">
         document.language.lang.selectedIndex=0;
         </script>
             </td></tr></table>
     ";
 }
 
-html_tag();
 if (defined("CHARSET")) {
     header("Content-type: text/html; charset=".tr(CHARSET));
 }
 
+html_tag();
 echo "
 <head>
 <link rel=\"shortcut icon\" href=\"logo/favicon.gif\">
-<link rel=\"stylesheet\" type=text/css href=white.css>
+<link rel=\"stylesheet\" href=\"white.css\">
 <title>BOINC</title>
 <meta name=description content=\"BOINC is an open-source software platform for computing using volunteered resources\">
 <meta name=keywords content=\"distributed scientific computing supercomputing grid SETI@home public computing volunteer computing \">
 </head>
-<body bgcolor=#ffffff>
-<table width=100% border=0><tr><td valign=top>
-<img hspace=20 vspace=6 align=left src=logo/www_logo.gif>
+<table width=\"100%\" border=0><tr><td valign=top>
+<img hspace=20 vspace=6 align=left src=\"logo/www_logo.gif\" alt=\"BOINC logo\">
 </td><td align=center>
-<span class=subtitle>
-".sprintf(tr(HOME_BOINC_DESC), '<a href=volunteer.php><nobr>', '</nobr></a>', '<a href=dg.php><nobr>', '</nobr></a>')."
+<span class=\"subtitle\">
+".sprintf(tr(HOME_BOINC_DESC), '<a href=volunteer.php><span class=nobr>', '</span></a>', '<a href=dg.php><span class=nobr>', '</span></a>')."
 </span>
 <table><tr><td>
 ";
@@ -235,10 +241,10 @@ search_form();
 echo "
 </td></tr></table>
 </td></tr></table>
-<table width=100% border=0 cellspacing=0 cellpadding=4>
+<table width=\"100%\" border=0 cellspacing=0 cellpadding=4>
 <tr>
 <td valign=top>
-<table width=100% border=0 cellspacing=0 cellpadding=8>
+<table width=\"100%\" border=0 cellspacing=0 cellpadding=8>
 ";
 show_participate();
 show_create();

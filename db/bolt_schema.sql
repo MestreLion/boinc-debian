@@ -4,7 +4,7 @@ create table bolt_user (
     sex             tinyint         not null,
     flags           integer         not null,
     attrs           text            not null,
-        -- project-defined.  Use JSON.
+        -- project-defined.  Use serialized PHP object
     primary key (user_id)
 );
 
@@ -14,7 +14,6 @@ create table bolt_course (
     short_name      varchar(255)    not null,
     name            varchar(255)    not null,
     description     text            not null,
-    doc_file        varchar(255)    not null,
     hidden          tinyint         not null,
     bossa_app_id    integer         not null,
         -- on completion, go to this Bossa app
@@ -73,6 +72,7 @@ create table bolt_result (
     course_id       integer         not null,
     view_id         integer         not null,
         -- the display of exercise
+    item_name       varchar(255)    not null,
     score           double          not null,
     response        text            not null,
         -- the query string containing user's responses
@@ -92,7 +92,7 @@ create table bolt_xset_result (
     start_time      integer         not null,
     end_time        integer         not null,
     name            varchar(255)    not null,
-        -- logical name of result set unit
+        -- logical name of exercise set unit
     score           double          not null,
 		-- weighted average score
     view_id         integer         not null,
@@ -109,6 +109,8 @@ create table bolt_select_finished (
     end_time        integer         not null,
     name            varchar(255)    not null,
         -- logical name of the select unit
+    selected_unit   varchar(255)    not null,
+        -- name of selected subunit
     view_id         integer         not null,
         -- the view of the last item
     primary key(id)
@@ -131,6 +133,8 @@ create table bolt_refresh (
         -- most recent result for this exercise set
     due_time        integer         not null,
         -- when refresh will be due
+    count           integer         not null,
+        -- index into intervals array
     primary key (id)
 );
 
@@ -141,6 +145,8 @@ create table bolt_question (
     course_id       integer         not null,
     name            varchar(255)    not null,
 		-- logical name of item where question was asked
+    mode            integer         not null,
+        -- distinguishes exercise show/answer
 	question		text			not null,
 	state			integer			not null,
 		-- whether question has been handled

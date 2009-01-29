@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
@@ -128,15 +144,15 @@ function name_search($filter) {
     if (strlen($search_string)<3) {
         error_page("search string must be at least 3 characters");
     }
-    $urls = urlencode($search_string);
-    $s = escape_pattern($search_string);
-    $fields = "id, create_time, name, country, total_credit, expavg_credit, teamid, url, has_profile";
+    $s = boinc_real_escape_string($search_string);
+    $s = escape_pattern($s);
+    $fields = "id, create_time, name, country, total_credit, expavg_credit, teamid, url, has_profile, donated";
     $users = BoincUser::enum_fields($fields, "name like '$s%'", "limit $count");
     $n=0;
     foreach ($users as $user) {
         if (!filter_user($user, $filter)) continue;
         if ($n==0) {
-            echo "<h3>User names starting with '".htmlspecialchars($search_string)."' $nice_name</h3>\n";
+            echo "<h3>User names starting with '".htmlspecialchars($search_string)."'</h3>\n";
             start_table();
             table_header("Name", "Team", "Average credit", "Total credit", "Country", "Joined");
 

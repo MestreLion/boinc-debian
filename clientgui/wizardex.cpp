@@ -8,7 +8,7 @@
 //              3) Fixed ShowPage() bug on displaying bitmaps
 //              Robert Vazan (sizers)
 // Created:     15.08.99
-// RCS-ID:      $Id: wizardex.cpp 12204 2007-03-09 23:44:34Z rwalton $
+// RCS-ID:      $Id: wizardex.cpp 16030 2008-09-19 21:16:03Z romw $
 // Copyright:   (c) 1999 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
 // Licence:     wxWindows licence
 ///////////////////////////////////////////////////////////////////////////////
@@ -400,10 +400,10 @@ void wxWizardEx::AddButtonRow(wxBoxSizer *mainColumn)
 #endif
 
     m_btnNext = new wxButton(this, wxID_FORWARD, _("&Next >"));
-    wxButton *btnCancel=new wxButton(this, wxID_CANCEL, _("&Cancel"), wxDefaultPosition, wxDefaultSize, buttonStyle);
+    m_btnCancel = new wxButton(this, wxID_CANCEL, _("&Cancel"), wxDefaultPosition, wxDefaultSize, buttonStyle);
 #ifndef __WXMAC__
     if (GetExtraStyle() & wxWIZARD_EX_HELPBUTTON)
-        btnHelp=new wxButton(this, wxID_HELP, _("&Help"), wxDefaultPosition, wxDefaultSize, buttonStyle);
+        btnHelp = new wxButton(this, wxID_HELP, _("&Help"), wxDefaultPosition, wxDefaultSize, buttonStyle);
 #endif
     m_btnPrev = new wxButton(this, wxID_BACKWARD, _("< &Back"), wxDefaultPosition, wxDefaultSize, buttonStyle);
 
@@ -424,7 +424,7 @@ void wxWizardEx::AddButtonRow(wxBoxSizer *mainColumn)
     AddBackNextPair(buttonRow);
 
     buttonRow->Add(
-        btnCancel,
+        m_btnCancel,
         0, // Horizontally unstretchable
         wxALL, // Border all around, top aligned
         5 // Border width

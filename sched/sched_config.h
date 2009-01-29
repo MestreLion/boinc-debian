@@ -1,27 +1,27 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _SCHED_CONFIG_
 #define _SCHED_CONFIG_
 
 #include "regex.h"
 #include <vector>
+#include <stdio.h>
+
 using std::vector;
 
 // parsed version of server configuration file
@@ -107,8 +107,6 @@ public:
         // number of work items in shared memory
     int feeder_query_size;
         // number of work items to request in each feeder query
-    bool no_darwin_6;
-        // don't allow Mac OS X 10.2 or earlier
     bool no_amd_k6;
         // don't allow AMD K6 CPUs
     char httpd_user[256];
@@ -118,18 +116,30 @@ public:
     bool request_time_stats_log;
     bool enable_assignment;
     int max_ncpus;
-    vector<regex_t> ban_os;
-    vector<regex_t> ban_cpu;
+    vector<regex_t> *ban_os;
+    vector<regex_t> *ban_cpu;
+    bool matchmaker;
+    int mm_min_slots;
+    int mm_max_slots;
+    bool job_size_matching;
+    bool use_credit_multiplier;
+    bool multiple_clients_per_host;
+    bool no_vista_sandbox;
+    bool have_cuda_apps;
+
     // log flags
     //
     bool debug_version_select;
     bool debug_assignment;
     bool debug_prefs;
     bool debug_send;
+    bool debug_resend;
     bool debug_request_headers;
     bool debug_user_messages;
     bool debug_request_details;
     bool debug_handle_results;
+    bool debug_edf_sim_workload;    // show workload for EDF sim
+    bool debug_edf_sim_detail;      // show details of EDF sim
 
     int parse(FILE*);
     int parse_file(const char* dir=".");
