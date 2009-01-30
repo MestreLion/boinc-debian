@@ -1,0 +1,7 @@
+Makefile.am
+client/Makefile.am
+clientgui/hyperlink.cpp
+config.guess
+config.sub
+locale/client/ar/BOINC Manager.mo
+sched/Makefile.am
