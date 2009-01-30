@@ -1,4 +1,7 @@
-boinc (6.4.5-1) experimental; urgency=low
+boinc (6.4.5-1) UNRELEASED; urgency=low
+
+   TODO: this version still have a big todo and 
+   testing, before merge it to debian/experimental
 
   * New upstream version
   * debian/patches:
@@ -7,6 +10,7 @@ boinc (6.4.5-1) experimental; urgency=low
     + 003_use_sensible-browser.patch
     + 004_exclude_sea.patch removed
     + 101_check_RSA_returned_values.patch removed
+    + add 005_disable_client_res.patch 
 
  -- Rene Mayorga <rmayorga@debian.org>  Thu, 29 Jan 2009 13:44:11 -0600
 
