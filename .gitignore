@@ -19,3 +19,6 @@ debian/stamp-patched
 Makefile
 Makefile.in
 aclocal.m4
+version.h
+*/*.o
+*/*/*.o
