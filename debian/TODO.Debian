@@ -1,40 +1,34 @@
 The to-do list for developers of the BOINC Debian packages is here:
   http://wiki.debian.org/BOINC/Development#TODO
 
+This is a more detailed todo anyway:
 
 TODO for this version(6.4.5)
 
-Licenses
-========
+Licenses and debian/copyright
+==============================
 
-client/app_stats_mac.cpp:
--------------------------
-this file should be removed from upstream source, since
-it has some copyright notice from Apple:
-(ref: line 24...)
- 24  * Copyright (c) 2002-2004 Apple Computer, Inc.  All rights reserved.
- 25  *
- 26  * @APPLE_LICENSE_HEADER_START@
-And http://wiki.debian.org/DFSGLicenses#head-0a5ca8d24d2dfd3d3c954c1abb441ad54b37461e
-stands that this license is not free.
-
-
-client/stream.cpp:
-------------------
-STREAM license should be need reviewed? ( just a really fuzzy view by
-my side here, nothing serious )
+ client/app_stats_mac.cpp:
+ -------------------------
+  this file should be removed from upstream source, since
+  it has some copyright notice from Apple:
+  (ref: line 24...)
+   24  * Copyright (c) 2002-2004 Apple Computer, Inc.  All rights reserved.
+   25  *
+   26  * @APPLE_LICENSE_HEADER_START@
+  And http://wiki.debian.org/DFSGLicenses#head-0a5ca8d24d2dfd3d3c954c1abb441ad54b37461e
+  stands that this license is not free.
 
 
-Review debian/copyright
------------------------
-Bump copyright years comming from upstrem if it is needed
-and review that all files has they _right_ copyright entry on
-debian/copyright.
+ api/textfont.[ch] and samples/glut/win32_util.c
+ ------------------------------------------------
+ The license on this file is not clear enough IMHO.
+ also there is a precedent that this license is considered
+ as non-DFSG (#467123). *IMPORTANT*
 
-
-samples/*
----------
-Those files needs a copyright entry on debian/copyright
-
-
+ samples/jpeglib/
+ ---------------
+ Maybe Clarify this license text, since the files refer to 
+ a non-existent README file, I actually check
+ the license from libjpeg62 README file.
 

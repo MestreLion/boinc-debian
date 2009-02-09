@@ -15,7 +15,16 @@ boinc (6.4.5-1) UNRELEASED; urgency=low
     of `BOINC' the include/ dir
   * debian/boinc-dev.links; make BOINC point to boinc, this
     will save those who still point to the wrong PATH
-
+  * debian/copyright: 
+    + Update upstream license from LGPL-2.1 to LGPL-3
+    + update the file name on : api/textfont.[ch], client/stream.cpp,
+      clientgui/wizardex.cpp
+    + update copyright years on html/inc/geoip.inc and correct license
+    + add copyright and license info for samples/glut/Roman.stroke, 
+      client/install-sh, samples/glut/win32_util.c, 
+      samples/glut/win32_x11.[ch], samples/glut/stroke.h,
+      samples/glut/glut.h, samples/jpeglib/*
+    
  -- Rene Mayorga <rmayorga@debian.org>  Thu, 29 Jan 2009 13:44:11 -0600
 
 boinc (6.2.18-2) experimental; urgency=low
