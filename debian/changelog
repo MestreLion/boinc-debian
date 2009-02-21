@@ -10,7 +10,8 @@ boinc (6.4.5-1) UNRELEASED; urgency=low
     + 003_use_sensible-browser.patch
     + 004_exclude_sea.patch removed
     + 101_check_RSA_returned_values.patch removed
-    + add 005_disable_client_res.patch added
+    + 005_disable_client_res.patch added
+    + 006_correct_catalog_path.patch added 
   * debian/boinc-dev.install; upstream now calls `boinc' instead
     of `BOINC' the include/ dir
   * debian/boinc-dev.links; make BOINC point to boinc, this
@@ -24,7 +25,11 @@ boinc (6.4.5-1) UNRELEASED; urgency=low
       client/install-sh, samples/glut/win32_util.c, 
       samples/glut/win32_x11.[ch], samples/glut/stroke.h,
       samples/glut/glut.h, samples/jpeglib/*
-    
+  * debian/rules:
+    + don't install .mo files manually
+    + correct .mo files perms
+  * debian/boinc-manager.install: usr/share/locale/* files added
+
  -- Rene Mayorga <rmayorga@debian.org>  Thu, 29 Jan 2009 13:44:11 -0600
 
 boinc (6.2.18-2) experimental; urgency=low
