@@ -126,6 +126,7 @@ autoreconf-stamp: patch
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
+	cp -f sea/*png clientgui/res
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	touch $@
 
@@ -167,7 +168,10 @@ clean-patched:
 	  client/scripts/Makefile \
 	  client/scripts/boinc-client \
 	  clientgui/res/Makefile \
-	  sea/Makefile
+	  sea/Makefile \
+	  clientgui/res/boincmgr.16x16.png \
+	  clientgui/res/boincmgr.32x32.png \
+	  clientgui/res/boincmgr.48x48.png
 	debconf-updatepo
 
 install: build install-stamp

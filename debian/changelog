@@ -9,8 +9,6 @@ boinc (6.4.5-1) UNRELEASED; urgency=low
     + 002_remove_hardcoded_optimization.patch refreshed
     + 003_use_sensible-browser.patch
     + 004_exclude_sea.patch removed
-    + 101_check_RSA_returned_values.patch removed
-    + 005_disable_client_res.patch added
     + 006_correct_catalog_path.patch added 
   * debian/boinc-dev.install; upstream now calls `boinc' instead
     of `BOINC' the include/ dir
@@ -28,6 +26,7 @@ boinc (6.4.5-1) UNRELEASED; urgency=low
   * debian/rules:
     + don't install .mo files manually
     + correct .mo files perms
+    + copy sea/*png file to clientgui/res and remove they on clean target
   * debian/boinc-manager.install: usr/share/locale/* files added
 
  -- Rene Mayorga <rmayorga@debian.org>  Thu, 29 Jan 2009 13:44:11 -0600

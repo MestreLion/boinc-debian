@@ -2,5 +2,5 @@
 002_remove_hardcoded_optimization.patch
 003_use_sensible-browser.patch 
 005_using_hyphen_as_minus.patch
-005_disable_client_res.patch
 006_correct_catalog_path.patch
+101_check_RSA_returned_values.patch
