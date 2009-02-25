@@ -1,3 +1,9 @@
+boinc (6.2.18-3) unstable; urgency=low
+
+  * Uploaded to unstable
+
+ -- Rene Mayorga <rmayorga@debian.org>  Wed, 25 Feb 2009 10:04:23 -0600
+
 boinc (6.2.18-2) experimental; urgency=low
 
   [ Frank S. Thomas ]
