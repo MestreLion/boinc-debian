@@ -1,4 +1,0 @@
-usr/bin/boinc                           usr/bin/boinc_client
-usr/bin/boinccmd                        usr/bin/boinc_cmd
-usr/share/man/man1/boinc.1.gz           usr/share/man/man1/boinc_client.1.gz
-usr/share/man/man1/boinccmd.1.gz        usr/share/man/man1/boinc_cmd.1.gz

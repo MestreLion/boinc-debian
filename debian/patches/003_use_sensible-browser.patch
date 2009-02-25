@@ -1,5 +1,8 @@
-This patch is Debian-specific. Don't use it for non Debian packages. The
-program "sensible-browser" is part of the essential package debianutils.
+Author: Frank S. Thomas <frank@thomas-alfeld.de>
+Description: use sensible-browser only, because upstream's attempt to
+start a browser fails miserably.
+Disclaimer: This patch is Debian-specific. Don't use it for non Debian packages.
+The program "sensible-browser" is part of the essential package debianutils.
 
 Index: boinc-5.10.8/clientgui/hyperlink.cpp
 ===================================================================

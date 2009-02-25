@@ -1,5 +1,10 @@
---- boinc.orig/client/Makefile.am
-+++ boinc/client/Makefile.am
+Author: Frank S. Thomas <frank@thomas-alfeld.de>
+Description: remove hardcoded compiler flags from client/Makefile.am
+Bug: #427661
+Index: boinc-6.1.0/client/Makefile.am
+===================================================================
+--- boinc-6.1.0.orig/client/Makefile.am
++++ boinc-6.1.0/client/Makefile.am
 @@ -61,7 +61,7 @@
      work_fetch.C
  

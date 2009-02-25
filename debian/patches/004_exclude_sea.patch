@@ -1,3 +1,6 @@
+Author: Frank S. Thomas <frank@thomas-alfeld.de>
+Description: prevent building the self-extracting archive, since we
+don't need it in any case and this fixes a FTBFS on non-Linux hosts.
 Index: boinc-5.10.8/Makefile.am
 ===================================================================
 --- boinc-5.10.8.orig/Makefile.am	2006-08-31 23:16:36.000000000 +0200

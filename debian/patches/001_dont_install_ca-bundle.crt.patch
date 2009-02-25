@@ -1,5 +1,10 @@
---- boinc.orig/client/Makefile.am
-+++ boinc/client/Makefile.am
+Description: Don't install ca-bundle.crt from BOINC, and keep the system using
+the ca-bundle.crt provided by ca-certificates
+Author: Frank S. Thomas <frank@thomas-alfeld.de>
+Index: boinc-5.10.25/client/Makefile.am
+===================================================================
+--- boinc-5.10.25.orig/client/Makefile.am
++++ boinc-5.10.25/client/Makefile.am
 @@ -66,7 +66,7 @@
  boinc_client_LDADD = $(LIBBOINC) $(PTHREAD_LIBS)
  
