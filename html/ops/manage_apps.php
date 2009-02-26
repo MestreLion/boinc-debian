@@ -1,4 +1,23 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 /***********************************************************************\
  *  Display and Manage BOINC Application Versions
  * 
@@ -11,7 +30,7 @@
  * used by clients).
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_apps.php 11547 2006-11-17 19:52:09Z rytiss $
+ * @(#) $Id: manage_apps.php 15758 2008-08-05 22:43:14Z davea $
 \***********************************************************************/
 
 require_once('../inc/util_ops.inc');
@@ -246,5 +265,5 @@ echo "</form><p>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_apps.php 11547 2006-11-17 19:52:09Z rytiss $";
+$cvs_version_tracker[]="\$Id: manage_apps.php 15758 2008-08-05 22:43:14Z davea $";
 ?>

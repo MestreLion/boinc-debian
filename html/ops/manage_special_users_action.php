@@ -1,5 +1,20 @@
 <?php
-$cvs_version_tracker[]="\$Id: manage_special_users_action.php 5555 2005-03-03 17:48:16Z ballen $";  //Generated automatically - do not edit
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/db_ops.inc");
 require_once("../inc/util_ops.inc");
@@ -11,7 +26,7 @@ admin_page_head("Manage special users action");
 $bitset = '';
 
 for ($i=0;$i<=6;$i++) {
-    if (post_int($i, TRUE) == '1') {
+    if (post_int("role".$i, TRUE) == '1') {
         $bitset = str_pad($bitset, $i+1, '1');
     } else {
         $bitset = str_pad($bitset, $i+1, '0');
@@ -35,4 +50,5 @@ echo "Query was: $query</center>";
 
 admin_page_tail();
 
+$cvs_version_tracker[]="\$Id: manage_special_users_action.php 16132 2008-10-05 12:45:33Z jbk $";  //Generated automatically - do not edit
 ?>

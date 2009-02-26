@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/db.inc");
 require_once("../inc/util.inc");
@@ -47,14 +63,16 @@ function show_nav() {
         <li><a href=\"team.php\">Teams</a> - create or join a team
         <li><a href=\"cert1.php\">Certificate</a>
         <li> <a href=\"apps.php\">".tra("Applications")."</a>
+
         </ul>
-        <h2>Community</h2>
+        <h2>".tra("Community")."</h2>
         <ul>
-        <li><a href=\"profile_menu.php\">Profiles</a>
+        <li><a href=\"profile_menu.php\">".tra("Profiles")."</a>
         <li><a href=\"user_search.php\">User search</a>
-        <li><a href=\"forum_index.php\">Message boards</a>
-        <li><a href=\"forum_help_desk.php\">Questions and answers</a>
+        <li><a href=\"forum_index.php\">".tra("Message boards")."</a>
+        <li><a href=\"forum_help_desk.php\">".tra("Questions and Answers")."</a>
         <li><a href=\"stats.php\">Statistics</a>
+        <li><a href=language_select.php>Languages</a>
         </ul>
         </div>
     ";
@@ -70,18 +88,24 @@ $stopped = web_stopped();
 $rssname = PROJECT . " RSS 2.0" ;
 $rsslink = URL_BASE . "rss_main.php";
 
-if (defined("CHARSET")) {
-    header("Content-type: text/html; charset=".tr(CHARSET));
+$charset = tra("CHARSET");
+
+if ($charset != "CHARSET") {
+    header("Content-type: text/html; charset=$charset");
 }
 
-echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd\">";
+echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
+
 echo "<html>
     <head>
     <title>".PROJECT."</title>
-    <link rel=\"stylesheet\" type=\"text/css\" href=\"white.css\">
+    <link rel=\"stylesheet\" type=\"text/css\" href=\"".STYLESHEET."\">
     <link rel=\"alternate\" type=\"application/rss+xml\" title=\"".$rssname."\" href=\"".$rsslink."\">
+";
+include 'schedulers.txt';
+echo "
     </head><body>
-    <h1>".PROJECT."</h1>
+    <span class=page_title>".PROJECT."</span>
     <table cellpadding=\"8\" cellspacing=\"4\">
     <tr><td rowspan=\"2\" valign=\"top\" width=\"40%\">
 ";
@@ -98,7 +122,7 @@ if ($stopped) {
 
 echo "
     <p>
-    <a href=\"http://boinc.berkeley.edu/\"><img align=\"middle\" border=\"0\" src=\"img/pb_boinc.gif\" alt=\"BOINC Logo\"></a>
+    <a href=\"http://boinc.berkeley.edu/\"><img align=\"middle\" border=\"0\" src=\"img/pb_boinc.gif\" alt=\"Powered by BOINC\"></a>
     </p>
     </td>
 ";
@@ -108,7 +132,7 @@ if (!$stopped) {
     if ($profile) {
         echo "
             <td id=\"uotd\">
-            <h2>User of the day</h2>
+            <h2>".tra("User of the day")."</h2>
         ";
         show_uotd($profile);
         echo "</td></tr>\n";
@@ -132,7 +156,6 @@ echo "
     </tr></table>
 ";
 
-include 'schedulers.txt';
 
 if ($caching) {
     page_tail_main(true);

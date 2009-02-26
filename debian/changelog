@@ -1,3 +1,36 @@
+boinc (6.4.5-1) UNRELEASED; urgency=low
+
+   TODO: this version still have a big todo and 
+   testing, before merge it to debian/experimental
+
+  * New upstream version
+  * debian/patches:
+    + 001_dont_install_ca-bundle.crt.patch refreshed
+    + 002_remove_hardcoded_optimization.patch refreshed
+    + 003_use_sensible-browser.patch
+    + 004_exclude_sea.patch removed
+    + 006_correct_catalog_path.patch added 
+  * debian/boinc-dev.install; upstream now calls `boinc' instead
+    of `BOINC' the include/ dir
+  * debian/boinc-dev.links; make BOINC point to boinc, this
+    will save those who still point to the wrong PATH
+  * debian/copyright: 
+    + Update upstream license from LGPL-2.1 to LGPL-3
+    + update the file name on : api/textfont.[ch], client/stream.cpp,
+      clientgui/wizardex.cpp
+    + update copyright years on html/inc/geoip.inc and correct license
+    + add copyright and license info for samples/glut/Roman.stroke, 
+      client/install-sh, samples/glut/win32_util.c, 
+      samples/glut/win32_x11.[ch], samples/glut/stroke.h,
+      samples/glut/glut.h, samples/jpeglib/*
+  * debian/rules:
+    + don't install .mo files manually
+    + correct .mo files perms
+    + copy sea/*png file to clientgui/res and remove they on clean target
+  * debian/boinc-manager.install: usr/share/locale/* files added
+
+ -- Rene Mayorga <rmayorga@debian.org>  Thu, 29 Jan 2009 13:44:11 -0600
+
 boinc (6.2.18-3) unstable; urgency=low
 
   * Uploaded to unstable

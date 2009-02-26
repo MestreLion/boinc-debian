@@ -1,18 +1,33 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 function result_claimed_credit_string($result, $string_to_show) {
     if ($result->server_state <> 5) return "---";
     switch($result->outcome) {
-    case 1: return $string_to_show; //Success
-    case 2: return "---"; //Couldn't send
-    case 3: if ($result->exit_status <> -221) {
+    case 3:
+        if ($result->exit_status <> -221) {
                 return $string_to_show; //Client error
-	    } else return "---"; // Aborted by server
-    case 4: return "---"; //No reply
-    case 5: return "---"; //Didn't need
-    case 6: return "---"; // Validate error
-    case 7: return "---"; // client detached
-    default: return $string_to_show;
+        } 
+    default:
+        if ($result->claimed_credit > 0) {
+            return $string_to_show;
+	    }
+        return "---"; // no claimed credit 
     }
 }
 
@@ -26,13 +41,11 @@ function result_granted_credit_string($result, $string_to_show) {
             return "pending";
         }
         return $string_to_show;
-    case 2: return "---"; //Couldn't send
-    case 3: return "---"; //Client error
-    case 4: return "---"; //No reply
-    case 5: return "---"; //Didn't need
-    case 6: return "---"; //Validate error
-    case 7: return "---"; // client detached
-    default: return $string_to_show;
+    default:
+        if ($result->granted_credit > 0) {
+            return $string_to_show;
+	    }
+        return "---"; // no claimed credit 
     }
 } 
 
@@ -40,7 +53,7 @@ function result_server_state_string($result) {
     switch($result->server_state) {
     case 1: return "Inactive";
     case 2: return "Unsent";
-    case 4: return "In Progress";
+    case 4: return "In progress";
     case 5: return "Over";
     }
     return "Unknown";
@@ -48,11 +61,14 @@ function result_server_state_string($result) {
 
 function result_outcome_string($result) {
     switch($result->outcome) {
+    case 0: return "---";
     case 1: return "Success";
     case 2: return "Couldn't send";
-    case 3: if ($result->exit_status <> -221) {
+    case 3:
+        if ($result->exit_status <> -221) {
                return "Client error";
-	    } else return "Redundant result";
+        }
+        return "Redundant result";
     case 4: return "No reply";
     case 5: return "Didn't need";
     case 6: return "Validate error";
@@ -69,9 +85,11 @@ function result_client_state_string($result) {
     case 3: return "Compute error";
     case 4: return "Uploading";
     case 5: return "Done";
-    case 6: if ($result->exit_status <> -221) {
-               return "Aborted by user";
-	    } else return "Cancelled by server";
+    case 6:
+        if ($result->exit_status <> -221) {
+            return "Aborted by user";
+        }
+        return "Cancelled by server";
     }
 }
 
@@ -79,9 +97,11 @@ function validate_state_str($result) {
     switch($result->validate_state) {
     case 0: return "Initial";
     case 1: return "Valid";
-    case 2: if ($result->exit_status <> -221) {
-               return "Invalid";
-	    } else return "Not necessary";
+    case 2:
+        if ($result->exit_status <> -221) {
+            return "Invalid";
+        }
+        return "Not necessary";
     case 3: return "Workunit error - check skipped";
     case 4: return "Checked, but no consensus yet";
     case 5: return "Task was reported too late to validate";
@@ -114,8 +134,7 @@ function wu_error_mask_str($s) {
     if ($s) {
         $x = $x."Unrecognized Error: $s ";
     }
-    if (strlen($x)) {
-    } else {
+    if (!strlen($x)) {
         $x="<br>";
     }
     return $x;
@@ -166,7 +185,7 @@ function bad_result($result) {
 }
 
 function show_result_row(
-    $result, $show_wu_link, $show_host_link, $show_result_link
+    $result, $show_wu_link, $show_host_link, $show_result_link, $i
 ) {
     $s = time_str($result->sent_time);
     // if result has been received, show the received time,
@@ -191,11 +210,8 @@ function show_result_row(
     $result_granted_credit = format_credit($result->granted_credit);
     $result_claimed_credit = result_claimed_credit_string($result, $result_claimed_credit);
     $result_granted_credit = result_granted_credit_string($result, $result_granted_credit); 
-    if (bad_result($result)) {
-        echo "<tr class=invalid_result>";
-    } else {
-        echo "<tr>";
-    }
+    $j = $i % 2;
+    echo "<tr class=row$j>";
     if ($show_result_link) {
         echo "<td><a href=\"result.php?resultid=$result->id\" title=\"Name: ".$result->name."\">$result->id</a></td>\n";
     }
@@ -283,6 +299,6 @@ function show_result_navigation(
     }
 }
 
-$cvs_version_tracker[]="\$Id: result.inc 14200 2007-11-14 16:03:47Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: result.inc 15771 2008-08-07 20:43:52Z davea $";  //Generated automatically - do not edit
 
 ?>

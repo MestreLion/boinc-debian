@@ -48,6 +48,7 @@ create table app (
     homogeneous_redundancy smallint not null default 0,
     weight              double      not null default 1,
     beta                smallint    not null default 0,
+    target_nresults     smallint    not null default 0,
     primary key (id)
 ) engine=InnoDB;
 
@@ -117,6 +118,7 @@ create table team (
     seti_id             integer     not null,
     ping_user           integer     not null default 0,
     ping_time           integer unsigned not null default 0,
+    joinable            tinyint     not null default 1,
     primary key (id)
 ) engine=MyISAM;  
 
@@ -442,6 +444,7 @@ create table forum_preferences (
         -- 0 = no email
         -- 1 = email per event
         -- 2 = digest email
+    highlight_special   tinyint     not null default 1,
     primary key (userid)
 ) engine=MyISAM; 
 
@@ -581,3 +584,13 @@ create table notify (
     opaque              integer         not null
         -- some other ID, e.g. that of the thread, user or PM record
 );
+
+-- credit multiplier.  Used by the scheduler and calculate_credit_multiplier
+-- script to automatically adjust granted credit.
+create table credit_multiplier (
+    id                  serial          primary key,
+    appid               integer         not null,
+    time                integer         not null,
+    multiplier          double          not null default 0
+) engine=MyISAM;
+

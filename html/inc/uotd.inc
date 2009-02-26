@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once('../inc/email.inc');
 require_once('../inc/profile.inc');
@@ -8,7 +24,7 @@ define('UOTD_THRESHOLD', 7);
 
 function uotd_thumbnail($profile, $user) {
     if ($profile->has_picture) {
-        return "<a href=".URL_BASE."view_profile.php?userid=$user->id><img border=0 vspace=4 hspace=8 align=left src=".URL_BASE.IMAGE_URL.$user->id."_sm.jpg></a>";
+        return "<a href=\"".URL_BASE."view_profile.php?userid=$user->id\"><img border=0 vspace=4 hspace=8 align=left src=\"".URL_BASE.IMAGE_URL.$user->id."_sm.jpg\" alt=\"User profile\"></a>";
     } else {
         return "";
     }
@@ -89,6 +105,13 @@ function select_uotd() {
     }
     $profile = mysql_fetch_object($result);
     $user = lookup_user_id($profile->userid);
+
+    // if profile is "orphaned", delete it and try again
+    //
+    if (!$user) {
+        $profile->delete_aux("userid=$profile->userid");
+        select_uotd();
+    }
 
     $sql = "UPDATE profile SET uotd_time = ".time()." WHERE userid=$user->id";
     mysql_query($sql);

@@ -1,13 +1,33 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/user.inc");
 
-page_head("Forgot your password?");
+page_head("Forgot your account info?");
 
 echo "
-<h3>Get email instructions for setting your password</h3>
+<h3>1) If you know your account's email address,
+    and you can receive email there:</h3>
+<p>
+Enter the email address below, and click OK.
+You will be sent email instructions for resetting your password.
 ";
 
 start_table();
@@ -19,18 +39,18 @@ end_table();
 
 echo "
 <p>
-<h3>If your account's email address is no longer valid</h3>
+<h3>2) If you forgot your account's email address,
+    or you can't receive email there:</h3>
 
 If you have run BOINC under the account,
-you can access the account
-even if you don't know the password and the email
-address is no longer valid.  Here's how:
+you can still access it.
+Here's how:
 
 <ul>
-<li> Go to the BOINC directory on your computer
-(on Windows this is usually <b>C:\\Program Files\BOINC</b>.
+<li> Go to the BOINC data directory on your computer
+(on Windows this is usually <b>C:\\Documents and Settings\All Users\Application Data\BOINC</b> or <b>C:\\Program Files\BOINC</b>.
 <li> Find your account file for this project;
-this will have a name like <b>account_lhcathome.cern.ch.xml</b>
+it will have a name like <b>account_lhcathome.cern.ch.xml</b>
 (where the project URL is <b>http://lhcathome.cern.ch</b>).
 <li> Open the file in a text editor like Notepad.
 You'll see something like

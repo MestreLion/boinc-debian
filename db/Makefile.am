@@ -1,10 +1,8 @@
-## $Id: Makefile.am 11286 2006-10-16 22:39:27Z rwalton $
-
-## install header-files with prefix-subdir BOINC/ to avoid name-conflicts
-includedir = ${prefix}/include/BOINC/
+## -*- mode: makefile; tab-width: 4 -*-
+## $Id: Makefile.am 15375 2008-06-08 22:18:52Z davea $
 
 ## the following headers need to be installed
-include_HEADERS =  boinc_db.h db_base.h
+pkginclude_HEADERS =  boinc_db.h db_base.h
 
 ## other stuff to go into the distribution
 EXTRA_DIST = constraints.sql schema.sql init_db

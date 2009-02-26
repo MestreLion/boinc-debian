@@ -1,5 +1,20 @@
 <?php
-$cvs_version_tracker[]="\$Id: manage_special_users.php 9431 2006-02-09 20:37:13Z ballen $";  //Generated automatically - do not edit
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once('../inc/forum.inc');
 require_once('../inc/util_ops.inc');
@@ -27,7 +42,7 @@ for($i=1;$i<=mysql_num_rows($result);$i++){
           <tr><td>$foo->name</td>";
     for ($j=0;$j<=6;$j++) {
         $bit = substr($foo->special_user, $j, 1);
-        echo "<td><input type=\"checkbox\" name=\"".$j."\" value=\"1\"";
+        echo "<td><input type=\"checkbox\" name=\"role".$j."\" value=\"1\"";
         if ($bit == 1) {
             echo " checked=\"checked\"";
         }
@@ -41,7 +56,7 @@ echo "<tr><form action=\"manage_special_users_action.php\" method=\"POST\">\n";
 echo "<td>Add UserID:<input type=\"text\" name=\"userid\" size=\"6\"></td>";
 
 for ($j=0;$j<=6;$j++) {
-        echo "<td><input type=\"checkbox\" name=\"".$j."\" value=\"1\"";
+        echo "<td><input type=\"checkbox\" name=\"role".$j."\" value=\"1\"";
         echo "></td>\n";
     }
     echo "<td><input type=\"submit\" value=\"Update\"></form></td>";
@@ -52,4 +67,5 @@ end_table();
 
 admin_page_tail();
 
+$cvs_version_tracker[]="\$Id: manage_special_users.php 16132 2008-10-05 12:45:33Z jbk $";  //Generated automatically - do not edit
 ?>

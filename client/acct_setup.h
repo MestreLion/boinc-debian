@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _ACCT_SETUP_H_
 #define _ACCT_SETUP_H_
@@ -23,8 +21,8 @@
 #include "gui_http.h"
 #include "error_numbers.h"
 
-// represents the contents of project_info.xml
-//
+/// represents the contents of project_info.xml
+
 struct PROJECT_INIT {
     char url[256];
     char name[256];
@@ -38,13 +36,10 @@ struct PROJECT_INIT {
 
 struct ACCOUNT_IN {
     std::string url;
+        /// the account identifier (user name or email addr)
     std::string email_addr;
-        // this is the account identifier.  on systems that use
-        // usernames it is the username, on systems that use
-        // email addresses it is an email address for the user.
+        /// the suggested friendly name for the user during account creation.
     std::string user_name;
-        // this is the suggested friendly name for the user
-        // during account creation.
     std::string passwd_hash;
 
     void parse(char*);

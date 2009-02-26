@@ -1,4 +1,21 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
 // Some posts may contain material that is not suited for public
 // viewing. This file allows people to report such posts
 // For this file to work the project must have defined who
@@ -39,7 +56,7 @@ if (get_str("submit",true)){
     }
 }
 
-
+$no_forum_rating = parse_bool($config, "no_forum_rating"); 
 
 //__--------------- Display part
 if ($success_page==1) {
@@ -52,12 +69,14 @@ if ($success_page==1) {
     echo "<a href=\"forum_thread.php?id=", $thread->id, "#", $post->id, "\">Return to thread</a>";
 } elseif ($success_page==0){
     page_head('Report a forum post'); 
-    echo "<p>Before reporting this post <em>please</em>
-        consider using the +/- rating system instead.
-        If enough users agree on rating a post negatively it will
-        eventually be hidden.
-        <br />You can find the rating system at the bottom of the post.</p>
-    ";
+    if (!$no_forum_rating) {
+        echo "<p>Before reporting this post <em>please</em>
+            consider using the +/- rating system instead.
+            If enough users agree on rating a post negatively it will
+            eventually be hidden.
+            <br>You can find the rating system at the bottom of the post.</br>
+        ";
+    }
     start_forum_table(array(tra("Author"), tra("Message"),""));
     show_post($post, $thread, $forum, $user, 0, 0);
     echo "<form action=\"forum_report_post.php\" method=\"get\">\n";

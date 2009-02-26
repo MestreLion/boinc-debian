@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
@@ -7,8 +23,8 @@ require_once("../inc/user.inc");
 
 $user = get_logged_in_user();
 
-$email_addr = strtolower(process_user_text(post_str("email_addr")));
-$passwd = process_user_text(post_str("passwd", true));
+$email_addr = strtolower(post_str("email_addr"));
+$passwd = post_str("passwd", true);
 
 page_head("Change email address of account");
 
@@ -34,7 +50,10 @@ if (!is_valid_email_addr($email_addr)) {
             echo "Invalid password.";
         } else {
             $passwd_hash = md5($passwd.$email_addr);
-            $result = $user->update("email_addr='$email_addr', passwd_hash='$passwd_hash', email_validated=0");
+            $email_addr = process_user_text($email_addr);
+            $result = $user->update(
+                "email_addr='$email_addr', passwd_hash='$passwd_hash', email_validated=0"
+            );
             if ($result) {
                 echo "
                     The email address of your account is now $email_addr.
@@ -50,5 +69,4 @@ if (!is_valid_email_addr($email_addr)) {
 }
 
 page_tail();
-
 ?>

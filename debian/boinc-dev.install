@@ -1,9 +1,9 @@
-debian/tmp/usr/include/BOINC/*  usr/include/BOINC
+debian/tmp/usr/include/boinc/*  usr/include/boinc
 debian/tmp/usr/lib/lib*         usr/lib
 
-api/graphics_data.h             usr/include/BOINC/api
-api/reduce.h                    usr/include/BOINC/api
-api/boinc_gl.h                  usr/include/BOINC/api
-api/txf_util.h                  usr/include/BOINC/api
-lib/md5_file.h                  usr/include/BOINC/lib
+api/graphics_data.h             usr/include/boinc/api
+api/reduce.h                    usr/include/boinc/api
+api/boinc_gl.h                  usr/include/boinc/api
+api/txf_util.h                  usr/include/boinc/api
+lib/md5_file.h                  usr/include/boinc/lib
 Makefile.am                     usr/share/boinc-dev

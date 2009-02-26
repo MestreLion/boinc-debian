@@ -113,8 +113,7 @@ int boinc_zip(int bZipType, const std::string szFileZip,
                 strcpy(av[0], "zip");
                 // default zip options -- no dir names, no subdirs, highest compression, quiet mode
                 if (strlen(av[1])==0)
-                        strcpy(av[1], "-j9");
-                        //strcpy(av[1], "-9jq");
+                        strcpy(av[1], "-j9q");
                 strcpy(av[2], szFileZip.c_str());
 
                 //sz 3 onward will be each vector
@@ -127,7 +126,7 @@ int boinc_zip(int bZipType, const std::string szFileZip,
                 strcpy(av[0], "unzip");
                 // default unzip options -- preserve subdirs, overwrite 
                 if (strlen(av[1])==0)
-                        strcpy(av[1], "-o");
+                        strcpy(av[1], "-oq");
                 strcpy(av[2], szFileZip.c_str());
 
                 // if they passed in a directory unzip there
@@ -332,5 +331,5 @@ boinc_UnzipToMemory ( char *zip, char *file, string &retstr )
 } // boinc_UnzipToMemory()
 
 
-const char *BOINC_RCSID_bdf38b2dfb = "$Id: boinc_zip.cpp 11874 2007-01-15 23:27:01Z rprix $";
+const char *BOINC_RCSID_bdf38b2dfb = "$Id: boinc_zip.cpp 16445 2008-11-07 04:13:08Z davea $";
 

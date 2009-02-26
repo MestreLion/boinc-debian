@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/util.inc");
 
@@ -46,7 +62,8 @@ function show_view($view) {
     if ($view->result_id) {
         $result = BoltResult::lookup_id($view->result_id);
         $qs = str_replace("action=answer", "action=answer_page", $result->response);
-        $x = "<br>Score: $result->score
+        $score = number_format($result->score*100);
+        $x = "<br>Score: $score%
             <br><a href=bolt_sched.php?$qs>Answer page</a>";
     }
     echo "<tr>
@@ -67,7 +84,7 @@ function show_views() {
     global $user;
     global $course;
 
-    $views = BoltView::enum("user_id=$user->id and course_id=$course->id order by id desc");
+    $views = BoltView::enum("user_id=$user->id and course_id=$course->id order by id");
     start_table();
 
     table_header("ID", "Time", "Duration", "Item", "Mode",
@@ -79,32 +96,8 @@ function show_views() {
     end_table();
 }
 
-function show_refresh($r) {
-    echo "<tr>
-        <td>".time_str($r->create_time)."</td>
-        <td>$r->name
-            <a href=bolt_sched.php?course_id=$r->course_id&refresh_id=$r->id&action=start>Start</a>
-            <a href=bolt_sched.php?course_id=$r->course_id&refresh_id=$r->id&action=resume>Resume</a>
-        </td>
-        <td>".time_str($r->due_time)."</td>
-        </tr>
-    ";
-}
-
-function show_refreshes() {
-    global $user;
-    global $course;
-
-    $refreshes = BoltRefreshRec::enum("user_id=$user->id and course_id=$course->id");
-    start_table();
-    table_header("Created", "Unit", "Due");
-    foreach ($refreshes as $r) {
-        show_refresh($r);
-    }
-    end_table();
-}
-
 require_once("../inc/bolt_db.inc");
+require_once("../inc/bolt_util.inc");
 
 $course_id = get_int('course_id');
 $course = BoltCourse::lookup_id($course_id);

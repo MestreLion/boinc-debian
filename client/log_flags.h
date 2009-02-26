@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // flags determining what is written to standard out.
 // (errors go to stderr)
@@ -42,41 +40,59 @@ class XML_PARSER;
 struct LOG_FLAGS {
     // on by default, user-readable
     //
-    bool task;              // task start and finish
-    bool file_xfer;         // file transfer start and finish
-    bool sched_ops;         // interactions with schedulers
+        /// task start and finish
+    bool task;
+        /// file transfer start and finish
+    bool file_xfer;
+        /// interactions with schedulers
+    bool sched_ops;
 
     // off by default; intended for developers and testers
     //
-    bool cpu_sched;         // preemption and resumption
-    bool cpu_sched_debug;   // explain scheduler decisions
-    bool rr_simulation;     // results of rr simulator
-    bool debt_debug;        // changes to debt
-    bool task_debug;        // task start and control details
-                            // also prints when apps checkpoint
-    bool work_fetch_debug;  // work fetch policy 
+        /// preemption and resumption
+    bool cpu_sched;
+        /// explain scheduler decisions
+    bool cpu_sched_debug;
+        /// results of rr simulator
+    bool rr_simulation;
+        /// changes to debt
+    bool debt_debug;
+        /// task start and control details, and when apps checkpoint
+    bool task_debug;
+        /// work fetch policy 
+    bool work_fetch_debug;
 
-    bool unparsed_xml;      // show unparsed XML lines
-    bool state_debug;       // print textual summary of CLIENT_STATE initially
-                            // and after each scheduler RPC and garbage collect
-                            // also show actions of garbage collector
-                            // also show when state file is read or written
-    bool file_xfer_debug;   // show completion of FILE_XFER
+        /// show unparsed XML lines
+    bool unparsed_xml;
+        /// print textual summary of CLIENT_STATE initially
+        /// and after each scheduler RPC and garbage collect
+        /// also show actions of garbage collector
+        /// also show when state file is read or written
+    bool state_debug;
+        /// show completion of FILE_XFER
+    bool file_xfer_debug;
     bool sched_op_debug;
     bool http_debug;
     bool proxy_debug;
-    bool time_debug;        // changes in on_frac, active_frac, connected_frac
+        /// changes in on_frac, active_frac, connected_frac
+    bool time_debug;
     bool http_xfer_debug;
-    bool benchmark_debug;   // debug CPU benchmarks
-    bool poll_debug;        // show what polls are responding
+        /// debug CPU benchmarks
+    bool benchmark_debug;
+        /// show what polls are responding
+    bool poll_debug;
     bool guirpc_debug;
     bool scrsave_debug;
-    bool app_msg_send;       // show shared-mem message to apps
-    bool app_msg_receive;    // show shared-mem message from apps
-	bool mem_usage_debug;	// memory usage
+        /// show shared-mem message to apps
+    bool app_msg_send;
+        /// show shared-mem message from apps
+    bool app_msg_receive;
+        /// memory usage
+	bool mem_usage_debug;
 	bool network_status_debug;
     bool checkpoint_debug;
-    int stress_shmem_debug;
+        /// show coproc reserve/free
+	bool coproc_debug;
 
     LOG_FLAGS();
     void defaults();
@@ -104,6 +120,14 @@ struct CONFIG {
     double start_delay;
     bool run_apps_manually;
     std::string force_auth;
+    bool allow_multiple_clients;
+    bool use_certs;
+    bool use_certs_only;
+        // overrides use_certs
+    std::vector<std::string> exclusive_apps;
+    std::string client_version_check_url;
+    std::string client_download_url;
+    std::string network_test_url;
 
     CONFIG();
     void defaults();
@@ -113,6 +137,6 @@ struct CONFIG {
 
 extern LOG_FLAGS log_flags;
 extern CONFIG config;
-extern int read_config_file();
+extern int read_config_file(bool init);
 
 #endif

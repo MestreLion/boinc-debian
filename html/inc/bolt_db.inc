@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/db_conn.inc");
 require_once("../inc/util.inc");
@@ -133,10 +149,14 @@ class BoltCourse {
         $db = BoltDb::get();
         return $db->update($this, 'bolt_course', $clause);
     }
+    function doc_file() {
+        $sn = $this->short_name;
+        return "../inc/$sn.inc";
+    }
 }
 
 class BoltEnrollment {
-    function insert($clause) {
+    static function insert($clause) {
         $db = BoltDb::get();
         return $db->insert('bolt_enrollment', $clause);
     }
@@ -148,9 +168,13 @@ class BoltEnrollment {
         $db = BoltDb::get();
         $db->update_aux('bolt_enrollment', "$clause where user_id=$this->user_id and course_id=$this->course_id");
     }
-    function delete($user_id, $course_id) {
+    static function delete($user_id, $course_id) {
         $db = BoltDb::get();
         $db->delete_aux('bolt_enrollment', "user_id=$user_id and course_id=$course_id");
+    }
+    static function delete_aux($clause) {
+        $db = BoltDb::get();
+        $db->delete_aux('bolt_enrollment', $clause);
     }
 }
 
@@ -173,6 +197,10 @@ class BoltView {
         $db = BoltDb::get();
         return $db->enum('bolt_view', 'BoltView', $clause);
     }
+    static function delete_aux($clause) {
+        $db = BoltDb::get();
+        $db->delete_aux('bolt_view', $clause);
+    }
 }
 
 class BoltResult {
@@ -188,7 +216,11 @@ class BoltResult {
     }
     static function enum($clause) {
         $db = BoltDb::get();
-        return $db->enum('bolt_view', 'BoltResult', $clause);
+        return $db->enum('bolt_result', 'BoltResult', $clause);
+    }
+    static function delete_aux($clause) {
+        $db = BoltDb::get();
+        $db->delete_aux('bolt_result', $clause);
     }
 }
 
@@ -197,7 +229,7 @@ class BoltXsetResult {
         $db = BoltDb::get();
         return $db->lookup_id($id, 'bolt_xset_result', 'BoltXsetResult');
     }
-    function insert($clause) {
+    static function insert($clause) {
         $db = BoltDb::get();
         $ret = $db->insert('bolt_xset_result', $clause);
         if (!$ret) return null;
@@ -206,6 +238,10 @@ class BoltXsetResult {
     static function enum($clause) {
         $db = BoltDb::get();
         return $db->enum('bolt_xset_result', 'BoltXsetResult', $clause);
+    }
+    static function delete_aux($clause) {
+        $db = BoltDb::get();
+        $db->delete_aux('bolt_xset_result', $clause);
     }
 }
 
@@ -222,7 +258,7 @@ class BoltRefreshRec {
         $db = BoltDb::get();
         return $db->replace('bolt_refresh', $clause);
     }
-    function insert($clause) {
+    static function insert($clause) {
         $db = BoltDb::get();
         $ret = $db->insert('bolt_refresh', $clause);
         if (!$ret) return null;
@@ -236,10 +272,14 @@ class BoltRefreshRec {
         $db = BoltDb::get();
         $db->update($this, 'bolt_refresh', $clause);
     }
+    static function delete_aux($clause) {
+        $db = BoltDb::get();
+        $db->delete_aux('bolt_refresh', $clause);
+    }
 }
 
 class BoltSelectFinished {
-    function insert($clause) {
+    static function insert($clause) {
         $db = BoltDb::get();
         return $db->insert('bolt_select_finished', $clause);
     }
@@ -247,16 +287,24 @@ class BoltSelectFinished {
         $db = BoltDb::get();
         return $db->enum('bolt_select_finished', 'BoltSelectFinished', $clause);
     }
+    static function delete_aux($clause) {
+        $db = BoltDb::get();
+        $db->delete_aux('bolt_select_finished', $clause);
+    }
 }
 
 class BoltQuestion {
-    function insert($clause) {
+    static function insert($clause) {
         $db = BoltDb::get();
         return $db->insert('bolt_question', $clause);
     }
     static function enum($clause) {
         $db = BoltDb::get();
         return $db->enum('bolt_question', 'BoltQuestion', $clause);
+    }
+    static function delete_aux($clause) {
+        $db = BoltDb::get();
+        $db->delete_aux('bolt_question', $clause);
     }
 }
 

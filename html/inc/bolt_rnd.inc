@@ -1,9 +1,25 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 class BoltRandom extends BoltSet {
     public $units;
-    function __construct($name, $units, $number) {
-        parent::__construct($name, $units, $number);
+    function __construct($name, $units, $number, $attrs) {
+        parent::__construct($name, $units, $number, $attrs);
     }
 
     function order(&$iter) {
@@ -32,13 +48,15 @@ function random() {
     $args = func_get_args();
     $units = array();
     $name = "";
-    $number = 1;
+    $number = 0;
+	$attrs = null;
     foreach ($args as $arg) {
         if (is_array($arg)) {
             switch ($arg[0]) {
             case 'name': $name = $arg[1]; break;
             case 'title': $title = $arg[1]; break;
             case 'number': $number = $arg[1]; break;
+            case 'attrs': $attrs = $arg[1]; break;
             default: echo "Unrecognized array arg: ", $arg[0], "\n"; break;
             }
         } else if (is_object($arg)) {
@@ -50,7 +68,8 @@ function random() {
             }
         }
     }
-    return new BoltRandom($name, $units, $number);
+    if ($number == 0) $number = count($units);
+    return new BoltRandom($name, $units, $number, $attrs);
 }
 
 ?>

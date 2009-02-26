@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // platform-independent interface to shared memory
 
@@ -42,8 +40,8 @@ int detach_shmem(HANDLE hSharedMem, void* p);
 #else
 #ifndef __EMX__
 #define MMAPPED_FILE_NAME    "boinc_mmap_file"
-extern int create_shmem_mmap(char *path, size_t size, void** pp);
-extern int attach_shmem_mmap(char *path, void** pp);
+extern int create_shmem_mmap(const char *path, size_t size, void** pp);
+extern int attach_shmem_mmap(const char *path, void** pp);
 extern int detach_shmem_mmap(void* p, size_t size);
 #endif
 extern int create_shmem(key_t, int size, gid_t gid, void**);

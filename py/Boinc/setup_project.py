@@ -1,4 +1,4 @@
-## $Id: setup_project.py 14847 2008-03-05 20:16:10Z davea $
+## $Id: setup_project.py 15702 2008-07-28 22:56:39Z davea $
 
 # module for setting up a new project (either a real project or a test project
 # see tools/makeproject, test/testbase.py).
@@ -366,12 +366,13 @@ def install_boinc_files(dest_dir, web_only):
           'sample_bitwise_validator', 'sample_trivial_validator',
           'file_deleter', 'sample_dummy_assimilator',
           'sample_assimilator', 'sample_work_generator',
-          'single_job_assimilator',
-          'update_stats', 'db_dump', 'db_purge', 'show_shmem' ])
+          'single_job_assimilator', 'pymw_assimilator',
+          'update_stats', 'db_dump', 'db_purge', 'show_shmem', 'census' ])
     map(lambda (s): install(srcdir('tools',s), dir('bin',s)),
         [ 'create_work', 'xadd', 'dbcheck_files_exist', 'run_in_ops',
           'update_versions', 'parse_config', 'grep_logs', 'db_query',
-          'watch_tcp', 'sign_executable', 'dir_hier_move', 'dir_hier_path' ])
+          'watch_tcp', 'sign_executable', 'dir_hier_move',
+          'pymw_setup', 'dir_hier_path' ])
     map(lambda (s): install(srcdir('lib',s), dir('bin',s)),
         [ 'crypt_prog' ])
     map(lambda (s): install(srcdir('sched',s), dir('',s)),
@@ -411,12 +412,14 @@ class Project:
         config.min_sendwork_interval = 0
         config.max_wus_to_send = 50
         config.daily_result_quota = 500
-        config.disable_account_creation = 1
+        config.disable_account_creation = 0
         config.show_results = 1
         config.sched_debug_level = 3
         config.fuh_debug_level = 3
         config.one_result_per_user_per_wu = 0
         config.send_result_abort = 1
+        if web_only:
+            config.no_computing = 1
 
         config.master_url    = master_url or os.path.join(options.html_url , self.short_name , '')
         config.download_url  = os.path.join(config.master_url, 'download')

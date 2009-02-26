@@ -1,11 +1,22 @@
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
 #ifndef _GRAPHICS2_H_
 #define _GRAPHICS2_H_
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 
 // Functions that must be supplied by the app
 //
@@ -23,11 +34,7 @@ extern void boinc_graphics_loop(int, char**);
 extern void* boinc_graphics_make_shmem(char*, int);
 extern void* boinc_graphics_get_shmem(char*);
 extern void boinc_set_windows_icon(const char* icon16,const char* icon48);
-extern void boinc_close_window_and_quit();
-
-#ifdef __cplusplus
-}
-#endif
+extern void boinc_close_window_and_quit(const char*);
 
 // Implementation stuff
 //
@@ -35,6 +42,5 @@ extern double boinc_max_fps;
 extern double boinc_max_gfx_cpu_frac;
 extern void get_window_title(char* buf, int len);
 extern bool throttled_app_render(int, int, double);
-
 
 #endif

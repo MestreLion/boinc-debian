@@ -166,41 +166,6 @@ BEGIN
     END
 END
 
-#elif defined(_SEED)
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION BOINC_MAJOR_VERSION,BOINC_MINOR_VERSION,BOINC_RELEASE,0
- PRODUCTVERSION BOINC_MAJOR_VERSION,BOINC_MINOR_VERSION,BOINC_RELEASE,0
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "CompanyName", "seedmagazine.com"
-            VALUE "FileDescription", "BOINC Screensaver"
-            VALUE "FileVersion", BOINC_VERSION_STRING "\0"
-            VALUE "InternalName", "boinc_ss"
-            VALUE "LegalCopyright", "© 2003-2008 University of California"
-            VALUE "OriginalFilename", "boinc.scr"
-            VALUE "ProductName", "BOINC client"
-            VALUE "ProductVersion", BOINC_VERSION_STRING "\0"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1200
-    END
-END
-
 #else
 
 VS_VERSION_INFO VERSIONINFO
@@ -269,11 +234,7 @@ IDB_BOINCSPLAT          BITMAP                  "res\\gridrepublic.bmp"
 
 #elif defined(_WCG)
 
-IDB_BOINCSPLAT          BITMAP                  "res\\boinc.bmp"
-
-#elif defined(_SEED)
-
-IDB_BOINCSPLAT          BITMAP                  "res\\seed.bmp"
+IDB_BOINCSPLAT          BITMAP                  "res\\wcg.bmp"
 
 #else
 
@@ -293,8 +254,6 @@ BEGIN
     IDS_ERR_GENERIC         "There was an unspecified problem\nwith the GridRepublic screensaver."
     IDS_ERR_BOINCNOTDETECTED 
                             "GridRepublic is not running.\n\nPlease launch GridRepublic to display graphics."
-    IDS_ERR_BOINCNOTDETECTEDSTARTUP 
-                            "GridRepublic is not running.\n(Automatic Startup not detected)\n\nWe recommend running GridRepublic at startup;\nplease reinstall GridRepublic and select this option."
     IDS_ERR_BOINCSUSPENDED  "GridRepublic is currently suspended."
     IDS_ERR_BOINCNOAPPSEXECUTING
                             "GridRepublic is currently idle."
@@ -319,8 +278,6 @@ BEGIN
     IDS_ERR_GENERIC         "There was an unspecified problem\nwith the World Community Grid screensaver."
     IDS_ERR_BOINCNOTDETECTED 
                             "World Community Grid is not running.\n\nPlease launch World Community Grid\nto display graphics."
-    IDS_ERR_BOINCNOTDETECTEDSTARTUP 
-                            "World Community Grid is not running.\n(Automatic Startup not detected)\n\nWe recommend running World Community Grid at startup;\nplease reinstall World Community Grid and select this option."
     IDS_ERR_BOINCSUSPENDED  "World Community Grid is currently suspended."
     IDS_ERR_BOINCNOAPPSEXECUTING
                             "World Community Grid is currently idle."
@@ -338,32 +295,6 @@ BEGIN
                             "World Community Grid screensaver cannot display graphics \nfrom older applications when configured to \nrun as a Windows service."
 END
 
-#elif defined(_SEED)
-
-STRINGTABLE 
-BEGIN
-    IDS_ERR_GENERIC         "There was an unspecified problem\nwith the seedmagazine screensaver."
-    IDS_ERR_BOINCNOTDETECTED 
-                            "seedmagazine is not running.\n\nPlease launch seedmagazine\nto display graphics."
-    IDS_ERR_BOINCNOTDETECTEDSTARTUP 
-                            "seedmagazine is not running.\n(Automatic Startup not detected)\n\nWe recommend running seedmagazine at startup;\nplease reinstall seedmagazine and select this option."
-    IDS_ERR_BOINCSUSPENDED  "seedmagazine is currently suspended."
-    IDS_ERR_BOINCNOAPPSEXECUTING
-                            "seedmagazine is currently idle."
-    IDS_ERR_BOINCNOAPPSEXECUTINGNOPROJECTSDETECTED
-                            "seedmagazine is not attached\nto any projects.\nYou can attach to projects using\nthe Attach to project wizard\nin the tools menu."
-    IDS_ERR_BOINCNOGRAPHICSAPPSEXECUTING
-                            "seedmagazine system status:\n\n"
-    IDS_ERR_BOINCSCREENSAVERLOADING
-                            "seedmagazine screensaver loading"
-    IDS_ERR_BOINCAPPFOUNDGRAPHICSLOADING
-                            "Application found, graphics loading...\n\nPlease wait..."
-    IDS_ERR_BOINCSHUTDOWNEVENT
-                            "seedmagazine\nscreensaver shutting down."
-    IDS_ERR_DAEMONALLOWSNOGRAPHICS
-                            "seedmagazine screensaver cannot display graphics \nfrom older applications when configured to \nrun as a Windows service."
-END
-
 #else
 
 STRINGTABLE 
@@ -371,8 +302,6 @@ BEGIN
     IDS_ERR_GENERIC         "There was an unspecified problem\nwith the BOINC screensaver."
     IDS_ERR_BOINCNOTDETECTED 
                             "BOINC is not running.\n\nPlease launch BOINC to display graphics."
-    IDS_ERR_BOINCNOTDETECTEDSTARTUP 
-                            "BOINC is not running.\n(Automatic Startup not detected)\n\nWe recommend running BOINC at startup;\nplease reinstall BOINC and select this option."
     IDS_ERR_BOINCSUSPENDED  "BOINC is currently suspended."
     IDS_ERR_BOINCNOAPPSEXECUTING
                             "BOINC is currently idle."
@@ -397,42 +326,6 @@ BEGIN
     IDS_ERR_OUTOFMEMORY     "Not enough memory."
     IDS_ERR_NOPREVIEW       "No preview available"
 END
-
-
-
-#if defined(_GRIDREPUBLIC)
-
-STRINGTABLE 
-BEGIN
-    IDS_DESCRIPTION         "GridRepublic"
-    IDS_SHORTCUTNAME        "GridRepublic Manager.lnk"
-END
-
-#elif defined(_WCG)
-
-STRINGTABLE 
-BEGIN
-    IDS_DESCRIPTION         "World Community Grid"
-    IDS_SHORTCUTNAME        "World Community Grid Manager.lnk"
-END
-
-#elif defined(_CPDNBBC)
-
-STRINGTABLE 
-BEGIN
-    IDS_DESCRIPTION         "seedmagazine"
-    IDS_SHORTCUTNAME        "seedmagazine.lnk"
-END
-
-#else
-
-STRINGTABLE 
-BEGIN
-    IDS_DESCRIPTION         "BOINC"
-    IDS_SHORTCUTNAME        "BOINC Manager.lnk"
-END
-
-#endif
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

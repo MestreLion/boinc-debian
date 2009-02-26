@@ -6,18 +6,19 @@
 // Implementation notes:
 // - The jobs use the app "single_job_PLATFORM".
 //   This app has a single app_version containing the wrapper for that platform
-// - the executable is part of the WU, and has the sticky bit set,
+// - the executable is part of the WU, has the sticky bit set,
 //   and has a signature
 // - The logical and physical name of the executable
 //   (as stored in the download directory) is "program_platform_cksum"
 //   where cksum is the last 8 chars of the MD5
-// - The physical name of the job file is job_WUID.xml
+// - The physical name of the job file is sj_WUID.xml
 // - The physical names of the input/output files are name_WUID
 // - a file containing the job directory is stored in
 //   sj_WUID in the upload hierarchy
-// - a workunit template sj_WUID is created in templates/
+// - workunit and result templates sj_wu_template_WUID
+//   and sj_result_template_WUID are created in templates/
 // - the single_job_assimilator copies the output files to the job dir,
-//   and cleans up the sj_WUID and WU template files
+//   and cleans up the sj_WUID and template files
 
 ini_set('error_reporting', E_ALL);
 
@@ -52,6 +53,8 @@ function get_project_dir() {
         echo "You must set the environment variable BOINC_PROJECT_DIR
 to the path of a BOINC project, e.g.:
 
+> export BOINC_PROJECT_DIR=~/projects/my_project
+or in csh:
 > setenv BOINC_PROJECT_DIR ~/projects/my_project
 
 ";
@@ -74,6 +77,12 @@ boinc-options:
     Direct f to the program's stdin
 --stdout f
     Direct the program's stdout to f
+--wait jobID
+    Wait for the completion of an existing job
+--abort jobID
+    Abort an existing job
+--jobs
+    Show pending jobs
 --help
     Print this
 ";
@@ -101,6 +110,21 @@ function do_includes() {
     require_once("../inc/boinc_db.inc");
     require_once("../inc/dir_hier.inc");
     BoincDb::get();
+}
+
+function check_infiles() {
+    global $infiles, $stdin_file, $job_dir;
+    chdir($job_dir);
+    foreach ($infiles as $i) {
+        if (!file_exists($i)) {
+	    error("Missing input file $i\n");
+	}
+    }
+    if ($stdin_file) {
+        if (!file_exists($stdin_file)) {
+	    error("Missing input file $stdin_file\n");
+	}
+    }
 }
 
 function check_app_version() {
@@ -262,6 +286,7 @@ function make_result_template() {
 "    <file_ref>
         <file_name><OUTFILE_$i/></file_name>
         <open_name>$outfile</open_name>
+        <optional/>
         <copy_file/>
     </file_ref>
 ");
@@ -273,6 +298,7 @@ function make_result_template() {
 "    <file_ref>
         <file_name><OUTFILE_$i/></file_name>
         <open_name>$stdout_file</open_name>
+        <optional/>
     </file_ref>
 ");
     }
@@ -321,7 +347,11 @@ function create_job() {
     if ($verbose) {
         echo "Executing command: $cmd\n";
     }
-    system($cmd);
+    system($cmd, $retval);
+    if ($retval) {
+        echo "create_work in $project_dir failed: $retval\n";
+        exit(1);
+    }
 }
 
 // copy input files and program file to the download hierarchy
@@ -364,7 +394,7 @@ function check_program() {
 
 function parse_args($argc, $argv) {
     global $platform, $infiles, $outfiles, $stdin_file, $stdout_file;
-    global $program, $cmdline_args, $wuid;
+    global $program, $cmdline_args, $wuid, $verbose;
 
     for ($i=1; $i<$argc; $i++) {
         switch ($argv[$i]) {
@@ -391,6 +421,11 @@ function parse_args($argc, $argv) {
         case '--wait':
             $wuid = $argv[++$i];
             wait();
+        case '--abort':
+            $wuid = $argv[++$i];
+            abort_job($wuid);
+        case '--jobs':
+            show_jobs();
         default:
             if ($program) {
                 $cmdline_args .= ''.$argv[$i];
@@ -401,6 +436,41 @@ function parse_args($argc, $argv) {
         }
     }
     if (!$program) usage();
+}
+
+function abort_job($wuid) {
+    $wu = BoincWorkunit::lookup_id($wuid);
+    if (!$wu) error("No such job");
+    $app = BoincApp::lookup_id($wu->appid);
+    if (!strstr($app->name, "single_job")) {
+        error("Not a boinc_submit job");
+    }
+    if ($wu->error_mask) {
+        echo "Job $wuid has already been aborted.\n";
+        exit;
+    }
+    $x = $wu->error_mask | 16;
+    $now = time();
+    BoincResult::update_aux("server_state=5, outcome=5 where server_state=2 and workunitid=$wuid");
+    $wu->update("error_mask=$x, transition_time=$now");
+    echo "Job $wuid has been aborted.\n";
+    exit;
+}
+
+function show_jobs() {
+    $apps = BoincApp::enum("");
+    foreach($apps as $app) {
+        if (!strstr($app->name, "single_job")) continue;
+        $avs = BoincAppVersion::enum("appid=$app->id");
+        $av = $avs[0];
+        $platform = BoincPlatform::lookup_id($av->platformid);
+        echo "Jobs for $platform->user_friendly_name:\n";
+        $wus = BoincWorkunit::enum("appid=$app->id");
+        foreach ($wus as $wu) {
+            show_job($wu);
+        }
+    }
+    exit;
 }
 
 function show_result($result, $i) {
@@ -417,8 +487,17 @@ function show_result($result, $i) {
     }
 }
 
+function show_job($wu) {
+    echo "Job $wu->id: ";
+    switch ($wu->assimilate_state) {
+    case 0: echo "in progress\n"; break;
+    case 1: echo "being assimilated\n"; break;
+    case 2: echo "completed\n"; break;
+    }
+}
+
 function show_wu_status($wu) {
-    $now = date("F j, Y, g:i a e");
+    $now = date("F j, Y, g:i A");
     switch ($wu->assimilate_state) {
     case 0:
         echo "$now: job $wu->id is in progress\n";
@@ -460,6 +539,7 @@ function wait() {
 get_project_dir();
 do_includes();
 parse_args($argc, $argv);
+check_infiles();
 check_app_version();
 check_program();
 create_wu();
@@ -467,6 +547,11 @@ make_wrapper_job_file();
 make_job_file();
 make_wu_template();
 make_result_template();
+
+// from this point on, stdin file is like other input files
+if ($stdin_file) {
+    $infiles[] = $stdin_file;
+}
 copy_files();
 create_job();
 wait();

@@ -1,8 +1,25 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // TODO: the following is organized in a funky way.  Clean it up
 
 require_once("../inc/profile.inc");
+require_once("../inc/akismet.inc");
 
 // output a select form item with the given name,
 // from a list of newline-delineated items from the text file.
@@ -157,24 +174,19 @@ function show_questions($profile) {
     $response1 = "";
     $response2 = "";
     if (isset($profile->response1)) {
-        $response1 = stripslashes($profile->response1);
+        $response1 = $profile->response1;
     }
     if (isset($profile->response2)) {
-        $response2 = stripslashes($profile->response2);
+        $response2 = $profile->response2;
     }
 
     row1(show_profile_heading1());
     rowify(show_profile_question1().html_info());
-    rowify("<br>");
     show_textarea("response1", $response1);
-    rowify("<br>");
     row1( show_profile_heading2());
     rowify( show_profile_question2().html_info());
-    rowify("<br>");
     show_textarea("response2", $response2);
-    rowify("<br>");
     show_language_selection($profile);
-    rowify("<br>");
 }
 
 function show_textarea($name, $text) {
@@ -185,9 +197,43 @@ function show_textarea($name, $text) {
 // Don't assign to $profile->x if this is the case.
 //
 function process_create_profile($user, $profile) {
-    $response1 = $_POST['response1'];
-    $response2 = $_POST['response2'];
-    $language = $_POST['language'];
+    $response1 = post_str('response1', true);
+    $response2 = post_str('response2', true);
+    $language = post_str('language');
+
+    $privatekey = parse_config($config, "<recaptcha_private_key>");
+    if ($privatekey) {
+        $resp = recaptcha_check_answer($privatekey, $_SERVER["REMOTE_ADDR"],
+            $_POST["recaptcha_challenge_field"], $_POST["recaptcha_response_field"]
+        );
+        if (!$resp->is_valid) {
+            $profile->response1 = $response1;
+            $profile->response2 = $response2;
+            show_profile_form($profile,
+                "Your ReCaptcha response was not correct.  Please try again."
+            );
+            return;
+        }
+    }
+    if (!akismet_check($user, $response1)) {
+        $profile->response1 = $response1;
+        $profile->response2 = $response2;
+        show_profile_form($profile,
+            "Your first response was flagged as spam by the Akismet
+            anti-spam system.  Please modify your text and try again."
+        );
+        return;
+    }
+    if (!akismet_check($user, $response2)) {
+        $profile->response1 = $response1;
+        $profile->response2 = $response2;
+        show_profile_form($profile,
+            "Your second response was flagged as spam by the Akismet
+            anti-spam system.  Please modify your text and try again."
+        );
+        return;
+    }
+
     if (isset($_POST['delete_pic'])) {
         $delete_pic = $_POST['delete_pic'];
     } else {
@@ -266,40 +312,16 @@ function process_create_profile($user, $profile) {
     page_tail();
 }
 
-function show_profile_creation_page($user) {
-    $config = get_config();
-    $min_credit = parse_config($config, "<profile_min_credit>");
-    if ($min_credit && $user->expavg_credit < $min_credit) {
-        error_page(
-            "To prevent spam, an average credit of $min_credit or greater is required to create or edit a profile.  We apologize for this inconvenience."
-        );
-    }
-
-    // If the user already has a profile,
-    // fill in the fields with their current values.
-    //
-    $profile = get_profile($user->id);
-    if (post_str("submit", true)) {
-        $privatekey = parse_config($config, "<recaptcha_private_key>");
-        if ($privatekey) {
-            $resp = recaptcha_check_answer($privatekey, $_SERVER["REMOTE_ADDR"],
-                $_POST["recaptcha_challenge_field"], $_POST["recaptcha_response_field"]
-            );
-            if (!$resp->is_valid) {
-                error_page("The reCAPTCHA wasn't entered correctly. Go back and try it again.<br>".
-                    "(reCAPTCHA said: " . $resp->error . ")"
-                );
-            }
-        }
-
-        process_create_profile($user, $profile);
-        exit();
-    }
-
+function show_profile_form($profile, $warning=null) {
     if ($profile) {
         page_head("Edit your profile");
     } else {
         page_head("Create a profile");
+    }
+
+    if ($warning) {
+        echo "<span class=error>$warning</span><p>
+        ";
     }
 
     echo "
@@ -313,9 +335,24 @@ function show_profile_creation_page($user) {
     end_table();
     echo "</form>";
     page_tail();
+
 }
 
 $user = get_logged_in_user(true);
-show_profile_creation_page($user);
+$profile = get_profile($user->id);
+$config = get_config();
+$min_credit = parse_config($config, "<profile_min_credit>");
+if ($min_credit && $user->expavg_credit < $min_credit) {
+    error_page(
+        "To prevent spam, an average credit of $min_credit or greater is required to create or edit a profile.  We apologize for this inconvenience."
+    );
+}
+
+if (post_str("submit", true)) {
+    process_create_profile($user, $profile);
+    exit;
+}
+
+show_profile_form($profile);
 
 ?>

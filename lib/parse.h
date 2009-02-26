@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef PARSE_H
 #define PARSE_H
@@ -26,9 +24,8 @@
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
+#include <errno.h>
 #include <math.h>
 #ifdef HAVE_IEEEFP_H
 #include <ieeefp.h>
@@ -44,11 +41,11 @@ class XML_PARSER {
     MIOFILE* f;
     bool scan_nonws(int&);
     int scan_comment();
-    int scan_tag(char*, int);
+    int scan_tag(char*, int, char* ab=0, int al=0);
     bool copy_until_tag(char*, int);
 public:
     XML_PARSER(MIOFILE*);
-    bool get(char*, int, bool&);
+    bool get(char*, int, bool&, char* ab=0, int al=0);
     bool parse_start(const char*);
     bool parse_str(char*, const char*, char*, int);
     bool parse_string(char*, const char*, std::string&);
@@ -82,7 +79,9 @@ inline bool match_tag(const std::string &s, const char* tag) {
 inline bool parse_int(const char* buf, const char* tag, int& x) {
     const char* p = strstr(buf, tag);
     if (!p) return false;
-    x = strtol(p+strlen(tag), 0, 0);        // this parses 0xabcd correctly
+    int y = strtol(p+strlen(tag), 0, 0);        // this parses 0xabcd correctly
+    if (errno == ERANGE) return false;
+    x = y;
     return true;
 }
 
@@ -115,6 +114,7 @@ extern bool parse_bool(const char*, const char*, bool&);
 extern int copy_stream(FILE* in, FILE* out);
 extern int strcatdup(char*& p, char* buf);
 extern int dup_element_contents(FILE* in, const char* end_tag, char** pp);
+extern int dup_element(FILE* in, const char* end_tag, char** pp);
 extern int copy_element_contents(FILE* in, const char* end_tag, char* p, int len);
 extern int copy_element_contents(FILE* in, const char* end_tag, std::string&);
 extern void replace_element_contents(
@@ -123,8 +123,8 @@ extern void replace_element_contents(
 extern bool remove_element(char* buf, const char* start, const char* end);
 extern bool str_replace(char* str, const char* old, const char* neww);
 extern char* sgets(char* buf, int len, char* &in);
-extern void xml_escape(const char*, char*);
-extern void xml_unescape(const char*, char*);
+extern void xml_escape(const char*, char*, int len);
+extern void xml_unescape(const char*, char*, int len);
 extern void extract_venue(const char*, const char*, char*);
 extern int skip_unrecognized(char* buf, MIOFILE&);
 

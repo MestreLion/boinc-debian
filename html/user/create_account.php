@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // RPC handler for account creation
 
@@ -19,16 +35,16 @@ if (parse_bool($config, "disable_account_creation")) {
 }
 
 if(defined('INVITE_CODES')) {
-    $invite_code = process_user_text(get_str("invite_code"));
+    $invite_code = get_str("invite_code");
     if (!preg_match(INVITE_CODES, $invite_code)) {
         xml_error(-209);
     }
 } 
 
 $email_addr = get_str("email_addr");
-$email_addr = process_user_text(strtolower($email_addr));
-$passwd_hash = process_user_text(get_str("passwd_hash"));
-$user_name = process_user_text(get_str("user_name"));
+$email_addr = strtolower($email_addr);
+$passwd_hash = get_str("passwd_hash");
+$user_name = get_str("user_name");
 
 if (!is_valid_email_addr($email_addr)) {
     xml_error(-205);

@@ -1,4 +1,5 @@
-## $Id: Makefile.am 11875 2007-01-15 23:28:33Z rprix $
+## -*- mode: makefile; tab-width: 4 -*-
+## $Id: Makefile.am 15375 2008-06-08 22:18:52Z davea $
 
 ## note:  -D flags taken from a zip config build under Linux
 
@@ -9,9 +10,7 @@ AM_CPPFLAGS =  -I$(top_srcdir)/zlib -I$(top_srcdir)/lib -I$(top_srcdir)/zip -I$(
 ##noinst_PROGRAMS = test
 lib_LIBRARIES = libboinc_zip.a
 
-## install header-files with prefix-subdir BOINC/ to avoid name-conflicts
-includedir = ${prefix}/include/BOINC/
-include_HEADERS = boinc_zip.h
+pkginclude_HEADERS = boinc_zip.h
 
 libboinc_zip_a_SOURCES = boinc_zip.cpp \
 ./unzip/apihelp.c \

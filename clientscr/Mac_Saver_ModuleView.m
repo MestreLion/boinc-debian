@@ -31,8 +31,11 @@ void strip_cr(char *buf);
 
 int gGoToBlank;      // True if we are to blank the screen
 int gBlankingTime;   // Delay in minutes before blanking the screen
-NSString *gPathToBundleResources;
-NSImage *gBOINC_Logo;
+NSString *gPathToBundleResources = NULL;
+NSString *mBundleID = NULL; // our bundle ID
+NSImage *gBOINC_Logo = NULL;
+
+int gTopWindowListIndex = -1;
 
 NSRect gMovingRect;
 float gImageXIndent;
@@ -40,7 +43,7 @@ float gTextBoxHeight;
 NSPoint gCurrentPosition;
 NSPoint gCurrentDelta;
 
-ATSUStyle  theStyle;
+ATSUStyle  theStyle = NULL;
 ATSUFontID theFontID;
 Fixed   atsuSize;
 char myFontName[] = "Helvetica";
@@ -68,18 +71,30 @@ int signof(float x) {
 @implementation BOINC_Saver_ModuleView
 
 - (id)initWithFrame:(NSRect)frame isPreview:(BOOL)isPreview {
+    self = [ super initWithFrame:frame isPreview:isPreview ];
+    return self;
+}
+
+// If there are multiple displays, this may get called 
+// multiple times (once for each display), so we need to guard 
+// against any problems that may cause.
+- (void)startAnimation {
     NSBundle * myBundle;
     OSStatus err;
+    int newFrequency;
 
-    self = [ super initWithFrame:frame isPreview:isPreview ];
     if (gBOINC_Logo == NULL) {
         if (self) {
             myBundle = [ NSBundle bundleForClass:[self class]];
             // grab the screensaver defaults
-            mBundleID = [ myBundle bundleIdentifier ];
+            if (mBundleID == NULL) {
+                mBundleID = [ myBundle bundleIdentifier ];
+            }
 
             // Path to our copy of switcher utility application in this screensaver bundle
-            gPathToBundleResources = [ myBundle resourcePath ];
+            if (gPathToBundleResources == NULL) {
+                gPathToBundleResources = [ myBundle resourcePath ];
+            }
             
             ScreenSaverDefaults *defaults = [ ScreenSaverDefaults defaultsForModuleWithName:mBundleID ];
             
@@ -109,7 +124,7 @@ int signof(float x) {
             NSString *fileName = [[ NSBundle bundleForClass:[ self class ]] pathForImageResource:@"boinc_ss_logo" ];
             if (! fileName) {
                 // What should we do in this case?
-                return self;
+                return;
             }
             
             gBOINC_Logo = [[ NSImage alloc ] initWithContentsOfFile:fileName ];
@@ -141,42 +156,60 @@ int signof(float x) {
         }
     }
     
-    return self;
-}
-
-- (void)startAnimation {
-    int newFrequency;
-
     [ super startAnimation ];
 
-    if ( [ self isPreview ] )
+    if ( [ self isPreview ] ) {
+        [ self setAnimationTimeInterval:1.0/8.0 ];
         return;
-        
-    newFrequency = initBOINCSaver([ self isPreview ]);        
+    }
+    
+    newFrequency = initBOINCSaver();        
     if (newFrequency)
         [ self setAnimationTimeInterval:1.0/newFrequency ];
 }
 
+// If there are multiple displays, this may get called 
+// multiple times (once for each display), so we need to guard 
+// against any problems that may cause.
 - (void)stopAnimation {
     [ super stopAnimation ];
 
-    if ( [ self isPreview ] )
-        return;
-    closeBOINCSaver();
+    if ( ! [ self isPreview ] ) {
+        closeBOINCSaver();
+    }
+ 
+    gTopWindowListIndex = -1;
+    
+    if (gBOINC_Logo) {
+        [ gBOINC_Logo release ];
+    }
+    gBOINC_Logo = NULL;
+    
+    if (theStyle) {
+        ATSUDisposeStyle(theStyle);
+    }
+    theStyle = NULL;
 }
 
+// If there are multiple displays, this may get called 
+// multiple times (once for each display), so we need to guard 
+// against any problems that may cause.
 - (void)drawRect:(NSRect)rect {
     [ super drawRect:rect ];
 
 //  optionally draw here
 }
 
+// If there are multiple displays, this may get called 
+// multiple times (once for each display), so we need to guard 
+// against any problems that may cause.
 - (void)animateOneFrame {
     int newFrequency = 0;
     int coveredFreq = 0;
     NSRect theFrame = [ self frame ];
     int myWindowNumber;
-    int windowList[1];
+    int windowList[20];
+    int i, n;
     NSRect currentDrawingRect, eraseRect;
     NSPoint imagePosition;
     Rect r;
@@ -211,7 +244,9 @@ int signof(float x) {
     NSRect windowFrame = [ myWindow frame ];
     if ( (windowFrame.origin.x != 0) || (windowFrame.origin.y != 0) ) {
         // Hide window on second display to aid in debugging
-//      [[[ NSView focusView] window ] setLevel:kCGMinimumWindowLevel ];
+#ifdef _DEBUG
+        [ myWindow setLevel:kCGMinimumWindowLevel ];
+#endif
         return;         // We draw only to main screen
     }
 
@@ -219,10 +254,11 @@ int signof(float x) {
 
     newFrequency = getSSMessage(&msg, &coveredFreq);
 
-    // NOTE: My tests seem to confirm that the first window returned by NSWindowList
-    // is always the top window under OS 10.5, but not under earlier systems.  However, 
-    // Apple's documentation is unclear whether we can depend on this.  So I have added 
-    // some safety by doing two things:
+    // NOTE: My tests seem to confirm that the top window is always the first 
+    // window returned by NSWindowList under OS 10.5 and the second window 
+    // returned by NSWindowList under OS 10.3.9 and OS 10.4.  However, Apple's 
+    // documentation is unclear whether we can depend on this.  So I have 
+    // added some safety by doing two things:
     // [1] Only use the NSWindowList test when we have started project graphics.
     // [2] Assume that our window is covered 45 seconds after starting project 
     //     graphics even if the NSWindowList test did not indicate that is so.
@@ -232,16 +268,36 @@ int signof(float x) {
     //
     // If we should use a different frequency when our window is covered by another 
     // window, then check whether there is a window at a higher z-level than ours.
+
+    // Assuming our window(s) are initially the top window(s), 
+    // determine our position in the window list when no graphics 
+    // applications have covered us.
+    if (gTopWindowListIndex < 0) {
+        myWindowNumber = [ myWindow windowNumber ];
+        NSWindowList(20, windowList);
+        NSCountWindows(&n);
+        if (n > 20) n = 20; 
+        for (i=0; i<n; i++) {
+            if (windowList[i] == myWindowNumber) {
+                gTopWindowListIndex = i;
+                break;
+            }
+        }
+    }
+
     if (coveredFreq) {
         myWindowNumber = [ myWindow windowNumber ];
 
         windowList[0] = 0;
-        NSWindowList(1, windowList);
-        if (windowList[0] != myWindowNumber) {
-            // Project graphics application has a window open above ours
-            // Don't waste CPU cycles since our window is obscured by application graphics
-            newFrequency = coveredFreq;
-            msg = NULL;
+        NSWindowList(20, windowList);
+        NSCountWindows(&n);
+        if (gTopWindowListIndex < n) { 
+            if (windowList[gTopWindowListIndex] != myWindowNumber) {
+                // Project graphics application has a window open above ours
+                // Don't waste CPU cycles since our window is obscured by application graphics
+                newFrequency = coveredFreq;
+                msg = NULL;
+            }
         }
     }
     

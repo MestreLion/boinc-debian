@@ -1,4 +1,23 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 // search for posts or a thread.
 // Takes input from forum_search.php
  
@@ -18,17 +37,17 @@ function search_thread_titles(
         $search_string.=mysql_escape_string($word)."%";
     }        
     $query = "title like '".$search_string."'";
-    if ($forum!="" && $forum!="all") {
-        $query.=" and forum = ".intval($forum->id);
+    if ($forum && $forum != "all") {
+        $query .= " and forum = $forum->id";
     }
-    if ($user!="" && $user!="all") {
-        $query.=" and owner = ".intval($user->id);
+    if ($user && $user != "all") {
+        $query .= " and owner = $user->id";
     }
-    if ($time!="" && $user!="all") {
-        $query.=" and timestamp > ".intval($time);
+    if ($time && $user != "all") {
+        $query .= " and timestamp > $time";
     }
-    if ($show_hidden == false) {
-        $query .= " AND thread.hidden = 0";
+    if (!$show_hidden) {
+        $query .= " and thread.hidden = 0";
     }
     switch($sort_style) {
     case MODIFIED_NEW:
@@ -54,7 +73,7 @@ function search_thread_titles(
         break;
     }
 
-    $query.= " limit ".intval($limit);
+    $query .= " limit $limit";
     return BoincThread::enum($query);
 }
 
@@ -120,7 +139,7 @@ if ($logged_in_user && $logged_in_user->prefs->privilege(S_MODERATOR)){
 page_head(tra("Forum search results"));
 
 $search_keywords = post_str("search_keywords", true);
-$search_author = post_str("search_author", true);
+$search_author = post_int("search_author", true);
 $search_max_time = post_int("search_max_time");
 $search_forum = post_int("search_forum");
 $search_sort = post_int("search_sort");
@@ -145,11 +164,12 @@ $threads = search_thread_titles($search_list, $forum, $user, $min_timestamp, rou
 
 // Display the threads while we search for posts
 if (count($threads)){
-    echo "<h2>Thread titles matching your query:</h2>";
+    echo "<span class=title>Thread titles matching your query:</span>";
     show_thread_and_context_header();
+    $i = 0;
     foreach ($threads as $thread){
         if ($thread->hidden) continue;
-        show_thread_and_context($thread, $logged_in_user);
+        show_thread_and_context($thread, $logged_in_user, $i++);
     }
     end_table();
     echo "<br /><br />";
@@ -164,7 +184,7 @@ $posts = search_post_content(
 );
 
 if (count($posts)){
-    echo "<h2>Messages matching your query:</h2>";
+    echo "<span class=title>Messages matching your query:</span>";
     start_table();
     $n = 1;
     $options = get_output_options($logged_in_user);
@@ -197,5 +217,5 @@ echo "<p><a href=\"forum_search.php\">Perform another search</a></p>";
 page_tail();
 exit;
 
-$cvs_version_tracker[]="\$Id: forum_search_action.php 14603 2008-01-19 13:25:47Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_search_action.php 15982 2008-09-09 14:59:50Z Rytis $";  //Generated automatically - do not edit
 ?>

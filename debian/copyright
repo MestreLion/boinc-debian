@@ -13,16 +13,85 @@ Upstream authors:
 
 Files: *
 Copyright: © 2005-2008 University of California
-License: LGPL-2.1+
+License: LGPL-3+
 
-Files: api/texfont.[Ch]
+Files: client/install-sh
+Copyright: © 1991 by the Massachusetts Institute of Technology
+License: other
+  Permission to use, copy, modify, distribute, and sell this software and its
+  documentation for any purpose is hereby granted without fee, provided that
+  the above copyright notice appear in all copies and that both that
+  copyright notice and this permission notice appear in supporting
+  documentation, and that the name of M.I.T. not be used in advertising or
+  publicity pertaining to distribution of the software without specific,
+  written prior permission.  M.I.T. makes no representations about the
+  suitability of this software for any purpose.  It is provided "as is"
+  without express or implied warranty.
+
+Files: api/texfont.[ch], samples/glut/glutbitmap.h
 Copyright: © 1997 Mark J. Kilgard
 License: other
  This program is freely distributable without licensing fees and is
  provided without guarantee or warrantee expressed or implied.
  This program is -not- in the public domain.
 
-Files: client/stream.C
+Files: samples/glut/glut.h
+Copyright: © 1994, 1995, 1996, 1998 Mark J. Kilgard
+License: other
+ This program is freely distributable without licensing fees and is
+ provided without guarantee or warrantee expressed or implied.
+ This program is -not- in the public domain.
+
+Files: samples/jpeglib/*
+Copyright: © 1991-1997, Thomas G. Lane.
+License: other
+ Permission is hereby granted to use, copy, modify, and distribute this
+ software (or portions thereof) for any purpose, without fee, subject to these
+ conditions:
+ (1) If any part of the source code for this software is distributed, then this
+ README file must be included, with this copyright and no-warranty notice
+ unaltered; and any additions, deletions, or changes to the original files
+ must be clearly indicated in accompanying documentation.
+ (2) If only executable code is distributed, then the accompanying
+ documentation must state that "this software is based in part on the work of
+ the Independent JPEG Group".
+ (3) Permission for use of this software is granted only if the user accepts
+ full responsibility for any undesirable consequences; the authors accept
+ NO LIABILITY for damages of any kind.
+ .
+ (License Info from libjpeg62 README) FIXME. 
+
+Files: samples/glut/win32_util.[ch] samples/glut/win32_x11.[ch]
+Copyright: © 1997 Nate Robins
+           © 1997-1998 Mark Kilgar
+License: other
+ This program is freely distributable without licensing fees and is
+ provided without guarantee or warrantee expressed or implied.
+ This program is -not- in the public domain.
+
+Files: samples/glut/Roman.stroke, samples/glut/stroke.h
+Copyright: © 1989,1990, 1991 by Sun Microsystems, Inc. and the X Consortium
+License: other
+ Permission to use, copy, modify, and distribute this software and its
+ documentation for any purpose and without fee is hereby granted,
+ provided that the above copyright notice appear in all copies and that
+ both that copyright notice and this permission notice appear in
+ supporting documentation, and that the names of Sun Microsystems,
+ the X Consortium, and MIT not be used in advertising or publicity 
+ pertaining to distribution of the software without specific, written
+ prior permission. 
+ .
+ SUN MICROSYSTEMS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ EVENT SHALL SUN MICROSYSTEMS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF
+ USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ PERFORMANCE OF THIS SOFTWARE.
+
+
+
+Files: client/stream.cpp
 Copyright: © 1991-2005: John D. McCalpin
            © 2005 University of California
 License: LGPL-2.1+, other
@@ -114,7 +183,7 @@ License: other
  If you do not wish that, you must delete the exception notice from such
  code and/or adjust the licensing conditions notice accordingly.
 
-Files: clientgui/wizard.*
+Files: clientgui/wizardex.*
 Copyright: © 1999 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
 License: other
  wxWindows Library Licence, Version 3, see above for details
@@ -143,8 +212,8 @@ License: GFDL-1.2+
  Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.
 
 Files: html/inc/geoip.inc
-Copyright: © 2003 MaxMind LLC
-License: GPL-2.1+
+Copyright: © 2004 MaxMind LLC
+License: LGPL-2.1+
 
 Files: html/inc/kses.php
 Copyright: © 2002-2003 Ulf Harnhammar
@@ -171,7 +240,7 @@ License: other
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
 
-Files: lib/md5.[Ch]
+Files: lib/md5.[ch]
 Copyright: © 1999 Aladdin Enterprises
 License: other
  This software is provided 'as-is', without any express or implied

@@ -90,7 +90,7 @@ array('SETI_at_BOINCWatch_1.10.15.exe',
     'SETI@BOINCWatch',
     '1.10.15',
     'A SETI@Home/BOINC client watcher! User statistics powered by BOINCStats',
-    'http://setiwatch.hit.bg/',
+    'http://www.setiboincwatch.org/',
     '',
     'Logging finished results which you can review in details later, builtin; starmap whish shows the position of the current WU and all the logged results; user, team and country statistics powered by BOINCStats and many more features included...',
     1115657242
@@ -99,7 +99,7 @@ array('SETIatBOINCWatch(.NET2.0).exe',
     'SETI@BOINCWatch(.NET 2.0)',
     '3.0.24 BETA',
     'A SETI@Home/BOINC client watcher! User statistics powered by BOINCStats. But now built with the .NET environment.',
-    'http://setiwatch.hit.bg/',
+    'http://www.setiboincwatch.org/',
     '2000/XP family/2003 Server family',
     'Logging finished results which you can review in details later, builtin; starmap whish shows the position of the current WU and all the logged results; user, team and country statistics powered by BOINCStats and many more features included...',
     1145198333
@@ -108,7 +108,7 @@ array('SETIatBOINCWatch(.NET).exe',
     'SETI@BOINCWatch(.NET)',
     '2.0.24 BETA',
     'A SETI@Home/BOINC client watcher! User statistics powered by BOINCStats. But now built with the .NET environment.',
-    'http://setiwatch.hit.bg/',
+    'http://www.setiboincwatch.org/',
     '2000/XP family/2003 Server family',
     'Logging finished results which you can review in details later, builtin; starmap whish shows the position of the current WU and all the logged results; user, team and country statistics powered by BOINCStats and many more features included...',
     1145198264
@@ -348,7 +348,7 @@ array('rc.boinc-slackware-linux-latest.txt',
     'http://markhill.me.uk',
     'Slackware',
     'rc.boinc is a script to start BOINC automatically on Slackware Linux. It is written for Slackware Linux but may work on similar Linux distributions',
-    1111810676
+    1221845757
 ),
 );
 
@@ -466,14 +466,14 @@ array('boinc_server_status.zip',
 );
 
 $web = array(
-array('http://download.conmunix.net/pub/boinc_lcs/boinc_lcs_3.0_beta.tar.gz',
+array('http://download.conmunix.net/pub/boinc_lcs/boinc_lcs_3.0.tar.gz',
     'Boinc LCS',
-    '3.0 beta',
+    '3.0 final',
     'Shows the current state and other information from an unlimited number of BOINC clients connected to the Internet.',
     'http://www.conmunix.net/boinc-lcs',
     'Apache, PHP',
-    'Boinc LCS is a free PHP based script, that allows you to monitor the current state (and other information) from each of your connected BOINC clients. It runs on a simple webserver and since version 2.1 it is also platform independent. Boinc LCS is released under the GNU/GPL license. You can modify and redistribute or just using it!',
-    '1193023938'
+    'Boinc LCS is a free PHP based script, that allows you to monitor the current state (and other information) from each of your connected BOINC clients. It runs on a simple webserver and is platform independent. Boinc LCS is released under the GNU/GPL license. You can modify and redistribute or just use it!',
+    '1210049520'
 ),
 array('b-sig.zip',
     'Forum signature showing jobs in progress',
@@ -521,6 +521,15 @@ array('phpboinc10.zip',
     'Windows, *nix',
     'This is a PHP script that will interpret your client statistics and display it on a webpage. By default it points to client_state.xml, but can be changed to point to any location. It includes an example output at the bottom of the script.',
     1110197681
+),
+array('phpBOINCer-1.5.zip',
+    'phpBOINCer',
+    '1.5',
+    'An improved PHP script based upon phpBOINC by Richard Silvers, to display BOINC stats on a webpage, and store or retrieve these stats to a mySQL database. ',
+    'http://kke.endofinternet.net/',
+    'Windows, *nix',
+    'This PHP script will parse your client_state.xml file (location configurable) and display it on a webpage. Optionally you can use this script to parse and store these statistics into a mySQL database instead of displaying it. You can also use the script to then pull these statistics from the mySQL database and display them on a webpage. This could be useful if your BOINC client is not on the same machine as your webserver, but you can access your database remotely. Possibly many other creative uses. See README.txt or phpBOINCer.php for more information.',
+    1215641230
 ),
 
 

@@ -1,4 +1,5 @@
-## $Id: Makefile.am 15066 2008-04-17 15:43:51Z davea $
+## -*- mode: makefile; tab-width: 4 -*-
+## $Id: Makefile.am 16069 2008-09-26 18:20:24Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -14,6 +15,7 @@ noinst_PROGRAMS = \
     get_file \
     make_work \
     message_handler \
+	pymw_assimilator \
     request_file_list \
     sample_assimilator \
     sample_dummy_assimilator \
@@ -41,20 +43,19 @@ LDADD = $(LIBSCHED) $(LIBBOINC) $(MYSQL_LIBS) $(PTHREAD_LIBS) $(RSA_LIBS)
 AM_CXXFLAGS = $(MYSQL_CFLAGS)
 
 libsched_a_SOURCES = \
-    sched_shmem.C \
-    sched_util.C \
-    sched_config.C \
-	sched_msgs.C \
-    ../db/boinc_db.C \
-    ../db/db_base.C \
-	../lib/msg_log.C \
-    ../tools/process_result_template.C \
-    ../tools/backend_lib.C
+    sched_shmem.cpp \
+    sched_util.cpp \
+    sched_config.cpp \
+	sched_msgs.cpp \
+    ../db/boinc_db.cpp \
+    ../db/db_base.cpp \
+	../lib/msg_log.cpp \
+    ../tools/process_result_template.cpp \
+    ../tools/backend_lib.cpp
 
 EXTRA_DIST = \
     assimilate_handler.h \
     fcgiapp.h \
-    fcgi_stdio.h \
     handle_request.h \
     main.h \
     sched_locality.h \
@@ -65,34 +66,31 @@ EXTRA_DIST = \
 
 
 cgi_SOURCES = \
-    edf_sim.C \
-    handle_request.C \
-    hr.C \
-    hr_info.C \
-    main.C \
-    sched_array.C \
-    sched_assign.C \
-    sched_hr.C \
-    sched_resend.C \
-    sched_locality.C \
-    sched_result.C \
-    sched_plan.C \
-    sched_send.C \
-    sched_timezone.C \
-    server_types.C \
-    time_stats_log.C \
-    ../lib/synch.C
+    edf_sim.cpp \
+    handle_request.cpp \
+    hr.cpp \
+    hr_info.cpp \
+    main.cpp \
+    sched_array.cpp \
+    sched_assign.cpp \
+    sched_hr.cpp \
+    sched_resend.cpp \
+    sched_locality.cpp \
+    sched_result.cpp \
+    sched_plan.cpp \
+    sched_send.cpp \
+    sched_timezone.cpp \
+    server_types.cpp \
+    time_stats_log.cpp \
+    ../lib/synch.cpp
 
 census_SOURCES = \
-    census.C \
-    hr.C \
-    hr_info.C
-
-## install header-files with prefix-subdir BOINC/ to avoid name-conflicts
-includedir = ${prefix}/include/BOINC/
+    census.cpp \
+    hr.cpp \
+    hr_info.cpp
 
 ## install only headers that are meant for exporting the API !!
-include_HEADERS = \
+pkginclude_HEADERS = \
 	sched_config.h \
 	sched_msgs.h \
 	sched_util.h \
@@ -101,110 +99,115 @@ include_HEADERS = \
 
 
 feeder_SOURCES = \
-    feeder.C \
-    hr.C \
-    hr_info.C \
-    ../lib/synch.C
+    feeder.cpp \
+    hr.cpp \
+    hr_info.cpp \
+    ../lib/synch.cpp
 
-wu_check_SOURCES = wu_check.C
+wu_check_SOURCES = wu_check.cpp
 
-show_shmem_SOURCES = show_shmem.C
+show_shmem_SOURCES = show_shmem.cpp
 
-file_deleter_SOURCES = file_deleter.C
+file_deleter_SOURCES = file_deleter.cpp
 
-sample_bitwise_validator_SOURCES = validator.C sample_bitwise_validator.C validate_util.C validate_util.h validate_util2.C
+sample_bitwise_validator_SOURCES = validator.cpp sample_bitwise_validator.cpp validate_util.cpp validate_util.h validate_util2.cpp
 
-sample_trivial_validator_SOURCES = validator.C sample_trivial_validator.C validate_util.C validate_util.h validate_util2.C
+sample_trivial_validator_SOURCES = validator.cpp sample_trivial_validator.cpp validate_util.cpp validate_util.h validate_util2.cpp
 
-sample_dummy_assimilator_SOURCES = assimilator.C sample_dummy_assimilator.C validate_util.C validate_util.h
+sample_dummy_assimilator_SOURCES = assimilator.cpp sample_dummy_assimilator.cpp validate_util.cpp validate_util.h
 
-sample_assimilator_SOURCES = assimilator.C sample_assimilator.C validate_util.C validate_util.h
+sample_assimilator_SOURCES = assimilator.cpp sample_assimilator.cpp validate_util.cpp validate_util.h
 
-single_job_assimilator_SOURCES = assimilator.C single_job_assimilator.C validate_util.C validate_util.h
+pymw_assimilator_SOURCES = assimilator.cpp pymw_assimilator.cpp validate_util.cpp validate_util.h 
+pymw_assimilator_DEPENDENCIES = $(LIB_SCHED) 
 
-sample_work_generator_SOURCES = sample_work_generator.C
+single_job_assimilator_SOURCES = assimilator.cpp single_job_assimilator.cpp validate_util.cpp validate_util.h
 
-db_dump_SOURCES = db_dump.C
+sample_work_generator_SOURCES = sample_work_generator.cpp
 
-db_purge_SOURCES = db_purge.C
+db_dump_SOURCES = db_dump.cpp
 
-trickle_handler_SOURCES = trickle_handler.C
+db_purge_SOURCES = db_purge.cpp
 
-update_stats_SOURCES = update_stats.C
+trickle_handler_SOURCES = trickle_handler.cpp
 
-file_upload_handler_SOURCES = file_upload_handler.C
+update_stats_SOURCES = update_stats.cpp
 
-make_work_SOURCES = make_work.C
+file_upload_handler_SOURCES = file_upload_handler.cpp
 
-transitioner_SOURCES = transitioner.C
+make_work_SOURCES = make_work.cpp
 
-message_handler_SOURCES = message_handler.C
+transitioner_SOURCES = transitioner.cpp
 
-request_file_list_SOURCES = request_file_list.C
+message_handler_SOURCES = message_handler.cpp
 
-get_file_SOURCES = get_file.C
+request_file_list_SOURCES = request_file_list.cpp
 
-send_file_SOURCES = send_file.C
+get_file_SOURCES = get_file.cpp
 
-delete_file_SOURCES = delete_file.C
+send_file_SOURCES = send_file.cpp
 
-sched_driver_SOURCES = sched_driver.C
+delete_file_SOURCES = delete_file.cpp
+
+sched_driver_SOURCES = sched_driver.cpp
 
 # N.B.: the FCGI scheduler can't use lib/libboinc.a;
 # it needs to have specially compiled versions of everything
 # because its stdio is different
 fcgi_SOURCES = \
-    handle_request.C \
-    hr.C \
-    hr_info.C \
-    main.C \
-    sched_array.C \
-    sched_assign.C \
-    sched_config.C \
-    sched_hr.C \
-    sched_locality.C \
-    sched_msgs.C \
-    sched_resend.C \
-    sched_result.C \
-    sched_plan.C \
-    sched_send.C \
-    sched_shmem.C \
-    sched_timezone.C \
-    sched_util.C \
-    server_types.C \
-	time_stats_log.C \
-    edf_sim.C \
-    ../db/boinc_db.C \
-    ../db/db_base.C \
-    ../lib/base64.C \
-    ../lib/coproc.C \
-    ../lib/crypt.C \
-    ../lib/filesys.C \
+    handle_request.cpp \
+    hr.cpp \
+    hr_info.cpp \
+    main.cpp \
+    sched_array.cpp \
+    sched_assign.cpp \
+    sched_config.cpp \
+    sched_hr.cpp \
+    sched_locality.cpp \
+    sched_msgs.cpp \
+    sched_resend.cpp \
+    sched_result.cpp \
+    sched_plan.cpp \
+    sched_send.cpp \
+    sched_shmem.cpp \
+    sched_timezone.cpp \
+    sched_util.cpp \
+    server_types.cpp \
+	time_stats_log.cpp \
+    edf_sim.cpp \
+    ../db/boinc_db.cpp \
+    ../db/db_base.cpp \
+    ../lib/base64.cpp \
+    ../lib/boinc_fcgi.cpp \
+    ../lib/coproc.cpp \
+    ../lib/crypt.cpp \
+    ../lib/filesys.cpp \
     ../lib/md5.c \
-    ../lib/md5_file.C \
-    ../lib/miofile.C \
-    ../lib/msg_log.C \
-    ../lib/parse.C \
-    ../lib/shmem.C \
-    ../lib/synch.C \
-    ../lib/str_util.C \
-    ../lib/util.C \
-    ../tools/process_result_template.C \
-    ../tools/backend_lib.C
+    ../lib/md5_file.cpp \
+    ../lib/miofile.cpp \
+    ../lib/msg_log.cpp \
+    ../lib/parse.cpp \
+    ../lib/shmem.cpp \
+    ../lib/synch.cpp \
+    ../lib/str_util.cpp \
+    ../lib/util.cpp \
+    ../tools/process_result_template.cpp \
+    ../tools/backend_lib.cpp
 
-fcgi_CPPFLAGS = -include fcgi_stdio.h -D_USING_FCGI_ $(AM_CPPFLAGS)
+fcgi_CPPFLAGS = -D_USING_FCGI_ -include boinc_fcgi.h $(AM_CPPFLAGS)
 fcgi_LDADD = -lfcgi $(MYSQL_LIBS)
 
 fcgi_file_upload_handler_SOURCES = \
-    file_upload_handler.C \
-    sched_config.C \
-    sched_msgs.C \
-    ../lib/miofile.C \
-    ../lib/msg_log.C \
-    ../lib/parse.C \
-    ../lib/crypt.C
+    file_upload_handler.cpp \
+    sched_config.cpp \
+    sched_msgs.cpp \
+    ../lib/boinc_fcgi.cpp \
+    ../lib/miofile.cpp \
+    ../lib/msg_log.cpp \
+    ../lib/parse.cpp \
+    ../lib/crypt.cpp
 
-fcgi_file_upload_handler_CPPFLAGS = -include fcgi_stdio.h -D_USING_FCGI_ $(AM_CPPFLAGS)
+fcgi_file_upload_handler_CPPFLAGS = -D_USING_FCGI_ -include boinc_fcgi.h $(AM_CPPFLAGS)
 fcgi_file_upload_handler_LDADD = $(LDADD) -lfcgi
 
 .PHONY: PHONY-start

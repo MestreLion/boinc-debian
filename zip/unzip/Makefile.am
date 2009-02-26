@@ -1,4 +1,5 @@
-## $Id: Makefile.am 4673 2004-11-27 21:04:36Z ballen $
+## -*- mode: makefile; tab-width: 4 -*-
+## $Id: Makefile.am 15375 2008-06-08 22:18:52Z davea $
 
 EXTRA_DIST = BUGS	      WHERE	  envargs.c    inflate.c   ttyio.h	 unzvers.h	\
 api.c	  explode.c    inflate.h   unix	 win32				\
