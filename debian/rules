@@ -189,16 +189,6 @@ install-stamp:
 	install -D clientgui/boincmgr.unmodified \
 	  debian/boinc-manager/usr/bin/boincmgr
 	
-	# Install binary message catalogs of the BOINC Manager.
-	#for i in `ls locale/client`; do \
-	#  if [ -f "locale/client/$$i/BOINC Manager.mo" ]; then \
-	#    install -D -m644 "locale/client/$$i/BOINC Manager.mo" \
-	#      "debian/boinc-manager/usr/share/locale/$$i/LC_MESSAGES/BOINC Manager.mo"; \
-	#  fi; \
-	#done;
-	
-	# The en_US po file is actually a po template, thus the corresponding
-	# "BOINC Manager.mo" is empty and useless.
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	
 	dh install --before dh_installchangelogs
@@ -228,7 +218,8 @@ get-orig-source:
 	  sed 's/boinc_core_release_\(.*\)\//\1/' | \
 	  sort -g -t_ -k1 -k2 -k3 | sed 's/_/./g' | tail -n 1 | tr -d '\n'`; \
 	EXB=/tmp/export-boinc; \
-	svn export svn://svn.debian.org/pkg-boinc/scripts/export-boinc $$EXB; \
+	wget -O $$EXB "http://git.debian.org/?p=pkg-boinc/scripts.git;a=blob_plain;f=export-boinc;hb=HEAD" --quiet; \
+	chmod +x $$EXB; \
 	$$EXB -r $$LATEST_VERSION -t $(origDir); \
 	rm -f $$EXB
 
