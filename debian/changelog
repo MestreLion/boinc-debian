@@ -1,7 +1,4 @@
-boinc (6.4.5-1) UNRELEASED; urgency=low
-
-   TODO: this version still have a big todo and 
-   testing, before merge it to debian/experimental
+boinc (6.4.5-1) experimental; urgency=low
 
   * New upstream version
   * debian/patches:
