@@ -27,7 +27,7 @@ boinc (6.4.5-1) experimental; urgency=low
     + download export-boinc from git instead svn, 
       use an ugly wget since git is not able to it by itself
   * debian/boinc-manager.install: usr/share/locale/* files added
-  * debian/control, set standards-version to 3.8.1
+  * debian/control, set standards-version to 3.8.1 ( no changes needed )
 
  -- Rene Mayorga <rmayorga@debian.org>  Sun, 05 Apr 2009 16:05:39 -0600
 
