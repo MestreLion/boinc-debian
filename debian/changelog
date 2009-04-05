@@ -26,6 +26,7 @@ boinc (6.4.5-1) experimental; urgency=low
     + copy sea/*png file to clientgui/res and remove they on clean target
     + download export-boinc from git instead svn, 
       use an ugly wget since git is not able to it by itself
+    + delete empty locale dirs
   * debian/boinc-manager.install: usr/share/locale/* files added
   * debian/control, set standards-version to 3.8.1 ( no changes needed )
 

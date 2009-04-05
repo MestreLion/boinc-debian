@@ -200,6 +200,8 @@ install-stamp:
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 	# Correct catalog file perms
 	find ./ -name "*.mo" -exec chmod 644   {} \;
+	# delete empty dirs
+	find debian/boinc-manager/usr/share/locale -type d -empty -delete
 	dh install
 	dh_buildinfo
 	touch $@
