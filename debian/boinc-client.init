@@ -55,13 +55,12 @@ if [ -z "$BOINC_USER" ]; then
 fi
 
 if [ ! -z "$BOINC_OPTS" ]; then
-	if [ ! `echo $FOO | grep  -- '--daemon' 1>/dev/null` ]; then
-		log_warning_msg "\`--deamon' option detected \
+	(echo $BOINC_OPTS | grep -- '--daemon' 1>/dev/null) &&
+		log_warning_msg "\`--daemon' option detected \
 			on /etc/default/boinc-client, this \
 			can cause problems on boinc. The option \
 			will be suppressed"
-			BOINC_OPTS=`echo "$BOINC_OPTS" | sed 's/--daemon//'`
-	fi
+		BOINC_OPTS=`echo "$BOINC_OPTS" | sed 's/--daemon//g'`
 fi
 
 PIDFILE=/var/run/boinc.pid
