@@ -1,0 +1,32 @@
+--- boinc.orig/sched/sched_driver.cpp
++++ boinc/sched/sched_driver.cpp
+@@ -40,6 +40,7 @@
+ #define HOSTID "7"
+     // ID of a host belonging to that user
+ 
++#include <cstdio>
+ #include <vector>
+ #include "util.h"
+ 
+--- boinc.orig/sched/sched_util.cpp
++++ boinc/sched/sched_util.cpp
+@@ -104,7 +104,7 @@
+ #else
+ int try_fopen(const char* path, FCGI_FILE*& f, const char *mode) {
+ #endif
+-    char* p;
++    const char* p;
+     DIR* d;
+     char dirpath[256];
+ 
+--- boinc.orig/clientgui/common/wxFlatNotebook.cpp
++++ boinc/clientgui/common/wxFlatNotebook.cpp
+@@ -607,7 +607,7 @@
+ //
+ ///////////////////////////////////////////////////////////////////////////////////////////
+ 
+-BEGIN_EVENT_TABLE(wxPageContainerBase, wxControl)
++BEGIN_EVENT_TABLE(wxPageContainerBase, wxPanel)
+ EVT_PAINT(wxPageContainerBase::OnPaint)
+ EVT_SIZE(wxPageContainerBase::OnSize)
+ EVT_LEFT_DOWN(wxPageContainerBase::OnLeftDown)
