@@ -1,3 +1,8 @@
+Author: René Mayorga
+Description: Pulled from upstream SVN, this patch avoid the
+FTBFS using gcc 4.4
+Debian-Bug: #526666
+
 --- boinc.orig/sched/sched_driver.cpp
 +++ boinc/sched/sched_driver.cpp
 @@ -40,6 +40,7 @@
