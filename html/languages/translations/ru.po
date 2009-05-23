@@ -12,7 +12,7 @@ msgstr ""
 
 ##########################################
 # Language: Russian (Russian Federation) (based on en.po SVN rev.15601)
-# FileID  : $Id: ru.po 15665 2008-07-24 05:36:29Z JensSeidler $
+# FileID  : $Id: ru.po 15666 2008-07-24 05:38:14Z JensSeidler $
 # Author  : Janus Kristensen (Translated by: Cyril Tikhonov, Nikolay Saharov)
 # Email   : jbk@visualgroup.dk (cyrilussr@yahoo.com, saharovna@mail.ru)
 ##########################################

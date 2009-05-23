@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // This provides the form from which the user can edit his or her
 // forum preferences.  It relies upon edit_forum_preferences_action.php
@@ -43,20 +59,29 @@ row2(
 
 // ------------ Forum identity -----------
 
-$zero_select = $two_select = "";
+$select_0 = $select_1 = $select_2 = "";
 if (strlen($user->prefs->avatar)){
-    $two_select="checked=\"true\"";
+    if (substr($user->prefs->avatar, 0, 4) == 'http') { // Gravatar
+        $select_1 = "checked=\"true\"";
+    } else {
+        $select_2 = "checked=\"true\"";
+    }
 } else {
-    $zero_select="checked=\"true\"";
+    $select_0 = "checked=\"true\"";
 }
 row1("Message-board identity");
 row2("Avatar
-    <br><span class=note>An image representing you on the message boards.
-    <br>Format: JPG or /PNG.  Size: at most 4 KB, 100x100 pixels</span>",
-    "<input type=\"radio\" name=\"avatar_select\" value=\"0\" ".$zero_select.">Don't use an avatar <br><input type=\"radio\" name=\"avatar_select\" value=\"2\" ".$two_select.">Use this uploaded avatar: <input type=\"file\" name=\"picture\">"
+    <br><span class=\"note\">An image representing you on the message boards.
+    <br>Format: JPG or PNG. Size: at most 4 KB, 100x100 pixels</span>",
+    "<input type=\"radio\" id=\"avatar_select_0\" name=\"avatar_select\" value=\"0\" ".$select_0.">
+        <label for=\"avatar_select_0\">Don't use an avatar</label><br>
+    <input type=\"radio\" id=\"avatar_select_1\" name=\"avatar_select\" value=\"1\" ".$select_1.">
+        <label for=\"avatar_select_1\">Use a Globally Recognized Avatar provided by <a href=\"http://gravatar.com\">Gravatar.com</a></label><br>
+    <input type=\"radio\" id=\"avatar_select_2\" name=\"avatar_select\" value=\"2\" ".$select_2.">
+        <label for=\"avatar_select_2\">Use this uploaded avatar:</label> <input type=\"file\" name=\"picture\">"
 );
 if (strlen($user->prefs->avatar)){
-    row2("Avatar preview<br><span class=note>This is how your avatar will look</span>",
+    row2("Avatar preview<br><span class=\"note\">This is how your avatar will look</span>",
     "<img src=\"".$user->prefs->avatar."\" width=\"100\" height=\"100\">");
 }
 
@@ -65,7 +90,7 @@ if (!$user->prefs->no_signature_by_default){
 } else {
     $signature_by_default="";
 }
-$signature=stripslashes($user->prefs->signature);
+$signature=$user->prefs->signature;
 $maxlen=250;
 row2(
     "Signature for message board posts<br>
@@ -116,6 +141,11 @@ if ($user->prefs->ignore_sticky_posts){
 } else {
     $forum_ignore_sticky_posts="";
 }
+if ($user->prefs->highlight_special){
+    $forum_highlight_special="checked=\"checked\"";
+} else {
+    $forum_highlight_special="";
+}
 
 $forum_minimum_wrap_postcount = intval($user->prefs->minimum_wrap_postcount);
 $forum_display_wrap_postcount = intval($user->prefs->display_wrap_postcount);
@@ -127,6 +157,7 @@ row2(
     <input type=\"checkbox\" name=\"forum_hide_signatures\" ".$forum_hide_signatures."> Hide signatures<br>
     <input type=\"checkbox\" name=\"forum_images_as_links\" ".$forum_image_as_link."> Show images as links<br>
     <input type=\"checkbox\" name=\"forum_link_popup\" ".$forum_link_popup."> Open links in new window/tab<br>
+    <input type=\"checkbox\" name=\"forum_highlight_special\" ".$forum_highlight_special."> Highlight special users<br>
     "
 );
 
@@ -175,5 +206,5 @@ row2("Or click here to reset preferences to the defaults",
 end_table();
 page_tail();
 
-$cvs_version_tracker[]="\$Id: edit_forum_preferences_form.php 14447 2007-12-30 22:02:16Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: edit_forum_preferences_form.php 16134 2008-10-05 16:00:11Z jbk $";  //Generated automatically - do not edit
 ?>

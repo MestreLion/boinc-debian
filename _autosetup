@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## $Id: _autosetup 15115 2008-05-01 22:11:08Z davea $
+## $Id: _autosetup 15282 2008-05-23 19:24:20Z davea $
 
 ## ---------- some portability checks/adjustments [stolen from configure] ----------
 ## 'echo -n' is not portable..
@@ -90,6 +90,8 @@ check_version()
       if test -f /usr/ccs/bin/m4
       then
          echo >/dev/null
+      elif check_version gm4 1.4; then
+         have_gm4=yes;
       else 
          echo "Couldn't find a new-enough version of 'm4', please install one!";
          exit 1;

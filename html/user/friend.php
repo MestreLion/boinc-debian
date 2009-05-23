@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // stuff related to "buddy lists"
 
@@ -82,7 +98,9 @@ function handle_add_confirm($user) {
     if ($msg) $msg = strip_tags(process_user_text($msg));
 
     $now = time();
-    $ret = BoincFriend::replace("user_src=$user->id, user_dest=$destid, message='$msg', create_time=$now, reciprocated=0");
+    $ret = BoincFriend::replace(
+        "user_src=$user->id, user_dest=$destid, message='$msg', create_time=$now, reciprocated=0"
+    );
     if (!$ret) {
         error_page("database error");
     }
@@ -118,13 +136,10 @@ function handle_query($user) {
         echo "<p>$srcuser->name says: $friend->message<p>";
     }
     echo "
-        <p>
-        <a href=friend.php?action=accept&userid=$srcid>Accept</a>
-        (click if $srcuser->name is in fact a friend)
-        <p>
-        <a href=friend.php?action=ignore&userid=$srcid>Decline</a>
-        (click if $srcuser->name is not a friend)
-        <p>
+        <p><ul class=\"actionlist\">";
+    show_actionlist_button("friend.php?action=accept&userid=".$srcid, tra("Accept friendship"), tra("Click accept if %1 is in fact a friend", $srcuser->name));
+    show_actionlist_button("friend.php?action=ignore&userid=".$srcid, tra("Decline"), tra("Click decline if %1 is not a friend", $srcuser->name));
+    echo "    <p>
     ";
     page_tail();
 }
@@ -218,10 +233,10 @@ function handle_cancel_confirm($user) {
     echo "
         Are you sure you want to cancel your friendship with $destuser->name?
         <p>
-    ";
-    show_button("friend.php?action=cancel&userid=$destid", "Yes", "Cancel friendship");
-    echo "<p>";
-    show_button("home.php", "No", "Don't cancel friendship");
+    <ul class=\"actionlist\">";
+    show_actionlist_button("friend.php?action=cancel&userid=$destid", tra("Yes"), "Cancel friendship");
+    show_actionlist_button("home.php", tra("No"), "Stay friends");
+    echo "</ul>";
     page_tail();
 }
 

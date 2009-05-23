@@ -1,4 +1,4 @@
-## $Id: database.py 14906 2008-03-13 22:57:24Z davea $
+## $Id: database.py 15357 2008-06-04 23:04:12Z davea $
 
 '''
 Defines database backend library and database table and object relationships.
@@ -32,7 +32,7 @@ import configxml
 from util import *
 from db_base import *
 
-ID = '$Id: database.py 14906 2008-03-13 22:57:24Z davea $'
+ID = '$Id: database.py 15357 2008-06-04 23:04:12Z davea $'
 
 class Platform(DatabaseObject):
     _table = DatabaseTable(
@@ -52,7 +52,8 @@ class App(DatabaseObject):
                     'user_friendly_name',
                     'homogeneous_redundancy',
                     'weight',
-                    'beta'
+                    'beta',
+                    'target_nresults'
                     ])
 
 class AppVersion(DatabaseObject):

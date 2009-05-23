@@ -1,6 +1,24 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+// Create message boards.
 // RUN THIS AS A SCRIPT, NOT VIA A BROWSER.
+// TODO: rewrite this using the DB abstraction layer
 // First, edit the set of forums (below) and remove the following line
 exit();
 
@@ -45,6 +63,6 @@ create_forum($catid, 3, "Getting started", "Creating your account");
 create_forum($catid, 4, "Preferences", "Using preferences");
 create_forum($catid, 5, "Wish list", "What new features would you like to see?");
 create_forum($catid, 6, "Web site", "Issues involving this web site");
-admin_page_tail();
-$cvs_version_tracker[]="\$Id: create_forums.php 11154 2006-09-14 00:18:13Z boincadm $";  //Generated automatically - do not edit
+
+$cvs_version_tracker[]="\$Id: create_forums.php 15911 2008-08-20 22:09:51Z davea $";  //Generated automatically - do not edit
 ?>

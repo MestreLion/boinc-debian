@@ -24,25 +24,31 @@ define("UOTD_ADMIN_EMAIL", "admin@$master_url");
 // offensive forum posts.
 define("POST_REPORT_EMAILS", "moderator1@$master_url|moderator2@$master_url");
 
-function project_banner($title) {
-    // Put your project title and logo here
+// set the following var if your project is behind a proxy.
+// This is used on ops/index.php to get the current SVN rev from BOINC
+//$project_http_proxy = "tcp://proxyname:port"
 
-    echo "<table width=\"100%\">
-        <tr>
-        <td><h2>$title</h2></td>
-        <td align=right>
-       </td></tr></table>
+function project_banner($title, $prefix) {
+    // Put your project title and logo here
+    // If you include any links, prepend URL with $prefix
+
+    echo "
+        <p>
+        <span class=\"page_title\">$title</span>
+        <p>
     ";
 }
 
-function project_footer($show_return, $show_date) {
+function project_footer($show_return, $show_date, $prefix) {
+    // If you include any links, prepend URL with $prefix
     echo "<br><hr noshade size=1><center>";
     if ($show_return) {
-        echo "<a href=index.php>Home</a> | <a href=home.php>My Account</a> | <a href=forum_index.php>Message Boards</a><br>\n";
+        echo "<a href=".$prefix."index.php>Home</a> | <a href=".$prefix."home.php>My Account</a> | <a href=".$prefix."forum_index.php>Message Boards</a><br>\n";
     }
     echo "<br><br>Copyright &copy; ".date("Y ").COPYRIGHT_HOLDER."</center>\n";
     if ($show_date) {
-        echo "<font size=-2 color=bbbbbb>Generated ",time_str(time()),"</font>\n";
+        $t = time_str(time());
+        echo "<span class=\"note\">Generated $t</span>\n";
     }
 }
 
@@ -73,25 +79,24 @@ function show_profile_question2() {
 }
 
 function project_workunit($wu){
-    //echo "This is displayed on the workunit page";
+    // shown in the workunit page
 }
 
 function project_user_summary($user){
-    //echo "Text here will go to the user summary page";
+    // shown in the user summary page
 }
 
 function project_user_page_private($user){
-    //echo "Whatever is here is added to the private account page";
+    // shown in the private account page
 }
 
 function project_user_credit($user){
-    //echo "Whatever is here is added to the private account page";
+    // shown in the the private account page, credit area
 }
 
 function project_forum_post_rules() {
-    // Add <li> entries for additional forum post rules
-    return "
-    ";
+    // additional forum post rules
+    return "";
 }
 
 ?>

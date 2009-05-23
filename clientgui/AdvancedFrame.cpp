@@ -217,7 +217,6 @@ CAdvancedFrame::CAdvancedFrame(wxString title, wxIcon* icon, wxIcon* icon32) :
 
     // Working Variables
     m_strBaseTitle = title;
-    m_bDisplayShutdownClientWarning = true;
 	m_iDisplayViewType = VIEW_GRID;
 
     // Initialize Application
@@ -835,7 +834,6 @@ bool CAdvancedFrame::SaveState() {
     //
     pConfig->SetPath(strBaseConfigLocation);
 
-    pConfig->Write(wxT("DisplayShutdownClientWarning"), m_bDisplayShutdownClientWarning);
     pConfig->Write(wxT("DisplayViewType"), m_iDisplayViewType);
 
 
@@ -935,7 +933,6 @@ bool CAdvancedFrame::RestoreState() {
     //
     pConfig->SetPath(strBaseConfigLocation);
 
-    pConfig->Read(wxT("DisplayShutdownClientWarning"), &m_bDisplayShutdownClientWarning, true);
     pConfig->Read(wxT("DisplayViewType"), &m_iDisplayViewType, VIEW_GRID);
 
 #ifdef __WXMAC__
@@ -1275,10 +1272,6 @@ void CAdvancedFrame::OnClientShutdown(wxCommandEvent& WXUNUSED(event)) {
     dlg.Centre();
 
     if (wxID_OK == dlg.ShowModal()) {
-        if (dlg.m_DialogDisableMessage->GetValue()) {
-            m_bDisplayShutdownClientWarning = false;
-        }
-
         pDoc->CoreClientQuit();
         pDoc->ForceDisconnect();
         
@@ -1573,8 +1566,10 @@ void CAdvancedFrame::OnOptionsOptions(wxCommandEvent& WXUNUSED(event)) {
 
     dlg.m_LanguageSelectionCtrl->SetSelection(m_iSelectedLanguage);
     dlg.m_ReminderFrequencyCtrl->SetValue(m_iReminderFrequency);
-
+    dlg.m_EnableBOINCManagerExitMessageCtrl->SetValue(wxGetApp().GetBOINCMGRDisplayExitMessage());
 #ifdef __WXMSW__
+    dlg.m_EnableBOINCManagerAutoStartCtrl->SetValue(!wxGetApp().GetBOINCMGRDisableAutoStart());
+
     // Connection Tab
     if (m_pDialupManager) {
         m_pDialupManager->GetISPNames(astrDialupConnections);
@@ -1647,7 +1642,10 @@ void CAdvancedFrame::OnOptionsOptions(wxCommandEvent& WXUNUSED(event)) {
         m_iSelectedLanguage = dlg.m_LanguageSelectionCtrl->GetSelection();
         m_iReminderFrequency = dlg.m_ReminderFrequencyCtrl->GetValue();
 
+        wxGetApp().SetBOINCMGRDisplayExitMessage(dlg.m_EnableBOINCManagerExitMessageCtrl->GetValue());
 #ifdef __WXMSW__
+        wxGetApp().SetBOINCMGRDisableAutoStart(!dlg.m_EnableBOINCManagerAutoStartCtrl->GetValue());
+
         // Connection Tab
         m_strNetworkDialupConnectionName = dlg.GetDefaultDialupConnection();
 #endif
@@ -2177,4 +2175,4 @@ void CAdvancedFrame::StopTimers() {
 }
 
 
-const char *BOINC_RCSID_d881a56dc5 = "$Id: AdvancedFrame.cpp 15451 2008-06-23 17:57:07Z romw $";
+const char *BOINC_RCSID_d881a56dc5 = "$Id: AdvancedFrame.cpp 16485 2008-11-12 09:58:15Z charlief $";

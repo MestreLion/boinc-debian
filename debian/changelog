@@ -1,3 +1,44 @@
+boinc (6.4.5-2) experimental; urgency=low
+
+  * Include a patch picked from Upstream SVN
+  to avoid FTBFSs whith gcc 4.4 (Closes: #526666)
+
+ -- Rene Mayorga <rmayorga@debian.org>  Sat, 23 May 2009 13:29:17 -0600
+
+boinc (6.4.5-1) experimental; urgency=low
+
+  * New upstream version
+  * debian/patches:
+    + 001_dont_install_ca-bundle.crt.patch refreshed
+    + 002_remove_hardcoded_optimization.patch refreshed
+    + 003_use_sensible-browser.patch
+    + 004_exclude_sea.patch removed
+    + 006_correct_catalog_path.patch added 
+  * debian/boinc-dev.install; upstream now calls `boinc' instead
+    of `BOINC' the include/ dir
+  * debian/boinc-dev.links; make BOINC point to boinc, this
+    will save those who still point to the wrong PATH
+  * debian/copyright: 
+    + Update upstream license from LGPL-2.1 to LGPL-3
+    + update the file name on : api/textfont.[ch], client/stream.cpp,
+      clientgui/wizardex.cpp
+    + update copyright years on html/inc/geoip.inc and correct license
+    + add copyright and license info for samples/glut/Roman.stroke, 
+      client/install-sh, samples/glut/win32_util.c, 
+      samples/glut/win32_x11.[ch], samples/glut/stroke.h,
+      samples/glut/glut.h, samples/jpeglib/*
+  * debian/rules:
+    + don't install .mo files manually
+    + correct .mo files perms
+    + copy sea/*png file to clientgui/res and remove they on clean target
+    + download export-boinc from git instead svn, 
+      use an ugly wget since git is not able to it by itself
+    + delete empty locale dirs
+  * debian/boinc-manager.install: usr/share/locale/* files added
+  * debian/control, set standards-version to 3.8.1 ( no changes needed )
+
+ -- Rene Mayorga <rmayorga@debian.org>  Sat, 23 May 2009 13:29:08 -0600
+
 boinc (6.2.18-4) unstable; urgency=low
 
   * remove unused var from init.d script

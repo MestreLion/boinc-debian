@@ -4,11 +4,19 @@ $biomed = array(
     "Biology and Medicine",
     array(
         array(
-            "GPU Grid - PS3 Grid",
-            "http://www.ps3grid.net/",
+            "Docking@Home",
+            "http://docking.cis.udel.edu/",
+            "University of Delaware",
+            "Study of protein - ligand interactions",
+            "Docking@Home has both bioscience and computer science goals. The project aims to further knowledge of the atomic details of protein-ligand interactions and, by doing so, will search for insights into the discovery of novel pharmaceuticals.",
+            "docking.png"
+        ),
+        array(
+            "GPUGrid.net ",
+            "http://www.gpugrid.net/",
             "Barcelona Biomedical Research Park (PRBB)",
             "Molecular simulations of proteins",
-            "PS3GRID opens novel computational scenarios by the first full-atom molecular dynamics code (CellMD) specially optimized to run on the Cell processor and the PlayStation3. New biomedical applications suddenly become possible giving a new role to computational biology for biomedical research.",
+            "GPUGrid.net opens novel computational scenarios by the first full-atom molecular dynamics code (CellMD) specially optimized to run on NVIDIA GPUs and the Sony PlayStation 3. New biomedical applications suddenly become possible giving a new role to computational biology for biomedical research.",
             "ps3grid.png"
         ),
         array(
@@ -74,14 +82,6 @@ $biomed = array(
             "Biology",
             "Calculate similarities between proteins. SIMAP provides a public database of the resulting data, which plays a key role in many bioinformatics research projects.",
             "simaplogo.jpg"
-        ),
-        array(
-            "World Community Grid",
-            "http://www.worldcommunitygrid.org/",
-            "IBM Corporate Community Relations",
-            "Humanitarian research on new and infectious disease, natural disasters and hunger.",
-            "To further critical non-profit research on some of humanity's most pressing problems by creating the world's largest volunteer computing grid.  Research includes HIV/AIDS, cancer, muscular dystrophy, dengue fever, and many more.",
-            "wcg.jpg",
         ),
     ),
 );
@@ -159,6 +159,27 @@ $astro_phys_chem = array(
         ),
     ),
 );
+$mixed = array(
+    "Multiple applications",
+    array(
+        array(
+            "Ibercivis",
+            "http://registro.ibercivis.es/",
+            "Spanish universities and research centers",
+            "Support Spanish research",
+            "Research in physics, material science, and biomedicine",
+            "cabecera2.jpg"
+        ),
+        array(
+            "World Community Grid",
+            "http://www.worldcommunitygrid.org/",
+            "IBM Corporate Community Relations",
+            "Humanitarian research on disease, natural disasters and hunger.",
+            "To further critical non-profit research on some of humanity's most pressing problems by creating the world's largest volunteer computing grid.  Research includes HIV/AIDS, cancer, muscular dystrophy, dengue fever, and many more.",
+            "wcg.jpg",
+        ),
+    ),
+);
 $math = array(
     "Mathematics and strategy games",
     array(
@@ -194,14 +215,14 @@ $math = array(
             "Find all the generalized binary number systems (in which bases are matrices and digits are vectors) up to dimension 11.",
             "szdg1_small.jpg"
         ),
-        array(
-            "Riesel Sieve",
-            "http://boinc.rieselsieve.com/",
-            "Riesel Sieve community",
-            "Mathematics",
-            "Find prime numbers of the form k*2<sup>n</sup>-1",
-            ""
-        ),
+//        array(
+//            "Riesel Sieve",
+//            "http://boinc.rieselsieve.com/",
+//            "Riesel Sieve community",
+//            "Mathematics",
+//            "Find prime numbers of the form k*2<sup>n</sup>-1",
+//            ""
+//        ),
         array(
             "Rectilinear Crossing Number",
             "http://dist.ist.tugraz.at/cape5/",
@@ -218,9 +239,17 @@ $math = array(
             "This project studies Chess 960, a variant of orthodox chess. In classical chess the starting position of the game never changes.  In Chess 960, just before the start of every game, the initial configuration of the chess pieces is determined randomly.",
             "chess960athome.jpg"
         ),
+        array(
+            "NQueens@home",
+            "http://nqueens.ing.udec.cl/",
+            "Universidad de Concepción, Chile",
+            "Game-playing",
+            "The eight queens problem consists of trying to place eight queens on a chessboard so that no queen attacks any other queen.  I has long been known that there are 92 solutions, of which 12 are distinct. NQueens@home studies the generalization to N queens on an NxN board, for N=19 and greater.",
+            "NQueens-Logo1b.png"
+        ),
     ),
 );
 
-$areas = array($biomed, $astro_phys_chem, $math, $earth);
+$areas = array($biomed, $astro_phys_chem, $math, $earth, $mixed);
 
 ?>

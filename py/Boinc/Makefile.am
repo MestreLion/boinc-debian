@@ -1,4 +1,5 @@
-## $Id: Makefile.am 2884 2004-01-15 23:25:17Z quarl $
+## -*- mode: makefile; tab-width: 4 -*-
+## $Id: Makefile.am 15375 2008-06-08 22:18:52Z davea $
 
 include $(top_srcdir)/Makefile.incl
 

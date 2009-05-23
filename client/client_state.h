@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _CLIENT_STATE_
 #define _CLIENT_STATE_
@@ -59,7 +57,7 @@ using std::vector;
     // project: no downloading or runnable results
     // overall: at least one idle CPU
 
-// CLIENT_STATE encapsulates the global variables of the core client.
+/// encapsulates the global variables of the core client.
 // If you add anything here, initialize it in the constructor
 //
 class CLIENT_STATE {
@@ -100,36 +98,35 @@ public:
     int cmdline_gui_rpc_port;
     bool show_projects;
     bool requested_exit;
+        /// stores URL for -detach_project option
     char detach_project_url[256];
-        // stores URL for -detach_project option
+        /// stores URL for -reset_project option
     char reset_project_url[256];
-        // stores URL for -reset_project option
+        /// stores URL for -update_prefs option
     char update_prefs_url[256];
-        // stores URL for -update_prefs option
+        /// venue from project or AMS that gave us general prefs
     char main_host_venue[256];
-        // venue from project that gave us general prefs
-        // or from account manager
     char attach_project_url[256];
     char attach_project_auth[256];
+        /// exit when about to upload a file
     bool exit_before_upload;
-        // exit when about to upload a file
 #ifndef _WIN32
     gid_t boinc_project_gid;
 #endif
 
     // backoff-related variables
     //
+        /// fetch project's master URL (and stop doing scheduler RPCs)
+        /// if get this many successive RPC failures (default 10)
     int master_fetch_period;
-        // fetch project's master URL (and stop doing scheduler RPCs)
-        // if get this many successive RPC failures (default 10)
+        /// cap project->nrpc_failures at this number
     int retry_cap;
-        // cap project->nrpc_failures at this number
+        /// after this many master-fetch failures,
+        /// move into a state in which we retry master fetch
+        /// at the frequency below
     int master_fetch_retry_cap;
-        // after this many master-fetch failures,
-        // move into a state in which we retry master fetch
-        // at the frequency below
+        /// see above
     int master_fetch_interval;
-        // see above
 
     int sched_retry_delay_min;
     int sched_retry_delay_max;
@@ -137,59 +134,60 @@ public:
     int pers_retry_delay_max;
     int pers_giveup;
 
+        /// Don't use CPU.  See check_suspend_activities for logic
     bool tasks_suspended;
-        // Don't do CPU.  See check_suspend_activities for logic
+        /// Don't use network.  See check_suspend_network for logic
     bool network_suspended;
-        // Don't do network.  See check_suspend_network for logic
     int suspend_reason;
     int network_suspend_reason;
+        /// true if --daemon is on the commandline
+
+        /// this means we are running as a daemon on unix,
+        /// or as a service on Windows
 	bool executing_as_daemon;
-        // true if --daemon is on the commandline
-        // this means we are running as a daemon on unix,
-        // or as a service on Windows
+        /// redirect stdout, stderr to log files
     bool redirect_io;
-        // redirect stdout, stderr to log files
+        /// a condition has occurred in which we know graphics will
+        /// not be displayable, so GUIs shouldn't offer graphics.
     bool disable_graphics;
-        // a condition has occurred in which we know graphics will
-        // not be displayable.
-        // So GUIs shouldn't offer graphics.
     bool detach_console;
+        /// this affects auto-update
     bool launched_by_manager;
-        // this affects auto-update
     bool run_by_updater;
     double now;
     double client_start_time;
     double last_wakeup_time;
     bool initialized;
+        /// failed to write state file.
+
+        /// In this case we continue to run for 1 minute,
+        /// handling GUI RPCs but doing nothing else,
+        /// so that the Manager can tell the user what the problem is
     bool cant_write_state_file;
-        // failed to write state file.
-        // In this case we continue to run for 1 minute,
-        // handling GUI RPCs but doing nothing else,
-        // so that the Manager can tell the user what the problem is
 private:
     bool client_state_dirty;
     int old_major_version;
     int old_minor_version;
     int old_release;
+        /// if set, use hardwired numbers rather than running benchmarks
     bool skip_cpu_benchmarks;
-        // if set, use hardwired numbers rather than running benchmarks
+        /// if set, run benchmarks on client startup
     bool run_cpu_benchmarks;
-        // if set, run benchmarks on client startup
+        /// set if a benchmark fails to start because of a process that doesn't stop.
+        /// Persists so that the next start of BOINC runs the benchmarks.
     bool cpu_benchmarks_pending;
-        // set if a benchmark fails to start because of a process that doesn't stop.
-        // Persists so that the next start of BOINC runs the benchmarks.
 
+        /// if nonzero, exit this many seconds after starting an app
     int exit_after_app_start_secs;
-        // if nonzero, exit this many seconds after starting an app
+        /// when the most recent app was started
     double app_started;
-        // when the most recent app was started
 
-// --------------- acct_mgr.C:
+// --------------- acct_mgr.cpp:
 public:
     ACCT_MGR_OP acct_mgr_op;
     ACCT_MGR_INFO acct_mgr_info;
 
-// --------------- acct_setup.C:
+// --------------- acct_setup.cpp:
 public:
     PROJECT_INIT project_init;
     PROJECT_ATTACH project_attach;
@@ -202,19 +200,20 @@ public:
     double all_projects_list_check_time;
     string newer_version;
 
-// --------------- auto_update.C:
+// --------------- auto_update.cpp:
 public:
     AUTO_UPDATE auto_update;
 
-// --------------- client_state.C:
+// --------------- client_state.cpp:
 public:
     CLIENT_STATE();
     void show_host_info();
+    void show_proxy_info();
     int init();
+        /// Never blocks.
+        /// Returns true if it actually did something,
+        /// in which case it should be called again immediately.
     bool poll_slow_events();
-        // Never blocks.
-        // Returns true if it actually did something,
-        // in which case it should be called again immediately.
     void do_io_or_sleep(double dt);
     bool time_to_exit();
     PROJECT* lookup_project(const char*);
@@ -241,8 +240,9 @@ private:
     bool garbage_collect_always();
     bool update_results();
     int nresults_for_project(PROJECT*);
+    void check_clock_reset();
 
-// --------------- cpu_sched.C:
+// --------------- cpu_sched.cpp:
 private:
     double debt_interval_start;
     double total_wall_cpu_time_this_debt_interval;
@@ -253,7 +253,6 @@ private:
     bool must_enforce_cpu_schedule;
     bool must_schedule_cpus;
     bool must_check_work_fetch;
-    std::vector <RESULT*> ordered_scheduled_results;
     void assign_results_to_projects();
     RESULT* largest_debt_project_best_result();
     RESULT* earliest_deadline_result();
@@ -263,14 +262,13 @@ private:
     void schedule_cpus();
     bool enforce_schedule();
     bool no_work_for_a_cpu();
-    void rr_simulation();
-    void make_running_task_heap(vector<ACTIVE_TASK*>&, double&);
-    void print_deadline_misses();
+    void make_preemptable_task_list(vector<ACTIVE_TASK*>&, double&);
 public:
+    std::vector <RESULT*> ordered_scheduled_results;
+        /// if we fail to start a task due to no shared-mem segments,
+        /// wait until at least this time to try running
+        /// another task that needs a shared-mem seg
     double retry_shmem_time;
-        // if we fail to start a task due to no shared-mem segments,
-        // wait until at least this time to try running
-        // another task that needs a shared-mem seg
 	inline double work_buf_min() {
 		return global_prefs.work_buf_min_days * 86400;
 	}
@@ -283,20 +281,19 @@ public:
         return x;
     }
     void request_enforce_schedule(const char*);
-    void request_schedule_cpus(const char*);
-        // Check for reschedule CPUs ASAP.  Called when:
-        // - core client starts (CS::init())
-        // - an app exits (ATS::check_app_exited())
-        // - Tasks are killed (ATS::exit_tasks())
-        // - a result's input files finish downloading (CS::update_results())
-        // - an app fails to start (CS::schedule_cpus())
-        // - any project op is done via RPC (suspend/resume)
-        // - any result op is done via RPC (suspend/resume)
-    bool sufficient_coprocs(APP_VERSION&);
-    void reserve_coprocs(APP_VERSION&);
-    void free_coprocs(APP_VERSION&);
+        /// Check for reschedule CPUs ASAP.
 
-// --------------- cs_account.C:
+        /// Called when:
+        /// - core client starts (CS::init())
+        /// - an app exits (ATS::check_app_exited())
+        /// - Tasks are killed (ATS::exit_tasks())
+        /// - a result's input files finish downloading (CS::update_results())
+        /// - an app fails to start (CS::schedule_cpus())
+        /// - any project op is done via RPC (suspend/resume)
+        /// - any result op is done via RPC (suspend/resume)
+    void request_schedule_cpus(const char*);
+
+// --------------- cs_account.cpp:
 public:
     int add_project(
         const char* master_url, const char* authenticator,
@@ -309,7 +306,7 @@ private:
     int parse_statistics_files();
         // should be move to a new file, but this will do it for testing
 
-// --------------- cs_apps.C:
+// --------------- cs_apps.cpp:
 private:
     double total_resource_share();
     double potentially_runnable_resource_share();
@@ -317,22 +314,24 @@ private:
     double fetchable_resource_share();
 public:
     double runnable_resource_share();
+        /// Check if work fetch needed.
+
+        /// Called when:
+        /// - core client starts (CS::init())
+        /// - task is completed or fails
+        /// - tasks are killed
+        /// - an RPC completes
+        /// - project suspend/detch/attach/reset GUI RPC
+        /// - result suspend/abort GUI RPC
     void request_work_fetch(const char*);
-        // Check if work fetch needed.  Called when:
-        // - core client starts (CS::init())
-        // - task is completed or fails
-        // - tasks are killed
-        // - an RPC completes
-        // - project suspend/detch/attach/reset GUI RPC
-        // - result suspend/abort GUI RPC
     int quit_activities();
     void set_ncpus();
     double estimate_cpu_time(WORKUNIT&);
     double get_fraction_done(RESULT* result);
     int input_files_available(RESULT*, bool, FILE_INFO** f=0);
     ACTIVE_TASK* lookup_active_task_by_result(RESULT*);
+        /// number of usable cpus
     int ncpus;
-        // number of usable cpus
 private:
     int nslots;
 
@@ -343,7 +342,7 @@ private:
 public:
     ACTIVE_TASK* get_task(RESULT*);
 
-// --------------- cs_benchmark.C:
+// --------------- cs_benchmark.cpp:
 public:
     bool should_run_cpu_benchmarks();
 	void start_cpu_benchmarks();
@@ -354,13 +353,13 @@ public:
 	void cpu_benchmarks_set_defaults();
     void print_benchmark_results();
 
-// --------------- cs_cmdline.C:
+// --------------- cs_cmdline.cpp:
 public:
     void parse_cmdline(int argc, char** argv);
     void parse_env_vars();
     void do_cmdline_actions();
 
-// --------------- cs_files.C:
+// --------------- cs_files.cpp:
 public:
     void check_file_existence();
     bool start_new_file_xfer(PERS_FILE_XFER&);
@@ -368,7 +367,7 @@ private:
     int make_project_dirs();
     bool handle_pers_file_xfers();
 
-// --------------- cs_platforms.C:
+// --------------- cs_platforms.cpp:
 public:
     const char* get_primary_platform();
 private:
@@ -377,12 +376,12 @@ private:
     void write_platforms(PROJECT*, MIOFILE&);
     bool is_supported_platform(const char*);
 
-// --------------- cs_prefs.C:
+// --------------- cs_prefs.cpp:
 public:
     int project_disk_usage(PROJECT*, double&);
+        /// returns the total disk usage of BOINC on this host
     int total_disk_usage(double&);
-        // returns the total disk usage of BOINC on this host
-    double allowed_disk_usage();
+    double allowed_disk_usage(double boinc_total);
     int allowed_project_disk_usage(double&);
     int suspend_tasks(int reason);
     int resume_tasks(int reason=0);
@@ -399,7 +398,7 @@ private:
     PROJECT* global_prefs_source_project();
     void show_global_prefs_source(bool);
 
-// --------------- cs_scheduler.C:
+// --------------- cs_scheduler.cpp:
 public:
     int make_scheduler_request(PROJECT*);
     int handle_scheduler_reply(PROJECT*, char* scheduler_url, int& nresults);
@@ -412,7 +411,7 @@ private:
     double avg_proc_rate();
     bool should_get_work();
 
-// --------------- cs_statefile.C:
+// --------------- cs_statefile.cpp:
 public:
     void set_client_state_dirty(const char*);
     int parse_state_file();
@@ -425,14 +424,14 @@ public:
     int write_file_transfers_gui(MIOFILE&);
     int write_tasks_gui(MIOFILE&);
 
-// --------------- cs_trickle.C:
+// --------------- cs_trickle.cpp:
 private:
     int read_trickle_files(PROJECT*, FILE*);
     int remove_trickle_files(PROJECT*);
 public:
     int handle_trickle_down(PROJECT*, FILE*);
 
-// --------------- check_state.C:
+// --------------- check_state.cpp:
 // stuff related to data-structure integrity checking
 //
 public:
@@ -458,7 +457,11 @@ public:
     void check_all();
     void free_mem();
 
-// --------------- work_fetch.C:
+// --------------- rr_sim.cpp:
+    void rr_simulation();
+    void print_deadline_misses();
+
+// --------------- work_fetch.cpp:
 public:
     int proj_min_results(PROJECT*, double);
 	void check_project_timeout();
@@ -478,15 +481,21 @@ public:
 
 extern CLIENT_STATE gstate;
 
-// return a random double in the range [MIN,min(e^n,MAX))
-//
+/// return a random double in the range [MIN,min(e^n,MAX))
+
 extern double calculate_exponential_backoff(
     int n, double MIN, double MAX
 );
+
+extern void print_suspend_tasks_message(int);
 
 #define POLL_INTERVAL   1.0
     // the client will handle I/O (including GUI RPCs)
     // for up to POLL_INTERVAL seconds before calling poll_slow_events()
     // to call the polling functions
+
+#define CPU_PESSIMISM_FACTOR 0.9
+    // assume actual CPU utilization will be this multiple
+    // of what we've actually measured recently
 
 #endif

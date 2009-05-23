@@ -1,4 +1,4 @@
-// $Id: stackwalker_win.cpp 15105 2008-04-30 05:42:06Z romw $
+// $Id: stackwalker_win.cpp 16551 2008-11-24 21:26:45Z romw $
 //
 
 /*////////////////////////////////////////////////////////////////////////////
@@ -111,18 +111,21 @@ bool DebuggerLoadLibrary(
     *lphInstance = LoadLibraryA( strTargetLibrary.c_str() );
     if ( *lphInstance == NULL )
     {
+        _ftprintf( stderr, "LoadLibraryA( %s ): GetLastError = %lu\n", strTargetLibrary.c_str(), gle );
+
         strTargetLibrary = strLibrary;
         *lphInstance = LoadLibraryA( strTargetLibrary.c_str() );
         if ( *lphInstance == NULL )
         {
-            _ftprintf( stderr, "LoadLibraryA( %s ): GetLastError = %lu\n", strLibrary.c_str(), gle );
+            _ftprintf( stderr, "LoadLibraryA( %s ): GetLastError = %lu\n", strTargetLibrary.c_str(), gle );
             return false;
         }
     }
+    _ftprintf( stderr, _T("Loaded Library    : %s\n"), strTargetLibrary.c_str());
     return true;
 }
 
-BOOL CALLBACK SymbolServerCallbackProc(UINT_PTR ActionCode, ULONG64 CallbackData, ULONG64 /* UserContext */)
+BOOL CALLBACK SymbolServerCallbackProc64(UINT_PTR ActionCode, ULONG64 CallbackData, ULONG64 /* UserContext */)
 {
     BOOL bRetVal = FALSE;
     PIMAGEHLP_CBA_EVENT pEvent = NULL;
@@ -155,7 +158,7 @@ BOOL CALLBACK SymbolServerCallbackProc(UINT_PTR ActionCode, ULONG64 CallbackData
     return bRetVal;
 }
 
-BOOL CALLBACK SymRegisterCallbackProc(HANDLE /* hProcess */, ULONG ActionCode, ULONG64 CallbackData, ULONG64 /* UserContext */)
+BOOL CALLBACK SymRegisterCallbackProc64(HANDLE /* hProcess */, ULONG ActionCode, ULONG64 CallbackData, ULONG64 /* UserContext */)
 {
     BOOL bRetVal = FALSE;
     PIMAGEHLP_CBA_EVENT pEvent = NULL;
@@ -188,7 +191,7 @@ BOOL CALLBACK SymRegisterCallbackProc(HANDLE /* hProcess */, ULONG ActionCode, U
     return bRetVal;
 }
 
-BOOL CALLBACK SymEnumerateModulesProc(LPSTR /* ModuleName */, DWORD64 BaseOfDll, PVOID /* UserContext */)
+BOOL CALLBACK SymEnumerateModulesProc64(LPCSTR /* ModuleName */, DWORD64 BaseOfDll, PVOID /* UserContext */)
 {
     IMAGEHLP_MODULE64   Module;
     char                szSymbolType[32];
@@ -342,21 +345,24 @@ BOOL CALLBACK SymEnumerateModulesProc(LPSTR /* ModuleName */, DWORD64 BaseOfDll,
     }
 
     _ftprintf(stderr, _T("ModLoad: "));
-    _ftprintf(stderr, _T("%.8x ")                          , Module.BaseOfImage);
-    _ftprintf(stderr, _T("%.8x ")                          , Module.ImageSize);
-    _ftprintf(stderr, _T("%s ")                            , Module.LoadedImageName);
+    _ftprintf(stderr, _T("%.8x ")                                 , Module.BaseOfImage);
+    _ftprintf(stderr, _T("%.8x ")                                 , Module.ImageSize);
+    _ftprintf(stderr, _T("%s ")                                   , Module.LoadedImageName);
     if (bFileVersionSupported && bFileVersionRetrieved) {
-        _ftprintf(stderr, _T("(%s) ")                      , szVersionInfo);
+        _ftprintf(stderr, _T("(%s) ")                             , szVersionInfo);
     }
-    _ftprintf(stderr, _T("(%s Symbols Loaded)")            , szSymbolType);
+    _ftprintf(stderr, _T("(%s Symbols Loaded)")                   , szSymbolType);
     _ftprintf(stderr, _T("\n"));
+#ifndef __MINGW32__
+    _ftprintf(stderr, _T("    Linked PDB Filename   : %s\n")      , Module.CVData);
+#endif
     if (bFileVersionSupported && bFileVersionRetrieved) {
-        _ftprintf(stderr, _T("    File Version   : %s\n")  , szFileVersion);
-        _ftprintf(stderr, _T("    Company Name   : %s\n")  , szCompanyName);
-        _ftprintf(stderr, _T("    Product Name   : %s\n")  , szProductName);
-        _ftprintf(stderr, _T("    Product Version: %s\n")  , szProductVersion);
-        _ftprintf(stderr, _T("\n"));
+        _ftprintf(stderr, _T("    File Version          : %s\n")  , szFileVersion);
+        _ftprintf(stderr, _T("    Company Name          : %s\n")  , szCompanyName);
+        _ftprintf(stderr, _T("    Product Name          : %s\n")  , szProductName);
+        _ftprintf(stderr, _T("    Product Version       : %s\n")  , szProductVersion);
     }
+    _ftprintf(stderr, _T("\n"));
 
     return TRUE;
 }
@@ -436,7 +442,7 @@ int DebuggerInitialize( LPCSTR pszBOINCLocation, LPCSTR pszSymbolStore, BOOL bPr
                 if (!pSSSO(SSRVOPT_TRACE, (ULONG64)TRUE)) {
                     _ftprintf(stderr, _T("SymbolServerSetOptions(): Register Trace Failed, GetLastError = %lu\n"), gle);
                 }
-                if (!pSSSO(SSRVOPT_CALLBACK, (ULONG64)SymbolServerCallbackProc)) {
+                if (!pSSSO(SSRVOPT_CALLBACK, (ULONG64)SymbolServerCallbackProc64)) {
                     _ftprintf(stderr, _T("SymbolServerSetOptions(): Register Callback Failed, GetLastError = %lu\n"), gle);
                 }
                 if (!pSSSO(SSRVOPT_UNATTENDED, (ULONG64)TRUE)) {
@@ -513,6 +519,8 @@ int DebuggerInitialize( LPCSTR pszBOINCLocation, LPCSTR pszSymbolStore, BOOL bPr
     CHAR* tt;
     CHAR* p;
     DWORD symOptions; // symbol handler settings
+    std::string strCurrentDirectory;
+    std::string strExecutableDirectory;
     std::string strLocalSymbolStore;
     std::string strSymbolSearchPath;
 
@@ -520,61 +528,92 @@ int DebuggerInitialize( LPCSTR pszBOINCLocation, LPCSTR pszSymbolStore, BOOL bPr
     if (!tt) return 1;  // not enough memory...
 
     // build symbol search path from:
+    strCurrentDirectory = "";
+    strExecutableDirectory = "";
     strLocalSymbolStore = "";
     strSymbolSearchPath = "";
 
-    // current directory
-    if ( GetCurrentDirectoryA( TTBUFLEN, tt ) )
-        strSymbolSearchPath += tt + std::string( ";" );
+    // Detect Current Directory
+    if ( GetCurrentDirectoryA( TTBUFLEN, tt ) ) {
+        strCurrentDirectory = tt;
+    }
 
-    // dir with executable
+    // Detect Executable Directory
     if ( GetModuleFileNameA( 0, tt, TTBUFLEN ) )
     {
         for ( p = tt + strlen( tt ) - 1; p >= tt; -- p )
         {
             // locate the rightmost path separator
-            if ( *p == '\\' || *p == '/' || *p == ':' )
+            if ( *p == '\\' || *p == '/' || *p == ':' ) {
                 break;
+            }
         }
+
         // if we found one, p is pointing at it; if not, tt only contains
         // an exe name (no path), and p points before its first byte
         if ( p != tt ) // path sep found?
         {
-            if ( *p == ':' ) // we leave colons in place
+            if ( *p == ':' )  { // we leave colons in place
                 ++p;
+            }
+
             *p = '\0'; // eliminate the exe name and last path sep
-            strSymbolSearchPath += tt + std::string( ";" );
+            strExecutableDirectory += tt;
         }
     }
 
-    // environment variable _NT_SYMBOL_PATH
-    if ( GetEnvironmentVariableA( "_NT_SYMBOL_PATH", tt, TTBUFLEN ) )
-        strSymbolSearchPath += tt + std::string( ";" );
-    // environment variable _NT_ALTERNATE_SYMBOL_PATH
-    if ( GetEnvironmentVariableA( "_NT_ALT_SYMBOL_PATH", tt, TTBUFLEN ) )
-        strSymbolSearchPath += tt + std::string( ";" );
+    // Current Directory
+    if (!strCurrentDirectory.empty()) {
+        strSymbolSearchPath += strCurrentDirectory + std::string( ";" );
+    }
 
-    if ( GetTempPathA( TTBUFLEN, tt ) )
-        strLocalSymbolStore += tt + std::string("symbols");
+    // Executable Directory
+    if (!strExecutableDirectory.empty()) {
+        strSymbolSearchPath += strExecutableDirectory + std::string( ";" );
+    }
+
+    // Environment Variable _NT_SYMBOL_PATH
+    if ( GetEnvironmentVariableA( "_NT_SYMBOL_PATH", tt, TTBUFLEN ) ) {
+        strSymbolSearchPath += tt + std::string( ";" );
+    }
+
+    // Environment Variable _NT_ALTERNATE_SYMBOL_PATH
+    if ( GetEnvironmentVariableA( "_NT_ALT_SYMBOL_PATH", tt, TTBUFLEN ) ) {
+        strSymbolSearchPath += tt + std::string( ";" );
+    }
 
     if (!diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION) || 
-        (diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION) || (0 < strlen(pszSymbolStore)))) {
+        (diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION) || (0 < strlen(pszSymbolStore))))
+    {
+        // Depending on if we are a BOINC application or a project application
+        // we'll need to store our symbol files in two different locations.
+        //
+        // BOINC:
+        //   [DATADIR]\symbols
+        // Project:
+        //   [DATADIR]\projects\project_dir\symbols
+        //
+        if (!diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION)) {
+            strLocalSymbolStore += strCurrentDirectory + std::string("symbols");
+        } else {
+            strLocalSymbolStore += strExecutableDirectory + std::string("symbols");
+        }
 
-        // microsoft public symbol server
+        // Microsoft Public Symbol Server
         if (std::string::npos == strSymbolSearchPath.find("http://msdl.microsoft.com/download/symbols")) {
             strSymbolSearchPath += 
                 std::string( "srv*" ) + strLocalSymbolStore + 
                 std::string( "*http://msdl.microsoft.com/download/symbols;" );
         }
 
-        // project symbol server
+        // Project Symbol Server
         if ((std::string::npos == strSymbolSearchPath.find(pszSymbolStore)) && (0 < strlen(pszSymbolStore))) {
             strSymbolSearchPath += 
                 std::string( "srv*" ) + strLocalSymbolStore + std::string( "*" ) +
                 std::string( pszSymbolStore ) + std::string( ";" );
         }
 
-        // boinc symbol server
+        // BOINC Symbol Server
         if (std::string::npos == strSymbolSearchPath.find("http://boinc.berkeley.edu/symstore")) {
             strSymbolSearchPath += 
                 std::string( "srv*" ) + strLocalSymbolStore + 
@@ -585,8 +624,9 @@ int DebuggerInitialize( LPCSTR pszBOINCLocation, LPCSTR pszSymbolStore, BOOL bPr
     if ( strSymbolSearchPath.size() > 0 ) // if we added anything, we have a trailing semicolon
         strSymbolSearchPath = strSymbolSearchPath.substr( 0, strSymbolSearchPath.size() - 1 );
 
-    if (tt) 
+    if (tt) {
         free( tt );
+    }
 
     // Setting symbol options to the WinDbg defaults.
     symOptions = (DWORD)NULL;
@@ -607,7 +647,7 @@ int DebuggerInitialize( LPCSTR pszBOINCLocation, LPCSTR pszSymbolStore, BOOL bPr
         return 1;
     }
 
-    if (!pSRC(g_hProcess, SymRegisterCallbackProc, (ULONG64)g_hProcess))
+    if (!pSRC(g_hProcess, SymRegisterCallbackProc64, (ULONG64)g_hProcess))
     {
         _ftprintf(stderr, _T("SymRegisterCallback64(): GetLastError = %lu\n"), gle);
     }
@@ -636,7 +676,7 @@ int DebuggerDisplayDiagnostics()
     _ftprintf( stderr, _T("Symbol Search Path: %s\n"), buf);
     _ftprintf( stderr, _T("\n\n"));
 
-    if (!pSEM(g_hProcess, SymEnumerateModulesProc, NULL))
+    if (!pSEM(g_hProcess, (PSYM_ENUMMODULES_CALLBACK64)SymEnumerateModulesProc64, NULL))
     {
         _ftprintf(stderr, _T("SymEnumerateModules64(): GetLastError = %lu\n"), gle );
     }
@@ -966,4 +1006,4 @@ static void ShowStackRM(HANDLE hThread, CONTEXT& Context)
     LeaveCriticalSection(&g_csFileOpenClose);
 }
 
-const char *BOINC_RCSID_e8b4633192 = "$Id: stackwalker_win.cpp 15105 2008-04-30 05:42:06Z romw $";
+const char *BOINC_RCSID_e8b4633192 = "$Id: stackwalker_win.cpp 16551 2008-11-24 21:26:45Z romw $";

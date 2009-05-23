@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 //
 //  mac_saver_module.cpp
@@ -39,7 +37,8 @@
 #include "util.h"
 #include "Mac_Saver_Module.h"
 #include "screensaver.h"
- 
+#include "diagnostics.h"
+
 //#include <drivers/event_status_driver.h>
 
 // It would be nice to always display the scrolled progress info in case the 
@@ -95,29 +94,57 @@ const char *  ScreenSaverAppStartingMsg = "Starting screensaver graphics.\nPleas
 
 //const char *  BOINCExitedSaverMode = "BOINC is no longer in screensaver mode.";
 
+// If there are multiple displays, this may get called 
+// multiple times (once for each display), so we need to guard 
+// against any problems that may cause.
+int initBOINCSaver() {
+#ifdef _DEBUG
+    char buf1[256], buf2[256];
+    strcpy(buf1, getenv("HOME"));
+    strcat(buf1, "/Documents/ss_stdout");
+    strcpy(buf2, getenv("HOME"));
+    strcat(buf2, "/Documents/ss_stderr");
 
-// Returns desired Animation Frequency (per second) or 0 for no change
-int initBOINCSaver(Boolean ispreview) {
-    if (ispreview)
-        return 8;
-        
-    gspScreensaver = new CScreensaver();
-    
-    return gspScreensaver->Create();
+    diagnostics_init(BOINC_DIAG_REDIRECTSTDOUTOVERWRITE
+        | BOINC_DIAG_REDIRECTSTDERROVERWRITE
+        | BOINC_DIAG_TRACETOSTDOUT, buf1, buf2
+        );
+#endif
+
+    if (gspScreensaver == NULL) {
+        gspScreensaver = new CScreensaver();
+        return gspScreensaver->Create();
+    }
+    return TEXTLOGOFREQUENCY;
 }
 
 int getSSMessage(char **theMessage, int* coveredFreq) {
-    return gspScreensaver->getSSMessage(theMessage, coveredFreq);
+    if (gspScreensaver) {
+        return gspScreensaver->getSSMessage(theMessage, coveredFreq);
+    } else {
+        *theMessage = "";
+        *coveredFreq = 0;
+        return NOTEXTLOGOFREQUENCY;
+    }
 };
 
 
 void drawPreview(CGContextRef myContext) {
-    gspScreensaver->drawPreview(myContext);
+    if (gspScreensaver) {
+        gspScreensaver->drawPreview(myContext);
+    }
 };
 
 
+// If there are multiple displays, this may get called 
+// multiple times (once for each display), so we need to guard 
+// against any problems that may cause.
 void closeBOINCSaver() {
-    gspScreensaver->ShutdownSaver();
+    if (gspScreensaver) {
+        gspScreensaver->ShutdownSaver();
+        delete gspScreensaver;
+        gspScreensaver = NULL;
+    }
 }
 
 CScreensaver::CScreensaver() {
@@ -168,6 +195,10 @@ int CScreensaver::Create() {
     // occur when the screensaver is run normally (from the screensaver 
     // engine.)  So we just display a message and don't access the core 
     // client.
+    // With V6 graphics when using gfx_switcher, the graphics application 
+    // fails to run and stderr shows the message: 
+    // "The process has forked and you cannot use this CoreFoundation 
+    // functionality safely. You MUST exec()" 
     GetCurrentProcess(&psn);
     memset(&pInfo, 0, sizeof(pInfo));
     pInfo.processInfoLength = sizeof( ProcessInfoRec );
@@ -317,8 +348,9 @@ int CScreensaver::getSSMessage(char **theMessage, int* coveredFreq) {
             // Take care of the possible race condition where the Core Client was in the  
             // process of shutting down just as ScreenSaver started, so initBOINCApp() 
             // found it already running but now it has shut down.
-            if (m_wasAlreadyRunning)  // If we launched it, then just wait for it to start
+            if (m_wasAlreadyRunning) { // If we launched it, then just wait for it to start
                 saverState = SaverState_RelaunchCoreClient;
+            }
          break;
 
     case SaverState_CoreClientRunning:
@@ -349,10 +381,11 @@ int CScreensaver::getSSMessage(char **theMessage, int* coveredFreq) {
         case SCRAPPERR_BOINCAPPFOUNDGRAPHICSLOADING:
         case SCRAPPERR_SCREENSAVERRUNNING:
 #if ! ALWAYS_DISPLAY_PROGRESS_TEXT
-            // NOTE: My tests seem to confirm that the first window returned by NSWindowList
-            // is always the top window under OS 10.5, but not under earlier systems.  However, 
-            // Apple's documentation is unclear whether we can depend on this.  So I have added 
-            // some safety by doing two things:
+            // NOTE: My tests seem to confirm that the top window is always the first 
+            // window returned by NSWindowList under OS 10.5 and the second window 
+            // returned by NSWindowList under OS 10.3.9 and OS 10.4.  However, Apple's 
+            // documentation is unclear whether we can depend on this.  So I have 
+            // added some safety by doing two things:
             // [1] Only use the NSWindowList test when we have started project graphics.
             // [2] Assume that our window is covered 45 seconds after starting project 
             //     graphics even if the NSWindowList test did not indicate that is so.
@@ -362,10 +395,8 @@ int CScreensaver::getSSMessage(char **theMessage, int* coveredFreq) {
             //
             // Tell the calling routine to set the frame rate to NOTEXTLOGOFREQUENCY if 
             // NSWindowList indicates that science app graphics window has covered our window.
-
-            if (gSystemVersion >= 0x1050) {
-                *coveredFreq = NOTEXTLOGOFREQUENCY;
-            }
+            *coveredFreq = NOTEXTLOGOFREQUENCY;
+            
             if (m_iGraphicsStartingMsgCounter > 0) {
                 // Show ScreenSaverAppStartingMsg for GFX_STARTING_MSG_DURATION seconds or until 
                 // NSWindowList indicates that science app graphics window has covered our window
@@ -430,9 +461,6 @@ void CScreensaver::drawPreview(CGContextRef myContext) {
 }
 
 
-// If there are multiple displays, closeBOINCSaver may get called 
-// multiple times (once for each display), so we need to guard 
-// against any problems that may cause.
 void CScreensaver::ShutdownSaver() {
     DestroyDataManagementThread();
     
@@ -775,4 +803,8 @@ void strip_cr(char *buf)
         *theCR = '\0';
 }
 #endif	// CREATE_LOG
-const char *BOINC_RCSID_7ce0778d35="$Id: mac_saver_module.cpp 14806 2008-02-27 07:50:58Z charlief $";
+
+void PrintBacktrace(void) {
+}
+
+const char *BOINC_RCSID_7ce0778d35="$Id: mac_saver_module.cpp 16385 2008-11-01 09:05:23Z charlief $";

@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
@@ -11,7 +27,7 @@ $teamid = get_int("teamid");
 $team = BoincTeam::lookup_id($teamid);
 if (!$team) error_page("no such team");
 require_admin($logged_in_user, $team);
-page_head("Remove Members from $team->name");
+page_head("Remove members from $team->name");
 echo "
     <form method=\"post\" action=\"team_remove_inactive_action.php\">
     <input type=\"hidden\" name=\"id\" value=\"".$team->id."\">
@@ -19,7 +35,7 @@ echo "
 start_table();
 echo "<tr>
     <th>Remove?</th>
-    <th>Name</th>
+    <th>Name (ID)</th>
     <th>Total credit</th>
     <th>Recent average credit</th>
     </tr>
@@ -35,7 +51,7 @@ foreach($users as $user) {
     echo "
         <tr>
         <td align=center><input type=checkbox name=remove_$ninactive_users value=$user->id>
-        <td>$user->name</td>
+        <td>".user_links($user)." ($user->id)</td>
         <td>$user_total_credit</td>
         <td>$user_expavg_credit</td>
         </tr>

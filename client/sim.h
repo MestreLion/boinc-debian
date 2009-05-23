@@ -1,9 +1,27 @@
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+//
 #include <vector>
 
 #include "app.h"
 #include "time_stats.h"
 #include "client_types.h"
 #include "../sched/edf_sim.h"
+#include "rr_sim.h"
 
 using std::vector;
 
@@ -167,7 +185,6 @@ private:
     bool must_enforce_cpu_schedule;
     bool must_schedule_cpus;
     bool must_check_work_fetch;
-    std::vector <RESULT*> ordered_scheduled_results;
     void assign_results_to_projects();
     RESULT* largest_debt_project_best_result();
     RESULT* earliest_deadline_result();
@@ -178,9 +195,10 @@ private:
     bool enforce_schedule();
     bool no_work_for_a_cpu();
     void rr_simulation();
-    void make_running_task_heap(vector<ACTIVE_TASK*>&, double&);
+    void make_preemptable_task_list(vector<ACTIVE_TASK*>&, double&);
     void print_deadline_misses();
 public:
+    std::vector <RESULT*> ordered_scheduled_results;
     double retry_shmem_time;
     inline double work_buf_min() {
         return global_prefs.work_buf_min_days * 86400;
@@ -284,3 +302,7 @@ extern bool dcf_stats;
 extern bool cpu_sched_rr_only;
 extern bool dual_dcf;
 extern bool work_fetch_old;
+
+#define CPU_PESSIMISM_FACTOR 0.9
+    // assume actual CPU utilization will be this multiple
+    // of what we've actually measured recently

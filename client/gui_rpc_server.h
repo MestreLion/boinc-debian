@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "network.h"
 #include "acct_setup.h"
@@ -40,10 +38,17 @@ class GUI_RPC_CONN {
 public:
     int sock;
     char nonce[256];
+        /// if true, don't allow operations other than authentication
     bool auth_needed;
-        // if true, don't allow operations other than authentication
+    bool got_auth1;
+        /// keep track of whether we've got the 2 authentication msgs;
+        /// don't accept more than one of each (to prevent DoS)
+    bool got_auth2;
+        /// we've send one <unauthorized>.
+        /// On next auth failure, disconnect
+    bool sent_unauthorized;
+        /// connection is from local host
     bool is_local;
-        // connection is from local host
     int au_ss_state;
     int au_mgr_state;
     GUI_HTTP gui_http;
@@ -55,7 +60,7 @@ public:
     ~GUI_RPC_CONN();
     int handle_rpc();
     void handle_auth1(MIOFILE&);
-    void handle_auth2(char*, MIOFILE&);
+    int handle_auth2(char*, MIOFILE&);
     void handle_get_project_config(char* buf, MIOFILE& fout);
     void handle_get_project_config_poll(char*, MIOFILE& fout);
     void handle_lookup_account(char* buf, MIOFILE& fout);
@@ -78,8 +83,8 @@ class GUI_RPC_CONN_SET {
     bool remote_hosts_file_exists;
 public:
     int lsock;
+        /// time of the last RPC that needs network access to handle
     double time_of_last_rpc_needing_network;
-        // time of the last RPC that needs network access to handle
 
     GUI_RPC_CONN_SET();
     char password[256];

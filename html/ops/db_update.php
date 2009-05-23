@@ -1,5 +1,21 @@
 #! /usr/bin/env php
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // code for one-time database updates goes here.
 // Don't run this unless you know what you're doing!
@@ -17,7 +33,7 @@ function do_query($query) {
     echo "Doing query:\n$query\n";
     $result = mysql_query($query);
     if (!$result) {
-        die("Failed!\n".mysql_error());
+        echo "Failed:\n".mysql_error()."\n";
     } else {
         echo "Success.\n";
     }
@@ -585,11 +601,38 @@ function update_3_31_2008() {
     do_query("alter table app_version change column xml_doc xml_doc mediumblob");
 }
 
+function update_6_3_2008() {
+    do_query("alter table app add target_nresults smallint not null default 0");
+}
+
+function update_7_28_2008() {
+    do_query("create table credit_multiplier (
+        id          serial          primary key,
+        appid       integer         not null,
+        time        integer         not null,
+        multiplier  double          not null default 0
+        ) engine=MyISAM
+    ");
+}
+
+function update_10_05_2008(){
+    do_query("alter table forum_preferences add highlight_special tinyint default '1' not null");
+}
+
+function update_10_7_2008() {
+    do_query("alter table team add joinable tinyint default '1' not null");
+}
+
 // modify the following to call the function you want.
 // Make sure you do all needed functions, in order.
 // (Look at your DB structure using "explain" queries to see
 // which ones you need).
 
-//update_3_13_2008();
+//update_6_3_2008();
+
+
+$db_updates = array (
+    array(16160, "update_10_7_2008"),
+);
 
 ?>

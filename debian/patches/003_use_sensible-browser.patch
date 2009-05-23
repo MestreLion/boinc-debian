@@ -4,10 +4,8 @@ start a browser fails miserably.
 Disclaimer: This patch is Debian-specific. Don't use it for non Debian packages.
 The program "sensible-browser" is part of the essential package debianutils.
 
-Index: boinc-5.10.8/clientgui/hyperlink.cpp
-===================================================================
---- boinc-5.10.8.orig/clientgui/hyperlink.cpp	2006-10-27 12:26:56.000000000 +0200
-+++ boinc-5.10.8/clientgui/hyperlink.cpp	2007-06-26 08:57:37.000000000 +0200
+--- boinc.orig/clientgui/hyperlink.cpp
++++ boinc/clientgui/hyperlink.cpp
 @@ -171,7 +171,8 @@
  }
  

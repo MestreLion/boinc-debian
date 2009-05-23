@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // This file allows you to create a new thread in a forum
 // At first it displays an input box and when you submit
@@ -21,6 +37,7 @@ check_create_thread_access($logged_in_user, $forum);
 $title = post_str("title", true);
 $content = post_str("content", true);
 $preview = post_str("preview", true);
+$warning = null;
 
 if ($content && $title && (!$preview)){
     if (post_str('add_signature',true)=="add_it"){
@@ -29,15 +46,25 @@ if ($content && $title && (!$preview)){
         $add_signature=false;
     }
     check_tokens($logged_in_user->authenticator);
-    akismet_check($logged_in_user, $content);
-    $thread = create_thread(
-        $title, $content, $logged_in_user, $forum, $add_signature
-    );
-    header('Location: forum_thread.php?id=' . $thread->id);
+    if (!akismet_check($logged_in_user, $content)) {
+        $warning = "Your message was flagged as spam by the Akismet
+            anti-spam system.  Please modify your text and try again.
+        ";
+        $preview = tra("Preview");
+    } else {
+        $thread = create_thread(
+            $title, $content, $logged_in_user, $forum, $add_signature
+        );
+        header('Location: forum_thread.php?id=' . $thread->id);
+    }
 }
 
 page_head('Create new thread');
 show_forum_header($logged_in_user);
+
+if ($warning) {
+    echo "<span class=error>$warning</span><p>";
+}
 
 switch ($forum->parent_type) {
 case 0:
@@ -66,11 +93,17 @@ row1(tra("Create a new thread")); //New thread
 $submit_help = "";
 $body_help = "";
 
-//Title
-if ($content && !$title) $submit_help = "<br /><font color=\"red\">Remember to add a title</font>";
-row2(tra("Title").$submit_help, "<input type=\"text\" name=\"title\" size=\"62\" value=\"".stripslashes(htmlspecialchars($title))."\">");
+if ($content && !$title) {
+    $submit_help = "<br /><font color=\"red\">Remember to add a title</font>";
+}
+
+row2(tra("Title").$submit_help,
+    "<input type=\"text\" name=\"title\" size=\"62\" value=\"".htmlspecialchars($title)."\">"
+);
 //Message
-row2(tra("Message").html_info().post_warning().$body_help, "<textarea name=\"content\" rows=\"12\" cols=\"54\">".stripslashes(htmlspecialchars($content))."</textarea>");
+row2(tra("Message").html_info().post_warning().$body_help,
+    "<textarea name=\"content\" rows=\"12\" cols=\"54\">".htmlspecialchars($content)."</textarea>"
+);
 
 if (!$logged_in_user->prefs->no_signature_by_default) {
     $enable_signature="checked=\"true\"";
@@ -88,5 +121,5 @@ echo "</form>\n";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_post.php 14233 2007-11-16 21:48:28Z davea $";
+$cvs_version_tracker[]="\$Id: forum_post.php 16189 2008-10-11 18:13:33Z davea $";
 ?>

@@ -1,6 +1,23 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("boinc_db.inc");
+require_once("sanitize_html.inc");
 
 function pm_header() {
     echo "<div>\n";
@@ -20,7 +37,7 @@ function pm_create_new($error = null) {
         echo "</div>\n";
     }
     
-    global $logged_in_user;
+    global $g_logged_in_user;
     $replyto = get_int("replyto", true);
     $userid = get_int("userid", true);
     
@@ -28,7 +45,7 @@ function pm_create_new($error = null) {
     $content = null;
     if ($replyto) {
         $message = BoincPrivateMessage::lookup_id($replyto);
-        if (!$message || $message->userid != $logged_in_user->id) {
+        if (!$message || $message->userid != $g_logged_in_user->id) {
             error_page("no such message");
         }
         $content = "[quote]".$message->content."[/quote]\n";
@@ -48,8 +65,8 @@ function pm_create_new($error = null) {
         }
     } else {
         $writeto = post_str("to", true);
-        $subject = stripslashes(post_str("subject", true));
-        $content = stripslashes(post_str("content", true));
+        $subject = post_str("subject", true);
+        $content = post_str("content", true);
     }
     
     $content = htmlspecialchars($content);
@@ -61,7 +78,7 @@ function pm_create_new($error = null) {
     
     echo "<form action=\"pm.php\" method=\"post\">\n";
     echo "<input type=\"hidden\" name=\"action\" value=\"send\">\n";
-    echo form_tokens($logged_in_user->authenticator);
+    echo form_tokens($g_logged_in_user->authenticator);
     start_table();
     row2(tra("To")."<br /><span class=\"smalltext\">".tra("User IDs or unique usernames, separated with commas")."</span>",
         "<input type=\"text\" name=\"to\" value=\"$writeto\" size=\"60\">"
@@ -112,10 +129,10 @@ function pm_web_line($notify) {
 }
 
 function pm_send($to_user, $subject, $content) {
-    global $logged_in_user;
-    $sql_subject = mysql_real_escape_string($subject);
-    $sql_content = mysql_real_escape_string($content);
-    $mid = BoincPrivateMessage::insert("(userid, senderid, date, subject, content) VALUES ($to_user->id, $logged_in_user->id, UNIX_TIMESTAMP(), '$sql_subject', '$sql_content')");
+    global $g_logged_in_user;
+    $sql_subject = boinc_real_escape_string(strip_tags($subject));
+    $sql_content = boinc_real_escape_string(strip_tags($content));
+    $mid = BoincPrivateMessage::insert("(userid, senderid, date, subject, content) VALUES ($to_user->id, $g_logged_in_user->id, UNIX_TIMESTAMP(), '$sql_subject', '$sql_content')");
     if (!$mid) {
         error_page("Couldn't create message");
     }
@@ -128,7 +145,7 @@ function pm_send($to_user, $subject, $content) {
         break;
     case 1:
         send_pm_notification_email(
-            $logged_in_user, $to_user, $subject, $content
+            $g_logged_in_user, $to_user, $subject, $content
         );
         break;
     }

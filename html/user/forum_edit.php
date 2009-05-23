@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // Using this page you can edit a post.
 // First it displays a box to edit in, and when you submit the changes
@@ -96,12 +112,12 @@ if ($can_edit_title) {
     if ($preview) {
         row2(
             tra("Title").html_info(),
-            "<input type=\"text\" name=\"title\" value=\"".stripslashes(htmlspecialchars($title))."\">"
+            "<input type=\"text\" name=\"title\" value=\"".htmlspecialchars($title)."\">"
         );
     } else {
         row2(
             tra("Title").html_info(),
-            '<input type="text" name="title" value="'.stripslashes(htmlspecialchars($thread->title)).'">'
+            '<input type="text" name="title" value="'.htmlspecialchars($thread->title).'">'
         );
     }
 };
@@ -109,12 +125,12 @@ if ($can_edit_title) {
 if ($preview) {
     row2(
         tra("Message").html_info().post_warning(),
-        "<textarea name=\"content\" rows=\"12\" cols=\"80\">".stripslashes(htmlspecialchars($content))."</textarea>"
+        "<textarea name=\"content\" rows=\"12\" cols=\"80\">".htmlspecialchars($content)."</textarea>"
     );
 } else {
     row2(
         tra("Message").html_info().post_warning(),
-        '<textarea name="content" rows="12" cols="80">'.stripslashes(htmlspecialchars($post->content)).'</textarea>'
+        '<textarea name="content" rows="12" cols="80">'.htmlspecialchars($post->content).'</textarea>'
     );
 }
 
@@ -134,5 +150,5 @@ echo "</form>";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_edit.php 14344 2007-12-02 21:11:17Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_edit.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
 ?>

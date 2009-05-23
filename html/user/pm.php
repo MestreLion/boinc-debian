@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/email.inc");
@@ -13,15 +29,11 @@ function show_block_link($userid) {
 }
 
 $action = get_str("action", true);
-if ($action == null) {
+if (!$action) {
     $action = post_str("action", true);
 }
 
-if ($action == null) {
-    // Prepend "select_" because translated actions may clash with default actions
-    $action = "select_".post_str("action_select", true);
-}
-if ($action == "select_") {
+if (!$action) {
     $action = "inbox";
 }
 
@@ -65,7 +77,9 @@ function do_inbox($logged_in_user) {
     if (count($msgs) == 0) {
         echo tra("You have no private messages.");
     } else {
-        echo "<form name=msg_list action=\"pm.php\" method=\"POST\">\n";
+        echo "<form name=msg_list action=pm.php method=post>
+            <input type=hidden name=action value=delete_selected>
+        ";
         echo form_tokens($logged_in_user->authenticator);
         start_table();
         echo "<tr><th>".tra("Subject")."</th><th>".tra("Sender and date")."</th><th>".tra("Message")."</th></tr>\n";
@@ -84,19 +98,19 @@ function do_inbox($logged_in_user) {
             echo "<br>".time_str($msg->date)."</td>\n";
             echo "<td valign=top>".output_transform($msg->content, $options)."<p>";
             $tokens = url_tokens($logged_in_user->authenticator);
-            show_button("pm.php?action=delete&id=$msg->id&$tokens", tra("Delete"), "Delete this message");
-            show_button("pm.php?action=new&replyto=$msg->id", tra("Reply"), "Reply to this message");
-            echo "</td></tr>\n";
+	    echo "<ul class=\"actionlist\">";
+            show_actionlist_button("pm.php?action=delete&id=$msg->id&$tokens", tra("Delete"), "Delete this message");
+            show_actionlist_button("pm.php?action=new&replyto=$msg->id", tra("Reply"), "Reply to this message");
+            echo "</ul></td></tr>\n";
         }
         echo "
-            <tr><td class=shaded>
+            <tr><td>
             <a href=\"javascript:set_all(1)\">Select all</a>
             |
             <a href=\"javascript:set_all(0)\">Unselect all</a>
             </td>
-            <td class=shaded colspan=2>
-            <input type=\"submit\" name=\"action_select\" value=\"".tra("Delete")."\">
-            selected messages
+            <td colspan=2>
+            <input type=submit value=\"".tra("Delete selected messages")."\">
             </td></tr>
         ";
         end_table();
@@ -154,9 +168,9 @@ function do_send($logged_in_user) {
     check_banished($logged_in_user);
     check_tokens($logged_in_user->authenticator);
     
-    $to = stripslashes(post_str("to", true));
-    $subject = stripslashes(post_str("subject", true));
-    $content = stripslashes(post_str("content", true));
+    $to = post_str("to", true);
+    $subject = post_str("subject", true);
+    $content = post_str("content", true);
     
     if (post_str("preview", true) == tra("Preview")) {
         pm_create_new();
@@ -164,7 +178,12 @@ function do_send($logged_in_user) {
     if (($to == null) || ($subject == null) || ($content == null)) {
         pm_create_new(tra("You need to fill all fields to send a private message"));
     } else {
-        akismet_check($logged_in_user, $content);
+        if (!akismet_check($logged_in_user, $content)) {
+            pm_create_new("Your message was flagged as spam
+                by the Akismet anti-spam system.
+                Please modify your text and try again."
+            );
+        }
         $to = str_replace(", ", ",", $to); // Filter out spaces after separator
         $users = explode(",", $to);
         
@@ -251,30 +270,6 @@ function do_delete_selected($logged_in_user) {
     Header("Location: pm.php?action=inbox&deleted=1");
 }
 
-function do_mark_as_read_selected($logged_in_user) {
-    check_tokens($logged_in_user->authenticator);
-    foreach ($_POST["pm_select"] as $id) {
-        $id = BoincDb::escape_string($id);
-        $msg = BoincPrivateMessage::lookup_id($id);
-        if ($msg && $msg->userid == $logged_in_user->id) {
-            $msg->update("opened=1");
-        }
-    }
-    Header("Location: pm.php?action=inbox");
-}
-
-function do_mark_as_unread_selected($logged_in_user) {
-    check_tokens($logged_in_user->authenticator);
-    foreach ($_POST["pm_select"] as $id) {
-        $id = BoincDb::escape_string($id);
-        $msg = BoincPrivateMessage::lookup_id($id);
-        if ($msg && $msg->userid == $logged_in_user->id) {
-            $msg->update("opened=0");
-        }
-    }
-    Header("Location: pm.php?action=inbox");
-}
-
 if ($action == "inbox") {
     do_inbox($logged_in_user);
 } elseif ($action == "read") {
@@ -289,12 +284,8 @@ if ($action == "inbox") {
     do_block($logged_in_user);
 } elseif ($action == "confirmedblock") {
     do_confirmedblock($logged_in_user);
-} elseif ($action == "select_".tra("Delete")) {
+} elseif ($action == "delete_selected") {
     do_delete_selected($logged_in_user);
-} elseif ($action == "select_".tra("Mark as read")) {
-    do_mark_as_read_selected($logged_in_user);
-} elseif ($action == "select_".tra("Mark as unread")) {
-    do_mark_as_unread_selected($logged_in_user);
 } else {
     error_page("Unknown action");
 }

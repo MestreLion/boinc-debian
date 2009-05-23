@@ -1,5 +1,5 @@
-## -*- mode: make; tab-width: 4 -*-
-## $Id: Makefile.am 4665 2004-11-26 17:45:13Z ballen $
+## -*- mode: makefile; tab-width: 4 -*-
+## $Id: Makefile.am 15375 2008-06-08 22:18:52Z davea $
 
 EXTRA_DIST = ax_check_gl.m4	  ax_lang_compiler_ms.m4  sah_header_stdcxx.m4 		\
 Makefile.am	ax_check_glu.m4   kc_mysql.m4		  sah_namespace.m4		\

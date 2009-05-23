@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/credit.inc");
 require_once("../inc/boinc_db.inc");
@@ -18,7 +34,7 @@ function sched_log_name($x) {
 }
 
 function sched_log_link($x) {
-    if (file_exists("../sched_logs")) {
+    if (file_exists("sched_logs")) {
         return "<a href=\"../sched_logs/" . sched_log_name($x) . "\">" . time_str($x) . "</a>";
     } else {
         return time_str($x);
@@ -195,9 +211,10 @@ function host_nresults($host) {
 // If private is false, show the owner's name only if they've given permission
 //
 function show_host_row($host, $i, $private, $show_owner) {
-    echo "<tr><td>
+    $j = $i % 2;
+    echo "<tr class=row$j><td>
         <nobr><a href=show_host_detail.php?hostid=$host->id>$host->id</a>
-        [<a href=results.php?hostid=$host->id>tasks</a>]</nobr>
+        | <a href=results.php?hostid=$host->id>tasks</a></nobr>
         </td>
     ";
     if ($private) {
@@ -314,12 +331,15 @@ function os_compatible($host1, $host2) {
 // that their time intervals are disjoint.
 // So the CPU/OS checks don't have to be very strict.
 //
-function hosts_compatible($host1, $host2, $detail) {
-    // skip disjoint-time check if one host or other has no credit
+function hosts_compatible($host1, $host2, $show_detail) {
+    // A host is "new" if it has no credit and no results.
+    // Skip disjoint-time check if one host or other is new
     //
-    if ($host1->total_credit && $host2->total_credit) {
+    $new1 = !$host1->total_credit && !host_nresults($host1);
+    $new2 = !$host2->total_credit && !host_nresults($host2);
+    if (!$new1 && !$new2) {
         if (!times_disjoint($host1, $host2)) {
-            if ($detail) {
+            if ($show_detail) {
                 $c1 = date_str($host1->create_time);
                 $r1 = date_str($host1->rpc_time);
                 $c2 = date_str($host2->create_time);
@@ -330,13 +350,13 @@ function hosts_compatible($host1, $host2, $detail) {
         }
     }
     if (!os_compatible($host1, $host2)) {
-        if ($detail) {
+        if ($show_detail) {
             echo "<br>Host $host2->id has incompatible OS: ($host1->os_name, $host2->os_name)\n";
         }
         return false;
     }
     if (!cpus_compatible($host1, $host2)) {
-        if ($detail) {
+        if ($show_detail) {
             echo "<br>Host $host2->id: CPU not compatible ($host1->p_vendor $host1->p_model, $host2->p_vendor $host2->p_model)\n";
         }
         return false;
@@ -406,7 +426,7 @@ function merge_hosts($old_host, $new_host) {
     if ($old_host->id == $new_host->id) {
         return "same host";
     }
-    if (!hosts_compatible($old_host, $new_host)) {
+    if (!hosts_compatible($old_host, $new_host, false)) {
         return "Can't merge host $old_host->id into $new_host->id - they're incompatible";
     }
 
@@ -443,6 +463,6 @@ function merge_hosts($old_host, $new_host) {
     return 0;
 }
 
-$cvs_version_tracker[]="\$Id: host.inc 15101 2008-04-26 23:34:38Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: host.inc 16163 2008-10-08 21:49:06Z davea $";  //Generated automatically - do not edit
 
 ?>

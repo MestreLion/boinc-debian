@@ -34,3 +34,4 @@ usr/lib/libboinc_api.a              usr/share/boinc-dev/api/libboinc_api.a
 usr/lib/libboinc_graphics_api.a     usr/share/boinc-dev/api/libboinc_graphics_api.a
 usr/lib/libboinc_graphics_impl.a    usr/share/boinc-dev/api/libboinc_graphics_impl.a
 usr/lib/libboinc_graphics_lib.a     usr/share/boinc-dev/api/libboinc_graphics_lib.a
+usr/include/boinc 		    usr/include/BOINC

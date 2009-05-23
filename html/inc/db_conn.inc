@@ -1,10 +1,26 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Should not be enabled for public code */
 //ini_set('display_errors', 'stdout');
 //error_reporting(E_ALL);
 
-// represents a connection to a database.
+/// represents a connection to a database.
 // Intended to be subclassed (e.g., BoincDb, BossaDb)
 
 class DbConn {
@@ -119,9 +135,9 @@ class DbConn {
         $query = "select count(*) as total from DBNAME.$table where $clause";
         $result = $this->do_query($query);
         $cnt = mysql_fetch_object($result);
+        mysql_free_result($result);
         if ($cnt) return $cnt->total;
         return null;
-        mysql_free_result($result);
     }
     function replace($table, $clause) {
         $query = "replace into DBNAME.$table set $clause";
@@ -132,6 +148,13 @@ class DbConn {
     }
     function base_error() {
         return mysql_error($this->db_conn);
+    }
+    function table_exists($table_name) {
+        $result = $this->do_query("show tables from DBNAME like '$table_name'");
+        $t = mysql_fetch_array($result);
+        mysql_free_result($result);
+        if ($t[0] == "$table_name") return true;
+        return false;
     }
 }
 

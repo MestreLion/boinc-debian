@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
@@ -7,7 +23,8 @@ require_once("../inc/email.inc");
 function send_validate_email() {
     global $master_url;
     $user = get_logged_in_user();
-    $x2 = md5($user->email_addr.$user->authenticator);
+    $x2 = uniqid(rand(), true);
+    $user->update("signature='$x2'");
     send_email(
         $user,
         "Validate BOINC email address",
@@ -24,14 +41,14 @@ function send_validate_email() {
 }
 
 function validate() {
-    $x = process_user_text(get_str("x"));
-    $u = process_user_text(get_int("u"));
+    $x = get_str("x");
+    $u = get_int("u");
     $user = lookup_user_id($u);
     if (!$user) {
         error_page("No such user.\n");
     }
 
-    $x2 = md5($user->email_addr.$user->authenticator);
+    $x2 = $user->signature;
     if ($x2 != $x) {
         error_page("Error in URL data - can't validate email address");
     }

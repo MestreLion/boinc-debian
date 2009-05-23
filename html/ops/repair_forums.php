@@ -1,4 +1,23 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 require_once("../inc/forum_db.inc");
 set_time_limit(0);
 
@@ -22,6 +41,20 @@ function cleanup_orphan_threads() {
     }
 }
 
-cleanup_orphan_threads();
+// Old PHP code put \' and \" into text fields instead of ' and ".
+// Fix this.
+//
+function remove_backslashes($table, $field) {
+    $db = BoincDb::get();
+    $query = "update DBNAME.$table set $field=replace(replace($field, '\\\\\\\"', '\\\"'), '\\\\\\'', '\'')";
+    $db->do_query($query);
+}
+
+remove_backslashes("post", "content");
+remove_backslashes("profile", "response1");
+remove_backslashes("profile", "response2");
+remove_backslashes("thread", "title");
+
+//cleanup_orphan_threads();
 
 ?>

@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
@@ -17,31 +33,6 @@ function xml_header() {
     header('Content-type: text/xml');
     echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>\n";
     $generating_xml = true;
-}
-
-function xml_error($num, $msg=null) {
-    if (!$msg) {
-        switch($num) {
-        case -112: $msg = "Invalid XML"; break;
-        case -136: $msg = "Invalid ID"; break;
-        case -137: $msg = "Name or email address is not unique"; break;
-        case -138: $msg = "Can't access database"; break;
-        case -183: $msg = "Project is temporarily offline"; break;
-        case -205: $msg = "Email address has invalid syntax"; break;
-        case -206: $msg = "Invalid password"; break;
-        case -207: $msg = "Email address is not unique"; break;
-        case -208: $msg = "Account creation is disabled"; break;
-        case -209: $msg = "Invalid invitation code"; break;
-	case -210: $msg = "Invalid request method"; break;
-        default: "Unknown error"; break;
-        }
-    }
-    echo "<error>
-    <error_num>$num</error_num>
-    <error_msg>$msg</error_msg>
-</error>
-";
-    exit();
 }
 
 function show_host_xml($host) {

@@ -1,4 +1,20 @@
 <?php
+// This file is part of BOINC.
+// http://boinc.berkeley.edu
+// Copyright (C) 2008 University of California
+//
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
+//
+// BOINC is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/util.inc");
 require_once("../inc/user.inc");
@@ -10,21 +26,18 @@ page_head("Weak account key");
 
 $weak_auth = weak_auth($user);
 
-//this is somewhat a rewrite of escape_url_readable from str_util.C - maybe it 
-//should be moved into its own function instead of inline here
+// figure out the name of this project's account file.
 
-//cut off the http://
+// strip http://
 $idx = strpos($url, '://');
-if ($idx !== FALSE) {
+if ($idx) {
 	$url = substr($url, $idx+strlen('://'));
 }
+
 //convert invalid characters into underscores
 for ($i=0; $i<strlen($url); $i++) {
 	$c = $url[$i];
-	if (ctype_alnum($c) || $c == '.' || $c == '-' || $c == '_') {
-		//noop; easier than inverting the condition
-	} else {
-		//in-place modification
+	if (!ctype_alnum($c) && $c != '.' && $c != '-' && $c != '_') {
 		$url[$i] = '_';
 	}
 }
