@@ -74,7 +74,7 @@ Description: development files to build applications for BOINC projects
  infrastructure.
 
 Package: boinc-dbg
-Section: devel
+Section: debug
 Priority: extra
 Architecture: any
 Depends: boinc-client (= ${binary:Version}) | boinc-manager (= ${binary:Version}), ${misc:Depends}
