@@ -10,3 +10,5 @@ Author: Frank S. Thomas <frank@thomas-alfeld.de>
 -boinc_client_DATA = ../curl/ca-bundle.crt
 +#boinc_client_DATA = ../curl/ca-bundle.crt
  
+ switcher_SOURCES = switcher.cpp
+ 
