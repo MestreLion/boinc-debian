@@ -1,10 +1,16 @@
-boinc (6.4.5-2) unstable; urgency=low
+boinc (6.4.5+dfsg-2) unstable; urgency=low
 
   * Uploaded to unstable
   * Include a patch picked from Upstream SVN
      to avoid FTBFSs whith gcc 4.4 (Closes: #526666)
   * remove CUDA dir that contais binary-only non DFSG software
   * change section from boinc-dbg to debug
+  * set orig +dfsg since we remove non-dfsg software 
+    when we pull the tag from upstream
+    + Add Comments about this on README.Source
+  * Move schedtool to Recommends, (Closes: #532133)
+  * Add ru debconf templates translation, thanks
+    to Yuri Kozlov <yuray@komyakino.ru> (Closes: #531205)
 
  -- Rene Mayorga <rmayorga@debian.org>  Sat, 23 May 2009 13:29:17 -0600
 
