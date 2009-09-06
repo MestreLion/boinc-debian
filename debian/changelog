@@ -4,6 +4,7 @@ boinc (6.4.5+dfsg-3) unstable; urgency=low
     Petr Salinger for the bug report and patch (Closes: #544070)
   * Standards-Version set to 3.8.3 (No changes needed)
   * Use dversionmangle on debian/watch
+  * debian/copyright: point to LGPL-2/GPL-2 instead of LGPL/GPL
 
  -- Rene Mayorga <rmayorga@debian.org>  Sat, 05 Sep 2009 18:24:45 -0600
 
