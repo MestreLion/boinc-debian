@@ -1,0 +1,10 @@
+--- boinc.orig/zip/unzip/unzpriv.h
++++ boinc/zip/unzip/unzpriv.h
+@@ -22,6 +22,7 @@
+ #ifndef __unzpriv_h   /* prevent multiple inclusions */
+ #define __unzpriv_h
+ 
++#include <unistd.h>
+ /* First thing: Signal all following code that we compile UnZip utilities! */
+ #ifndef UNZIP
+ #  define UNZIP
