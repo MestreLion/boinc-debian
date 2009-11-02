@@ -1,8 +1,8 @@
 Author: René Mayorga
 Description: Upstream place .mo files just in share/locale, on Debian 
  almost all .mo files are placed correctly under LC_MESSAGES
---- boinc.orig/locale/client/Makefile.am
-+++ boinc/locale/client/Makefile.am
+--- boinc.orig/locale/Makefile.am
++++ boinc/locale/Makefile.am
 @@ -2,7 +2,7 @@
  
  include $(top_srcdir)/Makefile.incl
@@ -18,9 +18,9 @@ Description: Upstream place .mo files just in share/locale, on Debian
  	for ldir in $(locale_dirs) ; do \
 -	  $(INSTALL) -d $$mydir/$$ldir ; \
 +	  $(INSTALL) -d $$mydir/$$ldir/LC_MESSAGES ; \
- 	  if [ -f "$$ldir/BOINC Manager.mo" ] ; then \
--	    $(INSTALL) "$$ldir/BOINC Manager.mo" "$$mydir/$$ldir/BOINC Manager.mo" ; \
-+	    $(INSTALL) "$$ldir/BOINC Manager.mo" "$$mydir/$$ldir/LC_MESSAGES/BOINC Manager.mo" ; \
+ 	  if [ -f $$ldir/BOINC-Manager.po ] ; then \
+-	    $(INSTALL) $$ldir/BOINC-Manager.po $$mydir/$$ldir/BOINC-Manager.po ; \
++	    $(INSTALL) "$$ldir/BOINC-Manager.po" "$$mydir/$$ldir/LC_MESSAGES/BOINC-Manager.po" ; \
  	  fi ;\
  	done
  

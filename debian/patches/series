@@ -1,8 +1,8 @@
-103_fix_ftbfs_on_kfreebsd.patch
-001_dont_install_ca-bundle.crt.patch
-002_remove_hardcoded_optimization.patch
+#103_fix_ftbfs_on_kfreebsd.patch  --   Needs to be removed maybe
+#001_dont_install_ca-bundle.crt.patch -- needs to be investigate
+#002_remove_hardcoded_optimization.patch -- needs to be investigate
 003_use_sensible-browser.patch 
-005_using_hyphen_as_minus.patch
+#005_using_hyphen_as_minus.patch Applied upstream
 006_correct_catalog_path.patch
-101_check_RSA_returned_values.patch
-102_gcc4.4_safe.patch
+#101_check_RSA_returned_values.patch # Might be applied upstream
+#102_gcc4.4_safe.patch # Applied upstram
