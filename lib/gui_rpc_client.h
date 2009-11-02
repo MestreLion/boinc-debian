@@ -18,7 +18,7 @@
 // a C++ interface to BOINC GUI RPC
 
 #if !defined(_WIN32) || defined (__CYGWIN__)
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <vector>
 #include <sys/socket.h>
@@ -63,17 +63,42 @@ public:
     std::string general_area;
     std::string specific_area;
     std::string description;
-    std::string home;
-    std::string image;
-    double rand;
+    std::string home;       // sponsoring organization
+    std::string image;      // URL of logo
+    std::vector<std::string> platforms;
+        // platforms supported by project, or empty
 
     PROJECT_LIST_ENTRY();
     ~PROJECT_LIST_ENTRY();
 
     int parse(XML_PARSER&);
     void clear();
+};
 
-    bool operator<(const PROJECT_LIST_ENTRY& compare);
+class AM_LIST_ENTRY {
+public:
+    std::string name;
+    std::string url;
+    std::string description;
+    std::string image;
+
+    AM_LIST_ENTRY();
+    ~AM_LIST_ENTRY();
+
+    int parse(XML_PARSER&);
+    void clear();
+};
+
+class ALL_PROJECTS_LIST {
+public:
+    std::vector<PROJECT_LIST_ENTRY*> projects;
+    std::vector<AM_LIST_ENTRY*> account_managers;
+
+    ALL_PROJECTS_LIST();
+    ~ALL_PROJECTS_LIST();
+
+    void clear();
+    void shuffle();
 };
 
 class PROJECT {
@@ -83,6 +108,7 @@ public:
     std::string project_name;
     std::string user_name;
     std::string team_name;
+    int hostid;
     std::vector<GUI_URL> gui_urls;
     double user_total_credit;
     double user_expavg_credit;
@@ -93,13 +119,23 @@ public:
                                 // contact all scheduling servers
     int master_fetch_failures;
     double min_rpc_time;           // earliest time to contact any server
+    double download_backoff;
+    double upload_backoff;
+
     double short_term_debt;
-    double long_term_debt;
+    double cpu_long_term_debt;
+    double cpu_backoff_time;
+    double cpu_backoff_interval;
+    double cuda_debt;
+    double cuda_backoff_time;
+    double cuda_backoff_interval;
+    double ati_debt;
+    double ati_backoff_time;
+    double ati_backoff_interval;
     double duration_correction_factor;
 
     bool master_url_fetch_pending; // need to fetch and parse the master URL
     int sched_rpc_pending;      // need to contact scheduling server
-    int rr_sim_deadlines_missed;
     bool non_cpu_intensive;
     bool suspended_via_gui;
     bool dont_request_more_work;
@@ -115,7 +151,7 @@ public:
     std::vector<DAILY_STATS> statistics; // credit data over the last x days
 
     // NOTE: if you add any data items above,
-    // update parse(), copy() and clear() to include them!!
+    // update parse(), and clear() to include them!!
 
     PROJECT();
     ~PROJECT();
@@ -124,7 +160,6 @@ public:
     void print();
     void clear();
     void get_name(std::string&);
-    void copy(PROJECT&);        // copy to this object
 
     // temp - keep track of whether or not this record needs to be deleted
     bool flag_for_delete;
@@ -164,14 +199,13 @@ class WORKUNIT {
 public:
     std::string name;
     std::string app_name;
-    int version_num;
+    int version_num;    // backwards compat
     double rsc_fpops_est;
     double rsc_fpops_bound;
     double rsc_memory_bound;
     double rsc_disk_bound;
     PROJECT* project;
     APP* app;
-    APP_VERSION* avp;
 
     WORKUNIT();
     ~WORKUNIT();
@@ -186,10 +220,14 @@ public:
     std::string name;
     std::string wu_name;
     std::string project_url;
-    int report_deadline;
+    int version_num;
+    std::string plan_class;
+    double report_deadline;
+    double received_time;
     bool ready_to_report;
     bool got_server_ack;
     double final_cpu_time;
+    double final_elapsed_time;
     int state;
     int scheduler_state;
     int exit_status;
@@ -197,17 +235,21 @@ public:
     std::string stderr_out;
     bool suspended_via_gui;
     bool project_suspended_via_gui;
+    bool coproc_missing;
 
     // the following defined if active
     bool active_task;
     int active_task_state;
     int app_version_num;
+    int slot;
     double checkpoint_cpu_time;
     double current_cpu_time;
     double fraction_done;
+    double elapsed_time;
     double swap_size;
     double working_set_size_smoothed;
     double estimated_cpu_time_remaining;
+        // actually, estimated elapsed time remaining
     bool supports_graphics;
     int graphics_mode_acked;
     bool too_large;
@@ -215,11 +257,13 @@ public:
     bool edf_scheduled;
     std::string graphics_exec_path;
     std::string slot_path;
+        // only present if graphics_exec_path is
     std::string resources;
 
     APP* app;
     WORKUNIT* wup;
     PROJECT* project;
+    APP_VERSION* avp;
 
     RESULT();
     ~RESULT();
@@ -250,6 +294,7 @@ public:
     double file_offset;
     double xfer_speed;
     std::string hostname;
+    double project_backoff;
     PROJECT* project;
 
     FILE_TRANSFER();
@@ -307,37 +352,27 @@ public:
     std::vector<APP_VERSION*> app_versions;
     std::vector<WORKUNIT*> wus;
     std::vector<RESULT*> results;
-
+    std::vector<std::string> platforms;
+        // platforms supported by client
     GLOBAL_PREFS global_prefs;  // working prefs, i.e. network + override
     VERSION_INFO version_info;  // populated only if talking to pre-5.6 CC
     bool executing_as_daemon;   // true if Client is running as a service / daemon
+    bool have_cuda;
+    bool have_ati;
 
     CC_STATE();
     ~CC_STATE();
 
     PROJECT* lookup_project(std::string&);
-    APP* lookup_app(std::string&, std::string&);
     APP* lookup_app(PROJECT*, std::string&);
-    APP_VERSION* lookup_app_version(std::string&, std::string&, int);
-    APP_VERSION* lookup_app_version(PROJECT*, std::string&, int);
-    WORKUNIT* lookup_wu(std::string&, std::string&);
+    APP_VERSION* lookup_app_version(PROJECT*, APP*, int, std::string&);
+    APP_VERSION* lookup_app_version_old(PROJECT*, APP*, int);
     WORKUNIT* lookup_wu(PROJECT*, std::string&);
-    RESULT* lookup_result(std::string&, std::string&);
     RESULT* lookup_result(PROJECT*, std::string&);
+    RESULT* lookup_result(std::string&, std::string&);
 
     void print();
     void clear();
-};
-
-class ALL_PROJECTS_LIST {
-public:
-    std::vector<PROJECT_LIST_ENTRY*> projects;
-
-    ALL_PROJECTS_LIST();
-    ~ALL_PROJECTS_LIST();
-
-    void clear();
-    void shuffle();
 };
 
 class PROJECTS {
@@ -411,6 +446,8 @@ struct ACCT_MGR_INFO {
     std::string acct_mgr_name;
     std::string acct_mgr_url;
     bool have_credentials;
+    bool cookie_required;
+    std::string cookie_failure_url;
     
     ACCT_MGR_INFO();
     ~ACCT_MGR_INFO(){}
@@ -456,15 +493,22 @@ struct PROJECT_INIT_STATUS {
 struct PROJECT_CONFIG {
     int error_num;
     std::string name;
+    std::string master_url;
+    int local_revision;     // SVN changeset# of server software
     int min_passwd_length;
     bool account_manager;
-    bool uses_username;
+    bool uses_username;     // true for WCG
     bool account_creation_disabled;
-    bool client_account_creation_disabled;
+    bool client_account_creation_disabled;  // must create account on web
+    bool sched_stopped;         // scheduler disabled
+    bool web_stopped;           // DB-driven web functions disabled
+    int min_client_version;
 	std::string error_msg;
     std::string terms_of_use;
         // if present, show this text in an "accept terms of use?" dialog
         // before allowing attachment to continue.
+    std::vector<std::string> platforms;
+        // platforms supported by project, or empty
 
     PROJECT_CONFIG();
     ~PROJECT_CONFIG();
@@ -559,11 +603,9 @@ public:
     int authorize(const char* passwd);
     int exchange_versions(VERSION_INFO&);
     int get_state(CC_STATE&);
-    int get_results(RESULTS&);
+    int get_results(RESULTS&, bool active_only = false);
     int get_file_transfers(FILE_TRANSFERS&);
     int get_simple_gui_info(SIMPLE_GUI_INFO&);
-    int get_simple_gui_info(CC_STATE&, RESULTS&);
-    int get_project_status(CC_STATE&);
     int get_project_status(PROJECTS&);
     int get_all_projects_list(ALL_PROJECTS_LIST&);
     int get_disk_usage(DISK_USAGE&);
@@ -582,6 +624,7 @@ public:
     int set_proxy_settings(GR_PROXY_INFO&);
     int get_proxy_settings(GR_PROXY_INFO&);
     int get_messages(int seqno, MESSAGES&);
+    int get_message_count(int& seqno);
     int file_transfer_op(FILE_TRANSFER&, const char*);
     int result_op(RESULT&, const char*);
     int get_host_info(HOST_INFO&);
@@ -639,7 +682,31 @@ struct RPC {
     int parse_reply();
 };
 
-struct SET_LOCALE {
+// We recommend using the XCode project under OS 10.5 to compile 
+// the BOINC library, but some projects still use config & make, 
+// so the following compatibility code avoids compiler errors when 
+// building libboinc.a using config & make on system OS 10.3.9 or 
+// with the OS 10.3.9 SDK (but using config & make is not recommended.)
+//
+#if defined(__APPLE__) && (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_4) && (!defined(BUILDING_MANAGER))
+#define NO_PER_THREAD_LOCALE 1
+#endif
+
+// uselocal() API should be available on UNIX, Fedora & Ubuntu.
+// For any platforms which do not support setting locale on a 
+// per-thread basis, add code here similar to the following sample:
+//#if defined(__UNIVAC__)
+//#define NO_PER_THREAD_LOCALE 1
+//#endif
+#if defined(__HAIKU__)
+#define NO_PER_THREAD_LOCALE 1
+#endif
+
+
+#ifdef NO_PER_THREAD_LOCALE  
+    // Use this code for any platforms which do not support 
+    // setting locale on a per-thread basis (see comment above)
+ struct SET_LOCALE {
     std::string locale;
     inline SET_LOCALE() {
         locale = setlocale(LC_ALL, NULL);
@@ -649,3 +716,42 @@ struct SET_LOCALE {
         setlocale(LC_ALL, locale.c_str());
     }
 };
+
+#elif defined(__APPLE__) && (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_4)
+// uselocale() is not available in OS 10.3.9 so use weak linking
+#include <xlocale.h>
+extern int		freelocale(locale_t) __attribute__((weak_import));
+extern locale_t	newlocale(int, __const char *, locale_t) __attribute__((weak_import));
+extern locale_t	uselocale(locale_t) __attribute__((weak_import));
+
+ struct SET_LOCALE {
+    locale_t old_locale, RPC_locale;
+    std::string locale;
+    inline SET_LOCALE() {
+        if (uselocale == NULL) {
+            locale = setlocale(LC_ALL, NULL);
+            setlocale(LC_ALL, "C");
+        }
+    }
+    inline ~SET_LOCALE() {
+        if (uselocale == NULL) {
+            setlocale(LC_ALL, locale.c_str());
+        }
+    }
+};
+
+#else
+#ifndef _WIN32
+#include <xlocale.h>
+#endif
+
+ struct SET_LOCALE {
+    // Don't need this if we have per-thread locale
+    inline SET_LOCALE() {
+    }
+    inline ~SET_LOCALE() {
+    }
+};
+#endif
+
+extern int read_gui_rpc_password(char*);

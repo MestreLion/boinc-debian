@@ -23,6 +23,12 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <setjmp.h>
+
 #ifdef _WIN32
 #ifdef __cplusplus
 extern "C" {
@@ -36,11 +42,6 @@ extern "C" {
 #endif
 
 #ifndef _WIN32
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <csetjmp>
 #ifdef __APPLE__
 #undef HAVE_STDLIB_H /* Avoid compiler warning (redefined in jconfig,h) */
 #endif
@@ -54,6 +55,7 @@ extern "C"{
 
 #include "filesys.h"
 #include "str_util.h"
+#include "str_replace.h"
 
 #include "gutil.h"
 

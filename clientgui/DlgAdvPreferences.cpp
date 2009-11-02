@@ -1,38 +1,40 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "DlgAdvPreferences.h"
 #endif
 
 #include "stdwx.h"
-#include "DlgAdvPreferences.h"
-#include "res/usage.xpm"
-#include "res/xfer.xpm"
-#include "res/proj.xpm"
-#include "res/warning.xpm"
 #include "BOINCGUIApp.h"
 #include "MainDocument.h"
+#include "BOINCBaseFrame.h"
 #include "SkinManager.h"
 #include "hyperlink.h"
 #include "Events.h"
 #include "error_numbers.h"
+#include "version.h"
+#include "DlgAdvPreferences.h"
+
+#include "res/usage.xpm"
+#include "res/xfer.xpm"
+#include "res/proj.xpm"
+#include "res/warning.xpm"
+
 
 using std::string;
 
@@ -180,7 +182,7 @@ double CDlgAdvPreferences::TimeStringToDouble(wxString timeStr) {
 // convert a double into a timestring HH:MM
 wxString CDlgAdvPreferences::DoubleToTimeString(double dt) {
 	int hour = (int)dt;
-	int minutes = (int)(60.0 * (dt - hour));
+	int minutes = (int)(60.0 * (dt - hour)+.5);
 	return wxString::Format(wxT("%02d:%02d"),hour,minutes);
 }
 
@@ -210,11 +212,11 @@ void CDlgAdvPreferences::ReadPreferenceSettings() {
 	wxCheckBox* aChks[] = {m_chkProcSunday,m_chkProcMonday,m_chkProcTuesday,m_chkProcWednesday,m_chkProcThursday,m_chkProcFriday,m_chkProcSaturday};
 	wxTextCtrl* aTxts[] = {m_txtProcSunday,m_txtProcMonday,m_txtProcTuesday,m_txtProcWednesday,m_txtProcThursday,m_txtProcFriday,m_txtProcSaturday};
 	for(int i=0; i< 7;i++) {
-        TIME_SPAN* cpu = prefs.cpu_times.week.get(i);
-		if(cpu) {
+        TIME_SPAN& cpu = prefs.cpu_times.week.days[i];
+		if(cpu.present) {
 			aChks[i]->SetValue(true);
-			wxString timeStr = DoubleToTimeString(cpu->start_hour) +
-								wxT("-") + DoubleToTimeString(cpu->end_hour);
+			wxString timeStr = DoubleToTimeString(cpu.start_hour) +
+								wxT("-") + DoubleToTimeString(cpu.end_hour);
 			aTxts[i]->SetValue(timeStr);
 		}
 	}
@@ -223,6 +225,7 @@ void CDlgAdvPreferences::ReadPreferenceSettings() {
 	m_chkProcOnBatteries->SetValue(prefs.run_on_batteries);
 	// in use
 	m_chkProcInUse->SetValue(prefs.run_if_user_active);
+    m_chkGPUProcInUse->SetValue(prefs.run_gpu_if_user_active);
 	// idle for X minutes
 	buffer.Printf(wxT("%.2f"),prefs.idle_time_to_run);
 	*m_txtProcIdleFor << buffer;
@@ -244,16 +247,16 @@ void CDlgAdvPreferences::ReadPreferenceSettings() {
 	wxCheckBox* aChks2[] = {m_chkNetSunday,m_chkNetMonday,m_chkNetTuesday,m_chkNetWednesday,m_chkNetThursday,m_chkNetFriday,m_chkNetSaturday};
 	wxTextCtrl* aTxts2[] = {m_txtNetSunday,m_txtNetMonday,m_txtNetTuesday,m_txtNetWednesday,m_txtNetThursday,m_txtNetFriday,m_txtNetSaturday};
 	for(int i=0; i< 7;i++) {
-        TIME_SPAN* net = prefs.net_times.week.get(i);
-		if(net) {
+        TIME_SPAN& net = prefs.net_times.week.days[i];
+		if(net.present) {
 			aChks2[i]->SetValue(true);
-			wxString timeStr = DoubleToTimeString(net->start_hour) +
-								wxT("-") + DoubleToTimeString(net->end_hour);
+			wxString timeStr = DoubleToTimeString(net.start_hour) +
+								wxT("-") + DoubleToTimeString(net.end_hour);
 			aTxts2[i]->SetValue(timeStr);
 		}
 	}
 	// connection interval
-	buffer.Printf(wxT("%01.4f"),prefs.work_buf_min_days);
+	buffer.Printf(wxT("%01.2f"),prefs.work_buf_min_days);
 	*m_txtNetConnectInterval << buffer;
 	//download rate
 	buffer.Printf(wxT("%.2f"),prefs.max_bytes_sec_down / 1024);
@@ -300,6 +303,11 @@ void CDlgAdvPreferences::ReadPreferenceSettings() {
 	this->UpdateControlStates();
 }
 
+void clamp_pct(double& x) {
+    if (x < 0) x = 0;
+    if (x > 100) x = 100;
+}
+
 /* write overridden preferences to disk (global_prefs_override.xml) */
 bool CDlgAdvPreferences::SavePreferencesSettings() {
 	double td;
@@ -314,6 +322,9 @@ bool CDlgAdvPreferences::SavePreferencesSettings() {
 	//
 	prefs.run_if_user_active=m_chkProcInUse->GetValue();
 	mask.run_if_user_active=true;
+
+	prefs.run_gpu_if_user_active=m_chkGPUProcInUse->GetValue();
+	mask.run_gpu_if_user_active=true;
 	//
 	if(m_txtProcIdleFor->IsEnabled()) {
 		m_txtProcIdleFor->GetValue().ToDouble(&td);
@@ -346,6 +357,7 @@ bool CDlgAdvPreferences::SavePreferencesSettings() {
 	//
 
 	m_txtProcUseProcessors->GetValue().ToDouble(&td);
+    clamp_pct(td);
 	prefs.max_ncpus_pct=td;
 	mask.max_ncpus_pct=true;
 
@@ -410,6 +422,7 @@ bool CDlgAdvPreferences::SavePreferencesSettings() {
 	mask.disk_min_free_gb=true;
 	//
 	m_txtDiskMaxOfTotal->GetValue().ToDouble(&td);
+    clamp_pct(td);
 	prefs.disk_max_used_pct=td;
 	mask.disk_max_used_pct=true;
 	//
@@ -418,16 +431,19 @@ bool CDlgAdvPreferences::SavePreferencesSettings() {
 	mask.disk_interval=true;
 	//
 	m_txtDiskMaxSwap->GetValue().ToDouble(&td);
+    clamp_pct(td);
 	td = td / 100.0 ;
 	prefs.vm_max_used_frac=td;
 	mask.vm_max_used_frac=true;
 	//Memory
 	m_txtMemoryMaxInUse->GetValue().ToDouble(&td);
+    clamp_pct(td);
 	td = td / 100.0;
 	prefs.ram_max_used_busy_frac=td;
 	mask.ram_max_used_busy_frac=true;
 	//
 	m_txtMemoryMaxOnIdle->GetValue().ToDouble(&td);
+    clamp_pct(td);
 	td = td / 100.0;
 	prefs.ram_max_used_idle_frac=td;
 	mask.ram_max_used_idle_frac=true;
@@ -440,7 +456,7 @@ bool CDlgAdvPreferences::SavePreferencesSettings() {
 /* set state of control depending on other control's state */
 void CDlgAdvPreferences::UpdateControlStates() {
 	//proc usage page
-	m_txtProcIdleFor->Enable(!m_chkProcInUse->IsChecked());
+	m_txtProcIdleFor->Enable(!m_chkProcInUse->IsChecked() || !m_chkGPUProcInUse->IsChecked());
 	m_txtProcMonday->Enable(m_chkProcMonday->IsChecked());
 	m_txtProcTuesday->Enable(m_chkProcTuesday->IsChecked());
 	m_txtProcWednesday->Enable(m_chkProcWednesday->IsChecked());
@@ -486,7 +502,7 @@ bool CDlgAdvPreferences::ValidateInput() {
 	}
 	//all text ctrls in proc special time panel
 	wxWindowList children = m_panelProcSpecialTimes->GetChildren();
-	wxWindowListNode* node = children.GetFirst();
+    wxWindowList::compatibility_iterator node = children.GetFirst();
 	while(node) {
 		if(node->GetData()->IsKindOf(CLASSINFO(wxTextCtrl))) {
 			wxTextCtrl*  txt = wxDynamicCast(node->GetData(),wxTextCtrl);
@@ -574,7 +590,7 @@ void CDlgAdvPreferences::ShowErrorMessage(wxString& message,wxTextCtrl* errorCtr
 	if(message.IsEmpty()){
 		message = _("invalid input value detected");
 	}
-	wxMessageBox(message,_("Validation Error"),wxOK | wxCENTRE | wxICON_ERROR,this);
+	wxGetApp().SafeMessageBox(message,_("Validation Error"),wxOK | wxCENTRE | wxICON_ERROR,this);
 }
 
 /* checks if ch is a valid character for float values */
@@ -618,7 +634,8 @@ bool CDlgAdvPreferences::IsValidTimeValue(const wxString& value) {
 	//all chars are valid, now what is with the value as a whole ?
 	wxDateTime dt;
 	const wxChar* stopChar = dt.ParseFormat(value,wxT("%H:%M"));
-	if(stopChar==NULL) {//conversion failed
+	if(stopChar==NULL && value != wxT("24:00")) {
+        // conversion failed
 		return false;
 	}
 	return true;
@@ -685,10 +702,19 @@ void CDlgAdvPreferences::OnOK(wxCommandEvent& ev) {
 
 // handles Help button clicked
 void CDlgAdvPreferences::OnHelp(wxCommandEvent& ev) {
-	wxString url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationWebsite();
-	url += wxT("/prefs.php");//this seems not the right url, but which instead ?
-	wxHyperLink::ExecuteLink(url);
-	ev.Skip();
+    if (IsShown()) {
+
+	    wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
+
+		wxString wxurl;
+		wxurl.Printf(
+            wxT("%s?target=advanced_preferences&version=%s&controlid=%d"),
+            strURL.c_str(),
+            wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
+            ev.GetId()
+        );
+        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+    }
 }
 
 // handles Clear button clicked 
@@ -708,7 +734,7 @@ void CDlgAdvPreferences::OnClear(wxCommandEvent& ev) {
 }
 
 bool CDlgAdvPreferences::ConfirmClear() {
-	int res = wxMessageBox(_("Do you really want to clear all local preferences ?"),
+	int res = wxGetApp().SafeMessageBox(_("Do you really want to clear all local preferences ?"),
 		_("Confirmation"),wxCENTER | wxICON_QUESTION | wxYES_NO | wxNO_DEFAULT,this);
 	
 	return res==wxYES;

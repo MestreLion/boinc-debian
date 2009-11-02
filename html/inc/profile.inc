@@ -183,6 +183,19 @@ function get_profile_summary($profile) {
     return $summary;
 }
 
+function check_whether_to_show_profile($user, $logged_in_user) {
+    $min_credit = parse_config(get_config(), "<profile_min_credit>");
+    if (!$logged_in_user && $min_credit && $user->expavg_credit < $min_credit ) {
+        error_page(
+           "To prevent spam, profiles of users with an average credit of less than $min_credit are displayed only to logged-in users.  We apologize for this inconvenience."
+        );
+    }
+    if (is_banished($user)) {
+        error_page("User is banished");
+    }
+
+}
+
 // Displays a user's profile (if they have one);
 // $screen_mode is set if we're in the administrative profile-screening page,
 // in which case we show everything
@@ -192,26 +205,15 @@ function show_profile($user, $logged_in_user, $screen_mode = false) {
     BoincForumPrefs::lookup($user);
     $profile = BoincProfile::lookup("userid = $user->id");
     if (!$profile) {
-        error_page("No user profile exists for that user ID.");
+        row1("No profile exists for that user ID.");
         $user->update("has_profile = 0");
+        return;
     }
 
-    $is_logged_in = isset($logged_in_user);
-
-    $can_edit = isset($logged_in_user) && $logged_in_user && $user->id == $logged_in_user->id;
-
-    $min_credit = parse_config(get_config(), "<profile_min_credit>");
-    if ((!$is_logged_in) && $min_credit && $user->expavg_credit < $min_credit ) {
-        error_page(
-           "To prevent spam, profiles of users with an average credit of less than $min_credit will only be displayed to users who are logged in to their accounts.  We appologize for this inconvenience."
-        );
-    }
-    if (is_banished($user)) {
-        error_page("User is banished");
-    }
+    $can_edit = $logged_in_user && $user->id == $logged_in_user->id;
 
     if ($can_edit) {
-        row1("<a href=create_profile.php>Edit your profile</a>");
+        row1("<a href=\"create_profile.php\">".tra("Edit your profile")."</a>");
     }
 
     // If screening is enabled, only show picture in certain situations
@@ -249,18 +251,18 @@ function show_profile($user, $logged_in_user, $screen_mode = false) {
     row1(output_transform($profile->response2, $options), 2, "foobar");
 
     if (!$can_edit and !$screen_mode) {
-        row1("Your feedback on this profile");
+        row1(tra("Your feedback on this profile"));
         row2(
-            "Recommend this profile for User of the Day:",
-            "I <a href=profile_rate.php?userid=$user->id&vote=recommend>like</a> this profile"
+            tra("Recommend this profile for User of the Day:"),
+            tra("I %1like%2 this profile", "<a href=\"profile_rate.php?userid=".$user->id."&vote=recommend\">", "</a>")
         );
         row2(
-            "Alert administrators to an offensive profile:",
-            "I <a href=profile_rate.php?userid=$user->id&vote=reject>don't like</a> this profile"
+            tra("Alert administrators to an offensive profile:"),
+            tra("I %1do not like%2 this profile", "<a href=\"profile_rate.php?userid=".$user->id."&vote=reject\">", "</a>")
         );
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile.inc 16338 2008-10-28 21:59:25Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: profile.inc 16749 2008-12-29 18:44:11Z jbk $";  //Generated automatically - do not edit
 
 ?>

@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "ProjectListCtrl.h"
@@ -23,7 +21,7 @@
 
 #include "stdwx.h"
 #include "BOINCGUIApp.h"
-#include "hyperlink.h"
+#include "BOINCWizards.h"
 #include "ProjectListCtrl.h"
 
 ////@begin XPM images
@@ -31,26 +29,341 @@
 ////@end XPM images
 
 
+#if wxUSE_ACCESSIBILITY
+
+// Gets the name of the specified object.
+wxAccStatus CProjectListCtrlAccessible::GetName(int childId, wxString* name)
+{
+    if (childId == wxACC_SELF)
+    {
+        *name = wxT("Project List");
+    }
+    else
+    {
+        CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+        if (pCtrl)
+        {
+            *name = pCtrl->GetItem(childId - 1)->GetTitle().c_str();
+        }
+    }
+    return wxACC_OK;
+}
+
+
+// Can return either a child object, or an integer
+// representing the child element, starting from 1.
+wxAccStatus CProjectListCtrlAccessible::HitTest(const wxPoint& pt, int* childId, wxAccessible** /*childObject*/)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl)
+    {
+        *childId = pCtrl->HitTest(pt);
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Returns the rectangle for this object (id = 0) or a child element (id > 0).
+wxAccStatus CProjectListCtrlAccessible::GetLocation(wxRect& rect, int elementId)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl && (0 == elementId))
+    {
+        // List control
+        rect.SetPosition(pCtrl->GetScreenPosition());
+        rect.SetWidth(pCtrl->GetSize().GetWidth());
+        rect.SetHeight(pCtrl->GetSize().GetHeight());
+        return wxACC_OK;
+    }
+    else if (pCtrl && (0 != elementId))
+    {
+        // List item
+        wxSize cCtrlSize = pCtrl->GetClientSize();
+        int    iItemWidth = cCtrlSize.GetWidth();
+        int    iItemHeight = pCtrl->GetTotalClientHeight() / (int)pCtrl->GetItemCount();
+
+        // Set the initial control postition to the absolute coords of the upper
+        //   left hand position of the control
+        rect.SetPosition(pCtrl->GetScreenPosition());
+        rect.width = iItemWidth - 1;
+        rect.height = iItemHeight - 1;
+
+        if (1 == elementId)
+        {
+            // First child
+        }
+        else
+        {
+            // Other children
+            rect.SetTop(rect.GetTop() + ((elementId - 1) * iItemHeight) + 1);
+            rect.height -= 1;
+        }
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_FALSE;
+}
+
+
+// Navigates from fromId to toId/toObject.
+wxAccStatus CProjectListCtrlAccessible::Navigate(
+    wxNavDir navDir, int fromId, int* toId, wxAccessible** toObject
+) {
+
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    *toObject = NULL;
+
+    if (0 != fromId)
+    {
+        switch (navDir)
+        {
+        case wxNAVDIR_PREVIOUS:
+        case wxNAVDIR_UP:
+            if (1 == fromId)
+            {
+                return wxACC_FALSE;
+            }
+            else
+            {
+                *toId = fromId - 1;
+                return wxACC_OK;
+            }
+            break;
+        case wxNAVDIR_NEXT:
+        case wxNAVDIR_DOWN:
+            if ((int)pCtrl->GetItemCount() == fromId)
+            {
+                return wxACC_FALSE;
+            }
+            else
+            {
+                *toId = fromId + 1;
+                return wxACC_OK;
+            }
+            return wxACC_FALSE;
+            break;
+        case wxNAVDIR_LEFT:
+            return wxACC_FALSE;
+            break;
+        case wxNAVDIR_RIGHT:
+            return wxACC_FALSE;           
+            break;
+        case wxNAVDIR_FIRSTCHILD:
+            if (1 == fromId)
+            {
+                return wxACC_FALSE;
+            }
+            else
+            {
+                *toId = 1;
+                return wxACC_OK;
+            }
+            break;
+        case wxNAVDIR_LASTCHILD:
+            if ((int)pCtrl->GetItemCount() == fromId)
+            {
+                return wxACC_FALSE;
+            }
+            else
+            {
+                *toId = (int)pCtrl->GetItemCount();
+                return wxACC_OK;
+            }
+            break;
+        }
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Gets the number of children.
+wxAccStatus CProjectListCtrlAccessible::GetChildCount(int* childCount)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl)
+    {
+        *childCount = (int)pCtrl->GetItemCount();
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Performs the default action. childId is 0 (the action for this object)
+// or > 0 (the action for a child).
+// Return wxACC_NOT_SUPPORTED if there is no default action for this
+// window (e.g. an edit control).
+wxAccStatus CProjectListCtrlAccessible::DoDefaultAction(int childId)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl && (childId != wxACC_SELF))
+    {
+        // Zero-based array index
+        int iRealChildId = childId - 1;
+
+        pCtrl->SetSelection(iRealChildId);
+
+        // Fire Event 
+        ProjectListCtrlEvent evt( 
+            wxEVT_PROJECTLIST_ITEM_CHANGE, 
+            pCtrl->GetItem(iRealChildId)->GetTitle(),  
+            pCtrl->GetItem(iRealChildId)->GetURL(), 
+            true 
+        ); 
+        evt.SetEventObject(this); 
+
+        pCtrl->GetParent()->AddPendingEvent( evt ); 
+
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Gets the default action for this object (0) or > 0 (the action for a child).
+// Return wxACC_OK even if there is no action. actionName is the action, or the empty
+// string if there is no action.
+// The retrieved string describes the action that is performed on an object,
+// not what the object does as a result. For example, a toolbar button that prints
+// a document has a default action of "Press" rather than "Prints the current document."
+wxAccStatus CProjectListCtrlAccessible::GetDefaultAction(int childId, wxString* actionName)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl && (childId != wxACC_SELF))
+    {
+        *actionName = _("Click");
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Returns the description for this object or a child.
+wxAccStatus CProjectListCtrlAccessible::GetDescription(int childId, wxString* description)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl && (childId != wxACC_SELF))
+    {
+        *description = pCtrl->GetItem(childId - 1)->GetDescription().c_str();
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Returns a role constant.
+wxAccStatus CProjectListCtrlAccessible::GetRole(int childId, wxAccRole* role)
+{
+    if (childId == wxACC_SELF)
+    {
+        *role = wxROLE_SYSTEM_LIST;
+    }
+    else
+    {
+        *role = wxROLE_SYSTEM_LISTITEM;
+    }
+    return wxACC_OK;
+}
+
+
+// Returns a role constant.
+wxAccStatus CProjectListCtrlAccessible::GetState(int childId, long* state)
+{
+    if (childId == wxACC_SELF)
+    {
+        *state = wxACC_STATE_SYSTEM_DEFAULT;
+    }
+    else
+    {
+        CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+        if (pCtrl && (pCtrl->IsSelected(childId - 1)))
+        {
+            *state = wxACC_STATE_SYSTEM_SELECTABLE |
+                     wxACC_STATE_SYSTEM_FOCUSABLE | 
+                     wxACC_STATE_SYSTEM_SELECTED | 
+                     wxACC_STATE_SYSTEM_FOCUSED;
+        }
+        else if (pCtrl && (pCtrl->IsVisible(childId - 1)))
+        {
+            *state = wxACC_STATE_SYSTEM_SELECTABLE |
+                     wxACC_STATE_SYSTEM_FOCUSABLE;
+        }
+        else
+        {
+            *state = wxACC_STATE_SYSTEM_SELECTABLE |
+                     wxACC_STATE_SYSTEM_FOCUSABLE |
+                     wxACC_STATE_SYSTEM_OFFSCREEN |
+                     wxACC_STATE_SYSTEM_INVISIBLE;
+        }
+    }
+    return wxACC_OK;
+}
+
+
+// Selects the object or child.
+wxAccStatus CProjectListCtrlAccessible::Select(int , wxAccSelectionFlags )
+{
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Gets a variant representing the selected children
+// of this object.
+// Acceptable values:
+// - a null variant (IsNull() returns true)
+// - a list variant (GetType() == wxT("list"))
+// - an integer representing the selected child element,
+//   or 0 if this object is selected (GetType() == wxT("long"))
+// - a "void*" pointer to a wxAccessible child object
+wxAccStatus CProjectListCtrlAccessible::GetSelections(wxVariant* )
+{
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+#endif
+
+
+/*!
+ * CProjectListItem type definition
+ */
+IMPLEMENT_DYNAMIC_CLASS( CProjectListItem, wxObject )
+
+
 /*!
  * CProjectListCtrl event definitions
  */
-DEFINE_EVENT_TYPE( wxEVT_PROJECTLISTCTRL_SELECTION_CHANGED )
+DEFINE_EVENT_TYPE( wxEVT_PROJECTLIST_ITEM_CHANGE )
+DEFINE_EVENT_TYPE( wxEVT_PROJECTLIST_ITEM_DISPLAY )
+
 
 /*!
  * CProjectListCtrl type definition
  */
- 
-IMPLEMENT_DYNAMIC_CLASS( CProjectListCtrl, wxScrolledWindow )
+IMPLEMENT_DYNAMIC_CLASS( CProjectListCtrl, wxHtmlListBox )
 IMPLEMENT_DYNAMIC_CLASS( ProjectListCtrlEvent, wxNotifyEvent )
+
 
 /*!
  * CProjectListCtrl event table definition
  */
  
-BEGIN_EVENT_TABLE( CProjectListCtrl, wxScrolledWindow )
+BEGIN_EVENT_TABLE( CProjectListCtrl, wxHtmlListBox )
 
 ////@begin CProjectListCtrl event table entries
-    EVT_PROJECTLISTITEMCTRL_CLICKED( CProjectListCtrl::OnItemClicked )
+    EVT_LISTBOX(ID_PROJECTLISTCTRL, CProjectListCtrl::OnSelected)
+    EVT_HTML_CELL_CLICKED( ID_PROJECTLISTCTRL, CProjectListCtrl::OnClicked )
+    EVT_LISTBOX_DCLICK(ID_PROJECTLISTCTRL, CProjectListCtrl::OnDClicked)
+    EVT_HTML_LINK_CLICKED( ID_PROJECTLISTCTRL, CProjectListCtrl::OnLinkClicked )
+    EVT_HTML_CELL_HOVER( ID_PROJECTLISTCTRL, CProjectListCtrl::OnHover )
 ////@end CProjectListCtrl event table entries
  
 END_EVENT_TABLE()
@@ -75,79 +388,86 @@ CProjectListCtrl::CProjectListCtrl( wxWindow* parent )
 bool CProjectListCtrl::Create( wxWindow* parent )
 {
 ////@begin CProjectListCtrl member initialisation
-    m_pMainSizer = NULL;
 ////@end CProjectListCtrl member initialisation
- 
+
 ////@begin CProjectListCtrl creation
-    wxScrolledWindow::Create( parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER );
-    SetExtraStyle( wxWS_EX_BLOCK_EVENTS );
+    wxHtmlListBox::Create( parent, ID_PROJECTLISTCTRL, wxDefaultPosition, wxDefaultSize,
+        wxSUNKEN_BORDER | wxTAB_TRAVERSAL );
 
-    CreateControls();
+#if wxUSE_ACCESSIBILITY
+    SetAccessible(new CProjectListCtrlAccessible(this));
+#endif
 
-    SetBackgroundColour( wxT("WHITE") );
-    SetScrollRate( 0, 25 );
-
-    GetSizer()->Fit(this);
+    wxMemoryFSHandler::AddFile(wxT("webexternallink.xpm"), wxBitmap(externalweblink_xpm), wxBITMAP_TYPE_XPM);
 ////@end CProjectListCtrl creation
     return TRUE;
 }
- 
-/*!
- * Control creation for ProjectListCtrl
- */
- 
-void CProjectListCtrl::CreateControls()
-{    
-////@begin CProjectListCtrl content construction
 
-    wxFlexGridSizer* itemFlexGridSizer5 = new wxFlexGridSizer(0, 1, 0, 0);
-    itemFlexGridSizer5->AddGrowableCol(0);
 
-    wxFlexGridSizer* itemFlexGridSizer6 = new wxFlexGridSizer(1, 1, 0, 0);
-    itemFlexGridSizer6->AddGrowableRow(0);
-    itemFlexGridSizer6->AddGrowableCol(0);
-    itemFlexGridSizer5->Add(itemFlexGridSizer6, 0, wxGROW|wxGROW|wxALL, 0);
-    m_pMainSizer = new wxBoxSizer(wxVERTICAL);
-    itemFlexGridSizer6->Add(m_pMainSizer, 0, wxGROW|wxGROW|wxALL, 0);
+void CProjectListCtrl::OnSelected( wxCommandEvent& event )
+{
+    // Fire Event 
+    ProjectListCtrlEvent evt( 
+        wxEVT_PROJECTLIST_ITEM_CHANGE, 
+        m_Items[event.GetInt()]->GetTitle(),  
+        m_Items[event.GetInt()]->GetURL(), 
+        m_Items[event.GetInt()]->IsPlatformSupported() 
+    ); 
+    evt.SetEventObject(this); 
 
-    SetSizer(itemFlexGridSizer5);
-
-////@end CProjectListCtrl content construction
+    GetParent()->AddPendingEvent( evt ); 
 }
 
 
-/*!
- * wxEVT_PROJECTLISTITEMCTRL_CLICKED event handler for window
- */
+void CProjectListCtrl::OnClicked( wxHtmlCellEvent& event )
+{
+    event.Skip();
+}
 
-void CProjectListCtrl::OnItemClicked( ProjectListItemCtrlEvent& event ) {
-    // Reset the background color back to the default
-    wxWindowList::compatibility_iterator current = GetChildren().GetFirst();
-    while (current) {
-        wxWindow* childWin = current->GetData();
-        childWin->SetBackgroundColour( wxNullColour );
-        childWin->Refresh();
-        current = current->GetNext();
-    }
 
-    // Set the background color of the window that threw the event to the
-    //   default background color of a selected control. Then fire an event
-    //   for the parent window notifing it of the new selection.
-    CProjectListItemCtrl* pSelectedItem = wxDynamicCast(event.GetEventObject(), CProjectListItemCtrl);
-    if (pSelectedItem) {
-        pSelectedItem->SetBackgroundColour( wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHT) );
-        pSelectedItem->Refresh();
+void CProjectListCtrl::OnDClicked( wxCommandEvent& event )
+{
+    event.Skip();
+}
 
-        // Fire Event
-        ProjectListCtrlEvent evt(
-            wxEVT_PROJECTLISTCTRL_SELECTION_CHANGED,
-            pSelectedItem->GetTitle(), 
-            pSelectedItem->GetURL()
-        );
-        evt.SetEventObject(this);
 
-        GetParent()->AddPendingEvent( evt );
-    }
+void CProjectListCtrl::OnLinkClicked( wxHtmlLinkEvent& event )
+{
+    // Fire Event 
+    ProjectListCtrlEvent evt( 
+        wxEVT_PROJECTLIST_ITEM_DISPLAY, 
+        wxEmptyString,  
+        event.GetLinkInfo().GetHref(), 
+        true 
+    ); 
+    evt.SetEventObject(this); 
+
+    GetParent()->AddPendingEvent( evt ); 
+}
+
+
+void CProjectListCtrl::OnHover( wxHtmlCellEvent& event )
+{
+    event.Skip();
+}
+
+
+wxString CProjectListCtrl::OnGetItem(size_t i) const
+{
+    wxString buf = wxEmptyString;
+
+    buf.Printf(
+        wxT("  <table cellpadding=0 cellspacing=1>")
+        wxT("    <tr>")
+        wxT("      <td width=100%%>%s</td>")
+        wxT("      <td><a href=\"%s\"><img src=\"memory:webexternallink.xpm\"></a></td>")
+        wxT("    </tr>")
+        wxT("  </table>"),
+        m_Items[i]->GetTitle().c_str(),
+        m_Items[i]->GetURL().c_str()
+    );
+
+    return buf;
 }
 
 
@@ -156,267 +476,44 @@ void CProjectListCtrl::OnItemClicked( ProjectListItemCtrlEvent& event ) {
  */
  
 bool CProjectListCtrl::Append(
+    wxString strURL,
     wxString strTitle,
-    wxString strURL
+    wxString strDescription,
+    bool bSupported
 )
 {
-    CProjectListItemCtrl* pItem = new CProjectListItemCtrl();
-    pItem->Create( this );
-    pItem->SetTitle( strTitle );
+    CProjectListItem* pItem = new CProjectListItem();
+
     pItem->SetURL( strURL );
-    m_pMainSizer->Add( pItem, 0, wxEXPAND );
+    pItem->SetTitle( strTitle );
+    pItem->SetDescription( strDescription );
+    pItem->SetPlatformSupported( bSupported );
 
-    FitInside();
+    m_Items.push_back(pItem);
+    SetItemCount(m_Items.size());
 
     return true;
 }
 
 
 /*!
- * CProjectListItemCtrl event definitions
- */
-DEFINE_EVENT_TYPE( wxEVT_PROJECTLISTITEMCTRL_CLICKED )
-
-/*!
- * CProjectListItemCtrl type definition
+ * Return the project list entry at a given index.
  */
  
-IMPLEMENT_DYNAMIC_CLASS( CProjectListItemCtrl, wxPanel )
-IMPLEMENT_DYNAMIC_CLASS( ProjectListItemCtrlEvent, wxNotifyEvent )
-
- 
-/*!
- * CProjectListItemCtrl event table definition
- */
- 
-BEGIN_EVENT_TABLE( CProjectListItemCtrl, wxPanel )
- 
-////@begin CProjectListItemCtrl event table entries
-    EVT_ENTER_WINDOW( CProjectListItemCtrl::OnMouseEnterLeave )
-    EVT_LEAVE_WINDOW( CProjectListItemCtrl::OnMouseEnterLeave )
-    EVT_LEFT_DOWN( CProjectListItemCtrl::OnMouseClick )
-    EVT_LEFT_UP( CProjectListItemCtrl::OnMouseClick )
-    EVT_BUTTON( ID_WEBSITEBUTTON, CProjectListItemCtrl::OnWebsiteButtonClick )
-////@end CProjectListItemCtrl event table entries
- 
-END_EVENT_TABLE()
- 
-/*!
- * CProjectListItemCtrl constructors
- */
- 
-CProjectListItemCtrl::CProjectListItemCtrl( )
-{
-}
- 
-CProjectListItemCtrl::CProjectListItemCtrl( wxWindow* parent )
-{
-    Create( parent );
-}
- 
-/*!
- * CProjectListItemCtrl creator
- */
- 
-bool CProjectListItemCtrl::Create( wxWindow* parent )
-{
-////@begin CProjectListItemCtrl member initialisation
-    m_pTitleStaticCtrl = NULL;
-    m_pWebsiteButtonCtrl = NULL;
-    m_strTitle = wxEmptyString;
-    m_strURL = wxEmptyString;
-    m_bLeftButtonDownDetected = false;
-////@end CProjectListItemCtrl member initialisation
- 
-////@begin CProjectListItemCtrl creation
-    wxPanel::Create( parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNO_BORDER);
-    SetExtraStyle( wxWS_EX_BLOCK_EVENTS );
-
-    CreateControls();
-    GetSizer()->Fit(this);
-////@end CProjectListItemCtrl creation
-
-    return TRUE;
-}
- 
-/*!
- * Control creation for CProjectListItemCtrl
- */
- 
-void CProjectListItemCtrl::CreateControls()
-{    
-////@begin CProjectListItemCtrl content construction
-
-    wxBoxSizer* itemBoxSizer7 = new wxBoxSizer(wxVERTICAL);
-
-    wxFlexGridSizer* itemFlexGridSizer8 = new wxFlexGridSizer(1, 2, 0, 0);
-    itemFlexGridSizer8->AddGrowableRow(0);
-    itemFlexGridSizer8->AddGrowableCol(0);
-    itemBoxSizer7->Add(itemFlexGridSizer8, 0, wxGROW|wxALL, 1);
-
-    m_pTitleStaticCtrl = new CProjectListItemStaticCtrl;
-    m_pTitleStaticCtrl->Create( this, wxID_STATIC, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    itemFlexGridSizer8->Add(m_pTitleStaticCtrl, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 0);
-
-    m_pWebsiteButtonCtrl = new wxBitmapButton;
-    m_pWebsiteButtonCtrl->Create( this, ID_WEBSITEBUTTON, wxBitmap(externalweblink_xpm), wxDefaultPosition, wxSize(12,12), wxNO_BORDER );
-    itemFlexGridSizer8->Add(m_pWebsiteButtonCtrl, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 0);
-
-    SetSizer(itemBoxSizer7);
-
-////@end CProjectListItemCtrl content construction
-}
-
-/*!
- * wxEVT_ENTER_WINDOW, wxEVT_LEAVE_WINDOW event handler for window
- */
-
-void CProjectListItemCtrl::OnMouseEnterLeave( wxMouseEvent& event ) {
-    m_bLeftButtonDownDetected = false;
-    event.Skip();
-}
-
-
-/*!
- * wxEVT_LEFT_DOWN, wxEVT_LEFT_UP event handler for window
- */
-
-void CProjectListItemCtrl::OnMouseClick( wxMouseEvent& event ) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectListItemCtrl::OnMouseClick - Function Begin"));
-
-    if ( event.LeftDown() ) {
-        m_bLeftButtonDownDetected = true;
-    } else {
-        if ( m_bLeftButtonDownDetected ) {
-            // The control that reported the down event is also
-            //   the one reporting the up event, so it is a valid
-            //   click event.
-            wxLogTrace(wxT("Function Status"), wxT("CProjectListItemCtrl::OnMouseClick - Click Detected!"));
-
-            ProjectListItemCtrlEvent evt(wxEVT_PROJECTLISTITEMCTRL_CLICKED, GetId());
-            evt.SetEventObject(this);
-
-            GetParent()->AddPendingEvent( evt );
-        }
-    }
-    event.Skip();
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectListItemCtrl::OnMouseClick - Function End"));
-}
-
-
-/*!
- * wxEVT_COMMAND_BUTTON_CLICKED event handler for window
- */
-
-void CProjectListItemCtrl::OnWebsiteButtonClick( wxCommandEvent& /*event*/ ) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectListItemCtrl::OnWebsiteButtonClick - Function Begin"));
-
-    if (!m_strURL.IsEmpty()) {
-        wxHyperLink::ExecuteLink(m_strURL);
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectListItemCtrl::OnWebsiteButtonClick - Function End"));
-}
-
-
-bool CProjectListItemCtrl::SetTitle( wxString strTitle ) {
-    if (m_pTitleStaticCtrl) m_pTitleStaticCtrl->SetLabel( strTitle );
-    m_strTitle = strTitle;
-    return true;
-}
-
-
-bool CProjectListItemCtrl::SetURL( wxString strURL ) {
-    if (m_pWebsiteButtonCtrl) {
-        wxString strBuffer = wxEmptyString;
-
-        strBuffer.Printf(
-            _("Click here to go to %s's website."),
-            m_strTitle.c_str()
-        );
-
-        m_pWebsiteButtonCtrl->SetToolTip(strBuffer);
-    }
-    m_strURL = strURL;
-    return true;
-}
-
-
-/*!
- * CProjectListItemStaticCtrl type definition
- */
- 
-IMPLEMENT_DYNAMIC_CLASS( CProjectListItemStaticCtrl, wxStaticText )
-
-/*!
- * CProjectListItemStaticCtrl event table definition
- */
- 
-BEGIN_EVENT_TABLE( CProjectListItemStaticCtrl, wxStaticText )
-
-////@begin CProjectListItemStaticCtrl event table entries
-    EVT_ENTER_WINDOW( CProjectListItemStaticCtrl::OnMouseEnterLeave )
-    EVT_LEAVE_WINDOW( CProjectListItemStaticCtrl::OnMouseEnterLeave )
-    EVT_LEFT_DOWN( CProjectListItemStaticCtrl::OnMouseClick )
-    EVT_LEFT_UP( CProjectListItemStaticCtrl::OnMouseClick )
-////@end CProjectListItemStaticCtrl event table entries
- 
-END_EVENT_TABLE()
- 
-/*!
- * CProjectListItemStaticCtrl constructors
- */
- 
-CProjectListItemStaticCtrl::CProjectListItemStaticCtrl( )
-{
-}
- 
-CProjectListItemStaticCtrl::CProjectListItemStaticCtrl( 
-    wxWindow *parent, wxWindowID id, const wxString& label, const wxPoint& pos, const wxSize& size, long style, const wxString& name
+CProjectListItem* CProjectListCtrl::GetItem( 
+    int iIndex
 )
 {
-    Create (parent, id, label, pos, size, style, name);
+    return m_Items[iIndex];
 }
- 
+
+
 /*!
- * CProjectListItemStaticCtrl creator
+ * Return the total height of all the client items.
  */
  
-bool CProjectListItemStaticCtrl::Create( 
-    wxWindow *parent, wxWindowID id, const wxString& label, const wxPoint& pos, const wxSize& size, long style, const wxString& name
-)
+wxCoord CProjectListCtrl::GetTotalClientHeight()
 {
-    bool okay = FALSE;
-
-    // create static text
-    okay = wxStaticText::Create (parent, id, label, pos, size, style, name);
-    wxASSERT_MSG (okay, wxT("Failed to create wxStaticText, needed by wxHyperLink!"));
-
-    return okay;
-}
-
-
-/*!
- * wxEVT_ENTER_WINDOW, wxEVT_LEAVE_WINDOW event handler for window
- */
-
-void CProjectListItemStaticCtrl::OnMouseEnterLeave( wxMouseEvent& event ) {
-    CProjectListItemCtrl* pParent = wxDynamicCast(GetParent(), CProjectListItemCtrl);
-    if (pParent) {
-        pParent->OnMouseEnterLeave( event );
-    }
-}
-
-
-/*!
- * wxEVT_LEFT_DOWN, wxEVT_LEFT_UP event handler for window
- */
-
-void CProjectListItemStaticCtrl::OnMouseClick( wxMouseEvent& event ) {
-    CProjectListItemCtrl* pParent = wxDynamicCast(GetParent(), CProjectListItemCtrl);
-    if (pParent) {
-        pParent->OnMouseClick( event );
-    }
+    return EstimateTotalHeight();
 }
 

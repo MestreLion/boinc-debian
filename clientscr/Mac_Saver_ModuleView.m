@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 //
 //  Mac_Saver_ModuleView.m
@@ -25,6 +23,19 @@
 #import "Mac_Saver_ModuleView.h"
 #include <Carbon/Carbon.h>
 #include <AppKit/AppKit.h>
+#include <QTKit/QTKitDefines.h> // For NSInteger
+
+#ifndef NSInteger
+#if __LP64__ || NS_BUILD_32_LIKE_64
+typedef long NSInteger;
+#else
+typedef int NSInteger;
+#endif
+#endif
+
+#ifndef CGFLOAT_DEFINED
+typedef float CGFloat;
+#endif
 
 void print_to_log_file(const char *format, ...);
 void strip_cr(char *buf);
@@ -42,16 +53,6 @@ float gImageXIndent;
 float gTextBoxHeight;
 NSPoint gCurrentPosition;
 NSPoint gCurrentDelta;
-
-ATSUStyle  theStyle = NULL;
-ATSUFontID theFontID;
-Fixed   atsuSize;
-char myFontName[] = "Helvetica";
-//char myFontName[] = "Lucida Blackletter";
-    
-ATSUAttributeTag  theTags[] =  { kATSUFontTag, kATSUSizeTag };
-ByteCount        theSizes[] = { sizeof (ATSUFontID), sizeof(Fixed) };
-ATSUAttributeValuePtr theValues[] = { &theFontID, &atsuSize };
 
 CGContextRef myContext;
 bool isErased;
@@ -80,7 +81,6 @@ int signof(float x) {
 // against any problems that may cause.
 - (void)startAnimation {
     NSBundle * myBundle;
-    OSStatus err;
     int newFrequency;
 
     if (gBOINC_Logo == NULL) {
@@ -146,13 +146,6 @@ int signof(float x) {
             gCurrentDelta.y = 1.0;
             
             [ self setAnimationTimeInterval:1/8.0 ];
-
-            ATSUFindFontFromName(myFontName, strlen(myFontName), kFontFamilyName, kFontMacintoshPlatform, 
-                                    kFontNoScriptCode, kFontNoLanguageCode, &theFontID);
-                                
-            err = ATSUCreateStyle(&theStyle);
-            atsuSize = Long2Fix (20);
-            err = ATSUSetAttributes(theStyle, 2, theTags, theSizes, theValues);
         }
     }
     
@@ -185,10 +178,6 @@ int signof(float x) {
     }
     gBOINC_Logo = NULL;
     
-    if (theStyle) {
-        ATSUDisposeStyle(theStyle);
-    }
-    theStyle = NULL;
 }
 
 // If there are multiple displays, this may get called 
@@ -207,16 +196,14 @@ int signof(float x) {
     int newFrequency = 0;
     int coveredFreq = 0;
     NSRect theFrame = [ self frame ];
-    int myWindowNumber;
-    int windowList[20];
-    int i, n;
+    NSInteger myWindowNumber;
+    NSInteger windowList[20];
+    NSInteger i, n;
     NSRect currentDrawingRect, eraseRect;
     NSPoint imagePosition;
-    Rect r;
     char *msg;
     CFStringRef cf_msg;
     AbsoluteTime timeToUnblock, frameStartTime = UpTime();
-    OSStatus err;
 
    if ([ self isPreview ]) {
 #if 1   // Currently drawRect just draws our logo in the preview window
@@ -239,7 +226,7 @@ int signof(float x) {
 
    myContext = [[NSGraphicsContext currentContext] graphicsPort];
 //    [myContext retain];
-
+    
     NSWindow *myWindow = [ self window ];
     NSRect windowFrame = [ myWindow frame ];
     if ( (windowFrame.origin.x != 0) || (windowFrame.origin.y != 0) ) {
@@ -286,18 +273,23 @@ int signof(float x) {
     }
 
     if (coveredFreq) {
-        myWindowNumber = [ myWindow windowNumber ];
+        if ( (msg != NULL) && (msg[0] != '\0') ) {
+            myWindowNumber = [ myWindow windowNumber ];
 
-        windowList[0] = 0;
-        NSWindowList(20, windowList);
-        NSCountWindows(&n);
-        if (gTopWindowListIndex < n) { 
-            if (windowList[gTopWindowListIndex] != myWindowNumber) {
-                // Project graphics application has a window open above ours
-                // Don't waste CPU cycles since our window is obscured by application graphics
-                newFrequency = coveredFreq;
-                msg = NULL;
+            windowList[0] = 0;
+            NSWindowList(20, windowList);
+            NSCountWindows(&n);
+            if (gTopWindowListIndex < n) { 
+                if (windowList[gTopWindowListIndex] != myWindowNumber) {
+                    // Project graphics application has a window open above ours
+                    // Don't waste CPU cycles since our window is obscured by application graphics
+                    newFrequency = coveredFreq;
+                    msg = NULL;
+                    windowIsCovered();
+                }
             }
+        } else {
+            newFrequency = coveredFreq;
         }
     }
     
@@ -333,46 +325,46 @@ int signof(float x) {
         gCurrentDelta.y = 0;
 #endif
 
-    if (!isErased) {
-        [[NSColor blackColor] set];
-        
-        // Erasing only 2 small rectangles reduces screensaver's CPU usage by about 25%
-        imagePosition.x = (float) ((int)gCurrentPosition.x + gImageXIndent);
-        imagePosition.y = (float) (int)gCurrentPosition.y;
-        eraseRect.origin.y = imagePosition.y;
-        eraseRect.size.height = currentDrawingRect.size.height - gTextBoxHeight;
-        
-        if (gCurrentDelta.x > 0) {
-            eraseRect.origin.x = imagePosition.x - 1;
-            eraseRect.size.width = gCurrentDelta.x + 1;
-        } else {
-            eraseRect.origin.x = currentDrawingRect.origin.x + currentDrawingRect.size.width - gImageXIndent + gCurrentDelta.x - 1;
-            eraseRect.size.width = -gCurrentDelta.x + 1;
-        }
-        
-        eraseRect = NSInsetRect(eraseRect, -1, -1);
-        NSRectFill(eraseRect);
-        
-        eraseRect.origin.x = imagePosition.x;
-        eraseRect.size.width = currentDrawingRect.size.width - gImageXIndent - gImageXIndent;
-
-        if (gCurrentDelta.y > 0) {
+        if (!isErased) {
+            [[NSColor blackColor] set];
+            
+            // Erasing only 2 small rectangles reduces screensaver's CPU usage by about 25%
+            imagePosition.x = (float) ((int)gCurrentPosition.x + gImageXIndent);
+            imagePosition.y = (float) (int)gCurrentPosition.y;
             eraseRect.origin.y = imagePosition.y;
-            eraseRect.size.height = gCurrentDelta.y + 1;
-        } else {
-            eraseRect.origin.y = imagePosition.y + currentDrawingRect.size.height - gTextBoxHeight - 1;
-            eraseRect.size.height = -gCurrentDelta.y + 1;
-        }
-        eraseRect = NSInsetRect(eraseRect, -1, -1);
-        NSRectFill(eraseRect);
-        
-        eraseRect = currentDrawingRect;
-        eraseRect.size.height = gTextBoxHeight;
-        eraseRect = NSInsetRect(eraseRect, -1, -1);
-        NSRectFill(eraseRect);
+            eraseRect.size.height = currentDrawingRect.size.height - gTextBoxHeight;
+            
+            if (gCurrentDelta.x > 0) {
+                eraseRect.origin.x = imagePosition.x - 1;
+                eraseRect.size.width = gCurrentDelta.x + 1;
+            } else {
+                eraseRect.origin.x = currentDrawingRect.origin.x + currentDrawingRect.size.width - gImageXIndent + gCurrentDelta.x - 1;
+                eraseRect.size.width = -gCurrentDelta.x + 1;
+            }
+            
+            eraseRect = NSInsetRect(eraseRect, -1, -1);
+            NSRectFill(eraseRect);
+            
+            eraseRect.origin.x = imagePosition.x;
+            eraseRect.size.width = currentDrawingRect.size.width - gImageXIndent - gImageXIndent;
 
-        isErased  = true;
-    }
+            if (gCurrentDelta.y > 0) {
+                eraseRect.origin.y = imagePosition.y;
+                eraseRect.size.height = gCurrentDelta.y + 1;
+            } else {
+                eraseRect.origin.y = imagePosition.y + currentDrawingRect.size.height - gTextBoxHeight - 1;
+                eraseRect.size.height = -gCurrentDelta.y + 1;
+            }
+            eraseRect = NSInsetRect(eraseRect, -1, -1);
+            NSRectFill(eraseRect);
+            
+            eraseRect = currentDrawingRect;
+            eraseRect.size.height = gTextBoxHeight;
+            eraseRect = NSInsetRect(eraseRect, -1, -1);
+            NSRectFill(eraseRect);
+
+            isErased  = true;
+        }
 
         // Get the new drawing area
         gCurrentPosition.x += gCurrentDelta.x;
@@ -380,28 +372,65 @@ int signof(float x) {
         
         imagePosition.x = (float) ((int)gCurrentPosition.x + gImageXIndent);
         imagePosition.y = (float) (int)gCurrentPosition.y;
-    
-        // Calculate QuickDraw Rect for current text box
-        r.left = (float) ((int)gCurrentPosition.x);
-        r.right = r.left + gMovingRect.size.width;
-        r.top = viewBounds.size.height - imagePosition.y;
-        r.bottom = r.top + (int)MAXTEXTBOXHEIGHT;
-        r.top += TEXTBOXTOPBORDER;        // Add a few pixels space below image
-        
-        TXNTextBoxOptionsData theOptions = {kTXNUseCGContextRefMask | kTXNSetFlushnessMask, 
-                                            kATSUCenterAlignment, kATSUNoJustification, 0, myContext };
-
-        cf_msg = CFStringCreateWithCString(NULL, msg, kCFStringEncodingMacRoman);
-
-        [[NSColor whiteColor] set];
 
         [ gBOINC_Logo compositeToPoint:imagePosition operation:NSCompositeCopy ];
 
-        err = TXNDrawCFStringTextBox ( cf_msg, &r, theStyle, &theOptions);
-        gTextBoxHeight = r.bottom - r.top + TEXTBOXTOPBORDER;
+        if ( (msg != NULL) && (msg[0] != '\0') ) {
+            cf_msg = CFStringCreateWithCString(NULL, msg, kCFStringEncodingMacRoman);
+
+            CGRect bounds = CGRectMake((float) ((int)gCurrentPosition.x), 
+                                 viewBounds.size.height - imagePosition.y + TEXTBOXTOPBORDER,
+                                 bounds.origin.x + gMovingRect.size.width,
+                                 bounds.origin.y + (int)MAXTEXTBOXHEIGHT
+                            );
+
+            CGContextSaveGState (myContext);
+            CGContextTranslateCTM (myContext, 0, viewBounds.origin.y + viewBounds.size.height);
+            CGContextScaleCTM (myContext, 1.0f, -1.0f);
+
+
+#ifdef __x86_64__
+            CTFontRef myFont = CTFontCreateWithName(CFSTR("Helvetica"), 20, NULL);
+
+            HIThemeTextInfo textInfo = {kHIThemeTextInfoVersionOne, kThemeStateActive, kThemeSpecifiedFont, 
+                                        kHIThemeTextHorizontalFlushLeft, kHIThemeTextVerticalFlushTop, 
+                                        kHIThemeTextBoxOptionNone, kHIThemeTextTruncationNone, 0, false,
+                                        0, myFont
+                                        };
+
+#else
+            GrafPtr port;
+            GetPort(&port);
+            SetPortTextFont(port, kFontIDHelvetica);
+            SetPortTextSize(port, 20);
+            
+            HIThemeTextInfo textInfo = {0, kThemeStateActive, kThemeCurrentPortFont, //kThemeMenuItemCmdKeyFont, //kThemePushButtonFont, 
+                                        kHIThemeTextHorizontalFlushLeft, kHIThemeTextVerticalFlushTop, 
+                                        kHIThemeTextBoxOptionNone, kHIThemeTextTruncationNone, 0, false 
+                                        };
+#endif
+
+            // Use only APIs available in Mac OS 10.3.9
+//            HIThemeSetTextFill(kThemeTextColorWhite, NULL, myContext, kHIThemeOrientationNormal);
+//            SetThemeTextColor(kThemeTextColorWhite, 32, true);
+
+            CGFloat myWhiteComponents[] = {1.0, 1.0, 1.0, 1.0};
+            CGColorSpaceRef myColorSpace = CGColorSpaceCreateDeviceRGB ();
+            CGColorRef myTextColor = CGColorCreate(myColorSpace, myWhiteComponents);
+
+            CGContextSetFillColorWithColor(myContext, myTextColor);
+
+            HIThemeDrawTextBox(cf_msg, &bounds, &textInfo, myContext, kHIThemeOrientationNormal);
+
+            CGColorRelease(myTextColor);
+            CGColorSpaceRelease(myColorSpace);
+            CGContextRestoreGState (myContext);
+            CFRelease(cf_msg);
+        }
+        
+        gTextBoxHeight = MAXTEXTBOXHEIGHT + TEXTBOXTOPBORDER;
         gMovingRect.size.height = [gBOINC_Logo size].height + gTextBoxHeight;
         
-        CFRelease(cf_msg);
         isErased  = false;
         
     } else {        // Empty or NULL message

@@ -69,12 +69,12 @@ function get_logged_in_user($must_be_logged_in=true) {
     global $g_logged_in_user;
     if ($g_logged_in_user) return $g_logged_in_user;
 
-	check_web_stopped();
+    check_web_stopped();
 
     $authenticator = null;
     if (isset($_COOKIE['auth'])) $authenticator = $_COOKIE['auth'];
 
-    $authenticator = process_user_text($authenticator);
+    $authenticator = BoincDb::escape_string($authenticator);
     if ($authenticator) {
         $g_logged_in_user = BoincUser::lookup("authenticator='$authenticator'");
     }
@@ -100,7 +100,9 @@ $cache_control_extra="";
 // To do so, define page_head() in the project include file.
 //
 if (!function_exists("page_head")){
-function page_head($title, $java_onload=null, $title_plain=null, $prefix="") {
+function page_head(
+    $title, $java_onload=null, $title_plain=null, $prefix="", $head_extra=null
+) {
     global $caching;
     global $cache_control_extra;
 
@@ -119,17 +121,18 @@ function page_head($title, $java_onload=null, $title_plain=null, $prefix="") {
         header ("Pragma: no-cache");                          // HTTP/1.0
     }
     
-    echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">
-    ";
-           
+    echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
+ 
     
     if (!$title_plain) {
         echo "<html><head><title>".strip_tags($title)."</title>\n";
     } else {
         echo "<html><head><title>".strip_tags($title_plain)."</title>\n";
     }
-    echo "<link rel=stylesheet type=\"text/css\" href=\"$stylesheet\">
+    echo "<link rel=stylesheet type=\"text/css\" href=\"main.css\" media=\"all\" />
+		<link rel=stylesheet type=\"text/css\" href=\"$stylesheet\">
         <link rel=alternate type=\"application/rss+xml\" title=\"$rssname\" href=\"$rsslink\">
+        $head_extra
         </head>
     ";
     if ($java_onload){
@@ -371,7 +374,7 @@ function check_tokens($auth) {
 if (!function_exists("print_login_form_aux")){
 function print_login_form_aux($next_url, $user, $email_addr="") {
     echo "
-        <form name=\"f\" method=\"post\" action=\"login_action.php\">
+        <form name=\"f\" method=\"post\" action=\"".URL_BASE."login_action.php\">
         <input type=\"hidden\" name=\"next_url\" value=\"$next_url\">
     ";
     start_table();
@@ -502,6 +505,9 @@ function user_links($user) {
     if ($user->donated == 1) { 
         require_once("../project/donations.inc");
         $x .= DONATION_LINK;
+    }
+    if (function_exists("project_user_links")){
+        $x .= project_user_links($user);
     }
     return $x;
 }
@@ -739,7 +745,7 @@ function check_web_stopped() {
 // Connects to database server and selects database as noted in config.xml
 // If only read-only access is necessary,
 // tries instead to connect to <replica_db_host> if tag exists.
-// DEPRECATED - use boinc_db.h
+// DEPRECATED - use boinc_db.inc
 //
 function db_init($try_replica=false) {
     check_web_stopped();
@@ -757,6 +763,6 @@ function db_init($try_replica=false) {
     return 0;
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 16399 2008-11-04 00:15:51Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util.inc 18712 2009-07-24 19:09:37Z davea $";  //Generated automatically - do not edit
 
 ?>

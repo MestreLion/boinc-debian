@@ -1,12 +1,16 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 16129 2008-10-04 18:51:38Z davea $
+## $Id: Makefile.am 18620 2009-07-17 16:45:08Z romw $
 
 AUTOMAKE_OPTIONS = foreign
+
+include Makefile.incl
 
 ## make sure rebuilding uses the right aclocal-switches
 ACLOCAL_AMFLAGS = -I m4
 
-API_SUBDIRS = api lib zip
+if ENABLE_LIBRARIES
+   API_SUBDIRS = api lib
+endif
 
 if ENABLE_SERVER
    SERVER_SUBDIRS = db test py sched apps tools samples/example_app
@@ -16,8 +20,8 @@ if ENABLE_CLIENT
    CLIENT_SUBDIRS = client client/scripts
 endif
 
-if BUILD_CLIENTGUI
-   CLIENTGUI_SUBDIRS = clientgui clientgui/res locale/client 
+if ENABLE_MANAGER
+   CLIENTGUI_SUBDIRS = clientgui clientgui/res locale
 endif
 
 # ORDER MATTERS below.  One must build dependencies FIRST, then things
@@ -33,9 +37,10 @@ EXTRA_DIST =                                    \
 	stripchart                                  \
     INSTALL										
 
+if INSTALL_HEADERS
 pkginclude_HEADERS = \
-    config.h \
     version.h
+endif
 
 # Add a stage target for staging a distribution
 

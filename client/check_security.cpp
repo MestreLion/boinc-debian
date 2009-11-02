@@ -35,6 +35,10 @@
 #include "error_numbers.h"
 #include "file_names.h"
 
+#ifdef __WXMAC__                            // If Mac BOINC Manager
+bool IsUserInGroupBM();
+#endif
+
 static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox);
 
 #if (! defined(__WXMAC__) && ! defined(_MAC_INSTALLER))
@@ -44,6 +48,7 @@ static void GetPathToThisProcess(char* outbuf, size_t maxLen);
 
 #define REAL_BOINC_MASTER_NAME "boinc_master"
 #define REAL_BOINC_PROJECT_NAME "boinc_project"
+
 
 static char         boinc_master_user_name[64];
 static char         boinc_master_group_name[64];
@@ -79,11 +84,15 @@ int use_sandbox, int isManager
     ProcessSerialNumber ourPSN;
     ProcessInfoRec      pInfo;
     FSRef               ourFSRef;
-    char                *p;
 #endif
-#ifdef _MAC_INSTALLER
-    char                *p;
-#endif
+
+#define NUMBRANDS 3
+
+char *saverName[NUMBRANDS];
+
+saverName[0] = "BOINCSaver";
+saverName[1] = "GridRepublic";
+saverName[2] = "Progress Thru Processors";
 
     useFakeProjectUserAndGroup = ! use_sandbox;
 #ifdef _DEBUG
@@ -91,7 +100,7 @@ int use_sandbox, int isManager
         useFakeProjectUserAndGroup = 1;
 #endif
 #ifdef __APPLE__
-    err = Gestalt(gestaltSystemVersion, &response);
+    err = Gestalt(gestaltSystemVersion, (SInt32*)&response);
     if ((err == noErr) && (response < 0x1040))
         useFakeProjectUserAndGroup = 1;
 #endif      // __APPLE__
@@ -149,10 +158,14 @@ int use_sandbox, int isManager
 
         boinc_master_uid = sbuf.st_uid;
         boinc_master_gid = sbuf.st_gid;
+
+#ifdef __WXMAC__
+    if (!IsUserInGroupBM())
+        return -1099;
+#endif
     } else {
         boinc_master_uid = geteuid();
         boinc_master_gid = getegid();
-
     }
 
 #ifdef _MAC_INSTALLER
@@ -203,6 +216,7 @@ int use_sandbox, int isManager
         boinc_project_gid = grp->gr_gid;
     }
 
+#if 0   // Manager is no longer setgid
 #if (defined(__WXMAC__) || defined(_MAC_INSTALLER)) // If Mac BOINC Manager or installer
         // Get the full path to BOINC Manager executable inside this application's bundle
         strlcpy(full_path, dir_path, sizeof(full_path));
@@ -228,6 +242,8 @@ int use_sandbox, int isManager
                 return -1015;
         }
 #endif
+#endif   // Manager is no longer setgid
+
 
 #ifdef _MAC_INSTALLER
         // Require absolute owner and group boinc_master:boinc_master
@@ -254,29 +270,31 @@ int use_sandbox, int isManager
         // to avoid this risk.
 
         if (use_sandbox) {
-            // Does gfx_switcher exist in screensaver bundle?
-            strcpy(full_path, "/Library/Screen Savers/BOINCSaver.saver/Contents/Resources/gfx_switcher");
-            retval = stat(full_path, &sbuf);
-            if (! retval) {
+            for (int i=0; i<NUMBRANDS; i++) {
+                // Does gfx_switcher exist in screensaver bundle?
+                sprintf(full_path, "/Library/Screen Savers/%s.saver/Contents/Resources/gfx_switcher", saverName[i]);
+                retval = stat(full_path, &sbuf);
+                if (! retval) {
 #ifdef _DEBUG
-                if (sbuf.st_uid != boinc_master_uid)
-                    return -1101;
+                    if (sbuf.st_uid != boinc_master_uid)
+                        return -1101;
 
-                if (sbuf.st_gid != boinc_master_gid)
-                    return -1102;
+                    if (sbuf.st_gid != boinc_master_gid)
+                        return -1102;
 
-                if ((sbuf.st_mode & (S_ISUID | S_ISGID)) != 0)
-                    return -1103;
+                    if ((sbuf.st_mode & (S_ISUID | S_ISGID)) != 0)
+                        return -1103;
 #else
-                if (sbuf.st_uid != 0)
-                    return -1101;
+                    if (sbuf.st_uid != 0)
+                        return -1101;
 
-                if (sbuf.st_gid != boinc_master_gid)
-                    return -1102;
+                    if (sbuf.st_gid != boinc_master_gid)
+                        return -1102;
 
-                if ((sbuf.st_mode & (S_ISUID | S_ISGID)) != S_ISUID)
-                    return -1103;
+                    if ((sbuf.st_mode & (S_ISUID | S_ISGID)) != S_ISUID)
+                        return -1103;
 #endif
+                }
             }
         }
 #endif
@@ -292,12 +310,13 @@ int use_sandbox, int isManager
 #else       // _MAC_INSTALLER
     getcwd(dir_path, sizeof(dir_path));             // Client or Manager
 
+    if (! isManager) {                                   // If BOINC Client
     if (egid != boinc_master_gid)
-        return -1019;     // Client or Manager should be running setgid boinc_master
+            return -1019;     // Client should be running setgid boinc_master
 
-    if (! isManager)                                    // If BOINC Client
         if (euid != boinc_master_uid)
             return -1020;     // BOINC Client should be running setuid boinc_master
+    }
 #endif
 
     retval = stat(dir_path, &sbuf);
@@ -344,7 +363,7 @@ int use_sandbox, int isManager
             return retval;
     }
 
-    strlcpy(full_path, dir_path, sizeof(dir_path));
+    strlcpy(full_path, dir_path, sizeof(full_path));
     strlcat(full_path, "/", sizeof(full_path));
     strlcat(full_path, SLOTS_DIR, sizeof(full_path));
     retval = stat(full_path, &sbuf);
@@ -387,7 +406,7 @@ int use_sandbox, int isManager
     }
 
     if (use_sandbox) {
-        strlcpy(full_path, dir_path, sizeof(dir_path));
+        strlcpy(full_path, dir_path, sizeof(full_path));
         strlcat(full_path, "/", sizeof(full_path));
         strlcat(full_path, SWITCHER_DIR, sizeof(full_path));
         retval = stat(full_path, &sbuf);
@@ -418,7 +437,7 @@ int use_sandbox, int isManager
         if ((sbuf.st_mode & 07777) != 04050)
             return -1040;
 
-        strlcpy(full_path, dir_path, sizeof(dir_path));
+        strlcpy(full_path, dir_path, sizeof(full_path));
         strlcat(full_path, "/", sizeof(full_path));
         strlcat(full_path, SWITCHER_DIR, sizeof(full_path));
 
@@ -436,10 +455,6 @@ int use_sandbox, int isManager
 
         if ((sbuf.st_mode & 07777) != 02500)
             return -1044;
-
-        strlcpy(full_path, dir_path, sizeof(dir_path));
-        strlcat(full_path, "/", sizeof(full_path));
-        strlcat(full_path, SWITCHER_DIR, sizeof(full_path));
 
 #ifdef __APPLE__
 #if 0       // AppStats is deprecated as of version 5.8.15
@@ -459,6 +474,23 @@ int use_sandbox, int isManager
             return -1048;
 #endif
 #endif  // __APPLE__
+
+        strlcpy(full_path, dir_path, sizeof(full_path));
+        strlcat(full_path, "/", sizeof(full_path));
+        strlcat(full_path, SS_CONFIG_FILE, sizeof(full_path));
+
+        retval = stat(full_path, &sbuf);
+        if (!retval) {
+            if (sbuf.st_uid != boinc_master_uid)
+                return -1051;
+
+            if (sbuf.st_gid != boinc_master_gid)
+                return -1052;
+
+            if ((sbuf.st_mode & 0777) != 0664)
+                return -1053;
+        }   // Screensaver config file ss_config.xml exists
+        
     }       // if (use_sandbox)
     
     return 0;
@@ -472,6 +504,7 @@ static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox) {
     int             retval = 0;
     DIR             *dirp;
     dirent          *dp;
+    static int      errShown = 0;
 
     dirp = opendir(basepath);
     if (dirp == NULL)           // Should never happen
@@ -559,6 +592,10 @@ static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox) {
 
     closedir(dirp);
     
+    if (retval && !errShown) {
+        fprintf(stderr, "Permissions error %d at %s\n", retval, full_path);
+        errShown = 1;
+    }
     return retval;
 }
 
@@ -620,3 +657,36 @@ static void GetPathToThisProcess(char* outbuf, size_t maxLen) {
         *q = '\0';
 }
 #endif
+
+
+#ifdef __WXMAC__                            // If Mac BOINC Manager
+bool IsUserInGroupBM() {
+    group               *grp;
+    gid_t               rgid;
+    char                *userName, *groupMember;
+    int                 i;
+
+    grp = getgrgid(boinc_master_gid);
+    if (grp) {
+
+        rgid = getgid();
+        if (rgid == boinc_master_gid) {
+            return true;                // User's primary group is boinc_master
+        }
+
+        userName = getlogin();
+        if (userName) {
+            for (i=0; ; i++) {          // Step through all users in group boinc_master
+                groupMember = grp->gr_mem[i];
+                if (groupMember == NULL)
+                    return false;       // User is not a member of group boinc_master
+                if (strcmp(userName, groupMember) == 0) {
+                    return true;        // User is a member of group boinc_master
+                }
+            }       // for (i)
+        }           // if (userName)
+    }               // if grp
+
+    return false;
+}
+#endif  // __WXMAC__

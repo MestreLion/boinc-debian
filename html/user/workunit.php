@@ -22,19 +22,21 @@ require_once("../inc/util.inc");
 require_once("../inc/boinc_db.inc");
 require_once("../inc/result.inc");
 
+BoincDb::get(true);
+
 $wuid = get_int("wuid");
 $wu = BoincWorkunit::lookup_id($wuid);
 if (!$wu) {
     error_page("can't find workunit");
 }
 
-page_head("Workunit details");
+page_head("Workunit $wuid");
 $app = BoincApp::lookup_id($wu->appid);
 
 start_table();
+row2("name", $wu->name);
 row2("application", $app->user_friendly_name);
 row2("created", time_str($wu->create_time));
-row2("name", $wu->name);
 if ($wu->canonical_resultid) {
     row2("canonical result",
         "<a href=result.php?resultid=$wu->canonical_resultid>$wu->canonical_resultid</a>"
@@ -42,12 +44,13 @@ if ($wu->canonical_resultid) {
     row2("granted credit", format_credit($wu->canonical_credit));
 }
 
-// if app is using adaptive replication and WU not assimilated yet,
+// if app is using adaptive replication and no canonical result yet,
 // don't show anything more
 // (so that bad guys can't tell if they have an unreplicated job)
 
-if ($app->target_nresults>0 && $wu->assimilate_state < 2) {
+if ($app->target_nresults>0 && !$wu->canonical_resultid) {
     row2("Tasks in progress", "suppressed pending completion");
+    end_table();
 } else {
     row2("minimum quorum", $wu->min_quorum);
     row2("initial replication", $wu->target_nresults);
@@ -63,11 +66,11 @@ if ($app->target_nresults>0 && $wu->assimilate_state < 2) {
     end_table();
     project_workunit($wu);
 
-    result_table_start(false, true, true);
+    result_table_start(false, true, null);
     $results = BoincResult::enum("workunitid=$wuid");
     $i = 0;
     foreach ($results as $result) {
-        show_result_row($result, false, true, true, $i++);
+        show_result_row($result, false, true, false, $i++);
     }
     echo "</table>\n";
 }

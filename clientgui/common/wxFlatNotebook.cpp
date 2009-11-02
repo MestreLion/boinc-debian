@@ -607,7 +607,7 @@ const wxColour& wxFlatNotebookBase::GetActiveTabColour()
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(wxPageContainerBase, wxControl)
+BEGIN_EVENT_TABLE(wxPageContainerBase, wxPanel)
 EVT_PAINT(wxPageContainerBase::OnPaint)
 EVT_SIZE(wxPageContainerBase::OnSize)
 EVT_LEFT_DOWN(wxPageContainerBase::OnLeftDown)
@@ -878,7 +878,7 @@ void wxPageContainerBase::OnPaint(wxPaintEvent &event)
 		}
 
 		// Draw the image for the tab if any
-#ifdef __WXMSW__
+#if (defined(__WXMSW__) || defined(__WXMAC__))
 		imageYCoord = style & wxFNB_BOTTOM ? 3 : 6;
 #else
 		imageYCoord = style & wxFNB_BOTTOM ? 3 : 10;
@@ -1390,7 +1390,7 @@ int wxPageContainerBase::HitTest(const wxPoint& pt, wxPageInfo& pageInfo, int &t
 		if(tabRect.Inside(pt))
 		{
 			// We have a match
-			// wxMessageBox(pgInfo.m_strCaption);
+			// wxGetApp().SafeMessageBox(pgInfo.m_strCaption);
 			pageInfo = pgInfo;
 			tabIdx = (int)cur;
 			return wxFNB_TAB;

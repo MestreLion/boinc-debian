@@ -103,10 +103,10 @@ function show_version($pname, $i, $v) {
     $type_text = type_text($type);
     $url = version_url($v);
     echo "<tr>
-       <td class=\"rowlineleft\">$num</td>
-        <td class=\"rowline\">$status</td>
-        <td class=\"rowline\"><a href=\"$url\"><b>Download</b></a> ($s MB)</td>
-        <td class=\"rowlineright\">$date</td>
+       <td class=rowlineleft>$num</td>
+        <td class=rowline>$status</td>
+        <td class=rowline><a href=\"$url\"><b>Download</b></a> ($s MB)</td>
+        <td class=rowlineright>$date</td>
         </tr>
     ";
 }
@@ -189,6 +189,11 @@ if ($xml) {
         }
         list_end();
         echo "
+            <h3>GPU computing</h3>
+            If your computer is equipped with an NVIDIA
+            Graphics Processing Unit (GPU),
+            you may be able to
+            <a href=cuda.php>use it to compute faster</a>.
             <h3>Other platforms</h3>
             If your computer is not of one of these types, you can
             <ul>
@@ -202,6 +207,17 @@ if ($xml) {
         show_linux_info();
     }
     echo "
+        <h3>Ubuntu image for USB/diskless/CD-ROM install</h3>
+        <a href=http://www.dotsch.de/boinc/Dotsch_UX.html>Dotsch/UX</a>
+        is an ISO-format Linux distribution, based on Ubuntu Linux,
+        with the 6.2.15 BOINC client pre-installed.
+        It lets you easily install and boot from a USB stick, hard disk and
+        from diskless clients,
+        and it also has some interfaces to set up the diskless server
+        and the clients automatically.
+        <a href=boincdl.ssl.berkeley.edu/dl/dotsch_ux-10.iso>Download</a>
+        the image (515 MB).
+
         <h3>Customizing this page</h3>
         The information on this page can be
         <a href=\"trac/wiki/DownloadInfo\">

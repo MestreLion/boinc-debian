@@ -46,6 +46,7 @@
 #endif
 
 #include "str_util.h"
+#include "str_replace.h"
 #include "parse.h"
 #include "util.h"
 #include "file_names.h"
@@ -93,7 +94,10 @@ void HOST_INFO::make_random_string(const char* salt, char* out) {
 // Should be unique across hosts with very high probability
 //
 void HOST_INFO::generate_host_cpid() {
-#if defined(__linux__) || defined(_WIN32) || defined(__APPLE__ )
+// Assume that get_mac_addresses can be ported to any unix system.
+// If not, it can return false.
+//
+#if defined(__linux__) || defined(_WIN32) || defined(__APPLE__ ) || defined(__unix)
     char buffer[8192] = "";
         // must be big enough to accommodate aa:bb:cc:dd:ee:ff
         // times the number of network interfaces,
@@ -114,4 +118,4 @@ void HOST_INFO::generate_host_cpid() {
 }
 
 
-const char *BOINC_RCSID_9275b20aa5 = "$Id: hostinfo_network.cpp 16433 2008-11-05 20:27:04Z davea $";
+const char *BOINC_RCSID_9275b20aa5 = "$Id: hostinfo_network.cpp 18658 2009-07-22 18:41:02Z davea $";

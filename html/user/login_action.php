@@ -28,7 +28,7 @@ if (strlen($next_url) == 0) $next_url = "home.php";
 
 // check for email/password case
 //
-$email_addr = strtolower(process_user_text(post_str("email_addr", true)));
+$email_addr = strtolower(strip_tags(post_str("email_addr", true)));
 $passwd = post_str("passwd", true);
 
 if ($email_addr && $passwd) {
@@ -99,7 +99,7 @@ if ($id && $t && $h) {
 //
 $authenticator = get_str("key", true);
 if (!$authenticator) {
-   $authenticator = post_str("authenticator", true);
+    $authenticator = post_str("authenticator", true);
 }
 if (!$authenticator) {
     error_page("You must supply an account key");

@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-using namespace std;
 
 #include "config.h"
 #include <cstdlib>
@@ -32,15 +31,16 @@ using namespace std;
 
 #include "sched_msgs.h"
 #include "sched_util.h"
+#include "sched_config.h"
 #include "util.h"
 
 #ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
 #endif
 
-const char* STOP_DAEMONS_FILENAME = "../stop_daemons";
+const char* STOP_DAEMONS_FILENAME = "stop_daemons";
     // NOTE: this must be same as in the "start" script
-const char* STOP_SCHED_FILENAME = "../stop_sched";
+const char* STOP_SCHED_FILENAME = "stop_sched";
     // NOTE: this must be same as in the "start" script
 const int STOP_SIGNAL = SIGHUP;
     // NOTE: this must be same as in the "start" script
@@ -78,17 +78,18 @@ void check_stop_daemons() {
         log_messages.printf(MSG_NORMAL, "Quitting due to SIGHUP\n");
         exit(0);
     }
-    if (boinc_file_exists(STOP_DAEMONS_FILENAME)) {
+    const char *stop_file = config.project_path(STOP_DAEMONS_FILENAME);
+    if (boinc_file_exists(stop_file)) {
         log_messages.printf(MSG_NORMAL,
             "Quitting because trigger file '%s' is present\n",
-            STOP_DAEMONS_FILENAME
+            stop_file
         );
         exit(0);
     }
 }
 
 bool check_stop_sched() {
-    return boinc_file_exists(STOP_SCHED_FILENAME);
+    return boinc_file_exists(config.project_path(STOP_SCHED_FILENAME));
 }
 
 // try to open a file.
@@ -104,7 +105,7 @@ int try_fopen(const char* path, FILE*& f, const char* mode) {
 #else
 int try_fopen(const char* path, FCGI_FILE*& f, const char *mode) {
 #endif
-    char* p;
+    const char* p;
     DIR* d;
     char dirpath[256];
 
@@ -134,11 +135,12 @@ int try_fopen(const char* path, FCGI_FILE*& f, const char *mode) {
 
 void get_log_path(char* p, const char* filename) {
     char host[256];
-    char dir[256];
+    const char *dir;
+
     gethostname(host, 256);
     char* q = strchr(host, '.');
     if (q) *q=0;
-    sprintf(dir, "../log_%s", host);
+    dir = config.project_path("log_%s", host);
     sprintf(p, "%s/%s", dir, filename);
     mode_t old_mask = umask(0);
     mkdir(dir, 01770);
@@ -221,17 +223,6 @@ void compute_avg_turnaround(HOST& host, double turnaround) {
     host.avg_turnaround = new_avg;
 }
 
-double elapsed_wallclock_time() {
-    static double wallclock_execution_time=0.0;
-
-    if (wallclock_execution_time == 0.0) {
-        wallclock_execution_time=dtime();
-        return 0.0;
-    }
-
-    return dtime()-wallclock_execution_time;
-}
-
 // Request lock on the given file with given fd.  Returns:
 // 0 if we get lock
 // PID (>0) if another process has lock
@@ -250,19 +241,6 @@ int mylockf(int fd) {
     fcntl(fd, F_GETLK, &fl);
     if (fl.l_pid>0) return fl.l_pid;
     return -1;
-}
-
-double fpops_to_credit(double fpops, double intops) {
-    // TODO: use fp_weight if specified in config file
-    double fpc = (fpops/1e9)*COBBLESTONE_FACTOR/SECONDS_PER_DAY;
-    double intc = (intops/1e9)*COBBLESTONE_FACTOR/SECONDS_PER_DAY;
-    return std::max(fpc, intc);
-}
-
-double credit_multiplier(int appid, time_t create_time) {
-    DB_CREDIT_MULTIPLIER mult;
-    mult.get_nearest(appid,create_time);
-    return mult.multiplier;
 }
 
 int count_results(char* query, int& n) {
@@ -297,13 +275,13 @@ int count_unsent_results(int& n, int appid) {
 void simulator_signal_handler(int signum){    
     FILE *fsim;
     char currenttime[64];
-    fsim = fopen("../simulator/sim_time.txt","r");
+    fsim = fopen(config.project_path("simulator/sim_time.txt"),"r");
     if(fsim){
         fscanf(fsim,"%s", currenttime);
         simtime = atof(currenttime); 
         fclose(fsim);
     }
-    log_messages.printf(SCHED_MSG_LOG::MSG_NORMAL,
+    log_messages.printf(MSG_NORMAL,
         "Invoked by the simulator at time %.0f... \n", simtime
     );
 }
@@ -315,8 +293,8 @@ int itime() {
 void continue_simulation(const char *daemonname){
     char daemonfilelok[64];
     char daemonfile[64];
-    sprintf(daemonfile, "../simulator/sim_%s.txt",daemonname);
-    sprintf(daemonfilelok, "../simulator/sim_%s.lok",daemonname);
+    sprintf(daemonfile, config.project_path("simulator/sim_%s.txt"),daemonname);
+    sprintf(daemonfilelok, config.project_path("simulator/sim_%s.lok"),daemonname);
     FILE *fsimlok = fopen(daemonfilelok, "w");
     if (fsimlok){
         fclose(fsimlok);
@@ -330,4 +308,4 @@ void continue_simulation(const char *daemonname){
 
 #endif
 
-const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 16097 2008-09-30 18:21:41Z davea $";
+const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 18825 2009-08-10 04:49:02Z davea $";

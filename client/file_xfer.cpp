@@ -62,7 +62,7 @@ int FILE_XFER::init_download(FILE_INFO& file_info) {
     }
     bytes_xferred = starting_size;
 
-    const char* url = fip->get_current_url(is_upload);
+    const char* url = fip->get_current_url();
     if (!url) return ERR_INVALID_URL;
     return HTTP_OP::init_get(
         url, pathname, false, (int)starting_size
@@ -83,6 +83,12 @@ int FILE_XFER::init_upload(FILE_INFO& file_info) {
 
     is_upload = true;
 
+    // skip file size check if file is small
+    //
+    if (fip->nbytes < FILE_SIZE_CHECK_THRESHOLD) {
+        fip->upload_offset = 0;
+    }
+
     if (file_info.upload_offset < 0) {
         bytes_xferred = 0;
         sprintf(header,
@@ -96,7 +102,7 @@ int FILE_XFER::init_upload(FILE_INFO& file_info) {
             file_info.name
         );
         file_size_query = true;
-        const char* url = fip->get_current_url(is_upload);
+        const char* url = fip->get_current_url();
         if (!url) return ERR_INVALID_URL;
         return HTTP_OP::init_post2(url, header, sizeof(header), NULL, 0);
     } else {
@@ -125,10 +131,10 @@ int FILE_XFER::init_upload(FILE_INFO& file_info) {
             file_info.upload_offset
         );
         file_size_query = false;
-        const char* url = fip->get_current_url(is_upload);
+        const char* url = fip->get_current_url();
         if (!url) return ERR_INVALID_URL;
         return HTTP_OP::init_post2(
-            url , header, sizeof(header), pathname, fip->upload_offset
+            url, header, sizeof(header), pathname, fip->upload_offset
         );
     }
 }
@@ -181,10 +187,7 @@ FILE_XFER_SET::FILE_XFER_SET(HTTP_OP_SET* p) {
 // If successful, add to the set
 //
 int FILE_XFER_SET::insert(FILE_XFER* fxp) {
-    int retval;
-
-    retval = http_ops->insert(fxp);
-    if (retval) return retval;
+    http_ops->insert(fxp);
     file_xfers.push_back(fxp);
     set_bandwidth_limits(fxp->is_upload);
     return 0;
@@ -201,12 +204,12 @@ int FILE_XFER_SET::remove(FILE_XFER* fxp) {
     while (iter != file_xfers.end()) {
         if (*iter == fxp) {
             iter = file_xfers.erase(iter);
-			set_bandwidth_limits(fxp->is_upload);
+            set_bandwidth_limits(fxp->is_upload);
             return 0;
         }
         iter++;
     }
-    msg_printf(NULL, MSG_INTERNAL_ERROR,
+    msg_printf(fxp->fip->project, MSG_INTERNAL_ERROR,
         "File transfer for %s not found", fxp->fip->name
     );
     return ERR_NOT_FOUND;
@@ -223,7 +226,7 @@ bool FILE_XFER_SET::poll() {
     char pathname[256];
     double size;
 
-    if (gstate.now - last_time < 1.0) return false;
+    if (gstate.now - last_time < FILE_XFER_POLL_PERIOD) return false;
     last_time = gstate.now;
 
     for (i=0; i<file_xfers.size(); i++) {
@@ -233,7 +236,7 @@ bool FILE_XFER_SET::poll() {
         action = true;
         fxp->file_xfer_done = true;
         if (log_flags.file_xfer_debug) {
-            msg_printf(0, MSG_INFO,
+            msg_printf(fxp->fip->project, MSG_INFO,
                 "[file_xfer_debug] FILE_XFER_SET::poll(): http op done; retval %d\n",
                 fxp->http_op_retval
             );
@@ -312,12 +315,12 @@ bool FILE_XFER_SET::poll() {
                 // got HTTP error; truncate last 5KB of file, since some
                 // error-reporting HTML may have been appended
                 //
-				if (diff < MIN_DOWNLOAD_INCREMENT) {
-					diff = 0;
-				} else {
-					diff -= MIN_DOWNLOAD_INCREMENT;
-				}
-				boinc_truncate(pathname, fxp->starting_size + diff);
+                if (diff < MIN_DOWNLOAD_INCREMENT) {
+                    diff = 0;
+                } else {
+                    diff -= MIN_DOWNLOAD_INCREMENT;
+                }
+                boinc_truncate(pathname, fxp->starting_size + diff);
             }
         }
 
@@ -400,7 +403,7 @@ void FILE_XFER_SET::set_bandwidth_limits(bool is_upload) {
     int n = 0;
     for (i=0; i<file_xfers.size(); i++) {
         fxp = file_xfers[i];
-		if (!fxp->is_active()) continue;
+        if (!fxp->is_active()) continue;
         if (is_upload) {
             if (!fxp->is_upload) continue;
         } else {
@@ -412,7 +415,7 @@ void FILE_XFER_SET::set_bandwidth_limits(bool is_upload) {
     max_bytes_sec /= n;
     for (i=0; i<file_xfers.size(); i++) {
         fxp = file_xfers[i];
-		if (!fxp->is_active()) continue;
+        if (!fxp->is_active()) continue;
         if (is_upload) {
             if (!fxp->is_upload) continue;
             fxp->set_speed_limit(true, max_bytes_sec);
@@ -423,4 +426,4 @@ void FILE_XFER_SET::set_bandwidth_limits(bool is_upload) {
     }
 }
 
-const char *BOINC_RCSID_31ba21bea3 = "$Id: file_xfer.cpp 16150 2008-10-07 12:45:06Z davea $";
+const char *BOINC_RCSID_31ba21bea3 = "$Id: file_xfer.cpp 18786 2009-07-31 19:46:47Z davea $";

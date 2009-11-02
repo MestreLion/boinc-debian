@@ -22,8 +22,8 @@
 //
 
 function test_mysql_query($msg) {
-        echo "mysql_query($msg)<br/>";
-        return 1;
+    echo "mysql_query($msg)<br/>";
+    return 1;
 }
 
 // for purposes of testing and seeing queries,
@@ -89,5 +89,5 @@ if (cancel_wu($wuid1, $wuid2)) {
 echo " cancelling workunits $wuid1 <= WUID <= $wuid2</h2>";
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: cancel_wu_action.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: cancel_wu_action.php 17456 2009-03-03 21:58:03Z davea $";  //Generated automatically - do not edit
 ?>

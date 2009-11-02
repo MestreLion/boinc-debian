@@ -33,6 +33,7 @@ $rm4555 = prot('root', 'boinc_master', '0555+setuid');
 $mm0550 = prot('boinc_master', 'boinc_master', '0550');
 $mm0440 = prot('boinc_master', 'boinc_master', '0440');
 $mm0660 = prot('boinc_master', 'boinc_master', '0660');
+$mm0664 = prot('boinc_master', 'boinc_master', '0664');
 $mm0771 = prot('boinc_master', 'boinc_master', '0771');
 $mm0775 = prot('boinc_master', 'boinc_master', '0775');
 $mp0775 = prot('boinc_master', 'boinc_project', '0775');
@@ -129,7 +130,8 @@ echo
         show_file('client_state.xml', $mm0660),
         show_file('gui_rpc_auth.cfg', $mm0660),
         show_file('sched_reply*', $mm0660),
-        show_file('sched_request*', $mm0660)
+        show_file('sched_request*', $mm0660),
+        show_file('ss_config.xml', $mm0664)
     ));
 
 echo "<br><br>";
@@ -197,10 +199,17 @@ screensaver is launched by the operating system, so it runs as the
 currently logged in user and group.  Since running the science projects' graphics applications 
 with this user and group would be a security risk, the screensaver has 
 its own embedded helper application <i>gfx_switcher</i> which it uses to 
-launch the graphics applications.  
+launch and kill the graphics applications.  
 Like the <i>switcher</i> application, <i>gfx_switcher</i> runs setuid 
 <b>root</b> and immediately changes its real and effective user ID and 
-group ID to <b>boinc_project</b>
+group ID to <b>boinc_project</b>.
+<li>Starting with BOINC version 6.7, a default screenaver graphics application 
+is provided with BOINC.  The screensaver (now more properly called the 
+<b>screensaver coordinator</b>) runs the default graphics alternating with science 
+graphics applications according to a schedule set by the data file ss-config.xml.  
+The default graphics are run also when no science graphics are available, such as 
+when BOINC is suspended.  The default graphics executable is run as user and group 
+<b>boinc_project</b>.  
 <li>The BOINC screensaver's use of setuid <b>root</b> for the 
 <i>gfx_switcher</i> application is safe because:
 <ul>
@@ -208,15 +217,17 @@ group ID to <b>boinc_project</b>
 its real and effective user ID and group ID to <b>boinc_project</b>, disabling 
 its superuser privileges.
 <li>The <i>gfx_switcher</i> application has very limited functionality.  It 
-accepts only two commands as its first argument:.  
+accepts only three commands as its first argument: 
 <ul>
 <li><i>launch_gfx</i>: the second argument is the slot number.  It looks for 
 a soft-link named <b>graphics_app</b> in the specified slot directory and launches 
-the referenced graphics application.
+the referenced graphics application as user and group <b>boinc_project</b>.
+<li><i>default_gfx</i>: launches the default graphics application <i>boincscr</i> 
+in the BOINC data directory as user and group <b>boinc_project</b>.
 <li><i>kill_gfx</i>: the second argument is the process ID.  It kills the 
 application with the process ID; since it is running as user and group 
-<b>boinc_project</b>, it can affect only processes belonging to that user.
-</ul>
+<b>boinc_project</b>, it can affect only processes belonging to that user.  
+This is used to exit all screensaver graphics applications.</ul>
 </ul>
 <li>BOINC Client sets its umask to 006 to hide account keys from unauthorized 
 users.  This means that third-party add-ons cannot read BOINC data files; they 
@@ -233,9 +244,8 @@ direct access to all BOINC and project files
 to simplify maintenance and administration.
 <li>The RPC password file <i>gui_rpc_auth.cfg</i>
 is accessible only by user and group <b>boinc_master</b>.
-In other words, only BOINC Manager, BOINC Client and
-authorized administrative users can read or modify it,
-limiting access to most BOINC RPC functions.
+In other words, only BOINC Manager, BOINC Client and authorized administrative 
+users can read or modify it, limiting access to most BOINC RPC functions.  
 <li>BOINC Manager restricts certain functions to authorized users:
 Attach to Project, Detach from Project, Reset Project, Abort Task,
 Abort Transfer, Update Account Manager.  

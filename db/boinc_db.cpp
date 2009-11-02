@@ -29,6 +29,7 @@
 #endif
 
 #include "str_util.h"
+#include "str_replace.h"
 #include "util.h"
 #include "error_numbers.h"
 #include "boinc_db.h"
@@ -68,6 +69,7 @@ void TRANSITIONER_ITEM::clear() {memset(this, 0, sizeof(*this));}
 void VALIDATOR_ITEM::clear() {memset(this, 0, sizeof(*this));}
 void SCHED_RESULT_ITEM::clear() {memset(this, 0, sizeof(*this));}
 void CREDIT_MULTIPLIER::clear() {memset(this, 0, sizeof(*this));}
+void STATE_COUNTS::clear() {memset(this, 0, sizeof(*this));}
 
 DB_PLATFORM::DB_PLATFORM(DB_CONN* dc) :
     DB_BASE("platform", dc?dc:&boinc_db){}
@@ -95,6 +97,8 @@ DB_ASSIGNMENT::DB_ASSIGNMENT(DB_CONN* dc) :
     DB_BASE("assignment", dc?dc:&boinc_db){}
 DB_CREDIT_MULTIPLIER::DB_CREDIT_MULTIPLIER(DB_CONN* dc) :
     DB_BASE("credit_multiplier", dc?dc:&boinc_db){}
+DB_STATE_COUNTS::DB_STATE_COUNTS(DB_CONN* dc) :
+    DB_BASE("state_counts", dc?dc:&boinc_db){}
 DB_TRANSITIONER_ITEM_SET::DB_TRANSITIONER_ITEM_SET(DB_CONN* dc) :
     DB_BASE_SPECIAL(dc?dc:&boinc_db){}
 DB_VALIDATOR_ITEM_SET::DB_VALIDATOR_ITEM_SET(DB_CONN* dc) :
@@ -121,6 +125,7 @@ int DB_MSG_FROM_HOST::get_id() {return id;}
 int DB_MSG_TO_HOST::get_id() {return id;}
 int DB_ASSIGNMENT::get_id() {return id;}
 int DB_CREDIT_MULTIPLIER::get_id() {return id;}
+int DB_STATE_COUNTS::get_id() {return appid;}
 
 void DB_PLATFORM::db_print(char* buf){
     sprintf(buf,
@@ -936,6 +941,50 @@ void DB_CREDIT_MULTIPLIER::db_parse(MYSQL_ROW& r) {
     multiplier = atof(r[i++]);
 }
 
+void DB_STATE_COUNTS::db_print(char* buf) {
+    sprintf(buf,
+        "appid=%d, "
+        "last_update_time=%d, "
+        "result_server_state_2=%d, "
+        "result_server_state_4=%d, "
+        "result_file_delete_state_1=%d, "
+        "result_file_delete_state_2=%d, "
+        "result_server_state_5_and_file_delete_state_0=%d, "
+        "workunit_need_validate_1=%d, "
+        "workunit_assimilate_state_1=%d, "
+        "workunit_file_delete_state_1=%d, "
+        "workunit_file_delete_state_2=%d, ",
+        appid,
+        last_update_time,   
+        result_server_state_2,      
+        result_server_state_4,      
+        result_file_delete_state_1, 
+        result_file_delete_state_2, 
+        result_server_state_5_and_file_delete_state_0,      
+        workunit_need_validate_1,   
+        workunit_assimilate_state_1,
+        workunit_file_delete_state_1,       
+        workunit_file_delete_state_2  
+    );
+}
+
+void DB_STATE_COUNTS::db_parse(MYSQL_ROW& r) {
+    int i=0;
+    clear();
+    appid = atoi(r[i++]);
+    last_update_time = atoi(r[i++]);
+    result_server_state_2 = atoi(r[i++]);      
+    result_server_state_4 = atoi(r[i++]);      
+    result_file_delete_state_1 = atoi(r[i++]); 
+    result_file_delete_state_2 = atoi(r[i++]); 
+    result_server_state_5_and_file_delete_state_0 = atoi(r[i++]);      
+    workunit_need_validate_1 = atoi(r[i++]);   
+    workunit_assimilate_state_1 = atoi(r[i++]);
+    workunit_file_delete_state_1 = atoi(r[i++]);       
+    workunit_file_delete_state_2 = atoi(r[i++]);
+}
+
+
 void DB_CREDIT_MULTIPLIER::get_nearest(int _appid, int t) {
     char query[MAX_QUERY_LEN];
     MYSQL_ROW row;
@@ -1205,6 +1254,8 @@ void VALIDATOR_ITEM::parse(MYSQL_ROW& r) {
     res.opaque = atof(r[i++]);
     res.exit_status = atoi(r[i++]);
     res.hostid = atoi(r[i++]);
+    res.userid = atoi(r[i++]);
+    res.teamid = atoi(r[i++]);
     res.sent_time = atoi(r[i++]);
     res.received_time = atoi(r[i++]);
     res.appid = atoi(r[i++]);
@@ -1260,6 +1311,8 @@ int DB_VALIDATOR_ITEM_SET::enumerate(
             "   res.opaque, "
             "   res.exit_status, "
             "   res.hostid, "
+            "   res.userid, "
+            "   res.teamid, "
             "   res.sent_time, "
             "   res.received_time, "
             "   res.appid "
@@ -1704,4 +1757,4 @@ int DB_SCHED_RESULT_ITEM_SET::update_workunits() {
     }
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 18490 2009-06-23 21:45:22Z jeffc $";

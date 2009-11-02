@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "BOINCBaseFrame.h"
@@ -52,10 +50,13 @@ IMPLEMENT_DYNAMIC_CLASS(CBOINCBaseFrame, wxFrame)
 BEGIN_EVENT_TABLE (CBOINCBaseFrame, wxFrame)
     EVT_TIMER(ID_DOCUMENTPOLLTIMER, CBOINCBaseFrame::OnDocumentPoll)
     EVT_TIMER(ID_ALERTPOLLTIMER, CBOINCBaseFrame::OnAlertPoll)
+    EVT_TIMER(ID_PERIODICRPCTIMER, CBOINCBaseFrame::OnPeriodicRPC)
     EVT_FRAME_INITIALIZED(CBOINCBaseFrame::OnInitialized)
     EVT_FRAME_ALERT(CBOINCBaseFrame::OnAlert)
+    EVT_FRAME_REFRESH(CBOINCBaseFrame::OnRefreshView)
     EVT_CLOSE(CBOINCBaseFrame::OnClose)
-    EVT_MENU(ID_FILECLOSEWINDOW, CBOINCBaseFrame::OnCloseWindow)
+    EVT_MENU(ID_CLOSEWINDOW, CBOINCBaseFrame::OnCloseWindow)
+    EVT_MENU(wxID_EXIT, CBOINCBaseFrame::OnExit)
 END_EVENT_TABLE ()
 
 
@@ -95,6 +96,10 @@ CBOINCBaseFrame::CBOINCBaseFrame(wxWindow* parent, const wxWindowID id, const wx
 
     m_pAlertPollTimer->Start(1000);                  // Send event every 1000 milliseconds
 
+    m_pPeriodicRPCTimer = new wxTimer(this, ID_PERIODICRPCTIMER);
+    wxASSERT(m_pPeriodicRPCTimer);
+
+    m_pPeriodicRPCTimer->Start(1000);                  // Send event every 1000 milliseconds
 
     // Limit the number of times the UI can update itself to two times a second
     //   NOTE: Linux and Mac were updating several times a second and eating
@@ -115,8 +120,14 @@ CBOINCBaseFrame::CBOINCBaseFrame(wxWindow* parent, const wxWindowID id, const wx
 CBOINCBaseFrame::~CBOINCBaseFrame() {
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::~CBOINCBaseFrame - Function Begin"));
 
+    wxASSERT(m_pPeriodicRPCTimer);
     wxASSERT(m_pAlertPollTimer);
     wxASSERT(m_pDocumentPollTimer);
+
+    if (m_pPeriodicRPCTimer) {
+        m_pPeriodicRPCTimer->Stop();
+        delete m_pPeriodicRPCTimer;
+    }
 
     if (m_pAlertPollTimer) {
         m_pAlertPollTimer->Stop();
@@ -135,6 +146,23 @@ CBOINCBaseFrame::~CBOINCBaseFrame() {
 }
 
 
+void CBOINCBaseFrame::OnPeriodicRPC(wxTimerEvent& WXUNUSED(event)) {
+    static bool        bAlreadyRunningLoop = false;
+    CMainDocument*     pDoc = wxGetApp().GetDocument();
+
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+
+    if (!bAlreadyRunningLoop && m_pPeriodicRPCTimer->IsRunning()) {
+        bAlreadyRunningLoop = true;
+
+        pDoc->RunPeriodicRPCs();
+        
+        bAlreadyRunningLoop = false;
+    }
+}
+
+
 void CBOINCBaseFrame::OnDocumentPoll(wxTimerEvent& WXUNUSED(event)) {
     static bool        bAlreadyRunOnce = false;
     CMainDocument*     pDoc = wxGetApp().GetDocument();
@@ -142,6 +170,11 @@ void CBOINCBaseFrame::OnDocumentPoll(wxTimerEvent& WXUNUSED(event)) {
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
+    // Timer events are handled while the RPC Wait dialog is shown 
+    // which may cause unintended recursion and repeatedly posting 
+    // the same RPC requests from timer routines.
+    if (pDoc->WaitingForRPC()) return;
+ 
     if (!bAlreadyRunOnce && m_pDocumentPollTimer->IsRunning()) {
         // Complete any remaining initialization that has to happen after we are up
         //   and running
@@ -166,7 +199,10 @@ void CBOINCBaseFrame::OnAlertPoll(wxTimerEvent& WXUNUSED(event)) {
         // Check to see if there is anything that we need to do from the
         //   dial up user perspective.
         if (pDoc && m_pDialupManager) {
-            if (pDoc->IsConnected()) {
+            // Timer events are handled while the RPC Wait dialog is shown 
+            // which may cause unintended recursion and repeatedly posting 
+            // the same RPC requests from timer routines.
+            if (pDoc->IsConnected() && !pDoc->WaitingForRPC()) {
                 m_pDialupManager->OnPoll();
             }
         }
@@ -175,7 +211,7 @@ void CBOINCBaseFrame::OnAlertPoll(wxTimerEvent& WXUNUSED(event)) {
             m_bShowConnectionFailedAlert = false;
             ShowConnectionFailedAlert();
         }
-
+        
         bAlreadyRunningLoop = false;
     }
 }
@@ -184,6 +220,10 @@ void CBOINCBaseFrame::OnAlertPoll(wxTimerEvent& WXUNUSED(event)) {
 void CBOINCBaseFrame::OnInitialized(CFrameEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::OnInitialized - Function Begin"));
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::OnInitialized - Function End"));
+}
+
+
+void CBOINCBaseFrame::OnRefreshView(CFrameEvent& ) {
 }
 
 
@@ -206,7 +246,7 @@ void CBOINCBaseFrame::OnAlert(CFrameAlertEvent& event) {
                     Show();
                 }
 
-                retval = ::wxMessageBox(event.m_message, event.m_title, event.m_style, this);
+                retval = wxGetApp().SafeMessageBox(event.m_message, event.m_title, event.m_style, this);
                 if (event.m_alert_event_type == AlertProcessResponse) {
                     event.ProcessResponse(retval);
                 }
@@ -237,7 +277,7 @@ void CBOINCBaseFrame::OnAlert(CFrameAlertEvent& event) {
             );
         }
 #elif defined (__WXMAC__)
-        // wxMessageBox() / ProcessResponse() hangs the Manager if hidden.
+        // SafeMessageBox() / ProcessResponse() hangs the Manager if hidden.
         // Currently, the only non-notification-only alert is Connection Failed,
         // which is now has logic to be displayed when Manager is maximized.
 
@@ -248,7 +288,7 @@ void CBOINCBaseFrame::OnAlert(CFrameAlertEvent& event) {
         if (IsShown() && !event.m_notification_only) {
             int retval = 0;
 
-            retval = ::wxMessageBox(event.m_message, event.m_title, event.m_style, this);
+            retval = wxGetApp().SafeMessageBox(event.m_message, event.m_title, event.m_style, this);
             if (event.m_alert_event_type == AlertProcessResponse) {
                 event.ProcessResponse(retval);
             }
@@ -266,12 +306,18 @@ void CBOINCBaseFrame::OnClose(wxCloseEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::OnClose - Function Begin"));
 
 #if defined(__WXMSW__) || defined(__WXMAC__)
-    if (!event.CanVeto()) {
+    if (!event.CanVeto()
+#ifdef __WXMAC__
+        || IsIconized()
+#endif    
+    ) {
+        wxGetApp().FrameClosed();
         Destroy();
     } else {
         Hide();
     }
 #else
+    wxGetApp().FrameClosed();
     Destroy();
 #endif
 
@@ -292,6 +338,10 @@ void CBOINCBaseFrame::OnExit(wxCommandEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnExit - Function Begin"));
 
     if (wxGetApp().ConfirmExit()) {
+
+        // Save state before exiting
+        SaveState();
+
 #ifdef __WXMSW__
         CMainDocument* pDoc = wxGetApp().GetDocument();
 
@@ -307,22 +357,22 @@ void CBOINCBaseFrame::OnExit(wxCommandEvent& WXUNUSED(event)) {
 
         // Under wxWidgets 2.8.0, the task bar icons must be deleted for app to exit its main loop
 #ifdef __WXMAC__
-        CMacSystemMenu* pMSM = wxGetApp().GetMacSystemMenu();
-        if (pMSM)
-            delete pMSM;
+        wxGetApp().DeleteMacSystemMenu();
 #endif
 
         // TaskBarIcon isn't used in Linux
 #if defined(__WXMSW__) || defined(__WXMAC__)
-        CTaskBarIcon* pTBI = wxGetApp().GetTaskBarIcon();
-        if (pTBI && !pTBI->m_bTaskbarInitiatedShutdown) {
-            delete pTBI;
-        }
+        wxGetApp().DeleteTaskBarIcon();
 #endif
         Close(true);
-
     }
+
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnExit - Function End"));
+}
+
+
+int CBOINCBaseFrame::GetCurrentViewPage() {
+    return _GetCurrentViewPage();
 }
 
 
@@ -333,8 +383,13 @@ void CBOINCBaseFrame::FireInitialize() {
 
 
 void CBOINCBaseFrame::FireRefreshView() {
-    CFrameEvent event(wxEVT_FRAME_REFRESHVIEW, this);
-    AddPendingEvent(event);
+    CMainDocument* pDoc      = wxGetApp().GetDocument();
+
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+    
+    pDoc->RefreshRPCs();
+    pDoc->RunPeriodicRPCs();
 }
 
 
@@ -373,8 +428,7 @@ void CBOINCBaseFrame::ShowConnectionBadPasswordAlert( bool bUsedDefaultPassword,
         if ( EACCES == m_iReadGUIRPCAuthFailure || ENOENT == m_iReadGUIRPCAuthFailure ) {
             ShowAlert(
                 strDialogTitle,
-                _("You currently are not authorized to manage the client.\n"
-                  "Please contact your administrator to add you to the 'boinc_users' local user group."),
+                _("You currently are not authorized to manage the client.\nPlease contact your administrator to add you to the 'boinc_users' local user group."),
                 wxOK | wxICON_ERROR
             );
         } else 
@@ -383,9 +437,7 @@ void CBOINCBaseFrame::ShowConnectionBadPasswordAlert( bool bUsedDefaultPassword,
             ShowAlert(
                 strDialogTitle,
 #ifndef __WXMAC__
-                _("Authorization failed connecting to running client."
-                  "\nMake sure you start this program in the same directory as the client."
-                ),
+                _("Authorization failed connecting to running client.\nMake sure you start this program in the same directory as the client."),
 #else
                 _("Authorization failed connecting to running client."),
 #endif
@@ -443,8 +495,7 @@ void CBOINCBaseFrame::ShowConnectionFailedAlert() {
     // 2st %s is the project name
     //    i.e. 'BOINC', 'GridRepublic'
     strDialogMessage.Printf(
-        _("%s is not able to connect to a %s client.\n"
-          "Would you like to try to connect again?"),
+        _("%s is not able to connect to a %s client.\nWould you like to try to connect again?"),
         pSkinAdvanced->GetApplicationName().c_str(),
         pSkinAdvanced->GetApplicationShortName().c_str()
     );
@@ -490,16 +541,13 @@ void CBOINCBaseFrame::ShowDaemonStartFailedAlert() {
     //    i.e. 'BOINC', 'GridRepublic'
 #ifdef __WXMSW__
     strDialogMessage.Printf(
-        _("%s is not able to start a %s client.\n"
-          "Please launch the Control Panel->Administative Tools->Services "
-          "applet and start the BOINC service."),
+        _("%s is not able to start a %s client.\nPlease launch the Control Panel->Administative Tools->Services applet and start the BOINC service."),
         pSkinAdvanced->GetApplicationName().c_str(),
         pSkinAdvanced->GetApplicationShortName().c_str()
     );
 #else
     strDialogMessage.Printf(
-        _("%s is not able to start a %s client.\n"
-          "Please start the daemon and try again."),
+        _("%s is not able to start a %s client.\nPlease start the daemon and try again."),
         pSkinAdvanced->GetApplicationName().c_str(),
         pSkinAdvanced->GetApplicationShortName().c_str()
     );
@@ -556,9 +604,7 @@ void CBOINCBaseFrame::ShowNotCurrentlyConnectedAlert() {
     // 3nd %s is the project name
     //    i.e. 'BOINC', 'GridRepublic'
     strDialogMessage.Printf(
-        _("%s is not currently connected to a %s client.\n"
-          "Please use the 'Advanced\\Select Computer...' menu option to connect up to a %s client.\n"
-          "To connect up to your local computer please use 'localhost' as the host name."),
+        _("%s is not currently connected to a %s client.\nPlease use the 'Advanced\\Select Computer...' menu option to connect up to a %s client.\nTo connect up to your local computer please use 'localhost' as the host name."),
         pSkinAdvanced->GetApplicationName().c_str(),
         pSkinAdvanced->GetApplicationShortName().c_str(),
         pSkinAdvanced->GetApplicationShortName().c_str()
@@ -575,13 +621,21 @@ void CBOINCBaseFrame::ShowNotCurrentlyConnectedAlert() {
 
 void CBOINCBaseFrame::StartTimers() {
     wxASSERT(m_pAlertPollTimer);
+    wxASSERT(m_pPeriodicRPCTimer);
+    wxASSERT(m_pDocumentPollTimer);
     m_pAlertPollTimer->Start();
+    m_pPeriodicRPCTimer->Start();
+    m_pDocumentPollTimer->Start();
 }
 
 
 void CBOINCBaseFrame::StopTimers() {
     wxASSERT(m_pAlertPollTimer);
+    wxASSERT(m_pPeriodicRPCTimer);
+    wxASSERT(m_pDocumentPollTimer);
     m_pAlertPollTimer->Stop();
+    m_pPeriodicRPCTimer->Stop();
+    m_pDocumentPollTimer->Stop();
 }
 
 
@@ -715,26 +769,24 @@ bool CBOINCBaseFrame::RestoreState() {
 }
 
 
-#ifdef __WXMAC__
-bool CBOINCBaseFrame::Show(bool show) {
-    ProcessSerialNumber psn;
-
-    GetCurrentProcess(&psn);
-    if (show) {
-        SetFrontProcess(&psn);  // Shows process if hidden
+bool CBOINCBaseFrame::Show(bool bShow) {
+    if (bShow) {
+        wxGetApp().ShowApplication(true);
     } else {
-//      GetWindowDimensions();
         if ( this == wxGetApp().GetFrame() ) {
-            if (IsProcessVisible(&psn)) {
-              ShowHideProcess(&psn, false);
+            if (wxGetApp().IsApplicationVisible()) {
+                wxGetApp().ShowApplication(false);
             }
         }
     }
-    
-    return wxFrame::Show(show);
+    return wxFrame::Show(bShow);
 }
 
-#endif // __WXMAC__
+
+int CBOINCBaseFrame::_GetCurrentViewPage() {
+    wxASSERT(false);
+    return 0;
+}
 
 
 void CFrameAlertEvent::ProcessResponse(const int response) const {
@@ -749,4 +801,4 @@ void CFrameAlertEvent::ProcessResponse(const int response) const {
 }
 
 
-const char *BOINC_RCSID_0a1bd38a5b = "$Id: BOINCBaseFrame.cpp 16451 2008-11-10 16:27:14Z romw $";
+const char *BOINC_RCSID_0a1bd38a5b = "$Id: BOINCBaseFrame.cpp 19325 2009-10-16 19:24:59Z romw $";

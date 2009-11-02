@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "AccountManagerProcessingPage.h"
@@ -35,7 +33,8 @@
 #include "MainDocument.h"
 #include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
-#include "WizardAccountManager.h"
+#include "ProjectListCtrl.h"
+#include "WizardAttachProject.h"
 #include "AccountManagerProcessingPage.h"
 #include "AccountManagerInfoPage.h"
 #include "AccountInfoPage.h"
@@ -176,19 +175,19 @@ void CAccountManagerProcessingPage::OnPageChanged( wxWizardExEvent& event )
 {
     if (event.GetDirection() == false) return;
  
-    CWizardAccountManager* pWAM = ((CWizardAccountManager*)GetParent());
-
+    CWizardAttachProject*  pWAP = ((CWizardAttachProject*)GetParent());
+    
     wxASSERT(m_pTitleStaticCtrl);
     wxASSERT(m_pPleaseWaitStaticCtrl);
     wxASSERT(m_pProgressIndicator);
-    wxASSERT(pWAM);
-
-    if (!pWAM->m_strProjectName.IsEmpty()) {
+    wxASSERT(pWAP);
+        
+    if (!pWAP->m_strProjectName.IsEmpty()) {
         wxString str;
 
         // %s is the project name
         //    i.e. 'BOINC', 'GridRepublic'
-        str.Printf(_("Communicating with %s."), pWAM->m_strProjectName.c_str());
+        str.Printf(_("Communicating with %s."), pWAP->m_strProjectName.c_str());
 
         m_pTitleStaticCtrl->SetLabel(
             str
@@ -229,7 +228,7 @@ void CAccountManagerProcessingPage::OnCancel( wxWizardExEvent& event ) {
 void CAccountManagerProcessingPage::OnStateChange( CAccountManagerProcessingPageEvent& WXUNUSED(event) )
 {
     CMainDocument* pDoc         = wxGetApp().GetDocument();
-    CWizardAccountManager* pWAM = ((CWizardAccountManager*)GetParent());
+    CWizardAttachProject*  pWAP = ((CWizardAttachProject*)GetParent());
     wxDateTime dtStartExecutionTime;
     wxDateTime dtCurrentExecutionTime;
     wxTimeSpan tsExecutionTime;
@@ -244,12 +243,12 @@ void CAccountManagerProcessingPage::OnStateChange( CAccountManagerProcessingPage
  
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+    wxASSERT(pWAP);
  
     switch(GetCurrentState()) {
         case ATTACHACCTMGR_INIT:
-            pWAM->DisableNextButton();
-            pWAM->DisableBackButton();
-
+            pWAP->DisableNextButton();
+            pWAP->DisableBackButton();
             StartProgress(m_pProgressIndicator);
             SetNextState(ATTACHACCTMGR_ATTACHACCTMGR_BEGIN);
             break;
@@ -257,28 +256,41 @@ void CAccountManagerProcessingPage::OnStateChange( CAccountManagerProcessingPage
             SetNextState(ATTACHACCTMGR_ATTACHACCTMGR_EXECUTE);
             break;
         case ATTACHACCTMGR_ATTACHACCTMGR_EXECUTE:
-            // Attempt to attach to the accout manager.
-            url = (const char*)pWAM->m_AccountManagerInfoPage->GetProjectURL().mb_str();
-            username = (const char*)pWAM->m_AccountInfoPage->GetAccountEmailAddress().mb_str();
-            password = (const char*)pWAM->m_AccountInfoPage->GetAccountPassword().mb_str();
-            pDoc->rpc.acct_mgr_rpc(
-                url.c_str(),
-                username.c_str(),
-                password.c_str(),
-                pWAM->m_bCredentialsCached
-            );
-    
+            // Attempt to attach to the account manager.
+
+            // Newer versions of the server-side software contain the correct
+            //   master url in the get_project_config response.  If it is available
+            //   use it instead of what the user typed in.
+            if (!pWAP->project_config.master_url.empty()) {
+                url = pWAP->project_config.master_url;
+            } else {
+                url = (const char*)pWAP->m_AccountManagerInfoPage->GetProjectURL().mb_str();
+            }
+
+            username = (const char*)pWAP->m_AccountInfoPage->GetAccountEmailAddress().mb_str();
+            password = (const char*)pWAP->m_AccountInfoPage->GetAccountPassword().mb_str();
+            
             // Wait until we are done processing the request.
             dtStartExecutionTime = wxDateTime::Now();
             dtCurrentExecutionTime = wxDateTime::Now();
             tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
             iReturnValue = 0;
-            reply.error_num = ERR_IN_PROGRESS;
-            while ((!iReturnValue && (ERR_IN_PROGRESS == reply.error_num)) &&
-                tsExecutionTime.GetSeconds() <= 60 &&
+            reply.error_num = ERR_RETRY;
+            while (
+                !iReturnValue && 
+                ((ERR_IN_PROGRESS == reply.error_num) || (ERR_RETRY == reply.error_num)) &&
+                (tsExecutionTime.GetSeconds() <= 60) &&
                 !CHECK_CLOSINGINPROGRESS()
-                )
-            {
+            ) {
+                if (ERR_RETRY == reply.error_num) {
+                    pDoc->rpc.acct_mgr_rpc(
+                        url.c_str(),
+                        username.c_str(),
+                        password.c_str(),
+                        pWAP->m_bCredentialsCached
+                    );
+                }
+            
                 dtCurrentExecutionTime = wxDateTime::Now();
                 tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
                 iReturnValue = pDoc->rpc.acct_mgr_rpc_poll(reply);
@@ -289,27 +301,27 @@ void CAccountManagerProcessingPage::OnStateChange( CAccountManagerProcessingPage
                 ::wxSafeYield(GetParent());
             }
     
-            if (!iReturnValue && !reply.error_num && !CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTATTACH)) {
+            if (!iReturnValue && !reply.error_num) {
                 SetProjectAttachSucceeded(true);
+                pWAP->SetAttachedToProjectSuccessfully(true);
             } else {
                 SetProjectAttachSucceeded(false);
 
                 if ((ERR_NOT_FOUND == reply.error_num) ||
 					(ERR_DB_NOT_FOUND == reply.error_num) ||
                     (ERR_BAD_EMAIL_ADDR == reply.error_num) ||
-                    (ERR_BAD_PASSWD == reply.error_num) ||
-                    CHECK_DEBUG_FLAG(WIZDEBUG_ERRACCOUNTNOTFOUND)) {
-
+                    (ERR_BAD_PASSWD == reply.error_num)
+                ) {
                     // For any logon error, make sure we do not attempt to use cached credentials
                     //   on any follow-ups.
-                    pWAM->m_bCredentialsCached = false;
+                    pWAP->m_bCredentialsCached = false;
                     SetProjectAccountNotFound(true);
                 } else {
                     SetProjectAccountNotFound(false);
                 }
 
-                strBuffer = pWAM->m_CompletionErrorPage->m_pServerMessagesCtrl->GetLabel();
-                if ((HTTP_STATUS_INTERNAL_SERVER_ERROR == reply.error_num) || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIESURL)) {
+                strBuffer = pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->GetLabel();
+                if ((HTTP_STATUS_INTERNAL_SERVER_ERROR == reply.error_num)) {
                     strBuffer += 
                         _("An internal server error has occurred.\n");
                 } else {
@@ -317,7 +329,7 @@ void CAccountManagerProcessingPage::OnStateChange( CAccountManagerProcessingPage
                         strBuffer += wxString(reply.messages[i].c_str(), wxConvUTF8) + wxString(wxT("\n"));
                     }
                 }
-                pWAM->m_CompletionErrorPage->m_pServerMessagesCtrl->SetLabel(strBuffer);
+                pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->SetLabel(strBuffer);
             }
             SetNextState(ATTACHACCTMGR_CLEANUP);
             break;
@@ -328,9 +340,9 @@ void CAccountManagerProcessingPage::OnStateChange( CAccountManagerProcessingPage
         default:
             // Allow a glimps of what the result was before advancing to the next page.
             wxSleep(1);
-            pWAM->EnableNextButton();
-            pWAM->EnableBackButton();
-            pWAM->SimulateNextButton();
+            pWAP->EnableNextButton();
+            pWAP->EnableBackButton();
+            pWAP->SimulateNextButton();
             bPostNewEvent = false;
             break;
     }

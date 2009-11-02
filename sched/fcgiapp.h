@@ -12,13 +12,13 @@
  * Note: The file "LICENSE.TERMS" is not included in the BOINC sources but is
  * available online at http://www.fastcgi.com/om_archive/kit/LICENSE.TERMS.
  *
- * $Id: fcgiapp.h 13876 2007-10-17 09:14:33Z fthomas $
+ * $Id: fcgiapp.h 17388 2009-02-26 00:23:23Z korpela $
  */
 
 #ifndef _FCGIAPP_H
 #define _FCGIAPP_H
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #ifndef DLLAPI
 #ifdef _WIN32

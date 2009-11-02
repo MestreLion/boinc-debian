@@ -21,6 +21,10 @@ require_once("../inc/util.inc");
 require_once("../inc/translation.inc");
 
 $languages = getSupportedLanguages();
+if (!is_array($languages)) {
+    error_page("Language selection not enabled.  Project admins must run the update_translations.php script.");
+}
+
 $prefs = $_SERVER["HTTP_ACCEPT_LANGUAGE"];
 
 $set_lang = get_str("set_lang", true);
@@ -63,9 +67,11 @@ row2("",
 );
 sort($languages);
 foreach ($languages as $language) {
+    $inter = tr_specific("LANG_NAME_INTERNATIONAL", $language);
+    $native = tr_specific("LANG_NAME_NATIVE", $language);
     row2(
         "<a href=\"language_select.php?set_lang=$language\">$language</a>",
-        "<a href=\"language_select.php?set_lang=$language\">".tr_specific("LANG_NAME_INTERNATIONAL", $language)." (".tr_specific("LANG_NAME_NATIVE", $language).")</a>"
+        "<a href=\"language_select.php?set_lang=$language\">$inter ($native)</a>"
     );
 }
 end_table();
@@ -73,7 +79,7 @@ echo "
     <p>
     Translations are done by volunteers.
     If your native language is not here,
-    <a href=translate.php>you can help</a>.
+    <a href=http://boinc.berkeley.edu/trac/wiki/TranslateIntro>you can provide a translation</a>.
 ";
 page_tail();
 ?>

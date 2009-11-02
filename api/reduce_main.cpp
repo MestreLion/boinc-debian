@@ -23,19 +23,12 @@
 
 
 #ifndef _WIN32
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
 #include <assert.h>
-
 #include <algorithm>
-
 #endif
 
 #include "reduce.h"
@@ -189,4 +182,4 @@ void REDUCED_ARRAY_GEN::add_source_row(float* in) {
     scury++;
 }
 
-const char *BOINC_RCSID_70f1fa52c7 = "$Id: reduce_main.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_70f1fa52c7 = "$Id: reduce_main.cpp 17388 2009-02-26 00:23:23Z korpela $";

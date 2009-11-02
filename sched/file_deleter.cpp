@@ -54,6 +54,7 @@
 #include "error_numbers.h"
 #include "util.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "filesys.h"
 #include "strings.h"
 
@@ -61,21 +62,20 @@
 #include "sched_util.h"
 #include "sched_msgs.h"
 
-using namespace std;
-
 #define LOCKFILE "file_deleter.out"
 #define PIDFILE  "file_deleter.pid"
 
-#define SLEEP_INTERVAL 5
+#define DEFAULT_SLEEP_INTERVAL 5
 #define RESULTS_PER_WU 4        // an estimate of redundancy 
 
-int id_modulus=0, id_remainder=0;
+int id_modulus=0, id_remainder=0, appid=0;
 bool dont_retry_errors = false;
 bool dont_delete_antiques = false;
 bool dont_delete_batches = false;
 int antique_delay = ANTIQUE_DELAY;
 bool do_input_files = true;
 bool do_output_files = true;
+int sleep_interval = DEFAULT_SLEEP_INTERVAL;
 
 void usage() {
     fprintf(stderr,
@@ -100,8 +100,12 @@ void usage() {
 "     set debug output level (1/2/3)\n"
 "-mod M R\n"
 "     handle only WUs with ID mod M == R\n"
+"-appid ID\n"
+"     handle only WUs of a particular app\n"
 "-one_pass\n"
 "     instead of sleeping in 2), exit\n"
+"-delete_antiques_now\n"
+"     do 5) immediately\n"
 "-dont_retry_error\n"
 "     don't do 4)\n"
 "-dont_delete_antiques\n"
@@ -122,8 +126,9 @@ void usage() {
     exit(1);
 }
 
-// Given a filename, find its full path in the upload directory hierarchy\n"
-// Return an error if file isn't there.\n"
+// Given a filename, find its full path in the upload directory hierarchy
+// Return ERR_OPENDIR if dir isn't there (possibly recoverable error),
+// ERR_NOT_FOUND if dir is there but not file
 //
 int get_file_path(
     const char *filename, char* upload_dir, int fanout, char* path
@@ -132,7 +137,12 @@ int get_file_path(
     if (boinc_file_exists(path)) {
         return 0;
     }
-    return ERR_NOT_FOUND;
+    char* p = strrchr(path, '/');
+    *p = 0;
+    if (boinc_file_exists(path)) {
+        return ERR_NOT_FOUND;
+    }
+    return ERR_OPENDIR;
 }
 
 
@@ -157,10 +167,17 @@ int wu_delete_files(WORKUNIT& wu) {
             no_delete = true;
         } else if (match_tag(p, "</file_info>")) {
             if (!no_delete) {
-                retval = get_file_path(filename, config.download_dir, config.uldl_dir_fanout,
+                retval = get_file_path(
+                    filename, config.download_dir, config.uldl_dir_fanout,
                     pathname
                 );
-                if (retval) {
+                if (retval == ERR_OPENDIR) {
+                    log_messages.printf(MSG_CRITICAL,
+                        "[WU#%d] missing dir for %s\n",
+                        wu.id, filename
+                    );
+                    mthd_retval = ERR_UNLINK;
+                } else if (retval) {
                     log_messages.printf(MSG_CRITICAL,
                         "[WU#%d] get_file_path: %s: %d\n",
                         wu.id, filename, retval
@@ -211,7 +228,13 @@ int result_delete_files(RESULT& result) {
                     filename, config.upload_dir, config.uldl_dir_fanout,
                     pathname
                 );
-                if (retval) {
+                if (retval == ERR_OPENDIR) {
+                    mthd_retval = ERR_OPENDIR;
+                    log_messages.printf(MSG_CRITICAL,
+                        "[RESULT#%d] missing dir for %s\n",
+                        result.id, pathname
+                    );
+                } else if (retval) {
                     // the fact that no result files were found is a critical
                     // error if this was a successful result, but is to be
                     // expected if the result outcome was failure, since in
@@ -277,7 +300,10 @@ bool do_pass(bool retry_error) {
     if (dont_delete_batches) {
         strcat(clause, " and batch <= 0 ");
     }
-
+    if (appid) {
+        sprintf(buf, " and appid = %d ", appid);
+        strcat(clause, buf);
+    }
     sprintf(buf,
         "where file_delete_state=%d %s limit %d",
         retry_error?FILE_DELETE_ERROR:FILE_DELETE_READY,
@@ -302,13 +328,22 @@ bool do_pass(bool retry_error) {
         if (retval) {
             wu.file_delete_state = FILE_DELETE_ERROR;
             log_messages.printf(MSG_CRITICAL,
-                "[WU#%d] update failed: %d\n", wu.id, retval
+                "[WU#%d] file deletion failed: %d\n", wu.id, retval
             );
         } else {
             wu.file_delete_state = FILE_DELETE_DONE;
         }
         sprintf(buf, "file_delete_state=%d", wu.file_delete_state);
-        retval= wu.update_field(buf);
+        retval = wu.update_field(buf);
+        if (retval) {
+            log_messages.printf(MSG_CRITICAL,
+                "[WU#%d] update failed: %d\n", wu.id, retval
+            );
+        } else {
+            log_messages.printf(MSG_DEBUG,
+                "[WU#%d] file_delete_state updated\n", wu.id
+            );
+        } 
     }
 
     sprintf(buf,
@@ -335,20 +370,30 @@ bool do_pass(bool retry_error) {
         if (retval) {
             result.file_delete_state = FILE_DELETE_ERROR;
             log_messages.printf(MSG_CRITICAL,
-                "[RESULT#%d] update failed: %d\n", result.id, retval
+                "[RESULT#%d] file deletion failed: %d\n", result.id, retval
             );
         } else {
             result.file_delete_state = FILE_DELETE_DONE;
         }
         sprintf(buf, "file_delete_state=%d", result.file_delete_state); 
-        retval= result.update_field(buf);
+        retval = result.update_field(buf);
+        retval = result.update_field(buf);
+        if (retval) {
+            log_messages.printf(MSG_CRITICAL,
+                "[RESULT#%d] update failed: %d\n", result.id, retval
+            );
+        } else {
+            log_messages.printf(MSG_DEBUG,
+                "[RESULT#%d] file_delete_state updated\n", result.id
+            );
+        } 
     } 
 
     return did_something;
 }
 
 struct FILE_RECORD {
-     string name;
+     std::string name;
      int date_modified;
 };
 
@@ -371,6 +416,9 @@ std::list<FILE_RECORD> files_to_delete;
 // delete files in antique files list, and empty the list.
 // Returns number of files deleted, or negative for error.
 //
+// TODO: the list contains filenames, and we convert these to paths.
+// This is wacked.  The list should contain paths.
+//
 int delete_antique_files() {
     int nfiles=0;
 
@@ -391,8 +439,7 @@ int delete_antique_files() {
         );
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "get_file_path(%s) failed: %d\n",
-                fr.name.c_str(), retval
+                "get_file_path(%s) failed: %d\n", fr.name.c_str(), retval
             );
             return retval;
         }
@@ -592,6 +639,8 @@ int main(int argc, char** argv) {
             preserve_wu_files = true;
         } else if (!strcmp(argv[i], "-preserve_result_files")) {
             preserve_result_files = true;
+        } else if (!strcmp(argv[i], "-appid")) {
+            appid = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "-d")) {
             log_messages.set_debug_level(atoi(argv[++i]));
         } else if (!strcmp(argv[i], "-mod")) {
@@ -608,6 +657,8 @@ int main(int argc, char** argv) {
             dont_delete_antiques = true;
         } else if (!strcmp(argv[i], "-output_files_only")) {
             do_input_files = false;
+        } else if (!strcmp(argv[i], "-sleep_interval")) {
+            sleep_interval = atoi(argv[++i]);
         } else if (!strcmp(argv[i], "-help")) {
             usage();
         } else {
@@ -625,10 +676,10 @@ int main(int argc, char** argv) {
         );
     }
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse ../config.xml: %s\n", boincerror(retval)
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -667,7 +718,7 @@ int main(int argc, char** argv) {
         }
         if (!got_any) {
             if (one_pass) break;
-            sleep(SLEEP_INTERVAL);
+            sleep(sleep_interval);
         }
         if (!dont_delete_antiques && (dtime() > next_antique_time)) {
             log_messages.printf(MSG_DEBUG,
@@ -685,4 +736,4 @@ int main(int argc, char** argv) {
     }
 }
 
-const char *BOINC_RCSID_bd0d4938a6 = "$Id: file_deleter.cpp 16397 2008-11-03 22:56:16Z davea $";
+const char *BOINC_RCSID_bd0d4938a6 = "$Id: file_deleter.cpp 18952 2009-08-31 20:16:46Z romw $";

@@ -22,11 +22,12 @@
 // and creates the directory if needed.
 
 #include "config.h"
-#include <stdio.h>
+#include <cstdio>
 
 #include "util.h"
 #include "sched_config.h"
 #include "sched_util.h"
+#include "str_util.h"
 
 
 const char *usage = 
@@ -44,9 +45,9 @@ int main(int argc, char** argv) {
       exit(1);
     }
 
-    retval = config.parse_file(".");
+    retval = config.parse_file();
     if (retval) {
-        fprintf(stderr, "Can't find config.xml; run this in project root dir\n");
+        fprintf(stderr, "Can't parse config.xml: %s\n", boincerror(retval));
         exit(1);
     }
 
@@ -60,4 +61,4 @@ int main(int argc, char** argv) {
     printf("%s\n", path);
 }
 
-const char *BOINC_RCSID_c683969ea8 = "$Id: dir_hier_path.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_c683969ea8 = "$Id: dir_hier_path.cpp 18042 2009-05-07 13:54:51Z davea $";

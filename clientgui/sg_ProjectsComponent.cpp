@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "sg_ProjectsComponent.h"
@@ -45,8 +43,10 @@
 #include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
 #include "WizardAttachProject.h"
-#include "WizardAccountManager.h"
+//#include "WizardAccountManager.h"
 #include "app_ipc.h"
+#include "version.h"
+
 
 
 IMPLEMENT_DYNAMIC_CLASS(CProjectsComponent, wxPanel)
@@ -58,8 +58,8 @@ BEGIN_EVENT_TABLE(CProjectsComponent, wxPanel)
     EVT_BUTTON(ID_SIMPLE_SUSPEND, CProjectsComponent::OnSuspend)
     EVT_BUTTON(ID_SIMPLE_RESUME, CProjectsComponent::OnResume)
     EVT_BUTTON(ID_SIMPLE_PREFERENCES, CProjectsComponent::OnPreferences)
-    EVT_BUTTON(ID_SIMPLE_ATTACHTOPROJECT, CProjectsComponent::OnAttachToProject)
-    EVT_BUTTON(ID_SIMPLE_SYNCHRONIZE, CProjectsComponent::OnSynchronize)
+    EVT_BUTTON(ID_WIZARDATTACH, CProjectsComponent::OnWizardAttach)
+    EVT_BUTTON(ID_WIZARDUPDATE, CProjectsComponent::OnWizardUpdate)
     EVT_PAINT(CProjectsComponent::OnPaint)
     EVT_BUTTON(-1,CProjectsComponent::OnBtnClick)
 	EVT_ERASE_BACKGROUND(CProjectsComponent::OnEraseBackground)
@@ -106,7 +106,7 @@ void CProjectsComponent::CreateComponent()
 	wxToolTip *ttAddProject = new wxToolTip(_("Attach to an additional project"));
 	btnAddProj=new wxBitmapButton(
         this,
-        ID_SIMPLE_ATTACHTOPROJECT,
+        ID_WIZARDATTACH,
         *pSkinSimple->GetAttachProjectButton()->GetBitmap(),
         wxPoint(214,7),
         wxSize(81,18),
@@ -123,7 +123,7 @@ void CProjectsComponent::CreateComponent()
     wxToolTip *ttSynchronize = new wxToolTip(_("Synchronize projects with account manager system"));
 	btnSynchronize=new wxBitmapButton(
         this,
-        ID_SIMPLE_SYNCHRONIZE,
+        ID_WIZARDUPDATE,
         *pSkinSimple->GetSynchronizeButton()->GetBitmap(),
         wxPoint(214,7),
         wxSize(81,18),
@@ -269,7 +269,7 @@ void CProjectsComponent::CreateComponent()
 	wxToolTip *ttAdvView = new wxToolTip(_("Switch to the BOINC advanced view"));
 	btnAdvancedView = new CLinkButton(
         this,
-        -1,
+        ID_CHANGEGUI,
         *(pSkinSimple->GetAdvancedLink()->GetBitmap()),
         wxPoint(233,86),
         wxSize(101,20),
@@ -301,7 +301,7 @@ void CProjectsComponent::UpdateProjectArray() {
 	CMainDocument* pDoc = wxGetApp().GetDocument();
 
 	if ( pDoc->IsConnected() ) {
-		int m_projCnt = pDoc->GetProjectCount();
+		int m_projCnt = pDoc->GetSimpleProjectCount();
 
 		// If a new project has been added, figure out which one and then add it;
 		if ( m_projCnt > (int) m_statProjects.size() ) {
@@ -393,17 +393,21 @@ void CProjectsComponent::UpdateDisplayedProjects() {
 }
 
 
-void CProjectsComponent::OnHelp(wxCommandEvent& /*event*/) {
+void CProjectsComponent::OnHelp(wxCommandEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnHelp - Function Begin"));
 
-	std::string url;
-	url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationWebsite().mb_str();
-	canonicalize_master_url(url);
+	wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
-	wxString wxurl;
-	wxurl.Printf(wxT("%smanager_links.php?target=simple"), url.c_str());
-    wxHyperLink::ExecuteLink(wxurl);
+    wxString wxurl;
+    wxurl.Printf(
+        wxT("%s?target=simple&version=%s&controlid=%d"),
+        strURL.c_str(),
+        wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
+        event.GetId()
+    );
 
+    wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+        
     wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnHelp - Function End"));
 }
 
@@ -416,12 +420,15 @@ void CProjectsComponent::OnMessages(wxCommandEvent& /*event*/) {
 
     MessagesViewed();
 
-    pPanel->SetDlgOpen(true);
 
 	CDlgMessages dlg(GetParent());
+    pPanel->SetDlgOpen(true);
+    ((CSimpleFrame*)pPanel->GetParent())->SetMsgsDlgOpen(&dlg);
+    
     dlg.ShowModal();
 
     pPanel->SetDlgOpen(false);
+    ((CSimpleFrame*)pPanel->GetParent())->SetMsgsDlgOpen(NULL);
 
     wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnMessages - Function End"));
 }
@@ -485,8 +492,8 @@ void CProjectsComponent::OnPreferences(wxCommandEvent& /*event*/) {
 }
 
 
-void CProjectsComponent::OnAttachToProject(wxCommandEvent& /*event*/) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnAttachToProject - Function Begin"));
+void CProjectsComponent::OnWizardAttach(wxCommandEvent& /*event*/) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnWizardAttach - Function Begin"));
 
 	CSimplePanel* pPanel = wxDynamicCast(GetParent(), CSimplePanel);
 
@@ -499,12 +506,12 @@ void CProjectsComponent::OnAttachToProject(wxCommandEvent& /*event*/) {
 
     pPanel->SetDlgOpen(false);
 
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnAttachToProject - Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnWizardAttach - Function End"));
 }
 
 
-void CProjectsComponent::OnSynchronize(wxCommandEvent& /*event*/) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnSynchronize - Function Begin"));
+void CProjectsComponent::OnWizardUpdate(wxCommandEvent& /*event*/) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnWizardUpdate - Function Begin"));
 
     CMainDocument* pDoc = wxGetApp().GetDocument();
 	CSimplePanel*  pPanel = wxDynamicCast(GetParent(), CSimplePanel);
@@ -520,9 +527,9 @@ void CProjectsComponent::OnSynchronize(wxCommandEvent& /*event*/) {
 
 	    pPanel->SetDlgOpen(true);
 
-        CWizardAccountManager* pWizard = new CWizardAccountManager(this);
+        CWizardAttachProject* pWizard = new CWizardAttachProject(this);
 
-        pWizard->Run(ACCOUNTMANAGER_UPDATE);
+        pWizard->SyncToAccountManager();
 
         if (pWizard)
             pWizard->Destroy();
@@ -532,7 +539,7 @@ void CProjectsComponent::OnSynchronize(wxCommandEvent& /*event*/) {
         pPanel->SetDlgOpen(false);
     }
 
-    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnSynchronize - Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnWizardUpdate - Function End"));
 }
 
 
@@ -563,16 +570,14 @@ void CProjectsComponent::UpdateInterface()
 		}
 	}
 
-    // Should we display the syncronize button instead of the
+    // Should we display the synchronize button instead of the
     //   attach to project button?
-    ACCT_MGR_INFO ami;
-	CC_STATUS     status;
-    bool                   is_acct_mgr_detected = false;
+	CC_STATUS       status;
+    bool            is_acct_mgr_detected = false;
 
 	pDoc->GetCoreClientStatus(status);
-    pDoc->rpc.acct_mgr_info(ami);
 
-    is_acct_mgr_detected = ami.acct_mgr_url.size() ? true : false;
+    is_acct_mgr_detected = pDoc->ami.acct_mgr_url.size() ? true : false;
 
     if (is_acct_mgr_detected) {
 		btnAddProj->Show(false);
@@ -731,6 +736,7 @@ void CProjectsComponent::OnEraseBackground(wxEraseEvent& event){
 void CProjectsComponent::OnMessageCheck(wxTimerEvent& WXUNUSED(event)) {
 	CMainDocument* pDoc     = wxGetApp().GetDocument();
 	MESSAGE* message;
+
 	// Only look at the messages recieved since the last time we looked
 	if ( pDoc->GetMessageCount() > (int) lastMessageId ) {
 		// Loop through and check for any messages recieved that are error messages

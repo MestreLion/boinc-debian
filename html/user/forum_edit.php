@@ -22,6 +22,7 @@
 //
 
 require_once('../inc/forum.inc');
+require_once('../inc/bbcode_html.inc');
 
 $logged_in_user = get_logged_in_user();
 BoincForumPrefs::lookup($logged_in_user);
@@ -82,7 +83,7 @@ if (post_str('submit',true) && (!$preview)) {
     }
 }
 
-page_head('Forum');
+page_head('Forum','','','', $bbcode_js);
 
 show_forum_header($logged_in_user);
 switch ($forum->parent_type) {
@@ -103,7 +104,7 @@ if ($preview == tra("Preview")) {
     echo "</div>\n";
 }
 
-echo "<form action=\"forum_edit.php?id=".$post->id."\" method=\"POST\">\n";
+echo "<form action=\"forum_edit.php?id=".$post->id."\" method=\"POST\" name=\"post\" onsubmit=\"return checkForm(this)\">\n";
 echo form_tokens($logged_in_user->authenticator);
 start_table();
 row1("Edit your message");
@@ -125,12 +126,12 @@ if ($can_edit_title) {
 if ($preview) {
     row2(
         tra("Message").html_info().post_warning(),
-        "<textarea name=\"content\" rows=\"12\" cols=\"80\">".htmlspecialchars($content)."</textarea>"
+        $bbcode_html."<textarea name=\"content\" rows=\"12\" cols=\"80\">".htmlspecialchars($content)."</textarea>"
     );
 } else {
     row2(
         tra("Message").html_info().post_warning(),
-        '<textarea name="content" rows="12" cols="80">'.htmlspecialchars($post->content).'</textarea>'
+        $bbcode_html.'<textarea name="content" rows="12" cols="80">'.htmlspecialchars($post->content).'</textarea>'
     );
 }
 
@@ -150,5 +151,5 @@ echo "</form>";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_edit.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_edit.php 18487 2009-06-23 17:15:17Z davea $";  //Generated automatically - do not edit
 ?>

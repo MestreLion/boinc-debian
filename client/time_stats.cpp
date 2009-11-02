@@ -166,6 +166,17 @@ void TIME_STATS::update(int suspend_reason) {
     } else {
         dt = gstate.now - last_update;
         if (dt <= 10) return;
+
+        if (dt > 14*86400) {
+            // If dt is large it could be because user is upgrading
+            // from a client version that wasn't updating due to bug.
+            // Or it could be because user wasn't running for a while
+            // and is starting up again.
+            // In either case, don't decay on_frac.
+            //
+            dt = 0;
+        }
+
         w1 = 1 - exp(-dt/ALPHA);    // weight for recent period
         w2 = 1 - w1;                // weight for everything before that
                                     // (close to zero if long gap)
@@ -194,6 +205,13 @@ void TIME_STATS::update(int suspend_reason) {
             sprintf(buf, "version %d.%d.%d", BOINC_MAJOR_VERSION, BOINC_MINOR_VERSION, BOINC_RELEASE);
             log_append(buf, gstate.now);
             log_append("power_on", gstate.now);
+        } else if (dt > 100) {
+            // large dt - the client or host must have been suspended
+            on_frac *= w2;
+            log_append("proc_stop", last_update);
+            if (is_active) {
+                log_append("proc_start", gstate.now);
+            }
         } else {
             on_frac = w1 + w2*on_frac;
             if (connected_frac < 0) connected_frac = 0;
@@ -261,14 +279,42 @@ int TIME_STATS::write(MIOFILE& out, bool to_server) {
 //
 int TIME_STATS::parse(MIOFILE& in) {
     char buf[256];
+    double x;
 
     while (in.fgets(buf, 256)) {
         if (match_tag(buf, "</time_stats>")) return 0;
-        else if (parse_double(buf, "<last_update>", last_update)) continue;
-        else if (parse_double(buf, "<on_frac>", on_frac)) continue;
-        else if (parse_double(buf, "<connected_frac>", connected_frac)) continue;
-        else if (parse_double(buf, "<active_frac>", active_frac)) continue;
-        else {
+        else if (parse_double(buf, "<last_update>", x)) {
+            if (x < 0 || x > gstate.now) {
+                msg_printf(0, MSG_INTERNAL_ERROR,
+                    "bad value %f of time stats last update; ignoring", x
+                );
+            } else {
+                last_update = x;
+            }
+            continue;
+        } else if (parse_double(buf, "<on_frac>", x)) {
+            if (x <= 0 || x > 1) {
+                msg_printf(0, MSG_INTERNAL_ERROR,
+                    "bad value %f of time stats on_frac; ignoring", x
+                );
+            } else {
+                on_frac = x;
+            }
+            continue;
+        } else if (parse_double(buf, "<connected_frac>", x)) {
+            // -1 means undefined; skip check
+            connected_frac = x;
+            continue;
+        } else if (parse_double(buf, "<active_frac>", x)) {
+            if (x <= 0 || x > 1) {
+                msg_printf(0, MSG_INTERNAL_ERROR,
+                    "bad value %f of time stats active_frac; ignoring", x
+                );
+            } else {
+                active_frac = x;
+            }
+            continue;
+        } else {
             if (log_flags.unparsed_xml) {
                 msg_printf(0, MSG_INFO,
                     "[unparsed_xml] TIME_STATS::parse(): unrecognized: %s\n", buf
@@ -313,4 +359,4 @@ void TIME_STATS::log_append_net(int new_state) {
     }
 }
 
-const char *BOINC_RCSID_472504d8c2 = "$Id: time_stats.cpp 16611 2008-12-03 20:55:22Z romw $";
+const char *BOINC_RCSID_472504d8c2 = "$Id: time_stats.cpp 19066 2009-09-17 15:12:30Z romw $";

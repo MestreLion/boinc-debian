@@ -21,11 +21,7 @@
 
 #ifndef _WIN32
 #include "config.h"
-#include <cstring>
-#include <string>
 #endif
-
-using std::string;
 
 #include "parse.h"
 #include "error_numbers.h"
@@ -33,14 +29,13 @@ using std::string;
 
 int PROXY_INFO::parse(MIOFILE& in) {
     char buf[1024];
-    string s5un, s5up, hun, hup, temp;
 
     memset(this, 0, sizeof(PROXY_INFO));
     while (in.fgets(buf, 256)) {
         if (match_tag(buf, "</proxy_info>")) return 0;
-        else if (match_tag(buf, "<use_http_proxy/>")) use_http_proxy = true;
-        else if (match_tag(buf, "<use_socks_proxy/>")) use_socks_proxy = true;
-        else if (match_tag(buf, "<use_http_auth/>")) use_http_auth = true;
+        else if (parse_bool(buf, "use_http_proxy", use_http_proxy)) continue;
+        else if (parse_bool(buf, "use_socks_proxy", use_socks_proxy)) continue;
+        else if (parse_bool(buf, "use_http_auth", use_http_auth)) continue;
         else if (parse_int(buf, "<socks_version>", socks_version)) continue;
         else if (parse_str(buf, "<socks_server_name>", socks_server_name, sizeof(socks_server_name))) continue;
         else if (parse_int(buf, "<socks_server_port>", socks_server_port)) continue;
@@ -75,8 +70,7 @@ int PROXY_INFO::write(MIOFILE& out) {
         "    <socks5_user_passwd>%s</socks5_user_passwd>\n"
         "    <http_user_name>%s</http_user_name>\n"
         "    <http_user_passwd>%s</http_user_passwd>\n"
-		"    <no_proxy>%s</no_proxy>\n"
-		"</proxy_info>\n",        
+		"    <no_proxy>%s</no_proxy>\n",
         use_http_proxy?"    <use_http_proxy/>\n":"",
         use_socks_proxy?"    <use_socks_proxy/>\n":"",
         use_http_auth?"    <use_http_auth/>\n":"",
@@ -90,6 +84,19 @@ int PROXY_INFO::write(MIOFILE& out) {
         hun,
         hup,
 		noproxy_hosts
+    );
+    if (strlen(autodetect_server_name)) {
+        out.printf(
+            "    <autodetect_protocol>%d</autodetect_protocol>\n"
+            "    <autodetect_server_name>%d</autodetect_server_name>\n"
+            "    <autodetect_port>%d</autodetect_port>\n",
+            autodetect_protocol,
+            autodetect_server_name,
+            autodetect_port
+        );
+    }
+    out.printf(
+		"</proxy_info>\n"
     );
     return 0;
 }
@@ -108,6 +115,9 @@ void PROXY_INFO::clear() {
     strcpy(http_user_passwd, "");
     socks_version = 0;
 	strcpy(noproxy_hosts, "");
+	strcpy(autodetect_server_name, "");
+    autodetect_port = 80;
+    autodetect_protocol = 0;
 }
 
-const char *BOINC_RCSID_af13db88e5 = "$Id: proxy_info.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_af13db88e5 = "$Id: proxy_info.cpp 19101 2009-09-18 20:48:19Z romw $";

@@ -29,7 +29,6 @@ class output_options {
     var $bb2html;            // BBCode as HTML? (on)
     var $images_as_links;    // Images as hyperlinks? (off)
     var $link_popup;        // Links in new windows? (off)
-    var $closeTags;            // Close extra HTML tags? (on)
     var $nl2br;                // Convert newlines to <br>'s? (on)
     var $htmlitems;            // Convert special chars to HTML entities? (on)
     var $htmlscrub;            // Scrub "bad" HTML tags? (off)
@@ -41,7 +40,6 @@ class output_options {
         $this->bb2html = 1;
         $this->images_as_links = 0;
         $this->link_popup = 0;
-        $this->closeTags = 1;
         $this->nl2br = 1;
         $this->htmlitems = 1;
         $this->htmlscrub = 0;
@@ -110,6 +108,8 @@ function bb2html($text) {
     $httpsregex = "(?:\"?)https\:\/\/([^\[\"<\ ]+)(?:\"?)";
     // List of allowable tags
     $bbtags = array (
+        "@\[pre\](.*?)\[/pre\]@eis",
+        "@\[code\](.*?)\[/code\]@eis",
         "@\[b\](.*?)\[/b\]@is",
         "@\[i\](.*?)\[/i\]@is",
         "@\[u\](.*?)\[/u\]@is",
@@ -123,12 +123,10 @@ function bb2html($text) {
         "@\[quote\](.*?)\[/quote\]@is",
         "@\[list\](.*?)\[/list\]@is",
         "@\[list=1\](.*?)\[/list\]@is",  
-        "@\[pre\](.*?)\[/pre\]@is",
         "@\[img\]$urlregex\[/img\]@is",
         "@\[color=(?:\"?)(.{3,8})(?:\"?)\](.*?)\[/color\]@is",
         "@((?:<ol>|<ul>).*?)\n\*([^\n]+)\n(.*?(</ol>|</ul>))@is",
         "@\[size=([1-9]|[0-2][0-9])\](.*?)\[/size\]@is",
-        "@\[code\](.*?)\[/code\]@is",
         "@\[mailto\](.*?)\[/mailto\]@is",
         "@\[email\](.*?)\[/email\]@is",
         "@\[trac\](?:\#|ticket:)(\d+)\[/trac\]@is",
@@ -141,6 +139,8 @@ function bb2html($text) {
     
     // What the above tags are turned in to
     $htmltags = array (
+        "'<div class=\"pre\">'.stop_recursion(remove_br('\\1')).'</div>'",
+        "'<div class=\"code\">'.stop_recursion('\\1').'</div>'",
         "<b>\\1</b>",
         "<i>\\1</i>",
         "<u>\\1</u>",
@@ -154,12 +154,10 @@ function bb2html($text) {
         "<blockquote class='postbody'>\\1</blockquote>",
         "<ul>\\1</ul><p>",
         "<ol>\\1</ol><p>",
-        "<pre>\\1</pre>",
         "<img src=\"http://\\2\">",
         "<font color=\"\\1\">\\2</font>",
         "\\1<li>\\2\n\\3",
         "<span style=\"font-size: \\1px;\">\\2</span>",
-        "<div class=\"code\">\\1</div>",
         "<a href=\"mailto:\\1\">\\1</a>",
         "<a href=\"mailto:\\1\">\\1</a>",
         "<a href=\"http://boinc.berkeley.edu/trac/ticket/\\1\">#\\1</a>",
@@ -179,8 +177,25 @@ function bb2html($text) {
     return $text;
 }
 
-// Make links open in new windows.
+// Removes any <br> tags added by nl2br which are not wanted,
+// for example inside <pre> containers
+// The original \n was retained after the br when it was added
+//
+function remove_br($text){
+    return str_replace("<br />", "", $text);
+}
 
+
+/**
+ * Stops recursion of BBCode by escaping any [ in the given text
+ * @param $text The text to stop recursion in
+ * @return A text that no longer can cause recursion
+ **/
+function stop_recursion($text){
+    return str_replace("[", "&#91;", $text);
+}
+
+// Make links open in new windows.
 function externalize_links($text) {
     // TODO:  Convert this to PCRE
     $i=0;$linkpos=true;
@@ -199,61 +214,11 @@ function externalize_links($text) {
 function image_as_link($text){
     /* This function depends on sanitized HTML */
     // Build some regex (should be a *lot* faster)
-    $pattern = '@<img src=([^>]+)>@si'; // Gives us the URL in ${1}...
-    $replacement = '<a href=${1}>[Image Link]</a>'; // Turns that URL into a hyperlink
+    $pattern = '@<img([\S\s]+?)src=([^>]+?)>@si';
+    $replacement = '<a href=${2}>[Image link]</a>'; // Turns that URL into a hyperlink
     $text = preg_replace($pattern, $replacement, $text);
     return $text;
 }
-
-// Closes open HTML tags.  Not quite perfect...
-
-function closeTags($str = null) {
-    // Function from http://episteme.arstechnica.com/eve/ubb.x/a/tpc/f/6330927813/m/139006252731/r/287008552731#287008552731
-    // (thanks Ageless for finding it)
-    // Edited by Rob to better fit in with boinc's needs
-    
-    // List of tags to check $str for
-    // TODO:  Adapt to use the pre-existing array of tags above
-    $tags = array('b', 'i', 'a', 'p', 'font[^>]?', 'strong', 'ul', 'li', 'pre', 'blockquote', 'u');
-    // Note on $tags - no br or img, as they have no closing tags - can we define this above?
-    // Maybe define two arrays, those with closing tags and those without, and combine the
-    // two of them for the standard HTML sanitizing function?
-
-    // Don't do anything if the string is too short
-    if (strlen($str) < 3) {
-        return $str;
-    } else {
-        // Loop over $str and count the opening and closing for each tag in $tags
-        foreach ($tags as $tag) {
-            $m = array();
-            $o = preg_match_all("/<(".$tag.")>/", $str, $m);
-            $c = substr_count($str, "</{$tag}>");
-
-            $open[$tag]  = ($o < $c) ? $c - $o : 0;
-            $close[$tag] = ($c < $o) ? $o - $c : 0;
-
-            // Debuggin'
-            //echo "<pre>Tag: {$tag}\nOpen: {$o}\nClose: {$c}\nOT: {$open[$tag]}\nCT: {$close[$tag]}</pre><hr />";
-        }
-
-        // Prepend the return string with an opening tag as needed
-        /* $pre = '';  ...uhh... doesn't work right
-
-        foreach ($open as $tag => $cnt) {
-            $pre .= ($cnt > 0) ? "<{$tag}>" : '';
-        }  */
-
-        // Append the return string with a closing tag as needed
-        $post = '';
-
-        foreach ($close as $tag => $cnt) {
-            $post .= ($cnt > 0) ? "</{$tag}>" : '';
-        }
-
-        return /*$pre.*/$str.$post;
-    }
-}
-
 
 // Highlight terms in text (most likely used with searches)
 
@@ -271,5 +236,5 @@ function highlight_terms($text, $terms) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: text_transform.inc 16193 2008-10-12 17:11:19Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: text_transform.inc 18357 2009-06-10 22:54:21Z boincadm $";  //Generated automatically - do not edit
 ?>

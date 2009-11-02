@@ -14,6 +14,14 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+//
+#include "config.h"
+
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#else
+#include <cstdio>
+#endif
 
 #include <unistd.h>
 
@@ -22,19 +30,19 @@
 #include "backend_lib.h"
 #include "error_numbers.h"
 
-#include "server_types.h"
-#include "main.h"
+#include "sched_main.h"
 #include "sched_msgs.h"
 #include "sched_send.h"
+#include "sched_version.h"
+#include "sched_types.h"
 
 #include "sched_assign.h"
 
-static int send_assigned_job(
-    ASSIGNMENT& asg, SCHEDULER_REQUEST& request, SCHEDULER_REPLY& reply
-) {
+static int send_assigned_job(ASSIGNMENT& asg) {
     int retval;
     DB_WORKUNIT wu;
-    char rtfpath[256], suffix[256], path[256], buf[256];
+    char suffix[256], path[256], buf[256];
+    const char *rtfpath;
     static bool first=true;
     static int seqno=0;
     static R_RSA_PRIVATE_KEY key;
@@ -58,7 +66,7 @@ static int send_assigned_job(
         return retval;
     }
 
-    bavp = get_app_version(request, reply, wu);
+    bavp = get_app_version(wu);
     if (!bavp) {
         log_messages.printf(MSG_CRITICAL,
             "App version for assigned WU not found\n"
@@ -66,9 +74,9 @@ static int send_assigned_job(
         return ERR_NOT_FOUND;
     }
 
-    sprintf(rtfpath, "../%s", wu.result_template_file);
+    rtfpath = config.project_path("%s", wu.result_template_file);
     sprintf(suffix, "%d_%d_%d", getpid(), (int)time(0), seqno++);
-    retval = create_result(wu, rtfpath, suffix, key, config, 0, 0);
+    retval = create_result(wu, (char *)rtfpath, suffix, key, config, 0, 0);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
             "[WU#%d %s] create_result() %d\n", wu.id, wu.name, retval
@@ -78,7 +86,7 @@ static int send_assigned_job(
     int result_id = boinc_db.insert_id();
     DB_RESULT result;
     retval = result.lookup_id(result_id);
-    add_result_to_reply(result, wu, request, reply, bavp);
+    add_result_to_reply(result, wu, bavp, false);
 
     // if this is a one-job assignment, fill in assignment.resultid
     // so that it doesn't get sent again
@@ -97,9 +105,9 @@ static int send_assigned_job(
         asg.resultid = result_id;
     }
     if (config.debug_assignment) {
-        log_messages.printf(MSG_DEBUG,
-            "[WU#%d] [RESULT#%d] [HOST#%d] send assignment %d\n",
-            wu.id, result_id, reply.host.id, asg.id
+        log_messages.printf(MSG_NORMAL,
+            "[assign] [WU#%d] [RESULT#%d] [HOST#%d] send assignment %d\n",
+            wu.id, result_id, g_reply->host.id, asg.id
         );
     }
     return 0;
@@ -108,7 +116,7 @@ static int send_assigned_job(
 // Send this host any jobs assigned to it, or to its user/team
 // Return true iff we sent anything
 //
-bool send_assigned_jobs(SCHEDULER_REQUEST& request, SCHEDULER_REPLY& reply) {
+bool send_assigned_jobs() {
     DB_RESULT result;
     int retval;
     char buf[256];
@@ -118,8 +126,8 @@ bool send_assigned_jobs(SCHEDULER_REQUEST& request, SCHEDULER_REPLY& reply) {
         ASSIGNMENT& asg = ssp->assignments[i];
 
         if (config.debug_assignment) {
-            log_messages.printf(MSG_DEBUG,
-                "processing assignment type %d\n", asg.target_type
+            log_messages.printf(MSG_NORMAL,
+                "[assign] processing assignment type %d\n", asg.target_type
             );
         }
         // see if this assignment applies to this host
@@ -128,46 +136,46 @@ bool send_assigned_jobs(SCHEDULER_REQUEST& request, SCHEDULER_REPLY& reply) {
         switch (asg.target_type) {
         case ASSIGN_NONE:
             sprintf(buf, "where hostid=%d and workunitid=%d",
-                reply.host.id, asg.workunitid
+                g_reply->host.id, asg.workunitid
             );
             retval = result.lookup(buf);
             if (retval == ERR_DB_NOT_FOUND) {
-                retval = send_assigned_job(asg, request, reply);
+                retval = send_assigned_job(asg);
                 if (!retval) sent_something = true;
             }
             break;
         case ASSIGN_HOST:
-            if (reply.host.id != asg.target_id) continue;
+            if (g_reply->host.id != asg.target_id) continue;
             sprintf(buf, "where workunitid=%d", asg.workunitid);
             retval = result.lookup(buf);
             if (retval == ERR_DB_NOT_FOUND) {
-                retval = send_assigned_job(asg, request, reply);
+                retval = send_assigned_job(asg);
                 if (!retval) sent_something = true;
             }
             break;
         case ASSIGN_USER:
-            if (reply.user.id != asg.target_id) continue;
+            if (g_reply->user.id != asg.target_id) continue;
             if (asg.multi) {
-                sprintf(buf, "where workunitid=%d and hostid=%d", asg.workunitid, reply.host.id);
+                sprintf(buf, "where workunitid=%d and hostid=%d", asg.workunitid, g_reply->host.id);
             } else {
                 sprintf(buf, "where workunitid=%d", asg.workunitid);
             }
             retval = result.lookup(buf);
             if (retval == ERR_DB_NOT_FOUND) {
-                retval = send_assigned_job(asg, request, reply);
+                retval = send_assigned_job(asg);
                 if (!retval) sent_something = true;
             }
             break;
         case ASSIGN_TEAM:
-            if (reply.team.id != asg.target_id) continue;
+            if (g_reply->team.id != asg.target_id) continue;
             if (asg.multi) {
-                sprintf(buf, "where workunitid=%d and hostid=%d", asg.workunitid, reply.host.id);
+                sprintf(buf, "where workunitid=%d and hostid=%d", asg.workunitid, g_reply->host.id);
             } else {
                 sprintf(buf, "where workunitid=%d", asg.workunitid);
             }
             retval = result.lookup(buf);
             if (retval == ERR_DB_NOT_FOUND) {
-                retval = send_assigned_job(asg, request, reply);
+                retval = send_assigned_job(asg);
                 if (!retval) sent_something = true;
             }
             break;

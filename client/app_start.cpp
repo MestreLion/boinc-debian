@@ -24,6 +24,9 @@
 #include "win_util.h"
 #else
 #include "config.h"
+#ifdef HAVE_SCHED_SETSCHEDULER
+#include <sched.h>
+#endif
 #if HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -66,12 +69,15 @@ using std::string;
 #include "error_numbers.h"
 #include "util.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "shmem.h"
 #include "client_msgs.h"
 #include "client_state.h"
 #include "file_names.h"
 #include "base64.h"
 #include "sandbox.h"
+#include "unix_util.h"
+
 
 #ifdef _WIN32
 #include "proc_control.h"
@@ -104,17 +110,22 @@ static void debug_print_argv(char** argv) {
 }
 #endif
 
-// for apps that use CUDA coprocessors, append "--device x" to the command line
+// For apps that use coprocessors, append "--device x" to the command line.
 //
-static void cuda_cmdline(ACTIVE_TASK* atp, char* cmdline) {
-    char buf[256];
-    COPROC* cp = gstate.coprocs.lookup("CUDA");
-    if (!cp) return;
-    for (int i=0; i<MAX_COPROC_INSTANCES; i++) {
-        if (cp->owner[i] == atp) {
-            sprintf(buf, " --device %d", i);
-            strcat(cmdline, buf);
+static void coproc_cmdline(
+    int rsc_type, RESULT* rp, double ninstances, char* cmdline
+) {
+    COPROC* coproc = (rsc_type==RSC_TYPE_CUDA)?(COPROC*)coproc_cuda:(COPROC*)coproc_ati;
+    for (int j=0; j<ninstances; j++) {
+        int k = rp->coproc_indices[j];
+        // sanity check
+        //
+        if (k < 0 || k >= coproc->count) {
+            *(int*)1 = 0;
         }
+        char buf[256];
+        sprintf(buf, " --device %d", coproc->device_nums[k]);
+        strcat(cmdline, buf);
     }
 }
 
@@ -168,8 +179,6 @@ int ACTIVE_TASK::write_app_init_file() {
     char init_data_path[256], project_dir[256], project_path[256];
     int retval;
 
-    memset(&aid, 0, sizeof(aid));
-
     aid.major_version = BOINC_MAJOR_VERSION;
     aid.minor_version = BOINC_MINOR_VERSION;
     aid.release = BOINC_RELEASE;
@@ -177,11 +186,12 @@ int ACTIVE_TASK::write_app_init_file() {
     safe_strcpy(aid.app_name, wup->app->name);
     safe_strcpy(aid.symstore, wup->project->symstore);
     safe_strcpy(aid.acct_mgr_url, gstate.acct_mgr_info.acct_mgr_url);
-    safe_strcpy(aid.user_name, wup->project->user_name);
-    safe_strcpy(aid.team_name, wup->project->team_name);
     if (wup->project->project_specific_prefs.length()) {
         aid.project_preferences = strdup(wup->project->project_specific_prefs.c_str());
     }
+    aid.hostid = wup->project->hostid;
+    safe_strcpy(aid.user_name, wup->project->user_name);
+    safe_strcpy(aid.team_name, wup->project->team_name);
     get_project_dir(wup->project, project_dir, sizeof(project_dir));
     relative_to_absolute(project_dir, project_path);
     strcpy(aid.project_dir, project_path);
@@ -212,11 +222,8 @@ int ACTIVE_TASK::write_app_init_file() {
 #else
     aid.shmem_seg_name = shmem_seg_name;
 #endif
-    // wu_cpu_time is the CPU time at start of session,
-    // not the checkpoint CPU time
-    // At the start of an episode these are equal, but not in the middle!
-    //
-    aid.wu_cpu_time = episode_start_cpu_time;
+    aid.wu_cpu_time = checkpoint_cpu_time;
+    aid.starting_elapsed_time = checkpoint_elapsed_time;
 
     sprintf(init_data_path, "%s/%s", slot_dir, INIT_DATA_FILE);
     f = boinc_fopen(init_data_path, "w");
@@ -234,19 +241,6 @@ int ACTIVE_TASK::write_app_init_file() {
     retval = write_init_data_file(f, aid);
     fclose(f);
     return retval;
-}
-
-static int make_soft_link(PROJECT* project, char* link_path, char* rel_file_path) {
-    FILE *fp = boinc_fopen(link_path, "w");
-    if (!fp) {
-        msg_printf(project, MSG_INTERNAL_ERROR,
-            "Can't create link file %s", link_path
-        );
-        return ERR_FOPEN;
-    }
-    fprintf(fp, "<soft_link>%s</soft_link>\n", rel_file_path);
-    fclose(fp);
-    return 0;
 }
 
 // set up a file reference, given a slot dir and project dir.
@@ -284,6 +278,9 @@ static int setup_file(
                 );
                 return retval;
             }
+#ifdef SANDBOX
+            return set_to_project_group(link_path);
+#endif
         }
         return 0;
     }
@@ -331,13 +328,21 @@ int ACTIVE_TASK::copy_output_files() {
         FILE_INFO* fip = fref.file_info;
         sprintf(slotfile, "%s/%s", slot_dir, fref.open_name);
         get_pathname(fip, projfile, sizeof(projfile));
+#if 1
+        boinc_rename(slotfile, projfile);
+#else
         int retval = boinc_rename(slotfile, projfile);
+        // this isn't a BOINC error.
+        // it just means the app didn't create an output file
+        // that it was supposed to.
+        //
         if (retval) {
             msg_printf(wup->project, MSG_INTERNAL_ERROR,
                 "Can't rename output file %s to %s: %s",
                 fip->name, projfile, boincerror(retval)
             );
         }
+#endif
     }
     return 0;
 }
@@ -362,19 +367,18 @@ int ACTIVE_TASK::start(bool first_time) {
     FILE_REF fref;
     FILE_INFO* fip;
     int retval;
-    bool coprocs_reserved = false;
 
-    // if this job uses a GPU and not much CPU, run it at normal priority
+    // if this job less than one CPU, run it at above idle priority
     //
-    bool high_priority = result->uses_coprocs() && (app_version->avg_ncpus < 1);
+    bool high_priority = (app_version->avg_ncpus < 1);
 
     if (first_time && log_flags.task) {
-        msg_printf(result->project, MSG_INFO,
+        msg_printf(wup->project, MSG_INFO,
             "Starting %s", result->name
         );
     }
     if (log_flags.cpu_sched) {
-        msg_printf(result->project, MSG_INFO,
+        msg_printf(wup->project, MSG_INFO,
             "[cpu_sched] Starting %s%s", result->name, first_time?" (initial)":"(resume)"
         );
     }
@@ -394,12 +398,7 @@ int ACTIVE_TASK::start(bool first_time) {
         }
     }
 
-    if (first_time) {
-        checkpoint_cpu_time = 0;
-        checkpoint_wall_time = gstate.now;
-    }
     current_cpu_time = checkpoint_cpu_time;
-    episode_start_cpu_time = checkpoint_cpu_time;
 
     graphics_request_queue.init(result->name);        // reset message queues
     process_control_queue.init(result->name);
@@ -494,9 +493,6 @@ int ACTIVE_TASK::start(bool first_time) {
         exit(0);
     }
 
-    reserve_coprocs();
-    coprocs_reserved = true;
-
 #ifdef _WIN32
     PROCESS_INFORMATION process_info;
     STARTUPINFO startup_info;
@@ -527,11 +523,23 @@ int ACTIVE_TASK::start(bool first_time) {
     sprintf(cmdline, "%s %s %s",
         exec_path, wup->command_line.c_str(), app_version->cmdline
     );
-    cuda_cmdline(this, cmdline);
+    if (app_version->ncudas) {
+        coproc_cmdline(RSC_TYPE_CUDA, result, app_version->ncudas, cmdline);
+    }
+    if (app_version->natis) {
+        coproc_cmdline(RSC_TYPE_ATI, result, app_version->natis, cmdline);
+    }
 
     relative_to_absolute(slot_dir, slotdirpath);
     bool success = false;
-    int prio_mask = high_priority?0:IDLE_PRIORITY_CLASS;
+    int prio_mask;
+    if (config.no_priority_change) {
+        prio_mask = 0;
+    } else if (high_priority) {
+        prio_mask = BELOW_NORMAL_PRIORITY_CLASS;
+    } else {
+        prio_mask = IDLE_PRIORITY_CLASS;
+    }
 
     for (i=0; i<5; i++) {
         if (sandbox_account_service_token != NULL) {
@@ -549,7 +557,7 @@ int ACTIVE_TASK::start(bool first_time) {
             if (!pCEB(&environment_block, sandbox_account_service_token, FALSE)) {
                 if (log_flags.task) {
                     windows_error_string(error_msg, sizeof(error_msg));
-                    msg_printf(result->project, MSG_INFO,
+                    msg_printf(wup->project, MSG_INFO,
                         "Process environment block creation failed: %s", error_msg
                     );
                 }
@@ -580,7 +588,7 @@ int ACTIVE_TASK::start(bool first_time) {
             if (!pDEB(environment_block)) {
                 if (log_flags.task) {
                     windows_error_string(error_msg, sizeof(error_msg2));
-                    msg_printf(result->project, MSG_INFO,
+                    msg_printf(wup->project, MSG_INFO,
                         "Process environment block cleanup failed: %s",
                         error_msg2
                     );
@@ -625,6 +633,7 @@ int ACTIVE_TASK::start(bool first_time) {
     }
     pid = process_info.dwProcessId;
     pid_handle = process_info.hProcess;
+    CloseHandle(process_info.hThread);  // thread handle is not used
 #elif defined(__EMX__)
 
     char* argv[100];
@@ -681,15 +690,17 @@ int ACTIVE_TASK::start(bool first_time) {
     chdir(current_dir);
 
     if (log_flags.task_debug) {
-        msg_printf(0, MSG_INFO,
+        msg_printf(wup->project, MSG_INFO,
             "[task_debug] ACTIVE_TASK::start(): forked process: pid %d\n", pid
         );
     }
 
-    if (setpriority(PRIO_PROCESS, pid,
-        high_priority?PROCESS_MEDIUM_PRIORITY:PROCESS_IDLE_PRIORITY)
-    ) {
-        perror("setpriority");
+    if (!config.no_priority_change) {
+        if (setpriority(PRIO_PROCESS, pid,
+            high_priority?PROCESS_MEDIUM_PRIORITY:PROCESS_IDLE_PRIORITY)
+        ) {
+            perror("setpriority");
+        }
     }
 
 #else
@@ -699,6 +710,16 @@ int ACTIVE_TASK::start(bool first_time) {
     char current_dir[1024];
 
     getcwd(current_dir, sizeof(current_dir));
+
+    sprintf(cmdline, "%s %s",
+        wup->command_line.c_str(), app_version->cmdline
+    );
+    if (app_version->ncudas) {
+        coproc_cmdline(RSC_TYPE_CUDA, result, app_version->ncudas, cmdline);
+    }
+    if (app_version->natis) {
+        coproc_cmdline(RSC_TYPE_ATI, result, app_version->natis, cmdline);
+    }
 
     // Set up core/app shared memory seg if needed
     //
@@ -763,7 +784,7 @@ int ACTIVE_TASK::start(bool first_time) {
         dup2(fd, STDOUT_FILENO);
         close(fd);
 
-        // add to library path:
+        // prepend to library path:
         // - the project dir (../../projects/X)
         // - the slot dir (.)
         // - the BOINC dir (../..)
@@ -774,11 +795,23 @@ int ACTIVE_TASK::start(bool first_time) {
         get_project_dir(wup->project, buf, sizeof(buf));
         char* p = getenv("LD_LIBRARY_PATH");
         if (p) {
-            sprintf(libpath, "%s:../../%s:.:../..", p, buf);
+            sprintf(libpath, "../../%s:.:../..:%s", buf, p);
         } else {
             sprintf(libpath, "../../%s:.:../..", buf);
         }
         setenv("LD_LIBRARY_PATH", libpath, 1);
+
+        // On the Mac, do the same for DYLIB_LIBRARY_PATH
+        //
+#ifdef __APPLE__
+        p = getenv("DYLIB_LIBRARY_PATH");
+        if (p) {
+            sprintf(libpath, "../../%s:.:../..:%s", buf, p);
+        } else {
+            sprintf(libpath, "../../%s:.:../..", buf);
+        }
+        setenv("DYLIB_LIBRARY_PATH", libpath, 1);
+#endif
 
         retval = chdir(slot_dir);
         if (retval) {
@@ -810,19 +843,30 @@ int ACTIVE_TASK::start(bool first_time) {
         //
         freopen(STDERR_FILE, "a", stderr);
 
+        if (!config.no_priority_change) {
 #ifdef HAVE_SETPRIORITY
-        if (setpriority(PRIO_PROCESS, 0,
-            high_priority?PROCESS_MEDIUM_PRIORITY:PROCESS_IDLE_PRIORITY)
-        ) {
-            perror("setpriority");
-        }
+            if (setpriority(PRIO_PROCESS, 0,
+                high_priority?PROCESS_MEDIUM_PRIORITY:PROCESS_IDLE_PRIORITY)
+            ) {
+                perror("setpriority");
+            }
 #endif
-        sprintf(cmdline, "%s %s", wup->command_line.c_str(), app_version->cmdline);
-        cuda_cmdline(this, cmdline);
+#ifdef HAVE_SCHED_SETSCHEDULER
+            if (!high_priority) {
+                struct sched_param p;
+                p.sched_priority = 0;
+                if (sched_setscheduler(0, SCHED_BATCH, &p)) {
+                    perror("sched_setscheduler");
+                }
+            }
+#endif
+        }
         sprintf(buf, "../../%s", exec_path );
         if (g_use_sandbox) {
             char switcher_path[100];
-            sprintf(switcher_path, "../../%s/%s", SWITCHER_DIR, SWITCHER_FILE_NAME);
+            sprintf(switcher_path, "../../%s/%s",
+                SWITCHER_DIR, SWITCHER_FILE_NAME
+            );
             argv[0] = SWITCHER_FILE_NAME;
             argv[1] = buf;
             argv[2] = exec_name;
@@ -830,17 +874,20 @@ int ACTIVE_TASK::start(bool first_time) {
             if (log_flags.task_debug) {
                 debug_print_argv(argv);
             }
-            // Files written by projects have user boinc_project and group boinc_project, 
+            // Files written by projects have user boinc_project
+            // and group boinc_project, 
             // so they must be world-readable so BOINC CLient can read them 
+            //
             umask(2);
             retval = execv(switcher_path, argv);
         } else {
-            argv[0] = exec_name;
+            argv[0] = buf;
             parse_command_line(cmdline, argv+1);
             retval = execv(buf, argv);
         }
         msg_printf(wup->project, MSG_INTERNAL_ERROR,
-            "Process creation (%s) failed: %s, errno=%d\n", buf, boincerror(retval), errno
+            "Process creation (%s) failed: %s, errno=%d\n",
+            buf, boincerror(retval), errno
         );
         perror("execv");
         fflush(NULL);
@@ -848,7 +895,7 @@ int ACTIVE_TASK::start(bool first_time) {
     }
 
     if (log_flags.task_debug) {
-        msg_printf(0, MSG_INFO,
+        msg_printf(wup->project, MSG_INFO,
             "[task_debug] ACTIVE_TASK::start(): forked process: pid %d\n", pid
         );
     }
@@ -860,15 +907,17 @@ int ACTIVE_TASK::start(bool first_time) {
     // go here on error; "buf" contains error message, "retval" is nonzero
     //
 error:
-    if (coprocs_reserved) {
-        free_coprocs();
-    }
 
     // if something failed, it's possible that the executable was munged.
     // Verify it to trigger another download.
     //
     gstate.input_files_available(result, true);
     gstate.report_result_error(*result, buf);
+    if (log_flags.task_debug) {
+        msg_printf(wup->project, MSG_INFO,
+            "[task_debug] couldn't start app: %s", buf
+        );
+    }
     set_task_state(PROCESS_COULDNT_START, "start");
     return retval;
 }
@@ -1002,4 +1051,4 @@ int ACTIVE_TASK::is_native_i386_app(char* exec_path) {
 }
 #endif
 
-const char *BOINC_RCSID_be8bae8cbb = "$Id: app_start.cpp 16611 2008-12-03 20:55:22Z romw $";
+const char *BOINC_RCSID_be8bae8cbb = "$Id: app_start.cpp 19321 2009-10-16 19:15:04Z romw $";

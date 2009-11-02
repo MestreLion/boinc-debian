@@ -3,7 +3,7 @@
 // Purpose:     wxHyperLink control
 // Maintainer:  Wyo
 // Created:     2003-04-07
-// RCS-ID:      $Id: hyperlink.cpp 11366 2006-10-27 10:26:56Z rwalton $
+// RCS-ID:      $Id: hyperlink.cpp 15901 2008-08-20 16:07:06Z charlief $
 // Copyright:   (c) 2004 wxCode
 // Licence:     wxWindows
 //////////////////////////////////////////////////////////////////////////////
@@ -189,18 +189,13 @@ void wxHyperLink::ExecuteLink (const wxString &strLink) {
         // 3rd %s is the application name
         //    i.e. 'BOINC Manager', 'GridRepublic Manager'
         strDialogMessage.Printf(
-            _("%s tried to display the web page\n"
-            "\t%s\n"
-            "but couldn't find a web browser.\n"
-            "To fix this, set the environment variable\n"
-            "BROWSER to the path of your web browser,\n"
-            "then restart the %s."),
+            _("%s tried to display the web page\n\t%s\nbut couldn't find a web browser.\nTo fix this, set the environment variable\nBROWSER to the path of your web browser,\nthen restart the %s."),
             wxGetApp().GetSkinManager()->GetAdvanced()->GetApplicationName().c_str(),
             strLink.c_str(),
             wxGetApp().GetSkinManager()->GetAdvanced()->GetApplicationName().c_str()
         );
 
-        ::wxMessageBox(
+        ::wxGetApp().SafeMessageBox(
             strDialogMessage,
             strDialogTitle,
             wxOK | wxICON_INFORMATION
@@ -208,4 +203,4 @@ void wxHyperLink::ExecuteLink (const wxString &strLink) {
     }
 }
 
-const char *BOINC_RCSID_d587835b7e="$Id: hyperlink.cpp 11366 2006-10-27 10:26:56Z rwalton $";
+const char *BOINC_RCSID_d587835b7e="$Id: hyperlink.cpp 15901 2008-08-20 16:07:06Z charlief $";

@@ -1,4 +1,4 @@
-// $Id: stackwalker_win.cpp 16551 2008-11-24 21:26:45Z romw $
+// $Id: stackwalker_win.cpp 18365 2009-06-11 02:14:36Z romw $
 //
 
 /*////////////////////////////////////////////////////////////////////////////
@@ -111,13 +111,13 @@ bool DebuggerLoadLibrary(
     *lphInstance = LoadLibraryA( strTargetLibrary.c_str() );
     if ( *lphInstance == NULL )
     {
-        _ftprintf( stderr, "LoadLibraryA( %s ): GetLastError = %lu\n", strTargetLibrary.c_str(), gle );
+        _ftprintf( stderr, _T("LoadLibraryA( %s ): GetLastError = %lu\n"), strTargetLibrary.c_str(), gle );
 
         strTargetLibrary = strLibrary;
         *lphInstance = LoadLibraryA( strTargetLibrary.c_str() );
         if ( *lphInstance == NULL )
         {
-            _ftprintf( stderr, "LoadLibraryA( %s ): GetLastError = %lu\n", strTargetLibrary.c_str(), gle );
+            _ftprintf( stderr, _T("LoadLibraryA( %s ): GetLastError = %lu\n"), strTargetLibrary.c_str(), gle );
             return false;
         }
     }
@@ -582,44 +582,46 @@ int DebuggerInitialize( LPCSTR pszBOINCLocation, LPCSTR pszSymbolStore, BOOL bPr
         strSymbolSearchPath += tt + std::string( ";" );
     }
 
-    if (!diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION) || 
-        (diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION) || (0 < strlen(pszSymbolStore))))
-    {
-        // Depending on if we are a BOINC application or a project application
-        // we'll need to store our symbol files in two different locations.
-        //
-        // BOINC:
-        //   [DATADIR]\symbols
-        // Project:
-        //   [DATADIR]\projects\project_dir\symbols
-        //
-        if (!diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION)) {
-            strLocalSymbolStore += strCurrentDirectory + std::string("symbols");
-        } else {
-            strLocalSymbolStore += strExecutableDirectory + std::string("symbols");
-        }
-
-        // Microsoft Public Symbol Server
-        if (std::string::npos == strSymbolSearchPath.find("http://msdl.microsoft.com/download/symbols")) {
-            strSymbolSearchPath += 
-                std::string( "srv*" ) + strLocalSymbolStore + 
-                std::string( "*http://msdl.microsoft.com/download/symbols;" );
-        }
-
-        // Project Symbol Server
-        if ((std::string::npos == strSymbolSearchPath.find(pszSymbolStore)) && (0 < strlen(pszSymbolStore))) {
-            strSymbolSearchPath += 
-                std::string( "srv*" ) + strLocalSymbolStore + std::string( "*" ) +
-                std::string( pszSymbolStore ) + std::string( ";" );
-        }
-
-        // BOINC Symbol Server
-        if (std::string::npos == strSymbolSearchPath.find("http://boinc.berkeley.edu/symstore")) {
-            strSymbolSearchPath += 
-                std::string( "srv*" ) + strLocalSymbolStore + 
-                std::string( "*http://boinc.berkeley.edu/symstore;" );
-        }
+    // Depending on if we are a BOINC application or a project application
+    // we'll need to store our symbol files in two different locations.
+    //
+    // BOINC:
+    //   [DATADIR]\symbols
+    // Project:
+    //   [DATADIR]\projects\project_dir\symbols
+    //
+    if (!diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION)) {
+        strLocalSymbolStore += strCurrentDirectory + std::string("\\symbols");
+    } else {
+        strLocalSymbolStore += strExecutableDirectory + std::string("\\symbols");
     }
+
+    // Microsoft Public Symbol Server
+	if (!diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION) || (0 < strlen(pszSymbolStore))) {
+		if (std::string::npos == strSymbolSearchPath.find("http://msdl.microsoft.com/download/symbols")) {
+			strSymbolSearchPath += 
+				std::string( "srv*" ) + strLocalSymbolStore + 
+				std::string( "*http://msdl.microsoft.com/download/symbols;" );
+		}
+	}
+
+    // Project Symbol Server
+	if (diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION) && (0 < strlen(pszSymbolStore))) {
+		if ((std::string::npos == strSymbolSearchPath.find(pszSymbolStore)) && (0 < strlen(pszSymbolStore))) {
+			strSymbolSearchPath += 
+				std::string( "srv*" ) + strLocalSymbolStore + std::string( "*" ) +
+				std::string( pszSymbolStore ) + std::string( ";" );
+		}
+	}
+
+    // BOINC Symbol Server
+	if (!diagnostics_is_flag_set(BOINC_DIAG_BOINCAPPLICATION)) {
+		if (std::string::npos == strSymbolSearchPath.find("http://boinc.berkeley.edu/symstore")) {
+			strSymbolSearchPath += 
+				std::string( "srv*" ) + strLocalSymbolStore + 
+				std::string( "*http://boinc.berkeley.edu/symstore;" );
+		}
+	}
 
     if ( strSymbolSearchPath.size() > 0 ) // if we added anything, we have a trailing semicolon
         strSymbolSearchPath = strSymbolSearchPath.substr( 0, strSymbolSearchPath.size() - 1 );
@@ -875,7 +877,7 @@ static void ShowStackRM(HANDLE hThread, CONTEXT& Context)
         if ( StackFrame.AddrPC.Offset == 0 )
         {
             // Special case: If we are here, we have no valid callstack entry!
-            _ftprintf(stderr, "(-nosymbols- PC == 0)\n");
+            _ftprintf(stderr, _T("(-nosymbols- PC == 0)\n"));
         }
         else
         {
@@ -928,31 +930,31 @@ static void ShowStackRM(HANDLE hThread, CONTEXT& Context)
         } // we seem to have a valid PC
 
 
-        _ftprintf(stderr, "%.8x ", StackFrame.AddrFrame.Offset);
-        _ftprintf(stderr, "%.8x ", StackFrame.AddrReturn.Offset);
-        _ftprintf(stderr, "%.8x ", StackFrame.Params[0]);
-        _ftprintf(stderr, "%.8x ", StackFrame.Params[1]);
-        _ftprintf(stderr, "%.8x ", StackFrame.Params[2]);
-        _ftprintf(stderr, "%.8x ", StackFrame.Params[3]);
-        _ftprintf(stderr, "%s",    Module.ModuleName);
-        _ftprintf(stderr, "!%s+",  undName);
-        _ftprintf(stderr, "0x%x ", offsetFromLine);
+        _ftprintf(stderr, _T("%.8x "), StackFrame.AddrFrame.Offset);
+        _ftprintf(stderr, _T("%.8x "), StackFrame.AddrReturn.Offset);
+        _ftprintf(stderr, _T("%.8x "), StackFrame.Params[0]);
+        _ftprintf(stderr, _T("%.8x "), StackFrame.Params[1]);
+        _ftprintf(stderr, _T("%.8x "), StackFrame.Params[2]);
+        _ftprintf(stderr, _T("%.8x "), StackFrame.Params[3]);
+        _ftprintf(stderr, _T("%s"),    Module.ModuleName);
+        _ftprintf(stderr, _T("!%s+"),  undName);
+        _ftprintf(stderr, _T("0x%x "), offsetFromLine);
 
         if (Line.LineNumber)
-            _ftprintf(stderr, "(%s:%lu) ", Line.FileName, Line.LineNumber);
+            _ftprintf(stderr, _T("(%s:%lu) "), Line.FileName, Line.LineNumber);
 
         if (StackFrame.FuncTableEntry) {
             // FPO Data
             PFPO_DATA pFPO = (PFPO_DATA)StackFrame.FuncTableEntry;
             switch(pFPO->cbFrame) {
                 case FRAME_FPO:
-                    _ftprintf(stderr, "FPO: [%d,%d,%d] ", pFPO->cdwParams, pFPO->cdwLocals, pFPO->cbRegs);
+                    _ftprintf(stderr, _T("FPO: [%d,%d,%d] "), pFPO->cdwParams, pFPO->cdwLocals, pFPO->cbRegs);
                     break;
                 case FRAME_TRAP:
-                    _ftprintf(stderr, "FPO: [%d,%d] TrapFrame @ 0x%.8x ", pFPO->cdwParams, pFPO->cdwLocals, pFPO->ulOffStart);
+                    _ftprintf(stderr, _T("FPO: [%d,%d] TrapFrame @ 0x%.8x "), pFPO->cdwParams, pFPO->cdwLocals, pFPO->ulOffStart);
                     break;
                 case FRAME_TSS:
-                    _ftprintf(stderr, "FPO: TaskGate Segment: 0 ");
+                    _ftprintf(stderr, _T("FPO: TaskGate Segment: 0 "));
                     break;
             }
         }
@@ -960,7 +962,7 @@ static void ShowStackRM(HANDLE hThread, CONTEXT& Context)
         if (strlen(szMsgSymFromAddr) || strlen(szMsgSymGetLineFromAddr) || strlen(szMsgSymGetModuleInfo)) {
             _ftprintf(
                 stderr,
-                "%s %s %s Address = '%.8x'",
+                _T("%s %s %s Address = '%.8x'"),
                 szMsgSymFromAddr,
                 szMsgSymGetLineFromAddr,
                 szMsgSymGetModuleInfo,
@@ -968,7 +970,7 @@ static void ShowStackRM(HANDLE hThread, CONTEXT& Context)
             );
         }
 
-        _ftprintf(stderr, "\n");
+        _ftprintf(stderr, _T("\n"));
 
 
         // Zero out params so we have fresh parameters through the next interation
@@ -1006,4 +1008,4 @@ static void ShowStackRM(HANDLE hThread, CONTEXT& Context)
     LeaveCriticalSection(&g_csFileOpenClose);
 }
 
-const char *BOINC_RCSID_e8b4633192 = "$Id: stackwalker_win.cpp 16551 2008-11-24 21:26:45Z romw $";
+const char *BOINC_RCSID_e8b4633192 = "$Id: stackwalker_win.cpp 18365 2009-06-11 02:14:36Z romw $";

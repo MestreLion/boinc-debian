@@ -45,6 +45,7 @@
 #include "parse.h"
 #include "util.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "client_state.h"
 #include "pers_file_xfer.h"
 #include "sandbox.h"
@@ -64,6 +65,9 @@ void PROJECT::init() {
     project_specific_prefs = "";
     gui_urls = "";
     resource_share = 100;
+    no_cpu = false;
+    no_cuda = false;
+    no_ati = false;
     strcpy(host_venue, "");
     using_venue_specific_prefs = false;
     scheduler_urls.clear();
@@ -96,7 +100,9 @@ void PROJECT::init() {
     non_cpu_intensive = false;
     verify_files_on_app_start = false;
     short_term_debt = 0;
-    long_term_debt = 0;
+    cpu_pwf.reset();
+    cuda_pwf.reset();
+    ati_pwf.reset();
     send_file_list = false;
     send_time_stats_log = 0;
     send_job_log = 0;
@@ -109,17 +115,13 @@ void PROJECT::init() {
     user_files.clear();
     project_files.clear();
     anticipated_debt = 0;
-    wall_cpu_time_this_debt_interval = 0;
     next_runnable_result = NULL;
-    work_request = 0;
-    work_request_urgency = WORK_FETCH_DONT_NEED;
     duration_correction_factor = 1;
     project_files_downloaded_time = 0;
     use_symlinks = false;
 
     // Initialize scratch variables.
     rr_sim_status.clear();
-    deadlines_missed = 0;
 }
 
 // parse project fields from client_state.xml
@@ -188,8 +190,22 @@ int PROJECT::parse_state(MIOFILE& in) {
         if (parse_bool(buf, "detach_when_done", detach_when_done)) continue;
         if (parse_bool(buf, "ended", ended)) continue;
         if (parse_double(buf, "<short_term_debt>", short_term_debt)) continue;
-        if (parse_double(buf, "<long_term_debt>", long_term_debt)) continue;
-        if (parse_double(buf, "<resource_share>", x)) continue;    // not authoritative
+        if (parse_double(buf, "<long_term_debt>", cpu_pwf.debt)) continue;
+        if (parse_double(buf, "<cpu_backoff_interval>", cpu_pwf.backoff_interval)) continue;
+        if (parse_double(buf, "<cpu_backoff_time>", cpu_pwf.backoff_time)) {
+            if (cpu_pwf.backoff_time > gstate.now + 28*SECONDS_PER_DAY) {
+                cpu_pwf.backoff_time = gstate.now + 28*SECONDS_PER_DAY;
+            }
+            continue;
+        }
+        if (parse_double(buf, "<cuda_debt>", cuda_pwf.debt)) continue;
+        if (parse_double(buf, "<cuda_backoff_interval>", cuda_pwf.backoff_interval)) continue;
+        if (parse_double(buf, "<cuda_backoff_time>", cuda_pwf.backoff_time)) continue;
+        if (parse_double(buf, "<ati_debt>", ati_pwf.debt)) continue;
+        if (parse_double(buf, "<ati_backoff_interval>", ati_pwf.backoff_interval)) continue;
+        if (parse_double(buf, "<ati_backoff_time>", ati_pwf.backoff_time)) continue;
+        if (parse_double(buf, "<resource_share>", x)) continue;
+            // not authoritative
         if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
         if (parse_bool(buf, "attached_via_acct_mgr", attached_via_acct_mgr)) continue;
         if (parse_double(buf, "<ams_resource_share>", ams_resource_share)) continue;
@@ -240,6 +256,14 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         "    <next_rpc_time>%f</next_rpc_time>\n"
         "    <short_term_debt>%f</short_term_debt>\n"
         "    <long_term_debt>%f</long_term_debt>\n"
+        "    <cpu_backoff_interval>%f</cpu_backoff_interval>\n"
+        "    <cpu_backoff_time>%f</cpu_backoff_time>\n"
+        "    <cuda_debt>%f</cuda_debt>\n"
+        "    <cuda_backoff_interval>%f</cuda_backoff_interval>\n"
+        "    <cuda_backoff_time>%f</cuda_backoff_time>\n"
+        "    <ati_debt>%f</ati_debt>\n"
+        "    <ati_backoff_interval>%f</ati_backoff_interval>\n"
+        "    <ati_backoff_time>%f</ati_backoff_time>\n"
         "    <resource_share>%f</resource_share>\n"
         "    <duration_correction_factor>%f</duration_correction_factor>\n"
 		"    <sched_rpc_pending>%d</sched_rpc_pending>\n"
@@ -268,7 +292,9 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         min_rpc_time,
         next_rpc_time,
         short_term_debt,
-        long_term_debt,
+        cpu_pwf.debt, cpu_pwf.backoff_interval, cpu_pwf.backoff_time,
+        cuda_pwf.debt, cuda_pwf.backoff_interval, cuda_pwf.backoff_time,
+        ati_pwf.debt, ati_pwf.backoff_interval, ati_pwf.backoff_time,
         resource_share,
         duration_correction_factor,
 		sched_rpc_pending,
@@ -295,13 +321,23 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
     if (gui_rpc) {
         out.printf("%s", gui_urls.c_str());
         out.printf(
-		    "    <rr_sim_deadlines_missed>%d</rr_sim_deadlines_missed>\n"
             "    <last_rpc_time>%f</last_rpc_time>\n"
             "    <project_files_downloaded_time>%f</project_files_downloaded_time>\n",
-		    rr_sim_status.deadlines_missed,
             last_rpc_time,
             project_files_downloaded_time
         );
+        if (download_backoff.next_xfer_time > gstate.now) {
+            out.printf(
+                "    <download_backoff>%f</download_backoff>\n",
+                download_backoff.next_xfer_time - gstate.now
+            );
+        }
+        if (upload_backoff.next_xfer_time > gstate.now) {
+            out.printf(
+                "    <upload_backoff>%f</upload_backoff>\n",
+                upload_backoff.next_xfer_time - gstate.now
+            );
+        }
     } else {
        for (i=0; i<scheduler_urls.size(); i++) {
             out.printf(
@@ -350,7 +386,9 @@ void PROJECT::copy_state_fields(PROJECT& p) {
     trickle_up_pending = p.trickle_up_pending;
     safe_strcpy(code_sign_key, p.code_sign_key);
     short_term_debt = p.short_term_debt;
-    long_term_debt = p.long_term_debt;
+    cpu_pwf = p.cpu_pwf;
+    cuda_pwf = p.cuda_pwf;
+    ati_pwf = p.ati_pwf;
     send_file_list = p.send_file_list;
     send_time_stats_log = p.send_time_stats_log;
     send_job_log = p.send_job_log;
@@ -417,44 +455,39 @@ const char* PROJECT::get_scheduler_url(int index, double r) {
     return scheduler_urls[i].c_str();
 }
 
-double PROJECT::next_file_xfer_time(const bool is_upload) {
-    return (is_upload ? next_file_xfer_up : next_file_xfer_down);
+bool FILE_XFER_BACKOFF::ok_to_transfer() {
+    double dt = next_xfer_time - gstate.now;
+    if (dt > gstate.pers_retry_delay_max) {
+        // must have changed the system clock
+        //
+        dt = 0;
+    }
+    return (dt <= 0);
 }
 
-void PROJECT::file_xfer_failed(const bool is_upload) {
-    if (is_upload) {
-        file_xfer_failures_up++;
-        if (file_xfer_failures_up < FILE_XFER_FAILURE_LIMIT) {
-            next_file_xfer_up = 0;
-        } else {
-            next_file_xfer_up = gstate.now + calculate_exponential_backoff(
-                file_xfer_failures_up,
-                gstate.pers_retry_delay_min,
-                gstate.pers_retry_delay_max
-            );
-        }
+void FILE_XFER_BACKOFF::file_xfer_failed(PROJECT* p) {
+    file_xfer_failures++;
+    if (file_xfer_failures < FILE_XFER_FAILURE_LIMIT) {
+        next_xfer_time = 0;
     } else {
-        file_xfer_failures_down++;
-        if (file_xfer_failures_down < FILE_XFER_FAILURE_LIMIT) {
-            next_file_xfer_down = 0;
-        } else {
-            next_file_xfer_down = gstate.now + calculate_exponential_backoff(
-                file_xfer_failures_down,
-                gstate.pers_retry_delay_min,
-                gstate.pers_retry_delay_max
+        double backoff = calculate_exponential_backoff(
+            file_xfer_failures,
+            gstate.pers_retry_delay_min,
+            gstate.pers_retry_delay_max
+        );
+        if (log_flags.file_xfer_debug) {
+            msg_printf(p, MSG_INFO,
+                "[file_xfer_debug] project-wide xfer delay for %f sec",
+                backoff
             );
         }
+        next_xfer_time = gstate.now + backoff;
     }
 }
 
-void PROJECT::file_xfer_succeeded(const bool is_upload) {
-    if (is_upload) {
-        file_xfer_failures_up = 0;
-        next_file_xfer_up  = 0;
-    } else {
-        file_xfer_failures_down = 0;
-        next_file_xfer_down = 0;
-    }
+void FILE_XFER_BACKOFF::file_xfer_succeeded() {
+    file_xfer_failures = 0;
+    next_xfer_time  = 0;
 }
 
 int PROJECT::parse_project_files(MIOFILE& in, bool delete_existing_symlinks) {
@@ -544,18 +577,16 @@ void PROJECT::write_project_files(MIOFILE& f) {
 // has several logical names, so try them all
 //
 int PROJECT::write_symlink_for_project_file(FILE_INFO* fip) {
-    char project_dir[256], path[256];
+    char project_dir[256], link_path[256], file_path[256];
     unsigned int i;
 
     get_project_dir(this, project_dir, sizeof(project_dir));
     for (i=0; i<project_files.size(); i++) {
         FILE_REF& fref = project_files[i];
         if (fref.file_info != fip) continue;
-        sprintf(path, "%s/%s", project_dir, fref.open_name);
-        FILE* f = boinc_fopen(path, "w");
-        if (!f) continue;
-        fprintf(f, "<soft_link>%s/%s</soft_link>\n", project_dir, fip->name);
-        fclose(f);
+        sprintf(link_path, "%s/%s", project_dir, fref.open_name);
+        sprintf(file_path, "%s/%s", project_dir, fip->name);
+        make_soft_link(this, link_path, file_path);
     }
     return 0;
 }
@@ -898,6 +929,13 @@ int FILE_INFO::write_gui(MIOFILE& out) {
 
     if (pers_file_xfer) {
         pers_file_xfer->write(out);
+
+        FILE_XFER_BACKOFF& fxb = project->file_xfer_backoff(pers_file_xfer->is_upload);
+        if (fxb.next_xfer_time > gstate.now) {
+            out.printf("    <project_backoff>%f</project_backoff>\n",
+                fxb.next_xfer_time - gstate.now
+            );
+        }
     }
     out.printf("</file_transfer>\n");
     return 0;
@@ -922,7 +960,7 @@ int FILE_INFO::delete_file() {
 // The is_upload arg says which kind you want.
 // NULL return means there is no URL of the requested type
 //
-const char* FILE_INFO::get_init_url(bool is_upload) {
+const char* FILE_INFO::get_init_url() {
     if (!urls.size()) {
         return NULL;
     }
@@ -943,40 +981,26 @@ const char* FILE_INFO::get_init_url(bool is_upload) {
     current_url = (int)temp;
 #endif
     start_url = current_url;
-    while(1) {
-        if (!is_correct_url_type(is_upload, urls[current_url])) {
-            current_url = (current_url + 1)%((int)urls.size());
-            if (current_url == start_url) {
-                msg_printf(project, MSG_INTERNAL_ERROR,
-                    "Couldn't find suitable URL for %s", name);
-                return NULL;
-            }
-        } else {
-            start_url = current_url;
-            return urls[current_url].c_str();
-        }
-    }
+    return urls[current_url].c_str();
 }
 
-// Call this to get the next URL of the indicated type.
+// Call this to get the next URL.
 // NULL return means you've tried them all.
 //
-const char* FILE_INFO::get_next_url(bool is_upload) {
+const char* FILE_INFO::get_next_url() {
     if (!urls.size()) return NULL;
     while(1) {
         current_url = (current_url + 1)%((int)urls.size());
         if (current_url == start_url) {
             return NULL;
         }
-        if (is_correct_url_type(is_upload, urls[current_url])) {
-            return urls[current_url].c_str();
-        }
+        return urls[current_url].c_str();
     }
 }
 
-const char* FILE_INFO::get_current_url(bool is_upload) {
+const char* FILE_INFO::get_current_url() {
     if (current_url < 0) {
-        return get_init_url(is_upload);
+        return get_init_url();
     }
     if (current_url >= (int)urls.size()) {
         msg_printf(project, MSG_INTERNAL_ERROR,
@@ -985,18 +1009,6 @@ const char* FILE_INFO::get_current_url(bool is_upload) {
         return NULL;
     }
     return urls[current_url].c_str();
-}
-
-// Checks if the URL includes the phrase "file_upload_handler"
-// This indicates the URL is an upload url
-// 
-bool FILE_INFO::is_correct_url_type(bool is_upload, std::string& url) {
-    const char* has_str = strstr(url.c_str(), "file_upload_handler");
-    if ((is_upload && !has_str) || (!is_upload && has_str)) {
-        return false;
-    } else {
-        return true;
-    }
 }
 
 // merges information from a new FILE_INFO that has the same name as one
@@ -1102,9 +1114,10 @@ int APP_VERSION::parse(MIOFILE& in) {
     strcpy(cmdline, "");
     avg_ncpus = 1;
     max_ncpus = 1;
+    ncudas = 0;
+    natis = 0;
     app = NULL;
     project = NULL;
-    coprocs.coprocs.clear();
     flops = gstate.host_info.p_fpops;
     while (in.fgets(buf, 256)) {
         if (match_tag(buf, "</app_version>")) return 0;
@@ -1123,13 +1136,17 @@ int APP_VERSION::parse(MIOFILE& in) {
         if (parse_double(buf, "<flops>", flops)) continue;
         if (parse_str(buf, "<cmdline>", cmdline, sizeof(cmdline))) continue;
         if (match_tag(buf, "<coproc>")) {
-            COPROC* cp = new COPROC("");
-            int retval = cp->parse(in);
+            COPROC_REQ cp;
+            int retval = cp.parse(in);
             if (!retval) {
-                coprocs.coprocs.push_back(cp);
+                if (!strcmp(cp.type, "CUDA")) {
+                    ncudas = cp.count;
+                }
+                if (!strcmp(cp.type, "ATI")) {
+                    natis = cp.count;
+                }
             } else {
                 msg_printf(0, MSG_INTERNAL_ERROR, "Error parsing <coproc>");
-                delete cp;
             }
             continue;
         }
@@ -1142,7 +1159,7 @@ int APP_VERSION::parse(MIOFILE& in) {
     return ERR_XML_PARSE;
 }
 
-int APP_VERSION::write(MIOFILE& out) {
+int APP_VERSION::write(MIOFILE& out, bool write_file_info) {
     unsigned int i;
     int retval;
 
@@ -1170,11 +1187,30 @@ int APP_VERSION::write(MIOFILE& out) {
     if (strlen(cmdline)) {
         out.printf("    <cmdline>%s</cmdline>\n", cmdline);
     }
-    for (i=0; i<app_files.size(); i++) {
-        retval = app_files[i].write(out);
-        if (retval) return retval;
+    if (write_file_info) {
+        for (i=0; i<app_files.size(); i++) {
+            retval = app_files[i].write(out);
+            if (retval) return retval;
+        }
     }
-    coprocs.write_xml(out);
+    if (ncudas) {
+        out.printf(
+            "    <coproc>\n"
+            "        <type>CUDA</type>\n"
+            "        <count>%f</count>\n"
+            "    </coproc>\n",
+            ncudas
+        );
+    }
+    if (natis) {
+        out.printf(
+            "    <coproc>\n"
+            "        <type>ATI</type>\n"
+            "        <count>%f</count>\n"
+            "    </coproc>\n",
+            natis
+        );
+    }
 
     out.printf(
         "</app_version>\n"
@@ -1207,6 +1243,16 @@ void APP_VERSION::get_file_errors(string& str) {
             str = str + msg;
         }
     }
+}
+
+bool APP_VERSION::missing_coproc() {
+    if (ncudas && !coproc_cuda) {
+        return true;
+    }
+    if (natis && !coproc_ati) {
+        return true;
+    }
+    return false;
 }
 
 void APP_VERSION::clear_errors() {
@@ -1441,17 +1487,18 @@ void RESULT::clear() {
     strcpy(name, "");
     strcpy(wu_name, "");
     report_deadline = 0;
+    received_time = 0;
     output_files.clear();
     _state = RESULT_NEW;
     ready_to_report = false;
     completed_time = 0;
     got_server_ack = false;
     final_cpu_time = 0;
+    final_elapsed_time = 0;
     exit_status = 0;
     stderr_out = "";
     suspended_via_gui = false;
     rr_sim_misses_deadline = false;
-    last_rr_sim_missed_deadline = false;
     fpops_per_cpu_sec = 0;
     fpops_cumulative = 0;
     intops_per_cpu_sec = 0;
@@ -1462,6 +1509,8 @@ void RESULT::clear() {
     version_num = 0;
     strcpy(platform, "");
     strcpy(plan_class, "");
+    strcpy(resources, "");
+    coproc_missing = false;
 }
 
 // parse a <result> element from scheduling server.
@@ -1518,6 +1567,7 @@ int RESULT::parse_state(MIOFILE& in) {
         }
         if (parse_str(buf, "<name>", name, sizeof(name))) continue;
         if (parse_str(buf, "<wu_name>", wu_name, sizeof(wu_name))) continue;
+        if (parse_double(buf, "<received_time>", received_time)) continue;
         if (parse_double(buf, "<report_deadline>", report_deadline)) {
             continue;
         }
@@ -1527,6 +1577,7 @@ int RESULT::parse_state(MIOFILE& in) {
             continue;
         }
         if (parse_double(buf, "<final_cpu_time>", final_cpu_time)) continue;
+        if (parse_double(buf, "<final_elapsed_time>", final_elapsed_time)) continue;
         if (parse_int(buf, "<exit_status>", exit_status)) continue;
         if (parse_bool(buf, "got_server_ack", got_server_ack)) continue;
         if (parse_bool(buf, "ready_to_report", ready_to_report)) continue;
@@ -1567,12 +1618,14 @@ int RESULT::write(MIOFILE& out, bool to_server) {
         "<result>\n"
         "    <name>%s</name>\n"
         "    <final_cpu_time>%f</final_cpu_time>\n"
+        "    <final_elapsed_time>%f</final_elapsed_time>\n"
         "    <exit_status>%d</exit_status>\n"
         "    <state>%d</state>\n"
         "    <platform>%s</platform>\n"
         "    <version_num>%d</version_num>\n",
         name,
         final_cpu_time,
+        final_elapsed_time,
         exit_status,
         state(),
         platform,
@@ -1639,9 +1692,11 @@ int RESULT::write(MIOFILE& out, bool to_server) {
         if (suspended_via_gui) out.printf("    <suspended_via_gui/>\n");
         out.printf(
             "    <wu_name>%s</wu_name>\n"
-            "    <report_deadline>%f</report_deadline>\n",
+            "    <report_deadline>%f</report_deadline>\n"
+            "    <received_time>%f</received_time>\n",
             wu_name,
-            report_deadline
+            report_deadline,
+            received_time
         );
         for (i=0; i<output_files.size(); i++) {
             retval = output_files[i].write(out);
@@ -1657,19 +1712,27 @@ int RESULT::write_gui(MIOFILE& out) {
         "<result>\n"
         "    <name>%s</name>\n"
         "    <wu_name>%s</wu_name>\n"
+        "    <version_num>%d</version_num>\n"
+        "    <plan_class>%s</plan_class>\n"
         "    <project_url>%s</project_url>\n"
         "    <final_cpu_time>%f</final_cpu_time>\n"
+        "    <final_elapsed_time>%f</final_elapsed_time>\n"
         "    <exit_status>%d</exit_status>\n"
         "    <state>%d</state>\n"
         "    <report_deadline>%f</report_deadline>\n"
+        "    <received_time>%f</received_time>\n"
         "    <estimated_cpu_time_remaining>%f</estimated_cpu_time_remaining>\n",
         name,
         wu_name,
+        version_num,
+        plan_class,
         project->master_url,
         final_cpu_time,
+        final_elapsed_time,
         exit_status,
         state(),
         report_deadline,
+        received_time,
         estimated_time_remaining(false)
     );
     if (got_server_ack) out.printf("    <got_server_ack/>\n");
@@ -1678,21 +1741,44 @@ int RESULT::write_gui(MIOFILE& out) {
     if (suspended_via_gui) out.printf("    <suspended_via_gui/>\n");
     if (project->suspended_via_gui) out.printf("    <project_suspended_via_gui/>\n");
     if (edf_scheduled) out.printf("    <edf_scheduled/>\n");
-    if (avp->coprocs.coprocs.size() || avp->avg_ncpus!= 1) {
-        char buf[256], desc[256];
-        sprintf(desc, "%.2f CPUs", avp->avg_ncpus);
-        for (unsigned int i=0; i<avp->coprocs.coprocs.size(); i++) {
-            COPROC* cp = avp->coprocs.coprocs[i];
-            sprintf(buf, ", %d %s", cp->count, cp->type);
-            strcat(desc, buf);
-        }
-        out.printf(
-            "    <resources>%s</resources>\n", desc
-        );
-    }
+    if (coproc_missing) out.printf("    <coproc_missing/>\n");
     ACTIVE_TASK* atp = gstate.active_tasks.lookup_result(this);
     if (atp) {
         atp->write_gui(out);
+    }
+    if (!strlen(resources)) {
+        // only need to compute this string once
+        //
+        if (avp->ncudas) {
+            sprintf(resources,
+                "%.2f CPUs + %.2f NVIDIA GPUs",
+                avp->avg_ncpus, avp->ncudas
+            );
+        } else if (avp->natis) {
+            sprintf(resources,
+                "%.2f CPUs + %.2f ATI GPUs",
+                avp->avg_ncpus, avp->natis
+                
+            );
+        } else if (avp->avg_ncpus != 1) {
+            sprintf(resources, "%.2f CPUs", avp->avg_ncpus);
+        } else {
+            strcpy(resources, " ");
+        }
+    }
+    if (strlen(resources)>1) {
+        char buf[256];
+        strcpy(buf, "");
+        if (atp && atp->task_state() == PROCESS_EXECUTING) {
+            if (avp->ncudas && coproc_cuda->count>1) {
+                sprintf(buf, " (device %d)", coproc_indices[0]);
+            } else if (avp->natis && coproc_ati->count>1) {
+                sprintf(buf, " (device %d)", coproc_indices[0]);
+            }
+        }
+        out.printf(
+            "    <resources>%s%s</resources>\n", resources, buf
+        );
     }
     out.printf("</result>\n");
     return 0;
@@ -1792,9 +1878,9 @@ void RESULT::append_log_record() {
     job_log_filename(*project, filename, sizeof(filename));
     FILE* f = fopen(filename, "ab");
     if (!f) return;
-    fprintf(f, "%f ue %f ct %f fe %f nm %s\n",
+    fprintf(f, "%.0f ue %f ct %f fe %.0f nm %s et %f\n",
         gstate.now, estimated_duration_uncorrected(), final_cpu_time,
-        wup->rsc_fpops_est, name
+        wup->rsc_fpops_est, name, final_elapsed_time
     );
     fclose(f);
 }
@@ -1850,4 +1936,4 @@ double MODE::delay() {
 	}
 }
 
-const char *BOINC_RCSID_b81ff9a584 = "$Id: client_types.cpp 16606 2008-12-03 18:31:41Z romw $";
+const char *BOINC_RCSID_b81ff9a584 = "$Id: client_types.cpp 19318 2009-10-16 19:07:56Z romw $";

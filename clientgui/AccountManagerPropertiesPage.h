@@ -1,23 +1,20 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
-
 #ifndef _WIZ_ACCOUNTMANAGERPROPERTIESPAGE_H_
 #define _WIZ_ACCOUNTMANAGERPROPERTIESPAGE_H_
 
@@ -58,8 +55,10 @@ END_DECLARE_EVENT_TYPES()
 #define ACCTMGRPROP_RETRPROJECTPROPERTIES_EXECUTE          2
 #define ACCTMGRPROP_DETERMINENETWORKSTATUS_BEGIN           3
 #define ACCTMGRPROP_DETERMINENETWORKSTATUS_EXECUTE         4
-#define ACCTMGRPROP_CLEANUP                                5
-#define ACCTMGRPROP_END                                    6
+#define ACCTMGRPROP_DETERMINEACCOUNTINFOSTATUS_BEGIN       5
+#define ACCTMGRPROP_DETERMINEACCOUNTINFOSTATUS_EXECUTE     6
+#define ACCTMGRPROP_CLEANUP                                7
+#define ACCTMGRPROP_END                                    8
 
 /*!
  * CAccountManagerPropertiesPage class declaration
@@ -115,20 +114,26 @@ public:
     bool GetProjectPropertiesURLFailure() const { return m_bProjectPropertiesURLFailure ; }
     void SetProjectPropertiesURLFailure(bool value) { m_bProjectPropertiesURLFailure = value ; }
 
+    bool GetProjectPropertiesCommunicationFailure() const { return m_bProjectPropertiesCommunicationFailure ; }
+    void SetProjectPropertiesCommunicationFailure(bool value) { m_bProjectPropertiesCommunicationFailure = value ; }
+
     bool GetProjectAccountCreationDisabled() const { return m_bProjectAccountCreationDisabled ; }
     void SetProjectAccountCreationDisabled(bool value) { m_bProjectAccountCreationDisabled = value ; }
 
     bool GetProjectClientAccountCreationDisabled() const { return m_bProjectClientAccountCreationDisabled ; }
     void SetProjectClientAccountCreationDisabled(bool value) { m_bProjectClientAccountCreationDisabled = value ; }
 
-    bool GetNetworkConnectionDetected() const { return m_bNetworkConnectionDetected ; }
-    void SetNetworkConnectionDetected(bool value) { m_bNetworkConnectionDetected = value ; }
+    bool GetNetworkConnectionNotDetected() const { return m_bNetworkConnectionNotDetected ; }
+    void SetNetworkConnectionNotDetected(bool value) { m_bNetworkConnectionNotDetected = value ; }
 
     bool GetServerReportedError() const { return m_bServerReportedError ; }
     void SetServerReportedError(bool value) { m_bServerReportedError = value ; }
 
     bool GetTermsOfUseRequired() const { return m_bTermsOfUseRequired ; }
     void SetTermsOfUseRequired(bool value) { m_bTermsOfUseRequired = value ; }
+
+    bool GetCredentialsAlreadyAvailable() const { return m_bCredentialsAlreadyAvailable ; }
+    void SetCredentialsAlreadyAvailable(bool value) { m_bCredentialsAlreadyAvailable = value ; }
 
     wxInt32 GetCurrentState() const { return m_iCurrentState ; }
     void SetNextState(wxInt32 value) { m_iCurrentState = value ; }
@@ -148,11 +153,13 @@ public:
 ////@end CAccountManagerPropertiesPage member variables
     bool m_bProjectPropertiesSucceeded;
     bool m_bProjectPropertiesURLFailure;
+    bool m_bProjectPropertiesCommunicationFailure;
     bool m_bProjectAccountCreationDisabled;
     bool m_bProjectClientAccountCreationDisabled;
-    bool m_bNetworkConnectionDetected;
+    bool m_bNetworkConnectionNotDetected;
     bool m_bServerReportedError;
     bool m_bTermsOfUseRequired;
+    bool m_bCredentialsAlreadyAvailable;
     int m_iBitmapIndex;
     int m_iCurrentState;
 };

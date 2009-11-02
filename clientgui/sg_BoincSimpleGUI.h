@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #ifndef _SIMPLEFRAME_H_
@@ -25,12 +23,21 @@
 #pragma interface "sg_BoincSimpleGUI.cpp"
 #endif
 
+
+///
+/// Bitmask values for CMainDocument::RunPeriodicRPCs()
+///
+#define VW_SGUI 1024
+#define VW_SMSG 2048
+
+
 class CViewTabPage;
 class StatImageLoader;
 class ImageLoader;
 class CProjectsComponent;
 class ClientStateIndicator;
 class WorkunitNotebook;
+class CDlgMessages;
 
 class CSimplePanel : public wxPanel
 {
@@ -66,6 +73,7 @@ public:
 	void UpdateProjectView();
 	void InitNotebook();
 	void DestroyNotebook();
+    void OnFrameRender();
 	void OnProjectsAttachToProject();
 	void SetDlgOpen(bool newDlgState) { dlgOpen = newDlgState; }
 	bool GetDlgOpen() { return dlgOpen; }
@@ -79,12 +87,10 @@ public:
 	wxBitmap *bm39cImg0;
 
 	wxBitmap *btmpIcnSleeping;
-	wxTimer* m_pFrameRenderTimer;
 
     DECLARE_EVENT_TABLE()
 
 protected:
-    void OnFrameRender(wxTimerEvent& event );
     void OnEraseBackground(wxEraseEvent& event);
 
 private:
@@ -99,31 +105,39 @@ class CSimpleFrame : public CBOINCBaseFrame
 
 public:
     CSimpleFrame();
-    CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32);
+    CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32, wxPoint position, wxSize size);
 
    ~CSimpleFrame();
 
+    void OnChangeGUI( wxCommandEvent& event );
     void OnHelp( wxHelpEvent& event );
     void OnHelpBOINC( wxCommandEvent& event );
 
-	void OnConnect(CFrameEvent& event );
     void OnProjectsAttachToProject();
-    void OnReloadSkin( CFrameEvent& event );
 
-private:
+	void OnConnect(CFrameEvent& event );
+    void OnReloadSkin( CFrameEvent& event );
+    void OnRefreshView( CFrameEvent& event );
+
+	void SetMsgsDlgOpen(CDlgMessages* newDlgPtr) { dlgMsgsPtr = newDlgPtr; }
+    bool isMessagesDlgOpen() { return (dlgMsgsPtr != NULL); }
+
     bool SaveState();
-    bool RestoreState();
 
 protected:
+    virtual int     _GetCurrentViewPage();
 
 #ifdef __WXMAC__
 	wxMenuBar* m_pMenubar;
 #endif
-
-	wxAcceleratorEntry  m_Shortcuts[1];
+    wxAcceleratorEntry  m_Shortcuts[1];
     wxAcceleratorTable* m_pAccelTable;
 
 	CSimplePanel* m_pBackgroundPanel;
+
+
+private:
+    CDlgMessages* dlgMsgsPtr;
 
     DECLARE_EVENT_TABLE()
 };

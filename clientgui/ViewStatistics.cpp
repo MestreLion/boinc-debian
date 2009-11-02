@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "ViewStatistics.h"
@@ -1820,7 +1818,7 @@ CViewStatistics::~CViewStatistics() {
 }
 
 wxString& CViewStatistics::GetViewName() {
-    static wxString strViewName(_("Statistics"));
+    static wxString strViewName(wxT("Statistics"));
     return strViewName;
 }
 
@@ -2042,12 +2040,12 @@ bool CViewStatistics::OnSaveState(wxConfigBase* pConfig) {
     }
 //--
     wxString    strBaseConfigLocation = wxEmptyString;
-    strBaseConfigLocation = wxT("/StatisticPage");
+    strBaseConfigLocation = wxT("/Statistics");
 	pConfig->SetPath(strBaseConfigLocation);
 	pConfig->Write(wxT("ModeViewStatistic"), m_PaintStatistics->m_ModeViewStatistic);
 	pConfig->Write(wxT("SelectedStatistic"), m_PaintStatistics->m_SelectedStatistic);
 	pConfig->Write(wxT("NextProjectStatistic"), m_PaintStatistics->m_NextProjectStatistic);
-	strBaseConfigLocation = wxT("/StatisticPage/ViewAll");
+	strBaseConfigLocation = wxT("/Statistics/ViewAll");
 	pConfig->DeleteGroup(strBaseConfigLocation);
 	pConfig->SetPath(strBaseConfigLocation);
 	int count = -1;
@@ -2069,7 +2067,7 @@ bool CViewStatistics::OnRestoreState(wxConfigBase* pConfig) {
 //--
     int     iTempValue = 0;
     wxString    strBaseConfigLocation = wxEmptyString;
-    strBaseConfigLocation = wxT("/StatisticPage");
+    strBaseConfigLocation = wxT("/Statistics");
 	pConfig->SetPath(strBaseConfigLocation);
 
 	m_PaintStatistics->m_ModeViewStatistic = 0;
@@ -2084,7 +2082,7 @@ bool CViewStatistics::OnRestoreState(wxConfigBase* pConfig) {
 	pConfig->Read(wxT("NextProjectStatistic"), &iTempValue, -1);
 	if (iTempValue >= 0)m_PaintStatistics->m_NextProjectStatistic = iTempValue;
 // -- Hide View All projects
-	strBaseConfigLocation = wxT("/StatisticPage/ViewAll");
+	strBaseConfigLocation = wxT("/Statistics/ViewAll");
 	pConfig->SetPath(strBaseConfigLocation);
 	wxString tmpstr1;
 	if (!(m_PaintStatistics->m_HideProjectStatistic.empty())) m_PaintStatistics->m_HideProjectStatistic.clear();
@@ -2112,4 +2110,4 @@ void CViewStatistics::UpdateSelection() {
 }
 
 
-const char *BOINC_RCSID_7aadb93333 = "$Id: ViewStatistics.cpp 13804 2007-10-09 11:35:47Z fthomas $";
+const char *BOINC_RCSID_7aadb93333 = "$Id: ViewStatistics.cpp 19277 2009-10-07 18:54:42Z romw $";

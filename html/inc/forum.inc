@@ -452,6 +452,8 @@ function is_ignoring($user, $other_user) {
 function show_post(
     $post, $thread, $forum, $logged_in_user, $last_visit, $n, $controls=FORUM_CONTROLS, $filter=true
 ) {
+    global $country_to_iso3166_2;
+
     $user = BoincUser::lookup_id($post->user);
     BoincForumPrefs::lookup($user);
     if (is_banished($user) && !is_moderator($logged_in_user, $forum)) {
@@ -536,7 +538,7 @@ function show_post(
     echo "<span class=\"authorinfo\">";
     if (!$filter || !$rated_below_threshold){
         if ($user->prefs && $user->prefs->avatar!="" && (!$logged_in_user || ($logged_in_user->prefs->hide_avatars==false))) {
-            echo "<img width=\"".AVATAR_WIDTH."\" height=\"".AVATAR_HEIGHT."\" src=\"".$user->prefs->avatar."\" alt=\"Avatar\"><br>";
+            echo "<img class=authorinfo width=\"".AVATAR_WIDTH."\" height=\"".AVATAR_HEIGHT."\" src=\"".$user->prefs->avatar."\" alt=\"Avatar\"><br>";
         }
     }
     
@@ -552,14 +554,25 @@ function show_post(
     if (function_exists('project_forum_user_info')){
         project_forum_user_info($user);
     } else {
+        echo "Posts: $user->nposts<br>";
         // circumvent various forms of identity spoofing
         // by displaying the  user id of the poster.
         //
-        echo "Posts: $user->nposts<br>";
-        echo "ID: ".$user->id."<br>";
+        //echo "ID: ".$user->id."<br>";
         if (!no_computing()) {
             echo "Credit: ".number_format($user->total_credit)."<br>";
             echo "RAC: ".number_format($user->expavg_credit)."<br>";
+        }
+        // to use this feature:
+        // - get flags from http://www.famfamfam.com/lab/icons/flags/famfamfam_flag_icons.zip
+        // - put the .png's in html/user/flags/
+        // - put define(COUNTRY_FLAGS, 1) in your html/project/project.inc
+        //
+        if (defined("COUNTRY_FLAGS")) {
+            if (array_key_exists($user->country, $country_to_iso3166_2)) {
+                $code = $country_to_iso3166_2[$user->country];
+                echo "<img class=flag alt=\"$user->country\" title=\"$user->country\" src=flags/$code.png><br>\n";
+            }
         }
     }
     echo "</span></div></td>";

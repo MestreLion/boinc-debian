@@ -1,23 +1,20 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
-
 #ifndef _WIZ_ATTACHPROJECT_H_
 #define _WIZ_ATTACHPROJECT_H_
 
@@ -33,7 +30,14 @@
 class CProjectInfoPage;
 class CProjectPropertiesPage;
 class CProjectProcessingPage;
+class CAccountManagerInfoPage;
+class CAccountManagerPropertiesPage;
+class CAccountManagerProcessingPage;
 ////@end forward declarations
+
+#define ACCOUNTMANAGER_ATTACH       0
+#define ACCOUNTMANAGER_UPDATE       1
+#define ACCOUNTMANAGER_DETACH       2
 
 
 /*!
@@ -72,6 +76,9 @@ public:
 
     /// Runs the wizard.
     bool Run( wxString& strName, wxString& strURL, bool bCredentialsCached = true );
+    
+    // Synchronize to Account Manager
+    bool SyncToAccountManager();
 
     /// Retrieves bitmap resources
     wxBitmap GetBitmapResource( const wxString& name );
@@ -112,13 +119,15 @@ public:
     CProjectInfoPage* m_ProjectInfoPage;
     CProjectPropertiesPage* m_ProjectPropertiesPage;
     CProjectProcessingPage* m_ProjectProcessingPage;
+    CAccountManagerInfoPage* m_AccountManagerInfoPage;
+    CAccountManagerPropertiesPage* m_AccountManagerPropertiesPage;
+    CAccountManagerProcessingPage* m_AccountManagerProcessingPage;
     CTermsOfUsePage* m_TermsOfUsePage;
     CAccountInfoPage* m_AccountInfoPage;
     CCompletionPage* m_CompletionPage;
     CCompletionErrorPage* m_CompletionErrorPage;
     CErrNotDetectedPage* m_ErrNotDetectedPage;
     CErrUnavailablePage* m_ErrUnavailablePage;
-    CErrAlreadyAttachedPage* m_ErrAlreadyAttachedPage;
     CErrNoInternetConnectionPage* m_ErrNoInternetConnectionPage;
     CErrNotFoundPage* m_ErrNotFoundPage;
     CErrAlreadyExistsPage* m_ErrAlreadyExistsPage;
@@ -128,7 +137,9 @@ public:
     bool m_bCredentialsCached;
     bool m_bCredentialsDetected;
     wxString m_strProjectName;
+    wxString m_strReturnURL;
+    bool m_bCookieRequired;
+    wxString m_strCookieFailureURL;
 };
 
 #endif // _WIZ_ATTACHPROJECT_H_
-

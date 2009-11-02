@@ -8,9 +8,10 @@
 // Copyright:   (c) Volodymir (T-Rex) Tryapichko
 // Licence:     wxWidgets license
 /////////////////////////////////////////////////////////////////////////////
+#include <vector>
+#include <algorithm>
 #include "wxPieCtrl.h"
 #include <wx/arrimpl.cpp>
-#include <vector>
 
 using namespace std;
 
@@ -193,15 +194,14 @@ void wxPieCtrl::GetPartAngles(wxArrayDouble & angles)
 void wxPieCtrl::DrawParts(wxRect& pieRect)
 {
 	wxArrayDouble angles;
-    unsigned int i;
-    std::vector<int> intAngles;
+        unsigned int i;
+        std::vector<int> intAngles;
 	wxPen oldpen = m_CanvasDC.GetPen();
-
-    intAngles.clear();
-        
-    if(m_ShowEdges) {
+	if(m_ShowEdges) {
 		m_CanvasDC.SetPen(*wxBLACK_PEN);
 	}
+        
+        intAngles.clear();
         
 	if(m_Series.Count() == 1)
 	{
@@ -219,35 +219,36 @@ void wxPieCtrl::DrawParts(wxRect& pieRect)
 											   pieRect.GetBottom()-pieRect.GetTop(),
 											   0,360);
 #endif
-    } else {
+	}
+	else {
 		GetPartAngles(angles);
                 
-        if (angles.Count() > 1) {
-            // Try to adjust angles so each segment is visible
-            for(i = 0; i < angles.Count(); i++) {
-                intAngles.push_back((int)angles[i]);
-                if (i > 0) {
-                    if ((intAngles[i] - intAngles[i-1]) < MINANGLE) {
-                        if (angles[i] > 0.0) {
-                            intAngles[i] = intAngles[i-1] + MINANGLE;
+                 if (angles.Count() > 1) {
+                    // Try to adjust angles so each segment is visible
+                    for(i = 0; i < angles.Count(); i++) {
+                        intAngles.push_back((int)angles[i]);
+                        if (i > 0) {
+                            if ((intAngles[i] - intAngles[i-1]) < MINANGLE) {
+                                if (angles[i] > 0.0) {
+                                    intAngles[i] = intAngles[i-1] + MINANGLE;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If we expanded last segment past 360, go back and fix it
+                    if (intAngles[angles.Count()-1] > 360) {
+                        intAngles[angles.Count()-1] = 360;
+                        for(i = angles.Count()-2; i > 0; i--) {
+                            if ((intAngles[i+1] - intAngles[i]) >= MINANGLE) {
+                                break;
+                            }
+                            if (angles[i+1] > 0.0) {
+                                intAngles[i] = intAngles[i+1] - MINANGLE;
+                            }
                         }
                     }
                 }
-            }
-            
-            // If we expanded last segment past 360, go back and fix it
-            if (intAngles[angles.Count()-1] > 360) {
-                intAngles[angles.Count()-1] = 360;
-                for(i = angles.Count()-2; i > 0; i--) {
-                    if ((intAngles[i+1] - intAngles[i]) >= MINANGLE) {
-                        break;
-                    }
-                    if (angles[i+1] > 0.0) {
-                        intAngles[i] = intAngles[i+1] - MINANGLE;
-                    }
-                }
-            }
-        }
                 
 		for(i = 0; i < angles.Count(); i++)
 		{
@@ -308,13 +309,13 @@ void wxPieCtrl::DrawLegend(int left, int top)
 	{
 		m_CanvasDC.GetTextExtent(m_Series[i].GetLabel(), &tw, &th);
 		dy += (th+3);
-		maxwidth = max(maxwidth, (int)(2*m_legendHorBorder+tw+15));
+		maxwidth = std::max(maxwidth, (int)(2*m_legendHorBorder+tw+15));
 	}
 	dy += m_LegendVerBorder;
 
 	int right(left+maxwidth-1), bottom(top+dy-1);
 
-	if(!IsTransparent())
+	if(! IsTransparent())
 	{
 		m_CanvasDC.SetBrush(wxBrush(m_LegendBackColour));
 		m_CanvasDC.DrawRectangle(left, top, maxwidth, dy);
@@ -356,7 +357,7 @@ void wxPieCtrl::Draw(wxPaintDC & pdc)
 	//size for background ops
 	GetSize(&bgW,&bgH);
 	//pie rect respects padding and is centered
-	int maxL = min(bgW,bgH) - 2* m_padding;
+	int maxL = std::min(bgW,bgH) - 2* m_padding;
 
 	if(m_CanRepaint)
 	{

@@ -1,4 +1,4 @@
-## $Id: db_base.py 4669 2004-11-27 09:43:05Z quarl $
+## $Id: db_base.py 18258 2009-06-02 04:07:53Z davea $
 
 # quarl 2003-10-16 initial version based on conglomeration of
 #                  coursesurvey/database.py and boinc/database.py
@@ -15,7 +15,7 @@ from __future__ import generators
 import MySQLdb, MySQLdb.cursors
 import sys, os, weakref
 
-ID = '$Id: db_base.py 4669 2004-11-27 09:43:05Z quarl $'
+ID = '$Id: db_base.py 18258 2009-06-02 04:07:53Z davea $'
 
 dbconnection = None
 
@@ -246,6 +246,12 @@ class DatabaseTable:
         and not just "id")'''
         pass
 
+    def clear_cache(self):
+        """
+        Clears the cached objects list
+        """
+        self.object_cache = []
+
     def count(self, **kwargs):
         """Return the number of database objects matching keywords.
 
@@ -450,7 +456,7 @@ class DatabaseObject:
         self.do_init(kwargs)
 
     def __eq__(self, other):
-        return other!=None and self.id == other.id
+        return other!=None and isinstance(other, DatabaseObject) and self.id == other.id
     def __ne__(self, other):
         return not (self == other)
     def __hash__(self):

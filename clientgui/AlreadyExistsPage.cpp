@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "AlreadyExistsPage.h"
@@ -185,20 +183,14 @@ void CErrAlreadyExistsPage::OnPageChanged( wxWizardExEvent& event ) {
             _("Username already in use")
         );
         m_pDirectionsStaticCtrl->SetLabel(
-            _("An account with that username already exists and has a\n"
-              "different password than the one you entered.\n"
-              "\n"
-              "Please visit the project's web site and follow the instructions there.")
+            _("An account with that username already exists and has a\ndifferent password than the one you entered.\n\nPlease visit the project's web site and follow the instructions there.")
         );
     } else {
         m_pTitleStaticCtrl->SetLabel(
             _("Email address already in use")
         );
         m_pDirectionsStaticCtrl->SetLabel(
-            _("An account with that email address already exists and has a\n"
-              "different password than the one you entered.\n"
-              "\n"
-              "Please visit the project's web site and follow the instructions there.")
+            _("An account with that email address already exists and has a\ndifferent password than the one you entered.\n\nPlease visit the project's web site and follow the instructions there.")
         );
     }
 

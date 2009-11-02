@@ -40,6 +40,7 @@
 
 #include "error_numbers.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "parse.h"
 
 #ifdef _USING_FCGI_
@@ -51,19 +52,26 @@ using std::string;
 
 
 // Parse a boolean; tag is of form "foobar"
-// Accept either <foobar/> or <foobar>0|1</foobar>
+// Accept either <foobar/>, <foobar />, or <foobar>0|1</foobar>
+// (possibly with leading/trailing white space)
 //
 bool parse_bool(const char* buf, const char* tag, bool& result) {
-    char single_tag[256], start_tag[256];
+    char tag2[256], tag3[256];
     int x;
 
-    sprintf(single_tag, "<%s/>", tag);
-    if (match_tag(buf, single_tag)) {
+    // quick check to reject most cases
+    //
+    if (!strstr(buf, tag)) {
+        return false;
+    }
+    sprintf(tag2, "<%s/>", tag);
+    sprintf(tag3, "<%s />", tag);
+    if (match_tag(buf, tag2) || match_tag(buf, tag3)) {
         result = true;
         return true;
     }
-    sprintf(start_tag, "<%s>", tag);
-    if (parse_int(buf, start_tag, x)) {
+    sprintf(tag2, "<%s>", tag);
+    if (parse_int(buf, tag2, x)) {
         result = (x != 0);
         return true;
     }
@@ -165,7 +173,7 @@ int dup_element_contents(FILE* in, const char* end_tag, char** pp) {
             free(buf);
             return 0;
         }
-        int n = strlen(line);
+        int n = (int)strlen(line);
         if (nused + n >= bufsize) {
             bufsize *= 2;
             buf = (char*)realloc(buf, bufsize);
@@ -369,6 +377,12 @@ void xml_escape(const char* in, char* out, int len) {
 
 // output buffer need not be larger than input
 //
+void xml_unescape(string& in) {
+    char buf[2048];
+    xml_unescape(in.c_str(), buf, sizeof(buf));
+    in = buf;
+}
+
 void xml_unescape(const char* in, char* out, int len) {
     char* p = out;
     while (*in) {
@@ -464,8 +478,11 @@ int XML_PARSER::scan_comment() {
     }
 }
 
-// we just read a <; read until we find a >,
-// and copy intervening text to buf.
+// we just read a <; read until we find a >.
+// Given <tag [attr=val attr=val] [/]>:
+// - copy tag (or tag/) to tag_buf
+// - copy "attr=val attr=val" to attr_buf
+//
 // Return:
 // 0 if got a tag
 // 1 if got a comment (ignore)
@@ -486,9 +503,13 @@ int XML_PARSER::scan_tag(
             return 0;
         }
         if (isspace(c)) {
+            if (found_space && attr_buf) {
+                if (--attr_len > 0) {
+                    *attr_buf++ = c;
+                }
+            }
             found_space = true;
-        }
-        if (c == '/') {
+        } else if (c == '/') {
             if (--tag_len > 0) {
                 *tag_buf++ = c;
             }
@@ -642,6 +663,7 @@ bool XML_PARSER::parse_int(char* parsed_tag, const char* start_tag, int& i) {
             return false;
         }
     }
+    errno = 0;
     int val = strtol(buf, &end, 0);
     if (errno == ERANGE) return false;
     if (end != buf+strlen(buf)) return false;
@@ -862,4 +884,4 @@ int main() {
 </blah>
 
 #endif
-const char *BOINC_RCSID_3f3de9eb18 = "$Id: parse.cpp 16478 2008-11-11 23:07:36Z davea $";
+const char *BOINC_RCSID_3f3de9eb18 = "$Id: parse.cpp 19245 2009-10-05 20:05:44Z romw $";

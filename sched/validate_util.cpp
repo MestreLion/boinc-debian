@@ -15,11 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// Code to facilitate writing validators.
-// Can be used as the basis for a validator that accepts everything
-// (see sample_trivial_validator.C),
-// or that requires strict equality (see sample_bitwise_validator.C)
-// or that uses fuzzy comparison.
+// Support functions for validators:
+// 1) functions for locating the output files
+// 2) various ways of deciding how much credit to grant
+//    a group of replicated results
 
 #include <cstring>
 #include "config.h"
@@ -37,6 +36,8 @@
 
 using std::vector;
 using std::string;
+
+////////// functions for locating output files ///////////////
 
 int FILE_INFO::parse(XML_PARSER& xp) {
     char tag[256];
@@ -179,6 +180,8 @@ int get_logical_name(RESULT& result, string& path, string& name) {
     return ERR_XML_PARSE;
 }
 
+//////////////// credit computation functions ///////////////
+
 #define CREDIT_EPSILON .001
 
 // If we have N correct results with nonzero claimed credit,
@@ -250,113 +253,6 @@ int get_credit_from_wu(WORKUNIT& wu, vector<RESULT>&, double& credit) {
     return ERR_XML_PARSE;
 }
 
-// This function should be called from the validator whenever credit
-// is granted to a host.  It's purpose is to track the average credit
-// per cpu time for that host.
-//
-// It updates an exponentially-decaying estimate of credit_per_cpu_sec
-// Note that this does NOT decay with time, but instead decays with
-// total credits earned.  If a host stops earning credits, then this
-// quantity stops decaying.  So credit_per_cpu_sec must NOT be
-// periodically decayed using the update_stats utility or similar
-// methods.
-//
-// The intended purpose is for cross-project credit comparisons on
-// BOINC statistics pages, for hosts attached to multiple machines.
-// One day people will write PhD theses on how to normalize credit
-// values to equalize them across projects.  I hope this will be done
-// according to "Allen's principle": "Credits granted by a project
-// should be normalized so that, averaged across all hosts attached to
-// multiple projects, projects grant equal credit per cpu second."
-// This principle ensures that (on average) participants will choose
-// projects based on merit, not based on credits.  It also ensures
-// that (on average) host machines migrate to the projects for which
-// they are best suited.
-//
-// For cross-project comparison the value of credit_per_cpu_sec should
-// be exported in the statistics file host_id.gz, which is written by
-// the code in db_dump.C.
-//
-// Algorithm: credits_per_cpu_second should be updated each time that
-// a host is granted credit, according to:
-//
-//     CREDIT_AVERAGE_CONST = 500           [see Note 5]
-//     MAX_CREDIT_PER_CPU_SEC = 0.1         [see Note 6]
-//
-//     e = tanh(granted_credit/CREDIT_AVERAGE_CONST)
-//     if (e < 0) then e = 0
-//     if (e > 1) then e = 1
-//     if (credit_per_cpu_sec <= 0) then e = 1
-//     if (cpu_time <= 0) then e = 0        [see Note 4]
-//     if (granted_credit <= 0) then e = 0  [see Note 3]
-//
-//     rate = granted_credit/cpu_time
-//     if (rate < 0) rate = 0
-//     if (rate > MAX_CREDIT_PER_CPU_SEC) rate = MAX_CREDIT_PER_CPU_SEC
-//
-//     credit_per_cpu_sec = e * rate + (1 - e) * credit_per_cpu_sec
-
-// Note 0: all quantities above should be treated as real numbers
-// Note 1: cpu_time is measured in seconds
-// Note 2: When a host is created, the initial value of
-//         credit_per_cpu_sec, should be zero.
-// Note 3: If a host has done invalid work (granted_credit==0) we have
-//         chosen not to include it.  One might argue that the
-//         boundary case granted_credit==0 should be treated the same
-//         as granted_credit>0.  However the goal here is not to
-//         identify cpus whose host machines sometimes produce
-//         rubbish.  It is to get a measure of how effectively the cpu
-//         runs the application code.
-// Note 4: e==0 means 'DO NOT include the first term on the rhs of the
-//         equation defining credit_per_cpu_sec' which is equivalent
-//         to 'DO NOT update credit_per_cpu_sec'.
-// Note 5: CREDIT_AVERAGE_CONST determines the exponential decay
-//         credit used in averaging credit_per_cpu_sec.  It may be
-//         changed at any time, even if the project database has
-//         already been populated with non-zero values of
-//         credit_per_cpu_sec.
-// Note 6: Typical VERY FAST cpus have credit_per_cpu_sec of around
-//         0.02.  This is a safety mechanism designed to prevent
-//         trouble if a client or host has reported absurd values (due
-//         to a bug in client or server software or by cheating).  In
-//         five years when cpus are five time faster, please increase
-//         the value of R.  You may also want to increase the value of
-//         CREDIT_AVERAGE_CONST.
-//
-//         Nonzero return value: host exceeded the max allowed
-//         credit/cpu_sec.
-//
-int update_credit_per_cpu_sec(
-    double  granted_credit,     // credit granted for this work
-    double  cpu_time,           // cpu time (seconds) used for this work
-    double& credit_per_cpu_sec  // (average) credit per cpu second
-) {
-    int retval = 0;
-
-    // Either of these values may be freely changed in the future.
-    // When CPUs get much faster one must increase the 'sanity-check'
-    // value of max_credit_per_cpu_sec.  At that time it would also
-    // make sense to proportionally increase the credit_average_const.
-    //
-    const double credit_average_const = 500;
-    const double max_credit_per_cpu_sec = 0.07;
-
-    double e = tanh(granted_credit/credit_average_const);
-    if (e <= 0.0 || cpu_time == 0.0 || granted_credit == 0.0) return retval;
-    if (e > 1.0 || credit_per_cpu_sec == 0.0) e = 1.0;
-
-    double rate =  granted_credit/cpu_time;
-    if (rate < 0.0) rate = 0.0;
-    if (rate > max_credit_per_cpu_sec) {
-        rate = max_credit_per_cpu_sec;
-        retval = 1;
-    }
-
-    credit_per_cpu_sec = e * rate + (1.0 - e) * credit_per_cpu_sec;
-
-    return retval;
-}
-
 double stddev_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
     double credit_low_bound = 0, credit_high_bound = 0;
     double penalize_credit_high_bound = 0;
@@ -367,7 +263,8 @@ double stddev_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
     int nvalid = 0;
     unsigned int i;
 
-    //calculate average
+    // calculate average
+    //
     for (i=0; i<results.size(); i++) {
         RESULT& result = results[i];
         if (result.validate_state != VALIDATE_STATE_VALID) continue;
@@ -382,7 +279,9 @@ double stddev_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
     credit_avg = credit/nvalid;
 
     nvalid = 0;
-    //calculate stddev difference
+
+    // calculate stddev difference
+    //
     for (i=0; i<results.size(); i++) {
         RESULT& result = results[i];
         if (result.validate_state != VALIDATE_STATE_VALID) continue;
@@ -393,19 +292,18 @@ double stddev_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
     std_dev = std_dev/ (double) nvalid;
     std_dev = sqrt(std_dev);
 
-    credit_low_bound = credit_avg-std_dev;
+    credit_low_bound = credit_avg - std_dev;
     if (credit_low_bound > credit_avg*.85) {
         credit_low_bound = credit_avg*.85;
     }
     credit_low_bound = credit_low_bound - 2.5;
     if (credit_low_bound < 1) credit_low_bound = 1;
 
-    credit_high_bound = credit_avg+std_dev;
+    credit_high_bound = credit_avg + std_dev;
     if (credit_high_bound < credit_avg*1.15) {
         credit_high_bound = credit_avg*1.15;
     }
     credit_high_bound = credit_high_bound + 5;
-
 
     nvalid=0;
     credit = 0;
@@ -454,7 +352,8 @@ double stddev_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
     }
 
     // penalize hosts that are claiming too much
-    penalize_credit_high_bound = grant_credit+1.5*std_dev;
+    //
+    penalize_credit_high_bound = grant_credit + 1.5*std_dev;
     if (penalize_credit_high_bound < grant_credit*1.65) {
         penalize_credit_high_bound = grant_credit*1.65;
     }
@@ -478,14 +377,14 @@ double stddev_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
 }
 
 double two_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
-    unsigned int i;
+    int i;
     double credit = 0;
     double credit_avg = 0;
     double last_credit = 0;
     int nvalid = 0;
-    double grant_credit;
 
-    //calculate average
+    // calculate average
+    //
     for (i=0; i<results.size(); i++) {
         RESULT& result = results[i];
         if (result.validate_state != VALIDATE_STATE_VALID) continue;
@@ -494,71 +393,94 @@ double two_credit(WORKUNIT& wu, std::vector<RESULT>& results) {
         nvalid++;
     }
 
-    if (nvalid == 0) {
-        return CREDIT_EPSILON;
+    // If more then 2 valid results, compute via stddev method
+    //
+    if ( nvalid > 2 ) return stddev_credit(wu, results);
+
+    // This case should never occur
+    //
+    if (nvalid == 0 ) {
+        log_messages.printf(MSG_CRITICAL,
+            "[WORKUNIT#%d %s] No valid results\n", wu.id, wu.name
+        );
+        exit(-1);
     }
 
     credit_avg = credit/nvalid;
 
-    // If more then 2 valid results, compute via stddev method
-    if (nvalid > 2) return stddev_credit(wu, results);
-    log_messages.printf(MSG_DEBUG,
-        "[WORKUNIT#%d %s] Only 2 results \n",wu.id, wu.name
-    );
+    // Next check to see if there is reasonably close agreement between the
+    // two results.  A study performed at World Community Grid found that in
+    // 85% of cases the credit claimed were within 15% of the average claimed
+    // credit for the workunit.  Return the average of the claimed credit
+    // in these cases.
+    //
+    if ( fabs(last_credit - credit_avg) < 0.15*credit_avg ) return credit_avg;
 
-    // If only 2, then check to see if range is reasonable
-    if (fabs(last_credit - credit_avg) < 0.15*credit_avg) return credit_avg;
-    log_messages.printf(MSG_DEBUG,
-        "[WORKUNIT#%d %s] Average is more than 15 percent from each value \n",
-        wu.id, wu.name
-    );
-
-    // log data on large variance in runtime
-    float cpu_time = 0.0;
-    for (i=0; i<results.size(); i++) {
-        RESULT& result = results[i];
-        if (result.validate_state != VALIDATE_STATE_VALID) continue;
-        if (result.cpu_time < 30) continue;
-        if (cpu_time == 0) {
-            cpu_time = result.cpu_time*1.0;
-        } else {
-            if (cpu_time/result.cpu_time > 2 || cpu_time/result.cpu_time < 0.5) {
-                log_messages.printf(MSG_DEBUG,
-                    "[WORKUNIT#%d %s] Large difference in runtime \n",
-                    wu.id, wu.name
-                );
-            }
-        }
-    }
-
-
-    //find result with smallest deviation from historical credit and award that value
+    // If we get here, then there was not agreement between the claimed credits
+    // So attempt to use the average of the historical granted credit instead
+    //
     DB_HOST host;
+    double credit_hist_avg=0;
+    double credit_min_dev=credit_avg;
+        // default award in case nobody matches the cases
+    nvalid=0;
     double deviation = -1;
-    grant_credit = credit_avg; // default award in case nobody matches the cases
     for (i=0; i<results.size(); i++) {
         RESULT& result = results[i];
         if (result.validate_state != VALIDATE_STATE_VALID) continue;
         host.lookup_id(result.hostid);
-        log_messages.printf(MSG_DEBUG,
-            "[RESULT#%d %s] Claimed Credit = %.2lf  Historical Credit = %.2lf \n",
-            result.id, result.name, result.claimed_credit,
-            result.cpu_time*host.credit_per_cpu_sec
-        );
-        if ((deviation < 0 || deviation > fabs(result.claimed_credit - result.cpu_time*host.credit_per_cpu_sec)) && result.cpu_time > 30) {
+        // skip if host is new or the cpu time is very low
+        if ( host.total_credit < config.granted_credit_ramp_up
+            || result.cpu_time < 30 ) continue;
+
+        // This is for computing the average based on the computers history
+        credit_hist_avg = credit_hist_avg + result.cpu_time*host.credit_per_cpu_sec;
+        nvalid++;
+        last_credit = result.cpu_time*host.credit_per_cpu_sec;
+
+        // This if is for finding the result whose claimed credit is the least
+        // different from the computers historical average
+        //
+        if ( (deviation < 0 || deviation > fabs(result.claimed_credit - result.cpu_time*host.credit_per_cpu_sec))
+        ) {
             deviation = fabs(result.claimed_credit - result.cpu_time*host.credit_per_cpu_sec);
-            log_messages.printf(MSG_NORMAL,
-                "[RESULT#%d %s] Credit deviation = %.2lf \n",
-                result.id, result.name, deviation
-            );
-            grant_credit = result.claimed_credit;
+            credit_min_dev = result.claimed_credit;
         }
     }
-    log_messages.printf(MSG_DEBUG,
-        "[WORKUNIT#%d %s] Credit granted = %.2lf \n",
-        wu.id, wu.name, grant_credit
+
+    // If this case occurs, then this is becuase neither host has
+    // been participating long.  As a result, returned the claimed
+    // credit average
+    if (nvalid == 0 ) {
+        log_messages.printf(MSG_DEBUG,
+            "[WORKUNIT#%d %s] No qualifying results",
+            wu.id, wu.name
+        );
+        return credit_avg;
+    }
+
+    credit_hist_avg = credit_hist_avg/nvalid;
+
+
+    // Check to see if the result.cpu_time*host.credit_per_cpu_sec are close.
+    // If so use the average of the historical credit
+    //
+    if (fabs(last_credit-credit_hist_avg)<0.1*credit_hist_avg) {
+        log_messages.printf(MSG_DEBUG,"[WORKUNIT#%d %s] Method1: "
+            "Credit Average = %.2lf Actual Credit Granted = %.2lf \n",
+            wu.id, wu.name, credit_avg, credit_hist_avg
+        );
+        return credit_hist_avg;
+    }
+
+    log_messages.printf(MSG_DEBUG,"[WORKUNIT#%d %s] Method2: "
+        "Credit Average = %.2lf Actual Credit Granted = %.2lf \n",
+        wu.id, wu.name, credit_avg, credit_min_dev
     );
-    return grant_credit;
+
+    return credit_min_dev;
 }
 
-const char *BOINC_RCSID_07049e8a0e = "$Id: validate_util.cpp 16069 2008-09-26 18:20:24Z davea $";
+//////////// END CREDIT CALCULATION FUNCTIONS ///////////////
+
+const char *BOINC_RCSID_07049e8a0e = "$Id: validate_util.cpp 18831 2009-08-12 16:26:43Z davea $";

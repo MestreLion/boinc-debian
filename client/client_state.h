@@ -57,7 +57,7 @@ using std::vector;
     // project: no downloading or runnable results
     // overall: at least one idle CPU
 
-/// encapsulates the global variables of the core client.
+// encapsulates the global variables of the core client.
 // If you add anything here, initialize it in the constructor
 //
 class CLIENT_STATE {
@@ -69,6 +69,7 @@ public:
     vector<APP_VERSION*> app_versions;
     vector<WORKUNIT*> workunits;
     vector<RESULT*> results;
+        // list of jobs, ordered by increasing arrival time
 
     PERS_FILE_XFER_SET* pers_file_xfers;
     HTTP_OP_SET* http_ops;
@@ -98,6 +99,12 @@ public:
     int cmdline_gui_rpc_port;
     bool show_projects;
     bool requested_exit;
+    bool requested_suspend;
+    bool requested_resume;
+    bool cleanup_completed;
+        /// Determine when it is safe to leave the quit_client() handler
+        /// and to finish cleaning up.
+    bool in_abort_sequence;
         /// stores URL for -detach_project option
     char detach_project_url[256];
         /// stores URL for -reset_project option
@@ -144,7 +151,7 @@ public:
 
         /// this means we are running as a daemon on unix,
         /// or as a service on Windows
-	bool executing_as_daemon;
+    bool executing_as_daemon;
         /// redirect stdout, stderr to log files
     bool redirect_io;
         /// a condition has occurred in which we know graphics will
@@ -159,21 +166,22 @@ public:
     double last_wakeup_time;
     bool initialized;
         /// failed to write state file.
-
         /// In this case we continue to run for 1 minute,
         /// handling GUI RPCs but doing nothing else,
         /// so that the Manager can tell the user what the problem is
     bool cant_write_state_file;
+        /// accept unsigned app files (use for testing only!!)
+    bool unsigned_apps_ok;
+        /// use hardwired numbers rather than running benchmarks
+    bool skip_cpu_benchmarks;
 private:
     bool client_state_dirty;
     int old_major_version;
     int old_minor_version;
     int old_release;
-        /// if set, use hardwired numbers rather than running benchmarks
-    bool skip_cpu_benchmarks;
         /// if set, run benchmarks on client startup
     bool run_cpu_benchmarks;
-        /// set if a benchmark fails to start because of a process that doesn't stop.
+        /// set if a benchmark fails to start because of a job that doesn't exit
         /// Persists so that the next start of BOINC runs the benchmarks.
     bool cpu_benchmarks_pending;
 
@@ -228,6 +236,9 @@ public:
     int report_result_error(RESULT&, const char *format, ...);
     int reset_project(PROJECT*, bool detaching);
     bool no_gui_rpc;
+    bool abort_jobs_on_exit;
+    void start_abort_sequence();
+    bool abort_sequence_done();
 private:
     int link_app(PROJECT*, APP*);
     int link_file_info(PROJECT*, FILE_INFO*);
@@ -236,6 +247,7 @@ private:
     int link_workunit(PROJECT*, WORKUNIT*);
     int link_result(PROJECT*, RESULT*);
     void print_summary();
+    bool abort_unstarted_late_jobs();
     bool garbage_collect();
     bool garbage_collect_always();
     bool update_results();
@@ -245,33 +257,29 @@ private:
 // --------------- cpu_sched.cpp:
 private:
     double debt_interval_start;
-    double total_wall_cpu_time_this_debt_interval;
-        // "wall CPU time" accumulated since last adjust_debts()
     double total_cpu_time_this_debt_interval;
-    double cpu_shortfall;
-	bool work_fetch_no_new_work;
+    bool work_fetch_no_new_work;
     bool must_enforce_cpu_schedule;
     bool must_schedule_cpus;
     bool must_check_work_fetch;
     void assign_results_to_projects();
     RESULT* largest_debt_project_best_result();
-    RESULT* earliest_deadline_result();
+    RESULT* earliest_deadline_result(bool coproc_only);
     void reset_debt_accounting();
-    void adjust_debts();
     bool possibly_schedule_cpus();
     void schedule_cpus();
     bool enforce_schedule();
-    bool no_work_for_a_cpu();
-    void make_preemptable_task_list(vector<ACTIVE_TASK*>&, double&);
+    void append_unfinished_time_slice(vector<RESULT*>&);
 public:
+    void adjust_debts();
     std::vector <RESULT*> ordered_scheduled_results;
         /// if we fail to start a task due to no shared-mem segments,
         /// wait until at least this time to try running
         /// another task that needs a shared-mem seg
     double retry_shmem_time;
-	inline double work_buf_min() {
-		return global_prefs.work_buf_min_days * 86400;
-	}
+    inline double work_buf_min() {
+        return global_prefs.work_buf_min_days * 86400;
+    }
     inline double work_buf_additional() {
         return global_prefs.work_buf_additional_days *86400;
     }
@@ -345,12 +353,12 @@ public:
 // --------------- cs_benchmark.cpp:
 public:
     bool should_run_cpu_benchmarks();
-	void start_cpu_benchmarks();
+    void start_cpu_benchmarks();
     bool cpu_benchmarks_poll();
     void abort_cpu_benchmarks();
     bool are_cpu_benchmarks_running();
-	bool cpu_benchmarks_done();
-	void cpu_benchmarks_set_defaults();
+    bool cpu_benchmarks_done();
+    void cpu_benchmarks_set_defaults();
     void print_benchmark_results();
 
 // --------------- cs_cmdline.cpp:
@@ -389,8 +397,8 @@ public:
     int resume_network();
     void read_global_prefs();
     int save_global_prefs(char* prefs, char* url, char* sched);
-	double available_ram();
-	double max_available_ram();
+    double available_ram();
+    double max_available_ram();
 private:
     int check_suspend_processing();
     int check_suspend_network();
@@ -401,8 +409,12 @@ private:
 // --------------- cs_scheduler.cpp:
 public:
     int make_scheduler_request(PROJECT*);
-    int handle_scheduler_reply(PROJECT*, char* scheduler_url, int& nresults);
+    int handle_scheduler_reply(PROJECT*, char* scheduler_url);
     SCHEDULER_OP* scheduler_op;
+    PROJECT* next_project_master_pending();
+    PROJECT* next_project_sched_rpc_pending();
+    PROJECT* next_project_trickle_up_pending();
+    PROJECT* find_project_with_overdue_results();
 private:
     bool contacted_sched_server;
     int overall_work_fetch_urgency;
@@ -418,11 +430,12 @@ public:
     int write_state(MIOFILE&);
     int write_state_file();
     int write_state_file_if_needed();
-	void check_anonymous();
-	int parse_app_info(PROJECT*, FILE*);
+    void check_anonymous();
+    int parse_app_info(PROJECT*, FILE*);
     int write_state_gui(MIOFILE&);
     int write_file_transfers_gui(MIOFILE&);
-    int write_tasks_gui(MIOFILE&);
+    int write_tasks_gui(MIOFILE&, bool);
+    void sort_results();
 
 // --------------- cs_trickle.cpp:
 private:
@@ -464,13 +477,8 @@ public:
 // --------------- work_fetch.cpp:
 public:
     int proj_min_results(PROJECT*, double);
-	void check_project_timeout();
-    PROJECT* next_project_master_pending();
-    PROJECT* next_project_sched_rpc_pending();
-    PROJECT* next_project_trickle_up_pending();
-    PROJECT* next_project_need_work();
-    PROJECT* find_project_with_overdue_results();
-	double overall_cpu_frac();
+    void check_project_timeout();
+    double overall_cpu_frac();
     double time_until_work_done(PROJECT*, int, double);
     bool compute_work_requests();
     void scale_duration_correction_factors(double);
@@ -480,6 +488,9 @@ public:
 };
 
 extern CLIENT_STATE gstate;
+
+extern COPROC_CUDA* coproc_cuda;
+extern COPROC_ATI* coproc_ati;
 
 /// return a random double in the range [MIN,min(e^n,MAX))
 
@@ -497,5 +508,37 @@ extern void print_suspend_tasks_message(int);
 #define CPU_PESSIMISM_FACTOR 0.9
     // assume actual CPU utilization will be this multiple
     // of what we've actually measured recently
+
+#define WORK_FETCH_PERIOD   60
+    // see if we need to fetch work at least this often
+
+#define CPU_SCHED_ENFORCE_PERIOD    60
+    // enforce CPU schedule at least this often
+
+#define DEBT_ADJUST_PERIOD CPU_SCHED_ENFORCE_PERIOD
+    // debt is adjusted at least this often,
+    // since adjust_debts() is called from enforce_schedule()
+
+#define GARBAGE_COLLECT_PERIOD  10
+    // how often to garbage collect
+
+#define TASK_POLL_PERIOD    1.0
+
+#define UPDATE_RESULTS_PERIOD   1.0
+
+#define HANDLE_FINISHED_APPS_PERIOD 1.0
+
+#define BENCHMARK_POLL_PERIOD   1.0
+
+#define PERS_FILE_XFER_START_PERIOD  1.0
+#define PERS_FILE_XFER_POLL_PERIOD  1.0
+
+#define SCHEDULER_RPC_POLL_PERIOD   5.0
+
+#define FILE_XFER_POLL_PERIOD   1.0
+
+#define GUI_HTTP_POLL_PERIOD    1.0
+
+#define CONNECT_ERROR_PERIOD    600.0
 
 #endif

@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "ViewWorkGrid.h"
@@ -128,8 +126,7 @@ CViewWorkGrid::CViewWorkGrid(wxNotebook* pNotebook) :
 
 	pItem = new CTaskItem(
         _("Abort"),
-        _("Abandon work on the result. "
-          "You will get no credit for it."),
+        _("Abandon work on the result. You will get no credit for it."),
         ID_TASK_WORK_ABORT 
     );
     pGroup->m_Tasks.push_back( pItem );
@@ -327,8 +324,7 @@ void CViewWorkGrid::OnWorkAbort( wxCommandEvent& WXUNUSED(event) ) {
         //FormatStatus(iResult, strStatus);
 
         strMessage.Printf(
-            _("Are you sure you want to abort this task '%s'?\n"
-              "(Progress: %s %%, Status: %s)"), 
+            _("Are you sure you want to abort this task '%s'?\n(Progress: %s %%, Status: %s)"), 
             strName.c_str(),
             strProgress.c_str(),
             strStatus.c_str()
@@ -716,7 +712,7 @@ wxInt32 CViewWorkGrid::FormatProgress(wxInt32 item, wxString& strBuffer) const {
 
 
 wxInt32 CViewWorkGrid::FormatTimeToCompletion(wxInt32 item, wxString& strBuffer) const {
-    float          fBuffer = 0;
+    double         est = 0;
     wxInt32        iHour = 0;
     wxInt32        iMin = 0;
     wxInt32        iSec = 0;
@@ -724,15 +720,19 @@ wxInt32 CViewWorkGrid::FormatTimeToCompletion(wxInt32 item, wxString& strBuffer)
     RESULT*        result = wxGetApp().GetDocument()->result(item);
 
     if (result) {
-        fBuffer = result->estimated_cpu_time_remaining;
+        est = result->estimated_cpu_time_remaining;
+        if (est > 86400*365*10) {
+            est = 86400*365*10;     // sanity check
+        }
+
     }
 
-    if (0 >= fBuffer) {
+    if (est <= 0) {
         strBuffer = wxT("---");
     } else {
-        iHour = (wxInt32)(fBuffer / (60 * 60));
-        iMin  = (wxInt32)(fBuffer / 60) % 60;
-        iSec  = (wxInt32)(fBuffer) % 60;
+        iHour = (wxInt32)(est / (60 * 60));
+        iMin  = (wxInt32)(est / 60) % 60;
+        iSec  = (wxInt32)(est) % 60;
 
         ts = wxTimeSpan(iHour, iMin, iSec);
 
@@ -805,9 +805,6 @@ wxInt32 CViewWorkGrid::FormatStatus(wxInt32 item, wxString& strBuffer) const {
             if (status.task_suspend_reason & SUSPEND_REASON_DISK_SIZE) {
                 strBuffer += _(" - need disk space");
             }
-            if (result->resources.size()) {
-                strBuffer += wxString(wxT(" (")) + wxString(result->resources.c_str(), wxConvUTF8) + wxString(wxT(")"));
-            }
         } else if (result->active_task) {
             if (result->too_large) {
                 strBuffer = _("Waiting for memory");
@@ -829,9 +826,6 @@ wxInt32 CViewWorkGrid::FormatStatus(wxInt32 item, wxString& strBuffer) const {
                 strBuffer = _("Waiting to run");
             } else if (result->scheduler_state == CPU_SCHED_UNINITIALIZED) {
                 strBuffer = _("Ready to start");
-            }
-            if (result->resources.size()) {
-                strBuffer += wxString(wxT(" (")) + wxString(result->resources.c_str(), wxConvUTF8) + wxString(wxT(")"));
             }
         } else {
             strBuffer = _("Ready to start");

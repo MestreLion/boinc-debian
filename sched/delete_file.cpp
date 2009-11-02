@@ -92,9 +92,9 @@ int main(int argc, char** argv) {
         usage(argv);
     }
 
-    retval = config.parse_file(".");
+    retval = config.parse_file();
     if (retval) {
-        fprintf(stderr, "Can't parse ../config.xml: %s\n", boincerror(retval));
+        fprintf(stderr, "Can't parse config.xml: %s\n", boincerror(retval));
         exit(1);
     }
 
@@ -111,4 +111,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_f6337b04b0 = "$Id: delete_file.cpp 16151 2008-10-07 20:24:16Z davea $";
+const char *BOINC_RCSID_f6337b04b0 = "$Id: delete_file.cpp 18042 2009-05-07 13:54:51Z davea $";

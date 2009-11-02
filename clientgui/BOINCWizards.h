@@ -1,23 +1,20 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
-
 #ifndef _BOINCWIZARDS_H_
 #define _BOINCWIZARDS_H_
 
@@ -39,7 +36,6 @@
 #define ID_COMPLETIONERRORPAGE 10104
 #define ID_ERRNOTDETECTEDPAGE 10105
 #define ID_ERRUNAVAILABLEPAGE 10106
-#define ID_ERRALREADYATTACHEDPAGE 10107
 #define ID_ERRNOINTERNETCONNECTIONPAGE 10108
 #define ID_ERRNOTFOUNDPAGE 10109
 #define ID_ERRALREADYEXISTSPAGE 10110
@@ -69,26 +65,15 @@
 // Completion Error Page Multiline Text Control
 #define ID_TEXTCTRL 11002
 
-// Change applications button control
-#define ID_CHANGEAPPS 11003
-
-// Debug Flag Controls
-#define ID_ERRPROJECTPROPERTIES 11100
-#define ID_ERRPROJECTCOMM 11101
-#define ID_ERRPROJECTPROPERTIESURL 11102
-#define ID_ERRACCOUNTCREATIONDISABLED 11103
-#define ID_ERRCLIENTACCOUNTCREATIONDISABLED 11104
-#define ID_ERRACCOUNTALREADYEXISTS 11105
-#define ID_ERRPROJECTALREADYATTACHED 11106
-#define ID_ERRPROJECTATTACHFAILURE 11107
-#define ID_ERRGOOGLECOMM 11108
-#define ID_ERRNETDETECTION 11110
+// Welcome Page Controls
+#define ID_WELCOMESELECTWIZARDPROJECT 11100
+#define ID_WELCOMESELECTWIZARDACCOUNTMGR 11101
+#define ID_WELCOMECHANGEAPPS 11102
 
 // Project Info/Account Manager Info Controls
-#define ID_PROJECTSELECTIONCTRL 11200
+#define ID_PROJECTLISTCTRL 11200
 #define ID_PROJECTURLSTATICCTRL 11201
-#define ID_PROJECTURLDESCRIPTIONSTATICCTRL 11202
-#define ID_PROJECTURLCTRL 11203
+#define ID_PROJECTURLCTRL 11202
 
 // Terms Of Use Controls
 #define ID_TERMSOFUSECTRL 11300
@@ -105,7 +90,9 @@
 #define ID_ACCOUNTCONFIRMPASSWORDSTATICCTRL 11406
 #define ID_ACCOUNTCONFIRMPASSWORDCTRL 11407
 #define ID_ACCOUNTREQUIREMENTSSTATICCTRL 11408
-#define ID_ACCOUNTFORGOTPASSWORDCTRL 11409
+#define ID_ACCOUNTLINKLABELSTATICCTRL 11409
+#define ID_ACCOUNTFORGOTPASSWORDCTRL 11410
+#define ID_ACCOUNTCOOKIEDETECTIONFAILEDCTRL 11411
 
 // Proxy Page Controls
 #define ID_PROXYHTTPSERVERSTATICCTRL 11500
@@ -155,27 +142,6 @@ class CErrProxyPage;
 class wxHyperLink;
 
 
-// Diagnostics Tools
-//
-#define WIZDEBUG_ERRPROJECTPROPERTIES                 0x00000001
-#define WIZDEBUG_ERRPROJECTPROPERTIESURL              0x00000002
-#define WIZDEBUG_ERRGOOGLECOMM                        0x00000008
-#define WIZDEBUG_ERRNETDETECTION                      0x00000010
-#define WIZDEBUG_ERRPROJECTCOMM                       0x00000020
-#define WIZDEBUG_ERRACCOUNTNOTFOUND                   0x00000040
-#define WIZDEBUG_ERRACCOUNTALREADYEXISTS              0x00000080
-#define WIZDEBUG_ERRACCOUNTCREATIONDISABLED           0x00000100
-#define WIZDEBUG_ERRCLIENTACCOUNTCREATIONDISABLED     0x00000200
-#define WIZDEBUG_ERRPROJECTATTACH                     0x00000400
-#define WIZDEBUG_ERRPROJECTALREADYATTACHED            0x00000800
-#define WIZDEBUG_ERRTERMSOFUSEREQUIRED                0x00001000
-
-#define PROCESS_DEBUG_FLAG(ulFlags) \
-    ((CBOINCBaseWizard*)GetParent())->SetDiagFlags(ulFlags)
-
-#define CHECK_DEBUG_FLAG(id) \
-    ((CBOINCBaseWizard*)GetParent())->IsDiagFlagsSet(id)
-
 // Wizard Detection
 //
 #define IS_ATTACHTOPROJECTWIZARD() \
@@ -186,9 +152,6 @@ class wxHyperLink;
 
 #define IS_ACCOUNTMANAGERUPDATEWIZARD() \
     ((CBOINCBaseWizard*)GetParent())->IsAccountManagerUpdateWizard
-
-#define IS_ACCOUNTMANAGERREMOVEWIZARD() \
-    ((CBOINCBaseWizard*)GetParent())->IsAccountManagerRemoveWizard
 
 
 // Commonly defined macros

@@ -28,6 +28,7 @@
 #include "parse.h"
 #include "error_numbers.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "filesys.h"
 #include "miofile.h"
 #include "app_ipc.h"
@@ -70,9 +71,48 @@ APP_INIT_DATA &APP_INIT_DATA::operator=(const APP_INIT_DATA& a) {
 }
 
 void APP_INIT_DATA::copy(const APP_INIT_DATA& a) {
-    memcpy(this, &a, sizeof(APP_INIT_DATA));
+    // memcpy the strings
+    memcpy(app_name, a.app_name, 256); 
+    memcpy(symstore, a.symstore, 256); 
+    memcpy(acct_mgr_url, a.acct_mgr_url, 256); 
+    memcpy(user_name, a.user_name, 256); 
+    memcpy(team_name, a.team_name, 256); 
+    memcpy(project_dir, a.project_dir, 256); 
+    memcpy(boinc_dir, a.boinc_dir, 256); 
+    memcpy(wu_name, a.wu_name, 256); 
+    memcpy(authenticator, a.authenticator, 256); 
+    memcpy(&shmem_seg_name, &a.shmem_seg_name, sizeof(SHMEM_SEG_NAME)); 
+                
+    // use assignment for the rest, especially the classes
+    // (so that the overloaded operators are called!)
+    major_version                 = a.major_version;               
+    minor_version                 = a.minor_version;
+    release                       = a.release;
+    app_version                   = a.app_version;
+    hostid                        = a.hostid;
+    slot                          = a.slot;
+    user_total_credit             = a.user_total_credit;
+    user_expavg_credit            = a.user_expavg_credit;
+    host_total_credit             = a.host_total_credit;
+    host_expavg_credit            = a.host_expavg_credit;
+    resource_share_fraction       = a.resource_share_fraction;
+    host_info                     = a.host_info;
+    proxy_info                    = a.proxy_info;
+    global_prefs                  = a.global_prefs;
+    starting_elapsed_time         = a.starting_elapsed_time;
+    rsc_fpops_est                 = a.rsc_fpops_est;
+    rsc_fpops_bound               = a.rsc_fpops_bound;
+    rsc_memory_bound              = a.rsc_memory_bound;
+    rsc_disk_bound                = a.rsc_disk_bound;
+    computation_deadline          = a.computation_deadline;
+    fraction_done_start           = a.fraction_done_start;
+    fraction_done_end             = a.fraction_done_end;
+    checkpoint_period             = a.checkpoint_period;
+    wu_cpu_time                   = a.wu_cpu_time;
     if (a.project_preferences) {
         project_preferences = strdup(a.project_preferences);
+    } else {
+        project_preferences = NULL;
     }
 }
 
@@ -83,11 +123,13 @@ int write_init_data_file(FILE* f, APP_INIT_DATA& ai) {
         "<major_version>%d</major_version>\n"
         "<minor_version>%d</minor_version>\n"
         "<release>%d</release>\n"
-        "<app_version>%d</app_version>\n",
+        "<app_version>%d</app_version>\n"
+        "<hostid>%d</hostid>\n",
         ai.major_version,
         ai.minor_version,
         ai.release,
-        ai.app_version
+        ai.app_version,
+        ai.hostid
     );
     if (strlen(ai.app_name)) {
         fprintf(f, "<app_name>%s</app_name>\n", ai.app_name);
@@ -131,6 +173,7 @@ int write_init_data_file(FILE* f, APP_INIT_DATA& ai) {
     fprintf(f,
         "<slot>%d</slot>\n"
         "<wu_cpu_time>%f</wu_cpu_time>\n"
+        "<starting_elapsed_time>%f</starting_elapsed_time>\n"
         "<user_total_credit>%f</user_total_credit>\n"
         "<user_expavg_credit>%f</user_expavg_credit>\n"
         "<host_total_credit>%f</host_total_credit>\n"
@@ -146,6 +189,7 @@ int write_init_data_file(FILE* f, APP_INIT_DATA& ai) {
         "<computation_deadline>%f</computation_deadline>\n",
         ai.slot,
         ai.wu_cpu_time,
+        ai.starting_elapsed_time,
         ai.user_total_credit,
         ai.user_expavg_credit,
         ai.host_total_credit,
@@ -246,6 +290,7 @@ int parse_init_data_file(FILE* f, APP_INIT_DATA& ai) {
         if (xp.parse_double(tag, "rsc_disk_bound", ai.rsc_disk_bound)) continue;
         if (xp.parse_double(tag, "computation_deadline", ai.computation_deadline)) continue;
         if (xp.parse_double(tag, "wu_cpu_time", ai.wu_cpu_time)) continue;
+        if (xp.parse_double(tag, "starting_elapsed_time", ai.starting_elapsed_time)) continue;
         if (xp.parse_double(tag, "checkpoint_period", ai.checkpoint_period)) continue;
         if (xp.parse_double(tag, "fraction_done_start", ai.fraction_done_start)) continue;
         if (xp.parse_double(tag, "fraction_done_end", ai.fraction_done_end)) continue;
@@ -356,7 +401,7 @@ int boinc_resolve_filename_s(const char *virtual_name, string& physical_name) {
     }
 #endif
     FILE *fp = boinc_fopen(virtual_name, "r");
-    if (!fp) return ERR_FOPEN;
+    if (!fp) return 0;
     buf[0] = 0;
     p = fgets(buf, 512, fp);
     fclose(fp);
@@ -370,4 +415,4 @@ void url_to_project_dir(char* url, char* dir) {
     sprintf(dir, "%s/%s", PROJECT_DIR, buf);
 }
 
-const char *BOINC_RCSID_3add42d20e = "$Id: app_ipc.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_3add42d20e = "$Id: app_ipc.cpp 19196 2009-09-28 15:59:11Z romw $";

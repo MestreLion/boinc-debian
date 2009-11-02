@@ -32,7 +32,6 @@
 #endif
 #include <unistd.h>
 
-using namespace std;
 #endif
 
 #include "filesys.h"
@@ -71,8 +70,8 @@ int MFILE::vprintf(const char* format, va_list ap) {
     n = (int)strlen(buf2);
     buf = (char*)realloc(buf, len+n+1);
     if (!buf) {
-        errno = ERR_MALLOC;
-        return ERR_MALLOC;
+        fprintf(stderr, "ERROR: realloc() failed in MFILE::vprintf()\n");
+        exit(1);
     }
     strncpy(buf+len, buf2, n);
     len += n;
@@ -93,8 +92,8 @@ int MFILE::printf(const char* format, ...) {
 size_t MFILE::write(const void *ptr, size_t size, size_t nitems) {
     buf = (char *)realloc( buf, len+(size*nitems)+1 );
     if (!buf) {
-        errno = ERR_MALLOC;
-        return 0;
+        fprintf(stderr, "ERROR: realloc() failed in MFILE::write()\n");
+        exit(1);
     }
     memcpy( buf+len, ptr, size*nitems );
     len += (int)size*(int)nitems;
@@ -105,8 +104,8 @@ size_t MFILE::write(const void *ptr, size_t size, size_t nitems) {
 int MFILE::_putchar(char c) {
     buf = (char*)realloc(buf, len+1+1);
     if (!buf) {
-        errno = ERR_MALLOC;
-        return EOF;
+        fprintf(stderr, "ERROR: realloc() failed in MFILE::_putchar()\n");
+        exit(1);
     }
     buf[len] = c;
     len++;
@@ -118,8 +117,8 @@ int MFILE::puts(const char* p) {
     int n = (int)strlen(p);
     buf = (char*)realloc(buf, len+n+1);
     if (!buf) {
-        errno = ERR_MALLOC;
-        return EOF;
+        fprintf(stderr, "ERROR: realloc() failed in MFILE::puts()\n");
+        exit(1);
     }
     strncpy(buf+len, p, n);
     len += n;
@@ -160,4 +159,4 @@ void MFILE::get_buf(char*& b, int& l) {
     len = 0;
 }
 
-const char *BOINC_RCSID_8de9facdd7 = "$Id: mfile.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_8de9facdd7 = "$Id: mfile.cpp 18594 2009-07-10 22:59:45Z davea $";

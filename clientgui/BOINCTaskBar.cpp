@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "BOINCTaskBar.h"
@@ -44,12 +42,12 @@
 
 
 DEFINE_EVENT_TYPE(wxEVT_TASKBAR_RELOADSKIN)
-
+DEFINE_EVENT_TYPE(wxEVT_TASKBAR_REFRESH)
 
 BEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIconEx)
     EVT_IDLE(CTaskBarIcon::OnIdle)
     EVT_CLOSE(CTaskBarIcon::OnClose)
-    EVT_TIMER(ID_TB_TIMER, CTaskBarIcon::OnRefresh)
+    EVT_TASKBAR_REFRESH(CTaskBarIcon::OnRefresh)
     EVT_TASKBAR_RELOADSKIN(CTaskBarIcon::OnReloadSkin)
     EVT_TASKBAR_LEFT_DCLICK(CTaskBarIcon::OnLButtonDClick)
     EVT_MENU(wxID_OPEN, CTaskBarIcon::OnOpen)
@@ -91,19 +89,11 @@ CTaskBarIcon::CTaskBarIcon(wxString title, wxIcon* icon, wxIcon* iconDisconnecte
     m_dtLastHoverDetected = wxDateTime((time_t)0);
 
     m_bMouseButtonPressed = false;
-
-    m_pRefreshTimer = new wxTimer(this, ID_TB_TIMER);
-    m_pRefreshTimer->Start(1000);  // Send event every second
 }
 
 
 CTaskBarIcon::~CTaskBarIcon() {
     RemoveIcon();
-
-    if (m_pRefreshTimer) {
-        m_pRefreshTimer->Stop();
-        delete m_pRefreshTimer;
-    }
 }
 
 
@@ -131,7 +121,7 @@ void CTaskBarIcon::OnClose(wxCloseEvent& event) {
 }
 
 
-void CTaskBarIcon::OnRefresh(wxTimerEvent& WXUNUSED(event)) {
+void CTaskBarIcon::OnRefresh(CTaskbarEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnRefresh - Function Begin"));
 
     CMainDocument* pDoc = wxGetApp().GetDocument();
@@ -179,7 +169,11 @@ void CTaskBarIcon::OnOpen(wxCommandEvent& WXUNUSED(event)) {
     if (pFrame) {
         pFrame->Show();
 
-#ifndef __WXMAC__
+#ifdef __WXMAC__
+        if (pFrame->IsIconized()) {
+            pFrame->Iconize(false);
+        }
+#else
         if (pFrame->IsMaximized()) {
             pFrame->Maximize(true);
         } else {
@@ -193,6 +187,11 @@ void CTaskBarIcon::OnOpen(wxCommandEvent& WXUNUSED(event)) {
         ::SetForegroundWindow((HWND)pFrame->GetHandle());
 #endif
 	}
+#ifdef __WXMAC__
+    else {
+        wxGetApp().ShowCurrentGUI();
+    }
+#endif
 }
 
 
@@ -242,24 +241,19 @@ void CTaskBarIcon::OnSuspendResume(wxCommandEvent& WXUNUSED(event)) {
 
 
 void CTaskBarIcon::OnAbout(wxCommandEvent& WXUNUSED(event)) {
-#ifdef __WXMAC__
-    ProcessSerialNumber psn;
+    bool bWasVisible;
 
-    GetCurrentProcess(&psn);
-    bool wasVisible = IsProcessVisible(&psn);
-    SetFrontProcess(&psn);  // Shows process if hidden
-#endif
+    bWasVisible = wxGetApp().IsApplicationVisible();
+    wxGetApp().ShowApplication(true);
 
     ResetTaskBar();
 
     CDlgAbout dlg(NULL);
     dlg.ShowModal();
 
-#ifdef __WXMAC__
-    if (!wasVisible) {
-        ShowHideProcess(&psn, false);
+    if (!bWasVisible) {
+        wxGetApp().ShowApplication(false);
     }
-#endif
 }
 
 
@@ -312,7 +306,7 @@ void CTaskBarIcon::OnMouseMove(wxTaskBarIconEvent& WXUNUSED(event)) {
         m_dtLastHoverDetected = wxDateTime::Now();
 
         CMainDocument* pDoc                 = wxGetApp().GetDocument();
-        wxString       strMachineName       = wxEmptyString;
+       wxString       strMachineName       = wxEmptyString;
         wxString       strMessage           = wxEmptyString;
         wxString       strProjectName       = wxEmptyString;
         wxString       strBuffer            = wxEmptyString;
@@ -326,8 +320,7 @@ void CTaskBarIcon::OnMouseMove(wxTaskBarIconEvent& WXUNUSED(event)) {
         wxInt32        iIndex               = 0;
         CC_STATUS      status;
 
-        wxASSERT(pDoc);
-        wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+        if (!pDoc) return;
 
         if (pDoc->IsConnected()) {
             pDoc->GetConnectedComputerName(strMachineName);
@@ -377,7 +370,7 @@ void CTaskBarIcon::OnMouseMove(wxTaskBarIconEvent& WXUNUSED(event)) {
                     state_result = pDoc->state.lookup_result(result->project_url, result->name);
                     if (state_result) {
                         state_result->project->get_name(project_name);
-                        strProjectName = wxString(project_name.c_str());
+                        strProjectName = wxString(project_name.c_str(), wxConvUTF8);
                     }
                     fProgress = floor(result->fraction_done*10000)/100;
                 }
@@ -501,7 +494,10 @@ bool CTaskBarIcon::SetIcon(const wxIcon& icon) {
     
     currentIcon = &icon;
     
-    result = wxGetApp().GetMacSystemMenu()->SetIcon(icon);
+    CMacSystemMenu* sysMenu = wxGetApp().GetMacSystemMenu();
+    if (sysMenu == NULL) return 0;
+    
+    result = sysMenu->SetIcon(icon);
 
     RestoreApplicationDockTileImage();      // Remove any previous badge
 
@@ -589,10 +585,13 @@ wxMenu *CTaskBarIcon::BuildContextMenu() {
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
     wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
 
-    // Account managers have a different menu arrangement
-    pDoc->rpc.acct_mgr_info(ami);
-    is_acct_mgr_detected = ami.acct_mgr_url.size() ? true : false;
-
+    // Prevent recursive entry of CMainDocument::RequestRPC() 
+     if (!pDoc->WaitingForRPC()) {
+        // Account managers have a different menu arrangement
+        pDoc->rpc.acct_mgr_info(ami);
+        is_acct_mgr_detected = ami.acct_mgr_url.size() ? true : false;
+    }
+    
     if (is_acct_mgr_detected) {
         menuName.Printf(
             _("Open %s Web..."),
@@ -646,19 +645,18 @@ void CTaskBarIcon::AdjustMenuItems(wxMenu* pMenu) {
 
     // BOINC Manager crashes if user selects "Exit" from taskbar menu while 
     //  a dialog is open, so we must disable the "Exit" menu item if a dialog 
-    //  is open. So lets search for the dialog by ID since all of BOINC
-    //   Manager's dialog IDs are 10000.
+    //  is open. 
     // On the Mac, the user can open multiple instances of the About dialog 
     //  by repeatedly selecting "About" menu item from the taskbar, so we 
     //  must also disable that item.  For consistency with the Mac standard, 
     //  we disable the entire taskbar menu when a modal dialog is open.
-    if (wxDynamicCast(wxWindow::FindWindowById(ID_ANYDIALOG), wxDialog)) {
+    if (wxGetApp().IsModalDialogDisplayed()) {
         is_dialog_detected = true;
     }
         
     for (loc = 0; loc < pMenu->GetMenuItemCount(); loc++) {
         pMenuItem = pMenu->FindItemByPosition(loc);
-        if (is_dialog_detected) {
+        if (is_dialog_detected && (pMenuItem->GetId() != wxID_OPEN)) {
             pMenuItem->Enable(false);
         } else {
             pMenuItem->Enable(!(pMenuItem->IsSeparator()));
@@ -688,6 +686,9 @@ void CTaskBarIcon::AdjustMenuItems(wxMenu* pMenu) {
     }
 #endif
 
+    // Prevent recursive entry of CMainDocument::RequestRPC() 
+    if (pDoc->WaitingForRPC()) return;
+
     pDoc->GetCoreClientStatus(status);
     if (RUN_MODE_NEVER == status.task_mode) {
         if (status.task_mode_perm == status.task_mode) {
@@ -695,12 +696,16 @@ void CTaskBarIcon::AdjustMenuItems(wxMenu* pMenu) {
             pMenu->Enable(ID_TB_SUSPEND, false);
         } else {
             pMenu->Check(ID_TB_SUSPEND, true);
+            if (!is_dialog_detected) {
             pMenu->Enable(ID_TB_SUSPEND, true);
+            }
         }
     } else {
         pMenu->Check(ID_TB_SUSPEND, false);
+            if (!is_dialog_detected) {
         pMenu->Enable(ID_TB_SUSPEND, true);
+            }
     }
 }
 
-const char *BOINC_RCSID_531575eeaa = "$Id: BOINCTaskBar.cpp 16451 2008-11-10 16:27:14Z romw $";
+const char *BOINC_RCSID_531575eeaa = "$Id: BOINCTaskBar.cpp 17859 2009-04-23 03:40:49Z romw $";

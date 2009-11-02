@@ -1,23 +1,21 @@
 #!/bin/sh
 
-# Berkeley Open Infrastructure for Network Computing
+# This file is part of BOINC.
 # http://boinc.berkeley.edu
-# Copyright (C) 2005 University of California
+# Copyright (C) 2008 University of California
 #
-# This is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation;
-# either version 2.1 of the License, or (at your option) any later version.
+# BOINC is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
 #
-# This software is distributed in the hope that it will be useful,
+# BOINC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 # See the GNU Lesser General Public License for more details.
 #
-# To view the GNU Lesser General Public License visit
-# http://www.gnu.org/copyleft/lesser.html
-# or write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+# You should have received a copy of the GNU Lesser General Public License
+# along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 #
 #
 # Script to build Macintosh example_app using Makefile
@@ -83,7 +81,7 @@ export CC=/usr/bin/gcc-4.0;export CXX=/usr/bin/g++-4.0
 export LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386"
 ## If your make file passes LDFLAGS directly to ld instead of to gcc, use the following instead:
 ## export LDFLAGS="-syslibroot /Developer/SDKs/MacOSX10.3.9.sdk -arch i386"
-export VARIANTFLAGS="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386"
+export VARIANTFLAGS="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -fvisibility=hidden -fvisibility-inlines-hidden"
 
 make -f Makefile_mac clean
 make -f Makefile_mac all
@@ -110,7 +108,7 @@ if [ -d /Developer/SDKs/MacOSX10.5.sdk/ ]; then
     export LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.5.sdk -arch x86_64"
     ## If your make file passes LDFLAGS directly to ld instead of to gcc, use the following instead:
     ## export LDFLAGS="-syslibroot /Developer/SDKs/MacOSX10.3.9.sdk -arch x86_64"
-    export VARIANTFLAGS="-isysroot /Developer/SDKs/MacOSX10.5.sdk -arch x86_64"
+    export VARIANTFLAGS="-isysroot /Developer/SDKs/MacOSX10.5.sdk -arch x86_64 -fvisibility=hidden -fvisibility-inlines-hidden"
 
     make -f Makefile_mac clean
     make -f Makefile_mac all

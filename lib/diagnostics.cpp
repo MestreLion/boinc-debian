@@ -35,6 +35,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#endif
+
 #ifdef __APPLE__
 #include "mac_backtrace.h"
 #endif
@@ -299,7 +303,12 @@ int diagnostics_init(
         strcpy(proxy_address, "");
         proxy_port = 0;
 
+#ifndef _USING_FCGI_
         p = fopen(INIT_DATA_FILE, "r");
+#else
+        p = FCGI::fopen(INIT_DATA_FILE, "r");
+#endif
+ 
 		if (p) {
 			mf.init_file(p);
 			while(mf.fgets(buf, sizeof(buf))) {
@@ -537,7 +546,7 @@ int diagnostics_cycle_logs() {
 
 // Set a signal handler only if it is not currently ignored
 //
-void boinc_set_signal_handler(int sig, void(*handler)(int)) {
+extern "C" void boinc_set_signal_handler(int sig, void(*handler)(int)) {
 #ifdef HAVE_SIGACTION
     struct sigaction temp;
     sigaction(sig, NULL, &temp);
@@ -586,7 +595,10 @@ void boinc_catch_signal(int signal) {
     case SIGINT: fprintf(stderr, "SIGINT: interrupt program\n"); break;
     case SIGILL: fprintf(stderr, "SIGILL: illegal instruction\n"); break;
     case SIGABRT: fprintf(stderr, "SIGABRT: abort called\n"); break;
+#if SIGBUS != SIGSEGV
+    // in case SIGBUS == SIGSEGV (e.g., Haiku)
     case SIGBUS: fprintf(stderr, "SIGBUS: bus error\n"); break;
+#endif
     case SIGSEGV: fprintf(stderr, "SIGSEGV: segmentation violation\n"); break;
     case SIGSYS: fprintf(stderr, "SIGSYS: system call given invalid argument\n"); break;
     case SIGPIPE: fprintf(stderr, "SIGPIPE: write on a pipe with no reader\n");
@@ -636,6 +648,16 @@ void boinc_trace(const char *pszFormat, ...) {
 #ifdef _WIN32
         strdate(szDate);
         strtime(szTime);
+#else
+        time_t t;
+        char *theCR;
+    
+        time(&t);
+        strcpy(szTime, asctime(localtime(&t)));
+        theCR = strrchr(szTime, '\n');
+        if (theCR) *theCR = '\0';
+        theCR = strrchr(szTime, '\r');
+        if (theCR) *theCR = '\0';
 #endif
 
         va_list ptr;
@@ -652,7 +674,7 @@ void boinc_trace(const char *pszFormat, ...) {
 #ifdef _WIN32
             fprintf(stderr, "[%s %s] TRACE [%d]: %s\n", szDate, szTime, GetCurrentThreadId(), szBuffer);
 #else
-            fprintf(stderr, "TRACE: %s\n", szBuffer);
+            fprintf(stderr, "[%s] TRACE: %s\n", szTime, szBuffer);
 #endif
         }
 
@@ -660,7 +682,7 @@ void boinc_trace(const char *pszFormat, ...) {
 #ifdef _WIN32
             fprintf(stdout, "[%s %s] TRACE [%d]: %s\n", szDate, szTime, GetCurrentThreadId(), szBuffer);
 #else
-            fprintf(stdout, "TRACE: %s\n", szBuffer);
+            fprintf(stderr, "[%s] TRACE: %s\n", szTime, szBuffer);
 #endif
         }
 #endif
@@ -712,4 +734,4 @@ void diagnostics_set_max_file_sizes(int stdout_size, int stderr_size) {
     if (stderr_size) max_stderr_file_size = stderr_size;
 }
 
-const char *BOINC_RCSID_4967ad204c = "$Id: diagnostics.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_4967ad204c = "$Id: diagnostics.cpp 18213 2009-05-27 23:36:55Z davea $";

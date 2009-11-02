@@ -22,22 +22,34 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#include <stdio.h>
+#include <cstdio>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#include <cerrno>
 #endif
+#include <cerrno>
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
+#endif
 #include <vector>
-#include <string.h>
+#include <cstring>
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
 #endif
 
 #include "str_util.h"
@@ -238,14 +250,14 @@ int GUI_RPC_CONN_SET::init(bool last_time) {
     int one = 1;
     setsockopt(lsock, SOL_SOCKET, SO_REUSEADDR, (char*)&one, 4);
 
-    retval = bind(lsock, (const sockaddr*)(&addr), (boinc_socklen_t)sizeof(addr));
+    retval = bind(lsock, (const sockaddr*)(&addr), (BOINC_SOCKLEN_T)sizeof(addr));
     if (retval) {
 #ifndef _WIN32
         retval = errno;     // Display the real error code
 #endif
         if (last_time) {
             msg_printf(NULL, MSG_INTERNAL_ERROR,
-                "GUI RPC bind failed: %d", retval
+                "GUI RPC bind to port %d failed: %d", htons(addr.sin_port), retval
             );
         }
         boinc_close_socket(lsock);
@@ -278,7 +290,7 @@ static void show_connect_error(in_addr ia) {
         last_time = gstate.now;
         count = 1;
     } else {
-        if (gstate.now - last_time < 600) {
+        if (gstate.now - last_time < CONNECT_ERROR_PERIOD) {
             count++;
             return;
         }
@@ -355,8 +367,8 @@ void GUI_RPC_CONN_SET::got_select(FDSET_GROUP& fg) {
             return;
         }
 
-        boinc_socklen_t addr_len = sizeof(addr);
-        sock = accept(lsock, (struct sockaddr*)&addr, (boinc_socklen_t*)&addr_len);
+        BOINC_SOCKLEN_T addr_len = sizeof(addr);
+        sock = accept(lsock, (struct sockaddr*)&addr, (BOINC_SOCKLEN_T*)&addr_len);
         if (sock == -1) {
             return;
         }
@@ -473,4 +485,4 @@ bool GUI_RPC_CONN_SET::quits_sent() {
     return true;
 }
 
-const char *BOINC_RCSID_88dd75dd85 = "$Id: gui_rpc_server.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_88dd75dd85 = "$Id: gui_rpc_server.cpp 18440 2009-06-16 22:17:04Z davea $";

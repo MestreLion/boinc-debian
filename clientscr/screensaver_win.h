@@ -59,17 +59,6 @@ struct INTERNALMONITORINFO
 
 
 //-----------------------------------------------------------------------------
-// Name: struct LASTINPUTINFO
-// Desc: Structure for holding input idle detection values on Win2k+
-//       systems.
-//-----------------------------------------------------------------------------
-typedef struct tagLASTINPUTINFO {
-    UINT cbSize;
-    DWORD dwTime;
-} LASTINPUTINFO, *PLASTINPUTINFO;
-
-
-//-----------------------------------------------------------------------------
 // Name: struct INTERNALMONITORINFO
 // Desc: Use the following structure rather than DISPLAY_DEVICE, since some
 //       old versions of DISPLAY_DEVICE are missing the last two fields and
@@ -86,22 +75,6 @@ struct DISPLAY_DEVICE_FULL
 };
 
 
-// Prototype for VerifyScreenSavePwd() in password.cpl, used on Win9x
-typedef BOOL (WINAPI *VERIFYPWDPROC)(HWND);
-
-// Prototype for GetLastInputInto() in user32.dll, used on Win2k or better.
-typedef BOOL (WINAPI *MYGETLASTINPUTINFO)(PLASTINPUTINFO);
-
-// Prototype for GetLastInputInto() in user32.dll, used on Win2k or better.
-typedef BOOL (WINAPI *MYISHUNGAPPWINDOW)(HWND hWnd);
-
-// Prototype for BroadcastSystemMessage() in user32.dll.
-typedef long (WINAPI *MYBROADCASTSYSTEMMESSAGE)(DWORD dwFlags, LPDWORD lpdwRecipients, UINT uiMessage, WPARAM wParam, LPARAM lParam);
-
-// Prototype for SHGetFolderPath() in shlwapi.dll.
-typedef HRESULT (WINAPI *MYSHGETFOLDERPATH)(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPSTR pszPath);
-
-
 //-----------------------------------------------------------------------------
 // Name: class CScreensaver
 // Desc: Screensaver class
@@ -112,7 +85,8 @@ public:
     CScreensaver();
 
     virtual HRESULT Create( HINSTANCE hInstance );
-    virtual INT     Run();
+    virtual HRESULT Run();
+    virtual HRESULT Cleanup();
     HRESULT         DisplayErrorMsg( HRESULT hr );
 
 
@@ -123,9 +97,9 @@ protected:
 	SaverMode       ParseCommandLine( TCHAR* pstrCommandLine );
 	VOID            EnumMonitors( VOID );
 
-    int             UtilGetRegKey(LPCTSTR name, DWORD &keyval);
-    int             UtilSetRegKey(LPCTSTR name, DWORD value);
-    int             UtilGetRegStartupStr(LPCTSTR name, LPTSTR str);
+    BOOL            UtilGetRegKey(LPCTSTR name, DWORD& keyval);
+    BOOL            UtilSetRegKey(LPCTSTR name, DWORD value);
+    BOOL            UtilGetRegDirectoryStr(LPCTSTR name, std::string& strDirectory);
 
     BOOL            CreateInfrastructureMutexes();
 
@@ -142,10 +116,37 @@ protected:
     TCHAR			m_szError[400];      // Error message text
     DWORD           m_dwBlankScreen;
     DWORD           m_dwBlankTime;
+    std::string     m_strBOINCInstallDirectory;
+    std::string     m_strBOINCDataDirectory;
+
+    //
+    // Input Activity Detection
+    //
+protected:
+    BOOL            CreateInputActivityThread();
+    BOOL            DestroyInputActivityThread();
+
+    DWORD WINAPI    InputActivityProc();
+    static DWORD WINAPI InputActivityProcStub( LPVOID lpParam );
+
+    HANDLE          m_hInputActivityThread;
 
 
     //
-    // Data management layer
+    // Graphics Window Promotion
+    //
+protected:
+    BOOL            CreateGraphicsWindowPromotionThread();
+    BOOL            DestroyGraphicsWindowPromotionThread();
+
+    DWORD WINAPI    GraphicsWindowPromotionProc();
+    static DWORD WINAPI GraphicsWindowPromotionProcStub( LPVOID lpParam );
+
+    HANDLE          m_hGraphicsWindowPromotionThread;
+
+
+    //
+    // Data Management Layer
     //
 protected:
     BOOL            CreateDataManagementThread();
@@ -154,30 +155,29 @@ protected:
     DWORD WINAPI    DataManagementProc();
     static DWORD WINAPI DataManagementProcStub( LPVOID lpParam );
 
-    void            CheckKeyboardMouseActivity();
-    void            CheckForNotificationWindow();
-    void            CheckForegroundWindow();
-
+    int             terminate_v6_screensaver(HANDLE& graphics_application);
     int             terminate_screensaver(HANDLE& graphics_application, RESULT *worker_app);
+    int             terminate_default_screensaver(HANDLE& graphics_application);
 	int             launch_screensaver(RESULT* rp, HANDLE& graphics_application);
+	int             launch_default_screensaver(char *dir_path, HANDLE& graphics_application);
     void            HandleRPCError(void);
-
-// Determine if two RESULT pointers refer to the same task
+    void            GetDisplayPeriods(char *dir_path);
+    BOOL            HasProcessExited(HANDLE pid_handle, int &exitCode);
+    
+    // Determine if two RESULT pointers refer to the same task
     bool            is_same_task(RESULT* taska, RESULT* taskb);
 
-// Count the number of active graphics-capable apps
+    // Count the number of active graphics-capable apps
     int             count_active_graphic_apps(RESULTS& results, RESULT* exclude = NULL);
 
-// Choose a ramdom graphics application from the vector that
-//   was passed in.
-
+    // Choose a ramdom graphics application from the vector that
+    //   was passed in.
     RESULT*         get_random_graphics_app(RESULTS& results, RESULT* exclude = NULL);
 
     RPC_CLIENT*     rpc;
     CC_STATE        state;
     RESULTS         results;
     RESULT          m_running_result;
-    bool            m_updating_results;
 
     HANDLE          m_hDataManagementThread;
     HANDLE          m_hGraphicsApplication;
@@ -188,15 +188,26 @@ protected:
 	time_t			m_tLastResultChangeTime;
     time_t          m_tThreadCreateTime;
 
+    double          m_fGFXDefaultPeriod;
+    double          m_fGFxSciencePeriod;
+    double          m_fGFXChangePeriod;
+    bool            m_bShow_default_ss_first;
+
+    bool            m_bScience_gfx_running;
+    bool            m_bDefault_gfx_running;
+    BOOL            m_bConnected;
+
     //
     // Presentation layer
     //
 protected:
 	HRESULT         CreateSaverWindow();
 	VOID            UpdateErrorBox();
+    VOID            FireInterruptSaverEvent();
     VOID            InterruptSaver();
     VOID            ShutdownSaver();
 	VOID            ChangePassword();
+
 
     VOID            DoConfig();
 	HRESULT         DoSaver();
@@ -218,9 +229,8 @@ protected:
     HINSTANCE				m_hInstance;
     BOOL					m_bWaitForInputIdle;  // Used to pause when preview starts
     DWORD					m_dwSaverMouseMoveCount;
-    BOOL					m_bIs9x;
-    BOOL					m_bCheckingSaverPassword;
     BOOL					m_bWindowed;
+    BOOL                    m_bDefault_ss_exists;
 
     INTERNALMONITORINFO		m_Monitors[MAX_DISPLAYS];
     DWORD					m_dwNumMonitors;

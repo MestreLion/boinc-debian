@@ -27,6 +27,10 @@
 #include <time.h>
 #endif
 
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#endif
+
 #include "parse.h"
 #include "util.h"
 
@@ -45,6 +49,7 @@ void GLOBAL_PREFS_MASK::clear() {
 void GLOBAL_PREFS_MASK::set_all() {
     run_on_batteries = true;
     run_if_user_active = true;
+    run_gpu_if_user_active = true;
     idle_time_to_run = true;
     suspend_if_no_recent_input = true;
     start_hour = true;
@@ -76,6 +81,7 @@ void GLOBAL_PREFS_MASK::set_all() {
 bool GLOBAL_PREFS_MASK::are_prefs_set() {
     if (run_on_batteries) return true;
     if (run_if_user_active) return true;
+    if (run_gpu_if_user_active) return true;
     if (idle_time_to_run) return true;
     if (suspend_if_no_recent_input) return true;
     if (start_hour) return true;
@@ -132,11 +138,10 @@ bool TIME_SPAN::suspended(double hour) const {
     }
 }
 
-
 TIME_SPAN::TimeMode TIME_SPAN::mode() const {
-    if (end_hour == start_hour || (start_hour == 0.0 && end_hour == 24.0)) {
+    if (end_hour == start_hour || (start_hour == 0 && end_hour == 24)) {
         return Always;
-    } else if (start_hour == 24.0 && end_hour == 0.0) {
+    } else if (start_hour == 24 && end_hour == 0) {
         return Never;
     }
     return Between;
@@ -151,7 +156,6 @@ void TIME_PREFS::clear() {
     week.clear();
 }
 
-
 bool TIME_PREFS::suspended() const {
     time_t now = time(0);
     struct tm* tmp = localtime(&now);
@@ -159,107 +163,35 @@ bool TIME_PREFS::suspended() const {
     int day = tmp->tm_wday;
 
     // Use day-specific settings, if they exist:
-    const TIME_SPAN* span = week.get(day) ? week.get(day) : this;
-
-    return span->suspended(hour);
+    //
+    if (day>=0 && day<7 && week.days[day].present) {
+        return week.days[day].suspended(hour);
+    }
+    return TIME_SPAN::suspended(hour);
 }
 
 
 // WEEK_PREFS implementation
 
-WEEK_PREFS::WEEK_PREFS() {
-    for (int i=0; i<7; i++) {
-        days[i] = 0;
-    }
-}
-
-
-WEEK_PREFS::WEEK_PREFS(const WEEK_PREFS& original) {
-    for (int i=0; i<7; i++) {
-        TIME_SPAN* time = original.days[i];
-        if (time) {
-            days[i] = new TIME_SPAN(time->start_hour, time->end_hour);
-        } else {
-            days[i] = 0;
-        }
-    }
-}
-
-
-WEEK_PREFS& WEEK_PREFS::operator=(const WEEK_PREFS& rhs) {
-    if (this != &rhs) {
-        for (int i=0; i<7; i++) {
-            TIME_SPAN* time = rhs.days[i];
-            if (time) {
-                if (days[i]) {
-                    *days[i] = *time;
-                } else {
-                    days[i] = new TIME_SPAN(*time);
-                }
-            } else {
-                unset(i);
-            }
-        }
-    }
-    return *this;
-}
-
-
-// Create a deep copy.
-void WEEK_PREFS::copy(const WEEK_PREFS& original) {
-    for (int i=0; i<7; i++) {
-        TIME_SPAN* time = original.days[i];
-        if (time) {
-            days[i] = new TIME_SPAN(time->start_hour, time->end_hour);
-        } else {
-            days[i] = 0;
-        }
-    }
-}
-
-
-WEEK_PREFS::~WEEK_PREFS() {
-    clear();
-}
-
-
-void WEEK_PREFS::clear() {
-    for (int i=0; i<7; i++) {
-        if (days[i]) {
-            delete days[i];
-            days[i] = 0;
-        }
-    }
-}
-
-
-TIME_SPAN* WEEK_PREFS::get(int day) const {
-
-    if (day < 0 || day > 6) return 0;
-    return days[day];
-}
-
 
 void WEEK_PREFS::set(int day, double start, double end) {
     if (day < 0 || day > 6) return;
-    if (days[day]) delete days[day];
-    days[day] = new TIME_SPAN(start, end);
+    days[day].present = true;
+    days[day].start_hour = start;
+    days[day].end_hour = end;
 }
 
 
 void WEEK_PREFS::set(int day, TIME_SPAN* time) {
     if (day < 0 || day > 6) return;
-    if (days[day] == time) return;
-    if (days[day]) delete days[day];
-    days[day] = time;
+    days[day].present = true;
+    days[day].start_hour = time->start_hour;
+    days[day].end_hour = time->end_hour;
 }
 
 void WEEK_PREFS::unset(int day) {
     if (day < 0 || day > 6) return;
-    if (days[day]) {
-        delete days[day];
-        days[day] = 0;
-    }
+    days[day].present = false;
 }
 
 // The following values determine how the client behaves
@@ -270,6 +202,7 @@ void WEEK_PREFS::unset(int day) {
 void GLOBAL_PREFS::defaults() {
     run_on_batteries = true;
     run_if_user_active = true;
+    run_gpu_if_user_active = false;
     idle_time_to_run = 3;
     suspend_if_no_recent_input = 0;
     cpu_times.clear();
@@ -453,6 +386,10 @@ int GLOBAL_PREFS::parse_override(
             mask.run_if_user_active = true;
             continue;
         }
+        if (xp.parse_bool(tag, "run_gpu_if_user_active", run_gpu_if_user_active)) {
+            mask.run_gpu_if_user_active = true;
+            continue;
+        }
         if (xp.parse_double(tag, "idle_time_to_run", idle_time_to_run)) {
             mask.idle_time_to_run = true;
             continue;
@@ -592,7 +529,11 @@ int GLOBAL_PREFS::parse_file(
     GLOBAL_PREFS_MASK mask;
     int retval;
 
+#ifndef _USING_FCGI_
     f = fopen(filename, "r");
+#else
+    f = FCGI::fopen(filename, "r");
+#endif
     if (!f) return ERR_FOPEN;
     MIOFILE mf;
     mf.init_file(f);
@@ -615,13 +556,18 @@ int GLOBAL_PREFS::write(MIOFILE& f) {
         "<global_preferences>\n"
         "   <source_project>%s</source_project>\n"
         "   <mod_time>%f</mod_time>\n"
-        "%s%s"
+        "   <run_on_batteries>%d</run_on_batteries>\n"
+        "   <run_if_user_active>%d</run_if_user_active>\n"
+        "   <run_gpu_if_user_active>%d</run_gpu_if_user_active>\n"
         "   <suspend_if_no_recent_input>%f</suspend_if_no_recent_input>\n"
         "   <start_hour>%f</start_hour>\n"
         "   <end_hour>%f</end_hour>\n"
         "   <net_start_hour>%f</net_start_hour>\n"
         "   <net_end_hour>%f</net_end_hour>\n"
-        "%s%s%s%s"
+        "   <leave_apps_in_memory>%d</leave_apps_in_memory>\n"
+        "   <confirm_before_connecting>%d</confirm_before_connecting>\n"
+        "   <hangup_if_dialed>%d</hangup_if_dialed>\n"
+        "   <dont_verify_images>%d</dont_verify_images>\n"
         "   <work_buf_min_days>%f</work_buf_min_days>\n"
         "   <work_buf_additional_days>%f</work_buf_additional_days>\n"
         "   <max_ncpus_pct>%f</max_ncpus_pct>\n"
@@ -639,17 +585,18 @@ int GLOBAL_PREFS::write(MIOFILE& f) {
         "   <cpu_usage_limit>%f</cpu_usage_limit>\n",
         source_project,
         mod_time,
-        run_on_batteries?"   <run_on_batteries/>\n":"",
-        run_if_user_active?"   <run_if_user_active/>\n":"",
+        run_on_batteries?1:0,
+        run_if_user_active?1:0,
+        run_gpu_if_user_active?1:0,
         suspend_if_no_recent_input,
         cpu_times.start_hour,
         cpu_times.end_hour,
         net_times.start_hour,
         net_times.end_hour,
-        leave_apps_in_memory?"   <leave_apps_in_memory/>\n":"",
-        confirm_before_connecting?"   <confirm_before_connecting/>\n":"",
-        hangup_if_dialed?"   <hangup_if_dialed/>\n":"",
-        dont_verify_images?"   <dont_verify_images/>\n":"",
+        leave_apps_in_memory?1:0,
+        confirm_before_connecting?1:0,
+        hangup_if_dialed?1:0,
+        dont_verify_images?1:0,
         work_buf_min_days,
         work_buf_additional_days,
         max_ncpus_pct,
@@ -670,28 +617,41 @@ int GLOBAL_PREFS::write(MIOFILE& f) {
         f.printf("   <max_cpus>%d</max_cpus>\n", max_ncpus);
     }
 
+    write_day_prefs(f);
+
+    f.printf("</global_preferences>\n");
+
+    return 0;
+}
+
+void GLOBAL_PREFS::write_day_prefs(MIOFILE& f) {
     for (int i=0; i<7; i++) {
-        TIME_SPAN* cpu = cpu_times.week.get(i);
-        TIME_SPAN* net = net_times.week.get(i);
+        bool cpu_present = cpu_times.week.days[i].present;
+        bool net_present = net_times.week.days[i].present;
         //write only when needed
-        if (net || cpu) {
+        if (net_present || cpu_present) {
             
             f.printf("   <day_prefs>\n");                
             f.printf("      <day_of_week>%d</day_of_week>\n", i);
-            if (cpu) {
-                f.printf("      <start_hour>%.02f</start_hour>\n", cpu->start_hour);
-                f.printf("      <end_hour>%.02f</end_hour>\n", cpu->end_hour);
+            if (cpu_present) {
+                f.printf(
+                    "      <start_hour>%.02f</start_hour>\n"
+                    "      <end_hour>%.02f</end_hour>\n",
+                    cpu_times.week.days[i].start_hour,
+                    cpu_times.week.days[i].end_hour
+                );
             }
-            if (net) {
-                f.printf("      <net_start_hour>%.02f</net_start_hour>\n", net->start_hour);
-                f.printf("      <net_end_hour>%.02f</net_end_hour>\n", net->end_hour);
+            if (net_present) {
+                f.printf(
+                    "      <net_start_hour>%.02f</net_start_hour>\n"
+                    "      <net_end_hour>%.02f</net_end_hour>\n",
+                    net_times.week.days[i].start_hour,
+                    net_times.week.days[i].end_hour
+                );
             }
             f.printf("   </day_prefs>\n");
         }
     }
-    f.printf("</global_preferences>\n");
-
-    return 0;
 }
 
 // write a subset of the global preferences,
@@ -709,6 +669,11 @@ int GLOBAL_PREFS::write_subset(MIOFILE& f, GLOBAL_PREFS_MASK& mask) {
     if (mask.run_if_user_active) {
         f.printf("   <run_if_user_active>%d</run_if_user_active>\n",
             run_if_user_active?1:0
+        );
+    }
+    if (mask.run_gpu_if_user_active) {
+        f.printf("   <run_gpu_if_user_active>%d</run_gpu_if_user_active>\n",
+            run_gpu_if_user_active?1:0
         );
     }
     if (mask.idle_time_to_run) {
@@ -798,29 +763,12 @@ int GLOBAL_PREFS::write_subset(MIOFILE& f, GLOBAL_PREFS_MASK& mask) {
         f.printf("   <cpu_usage_limit>%f</cpu_usage_limit>\n", cpu_usage_limit);
     }
 
-    for (int i=0; i<7; i++) {
-        TIME_SPAN* cpu = cpu_times.week.get(i);
-        TIME_SPAN* net = net_times.week.get(i);
-        //write only when needed
-        if (net || cpu) {
-            f.printf("   <day_prefs>\n");                
-            f.printf("      <day_of_week>%d</day_of_week>\n", i);
-            if (cpu) {
-                f.printf("      <start_hour>%.02f</start_hour>\n", cpu->start_hour);
-                f.printf("      <end_hour>%.02f</end_hour>\n", cpu->end_hour);
-            }
-            if (net) {
-                f.printf("      <net_start_hour>%.02f</net_start_hour>\n", net->start_hour);
-                f.printf("      <net_end_hour>%.02f</net_end_hour>\n", net->end_hour);
-            }
-            f.printf("   </day_prefs>\n");
-        }
-    }
+    write_day_prefs(f);
     f.printf("</global_preferences>\n");
     return 0;
 }
 
-const char *BOINC_RCSID_3fb442bb02 = "$Id: prefs.cpp 16298 2008-10-23 18:45:47Z davea $";
+const char *BOINC_RCSID_3fb442bb02 = "$Id: prefs.cpp 17740 2009-04-07 18:21:39Z davea $";
 
 
 

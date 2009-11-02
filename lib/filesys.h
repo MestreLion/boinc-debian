@@ -25,10 +25,9 @@
 
 #if defined(_WIN32) && !defined(__CYGWIN32__)
 #else
-#include <stdio.h>
 #include <dirent.h>
 #include <grp.h>
-
+#include <stdio.h>
 #ifdef __cplusplus
 #include <string>
 #endif
@@ -70,7 +69,7 @@ extern "C" {
 extern int file_size(const char*, double&);
 extern int clean_out_dir(const char*);
 extern int dir_size(const char* dirpath, double&, bool recurse=true);
-extern int get_filesystem_info(double& total, double& free, char* path=".");
+extern int get_filesystem_info(double& total, double& free, char* path=const_cast<char *>("."));
 
 // TODO TODO TODO
 // remove this code - the DirScanner class does the same thing.
@@ -113,6 +112,7 @@ struct FILE_LOCK {
 #else
     int fd;
 #endif
+    bool locked;
     FILE_LOCK();
     ~FILE_LOCK();
     int lock(const char* filename);

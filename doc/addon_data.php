@@ -11,6 +11,26 @@
 
 $win = array(
 array(
+    'http://www.bc-team.org/downloads.php?view=detail&df_id=3',
+    'BOINCcalculator',
+    '0.2.0',
+    'Show details of CPDN jobs',
+    'http://wiki.bc-team.org/index.php?title=BOINCcalculator',
+    'Windows (all)',
+    'BOINCcalculator shows details of running CPDN jobs: trickles, credits, timesteps, and checkpoints.',
+    1236727395
+),
+array(
+    'http://efmer.eu/boinc/',
+    'TThrottle',
+    '1.47',
+    'TThrottle throttles CPU usage to keep its temperature below a limit you select.',
+    'http://efmer.eu/boinc/',
+    'Win32: XP, Vista; Win64: XP, 2003, Vista',
+    '',
+    1234896753
+),
+array(
     'http://www.weebl00.nl/leiterow/zowtar/BOINC/',
     'BOINC mIRC',
     '0.1',
@@ -40,15 +60,15 @@ array(
 //    Put the .mrc on your mIRC main dir and type',
 //    1162833635
 //),
-array('boincdv_v0306.zip',
-    'BoincDV',
-    '',
-    'A small util to view current project debts for your v4.4x BOINC cc.',
-    'http://home.austin.rr.com/skipsjunk/',
-    'Tested on XP Pro/Home only',
-    'see included readme.txt',
-    1121326440
-),
+//array('boincdv_v0306.zip',
+//    'BoincDV',
+//    '',
+//    'A small util to view current project debts for your v4.4x BOINC cc.',
+//    'http://home.austin.rr.com/skipsjunk/',
+//    'Tested on XP Pro/Home only',
+//    'see included readme.txt',
+//    1121326440
+//),
 array('BoincLogX_Setup_v1.51.exe',
     'BoincLogX',
     '1.51',
@@ -72,7 +92,8 @@ array('boincview.zip',
     'BoincView',
     '1.2.5',
     'Advanced BOINC manager for networks',
-    'http://boincview.amanheis.de',
+    //'http://boincview.amanheis.de',
+    '',
     '',
     'BoincView can monitor and control all your BOINC clients throughout your network. Every client can be managed via the client\'s remote control feature.',
     1149517167
@@ -353,6 +374,16 @@ array('rc.boinc-slackware-linux-latest.txt',
 );
 
 $mac = array(
+array(
+    'http://brotherbard.com/boinc/',
+    'BOINCMenubar 2',
+    '0.1.11 beta',
+    'Mac GUI for BOINC',
+    'http://brotherbard.com/boinc/',
+    'Mac OS X 10.5 or later',
+    'BOINCMenubar 2 is a status menu item that lives on the right side of your menu bar. When you open the menu you get a quick overview of which projects have tasks running as well as other information about the projects that you set up yourself.  The BOINCMenubar menu also has items for controlling BOINC running on the host computer and for controlling projects that are attached to that computer.  There is a preference panel for setting up BOINCMenubar, for setting up all the preferences for the BOINC application itself and for attaching to and detaching from projects and account managers.',
+    1243918675
+),
 array(
     'http://michaelsprogramming.home.dyndns.org/',
     'BOINC Statistics',

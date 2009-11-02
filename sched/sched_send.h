@@ -15,51 +15,56 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+#ifndef _SCHED_SEND_
+#define _SCHED_SEND_
+
 #include <string.h>
 
-extern void send_work(SCHEDULER_REQUEST&, SCHEDULER_REPLY&);
+#include "boinc_db.h"
+#include "sched_types.h"
+
+extern void send_work();
 
 extern int add_result_to_reply(
-    DB_RESULT& result, WORKUNIT& wu, SCHEDULER_REQUEST&, SCHEDULER_REPLY&,
-    BEST_APP_VERSION* bavp
+    DB_RESULT& result, WORKUNIT& wu, BEST_APP_VERSION* bavp,
+    bool locality_scheduling
 );
 
 inline bool anonymous(PLATFORM* platform) {
     return (!strcmp(platform->name, "anonymous"));
 }
 
-extern BEST_APP_VERSION* get_app_version(
-    SCHEDULER_REQUEST&, SCHEDULER_REPLY&, WORKUNIT&
-);
-
 extern bool app_core_compatible(WORK_REQ& wreq, APP_VERSION& av);
 
 // values returned by wu_is_infeasible()
 //
-#define INFEASIBLE_MEM      1
-#define INFEASIBLE_DISK     2
-#define INFEASIBLE_CPU      3
-#define INFEASIBLE_WORK_BUF 4
-#define INFEASIBLE_APP_SETTING 5
-#define INFEASIBLE_WORKLOAD 6
-#define INFEASIBLE_DUP      7
-#define INFEASIBLE_HR       8
-#define INFEASIBLE_BANDWIDTH 9
+#define INFEASIBLE_MEM          1
+#define INFEASIBLE_DISK         2
+#define INFEASIBLE_CPU          3
+#define INFEASIBLE_WORK_BUF     4
+#define INFEASIBLE_APP_SETTING  5
+#define INFEASIBLE_WORKLOAD     6
+#define INFEASIBLE_DUP          7
+#define INFEASIBLE_HR           8
+#define INFEASIBLE_BANDWIDTH    9
+#define INFEASIBLE_CUSTOM       10
 
-extern int wu_is_infeasible_fast(
-    WORKUNIT&, SCHEDULER_REQUEST&, SCHEDULER_REPLY&, APP&
-);
+extern int wu_is_infeasible_fast(WORKUNIT&, APP&, BEST_APP_VERSION&);
  
-extern double max_allowable_disk(SCHEDULER_REQUEST&, SCHEDULER_REPLY&);
+extern double max_allowable_disk();
 
-extern bool wu_already_in_reply(WORKUNIT& wu, SCHEDULER_REPLY& reply);
+extern bool wu_already_in_reply(WORKUNIT& wu);
 
-extern double estimate_cpu_duration(WORKUNIT& wu, SCHEDULER_REPLY& reply);
+extern double estimate_duration(WORKUNIT& wu, BEST_APP_VERSION&);
 
 extern int update_wu_transition_time(WORKUNIT wu, time_t x);
 
 extern void lock_sema();
 extern void unlock_sema();
 extern const char* infeasible_string(int);
-extern bool app_not_selected(WORKUNIT&, SCHEDULER_REQUEST&, SCHEDULER_REPLY&);
-extern bool work_needed(SCHEDULER_REQUEST&, SCHEDULER_REPLY&, bool);
+extern bool app_not_selected(WORKUNIT&);
+extern bool work_needed(bool);
+extern void send_work_setup();
+extern int effective_ncpus();
+extern int preferred_app_message_index;
+#endif

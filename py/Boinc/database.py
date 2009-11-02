@@ -1,4 +1,4 @@
-## $Id: database.py 15357 2008-06-04 23:04:12Z davea $
+## $Id: database.py 18356 2009-06-10 22:38:33Z davea $
 
 '''
 Defines database backend library and database table and object relationships.
@@ -32,7 +32,7 @@ import configxml
 from util import *
 from db_base import *
 
-ID = '$Id: database.py 15357 2008-06-04 23:04:12Z davea $'
+ID = '$Id: database.py 18356 2009-06-10 22:38:33Z davea $'
 
 class Platform(DatabaseObject):
     _table = DatabaseTable(
@@ -257,7 +257,7 @@ def _execute_sql_script(cursor, filename):
         if not query: continue
         cursor.execute(query)
 
-def create_database(config = None, drop_first = False):
+def create_database(srcdir, config = None, drop_first = False):
     ''' creates a new database. '''
     import boinc_path_config
     config = config or configxml.default_config().config
@@ -267,9 +267,8 @@ def create_database(config = None, drop_first = False):
         cursor.execute("drop database if exists %s"%config.db_name)
     cursor.execute("create database %s"%config.db_name)
     cursor.execute("use %s"%config.db_name)
-    schema_path = os.path.join(boinc_path_config.TOP_SOURCE_DIR, 'db')
     for file in ['schema.sql', 'constraints.sql']:
-        _execute_sql_script(cursor, os.path.join(schema_path, file))
+        _execute_sql_script(cursor, os.path.join(srcdir, 'db', file))
     cursor.close()
 
 # alias

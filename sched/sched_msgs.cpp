@@ -23,9 +23,9 @@ SCHED_MSG_LOG log_messages;
 
 const char* SCHED_MSG_LOG::v_format_kind(int kind) const {
     switch(kind) {
-    case MSG_CRITICAL: return "CRITICAL";
-    case MSG_NORMAL:   return "normal  ";
-    case MSG_DEBUG:    return "debug   ";
+    case MSG_CRITICAL: return "[CRITICAL]";
+    case MSG_NORMAL:   return "";
+    case MSG_DEBUG:    return "[debug]";
     default:       return "*** internal error: invalid MessageKind ***";
     }
 }
@@ -57,7 +57,11 @@ void SCHED_MSG_LOG::close() {
     }
 }
 
+#ifndef _USING_FCGI_
 void SCHED_MSG_LOG::redirect(FILE* f) {
+#else
+void SCHED_MSG_LOG::redirect(FCGI_FILE* f) {
+#endif
     close();
     output = f;
 }
@@ -69,4 +73,4 @@ void SCHED_MSG_LOG::flush() {
 }
 #endif
 
-const char *BOINC_RCSID_b40ff9bb53 = "$Id: sched_msgs.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_b40ff9bb53 = "$Id: sched_msgs.cpp 16921 2009-01-15 20:23:20Z davea $";

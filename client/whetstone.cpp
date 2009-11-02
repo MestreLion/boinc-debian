@@ -26,11 +26,11 @@
 
 #ifndef _WIN32
 #include "config.h"
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <cmath>
-#include <ctime>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
 #endif
 
 #include "util.h"
@@ -278,4 +278,4 @@ int whetstone(double& flops, double& cpu_time, double min_cpu_time) {
     return 0;
 }
 
-const char *BOINC_RCSID_595304be61 = "$Id: whetstone.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_595304be61 = "$Id: whetstone.cpp 17954 2009-04-30 21:48:20Z davea $";

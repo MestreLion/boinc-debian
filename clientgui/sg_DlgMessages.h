@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #ifndef _DLG_MESSAGES_H_ 
@@ -95,8 +93,7 @@ public:
     /// wxEVT_ERASE_BACKGROUND event handler for ID_DLGMESSAGES
     void OnEraseBackground( wxEraseEvent& event );
 
-    /// wxEVT_TIMER event handler for ID_REFRESHMESSAGESTIMER
-    void OnRefresh( wxTimerEvent& event );
+    void OnRefresh();
 
     /// wxEVT_COMMAND_BUTTON_CLICKED event handler for wxID_OK
     void OnOK( wxCommandEvent& event );
@@ -116,25 +113,22 @@ public:
 ////@end CPanelMessages member function declarations
 
     virtual wxString        OnListGetItemText( long item, long column ) const;
-	virtual wxListItemAttr* OnListGetItemAttr( long item ) const;
+    virtual wxListItemAttr* OnListGetItemAttr( long item ) const;
 
     bool                    OnSaveState(wxConfigBase* pConfig);
     bool                    OnRestoreState(wxConfigBase* pConfig);
 
 private:
-	wxInt32                 m_iPreviousDocCount;
+    wxInt32                 m_iPreviousDocCount;
 
     CSGUIListCtrl*          m_pList;
     wxListItemAttr*         m_pMessageInfoAttr;
     wxListItemAttr*         m_pMessageErrorAttr;
 
     bool                    m_bProcessingRefreshEvent;
-    bool                    m_bForceUpdateSelection;
-
-	wxTimer*                m_pRefreshMessagesTimer;
 
     bool                    EnsureLastItemVisible();
-	wxInt32                 FormatProjectName( wxInt32 item, wxString& strBuffer ) const;
+    wxInt32                 FormatProjectName( wxInt32 item, wxString& strBuffer ) const;
     wxInt32                 FormatTime( wxInt32 item, wxString& strBuffer ) const;
     wxInt32                 FormatMessage( wxInt32 item, wxString& strBuffer ) const;
 
@@ -174,7 +168,9 @@ public:
 
     /// wxEVT_COMMAND_BUTTON_CLICKED event handler for wxID_OK
     void OnOK( wxCommandEvent& event );
-
+    
+    void OnRefresh() { m_pBackgroundPanel->OnRefresh(); }
+    
 private:
 
     bool SaveState();

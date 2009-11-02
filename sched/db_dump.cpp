@@ -36,6 +36,7 @@
 #include "filesys.h"
 #include "util.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "error_numbers.h"
 #include "md5_file.h"
 #include "parse.h"
@@ -337,6 +338,16 @@ void write_host(HOST& host, FILE* f, bool detail) {
         os_name,
         os_version
     );
+
+    // host.serialnum stores coprocessor description
+    //
+    if (strlen(host.serialnum)) {
+        char serialnum[1024];
+        xml_escape(host.serialnum, serialnum, sizeof(serialnum));
+        fprintf(f,
+            "    <coprocs>%s</coprocs>\n", serialnum
+        );
+    }
     if (detail) {
         fprintf(f,
             "  <create_time>%d</create_time>\n"
@@ -793,10 +804,10 @@ int main(int argc, char** argv) {
     }
     log_messages.printf(MSG_NORMAL, "Starting\n");
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse ../config.xml: %s\n", boincerror(retval)
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -872,4 +883,4 @@ int main(int argc, char** argv) {
     log_messages.printf(MSG_NORMAL, "db_dump finished\n");
 }
 
-const char *BOINC_RCSID_500089bde6 = "$Id: db_dump.cpp 16136 2008-10-06 00:18:36Z davea $";
+const char *BOINC_RCSID_500089bde6 = "$Id: db_dump.cpp 18437 2009-06-16 20:54:44Z davea $";

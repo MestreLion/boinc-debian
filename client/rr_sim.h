@@ -23,26 +23,12 @@ struct RESULT;
 struct RR_SIM_PROJECT_STATUS {
         /// jobs currently running (in simulation)
     std::vector<RESULT*>active;
-        /// jobs runnable but not running yet
+        /// CPU jobs runnable but not running yet
     std::vector<RESULT*>pending;
-    int deadlines_missed;
-        /// fraction of each CPU this project will get
-        /// set in CLIENT_STATE::rr_misses_deadline();
-    double proc_rate;
-	double active_ncpus;
-    double cpu_shortfall;
-	bool has_coproc_jobs;
-	bool has_cpu_jobs;
 
     inline void clear() {
         active.clear();
         pending.clear();
-        deadlines_missed = 0;
-        proc_rate = 0;
-        cpu_shortfall = 0;
-		active_ncpus = 0;
-		has_coproc_jobs = false;
-		has_cpu_jobs = false;
     }
     void activate(RESULT* rp);
     inline void add_pending(RESULT* rp) {
@@ -54,16 +40,12 @@ struct RR_SIM_PROJECT_STATUS {
     inline bool none_pending() {
         return !pending.size();
     }
-	bool can_run(RESULT* rp, int ncpus);
     void remove_active(RESULT* r);
     inline RESULT* get_pending() {
         if (!pending.size()) return NULL;
         RESULT* rp = pending[0];
         pending.erase(pending.begin());
         return rp;
-    }
-    inline double cpus_used() {
-        return active_ncpus;
     }
 };
 

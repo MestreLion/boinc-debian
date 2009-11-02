@@ -29,18 +29,6 @@
 #define MEGA (1048576.0)
 #define GIGA (1024.*1048576.0)
 
-#if !defined(HAVE_STRLCPY)
-extern size_t strlcpy(char*, const char*, size_t);
-#endif
-
-#if !defined(HAVE_STRLCAT)
-extern size_t strlcat(char *dst, const char *src, size_t size);
-#endif
-
-#if !defined(HAVE_STRCASESTR)
-extern char *strcasestr(const char *s1, const char *s2);
-#endif
-
 extern int ndays_to_string(double x, int smallest_timescale, char *buf);
 extern void nbytes_to_string(double nbytes, double total_bytes, char* str, int len);
 extern int parse_command_line(char*, char**);
@@ -75,6 +63,13 @@ inline bool starts_with(std::string const& s, std::string const& prefix) {
 inline void downcase_string(std::string& w) {
     for (std::string::iterator p = w.begin(); p != w.end(); ++p) {
         *p = tolower(*p);
+    }
+}
+
+inline void downcase_string(char* p) {
+    while (*p) {
+        *p = tolower(*p);
+        p++;
     }
 }
 

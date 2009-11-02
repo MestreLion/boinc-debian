@@ -53,7 +53,7 @@ bool CLIENT_STATE::handle_finished_apps() {
     ACTIVE_TASK* atp;
     bool action = false;
     static double last_time = 0;
-    if (now - last_time < 1.0) return false;
+    if (now - last_time < HANDLE_FINISHED_APPS_PERIOD) return false;
     last_time = now;
 
     vector<ACTIVE_TASK*>::iterator iter;
@@ -202,9 +202,8 @@ int CLIENT_STATE::app_finished(ACTIVE_TASK& at) {
         rp->project->update_duration_correction_factor(&at);
     }
 
-    double wall_cpu_time = now - debt_interval_start;
-    at.result->project->wall_cpu_time_this_debt_interval += wall_cpu_time;
-    total_wall_cpu_time_this_debt_interval += wall_cpu_time;
+    double elapsed_time = now - debt_interval_start;
+    work_fetch.accumulate_inst_sec(&at, elapsed_time);
 
     return 0;
 }
@@ -324,4 +323,4 @@ ACTIVE_TASK* ACTIVE_TASK_SET::lookup_result(RESULT* result) {
 }
 #endif
 
-const char *BOINC_RCSID_7bf63ad771 = "$Id: cs_apps.cpp 16611 2008-12-03 20:55:22Z romw $";
+const char *BOINC_RCSID_7bf63ad771 = "$Id: cs_apps.cpp 17396 2009-02-26 03:24:39Z davea $";

@@ -71,7 +71,6 @@ using std::vector;
 
 #include "app.h"
 
-
 #ifdef _WIN32
 bool ACTIVE_TASK::kill_all_children() {
 	unsigned int i,j;
@@ -247,6 +246,7 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
     get_app_status_msg();
     get_trickle_up_msg();
     result->final_cpu_time = current_cpu_time;
+    result->final_elapsed_time = elapsed_time;
     if (task_state() == PROCESS_ABORT_PENDING) {
         set_task_state(PROCESS_ABORTED, "handle_exited_app");
     } else {
@@ -371,7 +371,7 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
     if (!will_restart) {
         copy_output_files();
         read_stderr_file();
-        client_clean_out_dir(slot_dir);
+        client_clean_out_dir(slot_dir, "handle_exited_app()");
     }
     gstate.request_schedule_cpus("application exited");
     gstate.request_work_fetch("application exited");
@@ -406,16 +406,16 @@ void ACTIVE_TASK_SET::send_trickle_downs() {
 void ACTIVE_TASK_SET::send_heartbeats() {
     unsigned int i;
     ACTIVE_TASK* atp;
-	char buf[256];
+	char buf[1024];
 	double ar = gstate.available_ram();
 
     for (i=0; i<active_tasks.size(); i++) {
         atp = active_tasks[i];
         if (!atp->process_exists()) continue;
         if (!atp->app_client_shm.shm) continue;
-		sprintf(buf, "<heartbeat/>"
-			"<wss>%f</wss>"
-			"<max_wss>%f</max_wss>",
+		snprintf(buf, sizeof(buf), "<heartbeat/>"
+			"<wss>%e</wss>"
+			"<max_wss>%e</max_wss>",
 			atp->procinfo.working_set_size, ar
 		);
         bool sent = atp->app_client_shm.shm->heartbeat.send_msg(buf);
@@ -449,7 +449,7 @@ void ACTIVE_TASK_SET::process_control_poll() {
 		//
 		if (atp->process_control_queue.timeout(180)) {
             if (log_flags.task_debug) {
-                msg_printf(NULL, MSG_INFO,
+                msg_printf(atp->result->project, MSG_INFO,
                     "Restarting %s - message timeout", atp->result->name
                 );
             }
@@ -483,7 +483,7 @@ bool ACTIVE_TASK_SET::check_app_exited() {
         } else {
             if (log_flags.task_debug) {
                 char errmsg[1024];
-                msg_printf(0, MSG_INFO,
+                msg_printf(atp->result->project, MSG_INFO,
                     "[task_debug] task %s GetExitCodeProcess() failed - %s GLE %d (0x%x)",
                     atp->result->name,
                     windows_format_error_string(
@@ -509,7 +509,9 @@ bool ACTIVE_TASK_SET::check_app_exited() {
             // is probably a benchmark process; don't show error
             //
             if (!gstate.are_cpu_benchmarks_running() && log_flags.task_debug) {
-                msg_printf(NULL, MSG_INTERNAL_ERROR, "Process %d not found\n", pid);
+                msg_printf(NULL, MSG_INTERNAL_ERROR,
+                    "Process %d not found\n", pid
+                );
             }
             return false;
         }
@@ -529,7 +531,7 @@ bool ACTIVE_TASK::check_max_disk_exceeded() {
 
     retval = current_disk_usage(disk_usage);
     if (retval) {
-        msg_printf(0, MSG_INTERNAL_ERROR,
+        msg_printf(this->wup->project, MSG_INTERNAL_ERROR,
             "Can't get task disk usage: %s", boincerror(retval)
         );
     } else {
@@ -570,12 +572,12 @@ bool ACTIVE_TASK_SET::check_rsc_limits_exceeded() {
     for (i=0; i<active_tasks.size(); i++) {
         atp = active_tasks[i];
         if (atp->task_state() != PROCESS_EXECUTING) continue;
-		if (atp->current_cpu_time > atp->max_cpu_time) {
+		if (!atp->result->project->non_cpu_intensive && (atp->elapsed_time > atp->max_elapsed_time)) {
 			msg_printf(atp->result->project, MSG_INFO,
-				"Aborting task %s: exceeded CPU time limit %f\n",
-				atp->result->name, atp->max_cpu_time
+				"Aborting task %s: exceeded elapsed time limit %f\n",
+				atp->result->name, atp->max_elapsed_time
 			);
-			atp->abort_task(ERR_RSC_LIMIT_EXCEEDED, "Maximum CPU time exceeded");
+			atp->abort_task(ERR_RSC_LIMIT_EXCEEDED, "Maximum elapsed time exceeded");
 			did_anything = true;
 			continue;
 		}
@@ -766,7 +768,6 @@ int ACTIVE_TASK_SET::abort_project(PROJECT* project) {
             task_iter++;
         }
     }
-    project->long_term_debt = 0;
     return 0;
 }
 
@@ -775,15 +776,7 @@ int ACTIVE_TASK_SET::abort_project(PROJECT* project) {
 // e.g. because on batteries, time of day, benchmarking, CPU throttle, etc.
 //
 void ACTIVE_TASK_SET::suspend_all(bool cpu_throttle) {
-    unsigned int i;
-	bool leave_in_mem;
-
-	if (cpu_throttle) {
-		leave_in_mem = true;
-	} else {
-		leave_in_mem = gstate.global_prefs.leave_apps_in_memory;
-	}
-    for (i=0; i<active_tasks.size(); i++) {
+    for (unsigned int i=0; i<active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks[i];
         if (atp->task_state() != PROCESS_EXECUTING) continue;
 		if (cpu_throttle) {
@@ -792,8 +785,10 @@ void ACTIVE_TASK_SET::suspend_all(bool cpu_throttle) {
 			//
 			if (atp->result->project->non_cpu_intensive) continue;
 			if (atp->app_version->avg_ncpus < 1) continue;
-		}
-        atp->preempt(!leave_in_mem);
+            atp->preempt(REMOVE_NEVER);
+		} else {
+            atp->preempt(REMOVE_MAYBE_USER);
+        }
     }
 }
 
@@ -819,6 +814,8 @@ void ACTIVE_TASK_SET::unsuspend_all() {
 
 // Check to see if any tasks are running
 // called if benchmarking and waiting for suspends to happen
+// or the system needs to suspend itself so we are suspending
+// the applications
 //
 bool ACTIVE_TASK_SET::is_task_executing() {
     unsigned int i;
@@ -933,7 +930,7 @@ bool ACTIVE_TASK::get_app_status_msg() {
         return false;
     }
     if (log_flags.app_msg_receive) {
-        msg_printf(NULL, MSG_INFO,
+        msg_printf(this->wup->project, MSG_INFO,
             "[app_msg_receive] got msg from slot %d: %s", slot, msg_buf
         );
     }
@@ -990,29 +987,34 @@ bool ACTIVE_TASK::get_trickle_up_msg() {
 }
 
 // check for msgs from active tasks.
-// Return true if any of them has changed its checkpoint_cpu_time
-// (since in that case we need to write state file)
 //
-bool ACTIVE_TASK_SET::get_msgs() {
+void ACTIVE_TASK_SET::get_msgs() {
     unsigned int i;
     ACTIVE_TASK *atp;
     double old_time;
-    bool action = false;
     static double last_time=0;
     double delta_t;
     if (last_time) {
         delta_t = gstate.now - last_time;
+
+        // Normally this is called every second.
+        // If delta_t is > 10, we'll assume that a period of hibernation
+        // or suspension happened, and treat it as zero.
+        // If negative, must be clock reset.  Ignore.
+        //
+        if (delta_t > 10 || delta_t < 0) {
+            delta_t = 0;
+        }
     } else {
         delta_t = 0;
     }
     last_time = gstate.now;
 
-
     for (i=0; i<active_tasks.size(); i++) {
         atp = active_tasks[i];
         if (!atp->process_exists()) continue;
         old_time = atp->checkpoint_cpu_time;
-        if (atp->scheduler_state == CPU_SCHED_SCHEDULED) {
+        if (atp->task_state() == PROCESS_EXECUTING) {
             atp->elapsed_time += delta_t;
         }
         if (atp->get_app_status_msg()) {
@@ -1021,7 +1023,6 @@ bool ACTIVE_TASK_SET::get_msgs() {
                 atp->checkpoint_wall_time = gstate.now;
                 atp->premature_exit_count = 0;
                 atp->checkpoint_elapsed_time = atp->elapsed_time;
-                action = true;
                 if (log_flags.task_debug) {
                     msg_printf(atp->wup->project, MSG_INFO,
                         "[task_debug] result %s checkpointed",
@@ -1033,11 +1034,75 @@ bool ACTIVE_TASK_SET::get_msgs() {
                         atp->result->name
                     );
                 }
+                atp->write_task_state_file();
             }
         }
         atp->get_trickle_up_msg();
     }
-    return action;
 }
 
-const char *BOINC_RCSID_10ca137461 = "$Id: app_control.cpp 16608 2008-12-03 18:35:17Z romw $";
+// write checkpoint state to a file in the slot dir
+// (this avoids rewriting the state file on each checkpoint)
+//
+void ACTIVE_TASK::write_task_state_file() {
+    char path[1024];
+    sprintf(path, "%s/%s", slot_dir, TASK_STATE_FILENAME);
+    FILE* f = fopen(path, "w");
+    if (!f) return;
+    fprintf(f,
+        "<active_task>\n"
+        "    <project_master_url>%s</project_master_url>\n"
+        "    <result_name>%s</result_name>\n"
+        "    <checkpoint_cpu_time>%f</checkpoint_cpu_time>\n"
+        "    <checkpoint_elapsed_time>%f</checkpoint_elapsed_time>\n"
+        "    <fraction_done>%f</fraction_done>\n"
+        "</active_task>\n",
+        result->project->master_url,
+        result->name,
+        checkpoint_cpu_time,
+        checkpoint_elapsed_time,
+        fraction_done
+    );
+    fclose(f);
+}
+
+// called on startup; read the task state file in case it's more recent
+// then the main state file
+//
+void ACTIVE_TASK::read_task_state_file() {
+    char buf[4096], path[1024], s[1024];
+    sprintf(path, "%s/%s", slot_dir, TASK_STATE_FILENAME);
+    FILE* f = fopen(path, "r");
+    if (!f) return;
+    buf[0] = 0;
+    fread(buf, 1, 4096, f);
+    fclose(f);
+    buf[4095] = 0;
+    double x;
+    // sanity checks - project and result name must match
+    //
+    if (!parse_str(buf, "<project_master_url>", s, sizeof(s))) {
+        return;
+    }
+    if (strcmp(s, result->project->master_url)) {
+        return;
+    }
+    if (!parse_str(buf, "<result_name>", s, sizeof(s))) {
+        return;
+    }
+    if (strcmp(s, result->name)) {
+        return;
+    }
+    if (parse_double(buf, "<checkpoint_cpu_time>", x)) {
+        if (x > checkpoint_cpu_time) {
+            checkpoint_cpu_time = x;
+        }
+    }
+    if (parse_double(buf, "<checkpoint_elapsed_time>", x)) {
+        if (x > checkpoint_elapsed_time) {
+            checkpoint_elapsed_time = x;
+        }
+    }
+}
+
+const char *BOINC_RCSID_10ca137461 = "$Id: app_control.cpp 19314 2009-10-16 18:57:01Z romw $";

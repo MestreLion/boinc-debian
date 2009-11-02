@@ -30,15 +30,20 @@
 #undef _LARGEFILE64_SOURCE
 #endif
 #endif
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
 #include <unistd.h>
 #endif
 
 #ifdef HAVE_PROCFS_H
 #include <procfs.h> // definitions for solaris /proc structs
 #endif
+
+using std::FILE;
+using std::fread;
+using std::fopen;
+using std::fclose;
 
 #include "error_numbers.h"
 #include "mem_usage.h"
@@ -136,4 +141,4 @@ int mem_usage(double& vm_usage, double& resident_set) {
 #endif
 }
 
-const char *BOINC_RCSID_dc202bfd53 = "$Id: mem_usage.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_dc202bfd53 = "$Id: mem_usage.cpp 17388 2009-02-26 00:23:23Z korpela $";

@@ -81,7 +81,7 @@
 #define MODE_QUIT               6
 #define NGRAPHICS_MSGS  7
 
-// message priorities
+// priorities for client messages
 //
 #define MSG_INFO            1
     // write to stdout
@@ -110,7 +110,7 @@ enum SUSPEND_REASON {
     SUSPEND_REASON_CPU_USAGE_LIMIT = 64,
     SUSPEND_REASON_NO_RECENT_INPUT = 128,
     SUSPEND_REASON_INITIAL_DELAY = 256,
-    SUSPEND_REASON_EXCLUSIVE_APP_RUNNING = 512,
+    SUSPEND_REASON_EXCLUSIVE_APP_RUNNING = 512
 };
 
 // States of a result on a client.
@@ -194,5 +194,13 @@ struct VERSION_INFO {
 
 #define GRAPHICS_APP_FILENAME "graphics_app"
 #define ASSIGNED_WU_STR "asgn"
+#define GUI_RPC_PASSWD_FILE         "gui_rpc_auth.cfg"
+#define SS_CONFIG_FILE              "ss_config.xml"
+#ifdef _WIN32
+#define DEFAULT_SS_EXECUTABLE       "boincscr.exe"
+#else
+#define DEFAULT_SS_EXECUTABLE       "boincscr"
+#endif
+
 
 #endif

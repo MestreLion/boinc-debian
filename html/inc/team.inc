@@ -25,6 +25,7 @@ require_once("../inc/countries.inc");
 require_once("../inc/credit.inc");
 require_once("../inc/team_types.inc");
 require_once("../inc/time.inc");
+require_once("../inc/stats_sites.inc");
 
 function team_search_form($params) {
     echo '<form name="form" action="team_search.php">';
@@ -70,6 +71,7 @@ function foundership_transfer_link($user, $team) {
 }
 
 function display_team_page($team, $user) {
+    global $team_name_sites;
     page_head("$team->name");
 
     echo sanitize_html($team->name_html);
@@ -91,6 +93,23 @@ function display_team_page($team, $user) {
     if (!no_computing()) {
         row2(tra('Total credit'), format_credit_large($team->total_credit));
         row2(tra('Recent average credit'), format_credit_large($team->expavg_credit));
+
+        $x = "";
+        shuffle($team_name_sites);
+        foreach ($team_name_sites as $t) {
+            $url = $t[0];
+            $site_name = $t[1];
+            $encoding = $t[2];
+            if ($encoding == "hashlc") {
+                $key = md5(strtolower($team->name));
+            } else if ($encoding == 'hash') {
+                $key = md5($team->name);
+            } else {
+                $key = urlencode($team->name);
+            }
+            $x .= "<a href=$url".$key.">$site_name</a><br>\n";
+        }
+        row2(tra('Cross-project stats'), $x);
     }
     row2(tra('Country'), $team->country);
     row2(tra('Type'), team_type_name($team->type));
@@ -515,20 +534,19 @@ function transfer_ok($team, $now) {
 function make_team(
     $userid, $name, $url, $type, $name_html, $description, $country
 ) {
-    $name = process_user_text(strip_tags($name));
+    $name = BoincDb::escape_string(strip_tags($name));
     if (strlen($name) == 0) return null;
     $name_lc = strtolower($name);
-    $url = process_user_text(strip_tags($url));
+    $url = BoincDb::escape_string(strip_tags($url));
     if (strstr($url, "http://")) {
         $url = substr($url, 7);
     }
-    $name_html = process_user_text($name_html);
-    $description = process_user_text($description);
-    $country = process_user_text($country);
+    $name_html = BoincDb::escape_string($name_html);
+    $description = BoincDb::escape_string($description);
     if (!is_valid_country($country)) {
         $country = 'None';
     }
-    $country = boinc_real_escape_string($country);  // for Cote d'Ivoire
+    $country = BoincDb::escape_string($country);  // for Cote d'Ivoire
 
     $clause = sprintf(
         "(userid, create_time, name, name_lc, url, type, name_html, description, country, nusers, expavg_time) values(%d, %d, '%s', '%s', '%s', %d, '%s', '%s', '%s', %d, unix_timestamp())",
@@ -551,6 +569,6 @@ function make_team(
     }
 }
 
-$cvs_version_tracker[]="\$Id: team.inc 16244 2008-10-21 20:33:16Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team.inc 17456 2009-03-03 21:58:03Z davea $";  //Generated automatically - do not edit
 
 ?>

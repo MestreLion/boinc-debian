@@ -27,18 +27,20 @@
 
 #include "parse.h"
 #include "error_numbers.h"
+#include "filesys.h"
+#include "str_util.h"
+#include "str_replace.h"
 
 #include "sched_msgs.h"
 #include "sched_util.h"
 #include "sched_config.h"
-
 
 const char* CONFIG_FILE = "config.xml";
 
 SCHED_CONFIG config;
 
 const int MAX_NCPUS = 8;
-    // max multiplier for daily_result_quota and max_wus_in_progress;
+    // max multiplier for daily_result_quota.
     // need to change as multicore processors expand
 
 int SCHED_CONFIG::parse(FILE* f) {
@@ -54,6 +56,8 @@ int SCHED_CONFIG::parse(FILE* f) {
     memset(this, 0, sizeof(*this));
     ban_os = new vector<regex_t>;
     ban_cpu = new vector<regex_t>;
+    locality_scheduling_workunit_file = new vector<regex_t>;
+    locality_scheduling_sticky_file = new vector<regex_t>;
     max_wus_to_send = 10;
     default_disk_max_used_gb = 100.;
     default_disk_max_used_pct = 50.;
@@ -82,6 +86,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_str(tag, "db_user", db_user, sizeof(db_user))) continue;
         if (xp.parse_str(tag, "db_passwd", db_passwd, sizeof(db_passwd))) continue;
         if (xp.parse_str(tag, "db_host", db_host, sizeof(db_host))) continue;
+        if (xp.parse_str(tag, "project_dir", project_dir, sizeof(project_dir))) continue;
         if (xp.parse_int(tag, "shmem_key", shmem_key)) continue;
         if (xp.parse_str(tag, "key_dir", key_dir, sizeof(key_dir))) continue;
         if (xp.parse_str(tag, "download_url", download_url, sizeof(download_url))) continue;
@@ -103,14 +108,35 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_int(tag, "min_sendwork_interval", min_sendwork_interval)) continue;
         if (xp.parse_int(tag, "max_wus_to_send", max_wus_to_send)) continue;
         if (xp.parse_int(tag, "max_wus_in_progress", max_wus_in_progress)) continue;
+        if (xp.parse_int(tag, "max_wus_in_progress_gpu", max_wus_in_progress_gpu)) continue;
         if (xp.parse_int(tag, "daily_result_quota", daily_result_quota)) continue;
+        if (xp.parse_int(tag, "gpu_multiplier", gpu_multiplier)) continue;
         if (xp.parse_int(tag, "uldl_dir_fanout", uldl_dir_fanout)) continue;
         if (xp.parse_int(tag, "locality_scheduling_wait_period", locality_scheduling_wait_period)) continue;
         if (xp.parse_int(tag, "locality_scheduling_send_timeout", locality_scheduling_send_timeout)) continue;
+        if (xp.parse_str(tag, "locality_scheduling_workunit_file", buf, sizeof(buf))) {
+            retval = regcomp(&re, buf, REG_EXTENDED|REG_NOSUB);
+            if (retval) {
+                log_messages.printf(MSG_CRITICAL, "BAD REGEXP: %s\n", buf);
+            } else {
+                locality_scheduling_workunit_file->push_back(re);
+            }
+            continue;
+        }
+        if (xp.parse_str(tag, "locality_scheduling_sticky_file", buf, sizeof(buf))) {
+            retval = regcomp(&re, buf, REG_EXTENDED|REG_NOSUB);
+            if (retval) {
+                log_messages.printf(MSG_CRITICAL, "BAD REGEXP: %s\n", buf);
+            } else {
+                locality_scheduling_sticky_file->push_back(re);
+            }
+            continue;
+        }
+        if (xp.parse_double(tag, "locality_scheduler_fraction", locality_scheduler_fraction)) continue;
         if (xp.parse_int(tag, "min_core_client_version", min_core_client_version)) continue;
         if (xp.parse_int(tag, "min_core_client_version_announced", min_core_client_version_announced)) continue;
         if (xp.parse_int(tag, "min_core_client_upgrade_deadline", min_core_client_upgrade_deadline)) continue;
-        if (xp.parse_bool(tag, "choose_download_url_by_timezone", choose_download_url_by_timezone)) continue;
+        if (xp.parse_str(tag, "replace_download_url_by_timezone", replace_download_url_by_timezone, sizeof(replace_download_url_by_timezone))) continue;
         if (xp.parse_bool(tag, "cache_md5_info", cache_md5_info)) continue;
         if (xp.parse_bool(tag, "nowork_skip", nowork_skip)) continue;
         if (xp.parse_bool(tag, "resend_lost_results", resend_lost_results)) continue;
@@ -184,8 +210,9 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool(tag, "use_credit_multiplier", use_credit_multiplier)) continue;
         if (xp.parse_bool(tag, "multiple_clients_per_host", multiple_clients_per_host)) continue;
         if (xp.parse_bool(tag, "no_vista_sandbox", no_vista_sandbox)) continue;
-        if (xp.parse_bool(tag, "have_cuda_apps", have_cuda_apps)) continue;
-
+        if (xp.parse_bool(tag, "ignore_dcf", ignore_dcf)) continue;
+        if (xp.parse_int(tag, "report_max", report_max)) continue;
+        if (xp.parse_bool(tag, "dont_store_success_stderr", dont_store_success_stderr)) continue;
 
         if (xp.parse_bool(tag, "debug_version_select", debug_version_select)) continue;
         if (xp.parse_bool(tag, "debug_assignment", debug_assignment)) continue;
@@ -198,6 +225,8 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool(tag, "debug_handle_results", debug_handle_results)) continue;
         if (xp.parse_bool(tag, "debug_edf_sim_workload", debug_edf_sim_workload)) continue;
         if (xp.parse_bool(tag, "debug_edf_sim_detail", debug_edf_sim_detail)) continue;
+        if (xp.parse_bool(tag, "debug_locality", debug_locality)) continue;
+        if (xp.parse_bool(tag, "debug_array", debug_array)) continue;
 
         // don't complain about unparsed XML;
         // there are lots of tags the scheduler doesn't know about
@@ -213,12 +242,11 @@ int SCHED_CONFIG::parse_file(const char* dir) {
     char path[256];
     int retval;
 
-	char* p = getenv("BOINC_CONFIG_XML");
-	if (p) {
-		strcpy(path, p);
-	} else {
-		sprintf(path, "%s/%s", dir, CONFIG_FILE);
-	}
+    if (dir && dir[0]) {
+        snprintf(path, sizeof(path), "%s/%s", dir, CONFIG_FILE);
+    } else {
+        strcpy(path, project_path(CONFIG_FILE));
+    }
 #ifndef _USING_FCGI_
     FILE* f = fopen(path, "r");
 #else
@@ -231,17 +259,41 @@ int SCHED_CONFIG::parse_file(const char* dir) {
 }
 
 int SCHED_CONFIG::upload_path(const char* filename, char* path) {
-    return ::dir_hier_path(filename, upload_dir, uldl_dir_fanout, path, true);
+    return dir_hier_path(filename, upload_dir, uldl_dir_fanout, path, true);
 }
 
 int SCHED_CONFIG::download_path(const char* filename, char* path) {
-    return ::dir_hier_path(filename, download_dir, uldl_dir_fanout, path, true);
+    return dir_hier_path(filename, download_dir, uldl_dir_fanout, path, true);
 }
 
-void get_project_dir(char* p, int len) {
-    getcwd(p, len);
-    char* q = strrchr(p, '/');
-    if (q) *q = 0;
+// Does 2 things:
+// - locate project directory.  This is either
+//      a) env var BOINC_PROJECT_DIR, if defined
+//      b) current dir, if config.xml exists there
+//      c) parent dir, if config.xml exists there
+// - returns a path relative to the project dir,
+//      specified by a format string + args
+//
+const char *SCHED_CONFIG::project_path(const char *fmt, ...) {
+    static char path[1024];
+    va_list ap;
+
+    if (!strlen(project_dir)) {
+        char *p = getenv("BOINC_PROJECT_DIR");
+        if (p) {
+            strlcpy(project_dir, p, sizeof(project_dir));
+        } else if (boinc_file_exists(CONFIG_FILE)) {
+            strcpy(project_dir, ".");
+        } else {
+            strcpy(project_dir, "..");
+        }
+    }
+
+    va_start(ap, fmt);
+    snprintf(path, sizeof(path), "%s/", project_dir);
+    vsnprintf(path + strlen(path), sizeof(path) - strlen(path), fmt, ap);
+    va_end(ap);
+    return (const char *)path;
 }
 
-const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 16246 2008-10-21 23:16:07Z davea $";
+const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 18528 2009-06-30 18:00:58Z Rytis $";

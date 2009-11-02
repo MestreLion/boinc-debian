@@ -22,6 +22,8 @@
 #include "parse.h"
 
 #include "sched_msgs.h"
+#include "sched_config.h"
+#include "sched_types.h"
 
 #include "time_stats_log.h"
 
@@ -39,23 +41,24 @@ void handle_time_stats_log(FILE* fin) {
 // The host has been authenticated, so write the stats.
 // Use a directory hierarchy since there may be many hosts
 //
-void write_time_stats_log(SCHEDULER_REPLY& reply) {
-    char dirname[256], filename[256];
+void write_time_stats_log() {
+    char filename[256];
+    const char *dirname;
 
-    int hostid = reply.host.id;
+    int hostid = g_reply->host.id;
     int dirnum = hostid % 1000;
-    sprintf(dirname, "../time_stats_log/%d", dirnum);
+    dirname = config.project_path("time_stats_log/%d", dirnum);
     if (!is_dir(dirname)) {
         int retval = boinc_mkdir(dirname);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
                 "Can't make time stats log dir %s: %d\n", dirname, retval
             );
-            perror("mkdir");
+            std::perror("mkdir");
             return;
         }
     }
-    sprintf(filename, "../time_stats_log/%d/%d", dirnum, hostid);
+    sprintf(filename, "%s/%d", dirname, hostid);
 #ifndef _USING_FCGI_
     FILE* f = fopen(filename, "w");
 #else
@@ -69,13 +72,12 @@ void write_time_stats_log(SCHEDULER_REPLY& reply) {
     }
     fputs(stats_buf, f);
     fclose(f);
+    free(stats_buf);
+    stats_buf = 0;
 }
 
-bool have_time_stats_log(SCHEDULER_REPLY& reply) {
-    char filename[256];
-
-    int hostid = reply.host.id;
+bool have_time_stats_log() {
+    int hostid = g_reply->host.id;
     int dirnum = hostid % 1000;
-    sprintf(filename, "../time_stats_log/%d/%d", dirnum, hostid);
-    return is_file(filename);
+    return is_file(config.project_path("time_stats_log/%d/%d", dirnum, hostid));
 }

@@ -1,21 +1,37 @@
 ## -*- mode: makefile; tab-width: 4 -*-
 include $(top_srcdir)/Makefile.incl
 
+scheddir = $(libexecdir)/sched
+
 bin_PROGRAMS = create_work sign_executable dir_hier_path dir_hier_move
 
-EXTRA_DIST = make_project xadd update_versions dbcheck_files_exist upgrade makelog.sh cleanlogs.sh vote_monitor calculate_credit_multiplier
+dist_bin_SCRIPTS = \
+		calculate_credit_multiplier \
+		dbcheck_files_exist \
+		grep_logs \
+		make_project \
+		parse_config \
+		update_versions \
+		upgrade \
+		vote_monitor \
+		xadd
 
-LDADD = $(LIBSCHED) $(LIBBOINC) $(RSA_LIBS) $(MYSQL_LIBS)
-AM_CXXFLAGS = $(MYSQL_CFLAGS)
+dist_sched_SCRIPTS = \
+		cleanlogs.sh \
+		makelog.sh \
+		run_in_ops
 
-create_work_SOURCES =           \
-    create_work.cpp
+AM_CXXFLAGS += $(MYSQL_CFLAGS)
+AM_LDFLAGS += -static
 
-sign_executable_SOURCES =	\
-    sign_executable.cpp
+create_work_SOURCES = create_work.cpp
+create_work_LDADD = $(SERVERLIBS)
 
-dir_hier_path_SOURCES = \
-    dir_hier_path.cpp
+sign_executable_SOURCES = sign_executable.cpp
+sign_executable_LDADD = $(SERVERLIBS)
 
-dir_hier_move_SOURCES = \
-    dir_hier_move.cpp
+dir_hier_path_SOURCES = dir_hier_path.cpp
+dir_hier_path_LDADD = $(SERVERLIBS)
+
+dir_hier_move_SOURCES = dir_hier_move.cpp
+dir_hier_move_LDADD = $(SERVERLIBS)

@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "CompletionPage.h"
@@ -36,7 +34,6 @@
 #include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
 #include "WizardAttachProject.h"
-#include "WizardAccountManager.h"
 #include "CompletionPage.h"
 #include "AccountInfoPage.h"
 
@@ -57,7 +54,6 @@ BEGIN_EVENT_TABLE( CCompletionPage, wxWizardPageEx )
     EVT_WIZARDEX_PAGE_CHANGED( -1, CCompletionPage::OnPageChanged )
     EVT_WIZARDEX_CANCEL( -1, CCompletionPage::OnCancel )
     EVT_WIZARDEX_FINISHED( ID_COMPLETIONPAGE, CCompletionPage::OnFinished )
-
 ////@end CCompletionPage event table entries
  
 END_EVENT_TABLE()
@@ -177,7 +173,6 @@ wxBitmap CCompletionPage::GetBitmapResource( const wxString& WXUNUSED(name) )
 wxIcon CCompletionPage::GetIconResource( const wxString& WXUNUSED(name) )
 {
     // Icon retrieval
- 
 ////@begin CCompletionPage icon retrieval
     return wxNullIcon;
 ////@end CCompletionPage icon retrieval
@@ -215,8 +210,7 @@ void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
 
         if (pWAP->m_AccountInfoPage->m_pAccountCreateCtrl->GetValue()) {
             m_pCompletionMessage->SetLabel(
-                _("When you click Finish, your web browser will go to a page where\n"
-                  "you can set your account name and preferences.")
+                _("When you click Finish, your web browser will go to a page where\nyou can set your account name and preferences.")
             );
         } else {
             m_pCompletionMessage->SetLabel(
@@ -238,27 +232,6 @@ void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
                 );
             } else {
                 strTitle = _("Update completed.");
-            }
-
-            m_pCompletionTitle->SetLabel( strTitle );
-
-            m_pCompletionMessage->SetLabel(
-                _("Click Finish to close.")
-            );
-
-        } else if (IS_ACCOUNTMANAGERREMOVEWIZARD()) {
-            // Remove Completed
-
-            wxString strTitle;
-            if (pSkinAdvanced->IsBranded()) {
-                // %s is the project name
-                //    i.e. 'GridRepublic'
-                strTitle.Printf(
-                    _("Removal from %s completed."),
-                    pSkinAdvanced->GetApplicationShortName().c_str()
-                );
-            } else {
-                strTitle = _("Removal succeeded!");
             }
 
             m_pCompletionTitle->SetLabel( strTitle );
@@ -319,7 +292,13 @@ void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
     }
 
     Fit();
-
+    int x, y, x1, y1, w, h;
+    GetPosition(&x, &y);
+    m_pCompletionBrandedMessage->GetPosition(&x1, &y1);
+    pWAP->GetSize(&w, &h);
+    m_pCompletionBrandedMessage->Wrap(w - x - x1 - 5);
+    Fit();
+    
     // Is this supposed to be completely automated?
     // If so, then go ahead and close the wizard down now.
     if (pWAP->close_when_completed) {

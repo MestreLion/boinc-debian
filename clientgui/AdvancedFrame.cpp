@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "AdvancedFrame.h"
@@ -41,13 +39,9 @@
 #include "BOINCTaskBar.h"
 #include "BOINCDialupManager.h"
 #include "AdvancedFrame.h"
-#include "ViewProjectsGrid.h"
 #include "ViewProjects.h"
-#include "ViewWorkGrid.h"
 #include "ViewWork.h"
-#include "ViewTransfersGrid.h"
 #include "ViewTransfers.h"
-#include "ViewMessagesGrid.h"
 #include "ViewMessages.h"
 #include "ViewStatistics.h"
 #include "ViewResources.h"
@@ -59,17 +53,10 @@
 #include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
 #include "WizardAttachProject.h"
-#include "WizardAccountManager.h"
 #include "DlgAdvPreferences.h"
 
 #include "res/connect.xpm"
 #include "res/disconnect.xpm"
-
-
-// Which of the view sets should we display.
-//
-#define VIEW_GRID       1
-#define VIEW_LIST       2
 
 
 enum STATUSBARFIELDS {
@@ -96,7 +83,7 @@ CStatusBar::CStatusBar(wxWindow *parent) :
 {
     wxLogTrace(wxT("Function Start/End"), wxT("CStatusBar::CStatusBar - Function Begin"));
 
-    const int widths[] = {-1, 200, 20};
+    const int widths[] = {-1, 300, 20};
     SetFieldsCount(WXSIZEOF(widths), widths);
 
     m_pbmpConnected = new wxStaticBitmap(this, -1, wxIcon(connect_xpm));
@@ -114,6 +101,9 @@ CStatusBar::CStatusBar(wxWindow *parent) :
     m_ptxtDisconnect = new wxStaticText(this, -1, _("Disconnected"), wxPoint(0, 0), wxDefaultSize, wxALIGN_LEFT);
     wxASSERT(m_ptxtDisconnect);
     m_ptxtDisconnect->Hide();
+
+    wxSizeEvent evt;
+    AddPendingEvent(evt);
 
     wxLogTrace(wxT("Function Start/End"), wxT("CStatusBar::CStatusBar - Function End"));
 }
@@ -166,35 +156,36 @@ void CStatusBar::OnSize(wxSizeEvent& event) {
 IMPLEMENT_DYNAMIC_CLASS(CAdvancedFrame, CBOINCBaseFrame)
 
 BEGIN_EVENT_TABLE (CAdvancedFrame, CBOINCBaseFrame)
-    EVT_MENU(ID_FILERUNBENCHMARKS, CAdvancedFrame::OnRunBenchmarks)
-    EVT_MENU(ID_FILESELECTCOMPUTER, CAdvancedFrame::OnSelectComputer)
+    // View
+    EVT_MENU_RANGE(ID_ADVPROJECTSVIEW, ID_ADVNEWSVIEW, CAdvancedFrame::OnChangeView)
+    EVT_MENU(ID_CHANGEGUI, CAdvancedFrame::OnChangeGUI)
+    // Tools
+    EVT_MENU(ID_WIZARDATTACH, CAdvancedFrame::OnWizardAttach)
+    EVT_MENU(ID_WIZARDUPDATE, CAdvancedFrame::OnWizardUpdate)
+    EVT_MENU(ID_WIZARDDETACH, CAdvancedFrame::OnWizardDetach)
+    // Activity
+    EVT_MENU_RANGE(ID_ADVACTIVITYRUNALWAYS, ID_ADVACTIVITYSUSPEND, CAdvancedFrame::OnActivitySelection)
+    EVT_MENU_RANGE(ID_ADVNETWORKRUNALWAYS, ID_ADVNETWORKSUSPEND, CAdvancedFrame::OnNetworkSelection)
+    // Advanced
+    EVT_MENU(ID_OPTIONS, CAdvancedFrame::OnOptions)
+	EVT_MENU(ID_PREFERENCES, CAdvancedFrame::OnPreferences)
+    EVT_MENU(ID_SELECTCOMPUTER, CAdvancedFrame::OnSelectComputer)
     EVT_MENU(ID_SHUTDOWNCORECLIENT, CAdvancedFrame::OnClientShutdown)
-    EVT_MENU_RANGE(ID_VIEWACCESSIBLE, ID_VIEWGRID, CAdvancedFrame::OnSwitchView)
-    EVT_MENU(ID_FILESWITCHGUI, CAdvancedFrame::OnSwitchGUI)
-	EVT_MENU(ID_READ_PREFS, CAdvancedFrame::Onread_prefs)
-	EVT_MENU(ID_READ_CONFIG, CAdvancedFrame::Onread_config)
-    EVT_MENU(wxID_EXIT, CAdvancedFrame::OnExit)
-    EVT_MENU_RANGE(ID_FILEACTIVITYRUNALWAYS, ID_FILEACTIVITYSUSPEND, CAdvancedFrame::OnActivitySelection)
-    EVT_MENU_RANGE(ID_FILENETWORKRUNALWAYS, ID_FILENETWORKSUSPEND, CAdvancedFrame::OnNetworkSelection)
-    EVT_MENU(ID_PROJECTSATTACHACCOUNTMANAGER, CAdvancedFrame::OnProjectsAttachToAccountManager)
-    EVT_MENU(ID_TOOLSAMUPDATENOW, CAdvancedFrame::OnAccountManagerUpdate)
-    EVT_MENU(ID_ADVANCEDAMDEFECT, CAdvancedFrame::OnAccountManagerDetach)
-    EVT_MENU(ID_PROJECTSATTACHPROJECT, CAdvancedFrame::OnProjectsAttachToProject)
-    EVT_MENU(ID_COMMANDSRETRYCOMMUNICATIONS, CAdvancedFrame::OnCommandsRetryCommunications)
-    EVT_MENU(ID_OPTIONSOPTIONS, CAdvancedFrame::OnOptionsOptions)
-	EVT_MENU(ID_ADVPREFSDLG, CAdvancedFrame::OnDlgPreferences)
-    EVT_HELP(wxID_ANY, CAdvancedFrame::OnHelp)
+    EVT_MENU(ID_RUNBENCHMARKS, CAdvancedFrame::OnRunBenchmarks)
+    EVT_MENU(ID_RETRYCOMMUNICATIONS, CAdvancedFrame::OnRetryCommunications)
+	EVT_MENU(ID_READPREFERENCES, CAdvancedFrame::OnReadPreferences)
+	EVT_MENU(ID_READCONFIG, CAdvancedFrame::OnReadConfig)
+    // Help
     EVT_MENU(ID_HELPBOINC, CAdvancedFrame::OnHelpBOINC)
     EVT_MENU(ID_HELPBOINCMANAGER, CAdvancedFrame::OnHelpBOINC)
     EVT_MENU(ID_HELPBOINCWEBSITE, CAdvancedFrame::OnHelpBOINC)
     EVT_MENU(wxID_ABOUT, CAdvancedFrame::OnHelpAbout)
-    EVT_SHOW(CAdvancedFrame::OnShow)
-    EVT_FRAME_REFRESH(CAdvancedFrame::OnRefreshView)
+    EVT_HELP(wxID_ANY, CAdvancedFrame::OnHelp)
+    // Custom Events & Timers
     EVT_FRAME_CONNECT(CAdvancedFrame::OnConnect)
     EVT_FRAME_UPDATESTATUS(CAdvancedFrame::OnUpdateStatus)
     EVT_TIMER(ID_REFRESHSTATETIMER, CAdvancedFrame::OnRefreshState)
     EVT_TIMER(ID_FRAMERENDERTIMER, CAdvancedFrame::OnFrameRender)
-    EVT_TIMER(ID_FRAMELISTRENDERTIMER, CAdvancedFrame::OnListPanelRender)
     EVT_NOTEBOOK_PAGE_CHANGED(ID_FRAMENOTEBOOK, CAdvancedFrame::OnNotebookSelectionChanged)
 END_EVENT_TABLE ()
 
@@ -205,9 +196,8 @@ CAdvancedFrame::CAdvancedFrame() {
 }
 
 
-CAdvancedFrame::CAdvancedFrame(wxString title, wxIcon* icon, wxIcon* icon32) : 
-    CBOINCBaseFrame((wxFrame *)NULL, ID_ADVANCEDFRAME, title, wxDefaultPosition, wxDefaultSize,
-                    wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE)
+CAdvancedFrame::CAdvancedFrame(wxString title, wxIcon* icon, wxIcon* icon32, wxPoint position, wxSize size) : 
+    CBOINCBaseFrame((wxFrame *)NULL, ID_ADVANCEDFRAME, title, position, size, wxDEFAULT_FRAME_STYLE)
 {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CAdvancedFrame - Function Begin"));
     
@@ -217,7 +207,6 @@ CAdvancedFrame::CAdvancedFrame(wxString title, wxIcon* icon, wxIcon* icon32) :
 
     // Working Variables
     m_strBaseTitle = title;
-	m_iDisplayViewType = VIEW_GRID;
 
     // Initialize Application
     wxIconBundle icons;
@@ -225,45 +214,25 @@ CAdvancedFrame::CAdvancedFrame(wxString title, wxIcon* icon, wxIcon* icon32) :
     icons.AddIcon(*icon32);
     SetIcons(icons);
 
-    // Restore main application frame settings
-    RestoreState();
-
-    // Screen reader in use? If so, force the list view so that they
-    //   can still use us.
-#ifdef __WXMSW__
-    BOOL bScreenReaderEnabled = false;
-    SystemParametersInfo(SPI_GETSCREENREADER, NULL, &bScreenReaderEnabled, NULL);
-    if (bScreenReaderEnabled) {
-        m_iDisplayViewType = VIEW_LIST;
-    }
-#endif
-
     // Create UI elements
-    wxCHECK_RET(CreateMenu(), _T("Failed to create menu bar."));
-    wxCHECK_RET(CreateNotebook(), _T("Failed to create notebook."));
-    wxCHECK_RET(CreateStatusbar(), _T("Failed to create status bar."));
-    SetStatusBarPane(0);
+    wxCHECK_RET(CreateMenu(false), _T("Failed to create menu bar."));
+    wxCHECK_RET(CreateNotebook(false), _T("Failed to create notebook."));
+    wxCHECK_RET(CreateStatusbar(false), _T("Failed to create status bar."));
 
-    // Restore view settings
-    RestoreViewState();
+    RestoreState();
 
     m_pRefreshStateTimer = new wxTimer(this, ID_REFRESHSTATETIMER);
     wxASSERT(m_pRefreshStateTimer);
+#ifdef __WXMAC__
+    m_pRefreshStateTimer->Start(300000);            // Send event every 5 minutes
+#else
+    m_pRefreshStateTimer->Start(5000);              // Send event every 5 seconds
+#endif
 
     m_pFrameRenderTimer = new wxTimer(this, ID_FRAMERENDERTIMER);
     wxASSERT(m_pFrameRenderTimer);
+    m_pFrameRenderTimer->Start(1000);               // Send event every 1 second
 
-    m_pFrameListPanelRenderTimer = new wxTimer(this, ID_FRAMELISTRENDERTIMER);
-    wxASSERT(m_pFrameListPanelRenderTimer);
-
-    m_pRefreshStateTimer->Start(300000);             // Send event every 5 minutes
-    m_pFrameRenderTimer->Start(1000);                // Send event every 1 second
-    m_pFrameListPanelRenderTimer->Start(1000);       // Send event every 1 second
-
-    // Limit the number of times the UI can update itself to two times a second
-    //   NOTE: Linux and Mac were updating several times a second and eating
-    //         CPU time
-    wxUpdateUIEvent::SetUpdateInterval(500);
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CAdvancedFrame - Function End"));
 }
@@ -274,13 +243,11 @@ CAdvancedFrame::~CAdvancedFrame() {
 
     wxASSERT(m_pRefreshStateTimer);
     wxASSERT(m_pFrameRenderTimer);
-    wxASSERT(m_pFrameListPanelRenderTimer);
     wxASSERT(m_pMenubar);
     wxASSERT(m_pNotebook);
     wxASSERT(m_pStatusbar);
 
     SaveState();
-    SaveViewState();
 
     if (m_pRefreshStateTimer) {
         m_pRefreshStateTimer->Stop();
@@ -292,12 +259,6 @@ CAdvancedFrame::~CAdvancedFrame() {
         m_pFrameRenderTimer->Stop();
         delete m_pFrameRenderTimer;
         m_pFrameRenderTimer = NULL;
-    }
-
-    if (m_pFrameListPanelRenderTimer) {
-        m_pFrameListPanelRenderTimer->Stop();
-        delete m_pFrameListPanelRenderTimer;
-        m_pFrameListPanelRenderTimer = NULL;
     }
 
     if (m_pStatusbar)
@@ -313,7 +274,7 @@ CAdvancedFrame::~CAdvancedFrame() {
 }
 
 
-bool CAdvancedFrame::CreateMenu() {
+bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateMenu - Function Begin"));
 
     CMainDocument*     pDoc = wxGetApp().GetDocument();
@@ -328,23 +289,31 @@ bool CAdvancedFrame::CreateMenu() {
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
     wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
 
-    // Account managers have a different menu arrangement
-    pDoc->rpc.acct_mgr_info(ami);
-    is_acct_mgr_detected = ami.acct_mgr_url.size() ? true : false;
+    if (bRPCsSafe) {
+        // Account managers have a different menu arrangement
+        pDoc->rpc.acct_mgr_info(ami);
+        is_acct_mgr_detected = ami.acct_mgr_url.size() ? true : false;
+    }
 
     // File menu
     wxMenu *menuFile = new wxMenu;
 
+    // %s is the application name
+    //    i.e. 'BOINC Manager', 'GridRepublic Manager'
+    strMenuDescription.Printf(
+        _("Close the %s window"), 
+        pSkinAdvanced->GetApplicationName().c_str()
+    );
     menuFile->Append(
-        ID_FILECLOSEWINDOW,
+        ID_CLOSEWINDOW,
         _("&Close Window\tCTRL+W"),
-		_("Close BOINC Manager Window.")
+        strMenuDescription
     );
 
     // %s is the application name
     //    i.e. 'BOINC Manager', 'GridRepublic Manager'
     strMenuDescription.Printf(
-        _("Exit the %s"), 
+        _("Exit %s"), 
         pSkinAdvanced->GetApplicationName().c_str()
     );
     menuFile->Append(
@@ -356,33 +325,65 @@ bool CAdvancedFrame::CreateMenu() {
     // View menu
     wxMenu *menuView = new wxMenu;
 
-    menuView->AppendRadioItem(
-        ID_VIEWACCESSIBLE,
-        _("&Accessible View"),
-        _("Accessible views are compatible with accessibility aids such as "
-          "screen readers.")
-    );
-
-    menuView->AppendRadioItem(
-        ID_VIEWGRID,
-        _("&Grid View"),
-        _("Grid views allow you to sort various columns and displays "
-          "graphical progress bars.")
+    menuView->Append(
+        ID_ADVPROJECTSVIEW,
+        _("&Projects\tCTRL+SHIFT+P"),
+        _("Display projects")
     );
 
     menuView->Append(
-        ID_FILESWITCHGUI,
-        _("&Simple View..."),
-        _("Display the simple BOINC graphical interface.")
+        ID_ADVTASKSVIEW,
+        _("&Tasks\tCTRL+SHIFT+T"),
+        _("Display tasks")
+    );
+
+    menuView->Append(
+        ID_ADVTRANSFERSVIEW,
+        _("Trans&fers\tCTRL+SHIFT+X"),
+        _("Display transfers")
+    );
+
+    menuView->Append(
+        ID_ADVMESSAGESVIEW,
+        _("&Messages\tCTRL+SHIFT+M"),
+        _("Display messages")
+    );
+
+    menuView->Append(
+        ID_ADVSTATISTICSVIEW,
+        _("&Statistics\tCTRL+SHIFT+S"),
+        _("Display statistics")
+    );
+
+    menuView->Append(
+        ID_ADVRESOURCEUSAGEVIEW,
+        _("&Disk usage\tCTRL+SHIFT+D"),
+        _("Display disk usage")
+    );
+
+    menuView->Append(
+        ID_ADVNEWSVIEW,
+        _("&News\tCTRL+SHIFT+N"),
+        _("Display news")
+    );
+
+    menuView->AppendSeparator();
+
+    menuView->Append(
+        ID_CHANGEGUI,
+        _("Simple &View...\tCTRL+SHIFT+V"),
+        _("Display the simple graphical interface.")
     );
 
     // Screen too small?
     if (wxGetDisplaySize().GetHeight() < 600) {
-        menuView->Enable(ID_FILESWITCHGUI, false);
+        menuView->Enable(ID_CHANGEGUI, false);
     }
-    
-    menuView->Check(ID_VIEWACCESSIBLE, VIEW_LIST == m_iDisplayViewType);
-    menuView->Check(ID_VIEWGRID, VIEW_GRID == m_iDisplayViewType);
+
+    // Is an accessibility aid running?
+    if (wxGetApp().IsAccessibilityEnabled()) {
+        menuView->Enable(ID_CHANGEGUI, false);
+    }
 
 
     // Tools menu
@@ -390,14 +391,9 @@ bool CAdvancedFrame::CreateMenu() {
 
     if (!is_acct_mgr_detected) {
         menuTools->Append(
-            ID_PROJECTSATTACHPROJECT, 
-            _("Attach to &project..."),
-            _("Attach to a project")
-        );
-        menuTools->Append(
-            ID_PROJECTSATTACHACCOUNTMANAGER, 
-            _("Attach to &account manager..."),
-            _("Attach to an account manager")
+            ID_WIZARDATTACH, 
+            _("Attach to &project or account manager..."),
+            _("Attach to a project or account manager to begin processing work")
         );
     } else {
         strMenuName.Printf(
@@ -409,9 +405,23 @@ bool CAdvancedFrame::CreateMenu() {
             wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
         );
         menuTools->Append(
-            ID_TOOLSAMUPDATENOW, 
+            ID_WIZARDUPDATE, 
             strMenuName,
             strMenuDescription
+        );
+        strMenuName.Printf(
+            _("&Stop using %s..."), 
+            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+        );
+        menuTools->Append(
+            ID_WIZARDATTACH, 
+            _("Attach to &project..."),
+            _("Attach to a project to begin processing work")
+        );
+        menuTools->Append(
+            ID_WIZARDDETACH, 
+            strMenuName,
+            _("Remove client from account manager control.")
         );
     }
 
@@ -419,17 +429,17 @@ bool CAdvancedFrame::CreateMenu() {
     wxMenu *menuActivity = new wxMenu;
 
     menuActivity->AppendRadioItem(
-        ID_FILEACTIVITYRUNALWAYS,
+        ID_ADVACTIVITYRUNALWAYS,
         _("&Run always"),
         _("Allow work regardless of preferences")
     );
     menuActivity->AppendRadioItem(
-        ID_FILEACTIVITYRUNBASEDONPREPERENCES,
+        ID_ADVACTIVITYRUNBASEDONPREPERENCES,
         _("Run based on &preferences"),
         _("Allow work according to your preferences")
     );
     menuActivity->AppendRadioItem(
-        ID_FILEACTIVITYSUSPEND,
+        ID_ADVACTIVITYSUSPEND,
         _("&Suspend"),
         _("Stop work regardless of preferences")
     );
@@ -441,29 +451,29 @@ bool CAdvancedFrame::CreateMenu() {
     // selection on linux (wxGtk library) with the separator here,
     // so we add a blank disabled menu item instead
     //
-    wxMenuItem* pItem = menuActivity->Append(
-        ID_ACTIVITYMENUSEPARATOR,
-        (const wxChar *) wxT(" "),
-            // wxEmptyString here causes a wxWidgets assertion when debugging
+    menuActivity->Append(
+        ID_ADVACTIVITYMENUSEPARATOR,
+        (const wxChar *) wxT(" "), // wxEmptyString here causes a wxWidgets
+                                   //   assertion when debugging
         wxEmptyString,
-        wxITEM_NORMAL
-            // wxITEM_SEPARATOR here causes a wxWidgets assertion when debugging
+        wxITEM_NORMAL              // wxITEM_SEPARATOR here causes a wxWidgets
+                                   //   assertion when debugging
     );
-    pItem->Enable(false); // disable this menu item
+    menuActivity->Enable(ID_ADVACTIVITYMENUSEPARATOR, false);
 #endif
 
     menuActivity->AppendRadioItem(
-        ID_FILENETWORKRUNALWAYS,
+        ID_ADVNETWORKRUNALWAYS,
         _("&Network activity always available"),
         _("Allow network activity regardless of preferences")
     );
     menuActivity->AppendRadioItem(
-        ID_FILENETWORKRUNBASEDONPREPERENCES,
+        ID_ADVNETWORKRUNBASEDONPREPERENCES,
         _("Network activity based on &preferences"),
         _("Allow network activity according to your preferences")
     );
     menuActivity->AppendRadioItem(
-        ID_FILENETWORKSUSPEND,
+        ID_ADVNETWORKSUSPEND,
         _("&Network activity suspended"),
         _("Stop BOINC network activity")
     );
@@ -471,12 +481,12 @@ bool CAdvancedFrame::CreateMenu() {
     // Advanced menu
     wxMenu *menuAdvanced = new wxMenu;
     menuAdvanced->Append(
-        ID_OPTIONSOPTIONS, 
+        ID_OPTIONS, 
         _("&Options..."),
         _("Configure GUI options and proxy settings")
     );
     menuAdvanced->Append(
-		ID_ADVPREFSDLG, 
+		ID_PREFERENCES, 
         _("&Preferences..."),
         _("Configure local preferences")
     );
@@ -488,7 +498,7 @@ bool CAdvancedFrame::CreateMenu() {
         pSkinAdvanced->GetApplicationShortName().c_str()
     );
     menuAdvanced->Append(
-        ID_FILESELECTCOMPUTER, 
+        ID_SELECTCOMPUTER, 
         _("Select computer..."),
         strMenuDescription
     );
@@ -498,41 +508,25 @@ bool CAdvancedFrame::CreateMenu() {
         _("Shut down the currently connected core client")
     );
     menuAdvanced->Append(
-        ID_FILERUNBENCHMARKS, 
+        ID_RUNBENCHMARKS, 
         _("Run CPU &benchmarks"),
         _("Runs BOINC CPU benchmarks")
     );
     menuAdvanced->Append(
-        ID_COMMANDSRETRYCOMMUNICATIONS, 
+        ID_RETRYCOMMUNICATIONS, 
         _("Do network &communication"),
         _("Do all pending network communication.")
     );
     menuAdvanced->Append(
-        ID_READ_CONFIG, 
+        ID_READCONFIG, 
         _("Read config file"),
         _("Read configuration info from cc_config.xml.")
     );
     menuAdvanced->Append(
-        ID_READ_PREFS, 
+        ID_READPREFERENCES, 
         _("Read local prefs file"),
         _("Read preferences from global_prefs_override.xml.")
     );
-    if (is_acct_mgr_detected) {
-        strMenuName.Printf(
-            _("&Stop using %s..."), 
-            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
-        );
-        menuAdvanced->Append(
-            ID_ADVANCEDAMDEFECT, 
-            strMenuName,
-            _("Remove client from account manager control.")
-        );
-        menuAdvanced->Append(
-            ID_PROJECTSATTACHPROJECT, 
-            _("Attach to &project"),
-            _("Attach to a project to begin processing work")
-        );
-    }
 
 
     // Help menu
@@ -645,12 +639,8 @@ bool CAdvancedFrame::CreateMenu() {
     }
     
 #ifdef __WXMAC__
-    MenuRef prefsMenuRef;
-    MenuItemIndex prefsMenuItemIndex;
-
-    // Hide Mac OS X's standard Preferences menu item, since we don't use it
-    if (GetIndMenuItemWithCommandID(NULL, kHICommandPreferences, 1, &prefsMenuRef, &prefsMenuItemIndex) == noErr)
-        ChangeMenuItemAttributes(prefsMenuRef, prefsMenuItemIndex, kMenuItemAttrHidden, 0);
+    // Enable Mac OS X's standard Preferences menu item (handled in MacSysMenu.cpp)
+    EnableMenuCommand(NULL, kHICommandPreferences);
     
     // Set HELP key as keyboard shortcut
     m_Shortcuts[0].Set(wxACCEL_NORMAL, WXK_HELP, ID_HELPBOINCMANAGER);
@@ -663,7 +653,7 @@ bool CAdvancedFrame::CreateMenu() {
 }
 
 
-bool CAdvancedFrame::CreateNotebook() {
+bool CAdvancedFrame::CreateNotebook( bool /* bRPCsSafe */ ) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateNotebook - Function Begin"));
 
     // create frame panel
@@ -699,30 +689,19 @@ bool CAdvancedFrame::RepopulateNotebook() {
     DeleteNotebook();
 
     // Create the various notebook pages
-    if ( VIEW_GRID == m_iDisplayViewType ) {
-	    CreateNotebookPage(new CViewProjectsGrid(m_pNotebook));
-	    CreateNotebookPage(new CViewWorkGrid(m_pNotebook));
-	    CreateNotebookPage(new CViewTransfersGrid(m_pNotebook));
-        CreateNotebookPage(new CViewMessages(m_pNotebook));
-	    CreateNotebookPage(new CViewStatistics(m_pNotebook));
-        CreateNotebookPage(new CViewResources(m_pNotebook));
-    } else {
-	    CreateNotebookPage(new CViewProjects(m_pNotebook));
-	    CreateNotebookPage(new CViewWork(m_pNotebook));
-	    CreateNotebookPage(new CViewTransfers(m_pNotebook));
-        CreateNotebookPage(new CViewMessages(m_pNotebook));
-	    CreateNotebookPage(new CViewStatistics(m_pNotebook));
-        CreateNotebookPage(new CViewResources(m_pNotebook));
-    }
-
+    CreateNotebookPage(new CViewProjects(m_pNotebook));
+    CreateNotebookPage(new CViewWork(m_pNotebook));
+    CreateNotebookPage(new CViewTransfers(m_pNotebook));
+    CreateNotebookPage(new CViewMessages(m_pNotebook));
+    CreateNotebookPage(new CViewStatistics(m_pNotebook));
+    CreateNotebookPage(new CViewResources(m_pNotebook));
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::RepopulateNotebook - Function End"));
     return true;
 }
 
 
-template < class T >
-bool CAdvancedFrame::CreateNotebookPage(T pwndNewNotebookPage) {
+bool CAdvancedFrame::CreateNotebookPage( CBOINCBaseView* pwndNewNotebookPage) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateNotebookPage - Function Begin"));
 
     wxImageList*    pImageList;
@@ -748,7 +727,7 @@ bool CAdvancedFrame::CreateNotebookPage(T pwndNewNotebookPage) {
 }
 
 
-bool CAdvancedFrame::CreateStatusbar() {
+bool CAdvancedFrame::CreateStatusbar( bool /* bRPCsSafe */ ) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateStatusbar - Function Begin"));
 
     if (m_pStatusbar)
@@ -758,6 +737,7 @@ bool CAdvancedFrame::CreateStatusbar() {
     wxASSERT(m_pStatusbar);
 
     SetStatusBar(m_pStatusbar);
+    SetStatusBarPane(0);
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateStatusbar - Function End"));
     return true;
@@ -811,47 +791,6 @@ bool CAdvancedFrame::SaveState() {
 
     wxString        strBaseConfigLocation = wxString(wxT("/"));
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
-    wxString        strConfigLocation;
-    wxString        strPreviousLocation;
-    wxString        strBuffer;
-
-
-    wxASSERT(pConfig);
-    wxASSERT(m_pNotebook);
-
-
-    CBOINCBaseFrame::SaveState();
-
-
-    // An odd case happens every once and awhile where wxWidgets looses
-    //   the pointer to the config object, or it is cleaned up before
-    //   the window has finished it's cleanup duty.  If we detect a NULL
-    //   pointer, return false.
-    if (!pConfig) return false;
-
-    //
-    // Save Frame State
-    //
-    pConfig->SetPath(strBaseConfigLocation);
-
-    pConfig->Write(wxT("DisplayViewType"), m_iDisplayViewType);
-
-
-#ifdef __WXMAC__
-    // Reterieve and store the latest window dimensions.
-    SaveWindowDimensions();
-#endif
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::SaveState - Function End"));
-    return true;
-}
-
-
-bool CAdvancedFrame::SaveViewState() {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::SaveViewState - Function Begin"));
-
-    wxString        strBaseConfigLocation = wxString(wxT("/"));
-    wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
     wxWindow*       pwndNotebookPage = NULL;
     CBOINCBaseView* pView = NULL;
     wxString        strConfigLocation;
@@ -864,6 +803,7 @@ bool CAdvancedFrame::SaveViewState() {
     wxASSERT(pConfig);
     wxASSERT(m_pNotebook);
 
+    CBOINCBaseFrame::SaveState();
 
     // An odd case happens every once and awhile where wxWidgets looses
     //   the pointer to the config object, or it is cleaned up before
@@ -876,7 +816,10 @@ bool CAdvancedFrame::SaveViewState() {
     //
     pConfig->SetPath(strBaseConfigLocation);
 
-    pConfig->Write(wxT("CurrentPage"), m_pNotebook->GetSelection());
+     // Store the latest window dimensions.
+    SaveWindowDimensions();
+
+   pConfig->Write(wxT("CurrentPage"), m_pNotebook->GetSelection());
 
     //
     // Save Page(s) State
@@ -900,52 +843,13 @@ bool CAdvancedFrame::SaveViewState() {
         pConfig->SetPath(strPreviousLocation);
     }
 
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::SaveViewState - Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::SaveState - Function End"));
     return true;
 }
 
 
 bool CAdvancedFrame::RestoreState() {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::RestoreState - Function Begin"));
-
-    wxString        strBaseConfigLocation = wxString(wxT("/"));
-    wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
-    wxString        strConfigLocation;
-    wxString        strPreviousLocation;
-    wxString        strBuffer;
-    wxString        strValue;
-
-
-    wxASSERT(pConfig);
-
-
-    CBOINCBaseFrame::RestoreState();
-
-
-    // An odd case happens every once and awhile where wxWidgets looses
-    //   the pointer to the config object, or it is cleaned up before
-    //   the window has finished it's cleanup duty.  If we detect a NULL
-    //   pointer, return false.
-    if (!pConfig) return false;
-
-    //
-    // Restore Frame State
-    //
-    pConfig->SetPath(strBaseConfigLocation);
-
-    pConfig->Read(wxT("DisplayViewType"), &m_iDisplayViewType, VIEW_GRID);
-
-#ifdef __WXMAC__
-    RestoreWindowDimensions();
-#endif
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::RestoreState - Function End"));
-    return true;
-}
-
-
-bool CAdvancedFrame::RestoreViewState() {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::RestoreViewState - Function Begin"));
 
     wxString        strBaseConfigLocation = wxString(wxT("/"));
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
@@ -1009,12 +913,14 @@ bool CAdvancedFrame::RestoreViewState() {
 
     }
 
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::RestoreViewState - Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::RestoreState - Function End"));
     return true;
 }
 
 
 void CAdvancedFrame::SaveWindowDimensions() {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::SaveWindowDimensions - Function Begin"));
+
     wxString        strBaseConfigLocation = wxString(wxT("/"));
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
 
@@ -1026,64 +932,192 @@ void CAdvancedFrame::SaveWindowDimensions() {
     pConfig->Write(wxT("WindowMaximized"), IsMaximized());
     pConfig->Write(wxT("Width"), GetSize().GetWidth());
     pConfig->Write(wxT("Height"), GetSize().GetHeight());
-
-#ifdef __WXMAC__
     pConfig->Write(wxT("XPos"), GetPosition().x);
     pConfig->Write(wxT("YPos"), GetPosition().y);
-#endif  // ! __WXMAC__
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::SaveWindowDimensions - Function End"));
 }
     
 
-void CAdvancedFrame::RestoreWindowDimensions() {
-    wxString        strBaseConfigLocation = wxString(wxT("/"));
-    wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
-    bool            bWindowIconized = false;
-    bool            bWindowMaximized = false;
-    int             iHeight = 0;
-    int             iWidth = 0;
-    int             iTop = 0;
-    int             iLeft = 0;
+int CAdvancedFrame::_GetCurrentViewPage() {
+    switch (m_pNotebook->GetSelection()) {
+    case 0:
+        return VW_PROJ;
+    case 1:
+        return VW_TASK;
+    case 2:
+        return VW_XFER;
+    case 3:
+        return VW_MSGS;
+    case 4:
+        return VW_STAT;
+    case 5:
+        return VW_DISK;
+    }
+    return 0;       // Should never happen.
+}
 
-    wxASSERT(pConfig);
 
-    pConfig->SetPath(strBaseConfigLocation);
+void CAdvancedFrame::OnChangeView(wxCommandEvent& event) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnChangeView - Function Begin"));
 
-    pConfig->Read(wxT("YPos"), &iTop, 30);
-    pConfig->Read(wxT("XPos"), &iLeft, 30);
-    pConfig->Read(wxT("Width"), &iWidth, 800);
-    pConfig->Read(wxT("Height"), &iHeight, 600);
-    pConfig->Read(wxT("WindowIconized"), &bWindowIconized, false);
-    pConfig->Read(wxT("WindowMaximized"), &bWindowMaximized, false);
+    m_pNotebook->SetSelection(event.GetId() - ID_ADVVIEWBASE);
 
-#ifndef __WXMAC__
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnChangeView - Function End"));
+}
 
-    Iconize(bWindowIconized);
-    Maximize(bWindowMaximized);
-    if (!IsIconized() && !IsMaximized()) {
-        SetSize(-1, -1, iWidth, iHeight);
+
+void CAdvancedFrame::OnChangeGUI(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnChangeGUI - Function Begin"));
+
+    wxGetApp().SetActiveGUI(BOINC_SIMPLEGUI, true);
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnChangeGUI - Function End"));
+}
+
+
+void CAdvancedFrame::OnWizardAttach( wxCommandEvent& WXUNUSED(event) ) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnWizardAttach - Function Begin"));
+
+    CMainDocument* pDoc     = wxGetApp().GetDocument();
+
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+
+    if (!pDoc->IsUserAuthorized())
+        return;
+
+    if (pDoc->IsConnected()) {
+        UpdateStatusText(_("Attaching to project or account manager..."));
+
+        // Stop all timers so that the wizard is the only thing doing anything
+        StopTimers();
+
+        CWizardAttachProject* pWizard = new CWizardAttachProject(this);
+
+        wxString strName = wxEmptyString;
+        wxString strURL = wxEmptyString;
+        pWizard->Run( strName, strURL, false );
+
+        if (pWizard)
+            pWizard->Destroy();
+
+        DeleteMenu();
+        CreateMenu();
+
+        // Restart timers to continue normal operations.
+        StartTimers();
+
+        UpdateStatusText(wxT(""));
+
+        pDoc->ForceCacheUpdate();
+        FireRefreshView();
+    } else {
+        ShowNotCurrentlyConnectedAlert();
     }
 
-#else   // ! __WXMAC__
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnWizardAttach - Function End"));
+}
 
-    // If the user has changed the arrangement of multiple 
-    // displays, make sure the window title bar is still on-screen.
-    Rect titleRect = {iTop, iLeft, iTop+22, iLeft+iWidth };
-    InsetRect(&titleRect, 5, 5);    // Make sure at least a 5X5 piece visible
-    RgnHandle displayRgn = NewRgn();
-    CopyRgn(GetGrayRgn(), displayRgn);  // Region encompassing all displays
-    Rect menuRect = ((**GetMainDevice())).gdRect;
-    menuRect.bottom = GetMBarHeight() + menuRect.top;
-    RgnHandle menuRgn = NewRgn();
-    RectRgn(menuRgn, &menuRect);                // Region hidden by menu bar
-    DiffRgn(displayRgn, menuRgn, displayRgn);   // Subtract menu bar retion
-    if (!RectInRgn(&titleRect, displayRgn))
-        iTop = iLeft = 30;
-    DisposeRgn(menuRgn);
-    DisposeRgn(displayRgn);
 
-    SetSize(iLeft, iTop, iWidth, iHeight);
+void CAdvancedFrame::OnWizardUpdate(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnWizardUpdate - Function Begin"));
 
-#endif  // ! __WXMAC__
+    CMainDocument*            pDoc = wxGetApp().GetDocument();
+
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+
+    if (!pDoc->IsUserAuthorized())
+        return;
+
+    if (pDoc->IsConnected()) {
+        // Stop all timers so that the wizard is the only thing doing anything
+        StopTimers();
+
+        CWizardAttachProject* pWizard = new CWizardAttachProject(this);
+
+        pWizard->SyncToAccountManager();
+
+        if (pWizard)
+            pWizard->Destroy();
+
+        DeleteMenu();
+        CreateMenu();
+        pDoc->ForceCacheUpdate();
+        FireRefreshView();
+        ResetReminderTimers();
+
+        // Restart timers to continue normal operations.
+        StartTimers();
+    } else {
+        ShowNotCurrentlyConnectedAlert();
+    }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnWizardUpdate - Function End"));
+}
+
+
+void CAdvancedFrame::OnWizardDetach(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnWizardDetach - Function Begin"));
+
+    CMainDocument* pDoc           = wxGetApp().GetDocument();
+    CSkinAdvanced* pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
+    wxInt32        iAnswer        = 0; 
+    wxString       strTitle       = wxEmptyString;
+    wxString       strMessage     = wxEmptyString;
+    ACCT_MGR_INFO  ami;
+
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+    wxASSERT(pSkinAdvanced);
+    wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
+
+    if (!pDoc->IsUserAuthorized())
+        return;
+
+    if (pDoc->IsConnected()) {
+
+        pDoc->rpc.acct_mgr_info(ami);
+
+        strTitle.Printf(
+            _("%s - Detach from %s"),
+            pSkinAdvanced->GetApplicationName().c_str(),
+            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+        );
+        strMessage.Printf(
+            _("If you stop using %s,\nyou'll keep all your current projects,\nbut you'll have to manage projects manually.\n\nDo you want to stop using %s?"), 
+            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str(),
+            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
+        );
+
+        iAnswer = wxGetApp().SafeMessageBox(
+            strMessage,
+            strTitle,
+            wxYES_NO | wxICON_QUESTION,
+            this
+        );
+
+        if (wxYES == iAnswer) {
+            std::string url, name, passwd;
+            pDoc->rpc.acct_mgr_rpc(
+                url.c_str(),
+                name.c_str(),
+                passwd.c_str(),
+                false
+            );
+        }
+
+        DeleteMenu();
+        CreateMenu();
+        pDoc->ForceCacheUpdate();
+        FireRefreshView();
+
+    } else {
+        ShowNotCurrentlyConnectedAlert();
+    }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnWizardDetach - Function End"));
 }
 
 
@@ -1095,15 +1129,14 @@ void CAdvancedFrame::OnActivitySelection(wxCommandEvent& event) {
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-
     switch(event.GetId()) {
-    case ID_FILEACTIVITYRUNALWAYS:
+    case ID_ADVACTIVITYRUNALWAYS:
         pDoc->SetActivityRunMode(RUN_MODE_ALWAYS, 0);
         break;
-    case ID_FILEACTIVITYSUSPEND:
+    case ID_ADVACTIVITYSUSPEND:
         pDoc->SetActivityRunMode(RUN_MODE_NEVER, 0);
         break;
-    case ID_FILEACTIVITYRUNBASEDONPREPERENCES:
+    case ID_ADVACTIVITYRUNBASEDONPREPERENCES:
         pDoc->SetActivityRunMode(RUN_MODE_AUTO, 0);
         break;
     }
@@ -1122,13 +1155,13 @@ void CAdvancedFrame::OnNetworkSelection(wxCommandEvent& event) {
 
 
     switch(event.GetId()) {
-    case ID_FILENETWORKRUNALWAYS:
+    case ID_ADVNETWORKRUNALWAYS:
         pDoc->SetNetworkRunMode(RUN_MODE_ALWAYS, 0);
         break;
-    case ID_FILENETWORKSUSPEND:
+    case ID_ADVNETWORKSUSPEND:
         pDoc->SetNetworkRunMode(RUN_MODE_NEVER, 0);
         break;
-    case ID_FILENETWORKRUNBASEDONPREPERENCES:
+    case ID_ADVNETWORKRUNBASEDONPREPERENCES:
         pDoc->SetNetworkRunMode(RUN_MODE_AUTO, 0);
         break;
     }
@@ -1137,18 +1170,148 @@ void CAdvancedFrame::OnNetworkSelection(wxCommandEvent& event) {
 }
 
    
-void CAdvancedFrame::OnRunBenchmarks(wxCommandEvent& WXUNUSED(event)) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRunBenchmarks - Function Begin"));
+void CAdvancedFrame::OnOptions(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnOptions - Function Begin"));
 
     CMainDocument* pDoc = wxGetApp().GetDocument();
-    wxASSERT(m_pNotebook);
+    CSkinAdvanced* pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
+    CDlgOptions    dlg(this);
+    int            iBuffer = 0;
+    wxString       strBuffer = wxEmptyString;
+    wxArrayString  astrDialupConnections;
+    bool           bRetrievedProxyConfiguration = false;
+
     wxASSERT(pDoc);
+    wxASSERT(pSkinAdvanced);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+    wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
 
-    m_pNotebook->SetSelection(ID_LIST_MESSAGESVIEW - ID_LIST_BASE);
-    pDoc->RunBenchmarks();
+    // General Tab
+    dlg.m_LanguageSelectionCtrl->Append(wxGetApp().GetSupportedLanguages());
 
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRunBenchmarks - Function End"));
+    dlg.m_LanguageSelectionCtrl->SetSelection(m_iSelectedLanguage);
+    dlg.m_ReminderFrequencyCtrl->SetValue(m_iReminderFrequency);
+    dlg.m_EnableBOINCManagerExitMessageCtrl->SetValue(wxGetApp().GetBOINCMGRDisplayExitMessage());
+#ifdef __WXMSW__
+    dlg.m_EnableBOINCManagerAutoStartCtrl->SetValue(!wxGetApp().GetBOINCMGRDisableAutoStart());
+
+    // Connection Tab
+    if (m_pDialupManager) {
+        m_pDialupManager->GetISPNames(astrDialupConnections);
+
+        dlg.m_DialupConnectionsCtrl->Append(astrDialupConnections);
+        dlg.SetDefaultDialupConnection(m_strNetworkDialupConnectionName);
+    } else {
+        dlg.m_DialupSetDefaultCtrl->Disable();
+        dlg.m_DialupClearDefaultCtrl->Disable();
+    }
+#endif
+
+    // Proxy Tabs
+    bRetrievedProxyConfiguration = (0 == pDoc->GetProxyConfiguration());
+    if(!bRetrievedProxyConfiguration) {
+        // We were unable to get the proxy configuration, so disable
+        //   the controls
+        dlg.m_EnableHTTPProxyCtrl->Enable(false);
+        dlg.m_EnableSOCKSProxyCtrl->Enable(false);
+    } else {
+        dlg.m_EnableHTTPProxyCtrl->Enable(true);
+        dlg.m_EnableSOCKSProxyCtrl->Enable(true);
+    }
+
+    dlg.m_EnableHTTPProxyCtrl->SetValue(pDoc->proxy_info.use_http_proxy);
+    dlg.m_HTTPAddressCtrl->SetValue(wxString(pDoc->proxy_info.http_server_name.c_str(), wxConvUTF8));
+    dlg.m_HTTPUsernameCtrl->SetValue(wxString(pDoc->proxy_info.http_user_name.c_str(), wxConvUTF8));
+    dlg.m_HTTPPasswordCtrl->SetValue(wxString(pDoc->proxy_info.http_user_passwd.c_str(), wxConvUTF8));
+	dlg.m_HTTPNoProxiesCtrl->SetValue(wxString(pDoc->proxy_info.noproxy_hosts.c_str(), wxConvUTF8));
+    strBuffer.Printf(wxT("%d"), pDoc->proxy_info.http_server_port);
+    dlg.m_HTTPPortCtrl->SetValue(strBuffer);
+
+    dlg.m_EnableSOCKSProxyCtrl->SetValue(pDoc->proxy_info.use_socks_proxy);
+    dlg.m_SOCKSAddressCtrl->SetValue(wxString(pDoc->proxy_info.socks_server_name.c_str(), wxConvUTF8));
+    dlg.m_SOCKSUsernameCtrl->SetValue(wxString(pDoc->proxy_info.socks5_user_name.c_str(), wxConvUTF8));
+    dlg.m_SOCKSPasswordCtrl->SetValue(wxString(pDoc->proxy_info.socks5_user_passwd.c_str(), wxConvUTF8));
+	dlg.m_SOCKSNoProxiesCtrl->SetValue(wxString(pDoc->proxy_info.noproxy_hosts.c_str(),wxConvUTF8));
+    strBuffer.Printf(wxT("%d"), pDoc->proxy_info.socks_server_port);
+    dlg.m_SOCKSPortCtrl->SetValue(strBuffer);
+
+    if (wxID_OK == dlg.ShowModal()) {
+        // General Tab
+        if (m_iSelectedLanguage != dlg.m_LanguageSelectionCtrl->GetSelection()) {
+            wxString strDialogTitle;
+            wxString strDialogMessage;
+
+            // %s is the application name
+            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
+            strDialogTitle.Printf(
+                _("%s - Language Selection"),
+                pSkinAdvanced->GetApplicationName().c_str()
+            );
+
+            // %s is the application name
+            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
+            strDialogMessage.Printf(
+                _("The %s's default language has been changed, in order for this change to take affect you must restart the %s."),
+                pSkinAdvanced->GetApplicationName().c_str(),
+                pSkinAdvanced->GetApplicationName().c_str()
+            );
+
+            ShowAlert(
+                strDialogTitle,
+                strDialogMessage,
+                wxOK | wxICON_INFORMATION
+           );
+        }
+
+        m_iSelectedLanguage = dlg.m_LanguageSelectionCtrl->GetSelection();
+        m_iReminderFrequency = dlg.m_ReminderFrequencyCtrl->GetValue();
+        wxGetApp().SetBOINCMGRDisplayExitMessage(dlg.m_EnableBOINCManagerExitMessageCtrl->GetValue());
+#ifdef __WXMSW__
+        wxGetApp().SetBOINCMGRDisableAutoStart(!dlg.m_EnableBOINCManagerAutoStartCtrl->GetValue());
+
+        // Connection Tab
+        m_strNetworkDialupConnectionName = dlg.GetDefaultDialupConnection();
+#endif
+
+        // Proxy Tabs
+        if (bRetrievedProxyConfiguration) {
+            pDoc->proxy_info.use_http_proxy = dlg.m_EnableHTTPProxyCtrl->GetValue();
+            pDoc->proxy_info.http_server_name = (const char*)dlg.m_HTTPAddressCtrl->GetValue().mb_str();
+            pDoc->proxy_info.http_user_name = (const char*)dlg.m_HTTPUsernameCtrl->GetValue().mb_str();
+            pDoc->proxy_info.http_user_passwd = (const char*)dlg.m_HTTPPasswordCtrl->GetValue().mb_str();
+			if(pDoc->proxy_info.use_http_proxy) {
+				pDoc->proxy_info.noproxy_hosts = (const char*)dlg.m_HTTPNoProxiesCtrl->GetValue().mb_str();
+			}
+            strBuffer = dlg.m_HTTPPortCtrl->GetValue();
+            strBuffer.ToLong((long*)&iBuffer);
+            pDoc->proxy_info.http_server_port = iBuffer;
+
+            pDoc->proxy_info.use_socks_proxy = dlg.m_EnableSOCKSProxyCtrl->GetValue();
+            pDoc->proxy_info.socks_server_name = (const char*)dlg.m_SOCKSAddressCtrl->GetValue().mb_str();
+            pDoc->proxy_info.socks5_user_name = (const char*)dlg.m_SOCKSUsernameCtrl->GetValue().mb_str();
+            pDoc->proxy_info.socks5_user_passwd = (const char*)dlg.m_SOCKSPasswordCtrl->GetValue().mb_str();
+			if(pDoc->proxy_info.use_socks_proxy) {
+				pDoc->proxy_info.noproxy_hosts = (const char*)dlg.m_SOCKSNoProxiesCtrl->GetValue().mb_str();
+			}
+            strBuffer = dlg.m_SOCKSPortCtrl->GetValue();
+            strBuffer.ToLong((long*)&iBuffer);
+            pDoc->proxy_info.socks_server_port = iBuffer;
+
+            pDoc->SetProxyConfiguration();
+        }
+    }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnOptions - Function End"));
+}
+
+
+void CAdvancedFrame::OnPreferences(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnPreferences - Function Begin"));
+
+    CDlgAdvPreferences dlg(this);
+	dlg.ShowModal();
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnPreferences - Function End"));
 }
 
 
@@ -1189,11 +1352,11 @@ void CAdvancedFrame::OnSelectComputer(wxCommandEvent& WXUNUSED(event)) {
             // Connect to the remote machine
             wxString sHost = dlg.m_ComputerNameCtrl->GetValue(); 
             long lPort = GUI_RPC_PORT; 
-            int iPos = sHost.find(_(":")); 
+            int iPos = sHost.Find(wxT(":")); 
             if (iPos != wxNOT_FOUND) { 
-                wxString sPort = sHost.substr((size_t)iPos + 1); 
+                wxString sPort = sHost.substr(iPos + 1); 
                 if (!sPort.ToLong(&lPort)) lPort = GUI_RPC_PORT; 
-                sHost.erase((size_t)iPos); 
+                sHost.erase(iPos); 
             } 
             lRetVal = pDoc->Connect(
                 sHost,
@@ -1229,7 +1392,7 @@ void CAdvancedFrame::OnSelectComputer(wxCommandEvent& WXUNUSED(event)) {
 
 
 void CAdvancedFrame::OnClientShutdown(wxCommandEvent& WXUNUSED(event)) {
-    wxCommandEvent     evtSelectNewComputer(wxEVT_COMMAND_MENU_SELECTED, ID_FILESELECTCOMPUTER);
+    wxCommandEvent     evtSelectNewComputer(wxEVT_COMMAND_MENU_SELECTED, ID_SELECTCOMPUTER);
     CMainDocument*     pDoc = wxGetApp().GetDocument();
     CSkinAdvanced*     pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
     CDlgGenericMessage dlg(this);
@@ -1260,9 +1423,7 @@ void CAdvancedFrame::OnClientShutdown(wxCommandEvent& WXUNUSED(event)) {
     // 2nd %s is the project name
     //    i.e. 'BOINC', 'GridRepublic'
     strDialogMessage.Printf(
-        _("%s is going to shutdown the core client it is currently connected to.\n"
-          "NOTE: Choosing 'OK' will cause the select new computer dialog to appear \n"
-          "so you can attach to a different core client."),
+        _("%s will shut down the currently connected client,\nand prompt you for another host to connect to.\n"),
         pSkinAdvanced->GetApplicationName().c_str()
     );
 
@@ -1287,241 +1448,23 @@ void CAdvancedFrame::OnClientShutdown(wxCommandEvent& WXUNUSED(event)) {
 }
 
 
-void CAdvancedFrame::Onread_prefs(wxCommandEvent& WXUNUSED(event)) {
-	CMainDocument* pDoc = wxGetApp().GetDocument();
-	pDoc->rpc.read_global_prefs_override();
-}
+void CAdvancedFrame::OnRunBenchmarks(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRunBenchmarks - Function Begin"));
 
-
-void CAdvancedFrame::Onread_config(wxCommandEvent& WXUNUSED(event)) {
-	CMainDocument* pDoc = wxGetApp().GetDocument();
-	pDoc->rpc.read_cc_config();
-}
-
-
-void CAdvancedFrame::OnSwitchView(wxCommandEvent& event) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnSwitchView - Function Begin"));
-
-    switch(event.GetId()) {
-    case ID_VIEWACCESSIBLE:
-        m_iDisplayViewType = VIEW_LIST;
-        break;
-    case ID_VIEWGRID:
-    default:
-        m_iDisplayViewType = VIEW_GRID;
-        break;
-    }
-
-    // Save the current view state
-    SaveViewState();
-
-    // Delete the old pages and then create/display the new pages.
-    RepopulateNotebook();
-
-    // Restore the current view state settings to the newly
-    //   constructed views.
-    RestoreViewState();
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnSwitchView - Function End"));
-}
-
-
-void CAdvancedFrame::OnSwitchGUI(wxCommandEvent& WXUNUSED(event)) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnSwitchGUI - Function Begin"));
-
-    // Screen too small?
-    if (wxGetDisplaySize().GetHeight() >= 600) {
-        wxGetApp().SetActiveGUI(BOINC_SIMPLEGUI, true);
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnSwitchGUI - Function End"));
-}
-
-
-void CAdvancedFrame::OnProjectsAttachToAccountManager(wxCommandEvent& WXUNUSED(event)) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnProjectsAttachToAccountManager - Function Begin"));
-
-    CMainDocument*            pDoc = wxGetApp().GetDocument();
-
+    CMainDocument* pDoc = wxGetApp().GetDocument();
+    wxASSERT(m_pNotebook);
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-    if (!pDoc->IsUserAuthorized())
-        return;
+    m_pNotebook->SetSelection(ID_LIST_MESSAGESVIEW - ID_LIST_BASE);
+    pDoc->RunBenchmarks();
 
-    if (pDoc->IsConnected()) {
-        // Stop all timers so that the wizard is the only thing doing anything
-        StopTimers();
-
-        CWizardAccountManager* pWizard = new CWizardAccountManager(this);
-
-        pWizard->Run(ACCOUNTMANAGER_ATTACH);
-
-        if (pWizard)
-            pWizard->Destroy();
-
-        DeleteMenu();
-        CreateMenu();
-        FireRefreshView();
-
-        // Restart timers to continue normal operations.
-        StartTimers();
-    } else {
-        ShowNotCurrentlyConnectedAlert();
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnProjectsAttachToAccountManager - Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRunBenchmarks - Function End"));
 }
 
 
-void CAdvancedFrame::OnAccountManagerUpdate(wxCommandEvent& WXUNUSED(event)) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnAccountManagerUpdate - Function Begin"));
-
-    CMainDocument*            pDoc = wxGetApp().GetDocument();
-
-    wxASSERT(pDoc);
-    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-
-    if (!pDoc->IsUserAuthorized())
-        return;
-
-    if (pDoc->IsConnected()) {
-        // Stop all timers so that the wizard is the only thing doing anything
-        StopTimers();
-
-        CWizardAccountManager* pWizard = new CWizardAccountManager(this);
-
-        pWizard->Run(ACCOUNTMANAGER_UPDATE);
-
-        if (pWizard)
-            pWizard->Destroy();
-
-        DeleteMenu();
-        CreateMenu();
-        FireRefreshView();
-        ResetReminderTimers();
-
-        // Restart timers to continue normal operations.
-        StartTimers();
-    } else {
-        ShowNotCurrentlyConnectedAlert();
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnAccountManagerUpdate - Function End"));
-}
-
-
-void CAdvancedFrame::OnAccountManagerDetach(wxCommandEvent& WXUNUSED(event)) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnAccountManagerDetach - Function Begin"));
-
-    CMainDocument* pDoc           = wxGetApp().GetDocument();
-    CSkinAdvanced* pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
-    wxInt32        iAnswer        = 0; 
-    wxString       strTitle       = wxEmptyString;
-    wxString       strMessage     = wxEmptyString;
-    ACCT_MGR_INFO  ami;
-
-    wxASSERT(pDoc);
-    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-    wxASSERT(pSkinAdvanced);
-    wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
-
-    if (!pDoc->IsUserAuthorized())
-        return;
-
-    if (pDoc->IsConnected()) {
-
-        pDoc->rpc.acct_mgr_info(ami);
-
-        strTitle.Printf(
-            _("%s - Detach from %s"),
-            pSkinAdvanced->GetApplicationName().c_str(),
-            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
-        );
-        strMessage.Printf(
-            _("If you stop using %s,\n"
-              "you'll keep all your current projects,\n"
-              "but you'll have to manage projects manually.\n"
-              "\n"
-              "Do you want to stop using %s?"), 
-            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str(),
-            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
-        );
-
-        iAnswer = ::wxMessageBox(
-            strMessage,
-            strTitle,
-            wxYES_NO | wxICON_QUESTION,
-            this
-        );
-
-        if (wxYES == iAnswer) {
-            std::string url, name, passwd;
-            pDoc->rpc.acct_mgr_rpc(
-                url.c_str(),
-                name.c_str(),
-                passwd.c_str(),
-                false
-            );
-        }
-
-        DeleteMenu();
-        CreateMenu();
-        FireRefreshView();
-
-    } else {
-        ShowNotCurrentlyConnectedAlert();
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnAccountManagerDetach - Function End"));
-}
-
-
-void CAdvancedFrame::OnProjectsAttachToProject( wxCommandEvent& WXUNUSED(event) ) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnProjectsAttachToProject - Function Begin"));
-
-    CMainDocument* pDoc     = wxGetApp().GetDocument();
-
-    wxASSERT(pDoc);
-    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-
-    if (!pDoc->IsUserAuthorized())
-        return;
-
-    if (pDoc->IsConnected()) {
-        UpdateStatusText(_("Attaching to project..."));
-
-        // Stop all timers so that the wizard is the only thing doing anything
-        StopTimers();
-
-        CWizardAttachProject* pWizard = new CWizardAttachProject(this);
-
-        wxString strName = wxEmptyString;
-        wxString strURL = wxEmptyString;
-        pWizard->Run( strName, strURL, false );
-
-        if (pWizard)
-            pWizard->Destroy();
-
-        DeleteMenu();
-        CreateMenu();
-
-        // Restart timers to continue normal operations.
-        StartTimers();
-
-        UpdateStatusText(wxT(""));
-
-        FireRefreshView();
-    } else {
-        ShowNotCurrentlyConnectedAlert();
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnProjectsAttachToProject - Function End"));
-}
-
-
-void CAdvancedFrame::OnCommandsRetryCommunications( wxCommandEvent& WXUNUSED(event) ) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnCommandsRetryCommunications - Function Begin"));
+void CAdvancedFrame::OnRetryCommunications( wxCommandEvent& WXUNUSED(event) ) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRetryCommunications - Function Begin"));
 
     CMainDocument* pDoc     = wxGetApp().GetDocument();
     wxASSERT(pDoc);
@@ -1533,148 +1476,35 @@ void CAdvancedFrame::OnCommandsRetryCommunications( wxCommandEvent& WXUNUSED(eve
 
     FireRefreshView();
 
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnCommandsRetryCommunications - Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRetryCommunications - Function End"));
 }
 
 
-void CAdvancedFrame::OnDlgPreferences(wxCommandEvent& WXUNUSED(event)) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnDlgPreferences - Function Begin"));
-	CDlgAdvPreferences dlg(this);
-	dlg.ShowModal();
-	wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnDlgPreferences - Function End"));
-}
-
-void CAdvancedFrame::OnOptionsOptions(wxCommandEvent& WXUNUSED(event)) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnOptionsOptions - Function Begin"));
+void CAdvancedFrame::OnReadConfig(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnReadConfig - Function Begin"));
 
     CMainDocument* pDoc = wxGetApp().GetDocument();
-    CSkinAdvanced* pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
-    CDlgOptions    dlg(this);
-    int            iBuffer = 0;
-    wxString       strBuffer = wxEmptyString;
-    wxArrayString  astrDialupConnections;
-    bool           bRetrievedProxyConfiguration = false;
 
     wxASSERT(pDoc);
-    wxASSERT(pSkinAdvanced);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-    wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
+
+    pDoc->rpc.read_cc_config();
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnReadConfig - Function End"));
+}
 
 
-    // General Tab
-    dlg.m_LanguageSelectionCtrl->Append(wxGetApp().GetSupportedLanguages());
+void CAdvancedFrame::OnReadPreferences(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnReadPreferences - Function Begin"));
 
-    dlg.m_LanguageSelectionCtrl->SetSelection(m_iSelectedLanguage);
-    dlg.m_ReminderFrequencyCtrl->SetValue(m_iReminderFrequency);
-    dlg.m_EnableBOINCManagerExitMessageCtrl->SetValue(wxGetApp().GetBOINCMGRDisplayExitMessage());
-#ifdef __WXMSW__
-    dlg.m_EnableBOINCManagerAutoStartCtrl->SetValue(!wxGetApp().GetBOINCMGRDisableAutoStart());
+    CMainDocument* pDoc = wxGetApp().GetDocument();
 
-    // Connection Tab
-    if (m_pDialupManager) {
-        m_pDialupManager->GetISPNames(astrDialupConnections);
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-        dlg.m_DialupConnectionsCtrl->Append(astrDialupConnections);
-        dlg.SetDefaultDialupConnection(m_strNetworkDialupConnectionName);
-    } else {
-        dlg.m_DialupSetDefaultCtrl->Disable();
-        dlg.m_DialupClearDefaultCtrl->Disable();
-    }
-#endif
+    pDoc->rpc.read_global_prefs_override();
 
-    // Proxy Tabs
-    bRetrievedProxyConfiguration = (0 == pDoc->GetProxyConfiguration());
-    if(!bRetrievedProxyConfiguration) {
-        // We were unable to get the proxy configuration, so disable
-        //   the controls
-        dlg.m_EnableHTTPProxyCtrl->Enable(false);
-        dlg.m_EnableSOCKSProxyCtrl->Enable(false);
-    } else {
-        dlg.m_EnableHTTPProxyCtrl->Enable(true);
-        dlg.m_EnableSOCKSProxyCtrl->Enable(true);
-    }
-
-    dlg.m_EnableHTTPProxyCtrl->SetValue(pDoc->proxy_info.use_http_proxy);
-    dlg.m_HTTPAddressCtrl->SetValue(wxString(pDoc->proxy_info.http_server_name.c_str(), wxConvUTF8));
-    dlg.m_HTTPUsernameCtrl->SetValue(wxString(pDoc->proxy_info.http_user_name.c_str(), wxConvUTF8));
-    dlg.m_HTTPPasswordCtrl->SetValue(wxString(pDoc->proxy_info.http_user_passwd.c_str(), wxConvUTF8));
-
-    strBuffer.Printf(wxT("%d"), pDoc->proxy_info.http_server_port);
-    dlg.m_HTTPPortCtrl->SetValue(strBuffer);
-
-    dlg.m_EnableSOCKSProxyCtrl->SetValue(pDoc->proxy_info.use_socks_proxy);
-    dlg.m_SOCKSAddressCtrl->SetValue(wxString(pDoc->proxy_info.socks_server_name.c_str(), wxConvUTF8));
-    dlg.m_SOCKSUsernameCtrl->SetValue(wxString(pDoc->proxy_info.socks5_user_name.c_str(), wxConvUTF8));
-    dlg.m_SOCKSPasswordCtrl->SetValue(wxString(pDoc->proxy_info.socks5_user_passwd.c_str(), wxConvUTF8));
-
-    strBuffer.Printf(wxT("%d"), pDoc->proxy_info.socks_server_port);
-    dlg.m_SOCKSPortCtrl->SetValue(strBuffer);
-
-    if (wxID_OK == dlg.ShowModal()) {
-        // General Tab
-        if (m_iSelectedLanguage != dlg.m_LanguageSelectionCtrl->GetSelection()) {
-            wxString strDialogTitle;
-            wxString strDialogMessage;
-
-            // %s is the application name
-            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
-            strDialogTitle.Printf(
-                _("%s - Language Selection"),
-                pSkinAdvanced->GetApplicationName().c_str()
-            );
-
-            // %s is the application name
-            //    i.e. 'BOINC Manager', 'GridRepublic Manager'
-            strDialogMessage.Printf(
-                _("The %s's default language has been changed, in order for this "
-                  "change to take affect you must restart the %s."),
-                pSkinAdvanced->GetApplicationName().c_str(),
-                pSkinAdvanced->GetApplicationName().c_str()
-            );
-
-            ShowAlert(
-                strDialogTitle,
-                strDialogMessage,
-                wxOK | wxICON_INFORMATION
-           );
-        }
-
-        m_iSelectedLanguage = dlg.m_LanguageSelectionCtrl->GetSelection();
-        m_iReminderFrequency = dlg.m_ReminderFrequencyCtrl->GetValue();
-
-        wxGetApp().SetBOINCMGRDisplayExitMessage(dlg.m_EnableBOINCManagerExitMessageCtrl->GetValue());
-#ifdef __WXMSW__
-        wxGetApp().SetBOINCMGRDisableAutoStart(!dlg.m_EnableBOINCManagerAutoStartCtrl->GetValue());
-
-        // Connection Tab
-        m_strNetworkDialupConnectionName = dlg.GetDefaultDialupConnection();
-#endif
-
-        // Proxy Tabs
-        if (bRetrievedProxyConfiguration) {
-            pDoc->proxy_info.use_http_proxy = dlg.m_EnableHTTPProxyCtrl->GetValue();
-            pDoc->proxy_info.http_server_name = (const char*)dlg.m_HTTPAddressCtrl->GetValue().mb_str();
-            pDoc->proxy_info.http_user_name = (const char*)dlg.m_HTTPUsernameCtrl->GetValue().mb_str();
-            pDoc->proxy_info.http_user_passwd = (const char*)dlg.m_HTTPPasswordCtrl->GetValue().mb_str();
-
-            strBuffer = dlg.m_HTTPPortCtrl->GetValue();
-            strBuffer.ToLong((long*)&iBuffer);
-            pDoc->proxy_info.http_server_port = iBuffer;
-
-            pDoc->proxy_info.use_socks_proxy = dlg.m_EnableSOCKSProxyCtrl->GetValue();
-            pDoc->proxy_info.socks_server_name = (const char*)dlg.m_SOCKSAddressCtrl->GetValue().mb_str();
-            pDoc->proxy_info.socks5_user_name = (const char*)dlg.m_SOCKSUsernameCtrl->GetValue().mb_str();
-            pDoc->proxy_info.socks5_user_passwd = (const char*)dlg.m_SOCKSPasswordCtrl->GetValue().mb_str();
-
-            strBuffer = dlg.m_SOCKSPortCtrl->GetValue();
-            strBuffer.ToLong((long*)&iBuffer);
-            pDoc->proxy_info.socks_server_port = iBuffer;
-
-            pDoc->SetProxyConfiguration();
-        }
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnOptionsOptions - Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnReadPreferences - Function End"));
 }
 
 
@@ -1682,13 +1512,12 @@ void CAdvancedFrame::OnHelp(wxHelpEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnHelpBOINCManager - Function Begin"));
 
     if (IsShown()) {
-		std::string url;
-		url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl().mb_str();
+	    wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
 		wxString wxurl;
 		wxurl.Printf(
             wxT("%s?target=advanced&version=%s&controlid=%d"),
-            wxString(url.c_str(), wxConvUTF8).c_str(),
+            strURL.c_str(),
             wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
@@ -1703,13 +1532,12 @@ void CAdvancedFrame::OnHelpBOINC(wxCommandEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnHelpBOINC - Function Begin"));
 
     if (IsShown()) {
-		std::string url;
-		url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl().mb_str();
+    	wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
 		wxString wxurl;
 		wxurl.Printf(
             wxT("%s?target=advanced&version=%s&controlid=%d"),
-            wxString(url.c_str(), wxConvUTF8).c_str(),
+            strURL.c_str(),
             wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
@@ -1730,53 +1558,26 @@ void CAdvancedFrame::OnHelpAbout(wxCommandEvent& WXUNUSED(event)) {
 }
 
 
-void CAdvancedFrame::OnShow(wxShowEvent& event) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnShow - Function Begin"));
-    static bool bAlreadyRunning = false;
-
-    if ((event.GetEventObject() == this) && !bAlreadyRunning) {
-        bAlreadyRunning = true;
-
-        wxLogTrace(wxT("Function Status"), wxT("CAdvancedFrame::OnShow - Show/Hide Event for CAdvancedFrame detected"));
-        if (event.GetShow()) {
-            RestoreWindowDimensions();
-        } else {
-            SaveWindowDimensions();
-        }
-
-        bAlreadyRunning = false;
-    } else {
-        event.Skip();
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnShow - Function End"));
-}
-
-
 void CAdvancedFrame::OnRefreshView(CFrameEvent& WXUNUSED(event)) {
-    static bool bAlreadyRunningLoop = false;
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRefreshView - Function Begin"));
 
-    if (!bAlreadyRunningLoop) {
-        bAlreadyRunningLoop = true;
+    if (IsShown()) {
+        wxWindow*       pwndNotebookPage = NULL;
+        CBOINCBaseView* pView = NULL;
+        wxTimerEvent    timerEvent;
 
-        if (IsShown()) {
-            wxWindow*       pwndNotebookPage = NULL;
-            CBOINCBaseView* pView = NULL;
-            wxTimerEvent    timerEvent;
+        wxASSERT(m_pNotebook);
 
-            wxASSERT(m_pNotebook);
+        pwndNotebookPage = m_pNotebook->GetPage(m_pNotebook->GetSelection());
+        wxASSERT(pwndNotebookPage);
 
-            pwndNotebookPage = m_pNotebook->GetPage(m_pNotebook->GetSelection());
-            wxASSERT(pwndNotebookPage);
+        pView = wxDynamicCast(pwndNotebookPage, CBOINCBaseView);
+        wxASSERT(pView);
 
-            pView = wxDynamicCast(pwndNotebookPage, CBOINCBaseView);
-            wxASSERT(pView);
-
-            pView->FireOnListRender(timerEvent);
-        }
-
-        bAlreadyRunningLoop = false;
+        pView->FireOnListRender(timerEvent);
     }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRefreshView - Function End"));
 }
 
 
@@ -1785,7 +1586,6 @@ void CAdvancedFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     
     CMainDocument* pDoc = wxGetApp().GetDocument();
     CSkinAdvanced* pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
-    CWizardAccountManager* pAMWizard = NULL;
     CWizardAttachProject* pAPWizard = NULL;
     wxString strComputer = wxEmptyString;
     wxString strName = wxEmptyString;
@@ -1796,6 +1596,10 @@ void CAdvancedFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     ACCT_MGR_INFO ami;
     PROJECT_INIT_STATUS pis;
 	CC_STATUS     status;
+    wxWindow* pwndNotebookPage = NULL;
+    CBOINCBaseView* pView = NULL;
+    int iItemCount = 0, iIndex;
+    int wasShown = 0;
 
     wxASSERT(m_pNotebook);
     wxASSERT(pDoc);
@@ -1803,11 +1607,12 @@ void CAdvancedFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
     wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
 
-    pDoc->GetCoreClientStatus(status);
+    pDoc->GetCoreClientStatus(status, true);
 
     // Do we need to bug out to the simple view?
     if (status.simple_gui_only) {
         wxGetApp().SetActiveGUI(BOINC_SIMPLEGUI, true);
+        FireConnect();
         return;
     }
 
@@ -1825,20 +1630,42 @@ void CAdvancedFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     pDoc->GetConnectedComputerName(strComputer);
     if (pDoc->IsComputerNameLocal(strComputer)) {
         wxGetApp().StartBOINCScreensaverTest();
+        wxGetApp().StartBOINCDefaultScreensaverTest();
     }
 
+    // Clear selected rows in all tab pages when connecting to a different host
+    iItemCount = (int)m_pNotebook->GetPageCount() - 1;
+    for (iIndex = 0; iIndex <= iItemCount; iIndex++) {   
+        pwndNotebookPage = m_pNotebook->GetPage(iIndex);
+        wxASSERT(wxDynamicCast(pwndNotebookPage, CBOINCBaseView));
+
+        pView = wxDynamicCast(pwndNotebookPage, CBOINCBaseView);
+        wxASSERT(pView);
+        
+        pView->ClearSelections();
+    }
+
+    pDoc->RefreshRPCs();
+    pDoc->ForceCacheUpdate();
 
     pDoc->rpc.get_project_init_status(pis);
     pDoc->rpc.acct_mgr_info(ami);
     if (ami.acct_mgr_url.size() && !ami.have_credentials) {
-        if (!IsShown()) {
+        if (IsShown()) {
+            wasShown = 1;
+        } else {
             Show();
         }
 
-        pAMWizard = new CWizardAccountManager(this);
-        if (pAMWizard->Run()) {
-            // If successful, hide the main window
-            Hide();
+        pAPWizard = new CWizardAttachProject(this);
+        if (pAPWizard->SyncToAccountManager()) {
+
+#if defined(__WXMSW__) || defined(__WXMAC__)
+            // If successful, hide the main window if we showed it
+            if (!wasShown) {
+                Hide();
+            }
+#endif
 
             // %s is the application name
             //    i.e. 'BOINC Manager', 'GridRepublic Manager'
@@ -1897,8 +1724,6 @@ void CAdvancedFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     FireRefreshView();
 
 
-    if (pAMWizard)
-        pAMWizard->Destroy();
     if (pAPWizard)
         pAPWizard->Destroy();
 
@@ -1916,37 +1741,25 @@ void CAdvancedFrame::OnUpdateStatus(CFrameEvent& event) {
 }
 
 
-void CAdvancedFrame::OnRefreshState(wxTimerEvent &event) {
-    static bool bAlreadyRunningLoop = false;
+void CAdvancedFrame::OnRefreshState(wxTimerEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRefreshState - Function Begin"));
 
-    if (!bAlreadyRunningLoop) {
-        bAlreadyRunningLoop = true;
+    // Write a snapshot of the current state to the config
+    //   module, on Win9x systems we don't always shutdown
+    //   in a nice way, if we are terminated by the user
+    //   we still want the UI state to have been stored
+    //   for their next use
+    SaveState();
 
-        // Write a snapshot of the current state to the config
-        //   module, on Win9x systems we don't always shutdown
-        //   in a nice way, if we are terminated by the user
-        //   we still want the UI state to have been stored
-        //   for their next use
-        SaveState();
-
-        bAlreadyRunningLoop = false;
-    }
-
-    event.Skip();
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnRefreshState - Function End"));
 }
 
 
-void CAdvancedFrame::OnFrameRender(wxTimerEvent &event) {
-    static bool       bAlreadyRunningLoop = false;
-    static wxString   strCachedStatusText = wxEmptyString;
-
+void CAdvancedFrame::OnFrameRender(wxTimerEvent& WXUNUSED(event)) {
     CMainDocument*    pDoc     = wxGetApp().GetDocument();
     wxMenuBar*        pMenuBar = GetMenuBar();
 
-
-    if (!bAlreadyRunningLoop && m_pFrameRenderTimer->IsRunning()) {
-        bAlreadyRunningLoop = true;
-
+    if (m_pFrameRenderTimer->IsRunning()) {
         if (IsShown()) {
             if (pDoc) {
                 wxASSERT(wxDynamicCast(pDoc, CMainDocument));
@@ -1960,7 +1773,7 @@ void CAdvancedFrame::OnFrameRender(wxTimerEvent &event) {
                     UpdateNetworkModeControls(status);
 
                     if (status.disallow_attach) {
-                        pMenuBar->Enable(ID_PROJECTSATTACHPROJECT, false);
+                        pMenuBar->Enable(ID_WIZARDATTACH, false);
                     }
                 }
 
@@ -1976,7 +1789,6 @@ void CAdvancedFrame::OnFrameRender(wxTimerEvent &event) {
                     wxString strComputerVersion = wxEmptyString;
                     wxString strStatusText = wxEmptyString;
                     wxString strTitle = m_strBaseTitle;
-                    wxString strLocale = wxString(setlocale(LC_NUMERIC, NULL), wxConvUTF8);
      
                     if (pDoc->IsReconnecting()) {
                         pDoc->GetConnectingComputerName(strComputerName);
@@ -2006,9 +1818,7 @@ void CAdvancedFrame::OnFrameRender(wxTimerEvent &event) {
                     if (GetTitle() != strTitle) {
                         SetTitle(strTitle);
                     }
-                        
-                    if (strStatusText != strCachedStatusText) {
-                        strCachedStatusText = strStatusText;
+                    if (m_pStatusbar->m_ptxtConnected->GetLabel() != strStatusText) {
                         m_pStatusbar->m_ptxtConnected->SetLabel(strStatusText);
                     }
                 } else {
@@ -2022,27 +1832,34 @@ void CAdvancedFrame::OnFrameRender(wxTimerEvent &event) {
                 }
             }
         }
-
-        bAlreadyRunningLoop = false;
     }
-
-    event.Skip();
-}
-
-
-void CAdvancedFrame::OnListPanelRender(wxTimerEvent& WXUNUSED(event)) {
-    FireRefreshView();
 }
 
 
 void CAdvancedFrame::OnNotebookSelectionChanged(wxNotebookEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnNotebookSelectionChanged - Function Begin"));
 
-    if ((-1 != event.GetSelection())) {
-        UpdateRefreshTimerInterval(event.GetSelection());
-        FireRefreshView();
+    wxWindow*       pwndNotebookPage = NULL;
+    CBOINCBaseView* pView = NULL;
+    int             selection = event.GetSelection();
+    
+    if ((-1 != selection)) {
+        UpdateRefreshTimerInterval(selection);
+
+        CMainDocument*  pDoc = wxGetApp().GetDocument();
+        wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+        
+        pDoc->RefreshRPCs();
+        pDoc->RunPeriodicRPCs();
     }
 
+    pwndNotebookPage = m_pNotebook->GetPage(selection);
+    wxASSERT(wxDynamicCast(pwndNotebookPage, CBOINCBaseView));
+
+    pView = wxDynamicCast(pwndNotebookPage, CBOINCBaseView);
+    wxASSERT(pView);
+    
+    pView->RefreshTaskPane();
     event.Skip();
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnNotebookSelectionChanged - Function End"));
@@ -2069,20 +1886,20 @@ void CAdvancedFrame::UpdateActivityModeControls( CC_STATUS& status ) {
     //   will emulate a click event for a menu item even when the action of setting
     //   a controls value wasn't initiated via user interaction. This in turn causes
     //   the set_* RPC to be called which will cause the state file to become dirty.
-    if ((RUN_MODE_ALWAYS == status.task_mode) && pMenuBar->IsChecked(ID_FILEACTIVITYRUNALWAYS)) return;
-    if ((RUN_MODE_NEVER == status.task_mode) && pMenuBar->IsChecked(ID_FILEACTIVITYSUSPEND)) return;
-    if ((RUN_MODE_AUTO == status.task_mode) && pMenuBar->IsChecked(ID_FILEACTIVITYRUNBASEDONPREPERENCES)) return;
+    if ((RUN_MODE_ALWAYS == status.task_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYRUNALWAYS)) return;
+    if ((RUN_MODE_NEVER == status.task_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYSUSPEND)) return;
+    if ((RUN_MODE_AUTO == status.task_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYRUNBASEDONPREPERENCES)) return;
 
     // Set things up.
-    pMenuBar->Check(ID_FILEACTIVITYRUNALWAYS, false);
-    pMenuBar->Check(ID_FILEACTIVITYSUSPEND, false);
-    pMenuBar->Check(ID_FILEACTIVITYRUNBASEDONPREPERENCES, false);
+    pMenuBar->Check(ID_ADVACTIVITYRUNALWAYS, false);
+    pMenuBar->Check(ID_ADVACTIVITYSUSPEND, false);
+    pMenuBar->Check(ID_ADVACTIVITYRUNBASEDONPREPERENCES, false);
     if (RUN_MODE_ALWAYS == status.task_mode)
-        pMenuBar->Check(ID_FILEACTIVITYRUNALWAYS, true);
+        pMenuBar->Check(ID_ADVACTIVITYRUNALWAYS, true);
     if (RUN_MODE_NEVER == status.task_mode)
-        pMenuBar->Check(ID_FILEACTIVITYSUSPEND, true);
+        pMenuBar->Check(ID_ADVACTIVITYSUSPEND, true);
     if (RUN_MODE_AUTO == status.task_mode)
-        pMenuBar->Check(ID_FILEACTIVITYRUNBASEDONPREPERENCES, true);
+        pMenuBar->Check(ID_ADVACTIVITYRUNBASEDONPREPERENCES, true);
 }
 
 
@@ -2096,20 +1913,20 @@ void CAdvancedFrame::UpdateNetworkModeControls( CC_STATUS& status ) {
     //   will emulate a click event for a menu item even when the action of setting
     //   a controls value wasn't initiated via user interaction. This in turn causes
     //   the set_* RPC to be called which will cause the state file to become dirty.
-    if ((RUN_MODE_ALWAYS == status.network_mode) && pMenuBar->IsChecked(ID_FILENETWORKRUNALWAYS)) return;
-    if ((RUN_MODE_NEVER == status.network_mode) && pMenuBar->IsChecked(ID_FILENETWORKSUSPEND)) return;
-    if ((RUN_MODE_AUTO == status.network_mode) && pMenuBar->IsChecked(ID_FILENETWORKRUNBASEDONPREPERENCES)) return;
+    if ((RUN_MODE_ALWAYS == status.network_mode) && pMenuBar->IsChecked(ID_ADVNETWORKRUNALWAYS)) return;
+    if ((RUN_MODE_NEVER == status.network_mode) && pMenuBar->IsChecked(ID_ADVNETWORKSUSPEND)) return;
+    if ((RUN_MODE_AUTO == status.network_mode) && pMenuBar->IsChecked(ID_ADVNETWORKRUNBASEDONPREPERENCES)) return;
 
     // Set things up.
-    pMenuBar->Check(ID_FILENETWORKRUNALWAYS, false);
-    pMenuBar->Check(ID_FILENETWORKSUSPEND, false);
-    pMenuBar->Check(ID_FILENETWORKRUNBASEDONPREPERENCES, false);
+    pMenuBar->Check(ID_ADVNETWORKRUNALWAYS, false);
+    pMenuBar->Check(ID_ADVNETWORKSUSPEND, false);
+    pMenuBar->Check(ID_ADVNETWORKRUNBASEDONPREPERENCES, false);
     if (RUN_MODE_ALWAYS == status.network_mode)
-        pMenuBar->Check(ID_FILENETWORKRUNALWAYS, true);
+        pMenuBar->Check(ID_ADVNETWORKRUNALWAYS, true);
     if (RUN_MODE_NEVER == status.network_mode)
-        pMenuBar->Check(ID_FILENETWORKSUSPEND, true);
+        pMenuBar->Check(ID_ADVNETWORKSUSPEND, true);
     if (RUN_MODE_AUTO == status.network_mode)
-        pMenuBar->Check(ID_FILENETWORKRUNBASEDONPREPERENCES, true);
+        pMenuBar->Check(ID_ADVNETWORKRUNBASEDONPREPERENCES, true);
 }
 
 
@@ -2119,7 +1936,6 @@ void CAdvancedFrame::UpdateRefreshTimerInterval( wxInt32 iCurrentNotebookPage ) 
     if (IsShown()) {
         wxWindow*       pwndNotebookPage = NULL;
         CBOINCBaseView* pView = NULL;
-        CMainDocument*  pDoc = wxGetApp().GetDocument();
 
 
         wxASSERT(m_pNotebook);
@@ -2130,8 +1946,10 @@ void CAdvancedFrame::UpdateRefreshTimerInterval( wxInt32 iCurrentNotebookPage ) 
         pView = wxDynamicCast(pwndNotebookPage, CBOINCBaseView);
         wxASSERT(pView);
 
-        if (m_pFrameListPanelRenderTimer && m_pFrameListPanelRenderTimer->IsRunning()) {
-            m_pFrameListPanelRenderTimer->Stop();
+        CMainDocument*  pDoc = wxGetApp().GetDocument();
+
+        if (m_pPeriodicRPCTimer && m_pPeriodicRPCTimer->IsRunning()) {
+            m_pPeriodicRPCTimer->Stop();
 
             // View specific refresh rates only apply when a connection to the core
             //   client has been established, otherwise the refresh rate should be 1
@@ -2140,10 +1958,10 @@ void CAdvancedFrame::UpdateRefreshTimerInterval( wxInt32 iCurrentNotebookPage ) 
                 wxASSERT(wxDynamicCast(pDoc, CMainDocument));
                 if (pDoc->IsConnected()) {
                     // Set new view specific refresh rate
-                    m_pFrameListPanelRenderTimer->Start(pView->GetViewRefreshRate() * 1000); 
+                    m_pPeriodicRPCTimer->Start(pView->GetViewRefreshRate() * 1000); 
                 } else {
                     // Set view refresh rate to 1 second
-                    m_pFrameListPanelRenderTimer->Start(1000); 
+                    m_pPeriodicRPCTimer->Start(1000); 
                 }
             }
         }
@@ -2156,23 +1974,19 @@ void CAdvancedFrame::UpdateRefreshTimerInterval( wxInt32 iCurrentNotebookPage ) 
 void CAdvancedFrame::StartTimers() {
     wxASSERT(m_pRefreshStateTimer);
     wxASSERT(m_pFrameRenderTimer);
-    wxASSERT(m_pFrameListPanelRenderTimer);
     CBOINCBaseFrame::StartTimers();
     m_pRefreshStateTimer->Start();
     m_pFrameRenderTimer->Start();
-    m_pFrameListPanelRenderTimer->Start();
 }
 
 
 void CAdvancedFrame::StopTimers() {
     wxASSERT(m_pRefreshStateTimer);
     wxASSERT(m_pFrameRenderTimer);
-    wxASSERT(m_pFrameListPanelRenderTimer);
     CBOINCBaseFrame::StopTimers();
     m_pRefreshStateTimer->Stop();
     m_pFrameRenderTimer->Stop();
-    m_pFrameListPanelRenderTimer->Stop();
 }
 
 
-const char *BOINC_RCSID_d881a56dc5 = "$Id: AdvancedFrame.cpp 16485 2008-11-12 09:58:15Z charlief $";
+const char *BOINC_RCSID_d881a56dc5 = "$Id: AdvancedFrame.cpp 19371 2009-10-23 16:57:02Z romw $";

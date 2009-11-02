@@ -41,30 +41,18 @@
 #endif
 #endif
 
-// Modify the following defines if you have to target a platform prior to the ones specified below.
-// Refer to MSDN for the latest info on corresponding values for different platforms.
-#ifndef WINVER                  // Allow use of features specific to Windows 95 and Windows NT 4 or later.
-#define WINVER 0x0400           // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+// Target Windows 2000 or better with Internet Explorer 5.0 or better
+#ifndef WINVER
+#define WINVER 0x0500
 #endif
-
-#ifndef _WIN32_WINNT            // Allow use of features specific to Windows NT 4 or later.
-#define _WIN32_WINNT 0x0400		// Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0500
 #endif
-
-#ifndef _WIN32_WINDOWS          // Allow use of features specific to Windows 98 or later.
-#define _WIN32_WINDOWS 0x0400   // Change this to the appropriate value to target Windows Me or later.
+#ifndef _WIN32_WINDOWS
+#define _WIN32_WINDOWS 0x0500
 #endif
-
-#ifndef _WIN32_IE               // Allow use of features specific to IE 4.0 or later.
-#define _WIN32_IE 0x0500        // Change this to the appropriate value to target IE 5.0 or later.
-#endif
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN     // This trims down the windows libraries.
-#endif
-
-#ifndef WIN32_EXTRA_LEAN
-#define WIN32_EXTRA_LEAN        // Trims even farther.
+#ifndef _WIN32_IE
+#define _WIN32_IE 0x0500
 #endif
 
 #include <windows.h>
@@ -194,6 +182,14 @@ typedef LPCSTR PCTSTR, LPCTSTR, PCUTSTR, LPCUTSTR;
 #include <set>
 #endif
 
+// Define a generic string type that can be a Unicode string on
+// Unicode builds and an ANSI string on ANSI builds
+//
+#ifdef _UNICODE
+#define tstring std::wstring
+#else
+#define tstring std::string
+#endif
 
 #ifndef SIGRTMAX
 #if defined(_SIGRTMAX)
@@ -211,15 +207,15 @@ typedef LPCSTR PCTSTR, LPCTSTR, PCUTSTR, LPCUTSTR;
 #define vsnprintf               _vsnprintf
 #define snprintf                _snprintf
 #define stprintf                _stprintf
-#define stricmp					_stricmp
-#define strdup					_strdup
-#define fdopen					_fdopen
-#define dup						_dup
-#define unlink					_unlink
-#define read					_read
-#define stat					_stat
-#define chdir					_chdir
-#define finite					_finite
+#define stricmp                 _stricmp
+#define strdup                  _strdup
+#define fdopen                  _fdopen
+#define dup                     _dup
+#define unlink                  _unlink
+#define read                    _read
+#define stat                    _stat
+#define chdir                   _chdir
+#define finite                  _finite
 #define strdate                 _strdate
 #define strtime                 _strtime
 #define getcwd                  _getcwd

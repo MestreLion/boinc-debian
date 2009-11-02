@@ -20,7 +20,10 @@
 
 #include "config.h"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+
+using std::memset;
 
 #include "error_numbers.h"
 #include "synch.h"
@@ -108,4 +111,4 @@ int get_key(char* path, int id, key_t& key) {
     return 0;
 }
 
-const char *BOINC_RCSID_9412b586d1 = "$Id: synch.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_9412b586d1 = "$Id: synch.cpp 17388 2009-02-26 00:23:23Z korpela $";

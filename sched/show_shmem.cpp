@@ -26,15 +26,16 @@
 #include "shmem.h"
 #include "sched_config.h"
 #include "sched_shmem.h"
+#include "str_util.h"
 
 int main() {
     SCHED_SHMEM* ssp;
     int retval;
     void* p;
 
-    retval = config.parse_file(".");
+    retval = config.parse_file();
     if (retval) {
-        printf("can't parse config: %d\n", retval);
+        printf("Can't parse config.xml: %s\n", boincerror(retval));
         exit(1);
     }
     retval = attach_shmem(config.shmem_key, &p);
@@ -47,4 +48,4 @@ int main() {
     ssp->show(stdout);
 }
 
-const char *BOINC_RCSID_a370415aab = "$Id: show_shmem.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_a370415aab = "$Id: show_shmem.cpp 18042 2009-05-07 13:54:51Z davea $";

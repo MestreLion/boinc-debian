@@ -1,6 +1,237 @@
 <?
 
 $project_news = array(
+array("August 3, 2009",
+    "Intel (in partnership with GridRepublic and BOINC) announces
+    <a href=http://apps.facebook.com/processors/new.php>Progress Thru Processors</a>,
+    a Facebook application that makes participating in BOINC simpler and more sociable."
+),
+array("July 30, 2009",
+    "<a href=http://event.twgrid.org/isgc2009/asiaathome/wiki/index.php/Main_Page#Workshop_Schedule_and_Presentations>Videos of the talks at the recent Asia@home workshop in Taiwan</a> are now online."
+),
+array("July 20, 2009",
+    "Listen to a Podcast of <a href=http://www.rce-cast.com/index.php/Podcast/rce-13-boinc.html>an interview with David Anderson</a> on <a href=http://www.rce-cast.com/>RCE</a>."
+),
+array("July 15, 2009",
+    "The Consejer&iacute;a de Educaci&oacute;n, Spain, is
+    <a href=http://jarifa.unex.es/?p=230>using Jarifa to harness the power of 12,000 PCs.</a>"
+),
+array("June 23, 2009",
+    "Read <a href=http://www.newswise.com/articles/view/553414/>an article
+    about Docking@Home</a> in Newswise Science News."
+),
+array("June 10, 2009",
+    "Check out <a href=http://dishmag.com/issue96/homestyle/10099/boinc-how-your-computer-can-benefit-all-of-mankind/>BOINC! How your computer can benefit all of mankind</a>, a story in the online <a href=http://dishmag.com/>Dish Magazine</a>."
+),
+array("June 5, 2009",
+    "<a href=http://www.icvolunteers.org/>ICVolunteers</a>
+    is conducting an
+    <a href=http://www.surveymonkey.com/s.aspx?sm=dOgS3cfUxFKfFbeOy8L3eQ_3d_3d>online poll</a> to study motivation in volunteer computing.
+    Volunteers are encouraged to complete this poll."
+),
+array("June 1, 2009",
+    "Mac users: check out <a href=\"http://boinc.berkeley.edu/addon_item.php?platform=mac&item=http%3A%2F%2Fbrotherbard.com%2Fboinc%2F\">BOINCMenubar 2</a>,
+    an alternative to the BOINC Manager for Mac OS X."
+),
+array("May 17, 2009",
+    "Check out <a href=\"http://365daysofastronomy.org/2009/05/17/may-17th-citizen-scientists-making-a-difference-and-having-fun/\">Citizen Scientists</a>,
+    a podcast by the 365 Days of Astronomy project."
+),
+array("May 14, 2009",
+    "<a href=\"http://boinc.unex.es/planet\">Planet BOINC</a>
+    is a new RSS feed that combines many different sources of news
+    about BOINC and volunteer computing."
+),
+array("May 14, 2009",
+    "<a href=\"http://www2.warwick.ac.uk/newsandevents/audio/more/tedx/?podcastItem=francois_grey.mp4\">Francois Grey talks about citizen cyber-science</a> at TEDx Warwick."
+),
+array("May 13, 2009",
+    "See a <a href=\"http://www.youtube.com/watch?v=igB-vqS3gAc\">video</a> (in Spanish with English subtitles) about Extremadura@home and volunteer computing."
+),
+array("May 12, 2009",
+    "An
+    <a href=\"http://www.nature.com/embor/journal/v10/n5/full/embor200979.html\">article in EMBO reports</a> discusses citizen cyber-science."
+),
+array("May 1, 2009",
+    "Simon Lin of Academia Sinica discusses volunteer computing (and thinking) in Asia
+    on a <a href=\"http://www.bbc.co.uk/worldservice/science/2009/03/000000_digital_planet.shtml\">Podcast on BBC World Service</a>."
+),
+array("April 29, 2009",
+    "An <a href=\"http://www.news.cornell.edu/stories/March09/cordes.palfa.einstein.html\">article in Cornell's Chronicle Online</a> discusses
+    a new application in <a href=http://einstein.phys.uwm.edu/>Einstein@home</a>
+    that searches for pulsars in binary star systems."
+),
+array("April 29, 2009",
+    "Francois Grey discusses Citizen Cyberscience (and BOINC) in <a href=\"http://cerncourier.com/cws/article/cern/38718\">The CERN Courier</a>."
+),
+array("April 21, 2009",
+    "A <a href=\"http://event.twgrid.org/isgc2009/asiaathome/wiki/index.php/Main_Page\">workshop on volunteer computing with BOINC</a>
+    was held in Taipei on 16-17 April.
+    Lecture outlines and slides are available online.
+    "
+),
+array("April 9, 2009",
+    "BOINC 6.6 has been released to public for Windows and
+    MacOS X.  Please visit the <a href=\"http://boinc.berkeley.edu/download.php\">download</a> page and upgrade today."
+),
+array("April 6, 2009",
+    "Check out <a href=http://boinc.starwars-holonet.com/>a new
+    French-language web site</a> about volunteer computing."
+),
+array("March 30, 2009",
+    "<a href=http://boinc.vgtu.lt/vtuathome/>VTU@home</a>,
+    a project from the Vilnius Gediminas Technical University,
+    is now listed on the <a href=http://boinc.berkeley.edu/choose_projects.php>Choose
+    Projects</a> page.
+    VTU@home serves Lithuanian scientists.
+    It is currently studying the automated testing
+    of complex software systems.
+    "
+),
+array("March 18, 2009",
+    "<a href=http://www.isgtw.org/?pid=1001689>Volunteer computing goes East</a> -
+    a story on upcoming events in Taiwan and Beijing - appears
+    in International Science Grid This Week.
+    "
+),
+array("March 9, 2009",
+    "A new add-on for Windows,
+    <a href=\"http://boinc.berkeley.edu/addon_item.php?platform=win&item=http%3A%2F%2Fwww.bc-team.org%2Fdownloads.php%3Fview%3Ddetail%26df_id%3D3\">BOINCcalculator</a>, shows details (trickles, credit, timesteps, checkpoints) of running CPDN jobs."
+),
+array("March 9, 2009",
+    "<a href=http://www.cosmologyathome.org/>Cosmology@Home</a>,
+    a project from the University of Illinois whose goal is to search
+    for the model that best describes our Universe,
+    is now listed on the <a href=http://boinc.berkeley.edu/choose_projects.php>Choose
+    Projects</a> page."
+),
+array("March 5, 2009",
+    "BOINC was the subject of a 40-minute radio program (in Polish)
+    on <a href=http://www.tok.fm/TOKFM/0,89523.html>Tok FM</a>
+    (click on 'O sile polaczonych komputerow')."
+),
+array("March 3, 2009",
+    "We have released BOINC 6.4.7 for Windows. This release contains a
+     screensaver fix as well as updates to LibCurl(7.19.4) and 
+     OpenSSL(0.9.8j) for some recently published security advisories.
+    "
+),
+array("March 1, 2009",
+    "<a href=http://www.unitedboinc.com/>United BOINC</a>
+    now offers <a href=http://www.unitedboinc.com/news-sig/>signature images</a>
+    containing the latest news from your choice of projects.
+    "
+),
+array("February 27, 2009",
+    "We have rolled back to 6.4.5 for our latest stable version until 6.4.7 can be built. Something happened to 6.4.6 on our mirrors."
+),
+array("February 17, 2009",
+    "A new add-on program for Windows,
+    <a href=http://boinc.berkeley.edu/addon_item.php?platform=win&item=http%3A%2F%2Fefmer.eu%2Fboinc%2F>TThrottle</a>,
+    throttles CPU usage to keep its temperature below a limit you select."
+),
+array("February 13, 2009",
+    "A <a href=http://event.twgrid.org/isgc2009/asiaathome/>workshop on volunteer computing</a> will take place 16-17 April 2009 at the Academia Sinica in Taipei, Taiwan, in conjunction with the International Symposium on Grid Computing."
+),
+array("February 3, 2009",
+    "Congratulations to <a href=http://www.setibr.org/>SETIBR</a>,
+    the Brazilian team which,
+    across several BOINC-based projects,
+    has achieved the levels of 100K average credit
+    and 50M total credit."
+),
+array("January 29, 2009",
+    "Scientists: it's easier than ever to create a BOINC project -
+    you don't even need a server!
+    Instead, you can use the Amazon Elastic Computing Cloud,
+    with a <a href=http://boinc.berkeley.edu/trac/wiki/CloudServer>virtual machine image</a> created by Derrick Kondo of INRIA."
+),
+array("January 28, 2009",
+    "<a href=http://www.extremadurathome.org/extremadurathome/>Extremadura@home</a> is a new kind of account manager in which the choice of projects
+    is a group decision.  It's targeted at Spanish computer owners
+    but is open to everyone."
+),
+array("January 27, 2009",
+    "<a href=http://www.dotsch.de/boinc/Dotsch_UX.html>Dotsch/UX</a>
+    is an ISO-format Linux distribution, based on Ubuntu Linux,
+    with the 6.2.15 BOINC client pre-installed.
+    It lets you easily install and boot from a USB stick, hard disk and
+    from diskless clients,
+    and it also has some interfaces to set up the diskless server
+    and the clients automatically.
+    Download info is <a href=http://boinc.berkeley.edu/download_all.php>here</a>.
+    "
+),
+array("January 22, 2009",
+    "A <a href=http://boinc.berkeley.edu/images/Cochran_SRL_2009.pdf>paper
+    about Quake-Catcher Network</a> appeared in
+    Seismological Research Letters, Jan/Feb 2009."
+),
+array("January 20, 2009",
+    "A paper about BOINC,
+    \"<a href=http://boinc.berkeley.edu/boinc_papers/hicss_08/hicss_08.pdf>Celebrating Diversity in Volunteer Computing</a>\",
+    has won a Best Paper award at the
+    42nd Hawaii International Conference on System Sciences."
+),
+array("January 14, 2009",
+    "The <a href=http://docking.gcl.cis.udel.edu/>Docking@home</a>
+    project has a spiffy new web site, and welcomes new volunteers."
+),
+array("December 22, 2008",
+    "An <a href=http://bits.blogs.nytimes.com/2008/12/22/d-wave-arms-smoking-gun-proof-of-quantum-computer/>article about AQUA@home</a> appeared
+    in today's New York Times online."
+),
+array("December 17, 2008",
+    "BOINC now supports <a href=cuda.php>computing using NVIDIA GPUs</a>.
+    Two projects currently have GPU-enabled applications:
+    <a href=http://gpugrid.net/>GPUgrid.net</a> and
+    <a href=http://setiathome.berkeley.edu/>SETI@home</a>.
+    If your computer has a recent NVIDIA GPU,
+    you can compute 2X to 10X faster than with your CPU alone.
+    "
+),
+array("December 17, 2008",
+    "A press release from NVIDIA announcing BOINC's GPU support
+    is available in
+    <a href=http://www.imim.es/news/view.php?ID=37>English</a>,
+    <a href=http://www.imim.es/noticias/view.php?ID=91>Spanish</a>,
+    and <a href=http://www.imim.es/noticies/view.php?ID=183>Catalan</a>."
+),
+array("December 16, 2008",
+    "Version 6.4 of the BOINC client software has been released.
+    This is the recommended version for Windows and Linux. 
+    <a href=\"http://boinc.berkeley.edu/download.php\">Upgrade now</a>.
+    "
+),
+array("December 10, 2008",
+    "<a href=http://aqua.dwavesys.com/>AQUA@home</a> is now open to volunteers.  AQUA (Adiabatic QUantum Algorithms) is a research project, based at D-Wave Systems, Inc.,  whose goal is to predict the performance of superconducting adiabatic quantum computers on a variety of hard problems arising in fields ranging from materials science to machine learning."
+),
+array("December 8, 2008",
+    "IBM World Community Grid and Harvard launch
+    <a href=http://www.reuters.com/article/environmentNews/idUSTRE4B70QS20081208>an application to study a new type of photovoltaic solar cells</a>.
+    "
+),
+array("December 1, 2008",
+    "Wikipedia'a <a href=http://en.wikipedia.org/wiki/Wikipedia:Today%27s_featured_article/December_1,_2008>featured article for today</a> is about Rosetta@home."
+),
+array("November 29, 2008",
+    "Check out <a href=http://www.boincitaly.org/>BOINC.Italy</a>,
+    a new Italian BOINC portal."
+),
+array("November 29, 2008",
+    "Rechenkraft.net is <a href=http://www.rechenkraft.net/wiki/index.php?title=Verein:E-Petition/en>petitioning the German government</a>
+    to use non-security sensitive institutional computers to
+    assist scientific research."
+),
+array("November 20, 2008",
+    "See a video celebrating the
+    <a href=http://www.worldcommunitygrid.org/newsletter/video/viewIDedicate.do>fourth anniversary of IBM World Community Grid</a>."
+),
+array("November 20, 2008",
+    "<a href=http://jarifa.unex.es/>Jarifa</a>,
+    a system for organizational grid computing using BOINC,
+    has a new name, logo, and domain."
+),
 array("November 7, 2008",
     "On 27-28 November 2008, AlmereGrid and EDGeS will organise a two-day <a href=http://edges-grid.eu/web/userforum/1sttraining>Desktop Grid workshop</a> in Almere, The Netherlands."
 ),

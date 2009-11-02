@@ -25,19 +25,19 @@
 #ifndef _WIN32
 #include "config.h"
 #include <string>
-#include <cmath>
-#include <cstring>
-#include <cstdlib>
-#include <cctype>
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 #ifdef HAVE_ALLOCA_H
 #include "alloca.h"
 #endif
 #endif
 
-
 #include "error_numbers.h"
 #include "common_defs.h"
 #include "filesys.h"
+#include "str_replace.h"
 #include "str_util.h"
 
 #ifdef _USING_FCGI_
@@ -80,7 +80,7 @@ size_t strlcat(char *dst, const char *src, size_t size) {
 #endif // !HAVE_STRLCAT
 
 #if !defined(HAVE_STRCASESTR)
-extern char *strcasestr(const char *s1, const char *s2) {
+extern const char *strcasestr(const char *s1, const char *s2) {
   char *needle, *haystack, *p=NULL;
   // Is alloca() really less likely to fail with out of memory error 
   // than strdup?
@@ -735,6 +735,9 @@ const char* boincerror(int which_error) {
         case ERR_RMDIR: return "rmdir() failed";
         case ERR_SYMLINK: return "symlink() failed";
         case ERR_DB_CONN_LOST: return "DB connection lost during enumeration";
+        case ERR_CRYPTO: return "encryption error";
+        case ERR_ABORTED_ON_EXIT: return "job was aborted on client exit";
+        case ERR_UNSTARTED_LATE: return "job is unstarted and past deadline";
         case 404: return "HTTP file not found";
         case 407: return "HTTP proxy authentication failure";
         case 416: return "HTTP range request error";
@@ -778,26 +781,26 @@ const char* rpc_reason_string(int reason) {
 //
 char* windows_error_string(char* pszBuf, int iSize) {
     DWORD dwRet;
-    LPTSTR lpszTemp = NULL;
+    LPSTR lpszTemp = NULL;
 
-    dwRet = FormatMessage(
+    dwRet = FormatMessageA(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM |
         FORMAT_MESSAGE_ARGUMENT_ARRAY,
         NULL,
         GetLastError(),
         LANG_NEUTRAL,
-        (LPTSTR)&lpszTemp,
+        (LPSTR)&lpszTemp,
         0,
         NULL
     );
 
     // supplied buffer is not long enough
     if ( !dwRet || ( (long)iSize < (long)dwRet+14 ) ) {
-        pszBuf[0] = TEXT('\0');
+        pszBuf[0] = '\0';
     } else {
-        lpszTemp[lstrlen(lpszTemp)-2] = TEXT('\0');  //remove cr and newline character
-        sprintf( pszBuf, TEXT("%s (0x%x)"), lpszTemp, GetLastError() );
+        lpszTemp[lstrlenA(lpszTemp)-2] = '\0';  //remove cr and newline character
+        sprintf ( pszBuf, "%s (0x%x)", lpszTemp, GetLastError() );
     }
 
     if ( lpszTemp ) {
@@ -813,26 +816,26 @@ char* windows_format_error_string(
     unsigned long dwError, char* pszBuf, int iSize
 ) {
     DWORD dwRet;
-    LPTSTR lpszTemp = NULL;
+    LPSTR lpszTemp = NULL;
 
-    dwRet = FormatMessage(
+    dwRet = FormatMessageA(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM |
         FORMAT_MESSAGE_ARGUMENT_ARRAY,
         NULL,
         dwError,
         LANG_NEUTRAL,
-        (LPTSTR)&lpszTemp,
+        (LPSTR)&lpszTemp,
         0,
         NULL
     );
 
     // supplied buffer is not long enough
     if ( !dwRet || ( (long)iSize < (long)dwRet+14 ) ) {
-        pszBuf[0] = TEXT('\0');
+        pszBuf[0] = '\0';
     } else {
-        lpszTemp[lstrlen(lpszTemp)-2] = TEXT('\0');  //remove cr and newline character
-        sprintf( pszBuf, TEXT("%s (0x%x)"), lpszTemp, dwError );
+        lpszTemp[lstrlenA(lpszTemp)-2] = '\0';  //remove cr and newline character
+        sprintf( pszBuf, "%s (0x%x)", lpszTemp, dwError );
     }
 
     if ( lpszTemp ) {
@@ -876,4 +879,4 @@ int string_substitute(
     return retval;
 }
 
-const char *BOINC_RCSID_ab90e1e = "$Id: str_util.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_ab90e1e = "$Id: str_util.cpp 18663 2009-07-22 22:33:36Z davea $";

@@ -35,6 +35,11 @@ and we believe that their descriptions
 (institution and area of research) are accurate.
 See also
 <a href=wiki/Project_list>a complete list of projects</a>.
+
+<p>
+Note: if your computer is equipped with an NVIDIA Graphics Processing Unit
+(GPU), you may be able to
+<a href=http://boinc.berkeley.edu/cuda.php>use it to compute faster</a>.
 ";
 list_start("cellpadding=2 width=100%");
 list_heading(
@@ -56,7 +61,10 @@ foreach ($areas as $area) {
         $desc = addslashes($p[4]);
         $x = "<a href=$p[1] onmouseover=\"return escape('$img <b>Home:</b> $p[2]<hr><b>Area:</b> $p[3]<hr><b>Goal:</b> $desc')\">$p[0]</a>";
         $y = $p[1];
-        $p = get_platforms_cached($y);
+        if (array_key_exists(6, $p)) {
+            $y = $p[6];
+        }
+        $p = get_platforms_string($y);
         echo "<tr class=row$n>
             <td valign=top>$x</td>
             <td valign=top>$y</td>

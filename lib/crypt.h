@@ -22,8 +22,8 @@
 // We use our own data structures (R_RSA_PUBLIC_KEY and R_RSA_PRIVATE_KEY)
 // to store keys in either case.
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <openssl/rsa.h>
 
@@ -76,12 +76,17 @@ struct DATA_BLOCK {
 
 // size of text-encoded signature
 #define SIGNATURE_SIZE_TEXT (SIGNATURE_SIZE_BINARY*2+20)
-
-extern int print_hex_data(FILE* f, DATA_BLOCK&);
 extern int sprint_hex_data(char* p, DATA_BLOCK&);
+#ifdef _USING_FCGI_
+#undef FILE
+#endif
+extern int print_hex_data(FILE* f, DATA_BLOCK&);
 extern int scan_hex_data(FILE* f, DATA_BLOCK&);
 extern int print_key_hex(FILE*, KEY* key, int len);
 extern int scan_key_hex(FILE*, KEY* key, int len);
+#ifdef _USING_FCGI_
+#define FILE FCGI_FILE
+#endif
 extern int sscan_key_hex(const char*, KEY* key, int len);
 extern int encrypt_private(
     R_RSA_PRIVATE_KEY& key, DATA_BLOCK& in, DATA_BLOCK& out

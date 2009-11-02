@@ -16,6 +16,11 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#else
+#include <cstdio>
+#endif
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -26,12 +31,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
 #include "boinc_db.h"
 #include "crypt.h"
 #include "error_numbers.h"
 #include "md5_file.h"
 #include "parse.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "common_defs.h"
 #include "filesys.h"
 #include "sched_util.h"
@@ -39,11 +46,6 @@
 
 #include "backend_lib.h"
 
-#ifdef _USING_FCGI_
-#include "boinc_fcgi.h"
-#else
-#define FCGI_ToFILE(x) (x)
-#endif
 
 using std::string;
 
@@ -503,14 +505,12 @@ int create_result(
     // associated with this newly-created result
     //
     if (config_loc.locality_scheduling) {
-        char datafilename[512];
+        const char *datafilename;
         char *last=strstr(result.name, "__");
         if (result.name<last && last<(result.name+255)) {
-            sprintf(datafilename, "../locality_scheduling/working_set_removal/");
-            strncat(datafilename, result.name, last-result.name);
+            datafilename = config.project_path("locality_scheduling/working_set_removal/%s", result.name);
             unlink(datafilename);
-            sprintf(datafilename, "../locality_scheduling/work_available/");
-            strncat(datafilename, result.name, last-result.name);
+            datafilename = config.project_path("locality_scheduling/work_available/%s", result.name);
             boinc_touch_file(datafilename);
         } 
     }
@@ -635,4 +635,4 @@ int create_work(
     return 0;
 }
 
-const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 18437 2009-06-16 20:54:44Z davea $";

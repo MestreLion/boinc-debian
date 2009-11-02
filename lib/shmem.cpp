@@ -60,12 +60,19 @@ extern "C" int debug_printf(const char *fmt, ...);
 #endif
 #endif
 
+
 #include "error_numbers.h"
 #include "shmem.h"
 
 #ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
+using FCGI::fprintf;
+#define perror FCGI::perror
+#else
+using std::fprintf;
+using std::perror;
 #endif
+
 
 #ifdef _WIN32
 
@@ -319,7 +326,10 @@ int create_shmem_mmap(const char *path, size_t size, void** pp) {
     if (fd < 0) return ERR_SHMGET;
 
     retval = fstat(fd, &sbuf);
-    if (retval) return ERR_SHMGET;
+    if (retval) {
+        close(fd);
+        return ERR_SHMGET;
+    }
     if (sbuf.st_size < (long)size) {
         // The following 2 lines extend the file and clear its new 
         // area to all zeros because they write beyond the old EOF. 
@@ -355,8 +365,14 @@ int attach_shmem_mmap(const char *path, void** pp) {
     if (fd < 0) return ERR_SHMGET;
 
     retval = fstat(fd, &sbuf);
-    if (retval) return ERR_SHMGET;
-    if (sbuf.st_size == 0) return ERR_SHMGET;
+    if (retval) {
+        close(fd);
+        return ERR_SHMGET;
+    }
+    if (sbuf.st_size == 0) {
+        close(fd);
+        return ERR_SHMGET;
+    }
 
     *pp = mmap(NULL, sbuf.st_size, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0);
     
@@ -372,9 +388,10 @@ int attach_shmem_mmap(const char *path, void** pp) {
 
 
 int detach_shmem_mmap(void* p, size_t size) {
-    return munmap(p, size);
+    return munmap((char *)p, size);
 }
 
+#if HAVE_SYS_SHM_H
 
 // Compatibility routines for Unix/Linux/Mac V5 applications 
 //
@@ -492,6 +509,30 @@ int print_shmem_info(key_t key) {
     return 0;
 }
 
+#else  // HAVE_SYS_SHM_H
+
+// Platforms that don't have sys/shm.h will need stubs,
+// or alternate implementations
+
+int create_shmem(key_t, int size, gid_t gid, void**) {
+   perror("create_shmem: not supported on this platform");
+   return ERR_SHMGET;
+}
+int attach_shmem(key_t, void**) {
+   perror("attach_shmem: not supported on this platform");
+   return ERR_SHMGET;
+}
+int detach_shmem(void*) {
+   perror("detach_shmem: not supported on this platform");
+   return ERR_SHMGET;
+}
+int destroy_shmem(key_t) {
+   perror("destroy_shmem: not supported on this platform");
+   return ERR_SHMCTL;
+}
+
+#endif  // !HAVE_SYS_SHM_H
+
 #endif  // !defined(_WIN32) && !defined(__EMX__)
 
-const char *BOINC_RCSID_f835f078de = "$Id: shmem.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_f835f078de = "$Id: shmem.cpp 19251 2009-10-05 20:16:26Z romw $";

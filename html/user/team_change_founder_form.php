@@ -68,6 +68,8 @@ if ($team->ping_user != 0) {
             <p>
         ";
     }
+} else {
+    echo "No transfer request is pending.<p>";
 }
 
 echo "
@@ -99,8 +101,8 @@ foreach ($users as $user) {
             <tr>
             <td align="center"><input type="radio" name="userid" value="'.$user->id.'">
             <td>'.$user->name.'</td>
-            <td>'.$user_total_credit.'</td>
-            <td>'.$user_expavg_credit.'</td>
+            <td align=right>'.$user_total_credit.'</td>
+            <td align=right>'.$user_expavg_credit.'</td>
             </tr>
         ';
         $navailable_users++;
@@ -120,5 +122,5 @@ if ($navailable_users > 0) {
 echo "</form>";
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_change_founder_form.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_change_founder_form.php 16665 2008-12-09 22:42:28Z boincadm $";  //Generated automatically - do not edit
 ?>

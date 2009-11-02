@@ -28,7 +28,7 @@
 #endif
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -44,6 +44,7 @@
 
 #include "procinfo.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "client_msgs.h"
 
 using std::vector;
