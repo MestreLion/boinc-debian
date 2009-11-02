@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "sg_DlgMessages.h"
@@ -33,6 +31,7 @@
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
 #include "MainDocument.h"
+#include "BOINCBaseFrame.h"
 #include "hyperlink.h"
 #include "version.h"
 
@@ -65,7 +64,6 @@ IMPLEMENT_DYNAMIC_CLASS( CPanelMessages, wxPanel )
 BEGIN_EVENT_TABLE( CPanelMessages, wxPanel )
 ////@begin CPanelPreferences event table entries
     EVT_ERASE_BACKGROUND( CPanelMessages::OnEraseBackground )
-    EVT_TIMER(ID_REFRESHMESSAGESTIMER, CPanelMessages::OnRefresh)
     EVT_BUTTON( wxID_OK, CPanelMessages::OnOK )
     EVT_BUTTON(ID_COPYAll, CPanelMessages::OnMessagesCopyAll)
     EVT_BUTTON(ID_COPYSELECTED, CPanelMessages::OnMessagesCopySelected)
@@ -113,21 +111,12 @@ bool CPanelMessages::Create()
     m_pMessageInfoAttr = new wxListItemAttr(*wxBLACK, *wxWHITE, wxNullFont);
     m_pMessageErrorAttr = new wxListItemAttr(*wxRED, *wxWHITE, wxNullFont);
 
-	m_pRefreshMessagesTimer = new wxTimer(this, ID_REFRESHMESSAGESTIMER);
-    wxASSERT(m_pRefreshMessagesTimer);
-
-    m_pRefreshMessagesTimer->Start(1000);  
-
     return true;
 }
 
 
 CPanelMessages::~CPanelMessages()
 {
-	if (m_pRefreshMessagesTimer) {
-        m_pRefreshMessagesTimer->Stop();
-        delete m_pRefreshMessagesTimer;
-    }
 	if (m_pMessageInfoAttr) {
         delete m_pMessageInfoAttr;
         m_pMessageInfoAttr = NULL;
@@ -210,25 +199,17 @@ void CPanelMessages::CreateControls()
 	}
     itemButton2->SetHelpText(
 #ifdef __WXMAC__
-        _("Copy the selected messages to the clipboard. "
-          "You can select multiple messages by holding down the shift "
-          "or command key while clicking on messages.")
+        _("Copy the selected messages to the clipboard. You can select multiple messages by holding down the shift or command key while clicking on messages.")
 #else
-        _("Copy the selected messages to the clipboard. "
-          "You can select multiple messages by holding down the shift "
-          "or control key while clicking on messages.")
+        _("Copy the selected messages to the clipboard. You can select multiple messages by holding down the shift or control key while clicking on messages.")
 #endif
     );
 #if wxUSE_TOOLTIPS
     itemButton2->SetToolTip(
 #ifdef __WXMAC__
-        _("Copy the selected messages to the clipboard. "
-          "You can select multiple messages by holding down the shift "
-          "or command key while clicking on messages.")
+        _("Copy the selected messages to the clipboard. You can select multiple messages by holding down the shift or command key while clicking on messages.")
 #else
-        _("Copy the selected messages to the clipboard. "
-          "You can select multiple messages by holding down the shift "
-          "or control key while clicking on messages.")
+        _("Copy the selected messages to the clipboard. You can select multiple messages by holding down the shift or control key while clicking on messages.")
 #endif
     );
 #endif
@@ -340,10 +321,10 @@ void CPanelMessages::OnEraseBackground(wxEraseEvent& event){
 
 
 /*!
- * wxEVT_TIMER event handler for ID_REFRESHMESSAGESTIMER
+ * called from CSimpleFrame::OnRefreshView()
  */
 
-void CPanelMessages::OnRefresh(wxTimerEvent& event) {
+void CPanelMessages::OnRefresh() {
     bool isConnected;
     static bool was_connected = false;
     
@@ -371,13 +352,16 @@ void CPanelMessages::OnRefresh(wxTimerEvent& event) {
                 // Force a complete update
                 m_pList->DeleteAllItems();
                 m_pList->SetItemCount(iDocCount);
-           }
-            
-            if (m_iPreviousDocCount != iDocCount)
-                m_pList->SetItemCount(iDocCount);
+                 m_iPreviousDocCount = 0;    // Force scrolling to bottom
+            } else {
+                // Connection status didn't change
+                if (m_iPreviousDocCount != iDocCount) {
+                    m_pList->SetItemCount(iDocCount);
+                }
+            }
         }
 
-        if ((iDocCount) && (EnsureLastItemVisible()) && (m_iPreviousDocCount != iDocCount)) {
+        if ((iDocCount > 1) && (EnsureLastItemVisible()) && (m_iPreviousDocCount != iDocCount)) {
             m_pList->EnsureVisible(iDocCount - 1);
         }
 
@@ -387,8 +371,6 @@ void CPanelMessages::OnRefresh(wxTimerEvent& event) {
 
         m_bProcessingRefreshEvent = false;
     }
-
-    event.Skip();
 }
 
 
@@ -460,17 +442,18 @@ void CPanelMessages::OnMessagesCopySelected( wxCommandEvent& WXUNUSED(event) ) {
 void CPanelMessages::OnButtonHelp( wxCommandEvent& event ) {
     wxLogTrace(wxT("Function Start/End"), wxT("CPanelMessages::OnHelp - Function Begin"));
 
-	std::string url;
-	url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl().mb_str();
+    if (IsShown()) {
+    	wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
-	wxString wxurl;
-	wxurl.Printf(
-        wxT("%s?target=simple_messages&version=%s&controlid=%d"),
-        url.c_str(),
-        BOINC_VERSION_STRING,
-        event.GetId()
-    );
-    wxHyperLink::ExecuteLink(wxurl);
+		wxString wxurl;
+		wxurl.Printf(
+            wxT("%s?target=simple_messages&version=%s&controlid=%d"),
+            strURL.c_str(),
+            wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
+            event.GetId()
+        );
+        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+    }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CPanelMessages::OnHelp - Function End"));
 }
@@ -852,13 +835,16 @@ void CDlgMessages::OnHelp(wxHelpEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CDlgMessages::OnHelp - Function Begin"));
 
     if (IsShown()) {
-		std::string url;
-		url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationWebsite().mb_str();
-		canonicalize_master_url(url);
+        wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
-		wxString wxurl;
-		wxurl.Printf(wxT("%smanager_links.php?target=simple_messages&controlid=%d"), url.c_str(), event.GetId());
-        wxHyperLink::ExecuteLink(wxurl);
+        wxString wxurl;
+		wxurl.Printf(
+            wxT("%s?target=simple_messages&version=%s&controlid=%d"),
+            strURL.c_str(),
+            wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
+            event.GetId()
+        );
+        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CDlgMessages::OnHelp - Function End"));

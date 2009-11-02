@@ -49,6 +49,77 @@ function result_granted_credit_string($result, $string_to_show) {
     }
 } 
 
+// various states that we allow users to filter on
+
+define("STATE_ALL", 0);
+define("STATE_IN_PROGRESS", 1);
+define("STATE_PENDING", 2);
+define("STATE_VALID", 3);
+define("STATE_INVALID", 4);
+define("STATE_ERROR", 5);
+define("NSTATES", 6);
+
+$state_name = array(
+    "All",
+    "In progress",
+    "Pending",
+    "Valid",
+    "Invalid",
+    "Error",
+);
+
+$state_clause = array(
+    "",
+    " and server_state=4 ",
+    " and server_state=5 and outcome=1 and (validate_state=0 or validate_state=4) ",
+    " and server_state=5 and outcome=1 and validate_state=1 ",
+    " and server_state=5 and (outcome=6 or (outcome=1 and (validate_state=2 or validate_state=3 or validate_state=5))) ",
+    " and server_state=5 and (outcome=3 or outcome=4 or outcome=7) ",
+);
+
+function state_string($result) {
+    switch ($result->server_state) {
+    case 1: return "Inactive";
+    case 2: return "Unsent";
+    case 4: return "In progress";
+    case 5:
+        switch ($result->outcome) {
+        case 1:
+            switch ($result->validate_state) {
+            case 0: return "Completed, waiting for validation";
+            case 1: return "Completed and validated";
+            case 2: return "Completed, marked as invalid";
+            case 3: return "Completed, can't validate";
+            case 4: return "Completed, validation inconclusive";
+            case 5: return "Completed, too late to validate";
+            }
+            return "Completed";
+        case 2: return "Couldn't send";
+        case 3:
+            if ($result->exit_status == -221) {
+                return "Redundant result";
+            }
+            switch($result->client_state) {
+            case 1: return "Error while downloading";
+            case 2: return "Error while computing";
+            case 3: return "Error while computing";
+            case 4: return "Error while uploading";
+            case 6:
+                if ($result->exit_status == -221) {
+                    return "Cancelled by server";
+                }
+                return "Aborted by user";
+            }
+            return "Error";
+        case 4: return "Timed out - no response";
+        case 5: return "Didn't need";
+        case 6: return "Validate error";
+        case 7: return "Client detached";
+        }
+    }
+    return "Unknown";
+}
+
 function result_server_state_string($result) {
     switch($result->server_state) {
     case 1: return "Inactive";
@@ -66,7 +137,7 @@ function result_outcome_string($result) {
     case 2: return "Couldn't send";
     case 3:
         if ($result->exit_status <> -221) {
-               return "Client error";
+            return "Client error";
         }
         return "Redundant result";
     case 4: return "No reply";
@@ -86,10 +157,10 @@ function result_client_state_string($result) {
     case 4: return "Uploading";
     case 5: return "Done";
     case 6:
-        if ($result->exit_status <> -221) {
-            return "Aborted by user";
+        if ($result->exit_status == -221) {
+            return "Cancelled by server";
         }
-        return "Cancelled by server";
+        return "Aborted by user";
     }
 }
 
@@ -140,12 +211,30 @@ function wu_error_mask_str($s) {
     return $x;
 }
 
-function result_table_start($show_wu_link, $show_host_link, $show_result_link) {
+function result_page_url($info) {
+    $c = $info->clause;
+    $o = $info->offset;
+    $sn = $info->show_names;
+    $st = $info->state;
+    return "results.php?$c&amp;offset=$o&amp;show_names=$sn&amp;state=$st";
+}
+
+function result_table_start($show_wu_link, $show_host_link, $info) {
     start_table();
-    echo "
-        <tr>
-    ";
-    if ($show_result_link) {
+    echo "<tr>";
+    if ($info) {
+        if ($info->show_names) {
+            $i2 = clone $info;
+            $i2->show_names = 0;
+            $url = result_page_url($i2);
+            echo "<th>Task name<br><span class=\"smalltext\">click for details<br><a href=$url>Show IDs</a></span></th>\n";
+        } else {
+            $i2 = clone $info;
+            $i2->show_names = 1;
+            $url = result_page_url($i2);
+            echo "<th>Task ID<br><span class=\"smalltext\">click for details<br><a href=$url>Show names</a></span></th>\n";
+        }
+    } else {
         echo "<th>Task ID<br><span class=\"smalltext\">click for details</span></th>\n";
     }
     if ($show_wu_link) {
@@ -160,16 +249,8 @@ function result_table_start($show_wu_link, $show_host_link, $show_result_link) {
             <br>or deadline
             <br><span class=\"smalltext\"><a href=\"explain_state.php?field=result_time\">explain</a></span>
         </th>
-        <th>Server state
-            <br><span class=\"smalltext\"><a href=\"explain_state.php?field=result_server_state\">explain</a></span>
-        </th>
-        <th>Outcome
-            <br><span class=\"smalltext\"><a href=\"explain_state.php?field=result_outcome\">explain</a></span>
-        </th>
-        <th>Client state
-            <br><span class=\"smalltext\"><a href=\"explain_state.php?field=result_client_state\">explain</a></span>
-        </th>
-        <th>CPU time (sec)</th>
+        <th>Status</th>
+        <th>Run time (sec)</th>
         <th>claimed credit</th>
         <th>granted credit</th>
         </tr>
@@ -185,10 +266,10 @@ function bad_result($result) {
 }
 
 function show_result_row(
-    $result, $show_wu_link, $show_host_link, $show_result_link, $i
+    $result, $show_wu_link, $show_host_link, $show_name, $i
 ) {
     $s = time_str($result->sent_time);
-    // if result has been received, show the received time,
+    // if result has been reported, show the received time,
     // else show the reporting deadline in green if in the future
     // and in red if in the past.
     //
@@ -203,18 +284,19 @@ function show_result_row(
     } else {
         $r = "---";
     }
-    $ss = result_server_state_string($result);
-    $out = result_outcome_string($result);
-    $cl = result_client_state_string($result);
+    $ss = state_string($result);
     $result_claimed_credit = format_credit($result->claimed_credit);
     $result_granted_credit = format_credit($result->granted_credit);
     $result_claimed_credit = result_claimed_credit_string($result, $result_claimed_credit);
     $result_granted_credit = result_granted_credit_string($result, $result_granted_credit); 
     $j = $i % 2;
     echo "<tr class=row$j>";
-    if ($show_result_link) {
-        echo "<td><a href=\"result.php?resultid=$result->id\" title=\"Name: ".$result->name."\">$result->id</a></td>\n";
+    if ($show_name) {
+        $x = $result->name;
+    } else {
+        $x = $result->id;
     }
+    echo "<td><a href=\"result.php?resultid=$result->id\">$x</a></td>\n";
     if ($show_wu_link) {
         echo "<td><a href=\"workunit.php?wuid=$result->workunitid\">$result->workunitid</a></td>\n";
     }
@@ -230,11 +312,9 @@ function show_result_row(
         <td>$s</td>
         <td>$r</td>
         <td>$ss</td>
-        <td>$out</td>
-        <td>$cl</td>
-        <td>$cpu_time</td>
-        <td>$result_claimed_credit</td>
-        <td>$result_granted_credit</td>
+        <td align=right>$cpu_time</td>
+        <td align=right>$result_claimed_credit</td>
+        <td align=right>$result_granted_credit</td>
         </tr>
     ";
 }
@@ -259,7 +339,6 @@ function exit_status_string($result) {
 
 function show_result($result) {
     start_table();
-    row2("Task ID", $result->id);
     row2("Name", $result->name);
     row2("Workunit", "<a href=\"workunit.php?wuid=$result->workunitid\">$result->workunitid</a>");
     row2("Created", time_str($result->create_time));
@@ -271,7 +350,7 @@ function show_result($result) {
     row2("Exit status", exit_status_string($result));
     row2("Computer ID", host_link($result->hostid));
     row2("Report deadline", time_str($result->report_deadline));
-    row2("CPU time", $result->cpu_time);
+    row2("Run time", $result->cpu_time);
     row2("stderr out", "<pre>".htmlspecialchars($result->stderr_out)."</pre>");
     row2("Validate state", validate_state_str($result));
     row2("Claimed credit", $result->claimed_credit);
@@ -280,25 +359,43 @@ function show_result($result) {
     end_table();
 }
 
-function show_result_navigation(
-    $clause, $number_of_results, $offset, $results_per_page
-) {
+function show_result_navigation($info) {
+    global $state_name;
+
     echo "<br><center>";
-    if ($offset >= $results_per_page) {
-        $offset_p = $offset-$results_per_page;
-        echo "<a href=results.php?$clause&offset=$offset_p>Previous $results_per_page</a>";
+    $show_prev = ($info->offset >= $info->results_per_page);
+    $show_next = ($info->number_of_results > $info->results_per_page);
+    if ($show_prev) {
+        $i2 = clone $info;
+        $i2->offset = $info->offset - $info->results_per_page;
+        $url = result_page_url($i2);
+        echo "<a href=$url>Previous ".$info->results_per_page."</a>";
     }
-    if (($offset >= $results_per_page) && ($number_of_results > $results_per_page)) {
+    if ($show_prev && $show_next) {
         echo "&nbsp;|&nbsp;";
     }
-    if ($number_of_results > $results_per_page) {
-        $offset_n = $offset+$results_per_page;
-        echo "<a href=results.php?$clause&offset=$offset_n>Next $results_per_page</a></center><br>";
-    } else {
-        echo "</center><br><br>";
+    if ($show_next) {
+        $i2 = clone $info;
+        $i2->offset = $info->offset + $info->results_per_page;
+        $url = result_page_url($i2);
+        echo "<a href=$url>Next ".$info->results_per_page."</a>";
     }
+    echo "<br>Show: ";
+    for ($i=0; $i<NSTATES; $i++) {
+        if ($i) echo " | ";
+        if ($info->state == $i) {
+            echo $state_name[$i];
+        } else {
+            $i2 = clone $info;
+            $i2->state = $i;
+            $i2->offset = 0;
+            $url = result_page_url($i2);
+            echo "<a href=$url>".$state_name[$i]."</a>";
+        }
+    }
+    echo "</center><br>";
 }
 
-$cvs_version_tracker[]="\$Id: result.inc 15771 2008-08-07 20:43:52Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: result.inc 18426 2009-06-16 17:15:55Z davea $";  //Generated automatically - do not edit
 
 ?>

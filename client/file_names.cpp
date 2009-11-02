@@ -35,12 +35,31 @@
 #include "filesys.h"
 #include "error_numbers.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "util.h"
 #include "client_msgs.h"
 #include "sandbox.h"
 #include "client_state.h"
 
 #include "file_names.h"
+
+int make_soft_link(PROJECT* project, char* link_path, char* rel_file_path) {
+    FILE *fp = boinc_fopen(link_path, "w");
+    if (!fp) {
+        msg_printf(project, MSG_INTERNAL_ERROR,
+            "Can't create link file %s", link_path
+        );
+        return ERR_FOPEN;
+    }
+    fprintf(fp, "<soft_link>%s</soft_link>\n", rel_file_path);
+    fclose(fp);
+    if (log_flags.slot_debug) {
+        msg_printf(project, MSG_INFO,
+            "[slot] linked %s to %s", rel_file_path, link_path
+        );
+    }
+    return 0;
+}
 
 void get_project_dir(PROJECT* p, char* path, int len) {
     char buf[1024];
@@ -144,7 +163,7 @@ int remove_project_dir(PROJECT& p) {
     int retval;
 
     get_project_dir(&p, buf, sizeof(buf));
-    retval = client_clean_out_dir(buf);
+    retval = client_clean_out_dir(buf, "remove project dir");
     if (retval) {
         msg_printf(&p, MSG_INTERNAL_ERROR, "Can't delete file %s", boinc_failed_file);
         return retval;
@@ -223,7 +242,7 @@ void delete_old_slot_dirs() {
             }
 #endif
             if (!gstate.active_tasks.is_slot_dir_in_use(path)) {
-                client_clean_out_dir(path);
+                client_clean_out_dir(path, "delete old slot dirs");
                 remove_project_owned_dir(path);
             }
         } else {
@@ -313,4 +332,4 @@ bool is_version_dir(char* buf, VERSION_INFO& vi) {
     return (n==3);
 }
 
-const char *BOINC_RCSID_7d362a6a52 = "$Id: file_names.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_7d362a6a52 = "$Id: file_names.cpp 18437 2009-06-16 20:54:44Z davea $";

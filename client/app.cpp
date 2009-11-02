@@ -85,6 +85,62 @@ using std::min;
 ACTIVE_TASK::~ACTIVE_TASK() {
 }
 
+// preempt this task;
+// called from the CLIENT_STATE::enforce_schedule()
+// and ACTIVE_TASK_SET::suspend_all()
+//
+int ACTIVE_TASK::preempt(int preempt_type) {
+    int retval;
+    bool remove=false;
+
+    switch (preempt_type) {
+    case REMOVE_NEVER:
+        remove = false;
+        break;
+    case REMOVE_MAYBE_USER:
+    case REMOVE_MAYBE_SCHED:
+        // GPU jobs: always remove from mem, since it's tying up GPU RAM
+        //
+        if (result->uses_coprocs()) {
+            remove = true;
+            break;
+        }
+        // if it's never checkpointed, leave in mem
+        //
+        if (checkpoint_elapsed_time == 0) {
+            remove = false;
+            break;
+        }
+        // otherwise obey user prefs
+        //
+        remove = !gstate.global_prefs.leave_apps_in_memory;
+        break;
+    case REMOVE_ALWAYS:
+        remove = true;
+        break;
+    }
+
+    if (remove) {
+        if (log_flags.cpu_sched) {
+            msg_printf(result->project, MSG_INFO,
+                "[cpu_sched] Preempting %s (removed from memory)",
+                result->name
+            );
+        }
+        set_task_state(PROCESS_QUIT_PENDING, "preempt");
+        retval = request_exit();
+    } else {
+        if (log_flags.cpu_sched) {
+            msg_printf(result->project, MSG_INFO,
+                "[cpu_sched] Preempting %s (left in memory)",
+                result->name
+            );
+        }
+        retval = suspend();
+    }
+    return 0;
+}
+
 #ifndef SIM
 
 ACTIVE_TASK::ACTIVE_TASK() {
@@ -100,7 +156,6 @@ ACTIVE_TASK::ACTIVE_TASK() {
     graphics_mode_acked = MODE_UNSUPPORTED;
     graphics_mode_ack_timeout = 0;
     fraction_done = 0;
-    episode_start_cpu_time = 0;
     run_interval_start_wall_time = gstate.now;
     checkpoint_cpu_time = 0;
     checkpoint_wall_time = 0;
@@ -113,7 +168,6 @@ ACTIVE_TASK::ACTIVE_TASK() {
     needs_shmem = false;
     want_network = 0;
     premature_exit_count = 0;
-	coprocs_reserved = false;
     quit_time = 0;
     memset(&procinfo, 0, sizeof(procinfo));
 #ifdef _WIN32
@@ -176,13 +230,13 @@ void ACTIVE_TASK::cleanup_task() {
         {
             retval = detach_shmem(app_client_shm.shm);
             if (retval) {
-                msg_printf(NULL, MSG_INTERNAL_ERROR,
+                msg_printf(wup->project, MSG_INTERNAL_ERROR,
                     "Couldn't detach shared memory: %s", boincerror(retval)
                 );
             }
             retval = destroy_shmem(shmem_seg_name);
             if (retval) {
-                msg_printf(NULL, MSG_INTERNAL_ERROR,
+                msg_printf(wup->project, MSG_INTERNAL_ERROR,
                     "Couldn't destroy shared memory: %s", boincerror(retval)
                 );
             }
@@ -191,8 +245,18 @@ void ACTIVE_TASK::cleanup_task() {
         gstate.retry_shmem_time = 0;
     }
 #endif
-    
-    free_coprocs();
+
+    // clear backoff for app's resource;
+    // this addresses the situation where the project has a
+    // "max # jobs in progress" limit, and we're backed off because of that
+    //
+    if (app_version->ncudas) {
+        result->project->cuda_pwf.clear_backoff();
+    } else if (app_version->natis) {
+        result->project->ati_pwf.clear_backoff();
+    } else {
+        result->project->cpu_pwf.clear_backoff();
+    }
 
     if (gstate.exit_after_finish) {
         exit(0);
@@ -203,7 +267,7 @@ int ACTIVE_TASK::init(RESULT* rp) {
     result = rp;
     wup = rp->wup;
     app_version = rp->avp;
-    max_cpu_time = rp->wup->rsc_fpops_bound/gstate.host_info.p_fpops;
+    max_elapsed_time = rp->wup->rsc_fpops_bound/rp->avp->flops;
     max_disk_usage = rp->wup->rsc_disk_bound;
     max_mem_usage = rp->wup->rsc_memory_bound;
     get_slot_dir(slot, slot_dir, sizeof(slot_dir));
@@ -250,7 +314,7 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     retval = procinfo_setup(piv);
 	if (retval) {
 		if (log_flags.mem_usage_debug) {
-			msg_printf(0, MSG_INTERNAL_ERROR,
+			msg_printf(NULL, MSG_INTERNAL_ERROR,
 				"[mem_usage_debug] procinfo_setup() returned %d", retval
 			);
 		}
@@ -309,7 +373,7 @@ bool ACTIVE_TASK_SET::poll() {
     bool action;
     unsigned int i;
     static double last_time = 0;
-    if (gstate.now - last_time < 1.0) return false;
+    if (gstate.now - last_time < TASK_POLL_PERIOD) return false;
     last_time = gstate.now;
 
     action = check_app_exited();
@@ -319,7 +383,7 @@ bool ACTIVE_TASK_SET::poll() {
     process_control_poll();
     get_memory_usage();
     action |= check_rsc_limits_exceeded();
-    action |= get_msgs();
+    get_msgs();
     for (i=0; i<active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks[i];
         if (atp->task_state() == PROCESS_ABORT_PENDING) {
@@ -408,27 +472,30 @@ bool ACTIVE_TASK_SET::is_slot_dir_in_use(char* dir) {
 // Get a free slot,
 // and make a slot dir if needed
 //
-int ACTIVE_TASK_SET::get_free_slot() {
+void ACTIVE_TASK::get_free_slot(RESULT* rp) {
     int j, retval;
     char path[1024];
 
     for (j=0; ; j++) {
-        if (is_slot_in_use(j)) continue;
+        if (gstate.active_tasks.is_slot_in_use(j)) continue;
 
         // make sure we can make an empty directory for this slot
         //
         get_slot_dir(j, path, sizeof(path));
         if (boinc_file_exists(path)) {
             if (is_dir(path)) {
-                retval = client_clean_out_dir(path);
-                if (!retval) return j;
+                retval = client_clean_out_dir(path, "get_free_slot()");
+                if (!retval) break;
             }
         } else {
             retval = make_slot_dir(j);
-            if (!retval) return j;
+            if (!retval) break;
         }
     }
-    return ERR_NOT_FOUND;   // probably never get here
+    slot = j;
+    if (log_flags.slot_debug) {
+        msg_printf(rp->project, MSG_INFO, "[slot] assigning slot %d to %s", j, rp->name);
+    }
 }
 
 bool ACTIVE_TASK_SET::slot_taken(int slot) {
@@ -531,7 +598,8 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
     char buf[256], result_name[256], project_master_url[256];
     int n, dummy;
     unsigned int i;
-    PROJECT* project;
+    PROJECT* project=0;
+    double x;
 
     strcpy(result_name, "");
     strcpy(project_master_url, "");
@@ -542,7 +610,7 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
             if (!project) {
                 msg_printf(
                     NULL, MSG_INTERNAL_ERROR,
-                    "State file error: project %s not found\n",
+                    "State file error: project %s not found for task\n",
                     project_master_url
                 );
                 return ERR_NULL;
@@ -551,7 +619,7 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
             if (!result) {
                 msg_printf(
                     project, MSG_INTERNAL_ERROR,
-                    "State file error: result %s not found\n",
+                    "State file error: result %s not found for task\n",
                     result_name
                 );
                 return ERR_NULL;
@@ -563,10 +631,6 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
                 || result->ready_to_report
                 || result->state() != RESULT_FILES_DOWNLOADED
             ) {
-                msg_printf(project, MSG_INTERNAL_ERROR,
-                    "State file error: result %s is in wrong state\n",
-                    result_name
-                );
                 return ERR_BAD_RESULT_STATE;
             }
 
@@ -622,30 +686,16 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
         else if (parse_double(buf, "<working_set_size>", procinfo.working_set_size)) continue;
         else if (parse_double(buf, "<working_set_size_smoothed>", procinfo.working_set_size_smoothed)) continue;
         else if (parse_double(buf, "<page_fault_rate>", procinfo.page_fault_rate)) continue;
+        else if (parse_double(buf, "<current_cpu_time>", x)) continue;
         else {
             if (log_flags.unparsed_xml) {
-                msg_printf(0, MSG_INFO,
+                msg_printf(project, MSG_INFO,
                     "[unparsed_xml] ACTIVE_TASK::parse(): unrecognized %s\n", buf
                 );
             }
         }
     }
     return ERR_XML_PARSE;
-}
-
-void ACTIVE_TASK::reserve_coprocs() {
-    gstate.coprocs.reserve_coprocs(
-		app_version->coprocs, this, log_flags.coproc_debug, "coproc_debug"
-	);
-    coprocs_reserved = true;
-}
-
-void ACTIVE_TASK::free_coprocs() {
-    if (!coprocs_reserved) return;
-    gstate.coprocs.free_coprocs(
-		app_version->coprocs, this, log_flags.coproc_debug, "coproc_debug"
-	);
-    coprocs_reserved = false;
 }
 
 // Write XML information about this active task set
@@ -688,7 +738,7 @@ int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
             else delete atp;
         } else {
             if (log_flags.unparsed_xml) {
-                msg_printf(0, MSG_INFO,
+                msg_printf(NULL, MSG_INFO,
                     "[unparsed_xml] ACTIVE_TASK_SET::parse(): unrecognized %s\n", buf
                 );
             }
@@ -816,7 +866,9 @@ int ACTIVE_TASK::handle_upload_files() {
                     fip->status = FILE_PRESENT;
                 }
             } else {
-                msg_printf(0, MSG_INTERNAL_ERROR, "Can't find uploadable file %s", p);
+                msg_printf(wup->project, MSG_INTERNAL_ERROR,
+                    "Can't find uploadable file %s", p
+                );
             }
             sprintf(path, "%s/%s", slot_dir, buf);
             delete_project_owned_file(path, true);  // delete the link file
@@ -878,9 +930,10 @@ void ACTIVE_TASK_SET::init() {
         ACTIVE_TASK* atp = active_tasks[i];
         atp->init(atp->result);
         atp->scheduler_state = CPU_SCHED_PREEMPTED;
+        atp->read_task_state_file();
     }
 }
 
 #endif
 
-const char *BOINC_RCSID_778b61195e = "$Id: app.cpp 16622 2008-12-04 18:13:52Z romw $";
+const char *BOINC_RCSID_778b61195e = "$Id: app.cpp 19255 2009-10-05 20:34:14Z romw $";

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: xadd 8663 2005-10-12 18:40:53Z boincadm $
+# $Id: xadd 18374 2009-06-11 15:38:48Z davea $
 
 '''
 Add platform and application records to the BOINC database.
@@ -20,7 +20,8 @@ Reads info from "project.xml", e.g.:
 See http://boinc.berkeley.edu/tool_xadd.php
 '''
 
-import database, db_mid, projectxml
+import boinc_path_config
+from Boinc import database, db_mid, projectxml
 
 database.connect()
 projectxml.default_project().commit_all()

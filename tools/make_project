@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: make_project 15911 2008-08-20 22:09:51Z davea $
+# $Id: make_project 18381 2009-06-11 17:25:01Z davea $
 # Creates a new BOINC project.
 
 import boinc_path_config
@@ -29,14 +29,13 @@ Creates a new project with given name with everything running on a single
 server.
 
 Misc options:
-   --verbose={0,1,2}    default: 1
-   -v                   alias for --verbose=2
    --no_query           accept all directories without querying
    --user_name          default: $USER (%(USER)s)
    --delete_prev_inst   delete project-root first (from prev installation)
    --drop_db_first      drop database first (from prev installation)
    --test_app           install test application
    --web_only           install web files, no executables (for Bossa, Bolt)
+   --srcdir             where to find the source files (default: current directory)
 
 Dir-options:
    --project_root       default: HOME/projects/PROJECT
@@ -78,6 +77,7 @@ try:
             'no_query',
             'test_app',
             'web_only',
+            'srcdir=',
             'user_name=',
             'drop_db_first',
             'delete_prev_inst',
@@ -102,6 +102,7 @@ options.no_query = False
 options.test_app = False
 options.web_only = False
 options.delete_prev_inst = False
+options.srcdir = None
 
 for o,a in opts:
     if o == '-h' or o == '--help':        usage()
@@ -110,6 +111,7 @@ for o,a in opts:
     elif o == '--no_query':      options.no_query       = True
     elif o == '--test_app':      options.test_app       = True
     elif o == '--web_only':      options.web_only       = True
+    elif o == '--srcdir':        options.srcdir         = a
     elif o == '--user_name':     options.user_name      = a
     elif o == '--drop_db_first': options.drop_db_first  = True
     elif o == '--delete_prev_inst': options.delete_prev_inst  = True
@@ -132,6 +134,13 @@ elif len(args) == 1:
     (project_shortname, project_longname) = args[0], args[0]
 else:
     syntax_error('Need one or two arguments')
+
+if not options.srcdir:
+    for dir in ('.', '..'):
+        if os.path.exists(os.path.join(dir, 'html', 'project.sample', 'project.inc')):
+            options.srcdir = dir
+    if not options.srcdir:
+        syntax_error('Not running in the source directory and --srcdir was not specified')
 
 opt_repls = {'PROJECT':project_shortname,
              'PROJECT_ops':project_shortname+'_ops',
@@ -272,11 +281,24 @@ t.disabled = 1
 
 project.config.write()
 
+
 svn_version_file = proot+'/local.revision'
 try:
-    os.system('/bin/sh -c /usr/bin/svnversion > '+svn_version_file)
+    cmd = '/bin/sh -c \'/usr/bin/svnversion ' + options.srcdir + '\' > '+svn_version_file
+    os.system(cmd)
 except:
     print '''Couldn't find svnversion'''
+
+try:
+    cmd = '/bin/sh -c \'/usr/bin/svnversion ' + options.srcdir + '\' > '+proot+'/db_revision'
+    os.system(cmd)
+except:
+    print '''Couldn't find svnversion'''
+
+try:
+    os.system('cd '+proot+'/html/ops; ./update_translations.php -d 1')
+except:
+    print '''Couldn't install translation files'''
 
 print '''Done installing default daemons.'''
 
@@ -343,8 +365,8 @@ readme_filename = os.path.join(
 test_app_msg = ''
 if options.test_app:
     test_app_msg = '''
-3. The project is configured with a test application.
-    To install this application (recommended) run:
+-  The project is configured with a test application.
+   To install this application (recommended) run:
         cd %(proot)s
         bin/xadd
         bin/update_versions
@@ -353,17 +375,17 @@ if options.test_app:
 print >>open(readme_filename,'w'), '''
 Steps to complete installation:
 
-1. Change Apache configuration (as root):
+-  Change Apache configuration (as root):
 
    cat %(httpd_conf_template_filename)s >> /etc/apache/httpd.conf
 
-   (path to httpd.conf varies)
+   (path to httpd.conf varies; try /etc/httpd/)
    Then restart the web server:
 
    /usr/sbin/apache2ctl restart
    (or /usr/sbin/apachectl restart)
 
-2. Add to crontab (as %(USER)s)
+-  Add to crontab (as %(USER)s)
 
     0,5,10,15,20,25,30,35,40,45,50,55 * * * * %(proot)s/bin/start --cron
 
@@ -371,7 +393,7 @@ Steps to complete installation:
    PYTHONPATH)
 %(test_app_msg)s
 
-3. In the project home directory (%(proot)s) run
+-  In the project home directory (%(proot)s) run
     bin/xadd
 
 To start, show status, and stop the project, run:
@@ -393,7 +415,7 @@ See the online documentation at http://boinc.berkeley.edu/
 '''%locals()
 
 print '''
-Done installing files.  Please view
+Done creating project.  Please view
 %(readme_filename)s
 for important additional instructions.
 '''%locals()

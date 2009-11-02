@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _BOINCBASEVIEW_H_
 #define _BOINCBASEVIEW_H_
@@ -24,7 +22,7 @@
 #pragma interface "BOINCBaseView.cpp"
 #endif
 
-#define DEFAULT_TASK_FLAGS             wxTAB_TRAVERSAL | wxADJUST_MINSIZE
+#define DEFAULT_TASK_FLAGS             wxTAB_TRAVERSAL | wxADJUST_MINSIZE | wxFULL_REPAINT_ON_RESIZE
 #define DEFAULT_LIST_SINGLE_SEL_FLAGS  wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL
 #define DEFAULT_LIST_MULTI_SEL_FLAGS   wxLC_REPORT | wxLC_VIRTUAL
 
@@ -49,7 +47,7 @@ public:
     wxString                m_strDescription;
     wxInt32                 m_iEventID;
 
-	wxButton*				m_pButton;
+    wxButton*               m_pButton;
     wxString                m_strWebSiteLink;
 };
 
@@ -69,6 +67,8 @@ public:
 
 	std::vector<CTaskItem*> m_Tasks;
 };
+
+typedef bool     (*ListSortCompareFunc)(int, int);
 
 
 class CBOINCBaseView : public wxPanel {
@@ -94,6 +94,9 @@ public:
     virtual wxString&       GetViewDisplayName();
     virtual const char**    GetViewIcon();
     virtual const int       GetViewRefreshRate();
+    virtual wxString        GetKeyValue1(int iRowIndex);
+    virtual wxString        GetKeyValue2(int iRowIndex);
+    virtual int             FindRowIndexByKeyValues(wxString& key1, wxString& key2);
 
     bool                    FireOnSaveState( wxConfigBase* pConfig );
     bool                    FireOnRestoreState( wxConfigBase* pConfig );
@@ -105,8 +108,28 @@ public:
     wxString                FireOnListGetItemText( long item, long column ) const;
     int                     FireOnListGetItemImage( long item ) const;
     wxListItemAttr*         FireOnListGetItemAttr( long item ) const;
+    
+    int                     GetProgressColumn() { return m_iProgressColumn; }
+    virtual double          GetProgressValue(long item);
+    virtual wxString        GetProgressText( long item);
 
+    void                    InitSort();
+    
+	void                    SaveSelections();
+	void                    RestoreSelections();
+	void                    ClearSavedSelections();
+	void                    ClearSelections();
+    void                    RefreshTaskPane();
+ 
     std::vector<CTaskItemGroup*> m_TaskGroups;
+
+    int                     m_iSortColumn;
+    bool                    m_bReverseSort;
+
+private:
+
+	wxArrayString           m_arrSelectedKeys1;     //array for remembering the current selected rows by primary key column value
+	wxArrayString           m_arrSelectedKeys2;     //array for remembering the current selected rows by secondary key column value
 
 protected:
 
@@ -116,15 +139,14 @@ protected:
     virtual void            OnListRender( wxTimerEvent& event );
     virtual void            OnListSelected( wxListEvent& event );
     virtual void            OnListDeselected( wxListEvent& event );
+    virtual void            OnCacheHint(wxListEvent& event);
     virtual wxString        OnListGetItemText( long item, long column ) const;
     virtual int             OnListGetItemImage( long item ) const;
     virtual wxListItemAttr* OnListGetItemAttr( long item ) const;
 
-    virtual void            OnGridSelectCell( wxGridEvent& event );
-    virtual void            OnGridSelectRange( wxGridRangeSelectEvent& event );
-
+    void                    OnColClick(wxListEvent& event);
+    
     virtual int             GetDocCount();
-    virtual wxString        OnDocGetItemText( long item, long column ) const;
     virtual wxString        OnDocGetItemImage( long item ) const;
     virtual wxString        OnDocGetItemAttr( long item ) const;
 
@@ -132,8 +154,9 @@ protected:
     virtual int             EmptyCache();
     virtual int             GetCacheCount();
     virtual int             RemoveCacheElement();
-    virtual int             SyncronizeCache();
-    virtual int             UpdateCache( long item, long column, wxString& strNewData );
+    virtual int             SynchronizeCache();
+    virtual bool            SynchronizeCacheItem(wxInt32 iRowIndex, wxInt32 iColumnIndex);
+    void                    sortData();
 
     virtual void            EmptyTasks();
 
@@ -143,21 +166,36 @@ protected:
 
     virtual void            UpdateWebsiteSelection(long lControlGroup, PROJECT* project);
 
+
+    bool                    _IsSelectionManagementNeeded();
+    virtual bool            IsSelectionManagementNeeded();
+
     bool                    _EnsureLastItemVisible();
     virtual bool            EnsureLastItemVisible();
 
     static  void            append_to_status(wxString& existing, const wxChar* additional);
-	static  wxString        HtmlEntityEncode(wxString strRaw);
-	static  wxString        HtmlEntityDecode(wxString strRaw);
+    static  wxString        HtmlEntityEncode(wxString strRaw);
+    static  wxString        HtmlEntityDecode(wxString strRaw);
 
     bool                    m_bProcessingTaskRenderEvent;
     bool                    m_bProcessingListRenderEvent;
 
     bool                    m_bForceUpdateSelection;
     bool                    m_bIgnoreUIEvents;
+    bool                    m_bNeedSort;
+    
+    int                     m_iProgressColumn;
+
+    wxImageList *           m_SortArrows;
+    ListSortCompareFunc     m_funcSortCompare;
+    wxArrayInt              m_iSortedIndexes;
 
     CBOINCTaskCtrl*         m_pTaskPane;
     CBOINCListCtrl*         m_pListPane;
+
+    wxListItemAttr*         m_pWhiteBackgroundAttr;
+    wxListItemAttr*         m_pGrayBackgroundAttr;
+
 };
 
 

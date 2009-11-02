@@ -53,6 +53,7 @@ function job_finished($job, $inst) {
         $response->cy = get_int('pic_y');
     }
     $inst->set_opaque_data($response);
+    $job->set_state(BOSSA_JOB_DONE);
 }
 
 function job_timed_out($job, $inst, $user) {
@@ -64,8 +65,7 @@ function job_summary($job) {
     return "<a href=".URL_BASE."$info->path>View image</a>";
 }
 
-function instance_summary($inst) {
-    $info = $inst->get_opaque_data();
+function instance_summary($info) {
     if ($info->have_ellipse) {
         return "($info->cx, $info->cy)";
     } else {
@@ -73,7 +73,8 @@ function instance_summary($inst) {
     }
 }
 
-function show_user_summary($user) {
+function user_summary($user) {
+    return "";
 }
 
 ?>

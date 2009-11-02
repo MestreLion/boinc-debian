@@ -18,7 +18,7 @@
 #define SHOW_TIMING 0
 
 #include "config.h"
-#include <stdio.h>
+#include <cstdio>
 
 #include <ctype.h>
 #include <sys/types.h>
@@ -42,6 +42,7 @@ int procinfo_setup(vector<PROCINFO>& pi) {
     FILE* fd;
     PROCINFO p;
     int c, real_mem, virtual_mem, hours;
+    char* lf;
 
 #if SHOW_TIMING
     UnsignedWide start, end, elapsed;
@@ -52,6 +53,7 @@ int procinfo_setup(vector<PROCINFO>& pi) {
 // Some values of possible interest available from 'ps' command:
 // %cpu       percentage cpu usage (alias pcpu)
 // %mem       percentage memory usage (alias pmem)
+// command    command (executable name)
 // majflt     total page faults
 // minflt     total page reclaims
 // nswap      total swaps in/out
@@ -60,7 +62,6 @@ int procinfo_setup(vector<PROCINFO>& pi) {
 // ppid       parent process ID
 // poip       pageouts in progress
 // rss        resident set size in Kbytes
-// rsz        resident set size + (text size / text use count)
 // time       accumulated cpu time, user + system
 // vsz        virtual size in Kbytes
 //
@@ -82,7 +83,7 @@ int procinfo_setup(vector<PROCINFO>& pi) {
 // root; this was perceived by some users as a security risk.
 
 
-    fd = popen("ps -axopid,ppid,rsz,vsz,pagein,time", "r");
+    fd = popen("ps -axcopid,ppid,rss,vsz,pagein,time,command", "r");
     if (!fd) return 0;
 
     // Skip over the header line
@@ -96,8 +97,12 @@ int procinfo_setup(vector<PROCINFO>& pi) {
 
     while (1) {
         memset(&p, 0, sizeof(p));
-        c = fscanf(fd, "%d%d%d%d%ld%d:%lf\n", &p.id, &p.parentid, &real_mem, &virtual_mem, &p.page_fault_count, &hours, &p.user_time);
+        c = fscanf(fd, "%d%d%d%d%ld%d:%lf ", &p.id, &p.parentid, &real_mem, 
+                    &virtual_mem, &p.page_fault_count, &hours, &p.user_time);
         if (c < 7) break;
+        if (fgets(p.command, sizeof(p.command) , fd) == NULL) break;
+        lf = strchr(p.command, '\n');
+        if (lf) *lf = '\0';         // Strip trailing linefeed
         p.working_set_size = (double)real_mem * 1024.;
         p.swap_size = (double)virtual_mem * 1024.;
         p.user_time += 60. * (float)hours;

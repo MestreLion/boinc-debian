@@ -21,6 +21,12 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <setjmp.h>
+
 #ifdef _WIN32
 
 #ifndef SANS_JPEGLIB
@@ -38,11 +44,6 @@ extern "C" {
 #endif
 
 #ifndef _WIN32
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <csetjmp>
 #if defined(HAVE_MALLOC_H) || defined(_WIN32)
 #include <malloc.h>
 #if defined(__MINGW32__) && !defined(alloca)
@@ -597,11 +598,11 @@ int read_ppm_file(const char* name, int& w, int& h, unsigned char** arrayp) {
 // draw a texture at a given position and size.
 // Change size if needed so aspect ratio of texture isn't changed
 //
-void TEXTURE_DESC::draw(float* p, float* size, int xalign, int yalign) {
+void TEXTURE_DESC::draw(float* p, float* size, int xalign, int yalign, float alpha) {
     float pos[3];
     float tratio, sratio, new_size;
     memcpy(pos, p, sizeof(pos));
-    glColor4f(1.,1.,1.,1.);
+    glColor4f(1.,1.,1.,alpha);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, id);
 
@@ -912,4 +913,4 @@ void print_text(const char* string) {
 
 
 
-const char *BOINC_RCSID_12bffca9ae = "$Id: gutil.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_12bffca9ae = "$Id: gutil.cpp 17954 2009-04-30 21:48:20Z davea $";

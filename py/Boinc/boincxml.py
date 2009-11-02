@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-# $Id: boincxml.py 15168 2008-05-09 20:54:52Z davea $
+# $Id: boincxml.py 18840 2009-08-13 18:22:40Z davea $
 
 # boincxml.py - xml utilities for boinc
 
-import sys
+import sys, os
 import xml.dom.minidom
 
 def append_new_element(parent_node, name):
@@ -120,16 +120,17 @@ class XMLConfig:
         return self
     def read(self, failopen_ok=False):
         """Read the XML object's file source and return self."""
-        try:
-            self.xml = xml.dom.minidom.parse(self.filename)
-            strip_white_space(self.xml)
-        except:
-            if not failopen_ok:
-                # raise
-                raise Exception("Couldn't parse XML config\n")
-            print >>sys.stderr, "Warning: couldn't parse XML file"
-            # self.xml = xml.dom.minidom.Document()
+        if failopen_ok and not os.path.exists(self.filename):
             self._init_empty_xml()
+        else:
+            try:
+                self.xml = xml.dom.minidom.parse(self.filename)
+                strip_white_space(self.xml)
+            except:
+                if not failopen_ok:
+                    raise Exception("Couldn't parse XML config\n")
+                print >>sys.stderr, "Warning: couldn't parse XML file"
+                self._init_empty_xml()
         try:
             self._get_elements()
         except:

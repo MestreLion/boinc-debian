@@ -24,8 +24,8 @@
 //   [ -one_pass ]          do one pass, then exit
 //   [ -d x ]               debug level x
 //   [ -mod n i ]           process only WUs with (id mod n) == i
+//   [ -sleep_interval x ]  sleep x seconds if nothing to do
 
-using namespace std;
 #include "config.h"
 #include <vector>
 #include <unistd.h>
@@ -41,6 +41,7 @@ using namespace std;
 #include "backend_lib.h"
 #include "common_defs.h"
 #include "error_numbers.h"
+#include "str_util.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
@@ -53,17 +54,15 @@ using namespace std;
 #define PIDFILE                 "transitioner.pid"
 
 #define SELECT_LIMIT    1000
-#ifdef EINSTEIN_AT_HOME
-#define SLEEP_INTERVAL  1
-#else
-#define SLEEP_INTERVAL  5
-#endif
+
+#define DEFAULT_SLEEP_INTERVAL  5
 
 int startup_time;
 R_RSA_PRIVATE_KEY key;
 int mod_n, mod_i;
 bool do_mod = false;
 bool one_pass = false;
+int sleep_interval = DEFAULT_SLEEP_INTERVAL;
 
 void signal_handler(int) {
     log_messages.printf(MSG_NORMAL, "Signaled by simulator\n");
@@ -364,7 +363,7 @@ int handle_wu(
         // NOTE: n must be signed
         //
         int n = wu_item.target_nresults - nunsent - ninprogress - nsuccess;
-        string values;
+        std::string values;
         char value_buf[MAX_QUERY_LEN];
         if (n > 0) {
             log_messages.printf(
@@ -374,8 +373,7 @@ int handle_wu(
             );
             for (j=0; j<n; j++) {
                 sprintf(suffix, "%d", max_result_suffix+j+1);
-                char rtfpath[256];
-                sprintf(rtfpath, "../%s", wu_item.result_template_file);
+                const char *rtfpath = config.project_path("%s", wu_item.result_template_file);
                 int priority_increase = 0;
                 if (nover && config.reliable_priority_on_over) {
                     priority_increase += config.reliable_priority_on_over;
@@ -383,7 +381,7 @@ int handle_wu(
                     priority_increase += config.reliable_priority_on_over_except_error;
                 }
                 retval = create_result_ti(
-                    wu_item, rtfpath, suffix, key, config, value_buf, priority_increase
+                    wu_item, (char *)rtfpath, suffix, key, config, value_buf, priority_increase
                 );
                 if (retval) {
                     log_messages.printf(MSG_CRITICAL,
@@ -521,8 +519,9 @@ int handle_wu(
     if (wu_item.canonical_resultid) {
         wu_item.transition_time = INT_MAX;
     } else {
-        // If there is no canonical result, make sure that the transitioner will 'see'
-        // this WU again.  In principle this is NOT needed, but it is one way to make
+        // If there is no canonical result,
+        // make sure that the transitioner will 'see' this WU again.
+        // In principle this is NOT needed, but it is one way to make
         // the BOINC back-end more robust.
         //
         const int ten_days = 10*86400;
@@ -667,8 +666,8 @@ void main_loop() {
             signal(SIGUSR2, simulator_signal_handler);
             pause();
 #else
-            log_messages.printf(MSG_DEBUG, "sleeping %d\n", SLEEP_INTERVAL);
-            sleep(SLEEP_INTERVAL);
+            log_messages.printf(MSG_DEBUG, "sleeping %d\n", sleep_interval);
+            sleep(sleep_interval);
 #endif
         }
     }
@@ -688,13 +687,15 @@ int main(int argc, char** argv) {
             mod_n = atoi(argv[++i]);
             mod_i = atoi(argv[++i]);
             do_mod = true;
+        } else if (!strcmp(argv[i], "-sleep_interval")) {
+            sleep_interval = atoi(argv[++i]);
         }
     }
     if (!one_pass) check_stop_daemons();
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "can't read config file\n");
+        log_messages.printf(MSG_CRITICAL, "Can't parse config.xml: %s\n", boincerror(retval));
         exit(1);
     }
 
@@ -712,4 +713,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 16324 2008-10-27 21:23:07Z davea $";
+const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 18617 2009-07-17 16:13:51Z davea $";

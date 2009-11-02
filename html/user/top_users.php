@@ -70,7 +70,7 @@ function show_user_row($user, $i) {
         <tr class=row1>
         <td>$i</td>
         <td>", user_links($user), "</td>
-        <td align=right>", format_credit($user->expavg_credit), "</td>
+        <td align=right>", format_credit_large($user->expavg_credit), "</td>
         <td align=right>", format_credit_large($user->total_credit), "</td>
         <td>", $user->country, "</td>
         <td>", time_str($user->create_time),"</td>
@@ -123,12 +123,12 @@ foreach ($data as $user) {
 echo "</table>\n<p>";
 if ($offset > 0) {
     $new_offset = $offset - $users_per_page;
-    echo "<a href=top_users.php?sort_by=$sort_by&offset=$new_offset>Previous ".$users_per_page."</a> | ";
+    echo "<a href=top_users.php?sort_by=$sort_by&amp;offset=$new_offset>Previous ".$users_per_page."</a> | ";
 
 }
 if ($n==$users_per_page){ //If we aren't on the last page
     $new_offset = $offset + $users_per_page;
-    echo "<a href=top_users.php?sort_by=$sort_by&offset=$new_offset>Next ".$users_per_page."</a>";
+    echo "<a href=top_users.php?sort_by=$sort_by&amp;offset=$new_offset>Next ".$users_per_page."</a>";
 }
 
 page_tail();

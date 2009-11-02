@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "ProxyInfoPage.h"
@@ -216,20 +214,7 @@ void CErrProxyInfoPage::OnPageChanged( wxWizardExEvent& event ) {
     );
 #else
     m_pDescriptionStaticCtrl->SetLabel(
-        _("BOINC failed to communicate on the Internet.\n"
-            "The most likely reasons are:\n"
-            "\n"
-            "1) Connectivity problem.  Check your network\n"
-            "or modem connection and then click Back to try again.\n"
-            "\n"
-            "2) Personal firewall software is blocking BOINC.\n"
-            "Configure your personal firewall to let BOINC and\n"
-            "BOINC Manager communicate on port 80,\n"
-            "then click Back to try again.\n"
-            "\n"
-            "3) You are using a proxy server.\n"
-            "Click Next to configure BOINC's proxy settings."
-        )
+        _("BOINC failed to communicate on the Internet.\nThe most likely reasons are:\n\n1) Connectivity problem.  Check your network\nor modem connection and then click Back to try again.\n\n2) Personal firewall software is blocking BOINC.\nConfigure your personal firewall to let BOINC and\nBOINC Manager communicate on port 80,\nthen click Back to try again.\n\n3) You are using a proxy server.\nClick Next to configure BOINC's proxy settings.")
     );
 #endif
 

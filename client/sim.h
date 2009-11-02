@@ -146,6 +146,7 @@ public:
     vector<PROJECT*> projects;
     vector<WORKUNIT*> workunits;
     vector<RESULT*> results;
+    vector<APP_VERSION*> app_versions;
     vector<APP*> apps;
     ACTIVE_TASK_SET active_tasks;
     GLOBAL_PREFS global_prefs;
@@ -162,6 +163,7 @@ public:
     std::string html_msg;
     double share_violation();
     double monotony();
+    bool user_active;
 
 private:
     double app_started;
@@ -187,17 +189,17 @@ private:
     bool must_check_work_fetch;
     void assign_results_to_projects();
     RESULT* largest_debt_project_best_result();
-    RESULT* earliest_deadline_result();
+    RESULT* earliest_deadline_result(bool);
     void reset_debt_accounting();
-    void adjust_debts();
     bool possibly_schedule_cpus();
     void schedule_cpus();
     bool enforce_schedule();
     bool no_work_for_a_cpu();
-    void rr_simulation();
-    void make_preemptable_task_list(vector<ACTIVE_TASK*>&, double&);
+    void append_unfinished_time_slice(vector<RESULT*> &runnable_jobs);
     void print_deadline_misses();
 public:
+    void adjust_debts();
+    void rr_simulation();
     std::vector <RESULT*> ordered_scheduled_results;
     double retry_shmem_time;
     inline double work_buf_min() {
@@ -281,6 +283,7 @@ public:
     bool scheduler_rpc_poll();
     bool simulate_rpc(PROJECT*);
     void print_project_results(FILE*);
+    bool in_abort_sequence;
 };
 
 class NET_STATUS {
@@ -289,6 +292,8 @@ public:
 };
 
 extern CLIENT_STATE gstate;
+extern COPROC_CUDA* coproc_cuda;
+extern COPROC_ATI* coproc_ati;
 extern NET_STATUS net_status;
 extern FILE* logfile;
 extern bool user_active;
@@ -303,6 +308,12 @@ extern bool cpu_sched_rr_only;
 extern bool dual_dcf;
 extern bool work_fetch_old;
 
-#define CPU_PESSIMISM_FACTOR 0.9
-    // assume actual CPU utilization will be this multiple
-    // of what we've actually measured recently
+#define WORK_FETCH_PERIOD   60
+
+#define CPU_SCHED_ENFORCE_PERIOD    60
+    // enforce CPU schedule at least this often
+
+#define DEBT_ADJUST_PERIOD CPU_SCHED_ENFORCE_PERIOD
+    // debt is adjusted at least this often,
+    // since adjust_debts() is called from enforce_schedule()
+#define HANDLE_FINISHED_APPS_PERIOD 1.0

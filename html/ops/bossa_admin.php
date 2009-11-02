@@ -34,7 +34,7 @@ function include_app_file($app_id) {
     require_once($file);
 }
 
-function show_app($app, $i) {
+function show_bossa_app($app, $i) {
     $j = $i%2;
     echo "<tr class=row$j>
         <td>Name: $app->name<br>
@@ -53,14 +53,14 @@ function show_app($app, $i) {
     show_button("bossa_admin.php?action=show_batches&app_id=$app->id", "Show batches", "Show batches");
 }
 
-function show_apps() {
+function show_bossa_apps() {
     $apps = BossaApp::enum();
     start_table();
     row1("Existing apps", 2);
     table_header("Name/description", "");
     $i = 0;
     foreach ($apps as $app) {
-        show_app($app, $i++);
+        show_bossa_app($app, $i++);
     }
     end_table();
 }
@@ -112,7 +112,7 @@ function user_settings() {
 
 function show_all() {
     admin_page_head("Bossa administration");
-    show_apps();
+    show_bossa_apps();
     echo "<p>";
     add_app_form();
     echo "<p>";
@@ -223,14 +223,14 @@ function job_show_insts($job_id) {
 
 function calibration_job_string($inst, $job) {
     if ($inst->calibration) {
-        $i = $job->get_info();
+        $i = $job->get_opaque_data();
         return "yes: ".instance_summary($i->answer);
     } else {
         return "no";
     }
 }
 
-function show_user() {
+function show_bossa_user() {
     $user_id = get_int('user_id');
     $app_id = get_int('app_id');
     $user = BoincUser::lookup_id("$user_id");
@@ -238,11 +238,14 @@ function show_user() {
     $app = BossaApp::lookup_id($app_id);
 
     include_app_file($app_id);
-    admin_page_head("Bossa user ($app->name)");
-    echo user_summary($user);
+    admin_page_head("$user->name ($app->name)");
+    $x = user_summary($user);
+    if ($x) {
+        echo "User info: $x<br>";
+    }
     $insts = BossaJobInst::enum("user_id=$user_id");
     start_table();
-    table_header("Job", "Calibration?", "Start", "Duration", "Result");
+    table_header("Job", "Calibration?", "Start", "Duration", "Response");
     foreach ($insts as $inst) {
         $job = BossaJob::lookup_id($inst->job_id);
         table_row(
@@ -250,7 +253,7 @@ function show_user() {
             calibration_job_string($inst, $job),
             time_str($inst->create_time),
             job_duration($inst),
-            instance_summary($inst->get_info())
+            instance_summary($inst->get_opaque_data())
         );
     }
     end_table();
@@ -273,6 +276,10 @@ function clear_batch($batch_id) {
     admin_page_head("Deleting instances");
     if (BossaJobInst::delete_aux("batch_id=$batch_id")) {
         echo "Job instances deleted.";
+        $jobs = BossaJob::enum("batch_id=$batch_id");
+        foreach ($jobs as $job) {
+            $job->update("priority_0=1");
+        }
     } else {
         echo "Database error.";
     }
@@ -284,7 +291,6 @@ $user = get_logged_in_user();
 $db = BossaDb::get();
 if (!$db) error_page("Can't connect to database server");
 
-if (0) {
 if (!$db->table_exists('bossa_app')) {
     admin_page_head("Create Bossa database");
     $db_name = $db->db_name;
@@ -293,12 +299,12 @@ if (!$db->table_exists('bossa_app')) {
         To create them, go to ~/boinc/db and type
         <pre>
 mysql $db_name < bossa_schema.sql
+mysql $db_name < bossa_constraints.sql
 </pre>
     Then <a href=bossa_admin.php>reload this page</a>.
     ";
     admin_page_tail();
     exit;
-}
 }
 
 BossaUser::lookup($user);
@@ -320,7 +326,9 @@ case 'add_app':
         $courseid = 0;
     }
     $time_estimate = get_str('time_estimate');
+    if (!$time_estimate) $time_estimate = 60;
     $time_limit = get_str('time_limit');
+    if (!$time_limit) $time_limit = 3600;
     $calibration_frac = get_str('calibration_frac' , true);
     if (!$calibration_frac) $calibration_frac = 0;
     $now = time();
@@ -339,7 +347,7 @@ case 'update_user':
     Header('Location: bossa_admin.php');
     exit;
 case 'show_user':
-    show_user();
+    show_bossa_user();
     exit;
 case 'show_batches':
     $app_id = get_int('app_id');

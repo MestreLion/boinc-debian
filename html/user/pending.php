@@ -22,6 +22,8 @@ require_once("../inc/util.inc");
 require_once("../inc/boinc_db.inc");
 require_once("../inc/xml.inc");
 
+BoincDb::get(true);
+
 $config = get_config();
 if (!parse_bool($config, "show_results")) {
     error_page("This feature is turned off temporarily");
@@ -32,7 +34,7 @@ $format = get_str("format", true);
 if ($format == "xml") {
     xml_header();
     
-    $auth = process_user_text(get_str('authenticator'));
+    $auth = BoincDb::escape_string(get_str('authenticator'));
     $user = BoincUser::lookup("authenticator='$auth'");
     if (!$user) {
         echo "<error>".xml_error(-136)."</error>\n";
@@ -76,5 +78,5 @@ if ($format == "xml") {
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: pending.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: pending.php 18146 2009-05-18 16:58:11Z boincadm $";  //Generated automatically - do not edit
 ?>

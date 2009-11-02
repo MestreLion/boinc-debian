@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "DlgOptions.h"
@@ -87,6 +85,8 @@ bool CDlgOptions::Create(wxWindow* parent, wxWindowID id, const wxString& captio
 ////@begin CDlgOptions member initialisation
     m_LanguageSelectionCtrl = NULL;
     m_ReminderFrequencyCtrl = NULL;
+    m_EnableBOINCManagerAutoStartCtrl = NULL;
+    m_EnableBOINCManagerExitMessageCtrl = NULL;
     m_DialupStaticBoxCtrl = NULL;
 #if defined(__WXMSW__)
     m_DialupConnectionsCtrl = NULL;
@@ -105,6 +105,9 @@ bool CDlgOptions::Create(wxWindow* parent, wxWindowID id, const wxString& captio
     m_SOCKSPortCtrl = NULL;
     m_SOCKSUsernameCtrl = NULL;
     m_SOCKSPasswordCtrl = NULL;
+	m_HTTPNoProxiesCtrl = NULL;
+	m_SOCKSNoProxiesCtrl = NULL;
+
 ////@end CDlgOptions member initialisation
 
     wxString strCaption = caption;
@@ -148,21 +151,21 @@ void CDlgOptions::CreateControls()
     wxBoxSizer* itemBoxSizer5 = new wxBoxSizer(wxVERTICAL);
     itemPanel4->SetSizer(itemBoxSizer5);
 
-    wxFlexGridSizer* itemFlexGridSizer6 = new wxFlexGridSizer(4, 2, 0, 0);
+    wxFlexGridSizer* itemFlexGridSizer6 = new wxFlexGridSizer(3, 2, 0, 0);
     itemBoxSizer5->Add(itemFlexGridSizer6, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
     wxStaticText* itemStaticText7 = new wxStaticText;
-    itemStaticText7->Create( itemPanel4, wxID_STATIC, _("Language Selection:"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemStaticText7->Create( itemPanel4, wxID_STATIC, _("Language:"), wxDefaultPosition, wxDefaultSize, 0 );
     itemFlexGridSizer6->Add(itemStaticText7, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxString* m_LanguageSelectionCtrlStrings = NULL;
     m_LanguageSelectionCtrl = new wxComboBox;
     m_LanguageSelectionCtrl->Create( itemPanel4, ID_LANGUAGESELECTION, _T(""), wxDefaultPosition, wxDefaultSize, 0, m_LanguageSelectionCtrlStrings, wxCB_READONLY );
     if (ShowToolTips())
-        m_LanguageSelectionCtrl->SetToolTip(_("What language should the manager display by default."));
-    itemFlexGridSizer6->Add(m_LanguageSelectionCtrl, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+        m_LanguageSelectionCtrl->SetToolTip(_("What language should the manager use?"));
+    itemFlexGridSizer6->Add(m_LanguageSelectionCtrl, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxStaticText* itemStaticText9 = new wxStaticText;
-    itemStaticText9->Create( itemPanel4, wxID_STATIC, _("Reminder Frequency:"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemStaticText9->Create( itemPanel4, wxID_STATIC, _("Network reminder interval:\n(minutes)"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
     itemFlexGridSizer6->Add(itemStaticText9, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     m_ReminderFrequencyCtrl = new wxSlider;
@@ -174,29 +177,29 @@ void CDlgOptions::CreateControls()
 #endif
                                      wxSL_HORIZONTAL|wxSL_LABELS);
     if (ShowToolTips())
-        m_ReminderFrequencyCtrl->SetToolTip(_("How often, in minutes, should the manager remind you of possible connection events."));
-    itemFlexGridSizer6->Add(m_ReminderFrequencyCtrl, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+        m_ReminderFrequencyCtrl->SetToolTip(_("How often should the Manager remind you when a network connection is needed?"));
+    itemFlexGridSizer6->Add(m_ReminderFrequencyCtrl, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
 #ifdef __WXMSW__
     wxStaticText* itemStaticText10 = new wxStaticText;
-    itemStaticText10->Create( itemPanel4, wxID_STATIC, _("Run BOINC Manager at startup:"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemStaticText10->Create( itemPanel4, wxID_STATIC, _("Run Manager at login?"), wxDefaultPosition, wxDefaultSize, 0 );
     itemFlexGridSizer6->Add(itemStaticText10, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     m_EnableBOINCManagerAutoStartCtrl = new wxCheckBox;
     m_EnableBOINCManagerAutoStartCtrl->Create( itemPanel4, ID_ENABLEAUTOSTART, wxT(""), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
     if (ShowToolTips())
-        m_EnableBOINCManagerAutoStartCtrl->SetToolTip(_("Launch BOINC Manager when you log on."));
+        m_EnableBOINCManagerAutoStartCtrl->SetToolTip(_("Run the BOINC Manager when you log on."));
     itemFlexGridSizer6->Add(m_EnableBOINCManagerAutoStartCtrl, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 #endif
 
     wxStaticText* itemStaticText11 = new wxStaticText;
-    itemStaticText11->Create( itemPanel4, wxID_STATIC, _("Enable BOINC Manager exit message:"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemStaticText11->Create( itemPanel4, wxID_STATIC, _("Enable Manager exit dialog?"), wxDefaultPosition, wxDefaultSize, 0 );
     itemFlexGridSizer6->Add(itemStaticText11, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     m_EnableBOINCManagerExitMessageCtrl = new wxCheckBox;
     m_EnableBOINCManagerExitMessageCtrl->Create( itemPanel4, ID_ENABLEEXITMESSAGE, wxT(""), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
     if (ShowToolTips())
-        m_EnableBOINCManagerExitMessageCtrl->SetToolTip(_("Display the exit message dialog when shutting down BOINC Manager."));
+        m_EnableBOINCManagerExitMessageCtrl->SetToolTip(_("Display the exit dialog when shutting down the Manager."));
     itemFlexGridSizer6->Add(m_EnableBOINCManagerExitMessageCtrl, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     itemNotebook3->AddPage(itemPanel4, _("General"));
@@ -215,7 +218,7 @@ void CDlgOptions::CreateControls()
     m_DialupStaticBoxCtrl->Add(itemFlexGridSizer17, 0, wxGROW|wxALL, 5);
     wxString* m_DialupConnectionsCtrlStrings = NULL;
     m_DialupConnectionsCtrl = new wxListBox;
-    m_DialupConnectionsCtrl->Create( itemPanel11, ID_DIALUPCONNECTIONS, wxDefaultPosition, wxDefaultSize, 0, m_DialupConnectionsCtrlStrings, wxLB_SINGLE|wxLB_NEEDED_SB );
+    m_DialupConnectionsCtrl->Create( itemPanel11, ID_DIALUPCONNECTIONS, wxDefaultPosition, wxSize(166, 185), 0, m_DialupConnectionsCtrlStrings, wxLB_SINGLE|wxLB_NEEDED_SB );
     itemFlexGridSizer17->Add(m_DialupConnectionsCtrl, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxBoxSizer* itemBoxSizer19 = new wxBoxSizer(wxVERTICAL);
@@ -276,6 +279,14 @@ void CDlgOptions::CreateControls()
     m_HTTPPortCtrl->Create( itemPanel27, ID_HTTPPORTCTRL, _T(""), wxDefaultPosition, wxSize(50, -1), 0 );
     itemFlexGridSizer32->Add(m_HTTPPortCtrl, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
+	wxStaticText* itemStaticText62 = new wxStaticText;
+    itemStaticText62->Create( itemPanel27, wxID_STATIC, _("Don't use proxy for:"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemFlexGridSizer32->Add(itemStaticText62, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+	m_HTTPNoProxiesCtrl = new wxTextCtrl;
+	m_HTTPNoProxiesCtrl->Create(itemPanel27,ID_HTTPNOPROXYCTRL,_T(""),wxDefaultPosition,wxSize(150,-1),0);
+	itemFlexGridSizer32->Add(m_HTTPNoProxiesCtrl,0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
     wxStaticBox* itemStaticBoxSizer37Static = new wxStaticBox(itemPanel27, wxID_ANY, _("Leave these blank if not needed"));
     wxStaticBoxSizer* itemStaticBoxSizer37 = new wxStaticBoxSizer(itemStaticBoxSizer37Static, wxVERTICAL);
     itemStaticBoxSizer30->Add(itemStaticBoxSizer37, 0, wxGROW|wxALL, 5);
@@ -331,6 +342,14 @@ void CDlgOptions::CreateControls()
     m_SOCKSPortCtrl = new wxTextCtrl;
     m_SOCKSPortCtrl->Create( itemPanel43, ID_SOCKSPORTCTRL, _T(""), wxDefaultPosition, wxSize(50, -1), 0 );
     itemFlexGridSizer48->Add(m_SOCKSPortCtrl, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+	wxStaticText* itemStaticText63 = new wxStaticText;
+    itemStaticText63->Create( itemPanel43, wxID_STATIC, _("Don't use proxy for:"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemFlexGridSizer48->Add(itemStaticText63, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+	m_SOCKSNoProxiesCtrl = new wxTextCtrl;
+	m_SOCKSNoProxiesCtrl->Create(itemPanel43,ID_SOCKSNOPROXYCTRL,_T(""),wxDefaultPosition,wxSize(150,-1),0);
+	itemFlexGridSizer48->Add(m_SOCKSNoProxiesCtrl,0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxStaticBox* itemStaticBoxSizer53Static = new wxStaticBox(itemPanel43, wxID_ANY, _("Leave these blank if not needed"));
     wxStaticBoxSizer* itemStaticBoxSizer53 = new wxStaticBoxSizer(itemStaticBoxSizer53Static, wxVERTICAL);
@@ -424,11 +443,13 @@ void CDlgOptions::OnEnableHTTPProxyCtrlClick(wxCommandEvent& event) {
         m_HTTPPortCtrl->Enable(true);
         m_HTTPUsernameCtrl->Enable(true);
         m_HTTPPasswordCtrl->Enable(true);
+		m_HTTPNoProxiesCtrl->Enable(true);
     } else {
         m_HTTPAddressCtrl->Enable(false);
         m_HTTPPortCtrl->Enable(false);
         m_HTTPUsernameCtrl->Enable(false);
         m_HTTPPasswordCtrl->Enable(false);
+		m_HTTPNoProxiesCtrl->Enable(false);
     }
 
     event.Skip();
@@ -445,11 +466,13 @@ void CDlgOptions::OnEnableHTTPProxyCtrlUpdate(wxUpdateUIEvent& event) {
         m_HTTPPortCtrl->Enable(true);
         m_HTTPUsernameCtrl->Enable(true);
         m_HTTPPasswordCtrl->Enable(true);
+		m_HTTPNoProxiesCtrl->Enable(true);
     } else {
         m_HTTPAddressCtrl->Enable(false);
         m_HTTPPortCtrl->Enable(false);
         m_HTTPUsernameCtrl->Enable(false);
         m_HTTPPasswordCtrl->Enable(false);
+		m_HTTPNoProxiesCtrl->Enable(false);
     }
     event.Skip();
 }
@@ -465,11 +488,13 @@ void CDlgOptions::OnEnableSOCKSProxyCtrlClick(wxCommandEvent& event) {
         m_SOCKSPortCtrl->Enable(true);
         m_SOCKSUsernameCtrl->Enable(true);
         m_SOCKSPasswordCtrl->Enable(true);
+		m_SOCKSNoProxiesCtrl->Enable(true);
     } else {
         m_SOCKSAddressCtrl->Enable(false);
         m_SOCKSPortCtrl->Enable(false);
         m_SOCKSUsernameCtrl->Enable(false);
         m_SOCKSPasswordCtrl->Enable(false);
+		m_SOCKSNoProxiesCtrl->Enable(false);
     }
     event.Skip();
 }
@@ -485,11 +510,13 @@ void CDlgOptions::OnEnableSOCKSProxyCtrlUpdate(wxUpdateUIEvent& event) {
         m_SOCKSPortCtrl->Enable(true);
         m_SOCKSUsernameCtrl->Enable(true);
         m_SOCKSPasswordCtrl->Enable(true);
+		m_SOCKSNoProxiesCtrl->Enable(true);
     } else {
         m_SOCKSAddressCtrl->Enable(false);
         m_SOCKSPortCtrl->Enable(false);
         m_SOCKSUsernameCtrl->Enable(false);
         m_SOCKSPasswordCtrl->Enable(false);
+		m_SOCKSNoProxiesCtrl->Enable(false);
     }
     event.Skip();
 }
@@ -545,4 +572,4 @@ wxIcon CDlgOptions::GetIconResource( const wxString& WXUNUSED(name) )
 }
 
 
-const char *BOINC_RCSID_5743f67054="$Id: DlgOptions.cpp 16485 2008-11-12 09:58:15Z charlief $";
+const char *BOINC_RCSID_5743f67054="$Id: DlgOptions.cpp 17519 2009-03-06 00:04:16Z romw $";

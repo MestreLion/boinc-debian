@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "sg_StatImageLoader.h"
@@ -146,19 +144,20 @@ void StatImageLoader::AddMenuItems()
 	}
     
 	//  Add the 'remove project' option
-	statPopUpMenu->AppendSeparator();
-	wxMenuItemList menuList = statPopUpMenu->GetMenuItems();
+    if (!project->attached_via_acct_mgr) {
+    	statPopUpMenu->AppendSeparator();
+	    wxMenuItemList menuList = statPopUpMenu->GetMenuItems();
 #ifdef __WXMSW__
-	menuList[statPopUpMenu->GetMenuItemCount()-1]->SetBackgroundColour(wxColour("RED"));
+	    menuList[statPopUpMenu->GetMenuItemCount()-1]->SetBackgroundColour(wxColour(_T("RED")));
 #endif
 
-	urlItem = new wxMenuItem(statPopUpMenu, WEBSITE_URL_MENU_ID_REMOVE_PROJECT, _("Remove Project"));
+	    urlItem = new wxMenuItem(statPopUpMenu, WEBSITE_URL_MENU_ID_REMOVE_PROJECT, _("Remove Project"));
 #ifdef __WXMSW__
-	urlItem->SetBackgroundColour(*pSkinSimple->GetBackgroundImage()->GetBackgroundColor());
+	    urlItem->SetBackgroundColour(*pSkinSimple->GetBackgroundImage()->GetBackgroundColor());
 #endif
-	Connect( WEBSITE_URL_MENU_ID_REMOVE_PROJECT,  wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(StatImageLoader::OnMenuLinkClicked) );
-	statPopUpMenu->Append(urlItem);
-
+	    Connect( WEBSITE_URL_MENU_ID_REMOVE_PROJECT,  wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(StatImageLoader::OnMenuLinkClicked) );
+	    statPopUpMenu->Append(urlItem);
+    }
 }
 
 
@@ -205,7 +204,7 @@ void StatImageLoader::OnProjectDetach() {
         return;
 
 	int indexOfProj = -1;
-	int prjCount = pDoc->GetProjectCount();
+	int prjCount = pDoc->GetSimpleProjectCount();
 	for(int m = 0; m < prjCount; m++){
 		PROJECT* project = pDoc->project(m);
 		project->get_name(strProjectName);
@@ -219,7 +218,7 @@ void StatImageLoader::OnProjectDetach() {
         strProjectName.c_str()
     );
 
-    iAnswer = ::wxMessageBox(
+    iAnswer = wxGetApp().SafeMessageBox(
         strMessage,
         _("Detach from Project"),
         wxYES_NO | wxICON_QUESTION,

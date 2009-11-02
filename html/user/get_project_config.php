@@ -34,13 +34,18 @@ function show_platforms() {
         require_once("../inc/db.inc");
         $retval = db_init_aux(true);
         if (!$retval) {
-            $query = 'select name, user_friendly_name from platform, app_version where app_version.platformid = platform.id and app_version.deprecated=0 group by name';
+            $query = 'select name, user_friendly_name, plan_class from platform, app_version where app_version.platformid = platform.id and app_version.deprecated=0 group by name, plan_class';
             $result = mysql_query($query);
             $f = fopen($path, "w");
             fwrite($f, "<platforms>\n");
             while ($p = mysql_fetch_object($result)) {
+                if ($p->plan_class) {
+                    $pc = "   <plan_class>$p->plan_class</plan_class>\n";
+                } else {
+                    $pc = "";
+                }
                 fwrite($f,
-                    "  <platform>\n    <platform_name>$p->name</platform_name>\n    <user_friendly_name>$p->user_friendly_name</user_friendly_name>\n  </platform>\n"
+                    "  <platform>\n    <platform_name>$p->name</platform_name>\n    <user_friendly_name>$p->user_friendly_name</user_friendly_name>\n$pc  </platform>\n"
                 );
             }
             mysql_free_result($result);
@@ -53,6 +58,7 @@ function show_platforms() {
 
 $config = get_config();
 $long_name = parse_config($config, "<long_name>");
+
 $min_passwd_length = parse_config($config, "<min_passwd_length>");
 if (!$min_passwd_length) {
     $min_passwd_length = 6;
@@ -77,20 +83,35 @@ if (web_stopped()) {
     ";
 } else {
     echo "<web_stopped>0</web_stopped>\n";
-    if ($disable_account_creation || defined('INVITE_CODES')) {
-        echo "    <account_creation_disabled/>\n";
-    }
-    echo "
-        <min_passwd_length>$min_passwd_length</min_passwd_length>
-    ";
 }
+if ($disable_account_creation || defined('INVITE_CODES')) {
+    echo "    <account_creation_disabled/>\n";
+}
+
+echo "
+    <min_passwd_length>$min_passwd_length</min_passwd_length>
+";
+
 if (sched_stopped()) {
     echo "<sched_stopped>1</sched_stopped>\n";
 } else {
     echo "<sched_stopped>0</sched_stopped>\n";
 }
 
+$min_core_client_version = parse_config($config, "<min_core_client_version>");
+if ($min_core_client_version) {
+    echo "<min_client_version>$min_core_client_version</min_client_version>\n";
+}
+
 show_platforms();
+
+$tou_file = "../../terms_of_use.txt";
+if (file_exists($tou_file)) {
+    $terms_of_use = trim(file_get_contents($tou_file));
+    if ($terms_of_use) {
+        echo "<terms_of_use>\n$terms_of_use\n</terms_of_use>\n";
+    }
+}
 
 echo "
 </project_config>

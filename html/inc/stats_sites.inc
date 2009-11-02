@@ -20,7 +20,7 @@
 //
 $cpid_stats_sites = array(
     array("Free-DC",
-        "http://stats.free-dc.org/stats.php?page=userbycpid&cpid=%s"
+        "http://stats.free-dc.org/stats.php?page=userbycpid&amp;cpid=%s"
     ),
     array("BOINC all Project Stats",
         "http://www.allprojectstats.com/showuser.php?id=%s"
@@ -62,7 +62,7 @@ $stats_sites = array(
     array(
         "http://stats.free-dc.org",
         "Free-DC",
-        "Includes non-BOINC projects and completed projects."
+        "(Includes non-BOINC projects and completed projects.)"
     ),
     array(
         "http://www.boincuk.com/globalprojectstats.php",
@@ -87,7 +87,7 @@ $stats_sites = array(
     ),
     array("http://www.dc-vault.com",
         "DC-Vault",
-        "Include non-BOINC projects"
+        "(Include non-BOINC projects)"
     ),
     array("http://www.seti.nl/boinc_team.php",
         "SETI@Netherlands stats page",
@@ -97,13 +97,14 @@ $stats_sites = array(
         "The Knights Who Say 'Ni' stats",
         ""
     ),
-    array("http://www.teamocuk.com/",
+    array("http://www.teamocuk.co.uk/",
         "Team OcUK stats",
         ""
     ),
 );
 
 $team_stats_sites = array(
+    array("http://www.boincitaly.org/", "BOINC.Italy"),
     array("http://www.spacepage.be/component/option,com_boinc/", "Spacepage"),
     array("http://boinc.radax.net/de_boinc.htm", "BOINC@Austria"),
     array("http://www.myboinc.com/scores/", "L'Alliance Francophone"),
@@ -113,11 +114,12 @@ $team_stats_sites = array(
         "Boinc.be team stats",
         ""
     ),
-    array("http://www.seti-teamartbell.com/",
-        "Team Art Bell", ""
-    ),
+    array("http://www.seti-teamartbell.com/", "Team Art Bell", ""),
+    array("http://www.crunchers-freiburg.de/", "crunchers@freiburg", "(German)"),
 );
 
+// The following sites generate signature images based on user CPID
+//
 $sig_sites = array(
 //    array(
 //        "http://brainsmashr.com/BOINC/",
@@ -130,11 +132,11 @@ $sig_sites = array(
     array(
         "http://www.boincuk.com/show3.php",
         "BOINC UK",
-        "Highly configurable!"
+        "(Highly configurable!)"
     ),
     array("http://boinc.mundayweb.com/",
         "http://boinc.mundayweb.com",
-        "User-configurable stats counters. Cool!"
+        "(User-configurable stats counters. Cool!)"
     ),
     array("http://www.bigbee.be/comp/boinc/",
         "boinc.be",
@@ -147,7 +149,42 @@ $sig_sites = array(
     array(
         "http://www.allprojectstats.com/signature.php",
         "BOINC All Project Stats",
-        "Signature files for both users and teams"
+        "(Signature files for both users and teams)"
+    ),
+    array(
+        "http://www.unitedboinc.com/news-sig/",
+        "United BOINC",
+        "(Images showing the latest news from your choice of projects)"
+    ),
+);
+
+// the following sites generate cross-project team stats based on name
+//
+$team_name_sites = array(
+    array("http://stats.free-dc.org/stats.php?page=teambycpid&team=",
+        "Free-DC",
+        ""
+    ),
+    array("http://boincstats.com/stats/boinc_team_graph.php?pr=bo&teamcpid=",
+        "BOINCstats.com",
+        "hashlc"
+    ),
+    array("http://stats.setibzh.fr/team.php?teamcpid=",
+        "SETIBZH",
+        "hashlc"
+    ),
+);
+
+$host_sites = array(
+    array(
+        "http://boincstats.com/stats/boinc_host_graph.php?pr=bo&id=",
+        "BOINCstats.com",
+        "boincstats_icon.png"
+    ),
+    array(
+        "http://stats.free-dc.org/stats.php?page=hostbycpid&cpid=",
+        "Free-DC",
+        "freedc_icon.png"
     ),
 );
 
@@ -163,5 +200,5 @@ function site_list($sites) {
     echo "</ul>\n";
 }
 
-$cvs_version_tracker[]="\$Id: stats_sites.inc 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: stats_sites.inc 17954 2009-04-30 21:48:20Z davea $";  //Generated automatically - do not edit
 ?>

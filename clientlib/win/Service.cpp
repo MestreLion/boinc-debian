@@ -224,9 +224,66 @@ EXTERN_C __declspec(dllexport) BOOL IsBOINCServiceStopped()
 
 
 /**
- * Start the BOINC Service.
+ * Start the BOINC Service via the BOINC Service Control utility.
  **/
 EXTERN_C __declspec(dllexport) BOOL StartBOINCService()
+{
+    BOOL                bRetVal = FALSE;
+    BOOL                bProcessStarted;
+    SHELLEXECUTEINFO    shex;
+    TCHAR               szPath[MAX_PATH+1];
+    TCHAR               szExe[MAX_PATH+1];
+    unsigned long       ulExitCode;
+
+    // Determine the path to the BOINC Service Control utility
+    //   by finding out the path to the executable that requested
+    //   that we start the service.
+    GetModuleFileName(NULL, szPath, (sizeof(szPath)/sizeof(TCHAR)));
+		
+    TCHAR *pszProg = _tcsrchr(szPath, '\\');
+    if (pszProg) {
+        szPath[pszProg - szPath] = 0;
+    }
+
+    // The executable needs to contain the path.
+    _sntprintf(
+        szExe, (sizeof(szPath)/sizeof(TCHAR)),
+        _T("\"%s\\boincsvcctrl.exe\""),
+        szPath
+    );
+
+    memset( &shex, 0, sizeof( shex) );
+
+    shex.cbSize        = sizeof( SHELLEXECUTEINFO );
+    shex.fMask         = SEE_MASK_NOCLOSEPROCESS;
+    shex.hwnd          = NULL;
+    if ((LOBYTE(LOWORD(GetVersion()))) >= 6) {
+        shex.lpVerb        = _T("runas");
+    }
+    shex.lpFile        = (LPCTSTR)&szExe;
+    shex.lpParameters  = _T("--start");
+    shex.lpDirectory   = (LPCTSTR)&szPath;
+    shex.nShow         = SW_HIDE;
+
+    bProcessStarted = ShellExecuteEx( &shex );
+
+    if (bProcessStarted) {
+        WaitForSingleObject(shex.hProcess, INFINITE);
+        if (GetExitCodeProcess(shex.hProcess, &ulExitCode)) {
+            if (ulExitCode == 0) {
+                bRetVal = TRUE;
+            }
+        }
+    }
+
+    return bRetVal;
+}
+
+
+/**
+ * Start the BOINC Service.
+ **/
+EXTERN_C __declspec(dllexport) BOOL StartBOINCServiceEx()
 {
     SC_HANDLE schSCManager = NULL;
     SC_HANDLE schService = NULL;
@@ -264,9 +321,66 @@ EXTERN_C __declspec(dllexport) BOOL StartBOINCService()
 
 
 /**
- * Stop the BOINC Service.
+ * Stop the BOINC Service via the BOINC Service Control utility.
  **/
 EXTERN_C __declspec(dllexport) BOOL StopBOINCService()
+{
+    BOOL                bRetVal = FALSE;
+    BOOL                bProcessStarted;
+    SHELLEXECUTEINFO    shex;
+    TCHAR               szPath[MAX_PATH+1];
+    TCHAR               szExe[MAX_PATH+1];
+    unsigned long       ulExitCode;
+
+    // Determine the path to the BOINC Service Control utility
+    //   by finding out the path to the executable that requested
+    //   that we start the service.
+    GetModuleFileName(NULL, szPath, (sizeof(szPath)/sizeof(TCHAR)));
+		
+    TCHAR *pszProg = _tcsrchr(szPath, '\\');
+    if (pszProg) {
+        szPath[pszProg - szPath] = 0;
+    }
+
+    // The executable needs to contain the path.
+    _sntprintf(
+        szExe, (sizeof(szPath)/sizeof(TCHAR)),
+        _T("\"%s\\boincsvcctrl.exe\""),
+        szPath
+    );
+
+    memset( &shex, 0, sizeof( shex) );
+
+    shex.cbSize        = sizeof( SHELLEXECUTEINFO );
+    shex.fMask         = SEE_MASK_NOCLOSEPROCESS;
+    shex.hwnd          = NULL;
+    if ((LOBYTE(LOWORD(GetVersion()))) >= 6) {
+        shex.lpVerb        = _T("runas");
+    }
+    shex.lpFile        = (LPCTSTR)&szExe;
+    shex.lpParameters  = _T("--stop");
+    shex.lpDirectory   = (LPCTSTR)&szPath;
+    shex.nShow         = SW_HIDE;
+
+    bProcessStarted = ShellExecuteEx( &shex );
+
+    if (bProcessStarted) {
+        WaitForSingleObject(shex.hProcess, INFINITE);
+        if (GetExitCodeProcess(shex.hProcess, &ulExitCode)) {
+            if (ulExitCode == 0) {
+                bRetVal = TRUE;
+            }
+        }
+    }
+
+    return bRetVal;
+}
+
+
+/**
+ * Stop the BOINC Service.
+ **/
+EXTERN_C __declspec(dllexport) BOOL StopBOINCServiceEx()
 {
     SC_HANDLE schSCManager = NULL;
     SC_HANDLE schService = NULL;
@@ -302,3 +416,4 @@ EXTERN_C __declspec(dllexport) BOOL StopBOINCService()
 
     return bRetVal;
 }
+

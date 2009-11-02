@@ -36,8 +36,8 @@
 #define MAX_STATE_FILE_WRITE_ATTEMPTS 2
 
 void CLIENT_STATE::set_client_state_dirty(const char* source) {
-    if (log_flags.state_debug) {
-        msg_printf(0, MSG_INFO, "[state_debug] set dirty: %s\n", source);
+    if (log_flags.statefile_debug) {
+        msg_printf(0, MSG_INFO, "[statefile_debug] set dirty: %s\n", source);
     }
     client_state_dirty = true;
 }
@@ -64,6 +64,20 @@ static bool valid_state_file(const char* fname) {
     return false;
 }
 
+// return true if r0 arrived before r1
+// used to sort result list
+//
+static inline bool arrived_first(RESULT* r0, RESULT* r1) {
+    if (r0->received_time < r1->received_time) {
+        return true;
+    }
+    if (r0->received_time > r1->received_time) {
+        return false;
+    }
+    return (strcmp(r0->name, r1->name) > 0);
+        // arbitrary but deterministic
+}
+
 // Parse the client_state.xml file
 //
 int CLIENT_STATE::parse_state_file() {
@@ -83,9 +97,9 @@ int CLIENT_STATE::parse_state_file() {
     } else if (valid_state_file(STATE_FILE_PREV)) {
         fname = STATE_FILE_PREV;
     } else {
-        if (log_flags.state_debug) {
+        if (log_flags.statefile_debug) {
             msg_printf(0, MSG_INFO,
-                "[state_debug] CLIENT_STATE::parse_state_file(): No state file; will create one"
+                "[statefile_debug] CLIENT_STATE::parse_state_file(): No state file; will create one"
             );
         }
 
@@ -155,7 +169,7 @@ int CLIENT_STATE::parse_state_file() {
                 );
                 delete app;
                 continue;
-		    }
+            }
             apps.push_back(app);
             continue;
         }
@@ -254,6 +268,12 @@ int CLIENT_STATE::parse_state_file() {
                     strcpy(avp->platform, get_primary_platform());
                 }
             }
+            if (avp->missing_coproc()) {
+                msg_printf(project, MSG_INFO,
+                    "Application uses missing %s GPU",
+                    avp->ncudas?"NVIDIA":"ATI"
+                );
+            }
             retval = link_app_version(project, avp);
             if (retval) {
                 delete avp;
@@ -326,11 +346,17 @@ int CLIENT_STATE::parse_state_file() {
             );
             if (!rp->avp) {
                 msg_printf(project, MSG_INTERNAL_ERROR,
-                    "No app version for result: %s %d %s",
+                    "No application found for task: %s %d %s; discarding",
                     rp->platform, rp->version_num, rp->plan_class
                 );
                 delete rp;
                 continue;
+            }
+            if (rp->avp->missing_coproc()) {
+                msg_printf(project, MSG_INFO,
+                    "Missing coprocessor for task %s", rp->name
+                );
+                rp->coproc_missing = true;
             }
             rp->wup->version_num = rp->version_num;
             results.push_back(rp);
@@ -456,10 +482,18 @@ int CLIENT_STATE::parse_state_file() {
         }
         skip_unrecognized(buf, mf);
     }
+    sort_results();
     fclose(f);
     return 0;
 }
 
+void CLIENT_STATE::sort_results() {
+    std::sort(
+        results.begin(),
+        results.end(),
+        arrived_first
+    );
+}
 
 // Write the client_state.xml file
 //
@@ -473,9 +507,9 @@ int CLIENT_STATE::write_state_file() {
     for (attempt=1; attempt<=MAX_STATE_FILE_WRITE_ATTEMPTS; attempt++) {
         if (attempt > 1) boinc_sleep(1.0);
             
-        if (log_flags.state_debug) {
+        if (log_flags.statefile_debug) {
             msg_printf(0, MSG_INFO,
-                "[status_debug] CLIENT_STATE::write_state_file(): Writing state file"
+                "[statefile_debug] Writing state file"
             );
         }
 #ifdef _WIN32
@@ -484,7 +518,7 @@ int CLIENT_STATE::write_state_file() {
         retval = mf.open(STATE_FILE_NEXT, "w");
 #endif
         if (retval) {
-            if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.state_debug) {
+            if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
                 msg_printf(0, MSG_INTERNAL_ERROR,
                     "Can't open %s: %s",
                     STATE_FILE_NEXT, boincerror(retval)
@@ -498,7 +532,7 @@ int CLIENT_STATE::write_state_file() {
         ret1 = write_state(miof);
         ret2 = mf.close();
         if (ret1) {
-            if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.state_debug) {
+            if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Couldn't write state file: %s", boincerror(retval)
                 );
@@ -517,7 +551,7 @@ int CLIENT_STATE::write_state_file() {
             if (boinc_file_exists(STATE_FILE_PREV)) {
                 retval = boinc_delete_file(STATE_FILE_PREV);
                 if (retval) {
-                    if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.state_debug) {
+                    if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
 #ifdef _WIN32
                         msg_printf(0, MSG_USER_ERROR,
                             "Can't delete previous state file; %s",
@@ -536,7 +570,7 @@ int CLIENT_STATE::write_state_file() {
             
             retval = boinc_rename(STATE_FILE_NAME, STATE_FILE_PREV);
             if (retval) {
-                if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.state_debug) {
+                if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
 #ifdef _WIN32
                     msg_printf(0, MSG_USER_ERROR,
                         "Can't rename current state file to previous state file; %s",
@@ -554,14 +588,14 @@ int CLIENT_STATE::write_state_file() {
         }
 
         retval = boinc_rename(STATE_FILE_NEXT, STATE_FILE_NAME);
-        if (log_flags.state_debug) {
+        if (log_flags.statefile_debug) {
             msg_printf(0, MSG_INFO,
-                "[status_debug] CLIENT_STATE::write_state_file(): Done writing state file"
+                "[statefile_debug] Done writing state file"
             );
         }
         if (!retval) break;     // Success!
         
-         if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.state_debug) {
+         if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
 #ifdef _WIN32
             if (retval == ERROR_ACCESS_DENIED) {
                 msg_printf(0, MSG_USER_ERROR,
@@ -579,7 +613,7 @@ int CLIENT_STATE::write_state_file() {
                 "rename returned error %d: %s", 
                 STATE_FILE_NEXT, STATE_FILE_NAME, errno, strerror(errno)
             );
-            if (log_flags.state_debug) {
+            if (log_flags.statefile_debug) {
                 system("ls -al /Library/Application\\ Support/BOINC\\ Data/client*.*");
             }
 #else
@@ -617,10 +651,15 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
             }
         }
         for (i=0; i<file_infos.size(); i++) {
-            if (file_infos[i]->project == p) {
-                retval = file_infos[i]->write(f, false);
-                if (retval) return retval;
+            if (file_infos[i]->project != p) continue;
+            FILE_INFO* fip = file_infos[i];
+            // don't write file infos for anonymous platform app files
+            //
+            if (p->anonymous_platform && (fip->urls.size()==0)) {
+                continue;
             }
+            retval = fip->write(f, false);
+            if (retval) return retval;
         }
         for (i=0; i<app_versions.size(); i++) {
             if (app_versions[i]->project == p) {
@@ -718,6 +757,8 @@ void CLIENT_STATE::check_anonymous() {
     }
 }
 
+// parse a project's app_info.xml (anonymous platform) file
+//
 int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
     char buf[256];
     MIOFILE mf;
@@ -729,6 +770,13 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
         if (match_tag(buf, "<file_info>")) {
             FILE_INFO* fip = new FILE_INFO;
             if (fip->parse(mf, false)) {
+                delete fip;
+                continue;
+            }
+            if (fip->urls.size()) {
+                msg_printf(p, MSG_USER_ERROR,
+                    "Can't specify URLs in app_info.xml"
+                );
                 delete fip;
                 continue;
             }
@@ -785,12 +833,18 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
 
     f.printf("<client_state>\n");
 
+#if 1
+    // NOTE: the following stuff is not in CC_STATE.
+    // However, BoincView (which does its own parsing) expects it
+    // to be in the get_state() reply, so leave it in for now
+    //
     retval = host_info.write(f, false);
     if (retval) return retval;
     retval = time_stats.write(f, false);
     if (retval) return retval;
     retval = net_stats.write(f);
     if (retval) return retval;
+#endif
 
     for (j=0; j<projects.size(); j++) {
         PROJECT* p = projects[j];
@@ -817,18 +871,27 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
         "<core_client_major_version>%d</core_client_major_version>\n"
         "<core_client_minor_version>%d</core_client_minor_version>\n"
         "<core_client_release>%d</core_client_release>\n"
-        "%s"
-        "%s",
+        "<executing_as_daemon>%d</executing_as_daemon>\n"
+        "<have_cuda>%d</have_cuda>\n"
+        "<have_ati>%d</have_ati>\n",
         get_primary_platform(),
         core_client_version.major,
         core_client_version.minor,
         core_client_version.release,
-        executing_as_daemon?"<executing_as_daemon/>\n":"",
-        work_fetch_no_new_work?"<work_fetch_no_new_work/>\n":""
+        executing_as_daemon?1:0,
+        coproc_cuda?1:0,
+        coproc_ati?1:0
     );
+    for (i=0; i<platforms.size(); i++) {
+        f.printf(
+            "<platform>%s</platform>\n", platforms[i].name.c_str()
+        );
+    }
 
     global_prefs.write(f);
 
+    // the following used by BoincView - don't remove
+    //
     if (strlen(main_host_venue)) {
         f.printf("<host_venue>%s</host_venue>\n", main_host_venue);
     }
@@ -837,12 +900,19 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
     return 0;
 }
 
-int CLIENT_STATE::write_tasks_gui(MIOFILE& f) {
+int CLIENT_STATE::write_tasks_gui(MIOFILE& f, bool active_only) {
     unsigned int i;
-    
-    for (i=0; i<results.size(); i++) {
-        RESULT* rp = results[i];
-        rp->write_gui(f);
+
+    if (active_only) {
+        for (i=0; i<active_tasks.active_tasks.size(); i++) {
+            RESULT* rp = active_tasks.active_tasks[i]->result;
+            rp->write_gui(f);
+        }
+    } else {
+        for (i=0; i<results.size(); i++) {
+            RESULT* rp = results[i];
+            rp->write_gui(f);
+        }
     }
     return 0;
 }
@@ -864,4 +934,4 @@ int CLIENT_STATE::write_file_transfers_gui(MIOFILE& f) {
     return 0;
 }
 
-const char *BOINC_RCSID_375ec798cc = "$Id: cs_statefile.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_375ec798cc = "$Id: cs_statefile.cpp 19318 2009-10-16 19:07:56Z romw $";

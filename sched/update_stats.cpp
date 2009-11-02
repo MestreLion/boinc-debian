@@ -202,10 +202,10 @@ int main(int argc, char** argv) {
 
     log_messages.printf(MSG_NORMAL, "Starting\n");
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse ../config.xml: %s\n", boincerror(retval)
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -249,4 +249,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_6b05e9ecce = "$Id: update_stats.cpp 16324 2008-10-27 21:23:07Z davea $";
+const char *BOINC_RCSID_6b05e9ecce = "$Id: update_stats.cpp 18042 2009-05-07 13:54:51Z davea $";

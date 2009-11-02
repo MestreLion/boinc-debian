@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "BOINCDialupManager.h"
@@ -104,7 +102,7 @@ void CBOINCDialUpManager::OnPoll() {
 
 
     // We are ready to rock and roll.
-    if (!bAlreadyRunningLoop && pDoc) {
+    if (!bAlreadyRunningLoop && pDoc && pFrame) {
         wxASSERT(wxDynamicCast(pDoc, CMainDocument));
         wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
 
@@ -262,9 +260,7 @@ int CBOINCDialUpManager::NotifyUserNeedConnection(bool bNotificationOnly) {
         // %s is the project name
         //    i.e. 'BOINC', 'GridRepublic'
         strDialogMessage.Printf(
-            _("%s is unable to communicate with a project and needs an Internet connection.\n"
-                "Please connect to the Internet, then select the 'Do network communications' "
-                "item from the Advanced menu."),
+            _("%s is unable to communicate with a project and needs an Internet connection.\nPlease connect to the Internet, then select the 'Do network communications' item from the Advanced menu."),
             pSkinAdvanced->GetApplicationShortName().c_str()
         );
 #endif
@@ -314,7 +310,7 @@ int CBOINCDialUpManager::Connect() {
                     _("%s needs to connect to the Internet.\nMay it do so now?"),
                     pSkinAdvanced->GetApplicationShortName().c_str()
                 );
-                iAnswer = ::wxMessageBox(
+                iAnswer = wxGetApp().SafeMessageBox(
                     strDialogMessage,
                     m_strDialogTitle,
                     wxYES_NO | wxICON_QUESTION,
@@ -355,9 +351,7 @@ int CBOINCDialUpManager::Connect() {
             // %s is the project name
             //    i.e. 'BOINC', 'GridRepublic'
             strDialogMessage.Printf(
-                _("%s couldn't do Internet communication, and no default connection is selected.\n"
-                  "Please connect to the Internet, or select a default connection\n"
-                  "using Advanced/Options/Connections."),
+                _("%s couldn't do Internet communication, and no default connection is selected.\nPlease connect to the Internet, or select a default connection\nusing Advanced/Options/Connections."),
                 pSkinAdvanced->GetApplicationShortName().c_str()
             );
 
@@ -458,8 +452,7 @@ int CBOINCDialUpManager::NetworkAvailable() {
     // %s is the project name
     //    i.e. 'BOINC', 'GridRepublic'
     strDialogMessage.Printf(
-        _("%s has detected it is now connected to the Internet.\n"
-          "Updating all projects and retrying all transfers."),
+        _("%s has detected it is now connected to the Internet.\nUpdating all projects and retrying all transfers."),
         pSkinAdvanced->GetApplicationShortName().c_str()
     );
 

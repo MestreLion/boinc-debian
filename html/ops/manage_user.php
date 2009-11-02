@@ -25,7 +25,6 @@
  * and forum suspension (banishment).   Put this in html/ops,
  * (or could be used by moderators for bans < 24 hrs).
  *
- * @(#) $Id: manage_user.php 15758 2008-08-05 22:43:14Z davea $
 \***********************************************************************/
 
 require_once("../inc/util.inc");
@@ -101,7 +100,7 @@ $matches="";
 
 if( isset($_POST['search_submit']) ){
     $search_name = post_str('search_text');
-    $search_name = process_user_text(strip_tags($search_name));
+    $search_name = BoincDb::escape_string(strip_tags($search_name));
 
     if( !empty($search_name) ){ 
         $result = mysql_query("SELECT * FROM user WHERE name='$search_name'");
@@ -402,5 +401,5 @@ if($q) {
 admin_page_tail();
 
 $cvs_version_tracker[]=        //Generated automatically - do not edit
-    "\$Id: manage_user.php 15758 2008-08-05 22:43:14Z davea $"; 
+    "\$Id: manage_user.php 16696 2008-12-16 16:57:31Z davea $"; 
 ?>

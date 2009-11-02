@@ -31,6 +31,7 @@ function admin_page_head($title) {
     $stylesheet = URL_BASE.STYLESHEET;
 
     echo "<html><head><title>$title</title>
+        <link rel=stylesheet type=\"text/css\" href=\"".URL_BASE."main.css\" media=\"all\" />
         <link rel=\"stylesheet\" type=\"text/css\" href=\"$stylesheet\">
         </head>
         <body bgcolor=\"#ffffff\">
@@ -82,5 +83,5 @@ function show_profile_link_ops($user) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: util_ops.inc 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util_ops.inc 17837 2009-04-17 00:01:33Z davea $";  //Generated automatically - do not edit
 ?>

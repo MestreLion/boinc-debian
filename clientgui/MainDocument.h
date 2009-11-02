@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _MAINDOCUMENT_H_
 #define _MAINDOCUMENT_H_
@@ -27,6 +25,7 @@
 #include <vector>
 #include "common_defs.h"
 #include "gui_rpc_client.h"
+#include "AsyncRPC.h"
 
 typedef struct {
     int slot;
@@ -146,28 +145,71 @@ public:
     int                         SetActivityRunMode(int iMode, int iTimeout);
     int                         SetNetworkRunMode(int iMode, int iTimeout);
 
-    int                         ForceCacheUpdate();
+    void                        RefreshRPCs();
+    void                        RunPeriodicRPCs();
+    int                         ForceCacheUpdate(bool immediate = true);
     int                         RunBenchmarks();
 
     bool                        IsUserAuthorized();
 
     CNetworkConnection*         m_pNetworkConnection;
     CBOINCClientManager*        m_pClientManager;
-    RPC_CLIENT                  rpc;
+    AsyncRPC                    rpc;
+    RPC_CLIENT                  rpcClient;
+    PROJECTS                    async_projects_update_buf;
+    
     CC_STATE                    state;
+    CC_STATE                    async_state_buf;
+    int                         m_iGet_state_rpc_result;
+    
     CC_STATUS                   status;
+    CC_STATUS                   async_status_buf;
+    int                         m_iGet_status_rpc_result;
+    
     HOST_INFO                   host;
+    HOST_INFO                   async_host_buf;
+    int                         m_iGet_host_info_rpc_result;
     wxDateTime                  m_dtCachedStateTimestamp;
 
+    //
+    // Async RPC support
+    //
+public:
+    int                         RequestRPC(ASYNC_RPC_REQUEST& request, bool hasPriority = false);
+    void                        OnRPCComplete(CRPCFinishedEvent& event);
+    ASYNC_RPC_REQUEST*          GetCurrentRPCRequest() { return &current_rpc_request; }
+    bool                        WaitingForRPC() { return m_bWaitingForRPC; }
+    wxDialog*                   GetRPCWaitDialog() { return m_RPCWaitDlg; }
+//    void                      TestAsyncRPC();      // For testing Async RPCs
+    RPCThread*                  m_RPCThread;
+    bool                        m_bRPCThreadIsReady;
+    bool                        m_bShutDownRPCThread;
+
+private:
+    void                        HandleCompletedRPC();
+    void                        KillRPCThread();
+    int                         CopyProjectsToStateBuffer(PROJECTS& p, CC_STATE& state);
+    ASYNC_RPC_REQUEST           current_rpc_request;
+    AsyncRPCDlg*                m_RPCWaitDlg;
+    std::vector<ASYNC_RPC_REQUEST> RPC_requests;
+    bool                        m_bWaitingForRPC;
+    bool                        m_bNeedRefresh;
+    bool                        m_bNeedTaskBarRefresh;
+    BOINC_Mutex*                m_pRPC_Thread_Mutex;
+    BOINC_Condition*            m_pRPC_Thread_Condition;
+    BOINC_Mutex*                m_pRPC_Request_Mutex;
+    BOINC_Condition*            m_pRPC_Request_Condition;
+    wxDateTime                  m_dtLasAsyncRPCDlgTime;
 
     //
     // Project Tab
     //
 private:
-    int                         CachedProjectStatusUpdate();
+    int                         m_iGet_project_status1_rpc_result;
     wxDateTime                  m_dtProjecStatusTimestamp;
 
 public:
+    int                         CachedProjectStatusUpdate(bool bForce = false);
     PROJECT*                    project(unsigned int);
 	PROJECT*                    project(const wxString& projectname);
     float                       m_fProjectTotalResourceShare;
@@ -210,6 +252,10 @@ private:
 
 public:
     RESULTS                     results;
+    RESULTS                     async_results_buf;
+    int                         m_iGet_results_rpc_result;
+    bool                        m_ActiveTasksOnly;
+    
     RESULT*                     result(unsigned int);
     RESULT*                     result(const wxString& name, const wxString& project_url);
 
@@ -239,6 +285,9 @@ private:
 
 public:
     MESSAGES                    messages;
+    MESSAGES                    async_messages_buf;
+    int                         m_iGet_messages_rpc_result;
+    
     MESSAGE*                    message(unsigned int);
     int                         CachedMessageUpdate();
 
@@ -258,6 +307,9 @@ private:
 
 public:
     FILE_TRANSFERS              ft;
+    FILE_TRANSFERS              async_ft_buf;
+    int                         m_iGet_file_transfers_rpc_result;
+    
     FILE_TRANSFER*              file_transfer(unsigned int);
     FILE_TRANSFER*              file_transfer(const wxString& fileName, const wxString& project_url);
 
@@ -277,6 +329,9 @@ private:
 
 public:
     DISK_USAGE                  disk_usage;
+    DISK_USAGE                  async_disk_usage_buf;
+    int                         m_iGet_dsk_usage_rpc_result;
+    
     PROJECT*                    DiskUsageProject(unsigned int);
     int                         CachedDiskUsageUpdate();
 
@@ -288,8 +343,10 @@ private:
     wxDateTime                  m_dtStatisticsStatusTimestamp;
 
 public:
-	PROJECTS                    statistics_status;
+    PROJECTS                    statistics_status;
+    PROJECTS                    async_statistics_status_buf;
     PROJECT*                    statistic(unsigned int);
+    int                         m_iGet_statistics_rpc_result;
 
     int                         GetStatisticsCount();
 	
@@ -308,11 +365,17 @@ public:
     //
     // Simple GUI Updates
     //
+    int                         m_iGet_simple_gui2_rpc_result;
+    int                         CachedSimpleGUIUpdate(bool bForce = false);
+    int                         m_iAcct_mgr_info_rpc_result;
 private:
     wxDateTime                  m_dtCachedSimpleGUITimestamp;
-    int                         CachedSimpleGUIUpdate();
+    wxDateTime                  m_dtCachedAcctMgrInfoTimestamp;
 
 public:
+    ACCT_MGR_INFO               ami;
+    ACCT_MGR_INFO               async_ami_buf;
+    int                         GetSimpleProjectCount();
     int                         GetSimpleGUIWorkCount();
 
 };

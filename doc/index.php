@@ -1,4 +1,5 @@
 <?php
+
 $host = $_SERVER["SERVER_NAME"];
 if ($host == "bossa.berkeley.edu") {
     Header("Location: http://boinc.berkeley.edu/trac/wiki/BossaIntro");
@@ -11,7 +12,7 @@ if ($host == "bolt.berkeley.edu") {
 }
 
 require_once("docutil.php");
-require_once("translation.inc");
+require_once("../html/inc/translation.inc");
 
 function show_participant() {
     $i = rand(0, 99);
@@ -19,10 +20,10 @@ function show_participant() {
     echo "<table cellpadding=8 cellspacing=0>
         <tr><td class=heading_right>
         <center>
-        <span class=section_title>Computing power</span>
+        <span class=section_title>".tra("Computing power")."</span>
         <br>
-        <a class=heading href=chart_list.php><b>Top 100 volunteers</b></a>
-        &middot; <a class=heading href=\"links.php#stats\"><b>Statistics</b></a>
+        <a class=heading href=chart_list.php><b>".tra("Top 100 volunteers")."</b></a>
+        &middot; <a class=heading href=\"links.php#stats\"><b>".tra("Statistics")."</b></a>
         </center>
         </td></tr>
         <tr><td>
@@ -49,8 +50,8 @@ function show_totals() {
     $hosts = number_format($hosts);
 
     $teraflops = number_format($credit_day/100000, 2);
-    echo "Active: $users volunteers, $hosts computers.
-        <br>24-hour average: $teraflops TeraFLOPS.
+    echo tra("Active:")." $users ".tra("volunteers,")." $hosts ".tra("computers.
+")."        <br>".tra("24-hour average:")." $teraflops ".tra("TeraFLOPS.")."
         <hr size=1 width=\"80%\">
     ";
 }
@@ -62,18 +63,18 @@ function show_news_items() {
         <table border=0 cellpadding=8>
         <tr><td class=heading_right>
         <center>
-        <span class=section_title>News</span>
+        <span class=section_title>".tra("News")."</span>
         </center>
     ";
     $nnews_items = 6;
     show_news($project_news, $nnews_items);
     if (count($project_news) > $nnews_items) {
-        echo "<a href=old_news.php>... more</a>\n";
+        echo "<a href=old_news.php>".tra("... more")."</a>\n";
     }
 
-    echo "
-        <p><font size=-2>News is available as an
-        <a href=rss_main.php>RSS feed</a> <img src=xml.gif alt=\"RSS logo\"></font>
+    echo "<p><font size=-2>";
+    printf(tra('News is available as an %sRSS feed%s'), '<a href="rss_main.php">', '</a>');
+    echo "<img src=xml.gif alt=\"RSS logo\"></font>
         </td></tr></table>
     ";
 }
@@ -82,19 +83,35 @@ function show_participate() {
     echo "
         <tr><td class=heading_left>
         <center>
-        <span class=section_title>".tr(HOME_HEADING1)."</span>
+        <span class=section_title>".tra("Volunteer")."</span>
         <br>
-        <a class=heading href=download.php><b>".tr(HOME_DOWNLOAD)."</b></a>
-        &middot; <a class=heading href=\"/wiki/BOINC_Help\"><b>Help</b></a>
-        &middot; <a class=heading href=\"wiki/User_manual\"><b><span class=nobr>Documentation</span></b></a> 
+        <a class=heading href=download.php><b>".tra("Download")."</b></a>
+        &middot; <a class=heading href=\"/wiki/BOINC_Help\"><b>".tra("Help")."</b></a>
+        &middot; <a class=heading href=\"wiki/User_manual\"><b><span class=nobr>".tra("Documentation")."</span></b></a> 
         </center>
         </td></tr>
         <tr><td>
         <p>
-        ".sprintf(tr(HOME_P1), "<ol> <li> <a href=projects.php><b>", "</b></a>", "<li> <a href=download.php><b>", "</b></a>", "<li> <b>", "</b>")."
+        ".sprintf(
+            tra(" Use the idle time on your computer (Windows, Mac, or Linux) to cure diseases, study global warming, discover pulsars, and do many other types of scientific research.  It's safe, secure, and easy:  %sChoose%s projects  %sDownload%s and run BOINC software  %sEnter%s an email address and password. "),
+            "<ol> <li> <a href=projects.php><b>",
+            "</b></a>",
+            "<li> <a href=download.php><b>",
+            "</b></a>",
+            "<li> <b>",
+            "</b>"
+        )."
         </ol>
         <p>
-        ".sprintf(tr(HOME_P2), "<a href=\"trac/wiki/AccountManagers\">", "</a>", "<a href=\"http://www.gridrepublic.org\">", "</a>", "<a href=\"http://bam.boincstats.com/\">", "</a>")."
+        ".sprintf(
+            tra("Or, if you run several projects, try an %saccount manager%s such as %sGridRepublic%s or %sBAM!%s. "),
+            "<a href=\"wiki/Account_managers\">",
+            "</a>",
+            "<a href=\"http://www.gridrepublic.org\">",
+            "</a>",
+            "<a href=\"http://bam.boincstats.com/\">",
+            "</a>"
+        )."
         </td></tr>
     ";
 }
@@ -103,10 +120,10 @@ function show_create() {
     echo "
         <tr><td class=heading_left>
         <center>
-        <span class=section_title>Compute with BOINC</span>
+        <span class=section_title>".tra("Compute with BOINC")."</span>
         <br>
-        <a class=heading href=\"trac/wiki/ProjectMain\">Documentation</a>
-        &middot; <a class=heading href=\"trac/wiki/ServerUpdates\">Software updates</a>
+        <a class=heading href=\"trac/wiki/ProjectMain\">".tra("Documentation")."</a>
+        &middot; <a class=heading href=\"trac/wiki/ServerUpdates\">".tra("Software updates")."</a>
         </center>
         </td></tr>
         <tr><td>
@@ -133,27 +150,27 @@ function show_other() {
     echo "
         <tr><td class=heading_left>
         <center>
-        <span class=section_title>The BOINC project</span>
+        <span class=section_title>".tra("The BOINC project")."</span>
         </center>
         </td></tr>
         <tr><td>
             <ul>
-            <li> Help wanted!
+            <li> ".tra("Help wanted!")."
             <ul>
-                <li> <a href=\"trac/wiki/DevProjects\">Programming</a>
-                <li> <a href=\"trac/wiki/TranslateIntro\">Translation</a>
-                <li> <a href=\"trac/wiki/AlphaInstructions\">Testing</a>
-                <li> <a href=\"trac/wiki/WikiMeta\">Documentation</a>
+                <li> <a href=\"trac/wiki/DevProjects\">".tra("Programming")."</a>
+                <li> <a href=\"trac/wiki/TranslateIntro\">".tra("Translation")."</a>
+                <li> <a href=\"trac/wiki/AlphaInstructions\">".tra("Testing")."</a>
+                <li> <a href=\"trac/wiki/WikiMeta\">".tra("Documentation")."</a>
             </ul>
-            <li> <a href=\"trac/wiki/SoftwareDevelopment\">Software development</a>
-            <li> <a href=\"trac/wiki/SoftwareAddon\">APIs for add-on software</a>
-            <li> <a href=\"trac/wiki/ProjectPeople\">Personnel and contributors</a>
-            <li> <a href=\"dev/\">Message boards</a>
-            <li> <a href=email_lists.php>Email lists</a>
-            <li> <a href=\"trac/wiki/BoincEvents\">Events</a>
-            <li> <a href=\"trac/wiki/ConferenceList\">Conferences</a>
-            <li> <a href=\"trac/wiki/BoincPapers\">Papers and talks</a>
-            <li> <a href=logo.php>Logos and graphics</a>
+            <li> <a href=\"trac/wiki/SoftwareDevelopment\">".tra("Software development")."</a>
+            <li> <a href=\"trac/wiki/SoftwareAddon\">".tra("APIs for add-on software")."</a>
+            <li> <a href=\"trac/wiki/ProjectPeople\">".tra("Personnel and contributors")."</a>
+            <li> <a href=\"dev/\">".tra("Message boards")."</a>
+            <li> <a href=email_lists.php>".tra("Email lists")."</a>
+            <li> <a href=\"trac/wiki/BoincEvents\">".tra("Events")."</a>
+            <li> <a href=\"trac/wiki/ConferenceList\">".tra("Conferences")."</a>
+            <li> <a href=\"trac/wiki/BoincPapers\">".tra("Papers and talks")."</a>
+            <li> <a href=logo.php>".tra("Logos and graphics")."</a>
             </ul>
             <br>
         </td></tr>
@@ -186,26 +203,27 @@ function language_form() {
         <form name=language method=get action=set_language.php>
         <select class=selectbox name=lang onchange=\"javascript: submit()\">
         <option value=auto selected=\"selected\">-- language --
-        <option value=auto>Browser default
-        <option value=ar>العربية
-        <option value=be>Беларускі
-        <option value=bg>Български
-        <option value=ca>Català
-        <option value=cs>Čeština
-        <option value=de>Deutsch
-        <option value=en>English
-        <option value=es>Espa&ntilde;ol
-        <option value=fr>Fran&ccedil;ais
-        <option value=ja>日本語
-        <option value=lt>Lietuvių
-        <option value=nl>Nederlands
-        <option value=pl>Polski
-        <option value=pt_BR>Portugu&ecirc;s - Brasil
-        <option value=ru>Русский
-        <option value=sk>Slovenčina
-        <option value=tr>Türkçe
-        <option value=zh_CN>简体中文
-        </select>
+        <option value=auto>".tra("Browser default")
+        //."<option value=ar>العربية (Arabic)"
+        //."<option value=be>Беларускі (Belarusian)"
+        //."<option value=bg>Българск� (Bulgarian)"
+        ."<option value=ca>Català(Catalan)"
+        ."<option value=cs>Čeština (Czech)"
+        ."<option value=de>Deutsch (German)"
+        ."<option value=en>English"
+        ."<option value=es>Espa&ntilde;ol (Spanish)"
+        ."<option value=fr>Fran&ccedil;ais (French)"
+        ."<option value=ja>日本語 (Japanese)"
+        ."<option value=ko>한국어 (Korean)"
+        //."<option value=lt>Lietuvių (Lithuanian)"
+        ."<option value=nl>Nederlands (Dutch)"
+        //."<option value=pl>Polski (Polish)"
+        //."<option value=pt_BR>Portugu&ecirc;s - Brasil (Portuguese - Brazil)"
+        ."<option value=ru>Русский (Russian)"
+        //."<option value=sk>Slovenčina (Slovenian)"
+        ."<option value=tr>Türkçe (Turkish)"
+        ."<option value=zh_CN>简体中文 (Chinese)"
+        ."</select>
         </form>
         <script type=\"text/javascript\">
         document.language.lang.selectedIndex=0;
@@ -214,9 +232,7 @@ function language_form() {
     ";
 }
 
-if (defined("CHARSET")) {
-    header("Content-type: text/html; charset=".tr(CHARSET));
-}
+    header("Content-type: text/html; charset=utf-8");
 
 html_tag();
 echo "
@@ -231,7 +247,7 @@ echo "
 <img hspace=20 vspace=6 align=left src=\"logo/www_logo.gif\" alt=\"BOINC logo\">
 </td><td align=center>
 <span class=\"subtitle\">
-".sprintf(tr(HOME_BOINC_DESC), '<a href=volunteer.php><span class=nobr>', '</span></a>', '<a href=dg.php><span class=nobr>', '</span></a>')."
+".sprintf(tra("Open-source software for %svolunteer computing%s and %sgrid computing%s."), '<a href=volunteer.php><span class=nobr>', '</span></a>', '<a href=dg.php><span class=nobr>', '</span></a>')."
 </span>
 <table><tr><td>
 ";

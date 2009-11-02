@@ -16,12 +16,14 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "boinc_win.h"
-#define COMPILE_MULTIMON_STUBS
-#include <multimon.h>
+#ifndef __CYGWIN__
+#include <intrin.h>
+#endif
 
 #include "client_types.h"
 #include "filesys.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "client_msgs.h"
 #include "hostinfo_network.h"
 #include "hostinfo.h"
@@ -60,108 +62,143 @@ HINSTANCE g_hClientLibraryDll;
 // Newer product types than what is currently defined in
 //   Visual Studio 2005
 #ifndef PRODUCT_ULTIMATE
-#define PRODUCT_ULTIMATE                        0x00000001
+#define PRODUCT_ULTIMATE                            0x00000001
 #endif
 #ifndef PRODUCT_HOME_BASIC
-#define PRODUCT_HOME_BASIC                      0x00000002
+#define PRODUCT_HOME_BASIC                          0x00000002
 #endif
 #ifndef PRODUCT_HOME_PREMIUM
-#define PRODUCT_HOME_PREMIUM                    0x00000003
+#define PRODUCT_HOME_PREMIUM                        0x00000003
 #endif
 #ifndef PRODUCT_ENTERPRISE
-#define PRODUCT_ENTERPRISE                      0x00000004
+#define PRODUCT_ENTERPRISE                          0x00000004
 #endif
 #ifndef PRODUCT_HOME_BASIC_N
-#define PRODUCT_HOME_BASIC_N                    0x00000005
+#define PRODUCT_HOME_BASIC_N                        0x00000005
 #endif
 #ifndef PRODUCT_BUSINESS
-#define PRODUCT_BUSINESS                        0x00000006
+#define PRODUCT_BUSINESS                            0x00000006
 #endif
 #ifndef PRODUCT_STANDARD_SERVER
-#define PRODUCT_STANDARD_SERVER                 0x00000007
+#define PRODUCT_STANDARD_SERVER                     0x00000007
 #endif
 #ifndef PRODUCT_DATACENTER_SERVER
-#define PRODUCT_DATACENTER_SERVER               0x00000008
+#define PRODUCT_DATACENTER_SERVER                   0x00000008
 #endif
 #ifndef PRODUCT_SMALLBUSINESS_SERVER
-#define PRODUCT_SMALLBUSINESS_SERVER            0x00000009
+#define PRODUCT_SMALLBUSINESS_SERVER                0x00000009
 #endif
 #ifndef PRODUCT_ENTERPRISE_SERVER
-#define PRODUCT_ENTERPRISE_SERVER               0x0000000A
+#define PRODUCT_ENTERPRISE_SERVER                   0x0000000A
 #endif
 #ifndef PRODUCT_STARTER
-#define PRODUCT_STARTER                         0x0000000B
+#define PRODUCT_STARTER                             0x0000000B
 #endif
 #ifndef PRODUCT_DATACENTER_SERVER_CORE
-#define PRODUCT_DATACENTER_SERVER_CORE          0x0000000C
+#define PRODUCT_DATACENTER_SERVER_CORE              0x0000000C
 #endif
 #ifndef PRODUCT_STANDARD_SERVER_CORE
-#define PRODUCT_STANDARD_SERVER_CORE            0x0000000D
+#define PRODUCT_STANDARD_SERVER_CORE                0x0000000D
 #endif
 #ifndef PRODUCT_ENTERPRISE_SERVER_CORE
-#define PRODUCT_ENTERPRISE_SERVER_CORE          0x0000000E
+#define PRODUCT_ENTERPRISE_SERVER_CORE              0x0000000E
 #endif
 #ifndef PRODUCT_ENTERPRISE_SERVER_IA64
-#define PRODUCT_ENTERPRISE_SERVER_IA64          0x0000000F
+#define PRODUCT_ENTERPRISE_SERVER_IA64              0x0000000F
 #endif
 #ifndef PRODUCT_BUSINESS_N
-#define PRODUCT_BUSINESS_N                      0x00000010
+#define PRODUCT_BUSINESS_N                          0x00000010
 #endif
 #ifndef PRODUCT_WEB_SERVER
-#define PRODUCT_WEB_SERVER                      0x00000011
+#define PRODUCT_WEB_SERVER                          0x00000011
 #endif
 #ifndef PRODUCT_CLUSTER_SERVER
-#define PRODUCT_CLUSTER_SERVER                  0x00000012
+#define PRODUCT_CLUSTER_SERVER                      0x00000012
 #endif
 #ifndef PRODUCT_HOME_SERVER
-#define PRODUCT_HOME_SERVER                     0x00000013
+#define PRODUCT_HOME_SERVER                         0x00000013
 #endif
 #ifndef PRODUCT_STORAGE_EXPRESS_SERVER
-#define PRODUCT_STORAGE_EXPRESS_SERVER          0x00000014
+#define PRODUCT_STORAGE_EXPRESS_SERVER              0x00000014
 #endif
 #ifndef PRODUCT_STORAGE_STANDARD_SERVER
-#define PRODUCT_STORAGE_STANDARD_SERVER         0x00000015
+#define PRODUCT_STORAGE_STANDARD_SERVER             0x00000015
 #endif
 #ifndef PRODUCT_STORAGE_WORKGROUP_SERVER
-#define PRODUCT_STORAGE_WORKGROUP_SERVER        0x00000016
+#define PRODUCT_STORAGE_WORKGROUP_SERVER            0x00000016
 #endif
 #ifndef PRODUCT_STORAGE_ENTERPRISE_SERVER
-#define PRODUCT_STORAGE_ENTERPRISE_SERVER       0x00000017
+#define PRODUCT_STORAGE_ENTERPRISE_SERVER           0x00000017
 #endif
 #ifndef PRODUCT_SERVER_FOR_SMALLBUSINESS
-#define PRODUCT_SERVER_FOR_SMALLBUSINESS        0x00000018
+#define PRODUCT_SERVER_FOR_SMALLBUSINESS            0x00000018
 #endif
 #ifndef PRODUCT_SMALLBUSINESS_SERVER_PREMIUM
-#define PRODUCT_SMALLBUSINESS_SERVER_PREMIUM    0x00000019
+#define PRODUCT_SMALLBUSINESS_SERVER_PREMIUM        0x00000019
 #endif
-
-
-// Memory Status Structure for Win2K and WinXP based systems.
-typedef struct _MYMEMORYSTATUSEX {  
-    DWORD dwLength;
-    DWORD dwMemoryLoad;
-    DWORDLONG ullTotalPhys;
-    DWORDLONG ullAvailPhys;
-    DWORDLONG ullTotalPageFile;
-    DWORDLONG ullAvailPageFile;
-    DWORDLONG ullTotalVirtual;
-    DWORDLONG ullAvailVirtual;
-    DWORDLONG ullAvailExtendedVirtual;
-} MYMEMORYSTATUSEX, *LPMYMEMORYSTATUSEX;
-
-typedef BOOL (WINAPI *MYGLOBALMEMORYSTATUSEX)(LPMYMEMORYSTATUSEX lpBuffer);
-
-
-// Traverse the video adapters and flag them as potiential accelerators.
-struct INTERNALMONITORINFO
-{
-    DWORD  cb;
-    TCHAR  DeviceName[32];
-    TCHAR  DeviceString[128];
-    DWORD  StateFlags;
-    TCHAR  DeviceID[128];
-    TCHAR  DeviceKey[128];
-};
+#ifndef PRODUCT_HOME_PREMIUM_N
+#define PRODUCT_HOME_PREMIUM_N                      0x0000001A
+#endif
+#ifndef PRODUCT_ENTERPRISE_N
+#define PRODUCT_ENTERPRISE_N                        0x0000001B
+#endif
+#ifndef PRODUCT_ULTIMATE_N
+#define PRODUCT_ULTIMATE_N                          0x0000001C
+#endif
+#ifndef PRODUCT_WEB_SERVER_CORE
+#define PRODUCT_WEB_SERVER_CORE                     0x0000001D
+#endif
+#ifndef PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT
+#define PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT    0x0000001E
+#endif
+#ifndef PRODUCT_MEDIUMBUSINESS_SERVER_SECURITY
+#define PRODUCT_MEDIUMBUSINESS_SERVER_SECURITY      0x0000001F
+#endif
+#ifndef PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING
+#define PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING     0x00000020
+#endif
+#ifndef PRODUCT_SMALLBUSINESS_SERVER_PRIME
+#define PRODUCT_SMALLBUSINESS_SERVER_PRIME          0x00000021
+#endif
+#ifndef PRODUCT_HOME_PREMIUM_SERVER
+#define PRODUCT_HOME_PREMIUM_SERVER                 0x00000022
+#endif
+#ifndef PRODUCT_SERVER_FOR_SMALLBUSINESS_V
+#define PRODUCT_SERVER_FOR_SMALLBUSINESS_V          0x00000023
+#endif
+#ifndef PRODUCT_STANDARD_SERVER_V
+#define PRODUCT_STANDARD_SERVER_V                   0x00000024
+#endif
+#ifndef PRODUCT_DATACENTER_SERVER_V
+#define PRODUCT_DATACENTER_SERVER_V                 0x00000025
+#endif
+#ifndef PRODUCT_ENTERPRISE_SERVER_V
+#define PRODUCT_ENTERPRISE_SERVER_V                 0x00000026
+#endif
+#ifndef PRODUCT_DATACENTER_SERVER_CORE_V
+#define PRODUCT_DATACENTER_SERVER_CORE_V            0x00000027
+#endif
+#ifndef PRODUCT_STANDARD_SERVER_CORE_V
+#define PRODUCT_STANDARD_SERVER_CORE_V              0x00000028
+#endif
+#ifndef PRODUCT_ENTERPRISE_SERVER_CORE_V
+#define PRODUCT_ENTERPRISE_SERVER_CORE_V            0x00000029
+#endif
+#ifndef PRODUCT_HYPERV
+#define PRODUCT_HYPERV                              0x0000002A
+#endif
+#ifndef PRODUCT_STORAGE_EXPRESS_SERVER_CORE
+#define PRODUCT_STORAGE_EXPRESS_SERVER_CORE         0x0000002B
+#endif
+#ifndef PRODUCT_STORAGE_STANDARD_SERVER_CORE
+#define PRODUCT_STORAGE_STANDARD_SERVER_CORE        0x0000002C
+#endif
+#ifndef PRODUCT_STORAGE_WORKGROUP_SERVER_CORE
+#define PRODUCT_STORAGE_WORKGROUP_SERVER_CORE       0x0000002D
+#endif
+#ifndef PRODUCT_STORAGE_ENTERPRISE_SERVER_CORE
+#define PRODUCT_STORAGE_ENTERPRISE_SERVER_CORE      0x0000002E
+#endif
 
 
 // Returns the number of seconds difference from UTC
@@ -182,29 +219,12 @@ int get_timezone(int& timezone) {
 // Returns the memory information
 //
 int get_memory_info(double& bytes, double& swap) {
-    HMODULE hKernel32Lib;
-    MYGLOBALMEMORYSTATUSEX myGlobalMemoryStatusEx=0;
-    hKernel32Lib = GetModuleHandle("kernel32.dll");
-    if (hKernel32Lib) {
-        myGlobalMemoryStatusEx = (MYGLOBALMEMORYSTATUSEX) GetProcAddress(hKernel32Lib, "GlobalMemoryStatusEx");
-    }
-
-    if (hKernel32Lib && myGlobalMemoryStatusEx) {
-	    MYMEMORYSTATUSEX mStatusEx;
-	    ZeroMemory(&mStatusEx, sizeof(MYMEMORYSTATUSEX));
-	    mStatusEx.dwLength = sizeof(MYMEMORYSTATUSEX);
-	    (*myGlobalMemoryStatusEx)(&mStatusEx);
-        bytes = (double)mStatusEx.ullTotalPhys;
-        swap = (double)mStatusEx.ullTotalPageFile;
-    } else {
-	    MEMORYSTATUS mStatus;
-	    ZeroMemory(&mStatus, sizeof(MEMORYSTATUS));
-	    mStatus.dwLength = sizeof(MEMORYSTATUS);
-	    GlobalMemoryStatus(&mStatus);
-	    bytes = (double)mStatus.dwTotalPhys;
-	    swap = (double)mStatus.dwTotalPageFile;
-    }
-
+    MEMORYSTATUSEX mStatusEx;
+    ZeroMemory(&mStatusEx, sizeof(MEMORYSTATUSEX));
+    mStatusEx.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&mStatusEx);
+    bytes = (double)mStatusEx.ullTotalPhys;
+    swap = (double)mStatusEx.ullTotalPageFile;
     return 0;
 }
 
@@ -346,7 +366,7 @@ int get_os_information(
                 // Test for the workstation type.
                 if ( osvi.wProductType == VER_NT_WORKSTATION ) {
 
-                    if( (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 0) ) {
+                    if( (osvi.dwMajorVersion == 6) ) {
                         switch(dwType) {
                             case PRODUCT_ULTIMATE:
                                strcat(szSKU, "Ultimate ");
@@ -365,6 +385,21 @@ int get_os_information(
                                break;
                             case PRODUCT_STARTER:
                                strcat(szSKU, "Starter ");
+                               break;
+							case PRODUCT_HOME_PREMIUM_N:
+                               strcat(szSKU, "Home Premium N ");
+                               break;
+							case PRODUCT_HOME_BASIC_N:
+                               strcat(szSKU, "Home Basic N ");
+                               break;
+                            case PRODUCT_ULTIMATE_N:
+                               strcat(szSKU, "Ultimate N ");
+                               break;
+                            case PRODUCT_ENTERPRISE_N:
+                               strcat(szSKU, "Enterprise N ");
+                               break;
+                            case PRODUCT_BUSINESS_N:
+                               strcat(szSKU, "Business N ");
                                break;
                         }
                     } else if( (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2) ) {
@@ -388,7 +423,7 @@ int get_os_information(
             
                 // Test for the server type.
                 else if ( (osvi.wProductType == VER_NT_SERVER) || (osvi.wProductType == VER_NT_DOMAIN_CONTROLLER) ) {
-                    if( (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 0) ) {
+                    if( (osvi.dwMajorVersion == 6) ) {
 
                         switch(dwType) {
                             case PRODUCT_CLUSTER_SERVER:
@@ -423,6 +458,15 @@ int get_os_information(
                                break;
                             case PRODUCT_WEB_SERVER:
                                strcat( szSKU, "Web Server ");
+                               break;
+                            case PRODUCT_WEB_SERVER_CORE:
+                               strcat( szSKU, "Web Server (core installtion) ");
+                               break;
+                            case PRODUCT_HOME_SERVER:
+                               strcat( szSKU, "Home Server ");
+                               break;
+                            case PRODUCT_HOME_PREMIUM_SERVER:
+                               strcat( szSKU, "Home Premium Server ");
                                break;
                         }
 
@@ -485,7 +529,7 @@ int get_os_information(
                         break;
                 }
 
-                strcat(szSKU, "Editon");
+                strcat(szSKU, "Edition");
 
             } else { // Test for specific product on Windows NT 4.0 SP5 and earlier
 
@@ -571,89 +615,15 @@ int get_os_information(
 }
 
 
-// Check to see if a processor feature is available for use
-#ifdef _WIN64
-BOOL test_processor_feature(DWORD /*feature*/) {
-    return 0;
-}
-#else
-BOOL test_processor_feature(DWORD feature) {
-    __try {
-        switch (feature) {
-            case PF_XMMI_INSTRUCTIONS_AVAILABLE:
-                __asm {
-                    xorps xmm0, xmm0        // executing SSE instruction
-                }
-                break;
-            case PF_XMMI64_INSTRUCTIONS_AVAILABLE:
-                __asm {
-                    xorpd xmm0, xmm0        // executing SSE2 instruction
-                }
-                break;
-            case PF_3DNOW_INSTRUCTIONS_AVAILABLE:
-                __asm {
-                    pfrcp mm0, mm0          // executing 3DNow! instruction
-                    emms
-                }
-                break;
-            case PF_MMX_INSTRUCTIONS_AVAILABLE:
-                __asm {
-                    pxor mm0, mm0           // executing MMX instruction
-                    emms
-                }
-                break;
-            default:
-                return 0;
-                break;
-        }
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER) {
-        return 0;
-    }
-    return 1;
-}
-#endif
-
-// Detect to see if a processor feature is available for use
-
-// IsProcessorFeaturePresent()
-typedef BOOL (__stdcall *tIPFP)( IN DWORD dwFeature );
-
-BOOL is_processor_feature_supported(DWORD feature) {
-    // Detect platform information
-    OSVERSIONINFO osvi; 
-    osvi.dwOSVersionInfoSize = sizeof(osvi);
-    GetVersionEx(&osvi);
-
-    if (VER_PLATFORM_WIN32_WINDOWS == osvi.dwPlatformId) {
-        // Win9x doesn't have the IsProcessorFeaturePresent function, so just
-        //   run a quick test.
-        return test_processor_feature(feature);
-    } else {
-        HMODULE hKernel32Lib = GetModuleHandle("kernel32.dll");
-        tIPFP pIPFP = (tIPFP)GetProcAddress(hKernel32Lib, "IsProcessorFeaturePresent");
-        if (pIPFP) {
-            // IsProcessorFeaturePresent is available, use it.
-            return pIPFP(feature);
-        } else {
-            // Ooooppppssss, whichever version of Windows we are running on
-            //   doesn't support IsProcessorFeaturePresent, so just test things
-            //   out.
-            return test_processor_feature(feature);
-        }
-    }
-    return 0;
-}
-
-
 // Returns the processor make, model, and additional cpu flags supported by
 //   the processor, use the Linux CPU processor feature descriptions.
 //
 int get_processor_info(
     char* p_vendor, int p_vendor_size, char* p_model, int p_model_size,
-    char* p_features, int p_features_size
+    char* p_features, int p_features_size, double& p_cache
 )
 {
+    int CPUInfo[4] = {-1};
 	char vendorName[256], processorName[256], identifierName[256], capabilities[256], temp_model[256];
 	HKEY hKey = NULL;
 	LONG retval = 0;
@@ -666,49 +636,57 @@ int get_processor_info(
     strcpy(temp_model, "");
 
     // determine what the cpu's capabilities are
-    if (!is_processor_feature_supported(PF_FLOATING_POINT_EMULATED)) {
+    if (!IsProcessorFeaturePresent(PF_FLOATING_POINT_EMULATED)) {
         strncat(capabilities, "fpu ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_RDTSC_INSTRUCTION_AVAILABLE)) {
+    if (IsProcessorFeaturePresent(PF_RDTSC_INSTRUCTION_AVAILABLE)) {
         strncat(capabilities, "tsc ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_PAE_ENABLED)) {
+    if (IsProcessorFeaturePresent(PF_PAE_ENABLED)) {
         strncat(capabilities, "pae ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_NX_ENABLED)) {
+    if (IsProcessorFeaturePresent(PF_NX_ENABLED)) {
         strncat(capabilities, "nx ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_XMMI_INSTRUCTIONS_AVAILABLE)) {
+    if (IsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE)) {
         strncat(capabilities, "sse ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_XMMI64_INSTRUCTIONS_AVAILABLE)) {
+    if (IsProcessorFeaturePresent(PF_XMMI64_INSTRUCTIONS_AVAILABLE)) {
         strncat(capabilities, "sse2 ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_SSE3_INSTRUCTIONS_AVAILABLE)) {
+    if (IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE)) {
         strncat(capabilities, "pni ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_3DNOW_INSTRUCTIONS_AVAILABLE)) {
+    if (IsProcessorFeaturePresent(PF_3DNOW_INSTRUCTIONS_AVAILABLE)) {
         strncat(capabilities, "3dnow ", sizeof(capabilities) - strlen(capabilities));
     }
-    if (is_processor_feature_supported(PF_MMX_INSTRUCTIONS_AVAILABLE)) {
+    if (IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE)) {
         strncat(capabilities, "mmx ", sizeof(capabilities) - strlen(capabilities));
     }
     strip_whitespace(capabilities);
 
-    
+
+#ifndef __CYGWIN__
+    // determine CPU cache size
+    // see: http://msdn.microsoft.com/en-us/library/hskdteyh(VS.80).aspx
+    __cpuid(CPUInfo, 0x80000006);
+    p_cache = (double)((CPUInfo[2] >> 16) & 0xffff) * 1024;
+#endif
+
+
 	retval = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Hardware\\Description\\System\\CentralProcessor\\0", 0, KEY_QUERY_VALUE, &hKey);
 	if(retval == ERROR_SUCCESS) {
         // Win9x and WinNT store different information in these field.
         // NT Examples:
-        // ProcessorNameString: Intel(R) Xeon(TM) CPU 3.06GHz
-        // Identifier: x86 Family 15 Model 2 Stepping 7
-        // VendorIdentifier: GenuineIntel
-        // ~MHz: 3056
+        //     ProcessorNameString: Intel(R) Xeon(TM) CPU 3.06GHz
+        //     Identifier: x86 Family 15 Model 2 Stepping 7
+        //     VendorIdentifier: GenuineIntel
+        //     ~MHz: 3056
         // 9X Examples:
-        // ProcessorNameString: <Not Defined>
-        // Identifier: Pentium(r) Processor
-        // ~MHz: <Not Defined>
-        // VendorIdentifier: GenuineIntel
+        //     ProcessorNameString: <Not Defined>
+        //     Identifier: Pentium(r) Processor
+        //     ~MHz: <Not Defined>
+        //     VendorIdentifier: GenuineIntel
 
         // Look in various places for processor information, add'l
 		// entries suggested by mark mcclure
@@ -786,7 +764,8 @@ int HOST_INFO::get_host_info() {
     get_processor_info(
         p_vendor, sizeof(p_vendor),
         p_model, sizeof(p_model),
-        p_features, sizeof(p_features)
+        p_features, sizeof(p_features),
+        m_cache
     );
     get_processor_count(p_ncpus);
     get_local_network_info();
@@ -827,4 +806,4 @@ bool HOST_INFO::users_idle(bool /*check_all_logins*/, double idle_time_to_run) {
     return false;
 }
 
-const char *BOINC_RCSID_37fbd07edd = "$Id: hostinfo_win.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_37fbd07edd = "$Id: hostinfo_win.cpp 19200 2009-09-28 16:13:55Z romw $";

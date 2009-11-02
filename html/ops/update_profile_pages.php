@@ -153,10 +153,12 @@ function build_picture_pages($width, $height) {
 
     mysql_free_result($result);
 
-    if (count($userIds) > 0) {
-        // Randomize the ordering of users.
-        shuffle($userIds);
-    }
+// don't randomize; makes things hard for people who sift profiles
+//
+//    if (count($userIds) > 0) {
+//        // Randomize the ordering of users.
+//        shuffle($userIds);
+//    }
 
     $numPages = ceil(count($userIds)/($width * $height));
 
@@ -182,7 +184,7 @@ function build_picture_pages($width, $height) {
             Only user profiles with pictures are listed here.";
 
 
-        echo "<table class=bordered border=1 cellpadding=5\n";
+        echo "<table class=bordered border=1 cellpadding=5>\n";
 
         for ($row = 0; $row < $height; $row++) {
             echo "<tr>";

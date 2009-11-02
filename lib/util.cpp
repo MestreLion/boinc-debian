@@ -39,6 +39,12 @@
 #include <errno.h>
 #include <string>
 #include <cstring>
+#ifdef HAVE_IEEEFP_H
+#include <ieeefp.h>
+extern "C" {
+    int finite(double);
+}
+#endif
 #endif
 
 #include "error_numbers.h"
@@ -53,6 +59,7 @@
 
 #ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
+#define perror FCGI::perror
 #endif
 
 using std::min;
@@ -152,11 +159,11 @@ int boinc_thread_cpu_time(HANDLE thread_handle, double& cpu) {
     return 0;
 }
 
-int boinc_process_cpu_time(double& cpu) {
+int boinc_process_cpu_time(HANDLE process_handle, double& cpu) {
     FILETIME creationTime, exitTime, kernelTime, userTime;
 
     if (GetProcessTimes(
-        GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime)
+        process_handle, &creationTime, &exitTime, &kernelTime, &userTime)
     ) {
         ULARGE_INTEGER tKernel, tUser;
         LONGLONG totTime;
@@ -305,8 +312,8 @@ void boinc_crash() {
 
 // read file (at most max_len chars, if nonzero) into malloc'd buf
 //
-int read_file_malloc(const char* path, char*& buf, int max_len, bool tail) {
-    int retval, isize;
+int read_file_malloc(const char* path, char*& buf, size_t max_len, bool tail) {
+    int retval;
     double size;
 
     retval = file_size(path, size);
@@ -322,12 +329,12 @@ int read_file_malloc(const char* path, char*& buf, int max_len, bool tail) {
 #ifndef _USING_FCGI_
     if (max_len && size > max_len) {
         if (tail) {
-            fseek(f, (long)size-max_len, SEEK_SET);
+            fseek(f, (long)size-(long)max_len, SEEK_SET);
         }
         size = max_len;
     }
 #endif
-    isize = (int) size;
+    size_t isize = (size_t)size;
     buf = (char*)malloc(isize+1);
     size_t n = fread(buf, 1, isize, f);
     buf[n] = 0;
@@ -337,7 +344,7 @@ int read_file_malloc(const char* path, char*& buf, int max_len, bool tail) {
 
 // read file (at most max_len chars, if nonzero) into string
 //
-int read_file_string(const char* path, string& result, int max_len, bool tail) {
+int read_file_string(const char* path, string& result, size_t max_len, bool tail) {
     result.erase();
     int retval;
     char* buf;
@@ -361,7 +368,7 @@ int run_program(
 ) {
     int retval;
     PROCESS_INFORMATION process_info;
-    STARTUPINFO startup_info;
+    STARTUPINFOA startup_info;
     char cmdline[1024];
     char error_msg[1024];
     unsigned long status;
@@ -378,7 +385,7 @@ int run_program(
         }
     }
 
-    retval = CreateProcess(
+    retval = CreateProcessA(
         file,
         cmdline,
         NULL,
@@ -491,7 +498,7 @@ static int get_client_mutex(const char*) {
     }
     strcat( buf, RUN_MUTEX);
 
-    HANDLE h = CreateMutex(NULL, true, buf);
+    HANDLE h = CreateMutexA(NULL, true, buf);
     if ((h==0) || (GetLastError() == ERROR_ALREADY_EXISTS)) {
         return ERR_ALREADY_RUNNING;
     }
@@ -519,4 +526,13 @@ int wait_client_mutex(const char* dir, double timeout) {
     return ERR_ALREADY_RUNNING;
 }
 
-const char *BOINC_RCSID_ab65c90e1e = "$Id: util.cpp 16069 2008-09-26 18:20:24Z davea $";
+bool boinc_is_finite(double x) {
+#if defined (HPUX_SOURCE)
+    return _Isfinite(x);
+    return false;
+#else
+    return finite(x);
+#endif
+}
+
+const char *BOINC_RCSID_ab65c90e1e = "$Id: util.cpp 18772 2009-07-29 23:50:00Z romw $";

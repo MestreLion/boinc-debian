@@ -36,7 +36,6 @@
 #ifndef __EMX__
 #include <sched.h>
 #endif
-using namespace std;
 #endif
 
 #include "diagnostics.h"
@@ -44,6 +43,7 @@ using namespace std;
 #include "shmem.h"
 #include "util.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "filesys.h"
 #include "mem_usage.h"
 #include "error_numbers.h"
@@ -51,6 +51,8 @@ using namespace std;
 #include "app_ipc.h"
 
 #include "boinc_api.h"
+
+//#define DEBUG_BOINC_API
 
 #ifdef __APPLE__
 #include "mac_backtrace.h"
@@ -110,6 +112,9 @@ static volatile int interrupt_count = 0;
     // used to measure elapsed time in a way that's
     // not affected by user changing system clock,
     // and doesn't have big jump after hibernation
+static volatile int running_interrupt_count = 0;
+    // number of timer interrupts while not suspended.
+    // Used to compute elapsed time
 static double fpops_per_cpu_sec = 0;
 static double fpops_cumulative = 0;
 static double intops_per_cpu_sec = 0;
@@ -165,9 +170,27 @@ static void graphics_cleanup();
 static void block_sigalrm();
 static int start_worker_signals();
 
+char* boinc_msg_prefix() {
+    static char sbuf[256];
+    char buf[256];
+
+    time_t x = time(0);
+    struct tm* tm = localtime(&x);
+    strftime(buf, sizeof(buf)-1, "%H:%M:%S", tm);
+#ifdef _WIN32
+    sprintf(sbuf, "%s (%d):", buf, GetCurrentProcessId());
+#else
+    sprintf(sbuf, "%s (%d):", buf, getpid());
+#endif
+    return sbuf;
+}
+
 static int setup_shared_mem() {
     if (standalone) {
-        fprintf(stderr, "Standalone mode, so not using shared memory.\n");
+        fprintf(stderr,
+            "%s Standalone mode, so not using shared memory.\n",
+            boinc_msg_prefix()
+        );
         return 0;
     }
     app_client_shm = new APP_CLIENT_SHM;
@@ -181,6 +204,12 @@ static int setup_shared_mem() {
         app_client_shm = NULL;
     }
 #else
+#ifdef __EMX__
+    if (attach_shmem(aid.shmem_seg_name, (void**)&app_client_shm->shm)) {
+        delete app_client_shm;
+        app_client_shm = NULL;
+    }
+#else
     if (aid.shmem_seg_name == -1) {
         // Version 6 Unix/Linux/Mac client 
         if (attach_shmem_mmap(MMAPPED_FILE_NAME, (void**)&app_client_shm->shm)) {
@@ -188,12 +217,13 @@ static int setup_shared_mem() {
             app_client_shm = NULL;
         }
     } else {
-        // EMX or version 5 Unix/Linux/Mac client
+        // version 5 Unix/Linux/Mac client
         if (attach_shmem(aid.shmem_seg_name, (void**)&app_client_shm->shm)) {
             delete app_client_shm;
             app_client_shm = NULL;
         }
     }
+#endif
 #endif  // ! _WIN32
     if (app_client_shm == NULL) return -1;
     return 0;
@@ -205,7 +235,7 @@ double boinc_worker_thread_cpu_time() {
     double cpu;
 #ifdef _WIN32
     int retval;
-    retval = boinc_process_cpu_time(cpu);
+    retval = boinc_process_cpu_time(GetCurrentProcess(), cpu);
     if (retval) {
         cpu = nrunning_ticks * TIMER_PERIOD;   // for Win9x
     }
@@ -232,18 +262,21 @@ double boinc_worker_thread_cpu_time() {
     time_t now = time(0);
     double time_diff = (double)(now - last_time);
     if (!finite(cpu)) {
-        fprintf(stderr, "CPU time infinite or NaN\n");
+        fprintf(stderr, "%s CPU time infinite or NaN\n", boinc_msg_prefix());
         last_time = now;
         return last_cpu;
     }
     double cpu_diff = cpu - last_cpu;
     if (cpu_diff < 0) {
-        fprintf(stderr, "Negative CPU time change\n");
+        fprintf(stderr, "%s Negative CPU time change\n", boinc_msg_prefix());
         last_time = now;
         return last_cpu;
     }
     if (cpu_diff>(time_diff + 1)) {
-        fprintf(stderr, "CPU time incrementing faster than real time.  Correcting.\n");
+        fprintf(stderr,
+            "%s CPU time incrementing faster than real time.  Correcting.\n",
+            boinc_msg_prefix()
+        );
         cpu = last_cpu + time_diff + 1;         // allow catch-up
     }
     last_cpu = cpu;
@@ -341,12 +374,24 @@ int boinc_init_options_general(BOINC_OPTIONS& opt) {
         if (retval) {
             // give any previous occupant a chance to timeout and exit
             //
+            fprintf(stderr, "%s Can't acquire lockfile (%d) - waiting %ds\n",
+                boinc_msg_prefix(),
+                retval, LOCKFILE_TIMEOUT_PERIOD
+            );
             boinc_sleep(LOCKFILE_TIMEOUT_PERIOD);
             retval = file_lock.lock(LOCKFILE);
         }
         if (retval) {
-            fprintf(stderr, "Can't acquire lockfile - exiting\n");
-            boinc_exit(0);           // not un-recoverable ==> status=0
+            fprintf(stderr, "%s Can't acquire lockfile (%d) - exiting\n",
+                boinc_msg_prefix(),
+                retval
+            );
+#ifdef _WIN32
+            char buf[256];
+            windows_error_string(buf, 256);
+            fprintf(stderr, "%s Error: %s\n", boinc_msg_prefix(), buf);
+#endif
+            boinc_exit(0);           // status=0 means recoverable
         }
     }
 
@@ -357,9 +402,8 @@ int boinc_init_options_general(BOINC_OPTIONS& opt) {
         retval = setup_shared_mem();
         if (retval) {
             fprintf(stderr,
-                "Can't set up shared mem: %d\n"
-                "Will run in standalone mode.\n",
-                retval
+                "%s Can't set up shared mem: %d. Will run in standalone mode.\n",
+                boinc_msg_prefix(), retval
             );
             standalone = true;
         }
@@ -421,7 +465,7 @@ static void send_trickle_up_msg() {
 //
 int boinc_finish(int status) {
     fraction_done = 1;
-    fprintf(stderr, "called boinc_finish\n");
+    fprintf(stderr, "%s called boinc_finish\n", boinc_msg_prefix());
     boinc_sleep(2.0);   // let the timer thread send final messages
     g_sleep = true;     // then disable it
 
@@ -446,12 +490,28 @@ int boinc_finish(int status) {
 // make static eventually
 //
 void boinc_exit(int status) {
+    int retval;
     if (options.backwards_compatible_graphics) {
         graphics_cleanup();
     }
     
-    if (options.main_program) {
-        file_lock.unlock(LOCKFILE);
+    if (options.main_program && file_lock.locked) {
+        retval = file_lock.unlock(LOCKFILE);
+        if (retval) {
+#ifdef _WIN32
+            char buf[256];
+            windows_error_string(buf, 256);
+            fprintf(stderr,
+                "%s Can't unlock lockfile (%d): %s\n",
+                boinc_msg_prefix(), retval, buf
+            );
+#else
+            fprintf(stderr,
+                "%s Can't unlock lockfile (%d)\n", boinc_msg_prefix(), retval
+            );
+            perror("file unlock failed");
+#endif
+        }
     }
 
     fflush(NULL);
@@ -466,6 +526,9 @@ void boinc_exit(int status) {
 #if   defined(_WIN32)
     // Halt all the threads and cleans up.
     TerminateProcess(GetCurrentProcess(), status);
+    // note: the above CAN return!
+    Sleep(1000);
+    DebugBreak();
 #elif defined(__APPLE_CC__)
     // stops endless exit()/atexit() loops.
     _exit(status);
@@ -484,6 +547,11 @@ int boinc_is_standalone() {
 }
 
 static void exit_from_timer_thread(int status) {
+#ifdef DEBUG_BOINC_API
+    fprintf(stderr, "%s exit_from_timer_thread(%d) called\n",
+        boinc_msg_prefix(), status
+    );
+#endif
 #ifdef _WIN32
     // this seems to work OK on Windows
     //
@@ -521,7 +589,8 @@ int boinc_parse_init_data_file() {
 
     if (!boinc_file_exists(INIT_DATA_FILE)) {
         fprintf(stderr,
-            "Can't open init data file - running in standalone mode\n"
+            "%s Can't open init data file - running in standalone mode\n",
+            boinc_msg_prefix()
         );
         return ERR_FOPEN;
     }
@@ -530,7 +599,8 @@ int boinc_parse_init_data_file() {
     fclose(f);
     if (retval) {
         fprintf(stderr,
-            "Can't parse init data file - running in standalone mode\n"
+            "%s Can't parse init data file - running in standalone mode\n",
+            boinc_msg_prefix()
         );
         return retval;
     }
@@ -642,7 +712,10 @@ static void handle_upload_file_status() {
         strcpy(log_name, buf+strlen(UPLOAD_FILE_STATUS_PREFIX));
         FILE* f = boinc_fopen(filename.c_str(), "r");
         if (!f) {
-            fprintf(stderr, "handle_file_upload_status: can't open %s\n", filename.c_str());
+            fprintf(stderr,
+                "%s handle_file_upload_status: can't open %s\n",
+                boinc_msg_prefix(), filename.c_str()
+            );
             continue;
         }
         p = fgets(buf, 256, f);
@@ -653,7 +726,9 @@ static void handle_upload_file_status() {
             uf.status = status;
             upload_file_status.push_back(uf);
         } else {
-            fprintf(stderr, "handle_upload_file_status: can't parse %s\n", buf);
+            fprintf(stderr, "%s handle_upload_file_status: can't parse %s\n",
+                boinc_msg_prefix(), buf
+            );
         }
     }
 }
@@ -678,7 +753,9 @@ static void handle_trickle_down_msg() {
 static void handle_process_control_msg() {
     char buf[MSG_CHANNEL_SIZE];
     if (app_client_shm->shm->process_control_request.get_msg(buf)) {
-        //fprintf(stderr, "%f: got %s\n", dtime(), buf);
+#ifdef DEBUG_BOINC_API
+        fprintf(stderr, "%s got process control msg %s\n", boinc_msg_prefix(), buf);
+#endif
         if (match_tag(buf, "<suspend/>")) {
             boinc_status.suspended = true;
             suspend_activities();
@@ -840,6 +917,17 @@ static void graphics_cleanup() {
 static void timer_handler() {
     if (g_sleep) return;
     interrupt_count++;
+    if (!boinc_status.suspended) {
+        running_interrupt_count++;
+    }
+
+#ifdef DEBUG_BOINC_API
+    if (in_critical_section) {
+        fprintf(stderr,
+            "%s: timer_handler(): in critical section\n", boinc_msg_prefix()
+        );
+    }
+#endif
 
     // handle messages from the core client
     //
@@ -860,6 +948,10 @@ static void timer_handler() {
 
     if (interrupt_count % TIMERS_PER_SEC) return;
 
+#ifdef DEBUG_BOINC_API
+    fprintf(stderr, "%s 1 sec elapsed\n", boinc_msg_prefix());
+#endif
+
     // here it we're at a one-second boundary; do slow stuff
     //
 
@@ -876,7 +968,8 @@ static void timer_handler() {
     if (in_critical_section==0 && options.check_heartbeat) {
         if (heartbeat_giveup_time < interrupt_count) {
             fprintf(stderr,
-                "No heartbeat from core client for 30 sec - exiting\n"
+                "%s No heartbeat from core client for 30 sec - exiting\n",
+                boinc_msg_prefix()
             );
             if (options.direct_process_action) {
                 exit_from_timer_thread(0);
@@ -985,20 +1078,28 @@ int start_timer_thread() {
     //
     DWORD id;
     if (!CreateThread(NULL, 0, timer_thread, 0, 0, &id)) {
-        fprintf(stderr, "start_timer_thread(): CreateThread() failed, errno %d\n", errno);
+        fprintf(stderr,
+            "%s start_timer_thread(): CreateThread() failed, errno %d\n",
+            boinc_msg_prefix(), errno
+        );
         return errno;
     }
     
-    // lower our (worker thread) priority
-    //
-    SetThreadPriority(worker_thread_handle, THREAD_PRIORITY_IDLE);
+    if (!options.normal_thread_priority) {
+        // lower our (worker thread) priority
+        //
+        SetThreadPriority(worker_thread_handle, THREAD_PRIORITY_IDLE);
+    }
 #else
     pthread_attr_t thread_attrs;
     pthread_attr_init(&thread_attrs);
     pthread_attr_setstacksize(&thread_attrs, 16384);
     retval = pthread_create(&timer_thread_handle, &thread_attrs, timer_thread, NULL);
     if (retval) {
-        fprintf(stderr, "start_timer_thread(): pthread_create(): %d", retval);
+        fprintf(stderr,
+            "%s start_timer_thread(): pthread_create(): %d",
+            boinc_msg_prefix(), retval
+        );
         return retval;
     }
 #endif
@@ -1136,6 +1237,10 @@ void boinc_ops_cumulative(double fp, double i) {
     intops_cumulative = i;
 }
 
+void boinc_set_credit_claim(double credit) {
+    boinc_ops_cumulative(credit*8.64000e+11,0);
+}
+
 void boinc_need_network() {
     want_network = 1;
     have_network = 0;
@@ -1168,4 +1273,8 @@ double boinc_get_fraction_done() {
     return fraction_done;
 }
 
-const char *BOINC_RCSID_0fa0410386 = "$Id: boinc_api.cpp 16479 2008-11-11 23:39:00Z davea $";
+double boinc_elapsed_time() {
+    return running_interrupt_count*TIMER_PERIOD;
+}
+
+const char *BOINC_RCSID_0fa0410386 = "$Id: boinc_api.cpp 18535 2009-07-01 17:35:56Z davea $";

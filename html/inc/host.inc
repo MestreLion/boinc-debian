@@ -17,6 +17,7 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/credit.inc");
+require_once("../inc/stats_sites.inc");
 require_once("../inc/boinc_db.inc");
 
 function link_to_results($host) {
@@ -61,6 +62,18 @@ function location_form($host) {
     return $x;
 }
 
+function cross_project_links($host) {
+    global $host_sites;
+    $x = "";
+    foreach ($host_sites as $h) {
+        $url = $h[0];
+        $name = $h[1];
+        $img = $h[2];
+        $x .= "<a href=$url".$host->host_cpid."><img border=2 src=img/$img alt=\"$name\"></a>\n";
+    }
+    return $x;
+}
+
 // Show full-page description of $host.
 // If $user is non-null, it's both the owner of the host
 // and the logged in user (so show some extra fields)
@@ -68,6 +81,7 @@ function location_form($host) {
 function show_host($host, $user, $ipprivate) {
     start_table();
     row1("Computer information");
+    $anonymous = false;
     if ($user) {
         if ($ipprivate) {
             row2("IP address", "$host->last_ip_addr<br>(same the last $host->nsame_ip_addr times)");
@@ -88,13 +102,20 @@ function show_host($host, $user, $ipprivate) {
             row2("Owner", user_links($owner));
         } else {
             row2("Owner", "Anonymous");
+            $anonymous = true;
         }
     }
     row2("Created", time_str($host->create_time));
-    row2("Total Credit", format_credit_large($host->total_credit));
-    row2("Avg. credit", format_credit($host->expavg_credit));
+    row2("Total credit", format_credit_large($host->total_credit));
+    row2("Average credit", format_credit($host->expavg_credit));
+    if (!$anonymous) {
+        row2("Cross project credit", cross_project_links($host));
+    }
     row2("CPU type", "$host->p_vendor <br> $host->p_model");
-    row2("Number of CPUs", $host->p_ncpus);
+    row2("Number of processors", $host->p_ncpus);
+    if ($host->serialnum) {
+        row2("Coprocessors", gpu_desc($host->serialnum));
+    }
     row2("Operating System", "$host->os_name <br> $host->os_version");
     $x = $host->m_nbytes/(1024*1024);
     $y = round($x, 2);
@@ -179,9 +200,11 @@ function show_host($host, $user, $ipprivate) {
 // the following is used for list of top hosts
 //
 function top_host_table_start($sort_by) {
+    global $host_sites;
+    shuffle($host_sites);
     start_table();
     echo "<tr>";
-    echo "<th>Computer ID<br><font size=-2>Click for more info</font></th>\n";
+    echo "<th>Computer info</th>\n";
     echo "<th>Rank</th>";
     echo "<th>Owner</th>\n";
     if ($sort_by == 'total_credit') {
@@ -196,7 +219,8 @@ function top_host_table_start($sort_by) {
         ";
     }
     echo "
-        <th>CPU type</th>
+        <th>CPU</th>
+        <th>GPU</th>
         <th>Operating system</th>
         </tr>
     ";
@@ -206,15 +230,54 @@ function host_nresults($host) {
     return BoincResult::count("hostid=$host->id");
 }
 
+// format a GPU description string of the form [type|model|number|RAM]
+//
+function gpu_desc($x) {
+    if (!$x) return "";
+    $x = substr($x, 1, -1);
+    $y = explode("|", $x);
+    $z = "";
+    if ($y[2]!="" && $y[2]!="1") $z = "[".$y[2]."] ";
+    if ($y[0] == "CUDA") $z .= "NVIDIA ";
+    $z .= $y[1];
+    $z .= " (".$y[3].")";
+    if (array_key_exists(4, $y)) {
+        if ($y[4] != "" && $y[4] != 0) {
+            $z .= " driver: ".$y[4];
+        }
+    }
+    return $z;
+}
+
+function cpu_desc($host) {
+    return "$host->p_vendor<br>$host->p_model<br>($host->p_ncpus processors)\n";
+}
+
 // If private is true, we're showing the host to its owner,
 // so it's OK to show the domain name etc.
 // If private is false, show the owner's name only if they've given permission
 //
 function show_host_row($host, $i, $private, $show_owner) {
     $j = $i % 2;
-    echo "<tr class=row$j><td>
-        <nobr><a href=show_host_detail.php?hostid=$host->id>$host->id</a>
-        | <a href=results.php?hostid=$host->id>tasks</a></nobr>
+    $anonymous = false;
+    if (!$private) {
+        if ($show_owner) {
+            $user = BoincUser::lookup_id($host->userid);
+            if ($user && $user->show_hosts) {
+            } else {
+                $anonymous = true;
+            }
+        }
+    }
+    echo "<tr class=row$j><td>ID: $host->id
+        <br><a href=show_host_detail.php?hostid=$host->id>Details</a> |
+        <a href=results.php?hostid=$host->id>Tasks</a>
+    ";
+    if (!$anonymous) {
+        echo "
+            <br><nobr><span class=note>Cross-project stats:</span></nobr><br>".cross_project_links($host);
+    }
+    echo "
         </td>
     ";
     if ($private) {
@@ -223,11 +286,10 @@ function show_host_row($host, $i, $private, $show_owner) {
     } else {
         echo "<td>$i</td>\n";
         if ($show_owner) {
-            $user = BoincUser::lookup_id($host->userid);
-            if ($user && $user->show_hosts) {
-                echo "<td>", user_links($user), "</td>\n";
-            } else {
+            if ($anonymous) {
                 echo "<td>Anonymous</td>\n";
+            } else {
+                echo "<td>", user_links($user), "</td>\n";
             }
         }
     }
@@ -235,12 +297,15 @@ function show_host_row($host, $i, $private, $show_owner) {
         // This is used in the "top computers" display
         //
         printf("
+            <td align=right>%s</td>
+            <td align=right>%s</td>
             <td>%s</td>
             <td>%s</td>
-            <td>%s <br> %s</td>
             <td>%s <br> %s</td>",
-               format_credit($host->expavg_credit), format_credit_large($host->total_credit),
-               $host->p_vendor, $host->p_model,
+               format_credit($host->expavg_credit),
+               format_credit_large($host->total_credit),
+               cpu_desc($host),
+               gpu_desc($host->serialnum),
                $host->os_name, $host->os_version
         );
     } else {
@@ -248,7 +313,8 @@ function show_host_row($host, $i, $private, $show_owner) {
         //
         echo "<td align=right>", format_credit($host->expavg_credit), "</td>\n";
         echo "<td align=right>", format_credit_large($host->total_credit), "</td>\n";
-        echo "<td>$host->p_vendor<br><span class=note>$host->p_model</span></td>\n";
+        echo "<td>".cpu_desc($host)."</td>\n";
+        echo "<td>".gpu_desc($host->serialnum)."</td>\n";
         echo "<td>$host->os_name<br><span class=note>$host->os_version</span></td>\n";
         echo "<td>".sched_log_link($host->rpc_time)."</td>\n";
     }
@@ -292,8 +358,12 @@ function cpus_compatible($host1, $host2) {
         $g1 = ghz($p1);
         $g2 = ghz($p2);
         if ($g1 && $g2) {
-            if ($g1 != $g2) return false;
-        } else {
+            if ($g1 != $g2) {
+                return false;
+            }
+        } else if ($g1 && !$g2) {
+            return false;
+        } else if (!$g1 && $g2) {
             return false;
         }
     } else if (strstr($p1, "AuthenticAMD") && strstr($p2, "AuthenticAMD")) {
@@ -303,7 +373,9 @@ function cpus_compatible($host1, $host2) {
 
         // they're compatible if models are the same,
         // or contents of [family/model/stepping] are the same
-        if ($host1pm != $host2pm) return false;
+        if ($host1pm != $host2pm) {
+            return false;
+        }
     }
     return true;
 }
@@ -441,8 +513,7 @@ function merge_hosts($old_host, $new_host) {
     // update the database:
     // - add credit from old to new host
     // - change results to refer to new host
-    // - put old host in "zombie" state
-    // - update rpc_seqno if needed
+    // - put old host in "zombie" state (userid=0, rpc_seqno=new host ID)
     //
     $total_credit = $old_host->total_credit + $new_host->total_credit;
     $recent_credit = $old_host->expavg_credit + $new_host->expavg_credit;
@@ -463,6 +534,6 @@ function merge_hosts($old_host, $new_host) {
     return 0;
 }
 
-$cvs_version_tracker[]="\$Id: host.inc 16163 2008-10-08 21:49:06Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: host.inc 18196 2009-05-23 00:06:32Z boincadm $";  //Generated automatically - do not edit
 
 ?>

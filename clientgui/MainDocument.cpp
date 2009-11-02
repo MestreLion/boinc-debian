@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "MainDocument.h"
@@ -30,9 +28,13 @@
 #endif
 
 #include "BOINCGUIApp.h"
-#include "BOINCBaseFrame.h"
 #include "MainDocument.h"
+#include "BOINCBaseFrame.h"
+#include "AdvancedFrame.h"
+#include "sg_BoincSimpleGUI.h"
 #include "BOINCClientManager.h"
+#include "BOINCTaskBar.h"
+#include "Events.h"
 
 #ifndef _WIN32
 #include <sys/wait.h>
@@ -41,6 +43,39 @@
 #ifdef SANDBOX
 #include <grp.h>
 #endif
+
+#define USE_CACHE_TIMEOUTS 0
+
+// *** RPC update intervals in seconds ***
+// m_dtCachedCCStatusTimestamp
+#define CCSTATUS_RPC_INTERVAL 1
+
+//m_dtCachedStateTimestamp
+#define STATERPC_INTERVAL 3600
+
+//m_dtProjecStatusTimestamp
+#define PROJECTSTATUSRPC_INTERVAL 1
+
+//m_dtResultsTimestamp
+#define RESULTSRPC_INTERVAL 1
+
+//m_dtFileTransfersTimestamp
+#define FILETRANSFERSRPC_INTERVAL 1
+
+// m_dtStatisticsStatusTimestamp
+#define STATISTICSSTATUSRPC_INTERVAL 60
+
+// m_dtDiskUsageTimestamp
+#define DISKUSAGERPC_INTERVAL 60
+
+// m_dtCachedSimpleGUITimestamp
+#define CACHEDSIMPLEGUIRPC_INTERVAL 1
+
+// m_dtCachedAcctMgrInfoTimestamp
+#define CACHEDACCTMGRINFORPC_INTERVAL 600
+
+// m_dtLasAsyncRPCDlgTime
+#define DELAYAFTERASYNCRPC_DLG 1
 
 bool g_use_sandbox = false;
 
@@ -64,7 +99,7 @@ CNetworkConnection::CNetworkConnection(CMainDocument* pDocument) :
     m_bUsedDefaultPassword = false;
     m_iPort = GUI_RPC_PORT,
     m_iReadGUIRPCAuthFailure = 0;
-}
+ }
 
 
 CNetworkConnection::~CNetworkConnection() {
@@ -99,7 +134,7 @@ void CNetworkConnection::Poll() {
 
     if (IsReconnecting()) {
         wxLogTrace(wxT("Function Status"), wxT("CNetworkConnection::Poll - Reconnection Detected"));
-        retval = m_pDocument->rpc.init_poll();
+        retval = m_pDocument->rpcClient.init_poll();
         if (!retval) {
             wxLogTrace(wxT("Function Status"), wxT("CNetworkConnection::Poll - init_poll() returned ERR_CONNECT, now authorizing..."));
 
@@ -161,9 +196,9 @@ void CNetworkConnection::Poll() {
             //   timeout event right after boot-up.
             //
             if (IsComputerNameLocal(strComputer)) {
-                retval = m_pDocument->rpc.init_asynch(NULL, 60.0, true, m_iPort);
+                retval = m_pDocument->rpcClient.init_asynch(NULL, 60.0, true, m_iPort);
             } else {
-                retval = m_pDocument->rpc.init_asynch(strComputer.mb_str(), 60.0, false, m_iPort);
+                retval = m_pDocument->rpcClient.init_asynch(strComputer.mb_str(), 60.0, false, m_iPort);
             }
 
             if (!retval) {
@@ -312,6 +347,7 @@ void CNetworkConnection::SetStateSuccess(wxString& strComputer, wxString& strCom
         );
 
         m_bConnectEvent = false;
+        m_pDocument->ResetMessageState();
 
         pFrame->FireConnect();
     }
@@ -324,6 +360,7 @@ void CNetworkConnection::SetStateDisconnected() {
         wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
         m_bConnected = false;
         m_bReconnecting = false;
+        m_pDocument->results.clear();
     }
 }
 
@@ -331,7 +368,7 @@ void CNetworkConnection::SetStateDisconnected() {
 IMPLEMENT_DYNAMIC_CLASS(CMainDocument, wxObject)
 
 
-CMainDocument::CMainDocument() {
+CMainDocument::CMainDocument() : rpc(this) {
 
 #ifdef __WIN32__
     int retval;
@@ -345,19 +382,44 @@ CMainDocument::CMainDocument() {
 
     m_bClientStartCheckCompleted = false;
 
+    m_ActiveTasksOnly = false;
+
     m_fProjectTotalResourceShare = 0.0;
 
     m_iMessageSequenceNumber = 0;
 
     m_dtCachedStateTimestamp = wxDateTime((time_t)0);
+    m_iGet_state_rpc_result = 0;
+    m_iGet_host_info_rpc_result = 0;
+    
     m_dtCachedCCStatusTimestamp = wxDateTime((time_t)0);
+    m_iGet_status_rpc_result = 0;
+    
     m_dtProjecStatusTimestamp = wxDateTime((time_t)0);
+    m_iGet_project_status1_rpc_result = -1;
+    
     m_dtResultsTimestamp = wxDateTime((time_t)0);
+    m_iGet_results_rpc_result = -1;
+    
     m_dtKillInactiveGfxTimestamp = wxDateTime((time_t)0);
     m_dtFileTransfersTimestamp = wxDateTime((time_t)0);
+    m_iGet_file_transfers_rpc_result = 0;
+    
+    m_iGet_messages_rpc_result = -1;
+    
     m_dtDiskUsageTimestamp = wxDateTime((time_t)0);
+    m_iGet_dsk_usage_rpc_result = -1;
+
     m_dtStatisticsStatusTimestamp = wxDateTime((time_t)0);
+    m_iGet_statistics_rpc_result = -1;
+    
     m_dtCachedSimpleGUITimestamp = wxDateTime((time_t)0);
+    m_iGet_simple_gui2_rpc_result = -1;
+    
+    m_dtCachedAcctMgrInfoTimestamp = wxDateTime((time_t)0);
+    m_iAcct_mgr_info_rpc_result = -1;
+    
+    m_dtLasAsyncRPCDlgTime = wxDateTime((time_t)0);
 }
 
 
@@ -378,6 +440,45 @@ int CMainDocument::OnInit() {
     m_pClientManager = new CBOINCClientManager();
     wxASSERT(m_pClientManager);
 
+    m_RPCWaitDlg = NULL;
+    m_bWaitingForRPC = false;
+    m_bNeedRefresh = false;
+    m_bNeedTaskBarRefresh = false;
+    m_bRPCThreadIsReady = false;
+    m_bShutDownRPCThread = false;
+    current_rpc_request.clear();
+
+
+    m_pRPC_Thread_Mutex = new BOINC_Mutex();
+    wxASSERT(m_pRPC_Thread_Mutex);
+
+    m_pRPC_Thread_Condition = new BOINC_Condition(*m_pRPC_Thread_Mutex);
+     wxASSERT(m_pRPC_Thread_Condition);
+  
+    m_pRPC_Request_Mutex = new BOINC_Mutex();
+    wxASSERT(m_pRPC_Request_Mutex);
+
+    m_pRPC_Request_Condition = new BOINC_Condition(*m_pRPC_Request_Mutex);
+     wxASSERT(m_pRPC_Request_Condition);
+  
+    m_RPCThread = new RPCThread(this, 
+                                m_pRPC_Thread_Mutex, 
+                                m_pRPC_Thread_Condition, 
+                                m_pRPC_Request_Mutex, 
+                                m_pRPC_Request_Condition
+                    );
+    wxASSERT(m_RPCThread);
+
+    iRetVal = m_RPCThread->Create();
+    wxASSERT(!iRetVal);
+    
+    m_RPCThread->Run();
+    for (int i=0; i<100; i++) {
+        if (!m_bRPCThreadIsReady) {
+            boinc_sleep(0.01);  // Allow RPC thread to initialize itself
+        }
+    }
+
     return iRetVal;
 }
 
@@ -391,6 +492,25 @@ int CMainDocument::OnExit() {
         delete m_pClientManager;
         m_pClientManager = NULL;
     }
+
+    if (m_RPCThread) {
+        KillRPCThread();
+        m_RPCThread = NULL;
+    }
+    
+    delete m_pRPC_Thread_Mutex;
+    m_pRPC_Thread_Mutex = NULL;
+    
+    delete m_pRPC_Thread_Condition;
+    m_pRPC_Thread_Condition = NULL;
+    
+    delete m_pRPC_Request_Mutex;
+    m_pRPC_Request_Mutex = NULL;
+    
+    delete m_pRPC_Request_Condition;
+    m_pRPC_Request_Condition = NULL;
+    
+    rpcClient.close();
 
     if (m_pNetworkConnection) {
         delete m_pNetworkConnection;
@@ -450,40 +570,20 @@ int CMainDocument::OnRefreshState() {
 
 
 int CMainDocument::CachedStateUpdate() {
-    wxLogTrace(wxT("Function Start/End"), wxT("CMainDocument::CachedStateUpdate - Function Begin"));
-
-    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
+    // Most of this is now handled by RunPeriodicRPCs() and ForceCacheUpdate()
     int     retval = 0;
 
-    wxTimeSpan ts(wxDateTime::Now() - m_dtCachedStateTimestamp);
-    if (IsConnected() && (ts.GetSeconds() > 3600)) {
-        wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
-        pFrame->UpdateStatusText(_("Retrieving system state; please wait..."));
+    if (m_iGet_state_rpc_result) retval = m_iGet_state_rpc_result;
+    if (m_iGet_host_info_rpc_result) retval = m_iGet_host_info_rpc_result;
+            
+    if (retval) m_pNetworkConnection->SetStateDisconnected();
 
-        m_dtCachedStateTimestamp = wxDateTime::Now();
-        retval = rpc.get_state(state);
-        if (retval) {
-            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedStateUpdate - Get State Failed '%d'"), retval);
-            m_pNetworkConnection->SetStateDisconnected();
-        }
-        pFrame->UpdateStatusText(_("Retrieving host information; please wait..."));
-
-        retval = rpc.get_host_info(host);
-        if (retval) {
-            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedStateUpdate - Get Host Information Failed '%d'"), retval);
-            m_pNetworkConnection->SetStateDisconnected();
-        }
-
-        pFrame->UpdateStatusText(wxEmptyString);
-    }
-
-    wxLogTrace(wxT("Function Start/End"), wxT("CMainDocument::CachedStateUpdate - Function End"));
     return retval;
 }
 
 
 int CMainDocument::ResetState() {
-    rpc.close();
+    rpcClient.close();
     state.clear();
     host.clear_host_info();
     results.clear();
@@ -498,9 +598,10 @@ int CMainDocument::ResetState() {
 
 
 int CMainDocument::Connect(const wxChar* szComputer, int iPort, const wxChar* szComputerPassword, const bool bDisconnect, const bool bUseDefaultPassword) {
-    wxString strOldMachineName = wxEmptyString;
-
-   GetConnectedComputerName(strOldMachineName);
+    if (IsComputerNameLocal(szComputer)) {
+        // Restart client if not already running
+        m_pClientManager->AutoRestart();
+    }
    
    if (bDisconnect) {
         m_pNetworkConnection->ForceReconnect();
@@ -565,31 +666,51 @@ int CMainDocument::FrameShutdownDetected() {
 }
 
 
+// It is _not_ enough to just reset m_dtCachedCCStatusTimestamp 
+// and let RunPeriodicRPCs() update the state for these routines
+// (which need immediate results):
+//      CMainDocument::SetActivityRunMode()
+//      CMainDocument::SetNetworkRunMode()
+// Otherwise the Snooze task bar menu item and SimpleGUI Pause 
+// button do not work properly.
+//
 int CMainDocument::GetCoreClientStatus(CC_STATUS& ccs, bool bForce) {
     wxString         strMachine = wxEmptyString;
     int              iRetVal = 0;
 
     if (IsConnected()) {
-        wxTimeSpan ts(wxDateTime::Now() - m_dtCachedCCStatusTimestamp);
-        if ((ts.GetSeconds() > 0) || bForce) {
+        if (!m_bWaitingForRPC) {    // Prevent recursive entry of RequestRPC() 
+#if USE_CACHE_TIMEOUTS
+            wxTimeSpan ts(wxDateTime::Now() - m_dtCachedCCStatusTimestamp);
+            if (ts.GetSeconds() >= (10 * CCSTATUS_RPC_INTERVAL)) bForce = true;
+#endif
+            if (m_dtCachedCCStatusTimestamp.IsEqualTo(wxDateTime((time_t)0))) bForce = true;
+        }
+        if (bForce) {
             m_dtCachedCCStatusTimestamp = wxDateTime::Now();
 
-            iRetVal = rpc.get_cc_status(ccs);
+            m_iGet_status_rpc_result = rpc.get_cc_status(ccs);
             if (0 == iRetVal) {
                 status = ccs;
-                if (ccs.manager_must_quit) {
-                    GetConnectedComputerName(strMachine);
-                    if (IsComputerNameLocal(strMachine)) {
-                        CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
-                        wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
-                        pFrame->Close(true);
-                    }
-                }
             } else {
-                m_pNetworkConnection->SetStateDisconnected();
+                iRetVal = m_iGet_status_rpc_result;
             }
         } else {
             ccs = status;
+            iRetVal = m_iGet_status_rpc_result;
+        }
+        
+        if (m_iGet_status_rpc_result) {
+            m_pNetworkConnection->SetStateDisconnected();
+        } else {
+            if (ccs.manager_must_quit) {
+                GetConnectedComputerName(strMachine);
+                if (IsComputerNameLocal(strMachine)) {
+                    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
+                    wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
+                    pFrame->Close(true);
+                }
+            }
         }
     } else {
         iRetVal = -1;
@@ -637,10 +758,329 @@ int CMainDocument::SetNetworkRunMode(int iMode, int iTimeout) {
 }
 
 
-int CMainDocument::ForceCacheUpdate() {
-    m_dtCachedStateTimestamp = wxDateTime((time_t)0);
-    CachedStateUpdate();
-    return 0;
+void CMainDocument::RefreshRPCs() {
+
+    m_dtCachedCCStatusTimestamp = wxDateTime((time_t)0);
+//    m_iGet_status_rpc_result = -1;
+    
+    m_dtProjecStatusTimestamp = wxDateTime((time_t)0);
+//  m_iGet_project_status1_rpc_result = -1;
+        
+    m_dtResultsTimestamp = wxDateTime((time_t)0);
+//  m_iGet_results_rpc_result = -1;
+        
+    m_dtFileTransfersTimestamp = wxDateTime((time_t)0);
+//  m_iGet_file_transfers_rpc_result = 0;
+        
+//  m_iGet_messages_rpc_result = -1;
+        
+    m_dtDiskUsageTimestamp = wxDateTime((time_t)0);
+//  m_iGet_dsk_usage_rpc_result = -1;
+
+    m_dtStatisticsStatusTimestamp = wxDateTime((time_t)0);
+//  m_iGet_statistics_rpc_result = -1;
+        
+    m_dtCachedSimpleGUITimestamp = wxDateTime((time_t)0);
+//  m_iGet_simple_gui2_rpc_result = -1;
+
+    m_dtCachedAcctMgrInfoTimestamp = wxDateTime((time_t)0);
+    m_iAcct_mgr_info_rpc_result = -1;
+
+//  m_iGet_state_rpc_result = -1;
+}
+
+
+void CMainDocument::RunPeriodicRPCs() {
+    ASYNC_RPC_REQUEST request;
+    wxTimeSpan ts;
+
+    // Timer events are handled while the RPC Wait dialog is shown 
+    // which may cause unintended recursion and repeatedly posting 
+    // the same RPC requests from timer routines.
+    if (WaitingForRPC()) return;
+
+    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
+    if (!pFrame) return;
+
+    int currentTabView = pFrame->GetCurrentViewPage();
+        
+    // If the client is heavily loaded (e.g, very many tasks), the 
+    // RPC Wait dialog could appear continuously.  To prevent this, 
+    // delay periodic RPCs for 1 second after the dialog closes.
+    wxDateTime dtNow(wxDateTime::Now());
+    if ((currentTabView & (VW_STAT | VW_DISK)) == 0) {
+        ts = dtNow - m_dtLasAsyncRPCDlgTime;
+        if (ts.GetSeconds()<= DELAYAFTERASYNCRPC_DLG) {
+            return;
+        }
+    }
+    
+    wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
+
+    if (!IsConnected()) {
+        CFrameEvent event(wxEVT_FRAME_REFRESHVIEW, pFrame);
+        pFrame->AddPendingEvent(event);
+
+#if defined(__WXMSW__) || defined(__WXMAC__)
+        CTaskBarIcon* pTaskbar = wxGetApp().GetTaskBarIcon();
+        if (pTaskbar) {
+            CTaskbarEvent event(wxEVT_TASKBAR_REFRESH, pTaskbar);
+            pTaskbar->AddPendingEvent(event);
+        }
+#endif
+
+        return;
+    }
+    
+    // Several functions (such as Abort, Reset, Detach) display an 
+    // "Are you sure?" dialog before passing a pointer to a result 
+    // or project in a demand RPC call.  If Periodic RPCs continue 
+    // to run during these dialogs, that pointer may no longer be 
+    // valid by the time the demand RPC is executed.  So we suspend 
+    // periodic RPCs during certain modal dialogs.
+    //
+    // Note that this depends on using wxGetApp().SafeMessageBox()
+    // instead of wxMessageBox in all tab views and anywhere else 
+    // where a periodic RPC could cause a similar problem.
+    if (wxGetApp().IsSafeMesageBoxDisplayed()) {
+        return;
+    }
+
+    // *********** RPC_GET_CC_STATUS **************
+    
+    ts = dtNow - m_dtCachedCCStatusTimestamp;
+    if (ts.GetSeconds() >= CCSTATUS_RPC_INTERVAL) {
+        request.clear();
+        request.which_rpc = RPC_GET_CC_STATUS;
+        request.arg1 = &async_status_buf;
+        request.exchangeBuf = &status;
+        request.rpcType = RPC_TYPE_ASYNC_WITH_UPDATE_TASKBAR_ICON_AFTER;
+        request.completionTime = &m_dtCachedCCStatusTimestamp;
+        request.resultPtr = &m_iGet_status_rpc_result;
+       
+        RequestRPC(request);
+    }
+
+    // *********** RPC_GET_MESSAGES **************
+
+    request.clear();
+    request.which_rpc = RPC_GET_MESSAGES;
+    // m_iMessageSequenceNumber could change between request and execution
+    // of RPC, so pass in a pointer rather than its value
+    request.arg1 = &m_iMessageSequenceNumber;
+    request.arg2 = &messages;
+//        request.arg2 = &async_messages_buf;
+//        request.exchangeBuf = &messages;
+    request.rpcType = (currentTabView & VW_MSGS) ? 
+            RPC_TYPE_ASYNC_WITH_REFRESH_AFTER : RPC_TYPE_ASYNC_WITH_UPDATE_MESSAGE_LIST_AFTER;
+    request.completionTime = NULL;
+    request.resultPtr = &m_iGet_messages_rpc_result;
+   
+    RequestRPC(request);
+
+    ts = dtNow - m_dtCachedStateTimestamp;
+    if (ts.GetSeconds() >= STATERPC_INTERVAL) {
+
+    // *********** RPC_GET_STATE **************
+
+        request.clear();
+        request.which_rpc = RPC_GET_STATE;
+        request.arg1 = &async_state_buf;
+        request.exchangeBuf = &state;
+        request.rpcType = RPC_TYPE_ASYNC_NO_REFRESH;
+        request.resultPtr = &m_iGet_state_rpc_result;
+       
+        RequestRPC(request);
+
+    // *********** RPC_GET_HOST_INFO **************
+
+        request.clear();
+        request.which_rpc = RPC_GET_HOST_INFO;
+        request.arg1 = &async_host_buf;
+        request.exchangeBuf = &host;
+        request.rpcType = RPC_TYPE_ASYNC_NO_REFRESH;
+        request.completionTime = &m_dtCachedStateTimestamp;
+        request.resultPtr = &m_iGet_host_info_rpc_result;
+       
+        RequestRPC(request);
+    }
+     
+    // TODO: modify SimpleGUI to not do direct RPC calls when hidden / minimized
+    if (! ((currentTabView & VW_SGUI) || pFrame->IsShown()) ) return;
+   
+    // *********** RPC_GET_PROJECT_STATUS1 **************
+
+    if (currentTabView & VW_PROJ) {
+        wxTimeSpan ts(dtNow - m_dtProjecStatusTimestamp);
+        if (ts.GetSeconds() >= PROJECTSTATUSRPC_INTERVAL) {
+            request.clear();
+            request.which_rpc = RPC_GET_PROJECT_STATUS1;
+            request.arg1 = &async_projects_update_buf;
+            request.arg2 = &state;
+            request.rpcType = RPC_TYPE_ASYNC_WITH_REFRESH_AFTER;
+            request.completionTime = &m_dtProjecStatusTimestamp;
+            request.resultPtr = &m_iGet_project_status1_rpc_result;
+           
+            RequestRPC(request);
+        }
+    }
+
+    // *********** RPC_GET_RESULTS **************
+
+    if (currentTabView & VW_TASK) {
+        wxTimeSpan ts(dtNow - m_dtResultsTimestamp);
+        if (ts.GetSeconds() >= RESULTSRPC_INTERVAL) {
+            request.clear();
+            request.which_rpc = RPC_GET_RESULTS;
+            request.arg1 = &async_results_buf;
+            request.arg2 = &m_ActiveTasksOnly;
+            request.exchangeBuf = &results;
+            request.rpcType = RPC_TYPE_ASYNC_WITH_REFRESH_AFTER;
+            request.completionTime = &m_dtResultsTimestamp;
+            request.resultPtr = &m_iGet_results_rpc_result;
+           
+            RequestRPC(request);
+        }
+    }
+    
+    // *********** RPC_GET_FILE_TRANSFERS **************
+
+    if (currentTabView & VW_XFER) {
+        wxTimeSpan ts(dtNow - m_dtFileTransfersTimestamp);
+        if (ts.GetSeconds() >= FILETRANSFERSRPC_INTERVAL) {
+            request.clear();
+            request.which_rpc = RPC_GET_FILE_TRANSFERS;
+            request.arg1 = &async_ft_buf;
+            request.exchangeBuf = &ft;
+            request.rpcType = RPC_TYPE_ASYNC_WITH_REFRESH_AFTER;
+            request.completionTime = &m_dtFileTransfersTimestamp;
+            request.resultPtr = &m_iGet_file_transfers_rpc_result;
+           
+            RequestRPC(request);
+        }
+    }
+    
+    // *********** RPC_GET_STATISTICS **************
+
+    if (currentTabView & VW_STAT) {
+        wxTimeSpan ts(dtNow - m_dtStatisticsStatusTimestamp);
+        if (ts.GetSeconds() >= STATISTICSSTATUSRPC_INTERVAL) {
+            request.clear();
+            request.which_rpc = RPC_GET_STATISTICS;
+            request.arg1 = &async_statistics_status_buf;
+            request.exchangeBuf = &statistics_status;
+            request.rpcType = RPC_TYPE_ASYNC_WITH_REFRESH_AFTER;
+            request.completionTime = &m_dtStatisticsStatusTimestamp;
+            request.resultPtr = &m_iGet_statistics_rpc_result;
+           
+            RequestRPC(request);
+        }
+    }
+    
+    // *********** RPC_GET_DISK_USAGE **************
+
+    if (currentTabView & VW_DISK) {
+        wxTimeSpan ts(dtNow - m_dtDiskUsageTimestamp);
+        if ((ts.GetSeconds() >= DISKUSAGERPC_INTERVAL) || disk_usage.projects.empty()) {
+            request.clear();
+            request.which_rpc = RPC_GET_DISK_USAGE;
+            request.arg1 = &async_disk_usage_buf;
+            request.exchangeBuf = &disk_usage;
+            request.rpcType = RPC_TYPE_ASYNC_WITH_REFRESH_AFTER;
+            request.completionTime = &m_dtDiskUsageTimestamp;
+            request.resultPtr = &m_iGet_dsk_usage_rpc_result;
+           
+            RequestRPC(request);
+        }
+    }
+    
+    // *********** GET_SIMPLE_GUI_INFO2 **************
+    if (currentTabView & VW_SGUI) {
+        wxTimeSpan ts(dtNow - m_dtCachedSimpleGUITimestamp);
+        if (ts.GetSeconds() >= CACHEDSIMPLEGUIRPC_INTERVAL) {
+            request.clear();
+            request.which_rpc = RPC_GET_SIMPLE_GUI_INFO2;
+            request.arg1 = &async_projects_update_buf;
+            request.arg2 = &state;
+            request.arg3 = &async_results_buf;
+            request.exchangeBuf = &results;
+            request.rpcType = RPC_TYPE_ASYNC_WITH_REFRESH_AFTER;
+            request.completionTime = &m_dtCachedSimpleGUITimestamp;
+            request.resultPtr = &m_iGet_simple_gui2_rpc_result;
+           
+            RequestRPC(request);
+        }
+    }
+    // *********** RPC_ACCT_MGR_INFO **************
+
+    if (currentTabView & VW_SGUI) {
+        wxTimeSpan ts(dtNow - m_dtCachedAcctMgrInfoTimestamp);
+        if (ts.GetSeconds() >= CACHEDACCTMGRINFORPC_INTERVAL) {
+            request.clear();
+            request.which_rpc = RPC_ACCT_MGR_INFO;
+            request.arg1 = &async_ami_buf;
+            request.exchangeBuf = &ami;
+            request.rpcType = RPC_TYPE_ASYNC_NO_REFRESH;
+            request.completionTime = &m_dtCachedAcctMgrInfoTimestamp;
+            request.resultPtr = &m_iAcct_mgr_info_rpc_result;
+           
+            RequestRPC(request);
+        }
+    }
+}
+
+
+// TODO: Is it enough to just reset m_dtCachedStateTimestamp 
+// and let RunPeriodicRPCs() update the state?  This would avoid 
+// displaying the "Please wait" dialog on multi-processor computers.  
+// Possible exceptions might be when ForceCacheUpdate() is called 
+// from these routines (which may need immediate results):
+//      CAdvancedFrame::OnConnect()
+//      CDlgItemProperties::FormatApplicationName()
+//      WorkunitNotebook::AddTab()
+//      CMainDocument::CachedProjectStatusUpdate()
+//      CMainDocument::CachedSimpleGUIUpdate()
+//
+// Currently, no calls to ForceCacheUpdate pass false as the arg.
+//
+int CMainDocument::ForceCacheUpdate(bool immediate) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CMainDocument::ForceCacheUpdate - Function Begin"));
+
+    if (!immediate) {
+        m_dtCachedStateTimestamp = wxDateTime((time_t)0);
+        return m_iGet_state_rpc_result;
+    }
+    
+    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
+    int     retval = 0;
+
+    if (IsConnected()) {
+        wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
+        pFrame->UpdateStatusText(_("Retrieving system state; please wait..."));
+
+        m_dtCachedStateTimestamp = wxDateTime::Now();
+        m_iGet_state_rpc_result = rpc.get_state(state);
+        if (m_iGet_state_rpc_result) {
+            retval = m_iGet_state_rpc_result;
+            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::ForceCacheUpdate - Get State Failed '%d'"), retval);
+            m_pNetworkConnection->SetStateDisconnected();
+        }
+        pFrame->UpdateStatusText(_("Retrieving host information; please wait..."));
+
+        m_iGet_host_info_rpc_result = rpc.get_host_info(host);
+        if (m_iGet_host_info_rpc_result) {
+             retval = m_iGet_host_info_rpc_result;
+            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::ForceCacheUpdate - Get Host Information Failed '%d'"), retval);
+            m_pNetworkConnection->SetStateDisconnected();
+        }
+
+        pFrame->UpdateStatusText(wxEmptyString);
+    } else {
+        retval = -1;
+    }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CMainDocument::ForceCacheUpdate - Function End"));
+    return retval;
 }
 
 
@@ -708,31 +1148,34 @@ bool CMainDocument::IsUserAuthorized() {
 }
 
 
-int CMainDocument::CachedProjectStatusUpdate() {
-    int     iRetVal = 0;
+int CMainDocument::CachedProjectStatusUpdate(bool bForce) {
     int     i = 0;
 
-    if (IsConnected()) {
-        wxTimeSpan ts(wxDateTime::Now() - m_dtProjecStatusTimestamp);
-        if (ts.GetSeconds() > 0) {
-            m_dtProjecStatusTimestamp = wxDateTime::Now();
+    if (! IsConnected()) return -1;
 
-            iRetVal = rpc.get_project_status(state);
-            if (iRetVal) {
-                wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedProjectStatusUpdate - Get Project Status Failed '%d'"), iRetVal);
-                ForceCacheUpdate();
-            }
-
-            m_fProjectTotalResourceShare = 0.0;
-            for (i=0; i < (long)state.projects.size(); i++) {
-                m_fProjectTotalResourceShare += state.projects.at(i)->resource_share;
-            }
-        }
-    } else {
-        iRetVal = -1;
+#if USE_CACHE_TIMEOUTS
+    wxTimeSpan ts(wxDateTime::Now() - m_dtProjecStatusTimestamp);
+    if (ts.GetSeconds() >= (2 * PROJECTSTATUSRPC_INTERVAL)) bForce = true;
+#endif
+    if (m_dtProjecStatusTimestamp.IsEqualTo(wxDateTime((time_t)0))) bForce = true;
+    
+    if (bForce) {
+        m_dtProjecStatusTimestamp = wxDateTime::Now();
+        m_iGet_project_status1_rpc_result = rpc.get_project_status(async_projects_update_buf, state);
     }
 
-    return iRetVal;
+    if (m_iGet_project_status1_rpc_result) {
+        wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedProjectStatusUpdate - Get Project Status Failed '%d'"), m_iGet_project_status1_rpc_result);
+        ForceCacheUpdate();
+//        return m_iGet_project_status1_rpc_result;
+    }
+
+    m_fProjectTotalResourceShare = 0.0;
+    for (i=0; i < (long)state.projects.size(); i++) {
+        m_fProjectTotalResourceShare += state.projects.at(i)->resource_share;
+    }
+
+    return m_iGet_project_status1_rpc_result;
 }
 
 
@@ -749,6 +1192,7 @@ PROJECT* CMainDocument::project(unsigned int i) {
 
     return pProject;
 }
+
 
 PROJECT* CMainDocument::project(const wxString& projectname) {
 	for (unsigned int i=0; i< state.projects.size(); i++) {
@@ -773,6 +1217,7 @@ int CMainDocument::GetProjectCount() {
 
     return iCount;
 }
+
 
 int CMainDocument::ProjectDetach(int iIndex) {
     PROJECT* pProject = NULL;
@@ -948,24 +1393,36 @@ int CMainDocument::ProjectAllowMoreWork(const wxString& projectname) {
 
 
 int CMainDocument::CachedResultsStatusUpdate() {
-    int     iRetVal = 0;
+    if (! IsConnected()) return -1;
+    bool active_tasks_only = false;
+    bool immediate = false;
 
-    if (IsConnected()) {
-        wxTimeSpan ts(wxDateTime::Now() - m_dtResultsTimestamp);
-        if (ts.GetSeconds() > 0) {
-            m_dtResultsTimestamp = wxDateTime::Now();
+    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
+    if (pFrame) {
+        wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
 
-            iRetVal = rpc.get_results(results);
-            if (iRetVal) {
-                wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedResultsStatusUpdate - Get Result Status Failed '%d'"), iRetVal);
-                ForceCacheUpdate();
-            }
+        if (pFrame->GetCurrentViewPage() & VW_TASK) {
+            active_tasks_only = m_ActiveTasksOnly;
         }
-    } else {
-        iRetVal = -1;
     }
 
-    return iRetVal;
+#if USE_CACHE_TIMEOUTS
+    wxTimeSpan ts(wxDateTime::Now() - m_dtResultsTimestamp);
+    if (ts.GetSeconds() >= (2 * RESULTSRPC_INTERVAL)) immediate = true;
+#endif
+    if (m_dtResultsTimestamp.IsEqualTo(wxDateTime((time_t)0))) immediate = true;
+    
+    if (immediate) {
+        m_dtResultsTimestamp = wxDateTime::Now();
+        m_iGet_results_rpc_result = rpc.get_results(results, active_tasks_only);
+    }
+    
+    if (m_iGet_results_rpc_result) {
+        wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedResultsStatusUpdate - Get Result Status Failed '%d'"), m_iGet_results_rpc_result);
+        ForceCacheUpdate();
+    }
+
+    return m_iGet_results_rpc_result;
 }
 
 
@@ -1012,7 +1469,7 @@ RESULT* CMainDocument::result(const wxString& name, const wxString& project_url)
 
 int CMainDocument::GetWorkCount() {
     int iCount = -1;
-
+    
     CachedResultsStatusUpdate();
     CachedStateUpdate();
 
@@ -1108,7 +1565,7 @@ void CMainDocument::KillInactiveGraphicsApps()
     
     // If none of the Tasks displays are visible, we need to update 
     // the results vector.  This call does nothing if recently updated
-    // by a call from CViewWork, CViewWorkGrid or CViewTabPage.
+    // by a call from CViewWork or CViewTabPage.
     CachedResultsStatusUpdate();
     
     gfx_app_iter = m_running_gfx_apps.begin();
@@ -1285,9 +1742,9 @@ int CMainDocument::WorkShowGraphics(RESULT* result)
         // V5 and Older
         DISPLAY_INFO di;
 
-        strcpy(di.window_station, (char*)wxGetApp().m_strDefaultWindowStation.c_str());
-        strcpy(di.desktop, (char*)wxGetApp().m_strDefaultDesktop.c_str());
-        strcpy(di.display, (char*)wxGetApp().m_strDefaultDisplay.c_str());
+        strcpy(di.window_station, (const char*)wxGetApp().m_strDefaultWindowStation.mb_str());
+        strcpy(di.desktop, (const char*)wxGetApp().m_strDefaultDesktop.mb_str());
+        strcpy(di.display, (const char*)wxGetApp().m_strDefaultDisplay.mb_str());
 
         iRetVal = rpc.show_graphics(
             result->project_url.c_str(),
@@ -1315,22 +1772,19 @@ int CMainDocument::WorkAbort(std::string& strProjectURL, std::string& strName) {
 }
 
 
+// Call this only when message buffer is stable
+// Note: This must not call any rpcs.
 int CMainDocument::CachedMessageUpdate() {
-    int retval;
     static bool in_this_func = false;
-    static bool was_connected = false;
 
     if (in_this_func) return 0;
     in_this_func = true;
 
     if (IsConnected()) {
-        if (! was_connected) {
-            ResetMessageState();
-            was_connected = true;
-        }
-        retval = rpc.get_messages(m_iMessageSequenceNumber, messages);
-        if (retval) {
-            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedMessageUpdate - Get Messages Failed '%d'"), retval);
+        // rpc.get_messages is now called from RunPeriodicRPCs()
+//        retval = rpc.get_messages(m_iMessageSequenceNumber, messages);
+        if (m_iGet_messages_rpc_result) {
+            wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedMessageUpdate - Get Messages Failed '%d'"), m_iGet_messages_rpc_result);
             m_pNetworkConnection->SetStateDisconnected();
             goto done;
         }
@@ -1338,8 +1792,6 @@ int CMainDocument::CachedMessageUpdate() {
             size_t last_ind = messages.messages.size()-1;
             m_iMessageSequenceNumber = messages.messages[last_ind]->seqno;
         }
-    } else {
-        was_connected = false;
     }
 done:
     in_this_func = false;
@@ -1365,12 +1817,14 @@ MESSAGE* CMainDocument::message(unsigned int i) {
 int CMainDocument::GetMessageCount() {
     int iCount = -1;
 
-    CachedMessageUpdate();
+    // CachedMessageUpdate() is now called from CMainDocument::OnRPCComplete() 
+    // only after a get_messages RPC completes so messages buffer is stable.
     CachedStateUpdate();
 
-    if (!messages.messages.empty())
+    if (!messages.messages.empty()) {
         iCount = (int)messages.messages.size();
-
+    }
+    
     return iCount;
 }
 
@@ -1383,24 +1837,27 @@ int CMainDocument::ResetMessageState() {
 
 
 int CMainDocument::CachedFileTransfersUpdate() {
-    int     iRetVal = 0;
+    bool immediate = false;
 
-    if (IsConnected()) {
-        wxTimeSpan ts(wxDateTime::Now() - m_dtFileTransfersTimestamp);
-        if (ts.GetSeconds() > 0) {
-            m_dtFileTransfersTimestamp = wxDateTime::Now();
+    if (! IsConnected()) return -1;
 
-            iRetVal = rpc.get_file_transfers(ft);
-            if (iRetVal) {
-                wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedFileTransfersUpdate - Get File Transfers Failed '%d'"), iRetVal);
-                ForceCacheUpdate();
-            }
-        }
-    } else {
-        iRetVal = -1;
+#if USE_CACHE_TIMEOUTS
+    wxTimeSpan ts(wxDateTime::Now() - m_dtFileTransfersTimestamp);
+    if (ts.GetSeconds() >= (2* FILETRANSFERSRPC_INTERVAL)) immediate = true;
+#endif
+    if (m_dtFileTransfersTimestamp.IsEqualTo(wxDateTime((time_t)0))) immediate = true;
+    
+    if (immediate) {
+        m_dtFileTransfersTimestamp = wxDateTime::Now();
+        m_iGet_file_transfers_rpc_result = rpc.get_file_transfers(ft);
+    }
+ 
+     if (m_iGet_file_transfers_rpc_result) {
+        wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedFileTransfersUpdate - Get File Transfers Failed '%d'"), m_iGet_file_transfers_rpc_result);
+        ForceCacheUpdate();
     }
 
-    return iRetVal;
+    return m_iGet_file_transfers_rpc_result;
 }
 
 
@@ -1508,28 +1965,31 @@ int CMainDocument::TransferAbort(const wxString& fileName, const wxString& proje
 
 
 int CMainDocument::CachedDiskUsageUpdate() {
-    int     iRetVal = 0;
+    bool immediate = false;
 
-    if (IsConnected()) {
-        wxTimeSpan ts(wxDateTime::Now() - m_dtDiskUsageTimestamp);
+    if (! IsConnected()) return -1;
 
-		// don't get disk usage more than once per minute
-                // unless we just connected to a client
-		//
-        if ((ts.GetSeconds() > 60) || disk_usage.projects.empty()) {
-            m_dtDiskUsageTimestamp = wxDateTime::Now();
-
-            iRetVal = rpc.get_disk_usage(disk_usage);
-            if (iRetVal) {
-                wxLogTrace(wxT("Function Status"), wxT("Get Disk Usage Failed '%d'"), iRetVal);
-                ForceCacheUpdate();
-            }
-        }
-    } else {
-        iRetVal = -1;
+    // don't get disk usage more than once per minute
+            // unless we just connected to a client
+    //
+#if USE_CACHE_TIMEOUTS
+    wxTimeSpan ts(wxDateTime::Now() - m_dtDiskUsageTimestamp);
+    if (ts.GetSeconds() >= (2 * DISKUSAGERPC_INTERVAL)) immediate = true;
+#endif    
+    if (disk_usage.projects.empty()) immediate = true;
+    if (m_dtDiskUsageTimestamp.IsEqualTo(wxDateTime((time_t)0))) immediate = true;
+    
+    if (immediate) {
+        m_dtDiskUsageTimestamp = wxDateTime::Now();
+        m_iGet_dsk_usage_rpc_result = rpc.get_disk_usage(disk_usage);
+    }
+    
+    if (m_iGet_dsk_usage_rpc_result) {
+        wxLogTrace(wxT("Function Status"), wxT("Get Disk Usage Failed '%d'"), m_iGet_dsk_usage_rpc_result);
+        ForceCacheUpdate();
     }
 
-    return iRetVal;
+    return m_iGet_dsk_usage_rpc_result;
 }
 
 
@@ -1549,24 +2009,28 @@ PROJECT* CMainDocument::DiskUsageProject(unsigned int i) {
 }
 
 int CMainDocument::CachedStatisticsStatusUpdate() {
-    int     iRetVal = 0;
+    bool immediate = false;
 
-    if (IsConnected()) {
-        wxTimeSpan ts(wxDateTime::Now() - m_dtStatisticsStatusTimestamp);
-        if ((ts.GetSeconds() > 0) || statistics_status.projects.empty()) {
-            m_dtStatisticsStatusTimestamp = wxDateTime::Now();
+    if (! IsConnected()) return -1;
 
-            iRetVal = rpc.get_statistics(statistics_status);
-            if (iRetVal) {
-                wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedStatisticsStatusUpdate - Get Statistics Failed '%d'"), iRetVal);
-                ForceCacheUpdate();
-            }
-        }
-    } else {
-        iRetVal = -1;
+#if USE_CACHE_TIMEOUTS
+    wxTimeSpan ts(wxDateTime::Now() - m_dtStatisticsStatusTimestamp);
+    if (ts.GetSeconds() >= (2 * STATISTICSSTATUSRPC_INTERVAL)) immediate = true;
+#endif
+    if (statistics_status.projects.empty()) immediate = true;
+    if (m_dtStatisticsStatusTimestamp.IsEqualTo(wxDateTime((time_t)0))) immediate = true;
+    
+    if (immediate) {
+        m_dtStatisticsStatusTimestamp = wxDateTime::Now();
+        m_dtStatisticsStatusTimestamp = rpc.get_statistics(statistics_status);
     }
 
-    return iRetVal;
+    if (m_iGet_statistics_rpc_result) {
+        wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedStatisticsStatusUpdate - Get Statistics Failed '%d'"), m_iGet_statistics_rpc_result);
+        ForceCacheUpdate();
+    }
+
+    return m_iGet_state_rpc_result;
 }
 
 
@@ -1632,31 +2096,45 @@ int CMainDocument::SetProxyConfiguration() {
 }
 
 
-int CMainDocument::CachedSimpleGUIUpdate() {
-    int     iRetVal = 0;
+int CMainDocument::CachedSimpleGUIUpdate(bool bForce) {
     int     i = 0;
 
-    if (IsConnected()) {
-        wxTimeSpan ts(wxDateTime::Now() - m_dtCachedSimpleGUITimestamp);
-        if (ts.GetSeconds() > 0) {
-            m_dtCachedSimpleGUITimestamp = wxDateTime::Now();
+    if (! IsConnected()) return -1;
 
-            iRetVal = rpc.get_simple_gui_info(state, results);
-            if (iRetVal) {
-                wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedSimpleGUIUpdate - Get Simple GUI Failed '%d'"), iRetVal);
-                ForceCacheUpdate();
-            }
-
-            m_fProjectTotalResourceShare = 0.0;
-            for (i=0; i < (long)state.projects.size(); i++) {
-                m_fProjectTotalResourceShare += state.projects.at(i)->resource_share;
-            }
-        }
-    } else {
-        iRetVal = -1;
+#if USE_CACHE_TIMEOUTS
+    wxTimeSpan ts(wxDateTime::Now() - m_dtCachedSimpleGUITimestamp);
+    if (ts.GetSeconds() >= (2 * CACHEDSIMPLEGUIRPC_INTERVAL)) bForce = true;
+#endif
+    if (m_dtCachedSimpleGUITimestamp.IsEqualTo(wxDateTime((time_t)0))) bForce = true;
+    if (bForce) {
+        m_dtCachedSimpleGUITimestamp = wxDateTime::Now();
+        m_iGet_simple_gui2_rpc_result = rpc.get_simple_gui_info(async_projects_update_buf, state, results);
     }
 
-    return iRetVal;
+    if (m_iGet_simple_gui2_rpc_result) {
+        wxLogTrace(wxT("Function Status"), wxT("CMainDocument::CachedSimpleGUIUpdate - Get Simple GUI Failed '%d'"), m_iGet_simple_gui2_rpc_result);
+        ForceCacheUpdate();
+    }
+
+    m_fProjectTotalResourceShare = 0.0;
+    for (i=0; i < (long)state.projects.size(); i++) {
+        m_fProjectTotalResourceShare += state.projects.at(i)->resource_share;
+    }
+
+    return m_iGet_simple_gui2_rpc_result;
+}
+
+
+int CMainDocument::GetSimpleProjectCount() {
+    int iCount = -1;
+
+    CachedSimpleGUIUpdate();
+    CachedStateUpdate();
+
+    if (!state.projects.empty())
+        iCount = (int)state.projects.size();
+
+    return iCount;
 }
 
 
@@ -1676,4 +2154,4 @@ int CMainDocument::GetSimpleGUIWorkCount() {
 }
 
 
-const char *BOINC_RCSID_aa03a835ba = "$Id: MainDocument.cpp 15519 2008-07-01 02:26:30Z charlief $";
+const char *BOINC_RCSID_aa03a835ba = "$Id: MainDocument.cpp 18928 2009-08-27 21:04:52Z charlief $";

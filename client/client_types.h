@@ -26,7 +26,7 @@
 #include "cpp.h"
 
 #if !defined(_WIN32) || defined(__CYGWIN32__)
-#include <stdio.h>
+#include <cstdio>
 #include <sys/time.h>
 #endif
 
@@ -35,15 +35,16 @@
 #include "hostinfo.h"
 #include "coproc.h"
 #include "miofile.h"
-#include "rr_sim.h"
+#include "common_defs.h"
 
-#define P_LOW 1
-#define P_MEDIUM 3
-#define P_HIGH 5
+#include "rr_sim.h"
+#include "work_fetch.h"
 
 #define MAX_FILE_INFO_LEN   4096
 #define MAX_SIGNATURE_LEN   4096
 #define MAX_KEY_LEN         4096
+
+#define MAX_COPROCS_PER_JOB 8
 
 // If the status is neither of these two,
 // it will be an error code defined in error_numbers.h,
@@ -108,10 +109,9 @@ public:
     int write_gui(MIOFILE&);
         /// attempt to delete the underlying file
     int delete_file();
-    const char* get_init_url(bool);
-    const char* get_next_url(bool);
-    const char* get_current_url(bool);
-    bool is_correct_url_type(bool, std::string&);
+    const char* get_init_url();
+    const char* get_next_url();
+    const char* get_current_url();
     bool had_failure(int& failnum);
     void failure_message(std::string&);
     int merge_info(FILE_INFO&);
@@ -144,6 +144,28 @@ struct FILE_REF {
     int write(MIOFILE&);
 };
 
+// file xfer backoff state for a project and direction (up/down)
+// if file_xfer_failures exceeds FILE_XFER_FAILURE_LIMIT,
+// we switch from a per-file to a project-wide backoff policy
+// (separately for the up/down directions)
+// NOTE: this refers to transient failures, not permanent.
+//
+#define FILE_XFER_FAILURE_LIMIT 3
+struct FILE_XFER_BACKOFF {
+    int file_xfer_failures;
+        // count of consecutive failures
+    double next_xfer_time;
+        // when to start trying again
+    bool ok_to_transfer();
+    void file_xfer_failed(PROJECT*);
+    void file_xfer_succeeded();
+
+    FILE_XFER_BACKOFF() {
+        file_xfer_failures = 0;
+        next_xfer_time = 0;
+    }
+};
+
 /// statistics at a specific day
 
 struct DAILY_STATS {
@@ -159,6 +181,7 @@ struct DAILY_STATS {
 };
 bool operator < (const DAILY_STATS&, const DAILY_STATS&);
 class ACTIVE_TASK;
+
 class PROJECT {
 public:
     // the following items come from the account file
@@ -180,6 +203,9 @@ public:
     std::string gui_urls;
         /// project's resource share relative to other projects.
     double resource_share;
+    bool no_cpu;
+    bool no_cuda;
+    bool no_ati;
         /// logically, this belongs in the client state file
         /// rather than the account file.
         /// But we need it in the latter in order to parse prefs.
@@ -299,7 +325,7 @@ public:
     // everything from here on applies only to CPU intensive projects
 
         /// not suspended and not deferred and not no more work
-    bool contactable();
+    bool can_request_work();
         /// has a runnable result
     bool runnable();
         /// has a result in downloading state
@@ -316,42 +342,33 @@ public:
 
     RR_SIM_PROJECT_STATUS rr_sim_status;
         // temps used in CLIENT_STATE::rr_simulation();
-    void set_rrsim_proc_rate(double rrs);
-
-        /// used as scratch by scheduler, enforcer
-    int deadlines_missed;
 
     // "debt" is how much CPU time we owe this project relative to others
 
         /// computed over runnable projects
         /// used for CPU scheduling
     double short_term_debt;
-        /// Computed over potentially runnable projects
-        /// (defined for all projects, but doesn't change if
-        /// not potentially runnable).
-        /// Normalized so mean over all projects is zero
-	double long_term_debt;
 
         /// expected debt by the end of the preemption period
     double anticipated_debt;
-        /// how much "wall CPU time" has been devoted to this
-        /// project in the current debt interval
-    double wall_cpu_time_this_debt_interval;
         /// the next result to run for this project
     struct RESULT *next_runnable_result;
         /// number of results in UPLOADING state
         /// Don't start new results if these exceeds 2*ncpus.
     int nuploading_results;
+    bool too_many_uploading_results;
 
-        /// the unit is "project-normalized CPU seconds",
-        /// i.e. the work should take 1 CPU on this host
-        /// X seconds of wall-clock time to complete,
-        /// taking into account
-        /// 1) this project's fractional resource share
-        /// 2) on_frac and active_frac
-        /// see doc/sched.php
-    double work_request;
-    int work_request_urgency;
+    // stuff related to work fetch
+    //
+    RSC_PROJECT_WORK_FETCH cpu_pwf;
+    RSC_PROJECT_WORK_FETCH cuda_pwf;
+    RSC_PROJECT_WORK_FETCH ati_pwf;
+    PROJECT_WORK_FETCH pwf;
+    inline void reset() {
+        cpu_pwf.reset();
+        cuda_pwf.reset();
+        ati_pwf.reset();
+    }
 
         /// # of results being returned in current scheduler op
     int nresults_returned;
@@ -360,26 +377,11 @@ public:
         /// temporary used when scanning projects
     bool checked;
 
-    // vars related to file-transfer backoff
-    // file_xfer_failures_up: count of consecutive upload failures
-    // next_file_xfer_up: when to start trying uploads again
-    //
-    // if file_xfer_failures_up exceeds FILE_XFER_FAILURE_LIMIT,
-    // we switch from a per-file to a project-wide backoff policy
-    // (separately for the up/down directions)
-    //
-    // NOTE: all this refers to transient failures, not permanent.
-    // Also, none of this is used right now (commented out)
-    //
-#define FILE_XFER_FAILURE_LIMIT 3
-    int file_xfer_failures_up;
-    int file_xfer_failures_down;
-    double next_file_xfer_up;
-    double next_file_xfer_down;
-
-    double next_file_xfer_time(const bool);
-    void file_xfer_failed(const bool);
-    void file_xfer_succeeded(const bool);
+    FILE_XFER_BACKOFF download_backoff;
+    FILE_XFER_BACKOFF upload_backoff;
+    inline FILE_XFER_BACKOFF& file_xfer_backoff(bool is_upload) {
+        return is_upload?upload_backoff:download_backoff;
+    }
 
     PROJECT();
     ~PROJECT(){}
@@ -418,25 +420,37 @@ struct APP_VERSION {
     char api_version[16];
     double avg_ncpus;
     double max_ncpus;
+    double ncudas;
+    double natis;
     double flops;
         /// additional cmdline args
     char cmdline[256];
-    COPROCS coprocs;
 
     APP* app;
     PROJECT* project;
     std::vector<FILE_REF> app_files;
     int ref_cnt;
     char graphics_exec_path[512];
+    double max_working_set_size;
+        // max working set of tasks using this app version.
+        // temp var used in schedule_cpus()
 
     APP_VERSION(){}
     ~APP_VERSION(){}
     int parse(MIOFILE&);
-    int write(MIOFILE&);
+    int write(MIOFILE&, bool write_file_info = true);
     bool had_download_failure(int& failnum);
     void get_file_errors(std::string&);
     void clear_errors();
     int api_major_version();
+    bool missing_coproc();
+    bool uses_coproc(int rsc_type) {
+        switch (rsc_type) {
+        case RSC_TYPE_CUDA: return (ncudas>0);
+        case RSC_TYPE_ATI: return (natis>0);
+        }
+        return false;
+    }
 };
 
 struct WORKUNIT {
@@ -467,6 +481,7 @@ struct WORKUNIT {
 struct RESULT {
     char name[256];
     char wu_name[256];
+    double received_time;   // when we got this from server
     double report_deadline;
     int version_num;        // identifies the app used
     char plan_class[64];
@@ -479,9 +494,10 @@ struct RESULT {
     bool ready_to_report;
         /// time when ready_to_report was set
     double completed_time;
-        /// we're received the ack for this result from the server
+        /// we've received the ack for this result from the server
     bool got_server_ack;
     double final_cpu_time;
+    double final_elapsed_time;
 
     // the following are nonzero if reported by app
     double fpops_per_cpu_sec;
@@ -511,6 +527,9 @@ struct RESULT {
         /// - <stderr_txt>X</stderr_txt>, where X is the app's stderr output
     std::string stderr_out;
     bool suspended_via_gui;
+    bool coproc_missing;
+        // a coproc needed by this job is missing
+        // (e.g. because user removed their GPU board).
 
     APP* app;
         /// this may be NULL after result is finished
@@ -545,7 +564,12 @@ struct RESULT {
         return estimated_time_remaining(false)*avp->flops;
     }
 
-    bool computing_done();
+    inline bool computing_done() {
+        if (state() >= RESULT_COMPUTE_ERROR) return true; 
+        if (ready_to_report) return true;
+        return false;
+    }
+    bool not_started();
         /// downloaded, not finished, not suspended, project not suspended
     bool runnable();
         /// downloading or downloaded,
@@ -556,8 +580,16 @@ struct RESULT {
         /// some input or app file is downloading, and backed off
         /// i.e. it may be a long time before we can run this result
     bool some_download_stalled();
-    bool uses_coprocs() {
-        return (avp->coprocs.coprocs.size() > 0);
+    inline bool uses_cuda() {
+        return (avp->ncudas > 0);
+    }
+    inline bool uses_ati() {
+        return (avp->natis > 0);
+    }
+    inline bool uses_coprocs() {
+        if (avp->ncudas > 0) return true;
+        if (avp->natis > 0) return true;
+        return false;
     }
 
     // temporaries used in CLIENT_STATE::rr_simulation():
@@ -571,10 +603,18 @@ struct RESULT {
         /// report deadline - prefs.work_buf_min - time slice
     double computation_deadline();
     bool rr_sim_misses_deadline;
-    bool last_rr_sim_missed_deadline;
+
+    // temporaries used in enforce_schedule():
+    bool unfinished_time_slice;
+    int seqno;
 
         /// temporary used to tell GUI that this result is deadline-scheduled
     bool edf_scheduled;
+
+    int coproc_indices[MAX_COPROCS_PER_JOB];
+        // keep track of coprocessor reservations
+    char resources[256];
+        // textual description of resources used
 };
 
 /// represents an always/auto/never value, possibly temporarily overridden

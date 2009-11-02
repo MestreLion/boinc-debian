@@ -4,6 +4,14 @@ $biomed = array(
     "Biology and Medicine",
     array(
         array(
+            "POEM@HOME",
+            "http://boinc.fzk.de/poem/",
+            "University of Karlsruhe",
+            "Protein structure prediction",
+            "POEM@HOME uses a computational approach to predict the biologically active structure of proteins, to understand the signal-processing mechanisms when the proteins interact with one another, to understand diseases related to protein malfunction or aggregation, and to develop new drugs on the basis of the three-dimensions structure of biologically important proteins.",
+            "poem.jpg"
+        ),
+        array(
             "Docking@Home",
             "http://docking.cis.udel.edu/",
             "University of Delaware",
@@ -27,14 +35,14 @@ $biomed = array(
             "Superlink@Technion helps geneticists all over the world find disease-provoking genes causing some types of diabetes, hypertension (high blood pressure), cancer, schizophrenia and many others.",
             "superlink_logo.gif"
         ),
-        array(
-            "Proteins@Home",
-            "http://biology.polytechnique.fr/proteinsathome",
-            "Ecole Polytechnique, Paris",
-            "Protein structure prediction",
-            "By joining Proteins@Home, you will be part of a large-scale protein structure prediction project and help to advance an important area of science. By increasing our knowledge of proteins, you will contribute to a better understanding of many diseases and pathologies, and to progress in both medicine and technology. Proteins@Home is not for profit.",
-            "proteinsathome.gif"
-        ),
+//        array(
+//            "Proteins@Home",
+//            "http://biology.polytechnique.fr/proteinsathome",
+//            "Ecole Polytechnique, Paris",
+//            "Protein structure prediction",
+//            "By joining Proteins@Home, you will be part of a large-scale protein structure prediction project and help to advance an important area of science. By increasing our knowledge of proteins, you will contribute to a better understanding of many diseases and pathologies, and to progress in both medicine and technology. Proteins@Home is not for profit.",
+//            "proteinsathome.gif"
+//        ),
         array(
             "The Lattice Project",
             "http://boinc.umiacs.umd.edu/",
@@ -45,28 +53,28 @@ $biomed = array(
         ),
         array(
             "Malariacontrol.net",
-            "http://www.malariacontrol.net",
+            "http://www.malariacontrol.net/",
             "The Swiss Tropical Institute",
             "Epidemiology",
             "Simulation models of the transmission dynamics and health effects of malaria are an important tool for malaria control. They can be used to determine optimal strategies for delivering mosquito nets, chemotherapy, or new vaccines which are currently under development and testing.  Such modeling is extremely computer intensive, requiring simulations of large human populations with a diverse set of parameters related to biological and social factors that influence the distribution of the disease. ",
             "africaathome.gif"
         ),
-        array(
-            "Tanpaku",
-            "http://issofty17.is.noda.tus.ac.jp/",
-            "Tokyo University of Science",
-            "Biology",
-            "To predict protein structure and function from genetic sequences, using the 'Brownian Dynamics' (BD) method.  This method enables us to simulate more efficiently than conventional methods.",
-            "tanpaku.jpg"
-        ),
-        array(
-            "Predictor@home",
-            "http://predictor.chem.lsa.umich.edu/",
-            "University of Michigan",
-            "Biology",
-            "Protein structure prediction starts from a sequence of amino acids and attempts to predict the folded, functioning, form of the protein.  Predicting the structure of an unknown protein is a critical problem in enabling structure-based drug design to treat new and existing diseases.",
-            "predictor.jpg"
-        ),
+//        array(
+//            "Tanpaku",
+//            "http://issofty17.is.noda.tus.ac.jp/",
+//            "Tokyo University of Science",
+//            "Biology",
+//            "To predict protein structure and function from genetic sequences, using the 'Brownian Dynamics' (BD) method.  This method enables us to simulate more efficiently than conventional methods.",
+//            "tanpaku.jpg"
+//        ),
+//        array(
+//            "Predictor@home",
+//            "http://predictor.chem.lsa.umich.edu/",
+//            "University of Michigan",
+//            "Biology",
+//            "Protein structure prediction starts from a sequence of amino acids and attempts to predict the folded, functioning, form of the protein.  Predicting the structure of an unknown protein is a critical problem in enabling structure-based drug design to treat new and existing diseases.",
+//            "predictor.jpg"
+//        ),
         array(
             "Rosetta@home",
             "http://boinc.bakerlab.org/rosetta/",
@@ -90,17 +98,34 @@ $earth = array(
     array(
         array(
             "Climateprediction.net",
-            "http://climateprediction.net",
+            "http://climateprediction.net/",
             "Oxford University",
             "Earth sciences",
             "To investigate the approximations that have to be made in state-of-the-art climate models. By running the model thousands of times we hope to find out how the model responds to slight tweaks to these approximations - slight enough to not make the approximations any less realistic. This will allow us to improve our understanding of how sensitive our models are to small changes and also to things like changes in carbon dioxide and the sulphur cycle. This will allow us to explore how climate may change in the next century under a wide range of different scenarios.",
-            "cpn_logo_world_1.jpg"
+            "cpn_logo_world_1.jpg",
+            "http://climateapps2.oucs.ox.ac.uk/cpdnboinc/"
         ),
     ),
 );
 $astro_phys_chem = array(
     "Astronomy/Physics/Chemistry",
     array(
+        array(
+            "Cosmology@Home",
+            "http://www.cosmologyathome.org/",
+            "University of Illinois at Urbana-Chamapign",
+            "Astronomy",
+            "The goal of Cosmology@Home is to search for the model that best describes our Universe and to find the range of models that agree with the available astronomical particle physics data.",
+            "cosmo.jpg"
+        ),
+        array(
+            "Milkyway@home",
+            "http://milkyway.cs.rpi.edu/milkyway/",
+            "Rensselaer Polytechnic Institute",
+            "Astronomy",
+            "The goal of Milkyway@Home is to create a highly accurate three dimensional model of the Milky Way galaxy using data gathered by the Sloan Digital Sky Survey.",
+            "mw.png",
+        ),
         array(
             "Leiden Classical",
             "http://boinc.gorlaeus.net/",
@@ -130,7 +155,7 @@ $astro_phys_chem = array(
             "http://lhcathome.cern.ch/lhcathome/",
             "CERN (European Organization for Nuclear Research)",
             "Physics",
-            "The Large Hadron Collider (LHC) is a particle accelerator which is being built at CERN, the European Organization for Nuclear Research, the world's largest particle physics laboratory. When it switches on in 2007, it will be the most powerful instrument ever built to investigate on particles proprieties. LHC@home simulates particles traveling around the LHC to study the stability of their orbits.",
+            "The Large Hadron Collider (LHC) is a particle accelerator at CERN, the European Organization for Nuclear Research, the world's largest particle physics laboratory.  It is the most powerful instrument ever built to investigate on particles proprieties. LHC@home runs simulations to improve the design of LHC and its detectors.",
             "lhc.jpg"
         ),
         array(
@@ -181,8 +206,24 @@ $mixed = array(
     ),
 );
 $math = array(
-    "Mathematics and strategy games",
+    "Mathematics, computing, and games",
     array(
+        array(
+            "VTU@home",
+            "http://boinc.vgtu.lt/vtuathome/",
+            "Vilnius Gediminas Technical University and Kaunas University of Technology (Lithuania)",
+            "Software testing",
+            "The aim of this project is to provide a powerful distributed computing platform for scientists of Vilnius Gediminas Technical University (VGTU) as well as others Lithuanian academic institutions.  Current applications involve the study of Monte-Carlo based software testing.",
+            "vtuathome-white.gif",
+        ),
+        array(
+            "AQUA@home",
+            "http://aqua.dwavesys.com/",
+            "D-Wave Systems, Inc.",
+            "Quantum computing",
+            "D-Wave's AQUA (Adiabatic QUantum Algorithms) is a research project whose goal is to predict the performance of superconducting adiabatic quantum computers on a variety of hard problems arising in fields ranging from materials science to machine learning. AQUA@home uses Internet-connected computers to help design and analyze quantum computing algorithms, using Quantum Monte Carlo techniques.",
+            "logo_dwave2.png"
+        ),
         array(
             "SHA-1 Collision Search Graz",
             "http://boinc.iaik.tugraz.at/sha1_coll_search/",
@@ -201,7 +242,7 @@ $math = array(
         ),
         array(
             "PrimeGrid",
-            "http://www.primegrid.com",
+            "http://www.primegrid.com/",
             "Private",
             "Cryptography",
             "Primegrid is generating a public sequential prime number database, and is searching for large twin primes of the form k*2<sup>n</sup>+1 and k*2<sup>n</sup>-1",

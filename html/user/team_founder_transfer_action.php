@@ -46,7 +46,7 @@ If you do not respond within 60 days, ".$user->name." will
 be allowed to become the team founder.
 ";
 
-    pm_send($founder, $subject, $body);
+    pm_send($founder, $subject, $body, false);
 
     $subject = PROJECT." team founder transfer";
     $body = "Team member ".$user->name." has asked that you
@@ -144,6 +144,6 @@ echo "<a href='team_display.php?teamid=$team->id'>Return to team page</a>";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_founder_transfer_action.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_founder_transfer_action.php 16664 2008-12-09 22:41:29Z davea $";  //Generated automatically - do not edit
 
 ?>

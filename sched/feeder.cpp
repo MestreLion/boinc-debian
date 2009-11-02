@@ -27,8 +27,9 @@
 //  [ -mod n i ]          handle only results with (id mod n) == i
 //  [ -wmod n i ]         handle only workunits with (id mod n) == i
 //                        recommended if using HR with multiple schedulers
-//  [ -sleep_interval x ]   sleep x seconds if nothing to do
-//  [ -allapps ]  		  interleave results from all applications uniformly
+//  [ -sleep_interval x ] sleep x seconds if nothing to do
+//  [ -allapps ]          interleave results from all applications uniformly
+//  [ -appids a1{,a2} ]   get work only for appids a1,... (comma-separated list)
 //  [ -purge_stale x ]    remove work items from the shared memory segment
 //                        that have been there for longer then x minutes
 //                        but haven't been assigned
@@ -121,7 +122,7 @@ using std::vector;
 
 #define DEFAULT_SLEEP_INTERVAL  5
 
-#define REREAD_DB_FILENAME      "../reread_db"
+#define REREAD_DB_FILENAME      "reread_db"
 
 #define ENUM_FIRST_PASS     0
 #define ENUM_SECOND_PASS    1
@@ -172,7 +173,7 @@ void cleanup_shmem() {
 
 int check_reread_trigger() {
     FILE* f;
-    f = fopen(REREAD_DB_FILENAME, "r");
+    f = fopen(config.project_path(REREAD_DB_FILENAME), "r");
     if (f) {
         fclose(f);
         log_messages.printf(MSG_NORMAL,
@@ -181,7 +182,7 @@ int check_reread_trigger() {
         );
         ssp->init(num_work_items);
         ssp->scan_tables();
-        int retval = unlink(REREAD_DB_FILENAME);
+        int retval = unlink(config.project_path(REREAD_DB_FILENAME));
         if (retval) {
             // if we can't remove trigger file, exit to avoid infinite loop
             //
@@ -238,10 +239,10 @@ static bool get_job_from_db(
     int& enum_phase,
     int& ncollisions
 ) {
-	bool collision;
-	int retval, j, enum_size;
+    bool collision;
+    int retval, j, enum_size;
     char select_clause[256];
-	
+    
     if (all_apps) {
         sprintf(select_clause, "%s and r1.appid=%d",
             mod_select_clause, ssp->apps[app_index].id
@@ -259,7 +260,7 @@ static bool get_job_from_db(
         } else {
             retval = wi.enumerate(enum_size, select_clause, order_clause);
         }
-    	if (retval) {
+        if (retval) {
             if (retval != ERR_DB_NOT_FOUND) {
                 // If DB server dies, exit;
                 // so /start (run from crontab) will restart us eventually.
@@ -282,12 +283,12 @@ static bool get_job_from_db(
                 enum_phase = ENUM_OVER;
                 return false;
             }
-			log_messages.printf(MSG_NORMAL,
-            	"restarted enumeration for appid %d\n",
+            log_messages.printf(MSG_NORMAL,
+                "restarted enumeration for appid %d\n",
                 ssp->apps[app_index].id
             );
         } else {
-        	// Check for invalid application ID
+            // Check for invalid application ID
             //
             if (!ssp->lookup_app(wi.wu.appid)) {
                 log_messages.printf(MSG_CRITICAL,
@@ -302,16 +303,16 @@ static bool get_job_from_db(
             collision = false;
             for (j=0; j<ssp->max_wu_results; j++) {
                 if (ssp->wu_results[j].state != WR_STATE_EMPTY && ssp->wu_results[j].resultid == wi.res_id) {
-                	// If the result is already in shared mem,
-                	// and another instance of the WU has been sent,
-                	// bump the infeasible count to encourage
-                	// it to get sent more quickly
-                	//
-                	if (ssp->wu_results[j].infeasible_count == 0) {
-                		if (wi.wu.hr_class > 0) {
-                			ssp->wu_results[j].infeasible_count++;
-                		}
-                	}
+                    // If the result is already in shared mem,
+                    // and another instance of the WU has been sent,
+                    // bump the infeasible count to encourage
+                    // it to get sent more quickly
+                    //
+                    if (ssp->wu_results[j].infeasible_count == 0) {
+                        if (wi.wu.hr_class > 0) {
+                            ssp->wu_results[j].infeasible_count++;
+                        }
+                    }
                     ncollisions++;
                     collision = true;
                     log_messages.printf(MSG_DEBUG,
@@ -336,9 +337,9 @@ static bool get_job_from_db(
                 }
             }
             return true;
-    	}
-	}
-	return false;   // never reached
+        }
+    }
+    return false;   // never reached
 }
 
 // This function decides the interleaving used for -allapps.
@@ -406,8 +407,8 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
     int app_index;
     int nadditions=0, ncollisions=0;
     
-  	for (i=0; i<napps; i++) {
-    	if (work_items[i].cursor.active) {
+      for (i=0; i<napps; i++) {
+        if (work_items[i].cursor.active) {
             enum_phase[i] = ENUM_FIRST_PASS;
         } else {
             enum_phase[i] = ENUM_SECOND_PASS;
@@ -420,23 +421,23 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
 
     for (i=0; i<ssp->max_wu_results; i++) {
         app_index = app_indices[i];
-        if (enum_phase[app_index] == ENUM_OVER) continue;
 
-    	DB_WORK_ITEM& wi = work_items[app_index];
+        DB_WORK_ITEM& wi = work_items[app_index];
         WU_RESULT& wu_result = ssp->wu_results[i];
         switch (wu_result.state) {
         case WR_STATE_PRESENT:
-       	  	if (purge_stale_time && wu_result.time_added_to_shared_memory < (time(0) - purge_stale_time)) {
-    			wu_result.state = WR_STATE_EMPTY;
-				log_messages.printf(MSG_NORMAL,
+            if (purge_stale_time && wu_result.time_added_to_shared_memory < (time(0) - purge_stale_time)) {
+                wu_result.state = WR_STATE_EMPTY;
+                log_messages.printf(MSG_NORMAL,
                     "remove result [RESULT#%d] from slot %d because it is stale\n",
                     wu_result.resultid, i
                 );
                 // fall through, refill this array slot
             } else {
-            	break;
-        	}
+                break;
+            }
         case WR_STATE_EMPTY:
+            if (enum_phase[app_index] == ENUM_OVER) continue;
             found = get_job_from_db(
                 wi, app_index, enum_phase[app_index], ncollisions
             );
@@ -454,9 +455,9 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
                 // so we set its infeasible_count to 1
                 //
                 if (wi.wu.hr_class > 0) {
-                	wu_result.infeasible_count = 1;
+                    wu_result.infeasible_count = 1;
                 } else {
-                	wu_result.infeasible_count = 0;
+                    wu_result.infeasible_count = 0;
                 }
                 // If using the reliable mechanism, then set the results for
                 // workunits older then the specificed time
@@ -477,6 +478,7 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
             struct stat s;
             char buf[256];
             sprintf(buf, "/proc/%d", pid);
+            log_messages.printf(MSG_NORMAL, "checking pid %d", pid);
             if (stat(buf, &s)) {
                 wu_result.state = WR_STATE_PRESENT;
                 log_messages.printf(MSG_NORMAL,
@@ -632,16 +634,17 @@ int main(int argc, char** argv) {
     int i, retval;
     void* p;
     char path[256];
+    char* appids=NULL;
 
-    unlink(REREAD_DB_FILENAME);
-
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse ../config.xml: %s\n", boincerror(retval)
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
+
+    unlink(config.project_path(REREAD_DB_FILENAME));
 
     if (argc == 2 && !strcmp(argv[1], "--version")) {
         show_version();
@@ -660,6 +663,10 @@ int main(int argc, char** argv) {
             order_clause = "order by r1.priority desc, r1.workunitid";
         } else if (!strcmp(argv[i], "-purge_stale")) {
             purge_stale_time = atoi(argv[++i])*60;
+        } else if (!strcmp(argv[i], "-appids")) {
+           strcat(mod_select_clause, " and workunit.appid in (");
+           strcat(mod_select_clause, argv[++i]);
+           strcat(mod_select_clause, ")");
         } else if (!strcmp(argv[i], "-mod")) {
             int n = atoi(argv[++i]);
             int j = atoi(argv[++i]);
@@ -687,7 +694,7 @@ int main(int argc, char** argv) {
     if (config.shmem_work_items) {
         num_work_items = config.shmem_work_items;
     }
-    get_project_dir(path, sizeof(path));
+    strncpy(path, config.project_dir, sizeof(path));
     get_key(path, 'a', sema_key);
     destroy_semaphore(sema_key);
     create_semaphore(sema_key);
@@ -787,4 +794,4 @@ int main(int argc, char** argv) {
     feeder_loop();
 }
 
-const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 16160 2008-10-08 16:48:11Z davea $";
+const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 18256 2009-06-02 00:22:45Z davea $";

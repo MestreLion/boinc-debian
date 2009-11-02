@@ -28,6 +28,7 @@
 #endif
 
 #include "str_util.h"
+#include "str_replace.h"
 #include "util.h"
 #include "parse.h"
 #include "error_numbers.h"
@@ -73,25 +74,6 @@ bool SCHEDULER_OP::check_master_fetch_start() {
     return true;
 }
 
-// Try to get work from eligible project with biggest long term debt
-// PRECONDITION: compute_work_requests() has been called
-// to fill in PROJECT::work_request
-// and CLIENT_STATE::overall_work_fetch_urgency
-//
-int SCHEDULER_OP::init_get_work() {
-    int retval;
-
-    PROJECT* p = gstate.next_project_need_work();
-    if (p) {
-        retval = init_op_project(p, RPC_REASON_NEED_WORK);
-        if (retval) {
-            return retval;
-        }
-    }
-    return 0;
-}
-
-
 // try to initiate an RPC to the given project.
 // If there are multiple schedulers, start with a random one.
 // User messages and backoff() is done at this level.
@@ -122,7 +104,7 @@ int SCHEDULER_OP::init_op_project(PROJECT* p, int r) {
     }
 
     if (reason == RPC_REASON_INIT) {
-        p->work_request = 1;
+        work_fetch.set_initial_work_request();
         if (!gstate.cpu_benchmarks_done()) {
             gstate.cpu_benchmarks_set_defaults();
         }
@@ -163,6 +145,10 @@ int SCHEDULER_OP::init_op_project(PROJECT* p, int r) {
 void SCHEDULER_OP::backoff(PROJECT* p, const char *reason_msg) {
     char buf[1024];
 
+    if (gstate.in_abort_sequence) {
+        return;
+    }
+
     if (p->master_fetch_failures >= gstate.master_fetch_retry_cap) {
         sprintf(buf,
             "%d consecutive failures fetching scheduler list",
@@ -199,54 +185,105 @@ void SCHEDULER_OP::backoff(PROJECT* p, const char *reason_msg) {
     p->set_min_rpc_time(gstate.now + exp_backoff, reason_msg);
 }
 
+
+// RPC failed, either on startup or later.
+// If RPC was requested by project or acct mgr, or init,
+// keep trying (subject to backoff); otherwise give up.
+// The other cases (results_dur, need_work, project req, and trickle_up)
+// will be retriggered automatically
+//
+void SCHEDULER_OP::rpc_failed(const char* msg) {
+    backoff(cur_proj, msg);
+    switch (cur_proj->sched_rpc_pending) {
+    case RPC_REASON_INIT:
+    case RPC_REASON_ACCT_MGR_REQ:
+        break;
+    default:
+        cur_proj->sched_rpc_pending = 0;
+    }
+    cur_proj = 0;
+}
+
 // low-level routine to initiate an RPC
 // If successful, creates an HTTP_OP that must be polled
 // PRECONDITION: the request file has been created
 //
 int SCHEDULER_OP::start_rpc(PROJECT* p) {
     int retval;
-    char request_file[1024], reply_file[1024];
-
-    // if requesting work, round up to 1 sec
-    //
-    if (p->work_request>0 && p->work_request<1) {
-        p->work_request = 1;
-    }
+    char request_file[1024], reply_file[1024], buf[256];
 
     safe_strcpy(scheduler_url, p->get_scheduler_url(url_index, url_random));
     if (log_flags.sched_ops) {
         msg_printf(p, MSG_INFO,
-            "Sending scheduler request: %s.  Requesting %.0f seconds of work, reporting %d completed tasks",
-            rpc_reason_string(reason), p->work_request, p->nresults_returned
+            "Sending scheduler request: %s.", rpc_reason_string(reason)
         );
+        double gpu_req = cuda_work_fetch.req_secs + ati_work_fetch.req_secs;
+        if (cpu_work_fetch.req_secs || gpu_req) {
+            if (coproc_cuda||coproc_ati) {
+                if (cpu_work_fetch.req_secs && gpu_req) {
+                    sprintf(buf, " for CPU and GPU");
+                } else if (cpu_work_fetch.req_secs) {
+                    sprintf(buf, " for CPU");
+                } else {
+                    sprintf(buf, " for GPU");
+                }
+            } else {
+                strcpy(buf, "");
+            }
+            if (p->nresults_returned) {
+                msg_printf(p, MSG_INFO,
+                    "Reporting %d completed tasks, requesting new tasks%s",
+                    p->nresults_returned, buf
+                );
+            } else {
+                msg_printf(p, MSG_INFO, "Requesting new tasks%s", buf);
+            }
+        } else {
+            if (p->nresults_returned) {
+                msg_printf(p, MSG_INFO,
+                    "Reporting %d completed tasks, not requesting new tasks",
+                    p->nresults_returned
+                );
+            } else {
+                msg_printf(p, MSG_INFO, "Not reporting or requesting tasks");
+            }
+        }
+    }
+    if (log_flags.sched_op_debug) {
+        msg_printf(p, MSG_INFO,
+            "[sched_op_debug] CPU work request: %.2f seconds; %d idle CPUs",
+            cpu_work_fetch.req_secs, cpu_work_fetch.req_instances
+        );
+        if (coproc_cuda) {
+            msg_printf(p, MSG_INFO,
+                "[sched_op_debug] NVIDIA GPU work request: %.2f seconds; %d idle GPUs",
+                cuda_work_fetch.req_secs, cuda_work_fetch.req_instances
+            );
+        }
+        if (coproc_ati) {
+            msg_printf(p, MSG_INFO,
+                "[sched_op_debug] ATI GPU work request: %.2f seconds; %d idle GPUs",
+                ati_work_fetch.req_secs, ati_work_fetch.req_instances
+            );
+        }
     }
 
     get_sched_request_filename(*p, request_file, sizeof(request_file));
     get_sched_reply_filename(*p, reply_file, sizeof(reply_file));
 
-    http_op.set_proxy(&gstate.proxy_info);
+    cur_proj = p;
     retval = http_op.init_post(scheduler_url, request_file, reply_file);
     if (retval) {
         if (log_flags.sched_ops) {
             msg_printf(p, MSG_INFO,
-                "Scheduler request failed: %s", boincerror(retval)
+                "Scheduler request initialization failed: %s", boincerror(retval)
             );
         }
-        backoff(p, "scheduler request failed");
+        rpc_failed("Scheduler request initialization failed");
         return retval;
     }
-    retval = http_ops->insert(&http_op);
-    if (retval) {
-        if (log_flags.sched_ops) {
-            msg_printf(p, MSG_INFO,
-                "Scheduler request failed: %s", boincerror(retval)
-            );
-        }
-        backoff(p, "scheduler request failed");
-        return retval;
-    }
+    http_ops->insert(&http_op);
     p->rpc_seqno++;
-    cur_proj = p;    // remember what project we're talking to
     state = SCHEDULER_OP_STATE_RPC;
     return 0;
 }
@@ -262,12 +299,18 @@ int SCHEDULER_OP::init_master_fetch(PROJECT* p) {
     if (log_flags.sched_op_debug) {
         msg_printf(p, MSG_INFO, "[sched_op_debug] Fetching master file");
     }
-    http_op.set_proxy(&gstate.proxy_info);
-    retval = http_op.init_get(p->master_url, master_filename, true);
-    if (retval) return retval;
-    retval = http_ops->insert(&http_op);
-    if (retval) return retval;
     cur_proj = p;
+    retval = http_op.init_get(p->master_url, master_filename, true);
+    if (retval) {
+        if (log_flags.sched_ops) {
+            msg_printf(p, MSG_INFO,
+                "Master file fetch failed: %s", boincerror(retval)
+            );
+        }
+        rpc_failed("Master file fetch initialization failed");
+        return retval;
+    }
+    http_ops->insert(&http_op);
     state = SCHEDULER_OP_STATE_GET_MASTER;
     return 0;
 }
@@ -327,6 +370,7 @@ int SCHEDULER_OP::parse_master_file(PROJECT* p, vector<std::string> &urls) {
     // couldn't find any scheduler URLs in the master file?
     //
     if ((int) urls.size() == 0) {
+        p->sched_rpc_pending = 0;
         return ERR_XML_PARSE;
     }
 
@@ -364,9 +408,9 @@ bool SCHEDULER_OP::update_urls(PROJECT* p, vector<std::string> &urls) {
 // poll routine.  If an operation is in progress, check for completion
 //
 bool SCHEDULER_OP::poll() {
-    int retval, nresults;
+    int retval;
     vector<std::string> urls;
-    bool changed, scheduler_op_done;
+    bool changed;
 
     switch(state) {
     case SCHEDULER_OP_STATE_GET_MASTER:
@@ -376,7 +420,6 @@ bool SCHEDULER_OP::poll() {
             state = SCHEDULER_OP_STATE_IDLE;
             cur_proj->master_url_fetch_pending = false;
             http_ops->remove(&http_op);
-            gstate.set_client_state_dirty("master URL fetch done");
             if (http_op.http_op_retval == 0) {
                 if (log_flags.sched_op_debug) {
                     msg_printf(cur_proj, MSG_INFO,
@@ -388,7 +431,7 @@ bool SCHEDULER_OP::poll() {
                     // master file parse failed.
                     //
                     cur_proj->master_fetch_failures++;
-                    backoff(cur_proj, "Couldn't parse scheduler list");
+                    rpc_failed("Couldn't parse scheduler list");
                 } else {
                     // parse succeeded
                     //
@@ -411,8 +454,9 @@ bool SCHEDULER_OP::poll() {
                     boincerror(http_op.http_op_retval)
                 );
                 cur_proj->master_fetch_failures++;
-                backoff(cur_proj, buf);
+                rpc_failed("Master file request failed");
             }
+            gstate.set_client_state_dirty("Master fetch complete");
             gstate.request_work_fetch("Master fetch complete");
             cur_proj = NULL;
             return true;
@@ -422,7 +466,6 @@ bool SCHEDULER_OP::poll() {
 
         // here we're doing a scheduler RPC
         //
-        scheduler_op_done = false;
         if (http_op.http_op_state == HTTP_STATE_DONE) {
             state = SCHEDULER_OP_STATE_IDLE;
             http_ops->remove(&http_op);
@@ -444,17 +487,10 @@ bool SCHEDULER_OP::poll() {
                     if (!retval) return true;
                 }
                 if (url_index == (int) cur_proj->scheduler_urls.size()) {
-                    backoff(cur_proj, "scheduler request failed");
-                    scheduler_op_done = true;
-
-                    // if project suspended, don't retry failed RPC
-                    //
-                    if (cur_proj->suspended_via_gui) {
-                        cur_proj->sched_rpc_pending = 0;
-                    }
+                    rpc_failed("Scheduler request failed");
                 }
             } else {
-                retval = gstate.handle_scheduler_reply(cur_proj, scheduler_url, nresults);
+                retval = gstate.handle_scheduler_reply(cur_proj, scheduler_url);
                 switch (retval) {
                 case 0:
                     break;
@@ -465,9 +501,11 @@ bool SCHEDULER_OP::poll() {
                     backoff(cur_proj, "can't parse scheduler reply");
                     break;
                 }
-                cur_proj->work_request = 0;    // don't ask again right away
+				cur_proj->sched_rpc_pending = 0;
+                    // do this after handle_scheduler_reply()
             }
             cur_proj = NULL;
+            gstate.set_client_state_dirty("RPC complete");
             gstate.request_work_fetch("RPC complete");
             return true;
         }
@@ -529,6 +567,9 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
     send_job_log = 0;
     messages.clear();
     scheduler_version = 0;
+    cpu_backoff = 0;
+    cuda_backoff = 0;
+    ati_backoff = 0;
 
     // First line should either be tag (HTTP 1.0) or
     // hex length of response (HTTP 1.1)
@@ -690,7 +731,6 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
                     "Can't parse application version in scheduler reply: %s",
                     boincerror(retval)
                 );
-                av.coprocs.delete_coprocs();
             } else {
                 app_versions.push_back(av);
             }
@@ -794,11 +834,23 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
             retval = auto_update.parse(mf);
             if (!retval) auto_update.present = true;
 #endif
+        } else if (parse_double(buf, "<cpu_backoff>", cpu_backoff)) {
+            if (cpu_backoff > 28*SECONDS_PER_DAY) cpu_backoff = 28*SECONDS_PER_DAY;
+            if (cpu_backoff < 0) cpu_backoff = 0;
+            continue;
+        } else if (parse_double(buf, "<cuda_backoff>", cuda_backoff)) {
+            if (cuda_backoff > 28*SECONDS_PER_DAY) cuda_backoff = 28*SECONDS_PER_DAY;
+            if (cuda_backoff < 0) cuda_backoff = 0;
+            continue;
+        } else if (parse_double(buf, "<ati_backoff>", ati_backoff)) {
+            if (ati_backoff > 28*SECONDS_PER_DAY) ati_backoff = 28*SECONDS_PER_DAY;
+            if (ati_backoff < 0) ati_backoff = 0;
+            continue;
         } else if (match_tag(buf, "<!--")) {
             continue;
         } else if (strlen(buf)>1){
             if (log_flags.unparsed_xml) {
-                msg_printf(0, MSG_INFO,
+                msg_printf(project, MSG_INFO,
                     "[unparsed_xml] SCHEDULER_REPLY::parse(): unrecognized %s\n", buf
                 );
             }
@@ -818,4 +870,4 @@ USER_MESSAGE::USER_MESSAGE(char* m, char* p) {
     priority = p;
 }
 
-const char *BOINC_RCSID_11c806525b = "$Id: scheduler_op.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_11c806525b = "$Id: scheduler_op.cpp 19099 2009-09-18 20:43:43Z romw $";

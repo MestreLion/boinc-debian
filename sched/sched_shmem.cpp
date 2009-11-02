@@ -24,17 +24,21 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <vector>
+
+using std::vector;
 
 #include "boinc_db.h"
 #include "error_numbers.h"
+
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#endif
 
 #include "sched_shmem.h"
 #include "sched_util.h"
 #include "sched_msgs.h"
 
-#ifdef _USING_FCGI_
-#include "boinc_fcgi.h"
-#endif
 
 void SCHED_SHMEM::init(int nwu_results) {
     int size = sizeof(SCHED_SHMEM) + nwu_results*sizeof(WU_RESULT);
@@ -115,31 +119,37 @@ int SCHED_SHMEM::scan_tables() {
     n = 0;
 
     // for each (app, platform) pair,
-    // find the greatest version num of a non-deprecated version
-    // greater than app.min_version, if any.
-    // Then get all versions with that number.
+    // get all versions with numbers maximal in their plan class.
     //
     for (i=0; i<nplatforms; i++) {
         PLATFORM& splatform = platforms[i];
         for (j=0; j<napps; j++) {
-            char query[1024];
-            int max_version;
             APP& sapp = apps[j];
+            vector<APP_VERSION> avs;
+            char query[1024];
             sprintf(query,
-                "select max(version_num) from app_version where appid=%d and platformid=%d and version_num>=%d and deprecated=0",
-                sapp.id, splatform.id, sapp.min_version
+                "where appid=%d and platformid=%d and deprecated=0",
+                sapp.id, splatform.id
             );
-            retval = app_version.get_integer(query, max_version);
-            if (!retval) {
-                sprintf(query,
-                    "where appid=%d and platformid=%d and version_num=%d and deprecated=0",
-                    sapp.id, splatform.id, max_version
-                );
-                while (!app_version.enumerate(query)) {
-                    app_versions[n++] = app_version;
-                    if (n == MAX_APP_VERSIONS) {
-                        overflow("app_versions", "MAX_APP_VERSIONS");
+            while (!app_version.enumerate(query)) {
+                avs.push_back(app_version);
+            }
+            for (unsigned int k=0; k<avs.size(); k++) {
+                APP_VERSION& av1 = avs[k];
+                for (unsigned int kk=0; kk<avs.size(); kk++) {
+                    if (k == kk) continue;
+                    APP_VERSION& av2 = avs[kk];
+                    if (!strcmp(av1.plan_class, av2.plan_class) && av1.version_num > av2.version_num) {
+                        av2.deprecated = 1;
                     }
+                }
+            }
+            for (unsigned int k=0; k<avs.size(); k++) {
+                APP_VERSION& av1 = avs[k];
+                if (av1.deprecated) continue;
+                app_versions[n++] = av1;
+                if (n == MAX_APP_VERSIONS) {
+                    overflow("app_versions", "MAX_APP_VERSIONS");
                 }
             }
         }
@@ -253,9 +263,9 @@ void SCHED_SHMEM::show(FILE* f) {
             fprintf(f, "%4d: ---\n", i);
             break;
         default:
-            fprintf(f, "%d: PID %d: result %d\n", i, wu_result.state, wu_result.resultid);
+            fprintf(f, "%4d: PID %d: result %d\n", i, wu_result.state, wu_result.resultid);
         }
     }
 }
 
-const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 16904 2009-01-13 23:06:02Z korpela $";

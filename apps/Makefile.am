@@ -1,13 +1,22 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 16068 2008-09-26 18:10:10Z davea $
+## $Id: Makefile.am 18378 2009-06-11 16:11:45Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
-bin_PROGRAMS = upper_case concat 1sec
+exampledir = $(libexecdir)/examples
+example_PROGRAMS = upper_case concat 1sec
 
-LDADD = $(top_builddir)/api/libboinc_api.a $(LIBBOINC) $(PTHREAD_LIBS)
-AM_CXXFLAGS = $(MYSQL_CFLAGS)
+upper_case_SOURCES = upper_case.cpp
+upper_case_CXXFLAGS = $(PTHREAD_CFLAGS)
+upper_case_LDFLAGS = -static-libtool-libs $(PTHREAD_CFLAGS)
+upper_case_LDADD = $(APPLIBS)
 
-upper_case_SOURCES       = upper_case.cpp
-concat_SOURCES           = concat.cpp
-1sec_SOURCES             = 1sec.cpp
+concat_SOURCES = concat.cpp
+concat_CXXFLAGS = $(PTHREAD_CFLAGS)
+concat_LDFLAGS = -static-libtool-libs $(PTHREAD_CFLAGS)
+concat_LDADD = $(APPLIBS)
+
+1sec_SOURCES = 1sec.cpp
+1sec_CXXFLAGS = $(PTHREAD_CFLAGS)
+1sec_LDFLAGS = -static-libtool-libs $(PTHREAD_CFLAGS)
+1sec_LDADD = $(APPLIBS)

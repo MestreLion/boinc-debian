@@ -23,6 +23,7 @@
 
 #include "error_numbers.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "db_base.h"
 
 #ifdef _USING_FCGI_
@@ -41,8 +42,20 @@ DB_CONN::DB_CONN() {
 int DB_CONN::open(char* db_name, char* db_host, char* db_user, char* dbpassword) {
     mysql = mysql_init(0);
     if (!mysql) return ERR_DB_CANT_INIT;
+#if MYSQL_VERSION_ID >= 50106
+    my_bool mbReconnect = 1;
+    mysql_options(mysql, MYSQL_OPT_RECONNECT, &mbReconnect);
+#endif
     mysql = mysql_real_connect(mysql, db_host, db_user, dbpassword, db_name, 0, 0, 0);
     if (mysql == 0) return ERR_DB_CANT_CONNECT;
+
+    // older versions of MySQL lib need to set the option AFTER connecting;
+    // see http://dev.mysql.com/doc/refman/5.1/en/mysql-options.html
+    //
+#if MYSQL_VERSION_ID >= 50013 && MYSQL_VERSION_ID < 50106
+    my_bool mbReconnect = 1;
+    mysql_options(mysql, MYSQL_OPT_RECONNECT, &mbReconnect);
+#endif
     return 0;
 }
 
@@ -101,8 +114,9 @@ int DB_CONN::insert_id() {
     if (retval) return retval;
     rp = mysql_store_result(mysql);
     row = mysql_fetch_row(rp);
+    int x = atoi(row[0]);
     mysql_free_result(rp);
-    return atoi(row[0]);
+    return x;
 }
 
 void DB_CONN::print_error(const char* p) {
@@ -324,11 +338,13 @@ int DB_BASE::get_integer(const char* query, int& n) {
     resp = mysql_store_result(db->mysql);
     if (!resp) return ERR_DB_NOT_FOUND;
     row = mysql_fetch_row(resp);
+    if (!row || !row[0]) {
+        retval = ERR_DB_NOT_FOUND;
+    } else {
+        n = atoi(row[0]);
+    }
     mysql_free_result(resp);
-    if (!row) return ERR_DB_NOT_FOUND;
-    if (!row[0]) return ERR_DB_NOT_FOUND;
-    n = atoi(row[0]);
-    return 0;
+    return retval;
 }
 
 int DB_BASE::get_double(const char* query, double& x) {
@@ -341,11 +357,13 @@ int DB_BASE::get_double(const char* query, double& x) {
     resp = mysql_store_result(db->mysql);
     if (!resp) return ERR_DB_NOT_FOUND;
     row = mysql_fetch_row(resp);
+    if (!row || !row[0]) {
+        retval = ERR_DB_NOT_FOUND;
+    } else {
+        x = atof(row[0]);
+    }
     mysql_free_result(resp);
-    if (!row) return ERR_DB_NOT_FOUND;
-    if (!row[0]) return ERR_DB_NOT_FOUND;
-    x = atof(row[0]);
-    return 0;
+    return retval;
 }
 
 int DB_BASE::count(int& n, const char* clause) {
@@ -434,4 +452,4 @@ void escape_mysql_like_pattern(const char* in, char* out) {
     }
 }
 
-const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 16112 2008-10-02 19:03:52Z davea $";
+const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 18437 2009-06-16 20:54:44Z davea $";

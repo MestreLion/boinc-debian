@@ -24,8 +24,10 @@ require_once("../inc/result.inc");
 
 $config = get_config();
 if (!parse_bool($config, "show_results")) {
-    error_page("This feature is turned off temporarily");
+    error_page(tra("This feature is turned off temporarily"));
 }
+
+BoincDb::get(true);
 
 $results_per_page = 20;
 
@@ -33,38 +35,58 @@ $hostid = get_int("hostid", true);
 $userid = get_int("userid", true);
 $offset = get_int("offset", true);
 if (!$offset) $offset=0;
+$state = get_int("state", true);
+if (!$state) $state=0;
+$show_names = get_int("show_names", true);
+if (!$show_names) $show_names=0;
 
+$s = $state_name[$state];
 if ($hostid) {
     $host = BoincHost::lookup_id($hostid);
-    $type = "computer";
+    if (!$host) error_page(tra("No computer with ID %1 found", $hostid));
     $clause = "hostid=$hostid";
-} else {
+    page_head(tra("$s tasks for computer %1", $host->id));
+} else if ($userid){
     $user = get_logged_in_user();
     if ($userid != $user->id) {
-        error_page("No access");
+        error_page(tra("No access"));
     }
-    $type = "user";
     $clause = "userid=$userid";
+    page_head(tra("$s tasks for $user->name"));
+} else {
+    error_page(tra("Missing user ID or host ID"));
 }
-page_head("Tasks for $type");
-result_table_start(true, false, true);
-$query = "$clause order by id desc limit $offset,".($results_per_page+1);
-$results = BoincResult::enum($query);
-$number_of_results = count($results);
-echo show_result_navigation(
-    $clause, $number_of_results, $offset, $results_per_page
-);
-$i = 0;
-foreach ($results as $result) {
-    if ($i >= $results_per_page) break;
-    show_result_row($result, true, false, true, $i);
-    $i++;
-}
-echo "</table>\n";
 
-echo show_result_navigation(
-    $clause, $number_of_results, $offset, $results_per_page
-);
+$clause2 = $clause. $state_clause[$state];
+
+$query = "$clause2 order by id desc limit $offset,".($results_per_page+1);
+$results = BoincResult::enum($query);
+
+$info = null;
+$info->number_of_results = count($results);
+$info->clause = $clause;
+$info->results_per_page = $results_per_page;
+$info->offset = $offset;
+$info->show_names = $show_names;
+$info->state = $state;
+
+if (count($results)) {
+    echo show_result_navigation($info);
+    result_table_start(true, false, $info);
+    $i = 0;
+    foreach ($results as $result) {
+        if ($i >= $results_per_page) break;
+        show_result_row($result, true, false, $show_names, $i);
+        $i++;
+    }
+    echo "</table>\n";
+} else {
+    start_table();
+    row1(tra("No tasks to display"));
+    end_table();
+}
+
+echo show_result_navigation($info);
 
 page_tail();
 ?>

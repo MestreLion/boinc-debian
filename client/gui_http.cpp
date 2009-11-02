@@ -35,15 +35,13 @@ int GUI_HTTP::do_rpc(GUI_HTTP_OP* op, string url, string output_file) {
         return ERR_RETRY;
     }
 
-    http_op.set_proxy(&gstate.proxy_info);
     boinc_delete_file(output_file.c_str());
     retval = http_op.init_get(url.c_str(), output_file.c_str(), true);
-    if (!retval) retval = gstate.http_ops->insert(&http_op);
-    if (!retval) {
-        gui_http_op = op;
-        state = GUI_HTTP_STATE_BUSY;
-    }
-    return retval;
+    if (retval) return retval;
+    gstate.http_ops->insert(&http_op);
+    gui_http_op = op;
+    state = GUI_HTTP_STATE_BUSY;
+    return 0;
 }
 
 int GUI_HTTP::do_rpc_post(GUI_HTTP_OP* op, string url, string input_file, string output_file) {
@@ -53,21 +51,19 @@ int GUI_HTTP::do_rpc_post(GUI_HTTP_OP* op, string url, string input_file, string
         return ERR_RETRY;
     }
 
-    http_op.set_proxy(&gstate.proxy_info);
     boinc_delete_file(output_file.c_str());
     retval = http_op.init_post(url.c_str(), input_file.c_str(), output_file.c_str());
-    if (!retval) retval = gstate.http_ops->insert(&http_op);
-    if (!retval) {
-        gui_http_op = op;
-        state = GUI_HTTP_STATE_BUSY;
-    }
-    return retval;
+    if (retval) return retval;
+    gstate.http_ops->insert(&http_op);
+    gui_http_op = op;
+    state = GUI_HTTP_STATE_BUSY;
+    return 0;
 }
 
 bool GUI_HTTP::poll() {
     if (state == GUI_HTTP_STATE_IDLE) return false;
     static double last_time=0;
-    if (gstate.now-last_time < 1) return false;
+    if (gstate.now-last_time < GUI_HTTP_POLL_PERIOD) return false;
     last_time = gstate.now;
 
     if (http_op.http_op_state == HTTP_STATE_DONE) {
@@ -79,4 +75,4 @@ bool GUI_HTTP::poll() {
     return true;
 }
 
-const char *BOINC_RCSID_7c374a67d3="$Id: gui_http.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_7c374a67d3="$Id: gui_http.cpp 18988 2009-09-02 15:33:06Z romw $";

@@ -21,6 +21,8 @@
 // and thus can be put in a shared library,
 // separate from the application.
 
+// DEPRECATED - use separate graphics app
+
 #ifndef _WIN32
 #include "config.h"
 #endif
@@ -265,4 +267,4 @@ void get_window_title(APP_INIT_DATA& aid, char* buf, int len) {
     }
 }
 
-const char *BOINC_RCSID_6e92742852 = "$Id: graphics_impl.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_6e92742852 = "$Id: graphics_impl.cpp 16726 2008-12-19 18:14:02Z davea $";

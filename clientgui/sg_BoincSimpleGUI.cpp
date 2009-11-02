@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #if defined(__GNUG__) && !defined(__APPLE__)
@@ -39,7 +37,6 @@
 #include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
 #include "WizardAttachProject.h"
-#include "WizardAccountManager.h"
 #include "error_numbers.h"
 #include "version.h"
 
@@ -49,15 +46,16 @@
 #include "sg_ClientStateIndicator.h"
 #include "sg_StatImageLoader.h"
 #include "sg_ViewTabPage.h"
+#include "sg_DlgMessages.h"
 
 
 IMPLEMENT_DYNAMIC_CLASS(CSimpleFrame, CBOINCBaseFrame)
 
 BEGIN_EVENT_TABLE(CSimpleFrame, CBOINCBaseFrame)
     EVT_SIZE(CSimpleFrame::OnSize)
-    EVT_MENU(wxID_EXIT, CSimpleFrame::OnExit)
-    EVT_FRAME_CONNECT(CSimpleFrame::OnConnect)
+    EVT_MENU(ID_CHANGEGUI, CSimpleFrame::OnChangeGUI)
     EVT_HELP(wxID_ANY, CSimpleFrame::OnHelp)
+    EVT_FRAME_CONNECT(CSimpleFrame::OnConnect)
     EVT_FRAME_RELOADSKIN(CSimpleFrame::OnReloadSkin)
     // We can't eliminate the Mac Help menu, so we might as well make it useful.
     EVT_MENU(ID_HELPBOINC, CSimpleFrame::OnHelpBOINC)
@@ -71,18 +69,11 @@ CSimpleFrame::CSimpleFrame() {
 }
 
 
-CSimpleFrame::CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32) : 
-    CBOINCBaseFrame((wxFrame *)NULL, ID_SIMPLEFRAME, title, wxDefaultPosition, 
-#ifdef __WXMAC__
-                    wxSize(409, 561),
-#else
-                    wxSize(416, 570),
-#endif
-                    wxMINIMIZE_BOX | wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN | wxNO_FULL_REPAINT_ON_RESIZE)
+CSimpleFrame::CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32, wxPoint position, wxSize size) : 
+    CBOINCBaseFrame((wxFrame *)NULL, ID_SIMPLEFRAME, title, position, size,
+                    wxMINIMIZE_BOX | wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN)
 {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::CSimpleFrame - Overloaded Constructor Function Begin"));
-
-    RestoreState();
 
     // Initialize Application
     wxIconBundle icons;
@@ -102,17 +93,32 @@ CSimpleFrame::CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32) :
     // File menu
     wxMenu *menuFile = new wxMenu;
 
+    // %s is the application name
+    //    i.e. 'BOINC Manager', 'GridRepublic Manager'
+    strMenuDescription.Printf(
+        _("Close the %s window"), 
+        pSkinAdvanced->GetApplicationName().c_str()
+    );
     menuFile->Append(
-        ID_FILECLOSEWINDOW,
+        ID_CLOSEWINDOW,
         _("&Close Window\tCTRL+W"),
-		_("Close BOINC Manager Window.")
+		strMenuDescription
+    );
+
+    // View menu
+    wxMenu *menuView = new wxMenu;
+
+    menuView->Append(
+        ID_CHANGEGUI,
+        _("Advanced View...\tCTRL+SHIFT+A"),
+        _("Display the advanced (accessible) graphical interface.")
     );
 
     // Help menu
     wxMenu *menuHelp = new wxMenu;
 
     // %s is the project name
-    //    i.e. 'BOINC', 'GridRepublic'
+    //    i.e. 'BOINC Manager', 'GridRepublic'
     strMenuName.Printf(
         _("%s &help"), 
         pSkinAdvanced->GetApplicationShortName().c_str()
@@ -182,15 +188,21 @@ CSimpleFrame::CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32) :
         _("&File")
     );
     
-    // wxMac maps Command key to wxACCEL_ALT for wxAcceleratorTable but CTRL for wxMenu.
+    m_pMenubar->Append(
+        menuView,
+        _("&View")
+    );
+
     m_Shortcuts[0].Set(wxACCEL_NORMAL, WXK_HELP, ID_HELPBOINCMANAGER);
+    m_pAccelTable = new wxAcceleratorTable(2, m_Shortcuts);
 #else
-    m_Shortcuts[0].Set(wxACCEL_CTRL, (int)'W', ID_FILECLOSEWINDOW);
+    m_Shortcuts[0].Set(wxACCEL_CTRL|wxACCEL_SHIFT, (int)'A', ID_CHANGEGUI);
+    m_pAccelTable = new wxAcceleratorTable(1, m_Shortcuts);
 #endif
 
-    m_pAccelTable = new wxAcceleratorTable(1, m_Shortcuts);
     SetAcceleratorTable(*m_pAccelTable);
-
+    
+    dlgMsgsPtr = NULL;
     m_pBackgroundPanel = new CSimplePanel(this);
 }
 
@@ -198,8 +210,8 @@ CSimpleFrame::CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32) :
 CSimpleFrame::~CSimpleFrame() {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::CSimpleFrame - Destructor Function Begin"));
 
-	SaveState();
-
+    SaveState();
+    
     if (m_pAccelTable)
         delete m_pAccelTable;
 
@@ -207,75 +219,10 @@ CSimpleFrame::~CSimpleFrame() {
 }
 
 
-bool CSimpleFrame::RestoreState() {
-    CBOINCBaseFrame::RestoreState();
-    wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
-    wxString        strBaseConfigLocation = wxString(wxT("/"));
-    wxASSERT(pConfig);
-
-    // An odd case happens every once and awhile where wxWidgets looses
-    //   the pointer to the config object, or it is cleaned up before
-    //   the window has finished it's cleanup duty.  If we detect a NULL
-    //   pointer, return false.
-    if (!pConfig) return false;
-
-    //
-    // Restore Frame State
-    //
-    pConfig->SetPath(strBaseConfigLocation);
-
-	// Read the last coordinates of the BSG
-	int x = pConfig->Read(wxT("X_Position"), ((wxPoint) wxDefaultPosition).x);
-	int y = pConfig->Read(wxT("Y_Position"), ((wxPoint) wxDefaultPosition).y);
-	
-	// Read the size of the BSG
-	int width, height;
-	GetSize(&width, &height);
-
-#ifdef __WXMAC__
-
-        // If the user has changed the arrangement of multiple 
-        // displays, make sure the window title bar is still on-screen.
-        Rect titleRect = {y, x, y+22, x+width };
-        InsetRect(&titleRect, 5, 5);    // Make sure at least a 5X5 piece visible
-        RgnHandle displayRgn = NewRgn();
-        CopyRgn(GetGrayRgn(), displayRgn);  // Region encompassing all displays
-        Rect menuRect = ((**GetMainDevice())).gdRect;
-        menuRect.bottom = GetMBarHeight() + menuRect.top;
-        RgnHandle menuRgn = NewRgn();
-        RectRgn(menuRgn, &menuRect);                // Region hidden by menu bar
-        DiffRgn(displayRgn, menuRgn, displayRgn);   // Subtract menu bar retion
-        if (!RectInRgn(&titleRect, displayRgn))
-            x = y = 30;
-        DisposeRgn(menuRgn);
-        DisposeRgn(displayRgn);
-    
-#else
-
-	// If either co-ordinate is less then 0 then set it equal to 0 to ensure
-	// it displays on the screen.
-	if ( x < 0 ) x = 0;
-	if ( y < 0 ) y = 0;
-
-	// Read the size of the screen
-	int maxX = wxSystemSettings::GetMetric( wxSYS_SCREEN_X );
-	int maxY = wxSystemSettings::GetMetric( wxSYS_SCREEN_Y );
-
-	// Max sure that it doesn't go off to the right or bottom
-	if ( x + width > maxX ) x=maxX-width;
-	if ( y + height > maxY ) y=maxY-height;
-#endif
-
-	Move(x,y);
-
-	return true;
-}
-
-
 bool CSimpleFrame::SaveState() {
 	CBOINCBaseFrame::SaveState();
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
-	wxString        strBaseConfigLocation = wxString(wxT("/"));
+	wxString        strBaseConfigLocation = wxString(wxT("/Simple"));
 
     wxASSERT(pConfig);
 
@@ -290,32 +237,29 @@ bool CSimpleFrame::SaveState() {
     //
     pConfig->SetPath(strBaseConfigLocation);
 
-	int x,y;
-	GetPosition(&x, &y);
-	pConfig->Write(wxT("X_Position"), x);
-	pConfig->Write(wxT("Y_Position"), y);
-	return true;
+    pConfig->Write(wxT("XPos"), GetPosition().x);
+    pConfig->Write(wxT("YPos"), GetPosition().y);
+
+    return true;
 }
 
 
-void CSimpleFrame::OnHelp(wxHelpEvent& event) {
-    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnHelp - Function Begin"));
-
-    if (IsShown()) {
-		std::string url;
-		url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl().mb_str();
-
-		wxString wxurl;
-		wxurl.Printf(
-            wxT("%s?target=simple&version=%s&controlid=%d"),
-            url.c_str(),
-            BOINC_VERSION_STRING,
-            event.GetId()
-        );
-        ExecuteBrowserLink(wxurl);
+int CSimpleFrame::_GetCurrentViewPage() {
+    if (isMessagesDlgOpen()) {
+        return VW_SGUI | VW_SMSG;
+    } else {
+        return VW_SGUI;
     }
+    return 0;       // Should never happen.
+}
 
-    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnHelp - Function End"));
+
+void CSimpleFrame::OnChangeGUI(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnChangeGUI - Function Begin"));
+
+    wxGetApp().SetActiveGUI(BOINC_ADVANCEDGUI, true);
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnChangeGUI - Function End"));
 }
 
 
@@ -323,14 +267,13 @@ void CSimpleFrame::OnHelpBOINC(wxCommandEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnHelpBOINC - Function Begin"));
 
     if (IsShown()) {
-		std::string url;
-		url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl().mb_str();
+    	wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
 		wxString wxurl;
 		wxurl.Printf(
             wxT("%s?target=simple&version=%s&controlid=%d"),
-            url.c_str(),
-            BOINC_VERSION_STRING,
+            strURL.c_str(),
+            wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
 		ExecuteBrowserLink(wxurl);
@@ -340,12 +283,52 @@ void CSimpleFrame::OnHelpBOINC(wxCommandEvent& event) {
 }
 
 
+void CSimpleFrame::OnHelp(wxHelpEvent& event) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnHelp - Function Begin"));
+
+    if (IsShown()) {
+    	wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
+
+		wxString wxurl;
+		wxurl.Printf(
+            wxT("%s?target=simple&version=%s&controlid=%d"),
+            strURL.c_str(),
+            wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
+            event.GetId()
+        );
+        ExecuteBrowserLink(wxurl);
+    }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnHelp - Function End"));
+}
+
+
 void CSimpleFrame::OnReloadSkin(CFrameEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnReloadSkin - Function Start"));
     
     m_pBackgroundPanel->ReskinInterface();
 
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnReloadSkin - Function End"));
+}
+
+
+void CSimpleFrame::OnRefreshView(CFrameEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnRefreshView - Function Start"));
+    
+    static bool bAlreadyRunning = false;
+    
+    if (bAlreadyRunning) return;
+    bAlreadyRunning = true;
+    
+    m_pBackgroundPanel->OnFrameRender();
+    
+    if (dlgMsgsPtr) {
+        dlgMsgsPtr->OnRefresh();
+    }
+
+    bAlreadyRunning = false;
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnRefreshView - Function End"));
 }
 
 
@@ -361,8 +344,6 @@ void CSimpleFrame::OnProjectsAttachToProject() {
         return;
 
     if (pDoc->IsConnected()) {
-        
-        m_pBackgroundPanel->m_pFrameRenderTimer->Stop();
 
         CWizardAttachProject* pWizard = new CWizardAttachProject(this);
 
@@ -373,7 +354,6 @@ void CSimpleFrame::OnProjectsAttachToProject() {
         if (pWizard)
             pWizard->Destroy();
 
-        m_pBackgroundPanel->m_pFrameRenderTimer->Start();
     } else {
         ShowNotCurrentlyConnectedAlert();
     }
@@ -386,7 +366,6 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnConnect - Function Begin"));
     
     CMainDocument*     pDoc = wxGetApp().GetDocument();
-    CWizardAccountManager* pAMWizard = NULL;
     CWizardAttachProject* pAPWizard = NULL;
     wxString strComputer = wxEmptyString;
     wxString strName = wxEmptyString;
@@ -399,15 +378,18 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-    pDoc->GetCoreClientStatus(status);
+    pDoc->ForceCacheUpdate();
+    pDoc->GetCoreClientStatus(status, true);
 
 	// If we are connected to the localhost, run a really quick screensaver
     //   test to trigger a firewall popup.
     pDoc->GetConnectedComputerName(strComputer);
     if (pDoc->IsComputerNameLocal(strComputer)) {
         wxGetApp().StartBOINCScreensaverTest();
+        wxGetApp().StartBOINCDefaultScreensaverTest();
     }
 
+    pAPWizard = new CWizardAttachProject(this);
 
     pDoc->rpc.get_project_init_status(pis);
     pDoc->rpc.acct_mgr_info(ami);
@@ -416,17 +398,15 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
             Show();
         }
 
-       pAMWizard = new CWizardAccountManager(this);
-       if (pAMWizard->Run()) {
+       if (pAPWizard->SyncToAccountManager()) {
             // If successful, hide the main window
             Hide();
         }
-    } else if ((pis.url.size() || (0 >= pDoc->GetProjectCount())) && !status.disallow_attach) {
+    } else if ((pis.url.size() || (0 >= pDoc->GetSimpleProjectCount())) && !status.disallow_attach) {
         if (!IsShown()) {
             Show();
         }
 
-        pAPWizard = new CWizardAttachProject(this);
         strName = wxString(pis.name.c_str(), wxConvUTF8);
         strURL = wxString(pis.url.c_str(), wxConvUTF8);
         bCachedCredentials = pis.url.length() && pis.has_account_key;
@@ -434,9 +414,7 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
         pAPWizard->Run(strName, strURL, bCachedCredentials);
     }
 
-    if (pAMWizard)
-        pAMWizard->Destroy();
-	if (pAPWizard){
+ 	if (pAPWizard){
             pAPWizard->Destroy();
             //update Project Component
             m_pBackgroundPanel->UpdateProjectView();
@@ -451,13 +429,12 @@ IMPLEMENT_DYNAMIC_CLASS(CSimplePanel, wxPanel)
 BEGIN_EVENT_TABLE(CSimplePanel, wxPanel)
     EVT_SIZE(CSimplePanel::OnSize)
     EVT_ERASE_BACKGROUND(CSimplePanel::OnEraseBackground)
-    EVT_TIMER(ID_SIMPLEFRAMERENDERTIMER, CSimplePanel::OnFrameRender)
 END_EVENT_TABLE()
 
 
 CSimplePanel::CSimplePanel() {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimplePanel::CSimplePanel - Default Constructor Function Begin"));
-    wxLogTrace(wxT("Function Start/End"), wxT("CSimplePanels::CSimplePanel - Default Constructor Function End"));
+    wxLogTrace(wxT("Function Start/End"), wxT("CSimplePanel::CSimplePanel - Default Constructor Function End"));
 }
 
 
@@ -475,11 +452,6 @@ CSimplePanel::CSimplePanel(wxWindow* parent) :
 	notebookViewInitialized = false;
 	dlgOpen = false;
 
-	//set polling timer for interface
-	m_pFrameRenderTimer = new wxTimer(this, ID_SIMPLEFRAMERENDERTIMER);
-    wxASSERT(m_pFrameRenderTimer);
-    m_pFrameRenderTimer->Start(1000);                // Send event every 1 second
-
 	InitEmptyView();
 
     wxLogTrace(wxT("Function Start/End"), wxT("CSimplePanel::CSimplePanel - Overloaded Constructor Function End"));
@@ -489,13 +461,7 @@ CSimplePanel::CSimplePanel(wxWindow* parent) :
 CSimplePanel::~CSimplePanel()
 {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimplePanel::CSimplePanel - Destructor Function Begin"));
-    wxASSERT(m_pFrameRenderTimer);
-
-	if (m_pFrameRenderTimer) {
-        m_pFrameRenderTimer->Stop();
-        delete m_pFrameRenderTimer;
-    }
-
+    
     wxLogTrace(wxT("Function Start/End"), wxT("CSimplePanel::CSimplePanel - Destructor Function End"));
 }
 
@@ -540,8 +506,16 @@ void CSimplePanel::OnProjectsAttachToProject() {
 }
 
 
-void CSimplePanel::OnFrameRender(wxTimerEvent& WXUNUSED(event)) {
+// called from CSimpleFrame::OnRefreshView()
+void CSimplePanel::OnFrameRender() {
     CMainDocument*    pDoc = wxGetApp().GetDocument();
+    wxASSERT(pDoc);
+
+    // OnFrameRender() may be called while SimpleGUI initialization is 
+    // in progress due to completion of a periodic get_messages RPC, 
+    // causing unintended recursion in CMainDocument::RequestRPC().  
+    // Check for that situation here.
+    if (pDoc->WaitingForRPC()) return;
 
     if (IsShown()) {
 

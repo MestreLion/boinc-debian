@@ -92,7 +92,7 @@ int main(int argc, const char** argv) {
     strcpy(app.name, "");
     strcpy(db_passwd, "");
     strcpy(additional_xml, "");
-    const char* config_dir = ".";
+    const char* config_dir = 0;
     i = 1;
     ninfiles = 0;
     wu.clear();
@@ -105,12 +105,12 @@ int main(int argc, const char** argv) {
     wu.max_error_results = 3;
     wu.max_total_results = 10;
     wu.max_success_results = 6;
-    wu.rsc_fpops_est = 1e9;
-    wu.rsc_fpops_bound =  1e10;
-    wu.rsc_memory_bound = 1e8;
-    wu.rsc_disk_bound = 1e8;
+    wu.rsc_fpops_est = 3600e9;
+    wu.rsc_fpops_bound =  86400e9;
+    wu.rsc_memory_bound = 5e8;
+    wu.rsc_disk_bound = 1e9;
     wu.rsc_bandwidth_bound = 0.0;
-    wu.delay_bound = 100000;
+    wu.delay_bound = 7*86400;
 
     while (i < argc) {
         if (arg(argv, i, "appname")) {
@@ -213,7 +213,7 @@ int main(int argc, const char** argv) {
             exit(1);
         }
     }
-    retval = config.parse_file(config_dir);
+    retval = config.parse_file();
     if (retval) {
         fprintf(stderr, "Can't parse config file: %d\n", retval);
         exit(1);
@@ -279,4 +279,4 @@ int main(int argc, const char** argv) {
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 18042 2009-05-07 13:54:51Z davea $";

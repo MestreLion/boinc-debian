@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _BOINCBASEFRAME_H_
 #define _BOINCBASEFRAME_H_
@@ -52,8 +50,10 @@ public:
 
     ~CBOINCBaseFrame();
 
+    void                OnPeriodicRPC( wxTimerEvent& event );
     void                OnDocumentPoll( wxTimerEvent& event );
     void                OnAlertPoll( wxTimerEvent& event );
+    virtual void        OnRefreshView( CFrameEvent& event );
 
     void                OnInitialized( CFrameEvent& event );
 
@@ -61,7 +61,9 @@ public:
     virtual void        OnClose( wxCloseEvent& event );
     virtual void        OnCloseWindow( wxCommandEvent& event );
     virtual void        OnExit( wxCommandEvent& event );
-    
+
+    int                 GetCurrentViewPage();
+
     int                 GetReminderFrequency() { return m_iReminderFrequency; }
     wxString            GetDialupConnectionName() { return m_strNetworkDialupConnectionName; }
 
@@ -89,9 +91,9 @@ public:
 
     void                ExecuteBrowserLink( const wxString& strLink );
 
-#ifdef __WXMAC__
-    bool                Show( bool show = true );
-#endif
+    bool                Show( bool bShow = true );
+
+    virtual bool        SaveState();
 
 protected:
 
@@ -99,6 +101,7 @@ protected:
 
     wxTimer*            m_pDocumentPollTimer;
     wxTimer*            m_pAlertPollTimer;
+    wxTimer*            m_pPeriodicRPCTimer;
 
     int                 m_iSelectedLanguage;
     int                 m_iReminderFrequency;
@@ -109,7 +112,8 @@ protected:
 
     bool                m_bShowConnectionFailedAlert;
 
-    virtual bool        SaveState();
+    virtual int         _GetCurrentViewPage();
+
     virtual bool        RestoreState();
 
     DECLARE_EVENT_TABLE()
@@ -181,6 +185,7 @@ DECLARE_EVENT_TYPE( wxEVT_FRAME_INITIALIZED, 10004 )
 DECLARE_EVENT_TYPE( wxEVT_FRAME_REFRESHVIEW, 10005 )
 DECLARE_EVENT_TYPE( wxEVT_FRAME_UPDATESTATUS, 10006 )
 DECLARE_EVENT_TYPE( wxEVT_FRAME_RELOADSKIN, 10007 )
+
 END_DECLARE_EVENT_TYPES()
 
 #define EVT_FRAME_ALERT(fn)              DECLARE_EVENT_TABLE_ENTRY(wxEVT_FRAME_ALERT, -1, -1, (wxObjectEventFunction) (wxEventFunction) &fn, NULL),

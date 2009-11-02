@@ -21,10 +21,10 @@
 // with the given fanout
 
 #include "config.h"
-#include <stdio.h>
+#include <cstdio>
 #include <string>
-#include <stdlib.h>
-#include <errno.h>
+#include <cstdlib>
+#include <cerrno>
 
 #include "filesys.h"
 #include "util.h"
@@ -69,4 +69,4 @@ int main(int argc, char** argv) {
     }
 }
 
-const char *BOINC_RCSID_d6492ba662 = "$Id: dir_hier_move.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_d6492ba662 = "$Id: dir_hier_move.cpp 17388 2009-02-26 00:23:23Z korpela $";

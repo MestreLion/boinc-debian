@@ -20,7 +20,6 @@
 //
 
 #include "config.h"
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -31,24 +30,29 @@
 #include <csignal>
 #include <fcntl.h>
 
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#else
+#include <cstdio>
+#endif
+
 #include "crypt.h"
 #include "parse.h"
 #include "util.h"
 #include "error_numbers.h"
+#include "str_util.h"
 #include "filesys.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
 
-#ifdef _USING_FCGI_
-#include "boinc_fcgi.h"
-#endif
 #include "sched_msgs.h"
 
 #define ERR_TRANSIENT   true
 #define ERR_PERMANENT   false
 
 char this_filename[256];
+double start_time();
 
 struct FILE_INFO {
     char name[256];
@@ -215,7 +219,7 @@ int copy_socket_to_file(FILE* in, char* path, double offset, double nbytes) {
         to_write=n;
         while (to_write > 0) {
             ssize_t ret = write(fd, buf+n-to_write, to_write);
-            if (ret < 0) { 
+            if (ret < 0) {
                 close(fd);
                 const char* errmsg;
                 if (errno == ENOSPC) {
@@ -326,7 +330,7 @@ int handle_file_upload(FILE* in, R_RSA_PUBLIC_KEY& key) {
         if (parse_double(buf, "<nbytes>", nbytes)) continue;
         if (parse_str(buf, "<md5_cksum>", temp, sizeof(temp))) continue;
         if (match_tag(buf, "<data>")) {
-            if (nbytes <= 0) {
+            if (nbytes < 0) {
                 return return_error(ERR_PERMANENT, "nbytes missing or negative");
             }
 
@@ -363,7 +367,7 @@ int handle_file_upload(FILE* in, R_RSA_PUBLIC_KEY& key) {
                 path, true
             );
             if (retval) {
-                log_messages.printf(MSG_CRITICAL, 
+                log_messages.printf(MSG_CRITICAL,
                     "Failed to find/create directory for file '%s' in '%s'\n",
                     file_info.name, config.upload_dir
                 );
@@ -427,7 +431,7 @@ int handle_get_file_size(char* file_name) {
         file_name, config.upload_dir, config.uldl_dir_fanout, path
     );
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, 
+        log_messages.printf(MSG_CRITICAL,
             "Failed to find/create directory for file '%s' in '%s'.\n",
             file_name, config.upload_dir
         );
@@ -472,7 +476,7 @@ int handle_get_file_size(char* file_name) {
         return return_error(ERR_TRANSIENT,
             "[%s] locked by file_upload_handler PID=%d", file_name, pid
         );
-    } 
+    }
     // file exists, writable, not locked by anyone else, so return length.
     //
     retval = stat(path, &sbuf);
@@ -503,6 +507,7 @@ int handle_request(FILE* in, R_RSA_PUBLIC_KEY& key) {
     int major, minor, release, retval=0;
     bool got_version = true;
     bool did_something = false;
+    double start_time = dtime();
 
 #ifdef _USING_FCGI_
     log_messages.set_indent_level(1);
@@ -546,9 +551,7 @@ int handle_request(FILE* in, R_RSA_PUBLIC_KEY& key) {
         return return_error(ERR_TRANSIENT, "no command");
     }
 
-    log_messages.printf(MSG_DEBUG,
-        "elapsed time %f seconds\n", elapsed_wallclock_time()
-    );
+    log_messages.printf(MSG_DEBUG, "elapsed time %f seconds\n", dtime()-start_time);
 
     return retval;
 }
@@ -563,7 +566,11 @@ int get_key(R_RSA_PUBLIC_KEY& key) {
     FCGI_FILE *f = FCGI::fopen(buf, "r");
 #endif
     if (!f) return -1;
+#ifdef _USING_FCGI_
+    retval = scan_key_hex(FCGI_ToFILE(f), (KEY*)&key, sizeof(key));
+#else
     retval = scan_key_hex(f, (KEY*)&key, sizeof(key));
+#endif
     fclose(f);
     if (retval) return retval;
     return 0;
@@ -575,9 +582,9 @@ void boinc_catch_signal(int signal_num) {
         sprintf(buffer, "FILE=%s (%.0f bytes left) ", this_filename, bytes_left);
     }
     log_messages.printf(MSG_CRITICAL,
-        "%sIP=%s caught signal %d [%s] elapsed time %f seconds\n",
+        "%sIP=%s caught signal %d [%s]\n",
         buffer, get_remote_addr(),
-        signal_num, strsignal(signal_num), elapsed_wallclock_time()
+        signal_num, strsignal(signal_num)
     );
 
     // there is no point in trying to return an error.
@@ -585,7 +592,7 @@ void boinc_catch_signal(int signal_num) {
     // so a write to stdout will just generate a SIGPIPE
     //
     // return_error(ERR_TRANSIENT, "while downloading %s server caught signal %d", this_filename, signal_num);
-    exit(1);
+    _exit(1);
 }
 
 void installer() {
@@ -611,15 +618,18 @@ int main() {
 #ifdef _USING_FCGI_
     unsigned int counter=0;
 #endif
-    elapsed_wallclock_time();
 
     installer();
 
     get_log_path(log_path, "file_upload_handler.log");
 #ifndef _USING_FCGI_
     if (!freopen(log_path, "a", stderr)) {
-        fprintf(stderr, "Can't open log file\n");
-        return_error(ERR_TRANSIENT, "can't open log file");
+        fprintf(stderr, "Can't open log file '%s' (errno: %d)\n",
+            log_path, errno
+        );
+        return_error(ERR_TRANSIENT, "can't open log file '%s' (errno: %d)",
+            log_path, errno
+        );
         exit(1);
     }
 #else
@@ -633,15 +643,19 @@ int main() {
     }
 #endif
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
+        fprintf(stderr, "Can't parse config.xml: %s\n", boincerror(retval));
+        return_error(ERR_TRANSIENT,
+            "can't parse config file", log_path, errno
+        );
         exit(1);
     }
 
     log_messages.pid = getpid();
     log_messages.set_debug_level(config.fuh_debug_level);
 
-    if (boinc_file_exists("../stop_upload")) {
+    if (boinc_file_exists(config.project_path("stop_upload"))) {
         return_error(ERR_TRANSIENT, "Maintenance underway: file uploads are temporarily disabled.");
         exit(1);
     }
@@ -655,21 +669,21 @@ int main() {
     }
 
 #ifdef _USING_FCGI_
-  while(FCGI_Accept() >= 0) {
-    counter++;
-    //fprintf(stderr, "file_upload_handler (FCGI): counter: %d\n", counter);
-    log_messages.set_indent_level(0);
+    while(FCGI_Accept() >= 0) {
+        counter++;
+        //fprintf(stderr, "file_upload_handler (FCGI): counter: %d\n", counter);
+        log_messages.set_indent_level(0);
 #endif
-    handle_request(stdin, key);
+        handle_request(stdin, key);
 #ifdef _USING_FCGI_
-    // flush log for FCGI, otherwise it just buffers a lot
-    log_messages.flush();
-  }
-  // when exiting, write headers back to apache so it won't complain
-  // about "incomplete headers"
-  fprintf(stdout,"Content-type: text/plain\n\n");
+        // flush log for FCGI, otherwise it just buffers a lot
+        log_messages.flush();
+    }
+    // when exiting, write headers back to apache so it won't complain
+    // about "incomplete headers"
+    fprintf(stdout,"Content-type: text/plain\n\n");
 #endif
     return 0;
 }
 
-const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 18786 2009-07-31 19:46:47Z davea $";

@@ -1,214 +1,277 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 16069 2008-09-26 18:20:24Z davea $
+## $Id: Makefile.am 18832 2009-08-13 03:35:26Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
-noinst_PROGRAMS = \
-    census \
-    cgi \
-    db_dump \
-    db_purge \
-    delete_file \
-    feeder \
-    file_deleter \
-    file_upload_handler \
-    get_file \
-    make_work \
-    message_handler \
-	pymw_assimilator \
-    request_file_list \
-    sample_assimilator \
-    sample_dummy_assimilator \
-    sample_bitwise_validator \
-    sample_trivial_validator \
-    sample_work_generator \
-    single_job_assimilator \
-    sched_driver \
-    send_file \
-    show_shmem \
-    transitioner \
-    trickle_handler \
-    update_stats \
-    wu_check
+AM_CPPFLAGS += $(MYSQL_CFLAGS) $(PTHREAD_CFLAGS)
+AM_LDFLAGS += -static
 
-lib_LIBRARIES = libsched.a
+if ENABLE_LIBRARIES
 
-EXTRA_PROGRAMS = fcgi \
-		 fcgi_file_upload_handler
-
-# scripts that 'make install' should put in bindir
-bin_SCRIPTS = start stop status
-
-LDADD = $(LIBSCHED) $(LIBBOINC) $(MYSQL_LIBS) $(PTHREAD_LIBS) $(RSA_LIBS)
-AM_CXXFLAGS = $(MYSQL_CFLAGS)
-
-libsched_a_SOURCES = \
+libsched_sources = \
     sched_shmem.cpp \
     sched_util.cpp \
     sched_config.cpp \
-	sched_msgs.cpp \
+    sched_msgs.cpp \
     ../db/boinc_db.cpp \
     ../db/db_base.cpp \
-	../lib/msg_log.cpp \
     ../tools/process_result_template.cpp \
     ../tools/backend_lib.cpp
 
-EXTRA_DIST = \
-    assimilate_handler.h \
-    fcgiapp.h \
-    handle_request.h \
-    main.h \
-    sched_locality.h \
-    sched_send.h \
-    sched_shmem.h \
-    server_types.h \
-    start
-
-
-cgi_SOURCES = \
-    edf_sim.cpp \
-    handle_request.cpp \
-    hr.cpp \
-    hr_info.cpp \
-    main.cpp \
-    sched_array.cpp \
-    sched_assign.cpp \
-    sched_hr.cpp \
-    sched_resend.cpp \
-    sched_locality.cpp \
-    sched_result.cpp \
-    sched_plan.cpp \
-    sched_send.cpp \
-    sched_timezone.cpp \
-    server_types.cpp \
-    time_stats_log.cpp \
-    ../lib/synch.cpp
-
-census_SOURCES = \
-    census.cpp \
-    hr.cpp \
-    hr_info.cpp
+lib_LTLIBRARIES = libsched.la
+libsched_la_SOURCES = $(libsched_sources)
+libsched_la_CFLAGS = $(AM_CPPFLAGS)
+libsched_la_CXXFLAGS = $(AM_CPPFLAGS)
+libsched_la_LDFLAGS= -L$(libdir) -rpath $(libdir) -version-number $(LIBBOINC_VERSION)
+libsched_la_LIBADD= $(SSL_LIBS)
 
 ## install only headers that are meant for exporting the API !!
+if INSTALL_HEADERS
 pkginclude_HEADERS = \
 	sched_config.h \
 	sched_msgs.h \
 	sched_util.h \
 	../tools/backend_lib.h \
 	validate_util.h
+endif
+# end of "if INSTALL_HEADERS
 
+if ENABLE_FCGI
+
+lib_LTLIBRARIES += libsched_fcgi.la
+libsched_fcgi_la_SOURCES = $(libsched_sources)
+libsched_fcgi_la_CFLAGS = -D_USING_FCGI_ $(AM_CPPFLAGS)
+libsched_fcgi_la_CXXFLAGS = -D_USING_FCGI_ $(AM_CPPFLAGS)
+libsched_fcgi_la_LDFLAGS= -L$(libdir) -rpath $(libdir) -version-number $(LIBBOINC_VERSION)
+libsched_fcgi_la_LIBADD=
+
+endif
+# end of "if ENABLE_FCGI"
+
+# Some OSs may not prefix libraries with lib. 
+# For example OS2
+if OS_OS2
+LIBSCHED_STATIC=sched.${LIBEXT}
+LIBSCHED_FCGI_STATIC=sched_fcgi.${LIBEXT}
+else
+LIBSCHED_STATIC=libsched.${LIBEXT}
+LIBSCHED_FCGI_STATIC=libsched_fcgi.${LIBEXT}
+endif
+
+
+if BUILD_STATIC_LIBS
+all_local = $(LIBSCHED_STATIC)
+if ENABLE_FCGI
+all_local += $(LIBSCHED_FCGI_STATIC)
+endif
+endif
+
+all-local: $(all_local)
+
+$(LIBSCHED_STATIC): libsched.la
+	rm -f $(LIBSCHED_STATIC)
+	$(LN) .libs/$(LIBSCHED_STATIC)
+
+$(LIBSCHED_FCGI_STATIC): libsched_fcgi.la
+	rm -f $(LIBSCHED_FCGI_STATIC)
+	$(LN) .libs/$(LIBSCHED_FCGI_STATIC)
+
+
+endif
+# end of "if ENABLE_LIBRARIES
+
+if ENABLE_SERVER
+
+cgidir = $(libexecdir)/cgi-bin
+scheddir = $(libexecdir)/sched
+
+bin_PROGRAMS = \
+    delete_file \
+    get_file \
+    make_work \
+    request_file_list \
+    sched_driver \
+    send_file \
+    show_shmem \
+    wu_check
+
+sched_PROGRAMS = \
+    census \
+    db_dump \
+    db_purge \
+    feeder \
+    file_deleter \
+    message_handler \
+    sample_assimilator \
+    sample_dummy_assimilator \
+    sample_bitwise_validator \
+    sample_trivial_validator \
+    sample_work_generator \
+    single_job_assimilator \
+    transitioner \
+    trickle_handler \
+    update_stats
+
+cgi_PROGRAMS= \
+    cgi \
+    file_upload_handler
+
+# scripts that 'make install' should put in bindir
+bin_SCRIPTS = start stop status
+
+noinst_HEADERS = \
+    assimilate_handler.h \
+    handle_request.h \
+    sched_main.h \
+    sched_locality.h \
+    sched_score.h \
+    sched_send.h \
+    sched_shmem.h \
+    sched_version.h \
+    sched_types.h
+
+EXTRA_DIST = \
+    start
+
+cgi_sources = \
+	credit.cpp \
+    edf_sim.cpp \
+    handle_request.cpp \
+    hr.cpp \
+    hr_info.cpp \
+    sched_main.cpp \
+    sched_array.cpp \
+    sched_assign.cpp \
+    sched_customize.cpp \
+    sched_hr.cpp \
+    sched_resend.cpp \
+    sched_locality.cpp \
+    sched_result.cpp \
+    sched_score.cpp \
+    sched_send.cpp \
+    sched_timezone.cpp \
+    sched_version.cpp \
+    sched_types.cpp \
+    time_stats_log.cpp
+
+cgi_SOURCES = $(cgi_sources)
+cgi_LDADD = $(SERVERLIBS)
+
+census_SOURCES = \
+    census.cpp \
+    hr.cpp \
+    hr_info.cpp
+census_LDADD = $(SERVERLIBS)
 
 feeder_SOURCES = \
     feeder.cpp \
     hr.cpp \
     hr_info.cpp \
     ../lib/synch.cpp
+feeder_LDADD = $(SERVERLIBS)
 
 wu_check_SOURCES = wu_check.cpp
+wu_check_LDADD = $(SERVERLIBS)
 
 show_shmem_SOURCES = show_shmem.cpp
+show_shmem_LDADD = $(SERVERLIBS)
 
 file_deleter_SOURCES = file_deleter.cpp
+file_deleter_LDADD = $(SERVERLIBS)
 
-sample_bitwise_validator_SOURCES = validator.cpp sample_bitwise_validator.cpp validate_util.cpp validate_util.h validate_util2.cpp
+VALIDATOR_SOURCES = \
+	credit.cpp \
+	validator.cpp \
+	validate_util.cpp \
+	validate_util2.cpp
 
-sample_trivial_validator_SOURCES = validator.cpp sample_trivial_validator.cpp validate_util.cpp validate_util.h validate_util2.cpp
+sample_bitwise_validator_SOURCES = $(VALIDATOR_SOURCES) \
+	sample_bitwise_validator.cpp 
+sample_bitwise_validator_LDADD = $(SERVERLIBS)
 
-sample_dummy_assimilator_SOURCES = assimilator.cpp sample_dummy_assimilator.cpp validate_util.cpp validate_util.h
+sample_trivial_validator_SOURCES = $(VALIDATOR_SOURCES) \
+	sample_trivial_validator.cpp
+sample_trivial_validator_LDADD = $(SERVERLIBS)
 
-sample_assimilator_SOURCES = assimilator.cpp sample_assimilator.cpp validate_util.cpp validate_util.h
+ASSIMILATOR_SOURCES = \
+	assimilator.cpp \
+	validate_util.cpp
 
-pymw_assimilator_SOURCES = assimilator.cpp pymw_assimilator.cpp validate_util.cpp validate_util.h 
-pymw_assimilator_DEPENDENCIES = $(LIB_SCHED) 
+sample_dummy_assimilator_SOURCES = $(ASSIMILATOR_SOURCES) \
+	sample_dummy_assimilator.cpp
+sample_dummy_assimilator_LDADD = $(SERVERLIBS)
 
-single_job_assimilator_SOURCES = assimilator.cpp single_job_assimilator.cpp validate_util.cpp validate_util.h
+sample_assimilator_SOURCES = $(ASSIMILATOR_SOURCES) \
+	sample_assimilator.cpp
+sample_assimilator_LDADD = $(SERVERLIBS)
+
+single_job_assimilator_SOURCES = $(ASSIMILATOR_SOURCES) \
+	single_job_assimilator.cpp
+single_job_assimilator_LDADD = $(SERVERLIBS)
 
 sample_work_generator_SOURCES = sample_work_generator.cpp
+sample_work_generator_LDADD = $(SERVERLIBS)
 
 db_dump_SOURCES = db_dump.cpp
+db_dump_LDADD = $(SERVERLIBS)
 
 db_purge_SOURCES = db_purge.cpp
+db_purge_LDADD = $(SERVERLIBS)
 
 trickle_handler_SOURCES = trickle_handler.cpp
+trickle_handler_LDADD = $(SERVERLIBS)
 
 update_stats_SOURCES = update_stats.cpp
+update_stats_LDADD = $(SERVERLIBS)
 
 file_upload_handler_SOURCES = file_upload_handler.cpp
+file_upload_handler_LDADD = $(SERVERLIBS)
 
 make_work_SOURCES = make_work.cpp
+make_work_LDADD = $(SERVERLIBS)
 
 transitioner_SOURCES = transitioner.cpp
+transitioner_LDADD = $(SERVERLIBS)
 
 message_handler_SOURCES = message_handler.cpp
+message_handler_LDADD = $(SERVERLIBS)
 
 request_file_list_SOURCES = request_file_list.cpp
+request_file_list_LDADD = $(SERVERLIBS)
 
 get_file_SOURCES = get_file.cpp
+get_file_LDADD = $(SERVERLIBS)
 
 send_file_SOURCES = send_file.cpp
+send_file_LDADD = $(SERVERLIBS)
 
 delete_file_SOURCES = delete_file.cpp
+delete_file_LDADD = $(SERVERLIBS)
 
 sched_driver_SOURCES = sched_driver.cpp
+sched_driver_LDADD = $(SERVERLIBS)
 
-# N.B.: the FCGI scheduler can't use lib/libboinc.a;
-# it needs to have specially compiled versions of everything
-# because its stdio is different
-fcgi_SOURCES = \
-    handle_request.cpp \
-    hr.cpp \
-    hr_info.cpp \
-    main.cpp \
-    sched_array.cpp \
-    sched_assign.cpp \
-    sched_config.cpp \
-    sched_hr.cpp \
-    sched_locality.cpp \
-    sched_msgs.cpp \
-    sched_resend.cpp \
-    sched_result.cpp \
-    sched_plan.cpp \
-    sched_send.cpp \
-    sched_shmem.cpp \
-    sched_timezone.cpp \
-    sched_util.cpp \
-    server_types.cpp \
-	time_stats_log.cpp \
-    edf_sim.cpp \
-    ../db/boinc_db.cpp \
-    ../db/db_base.cpp \
-    ../lib/base64.cpp \
-    ../lib/boinc_fcgi.cpp \
-    ../lib/coproc.cpp \
-    ../lib/crypt.cpp \
-    ../lib/filesys.cpp \
-    ../lib/md5.c \
-    ../lib/md5_file.cpp \
-    ../lib/miofile.cpp \
-    ../lib/msg_log.cpp \
-    ../lib/parse.cpp \
-    ../lib/shmem.cpp \
-    ../lib/synch.cpp \
-    ../lib/str_util.cpp \
-    ../lib/util.cpp \
-    ../tools/process_result_template.cpp \
-    ../tools/backend_lib.cpp
+if ENABLE_FCGI
 
-fcgi_CPPFLAGS = -D_USING_FCGI_ -include boinc_fcgi.h $(AM_CPPFLAGS)
-fcgi_LDADD = -lfcgi $(MYSQL_LIBS)
+cgi_PROGRAMS += fcgi \
+                fcgi_file_upload_handler
+
+fcgi_SOURCES = $(cgi_sources)
+fcgi_CPPFLAGS = -D_USING_FCGI_ $(AM_CPPFLAGS)
+fcgi_LDADD = $(SERVERLIBS_FCGI)
+
 
 fcgi_file_upload_handler_SOURCES = \
     file_upload_handler.cpp \
     sched_config.cpp \
-    sched_msgs.cpp \
-    ../lib/boinc_fcgi.cpp \
-    ../lib/miofile.cpp \
-    ../lib/msg_log.cpp \
-    ../lib/parse.cpp \
-    ../lib/crypt.cpp
+    sched_msgs.cpp 
+fcgi_file_upload_handler_CPPFLAGS = -D_USING_FCGI_ $(AM_CPPFLAGS)
+fcgi_file_upload_handler_LDADD = $(SERVERLIBS_FCGI)
 
-fcgi_file_upload_handler_CPPFLAGS = -D_USING_FCGI_ -include boinc_fcgi.h $(AM_CPPFLAGS)
-fcgi_file_upload_handler_LDADD = $(LDADD) -lfcgi
+endif
+# end of "if ENABLE_FCGI"
+endif 
+# end of "if ENABLE_SERVER"
 
 .PHONY: PHONY-start
 

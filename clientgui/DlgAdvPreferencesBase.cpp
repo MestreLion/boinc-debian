@@ -72,19 +72,35 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	bSizer7 = new wxBoxSizer( wxVERTICAL );
 
 	wxStaticBoxSizer* sbSizer4;
-	sbSizer4 = new wxStaticBoxSizer( new wxStaticBox( m_panelProcessor, -1, _("Computing allowed") ), wxVERTICAL );
-
-	m_chkProcOnBatteries = new wxCheckBox( m_panelProcessor, ID_CHKPROCONBATTERIES, _(" While computer is on batteries"), wxDefaultPosition, wxDefaultSize, 0 );
-
-	m_chkProcOnBatteries->SetToolTip( _("check this if you want this computer to do work while it runs on batteries") );
-
+	sbSizer4 = new wxStaticBoxSizer(
+        new wxStaticBox(m_panelProcessor, -1, _("Computing allowed") ), wxVERTICAL
+    );
+	m_chkProcOnBatteries = new wxCheckBox(
+        m_panelProcessor, ID_CHKPROCONBATTERIES,
+        _(" While computer is on batteries"), wxDefaultPosition, wxDefaultSize, 0
+    );
+	m_chkProcOnBatteries->SetToolTip(
+        _("check this if you want this computer to do work while it runs on batteries")
+    );
 	sbSizer4->Add( m_chkProcOnBatteries, 0, wxALL, 5 );
 
-	m_chkProcInUse = new wxCheckBox( m_panelProcessor, ID_CHKPROCINUSE, _(" While computer is in use"), wxDefaultPosition, wxDefaultSize, 0 );
-
-	m_chkProcInUse->SetToolTip( _("check this if you want this computer to do work even when you're using it") );
-
+	m_chkProcInUse = new wxCheckBox(
+        m_panelProcessor, ID_CHKPROCINUSE,
+        _(" While computer is in use"), wxDefaultPosition, wxDefaultSize, 0
+    );
+	m_chkProcInUse->SetToolTip(
+        _("check this if you want this computer to do work even when you're using it")
+    );
 	sbSizer4->Add( m_chkProcInUse, 0, wxALL, 5 );
+
+    m_chkGPUProcInUse = new wxCheckBox(
+        m_panelProcessor, ID_CHKGPUPROCINUSE,
+        _(" Use GPU while computer is in use"), wxDefaultPosition, wxDefaultSize, 0
+    );
+	m_chkGPUProcInUse->SetToolTip(
+        _("check this if you want your GPU to do work even when you're using the computer")
+    );
+	sbSizer4->Add( m_chkGPUProcInUse, 0, wxALL, 5 );
 
 	wxFlexGridSizer* fgSizer5;
 	fgSizer5 = new wxFlexGridSizer( 2, 4, 0, 0 );
@@ -229,7 +245,8 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	m_txtProcUseProcessors = new wxTextCtrl( m_panelProcessor, ID_TXTPROCUSEPROCESSORS, wxT(""), wxDefaultPosition, wxSize( 50,-1 ), wxTE_RIGHT );
 	fgSizer3->Add( m_txtProcUseProcessors, 0, wxALL, 1 );
 
-	m_staticText21 = new wxStaticText( m_panelProcessor, ID_DEFAULT, _("% of the processors"), wxDefaultPosition, wxDefaultSize, 0 );
+    /*xgettext:no-c-format*/ 
+    m_staticText21 = new wxStaticText( m_panelProcessor, ID_DEFAULT, _("% of the processors"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer3->Add( m_staticText21, 0, wxALL, 5 );
 
 	m_staticText22 = new wxStaticText( m_panelProcessor, ID_DEFAULT, _("Use at most"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
@@ -463,7 +480,7 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	fgSizerDiskUsage->Add( m_staticText42, 0, wxALL|wxEXPAND, 5 );
 
 	m_txtDiskLeastFree = new wxTextCtrl( m_panelDiskAndMemory, ID_TXTDISKLEASTFREE, wxT(""), wxDefaultPosition, wxSize( 50,-1 ), wxTE_RIGHT );
-	m_txtDiskLeastFree->SetToolTip( _("BOINC leaves at least this amount of disk space free (in Gigagytes)") );
+	m_txtDiskLeastFree->SetToolTip( _("BOINC leaves at least this amount of disk space free (in Gigabytes)") );
 
 	fgSizerDiskUsage->Add( m_txtDiskLeastFree, 0, wxALL, 1 );
 
@@ -482,7 +499,7 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	m_staticText45 = new wxStaticText( m_panelDiskAndMemory, ID_DEFAULT, _("% of total disk space"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerDiskUsage->Add( m_staticText45, 0, wxALL, 5 );
 
-	m_staticText46 = new wxStaticText( m_panelDiskAndMemory, ID_DEFAULT, _("Write to disk at most every"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText46 = new wxStaticText( m_panelDiskAndMemory, ID_DEFAULT, _("Tasks checkpoint to disk at most every"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	fgSizerDiskUsage->Add( m_staticText46, 0, wxALL|wxEXPAND, 5 );
 
 	m_txtDiskWriteToDisk = new wxTextCtrl( m_panelDiskAndMemory, ID_TXTDISKWRITETODISK, wxT(""), wxDefaultPosition, wxSize( 50,-1 ), wxTE_RIGHT );
@@ -520,7 +537,8 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	m_txtMemoryMaxInUse = new wxTextCtrl( m_panelDiskAndMemory, ID_TXTMEMORYMAXINUSE, wxT(""), wxDefaultPosition, wxSize( 50,-1 ), wxTE_RIGHT );
 	fgSizerMemoryUsage->Add( m_txtMemoryMaxInUse, 0, wxALL, 1 );
 
-	m_staticText51 = new wxStaticText( m_panelDiskAndMemory, ID_DEFAULT, _("% when computer is in use"), wxDefaultPosition, wxDefaultSize, 0 );
+    /*xgettext:no-c-format*/ 
+    m_staticText51 = new wxStaticText( m_panelDiskAndMemory, ID_DEFAULT, _("% when computer is in use"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerMemoryUsage->Add( m_staticText51, 0, wxALL, 5 );
 
 	m_staticText52 = new wxStaticText( m_panelDiskAndMemory, ID_DEFAULT, _("Use at most"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
@@ -529,6 +547,7 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	m_txtMemoryMaxOnIdle = new wxTextCtrl( m_panelDiskAndMemory, ID_TXTMEMORYMAXONIDLE, wxT(""), wxDefaultPosition, wxSize( 50,-1 ), wxTE_RIGHT );
 	fgSizerMemoryUsage->Add( m_txtMemoryMaxOnIdle, 0, wxALL, 1 );
 
+    /*xgettext:no-c-format*/ 
 	m_staticText53 = new wxStaticText( m_panelDiskAndMemory, ID_DEFAULT, _("% when computer is idle"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerMemoryUsage->Add( m_staticText53, 0, wxALL, 5 );
 

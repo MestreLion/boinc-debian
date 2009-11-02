@@ -1,10 +1,18 @@
 #!/usr/bin/php
 <?php
 
-if (!isset($argv[1])) {
-    die('Usage: build_po.php [PROJECT_PATH]');
+// generate translation template "en.po" for project-specific pages
+//
+// Run this in project_root/html/.
+// edit the definition of FILE_LIST line so that it includes only your pages
+// (not BOINC-supplied pages)
+
+//$FILE_LIST = "user/index.php project/project.inc";
+
+if (!isset($FILE_LIST)) {
+    echo "You must edit build_po.php to specify your project's .php files\n";
+    exit;
 }
-$path = $argv[1];
 
 $date = strftime('%Y-%m-%d %H:%M %Z');
 $header = <<<HDR
@@ -14,10 +22,11 @@ $header = <<<HDR
 # This file is distributed under the same license as BOINC.
 #
 # FileID  : \$Id\$
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: BOINC \$Id\$\\n"
-"Report-Msgid-Bugs-To: BOINC translation team <translate@boinc.berkeley.edu>\\n"
+"Report-Msgid-Bugs-To: BOINC translation team <boinc_loc@boinc.berkeley.edu>\\n"
 "POT-Creation-Date: $date\\n"
 "Last-Translator: Generated automatically from source files\\n"
 "MIME-Version: 1.0\\n"
@@ -31,15 +40,19 @@ msgstr "English"
 msgid "LANG_NAME_INTERNATIONAL"
 msgstr "English"
 
-
 HDR;
 
-$out = fopen("$path/html/languages/translations/web.pot", "w");
+$out = fopen("en.po", "w");
+
 fwrite($out, $header);
-$pipe = popen("xgettext --omit-header -o - --keyword=tra -L PHP --no-location $path/html/inc/*.inc $path/html/user/*.php $path/html/project.sample/*.*", "r");
+
+$pipe = popen(
+    "xgettext --omit-header -o - --keyword=tra -L PHP $FILE_LIST",
+    "r"
+);
 stream_copy_to_stream($pipe, $out);
+
 fclose($pipe);
 fclose($out);
 
-system("msgen -o $path/html/languages/translations/en.po $path/html/languages/translations/web.pot");
 ?>

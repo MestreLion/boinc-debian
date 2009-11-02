@@ -22,14 +22,15 @@
 #include <cstring>
 
 #include "config.h"
-#include "main.h"
-#include "server_types.h"
+#include "sched_main.h"
+#include "sched_types.h"
 #include "sched_shmem.h"
 #include "sched_hr.h"
 #include "sched_config.h"
 #include "sched_util.h"
 #include "sched_msgs.h"
 #include "sched_send.h"
+#include "sched_version.h"
 
 #include "sched_array.h"
 
@@ -39,22 +40,31 @@
 #endif
 
 // Make a pass through the wu/results array, sending work.
-// If reply.wreq.infeasible_only is true,
-// send only results that were previously infeasible for some host
+// The choice of jobs is limited by flags in g_wreq, as follows:
+// infeasible_only:
+//      send only results that were previously infeasible for some host
+// reliable_only: 
+//      send only retries
+// user_apps_only:
+//      Send only jobs for apps selected by user
+// beta_only:
+//      Send only jobs for beta-test apps
 //
-void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
+// Return true if no more work is needed.
+//
+static bool scan_work_array() {
     int i, j, retval, n, rnd_off, last_retval=0;;
     WORKUNIT wu;
     DB_RESULT result;
     char buf[256];
     APP* app;
+    bool no_more_needed = false;
 
     lock_sema();
     
     rnd_off = rand() % ssp->max_wu_results;
     for (j=0; j<ssp->max_wu_results; j++) {
         i = (j+rnd_off) % ssp->max_wu_results;
-        if (!work_needed(sreq, reply, false)) break;
 
         WU_RESULT& wu_result = ssp->wu_results[i];
 
@@ -65,34 +75,38 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
         if (wu_result.state != WR_STATE_PRESENT && wu_result.state != g_pid) {
             continue;
         }
-        
+
         // If we are looking for beta results and result is not a beta result
         // then move on
         //
         app = ssp->lookup_app(wu_result.workunit.appid);
         if (app == NULL) continue; // this should never happen
-        if (reply.wreq.beta_only) {
+        if (g_wreq->beta_only) {
             if (!app->beta) {
                 continue;
             }
-            log_messages.printf(MSG_DEBUG,
-                "[HOST#%d] beta work found.  [RESULT#%d]\n",
-                reply.host.id, wu_result.resultid
-            );
+            if (config.debug_send) {
+                log_messages.printf(MSG_NORMAL,
+                    "[send] [HOST#%d] beta work found: [RESULT#%d]\n",
+                    g_reply->host.id, wu_result.resultid
+                );
+            }
         } else {
-             if (app->beta) {
+            if (app->beta) {
                 continue;
             }
         }
+        
+        g_wreq->no_jobs_available = false;
         
         // If this is a reliable host and we are checking for results that
         // need a reliable host, then continue if the result is a normal result
         // skip if the app is beta (beta apps don't use the reliable mechanism)
         //
         if (!app->beta) {
-            if (reply.wreq.reliable_only && (!wu_result.need_reliable)) {
+            if (g_wreq->reliable_only && (!wu_result.need_reliable)) {
                 continue;
-            } else if (!reply.wreq.reliable_only && wu_result.need_reliable) {
+            } else if (!g_wreq->reliable_only && wu_result.need_reliable) {
                 continue;
             }
         }
@@ -100,7 +114,7 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
         // don't send if we are looking for infeasible results
         // and the result is not infeasible
         //
-        if (reply.wreq.infeasible_only && (wu_result.infeasible_count==0)) {
+        if (g_wreq->infeasible_only && (wu_result.infeasible_count==0)) {
             continue;
         }
         
@@ -108,40 +122,52 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
 
         // check app filter if needed
         //
-        if (reply.wreq.user_apps_only &&
-            (!reply.wreq.beta_only || config.distinct_beta_apps)
+        if (g_wreq->user_apps_only &&
+            (!g_wreq->beta_only || config.distinct_beta_apps)
         ) {
-            if (app_not_selected(wu, sreq, reply)) {
-                reply.wreq.no_allowed_apps_available = true;
+            if (app_not_selected(wu)) {
+                g_wreq->no_allowed_apps_available = true;
+#if 0
                 if (config.debug_send) {
-                    log_messages.printf(MSG_DEBUG,
-                        "[USER#%d] [WU#%d] user doesn't want work for this application\n",
-                        reply.user.id, wu.id
+                    log_messages.printf(MSG_NORMAL,
+                        "[send] [USER#%d] [WU#%d] user doesn't want work for app %s\n",
+                        g_reply->user.id, wu.id, app->name
                     );
                 }
+#endif
                 continue;
             }
-        }
-
-        // don't send if host can't handle it
-        //
-        retval = wu_is_infeasible_fast(wu, sreq, reply, *app);
-        if (retval && retval != last_retval) {
-            if (config.debug_send) {
-                log_messages.printf(MSG_DEBUG,
-                    "[HOST#%d] [WU#%d %s] WU is infeasible: %s\n",
-                    reply.host.id, wu.id, wu.name, infeasible_string(retval)
-                );
-            }
-            last_retval = retval;
-            continue;
         }
 
         // Find the app and best app_version for this host.
         //
         BEST_APP_VERSION* bavp;
-        bavp = get_app_version(sreq, reply, wu);
+        bavp = get_app_version(wu, true);
         if (!bavp) {
+            if (config.debug_array) {
+                log_messages.printf(MSG_NORMAL,
+                    "[array] No app version\n"
+                );
+            }
+            continue;
+        }
+
+        // don't send if host can't handle it
+        //
+        retval = wu_is_infeasible_fast(wu, *app, *bavp);
+        if (retval) {
+            if (retval != last_retval && config.debug_send) {
+                log_messages.printf(MSG_NORMAL,
+                    "[send] [HOST#%d] [WU#%d %s] WU is infeasible: %s\n",
+                    g_reply->host.id, wu.id, wu.name, infeasible_string(retval)
+                );
+            }
+            last_retval = retval;
+            if (config.debug_array) {
+                log_messages.printf(MSG_NORMAL,
+                    "[array] infeasible\n"
+                );
+            }
             continue;
         }
 
@@ -162,7 +188,7 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
         if (config.one_result_per_user_per_wu) {
             sprintf(buf,
                 "where workunitid=%d and userid=%d",
-                wu_result.workunit.id, reply.user.id
+                wu_result.workunit.id, g_reply->user.id
             );
             retval = result.count(n, buf);
             if (retval) {
@@ -172,10 +198,12 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
                 goto dont_send;
             } else {
                 if (n>0) {
-                    log_messages.printf(MSG_DEBUG,
-                        "send_work: user %d already has %d result(s) for WU %d\n",
-                        reply.user.id, n, wu_result.workunit.id
-                    );
+                    if (config.debug_send) {
+                        log_messages.printf(MSG_NORMAL,
+                            "[send] [USER#%d] already has %d result(s) for [WU#%d]\n",
+                            g_reply->user.id, n, wu_result.workunit.id
+                        );
+                    }
                     goto dont_send;
                 }
             }
@@ -187,7 +215,7 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
             //
             sprintf(buf,
                 "where workunitid=%d and hostid=%d",
-                wu_result.workunit.id, reply.host.id
+                wu_result.workunit.id, g_reply->host.id
             );
             retval = result.count(n, buf);
             if (retval) {
@@ -197,10 +225,12 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
                 goto dont_send;
             } else {
                 if (n>0) {
-                    log_messages.printf(MSG_DEBUG,
-                        "send_work: host %d already has %d result(s) for WU %d\n",
-                        reply.host.id, n, wu_result.workunit.id
-                    );
+                    if (config.debug_send) {
+                        log_messages.printf(MSG_NORMAL,
+                            "[send] [HOST#%d] already has %d result(s) for [WU#%d]\n",
+                            g_reply->host.id, n, wu_result.workunit.id
+                        );
+                    }
                     goto dont_send;
                 }
             }
@@ -208,12 +238,14 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
 
         if (app_hr_type(*app)) {
             if (already_sent_to_different_platform_careful(
-                sreq, reply.wreq, wu_result.workunit, *app
+                wu_result.workunit, *app
             )) {
-                 log_messages.printf(MSG_DEBUG,
-                    "[HOST#%d] [WU#%d %s] WU is infeasible (assigned to different platform)\n",
-                    reply.host.id, wu.id, wu.name
-                );
+                if (config.debug_send) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[send] [HOST#%d] [WU#%d %s] is assigned to different platform\n",
+                        g_reply->host.id, wu.id, wu.name
+                    );
+                }
                 // Mark the workunit as infeasible.
                 // This ensures that jobs already assigned to a platform
                 // are processed first.
@@ -243,7 +275,7 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
             goto done;
         }
         if (result.server_state != RESULT_SERVER_STATE_UNSENT) {
-            log_messages.printf(MSG_DEBUG,
+            log_messages.printf(MSG_NORMAL,
                 "[RESULT#%d] expected to be unsent; instead, state is %d\n",
                 result.id, result.server_state
             );
@@ -257,7 +289,7 @@ void scan_work_array(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
             goto done;
         }
 
-        retval = add_result_to_reply(result, wu, sreq, reply, bavp);
+        retval = add_result_to_reply(result, wu, bavp, false);
 
         // add_result_to_reply() fails only in fairly pathological cases -
         // e.g. we couldn't update the DB record or modify XML fields.
@@ -275,8 +307,72 @@ dont_send:
         wu_result.state = WR_STATE_PRESENT;
 done:
         lock_sema();
+        if (!work_needed(false)) {
+            no_more_needed = true;
+            break;
+        }
     }
     unlock_sema();
+    return no_more_needed;
 }
 
-const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 16246 2008-10-21 23:16:07Z davea $";
+// Send work by scanning the job array multiple times,
+// with different selection criteria on each scan.
+// This has been superceded by send_work_matchmaker()
+//
+void send_work_old() {
+    if (!work_needed(false)) return;
+    g_wreq->no_jobs_available = true;
+    g_wreq->beta_only = false;
+    g_wreq->user_apps_only = true;
+    g_wreq->infeasible_only = false;
+
+    // give top priority to results that require a 'reliable host'
+    //
+    if (g_wreq->reliable) {
+        g_wreq->reliable_only = true;
+        if (scan_work_array()) return;
+    }
+    g_wreq->reliable_only = false;
+
+    // give 2nd priority to results for a beta app
+    // (projects should load beta work with care,
+    // otherwise your users won't get production work done!
+    //
+    if (g_wreq->allow_beta_work) {
+        g_wreq->beta_only = true;
+        if (config.debug_send) {
+            log_messages.printf(MSG_NORMAL,
+                "[send] [HOST#%d] will accept beta work.  Scanning for beta work.\n",
+                g_reply->host.id
+            );
+        }
+        if (scan_work_array()) return;
+    }
+    g_wreq->beta_only = false;
+
+    // give next priority to results that were infeasible for some other host
+    //
+    g_wreq->infeasible_only = true;
+    if (scan_work_array()) return;;
+
+    g_wreq->infeasible_only = false;
+    if (scan_work_array()) return;
+
+    // If user has selected apps but will accept any,
+    // and we haven't found any jobs for selected apps, try others
+    //
+    if (!g_wreq->njobs_sent && g_wreq->allow_non_preferred_apps ) {
+        g_wreq->user_apps_only = false;
+        preferred_app_message_index = g_wreq->no_work_messages.size();
+        if (config.debug_send) {
+            log_messages.printf(MSG_NORMAL,
+                "[send] [HOST#%d] is looking for work from a non-preferred application\n",
+                g_reply->host.id
+            );
+        }
+        scan_work_array();
+    }
+}
+
+const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 18825 2009-08-10 04:49:02Z davea $";

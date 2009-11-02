@@ -18,6 +18,7 @@
 
 require_once("boinc_db.inc");
 require_once("sanitize_html.inc");
+require_once("bbcode_html.inc");
 
 function pm_header() {
     echo "<div>\n";
@@ -27,7 +28,9 @@ function pm_header() {
 }
 
 function pm_create_new($error = null) {
-    page_head(tra("Send private message"));
+    global $bbcode_html, $bbcode_js;
+    global $g_logged_in_user;
+    page_head(tra("Send private message"),'','','', $bbcode_js);
     
     if (post_str("preview", true) == tra("Preview")) {
         $options = new output_options;
@@ -37,7 +40,6 @@ function pm_create_new($error = null) {
         echo "</div>\n";
     }
     
-    global $g_logged_in_user;
     $replyto = get_int("replyto", true);
     $userid = get_int("userid", true);
     
@@ -76,7 +78,7 @@ function pm_create_new($error = null) {
         echo "<div class=\"error\">".$error."</div>\n";
     }
     
-    echo "<form action=\"pm.php\" method=\"post\">\n";
+    echo "<form action=\"pm.php\" method=\"post\" name=\"post\" onsubmit=\"return checkForm(this)\">\n";
     echo "<input type=\"hidden\" name=\"action\" value=\"send\">\n";
     echo form_tokens($g_logged_in_user->authenticator);
     start_table();
@@ -85,7 +87,7 @@ function pm_create_new($error = null) {
     );
     row2(tra("Subject"), "<input type=\"text\" name=\"subject\" value=\"$subject\" size=\"60\">");
     row2(tra("Message")."<span class=\"smalltext\">".html_info()."</span>",
-        "<textarea name=\"content\" rows=\"18\" cols=\"80\">$content</textarea>"
+        $bbcode_html."<textarea name=\"content\" rows=\"18\" cols=\"80\">$content</textarea>"
     );
     echo "<tr><td></td><td><input type=\"submit\" name=\"preview\" value=\"".tra("Preview")."\"> <input type=\"submit\" value=\"".tra("Send message")."\"></td></tr>\n";
     end_table();
@@ -128,31 +130,33 @@ function pm_web_line($notify) {
     return "<a href=pm.php>Private message</a> from $from_user->name, subject: $pm->subject";
 }
 
-function pm_send($to_user, $subject, $content) {
+function pm_send($to_user, $subject, $content, $send_email) {
     global $g_logged_in_user;
     $sql_subject = boinc_real_escape_string(strip_tags($subject));
-    $sql_content = boinc_real_escape_string(strip_tags($content));
+    $sql_content = boinc_real_escape_string($content);
     $mid = BoincPrivateMessage::insert("(userid, senderid, date, subject, content) VALUES ($to_user->id, $g_logged_in_user->id, UNIX_TIMESTAMP(), '$sql_subject', '$sql_content')");
     if (!$mid) {
         error_page("Couldn't create message");
     }
     // send email notification if needed
     //
-    BoincForumPrefs::lookup($to_user);
-    switch ($to_user->prefs->pm_notification) {
-    case 0:
-    case 2:
-        break;
-    case 1:
-        send_pm_notification_email(
-            $g_logged_in_user, $to_user, $subject, $content
-        );
-        break;
-    }
+    if ($send_email) {
+        BoincForumPrefs::lookup($to_user);
+        switch ($to_user->prefs->pm_notification) {
+        case 0:
+        case 2:
+            break;
+        case 1:
+            send_pm_notification_email(
+                $g_logged_in_user, $to_user, $subject, $content
+            );
+            break;
+        }
 
-    // create notification in any case
-    //
-    BoincNotify::insert("(userid, create_time, type, opaque) values ($to_user->id, ".time().", ".NOTIFY_PM.", $mid)");
+        // create notification in any case
+        //
+        BoincNotify::insert("(userid, create_time, type, opaque) values ($to_user->id, ".time().", ".NOTIFY_PM.", $mid)");
+    }
 }
 
 function pm_count($userid, $duration) {

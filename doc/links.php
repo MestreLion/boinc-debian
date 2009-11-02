@@ -5,7 +5,7 @@ require_once("docutil.php");
 include("../html/inc/stats_sites.inc");
 
 function language($lang, $sites) {
-    echo "<tr><td bgcolor=eeeeee valign=top>$lang</td><td>\n";
+    echo "<tr><td bgcolor=eeeeee valign=top width=250>$lang</td><td>\n";
     shuffle($sites);
     foreach ($sites as $s) {
         echo "$s<br>\n";
@@ -80,9 +80,11 @@ echo "
 <ul>
 <li> <a href=#info>Help and Information</a>
 <li> <a href=#stats>Credit statistics</a>
-<li> <a href=#sigs>Credit-based signatures</a>
+<li> <a href=#sigs>Signature images</a>
 <li> <a href=#team_stats>Team statistics</a>
-<li> <a href=#status>Project status</a>
+";
+//<li> <a href=#status>Project status</a>
+echo "
 <li> <a href=#misc>Miscellaneous</a>
 <li> <a href=#skins>Skins for the BOINC Manager</a>
 <li> <a href=#sites>Other BOINC-related sites</a>
@@ -111,10 +113,11 @@ shuffle($stats_sites);
 site_list($stats_sites);
 echo "
 <a name=sigs></a>
-<h3>Statistics signature images</h3>
+<h3>Signature images</h3>
 <p>
 The following sites offer dynamically-generated
-images showing your statistics in BOINC projects.
+images showing your statistics in BOINC projects,
+and/or news from projects.
 Use these in your email or message-board signature.
 ";
 shuffle($sig_sites);
@@ -125,17 +128,20 @@ echo "
 ";
 shuffle($team_stats_sites);
 site_list($team_stats_sites);
+if (0) {
+    echo "
+        <a name=status></a>
+        <h3>Project status sites</h3>
+        Show if the servers of various projects are up or down.
+        <ul>
+    ";
+    //<li> <a href=http://www.esea.dk/esea/bos.asp>BOS (BOINC Online Schedulers></a>
+    echo "
+        <li> <a href=http://boincprojectstatus.ath.cx/>BOINC Project Status</a>
+        </ul>
+    ";
+}
 echo "
-
-<a name=status></a>
-<h3>Project status sites</h3>
-Show if the servers of various projects are up or down.
-<ul>
-";
-//<li> <a href=http://www.esea.dk/esea/bos.asp>BOS (BOINC Online Schedulers></a>
-echo "
-<li> <a href=http://boincprojectstatus.ath.cx/>BOINC Project Status</a>
-</ul>
 <a name=misc></a>
 <h3>Miscellaneous</h3>
 ";
@@ -238,6 +244,7 @@ language("Finnish", array(
     //),
 ));
 language("French", array(
+    site("http://boinc.starwars-holonet.com/", "Star Wars [FR]"),
     //site("http://wwww.boinc-2tf.org", "2TF Asso"),
     site("http://boincfrance.org", "BOINCFRANCE.ORG"),
     site("http://www.boinc-af.org", "L'Alliance Francophone"),
@@ -268,6 +275,7 @@ language("Hungarian", array(
     site("http://seti.hwsw.hu/", "HWSW SETI@home Team")
 ));
 language("Italian", array(
+    site("http://www.boincitaly.org/", "BOINC.Italy"),
     site("http://gaming.ngi.it/forum/forumdisplay.php?f=73", "NGI forum"),
     site("http://it.groups.yahoo.com/group/BOINC-ITALIA/", "BOINC-ITALIA")
 ));
@@ -277,6 +285,7 @@ language("Japanese", array(
         "translation by Komori Hitoshi")
 ));
 language("Korean", array(
+    site("http://setikah.mi.am/", "SETIKAH@home"),
     site("http://boincatkorea.xo.st/", "BOINC@KOREA"),
 ));
 
@@ -285,10 +294,11 @@ language("Polish", array(
     site("http://www.boinc.org.pl/", "Team boinc.pl"),
     site("http://www.boinc.prv.pl", "BOINC@Kolobrzeg"),
     site("http://www.boincatpoland.org", "BOINC@Poland"),
-    site("http://www.boinc.pl", "www.boinc.pl")
+    //site("http://www.boinc.pl", "www.boinc.pl"),
 ));
 language("Portuguese", array(
-    site( "http://portugalathome.pt.vu/", "Portugal@home")
+    site( "http://portugalathome.pt.vu/", "Portugal@home"),
+    site("http://www.setibr.org/", "SETIBR"),
 ));
 language("Romanian", array(
     site( "http://www.boinc.ro/", "SETI@home Romania")
@@ -301,6 +311,7 @@ language("Slovak", array(
     site("http://www.boinc.sk/", "www.boinc.sk")
 ));
 language("Spanish", array(
+    site("http://www.seti.cl/", "BOINC SETI Chile"),
     site("http://www.easyboinc.org/", "Computación Distribuida"),
     site("http://foro.noticias3d.com/vbulletin/showthread.php?t=192297", "Noticias3D"),
     site("http://elmajo.blogspot.com", "Computación Distribuida"),

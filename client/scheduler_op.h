@@ -73,7 +73,6 @@ public:
 public:
     SCHEDULER_OP(HTTP_OP_SET*);
     bool poll();
-    int init_get_work();
     int init_op_project(PROJECT*, int);
     int init_master_fetch(PROJECT*);
     bool check_master_fetch_start();
@@ -84,6 +83,7 @@ private:
     bool update_urls(PROJECT*, std::vector<std::string> &urls);
     int start_op(PROJECT*);
     int start_rpc(PROJECT*);
+    void rpc_failed(const char*);
     int parse_master_file(PROJECT*, std::vector<std::string>&);
 };
 
@@ -125,6 +125,9 @@ struct SCHEDULER_REPLY {
     int send_job_log;
     int scheduler_version;
     AUTO_UPDATE auto_update;
+    double cpu_backoff;
+    double cuda_backoff;
+    double ati_backoff;
 
     SCHEDULER_REPLY();
     ~SCHEDULER_REPLY();

@@ -20,9 +20,7 @@ $lang_language_dir = "../languages/";
 $lang_translations_dir = "translations/";
 $lang_prj_translations_dir = "project_specific_translations/";
 $lang_compiled_dir = "compiled/";
-$lang_log_level = 0;
-$lang_log_file = $lang_language_dir."translator.log";
-$PROJECT = PROJECT; // Default constant usable from .po files
+$lang_log_level = 1;
 
 /**
  * Fetches a list of compiled languages from the directory
@@ -31,6 +29,7 @@ $PROJECT = PROJECT; // Default constant usable from .po files
  */
 function getSupportedLanguages(){
     global $lang_language_dir, $lang_compiled_dir;
+    $list = array();
     if (is_dir($lang_language_dir.$lang_compiled_dir)) {
         if ($dh = opendir($lang_language_dir.$lang_compiled_dir)) {
             while ($file = readdir($dh)) {
@@ -54,7 +53,7 @@ function getSupportedLanguages(){
  * @param compdir The output location relative to langdir
  * @param append If true the function will only append to rather than replace the compiled files
  */
-function buildLanguages($langdir,$transdir,$compdir,$append=false){
+function buildLanguages($langdir,$transdir,$compdir){
     global $lang_project_default;
 
     // Run through each language and compile their lookup arrays.
@@ -65,30 +64,37 @@ function buildLanguages($langdir,$transdir,$compdir,$append=false){
                     // Skip parent and current dir
                 } else if (substr($file,-3)==".po"){
                     // and only do files ending in .po
-                    language_log("-------------Compiling $transdir$file------------",0);
-                    $language = parseLanguage(
-                        $langdir.$transdir.$file, $interface
+                    language_log(
+                        "-------------Compiling $transdir$file------------", 0
                     );
+                    $language = parseLanguage($langdir.$transdir.$file);
                     if (!$language){
                         language_log(
                             "WARNING: Could not parse language ".$file
                         );
                         continue;
                     }
-                    if (!$fh = fopen($langdir.$compdir.$file.".inc",$append?"a":"w")) {
+                    $path = $langdir.$compdir.$file.".inc";
+                    if (file_exists($path)) {
+                        $fh = fopen($path, "a");
+                    } else {
+                        $fh = fopen($path, "w");
+                        fwrite($fh, "<?php\n");                    
+                    }
+                    if (!$fh) {
                         language_log(
-                            "ERROR: could not access $langdir $compdir - please check permissions",2
+                            "ERROR: could not access $langdir $compdir - please check permissions", 2
                         );
                         exit;
                     }
-                    fwrite($fh, "<?php\n");                    
                     foreach ($language as $key => $value){
                         if ($value !== "") {
                             //Skip if the msgstr is empty
                             fwrite($fh, "\$language_lookup_array[\"".str_replace("\"", "\\\"", substr($file,0,-3))."\"][\"".$key."\"] = \"".$value."\";\n");
                         }
                     }
-                    fwrite($fh, '?>');
+                    // don't write \?\> - may append
+
                     fclose($fh);
                 } else {
                     //debug("File $file with unknown extension found in $info_dir");
@@ -112,21 +118,32 @@ function parseLanguage($file){
     $translation_file = file($file);
     $first_entry = true;
     $current_token_text="";
+    $current_token ="";
+    $parsing_token = false;
+    $parsing_text = false;
+    $output = array();
     for ($i = 0;$i<sizeof($translation_file);$i++){
-        $entry = ltrim(trim($translation_file[$i]));
-        //echo $entry;
-        if (($pos=strpos($entry, "msgid"))!==false){
-            //If found msgid entry
+        $entry = trim($translation_file[$i]);
+        //echo "line $i: $entry\n";
+        if (substr($entry,0,1)=="#") {
+            continue;
+        } elseif (strpos($entry, "msgid") !== false) {
             if (!$first_entry){
                 //If this is not the first, save the previous entry
-                if ($id!==false){
-                    $output[$current_token]=$current_token_text;
-                }
+                $output[$current_token]=$current_token_text;
             }
             $current_token = getPOLineContent($entry);
             $current_token_text="";
+            $parsing_token = true;
+            $parsing_text = false;
             $first_entry=false;
-        } elseif (substr($translation_file[$i],0,1)!="#") {
+        } elseif (strpos($entry, "msgstr") !== false) {
+            $current_token_text = getPOLineContent($entry);
+            $parsing_token = false;
+            $parsing_text = true;
+        } elseif ($parsing_token) {
+            $current_token .= getPOLineContent($entry);
+        } elseif ($parsing_text) {
             $current_token_text.=getPOLineContent($entry);
         }
     }
@@ -145,7 +162,13 @@ function parseLanguage($file){
 function getPOLineContent($line){
     $start = strpos($line, '"')+1;
     $stop = strrpos($line, '"');
-    return substr($line, $start, $stop-$start);
+    $x =  substr($line, $start, $stop-$start);
+    $n = ereg("[^\\]\"", $x);
+    if ($n) {
+        echo "ERROR - MISMATCHED QUOTES IN $line\n";
+        return "";
+    }
+    return $x;
 }
 
 /**
@@ -155,9 +178,13 @@ function tra($text /* ...arglist... */){
     global $language_lookup_array, $languages_in_use;
     
     // Find the string in the user's language
+    //
     foreach ($languages_in_use as $language){
         if (isset($language_lookup_array[$language][$text])) {
             $text = $language_lookup_array[$language][$text];
+            break;
+        } else if ($language=="en"){ 
+            // This language is defined in the code and is always available
             break;
         }
     }
@@ -181,24 +208,14 @@ function tr_specific($text, $language){
 }
 
 function language_log($message, $loglevel=0){
-    global $lang_log_level, $lang_log_file;
+    global $lang_log_level;
     if ($loglevel==0) $msg = "[ Debug    ]";
     if ($loglevel==1) $msg = "[ Warning  ]";
     if ($loglevel==2) $msg = "[ CRITICAL ]";
 
-    if ($loglevel>=$lang_log_level){
-        $fh = fopen($lang_log_file,"a");
-        fwrite($fh, date("Y-m-d H:i:s",time())." ".$msg." ".$message."\n");
-        fclose($fh);
+    if ($loglevel >= $lang_log_level){
+        echo date("Y-m-d H:i:s",time())." ".$msg." ".$message."\n";
     }
-}
-
-// Determine whether to recompile language files
-$compile_languages = false;
-if (isset($_GET['compile_languages'])) $compile_languages = true;
-if ($compile_languages){
-    buildLanguages($lang_language_dir,$lang_translations_dir, $lang_compiled_dir);
-    buildLanguages($lang_language_dir,$lang_prj_translations_dir, $lang_compiled_dir, true);
 }
 
 // Make a list of languages which the user prefers
@@ -254,12 +271,18 @@ for ($i=0; $i<sizeof($client_languages); $i++) {
         $language2 = null;
     }
 
+    // if main language is english, look no further
+    //
+    if ($i == 0 && $language == 'en') {
+        break;
+    }
+
     // If we have a translation for the language, include it
     $file_name = $lang_language_dir.$lang_compiled_dir.$language.".po.inc";
     if (file_exists($file_name)) {
         if (!in_array($language, $languages_in_use)){
             require_once($file_name);
-                $languages_in_use[] = $language;
+            $languages_in_use[] = $language;
         }
     }
     if ($language2) {
@@ -273,5 +296,5 @@ for ($i=0; $i<sizeof($client_languages); $i++) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: translation.inc 16363 2008-10-30 18:27:22Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: translation.inc 18166 2009-05-19 21:00:03Z boincadm $";  //Generated automatically - do not edit
 ?>

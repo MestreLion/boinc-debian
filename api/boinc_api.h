@@ -30,6 +30,12 @@ extern "C" {
 #endif
 typedef struct BOINC_OPTIONS {
     // the following are booleans, implemented as ints for portability
+    int backwards_compatible_graphics;
+        // V6 apps should set this so that "Show Graphics" will work
+        // with pre-V6 clients
+    int normal_thread_priority;
+        // run app at normal thread priority on Win.
+        // (default is idle priority)
     int main_program;
         // this is the main program, so
         // - lock a lock file in the slot directory
@@ -48,11 +54,6 @@ typedef struct BOINC_OPTIONS {
         // if heartbeat fail, or get process control msg, take
         // direction action (exit, suspend, resume).
         // Otherwise just set flag in BOINC status
-    int worker_thread_stack_size;
-        // if nonzero, the worker thread stack size limit
-    int backwards_compatible_graphics;
-        // V6 apps should set this so that "Show Graphics" will work
-        // with pre-V6 clients
 } BOINC_OPTIONS;
 
 typedef struct BOINC_STATUS {
@@ -90,6 +91,7 @@ extern void boinc_network_done();
 extern int boinc_is_standalone(void);
 extern void boinc_ops_per_cpu_sec(double fp, double integer);
 extern void boinc_ops_cumulative(double fp, double integer);
+extern void boinc_set_credit_claim(double credit);
 extern int boinc_receive_trickle_down(char* buf, int len);
 extern int boinc_init_options(BOINC_OPTIONS*);
 extern int boinc_get_status(BOINC_STATUS*);
@@ -115,9 +117,11 @@ extern int setMacIcon(char *filename, char *iconData, long iconSize);
 extern int boinc_resolve_filename_s(const char*, std::string&);
 extern int boinc_get_init_data(APP_INIT_DATA&);
 extern int boinc_wu_cpu_time(double&);
+extern double boinc_elapsed_time();
 extern int boinc_upload_file(std::string& name);
 extern int boinc_upload_status(std::string& name);
 extern int boinc_write_init_data_file(APP_INIT_DATA&);
+extern char* boinc_msg_prefix();
 extern int suspend_activities();   // deprecated
 extern int resume_activities();    // deprecated
 extern int restore_activities();    //deprecated
@@ -143,8 +147,8 @@ inline void boinc_options_defaults(BOINC_OPTIONS& b) {
     b.handle_process_control = 1;
     b.send_status_msgs = 1;
     b.direct_process_action = 1;
-    b.worker_thread_stack_size = 0;
     b.backwards_compatible_graphics = 1;
+    b.normal_thread_priority = 0;
 }
 
 

@@ -1,7 +1,7 @@
 <?php
 
 require_once('docutil.php');
-require_once('translation.inc');
+require_once('../html/inc/translation.inc');
 
 $cachefile = "cache/poll_results_$language_in_use.html";
 
@@ -9,12 +9,13 @@ $cachefile = "cache/poll_results_$language_in_use.html";
 $cache_time = 3600*24;
 if (file_exists($cachefile)) {
     $age = time() - filemtime($cachefile);
-    if ($age < $cache_time) {
+    //if ($age < $cache_time) {
         readfile($cachefile);
         exit();
-    }
+    //}
 }
 set_time_limit(0);
+ini_set("memory_limit", "2048M");
 ob_start();
 ob_implicit_flush(0);
 
@@ -25,6 +26,20 @@ mysql_pconnect("localhost", "boincadm", null);
 mysql_select_db("poll");
 
 $last_time = 0;
+
+function parse_xml2($resp, &$sums) {
+    $x = array();
+    $xml = $resp->xml;
+    $lines = explode("\n", $xml);
+    foreach ($lines as $line) {
+        $matches = array();
+        $retval = ereg('<([^>]*)>([^<]*)', $line, $matches);
+        $tag = $matches[1];
+        $val = $matches[2];
+        $x[$tag] = $val;
+    }
+    return $x;
+}
 
 function parse_xml($resp, &$sums) {
     global $last_time;
@@ -163,11 +178,22 @@ $sums = array();
 $result = mysql_query("select * from response order by update_time");
 while ($resp = mysql_fetch_object($result)) {
     parse_xml($resp, $sums);
+    if (0) {
+        $x = parse_xml2($resp, $sums);
+        if ($x['fother_text'] == "") continue;
+        if ($x['wother_text'] == "") continue;
+        if ($x['nother_text'] == "") continue;
+        if ($x['cother_text'] == "") continue;
+        if ($x['vother_text'] == "") continue;
+        echo "deleting $resp->uid\n";
+        mysql_query("delete from response where uid='$resp->uid'");
+    }
 }
+//exit;
 //print_r($sums);
 
-page_head(tr(POLL_RESULTS_TITLE));
-echo tr(POLL_RESULTS_TEXT)."
+page_head(tra("Survey results"));
+echo tra("These are the current results of the <a href=poll.php>BOINC user survey</a>.  This page is updated every hour.")."
 <p>
 ";
 list_start();

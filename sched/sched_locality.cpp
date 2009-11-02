@@ -18,10 +18,15 @@
 // Locality scheduling: see doc/sched_locality.php
 
 #include "config.h"
-#include <stdio.h>
+
+#include <algorithm>
+#include <climits>
+#include <vector>
+
+#include <cstdio>
 #include <unistd.h>
 #include <cstdlib>
-#include <strings.h>
+#include <cstring>
 #include <glob.h>
 #include <sys/stat.h>
 
@@ -30,45 +35,41 @@
 #include "str_util.h"
 #include "filesys.h"
 
-#include "main.h"
-#include "server_types.h"
+#include "sched_main.h"
+#include "sched_types.h"
+#include "sched_locality.h"
+#include "sched_msgs.h"
 #include "sched_shmem.h"
 #include "sched_send.h"
-#include "sched_msgs.h"
-#include "sched_locality.h"
 #include "sched_util.h"
-
-#include <algorithm>
-#include <climits>
-#include <vector>
-#include <string>
-#include <cstring>
-using namespace std;
+#include "sched_version.h"
+#include "sched_config.h"
 
 #define VERBOSE_DEBUG
 
 // returns zero if there is a file we can delete.
 //
-int delete_file_from_host(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& sreply) {
+int delete_file_from_host() {
 
 #ifdef EINSTEIN_AT_HOME
     // append the list of deletion candidates to the file list
-    int ndelete_candidates = (int)sreq.file_delete_candidates.size();
+    int ndelete_candidates = (int)g_request->file_delete_candidates.size();
     for (int j=0; j<ndelete_candidates; j++) {
-        FILE_INFO& fi = sreq.file_delete_candidates[j];
-        sreq.file_infos.push_back(fi);
+        FILE_INFO& fi = g_request->file_delete_candidates[j];
+        g_request->file_infos.push_back(fi);
     }
-    sreq.file_delete_candidates.clear();
+    g_request->file_delete_candidates.clear();
 #endif
 
-    int nfiles = (int)sreq.file_infos.size();
+    int nfiles = (int)g_request->file_infos.size();
     char buf[256];
     if (!nfiles) {
 
-        double maxdisk=max_allowable_disk(sreq, sreply);
+        double maxdisk = max_allowable_disk();
 
         log_messages.printf(MSG_CRITICAL,
-            "[HOST#%d]: no disk space but no files we can delete!\n", sreply.host.id
+            "[HOST#%d]: no disk space but no files we can delete!\n",
+            g_reply->host.id
         );
 
         if (maxdisk > 0) {
@@ -83,16 +84,15 @@ int delete_file_from_host(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& sreply) {
             );
         }
 
-        if (sreply.disk_limits.max_used != 0.0) {
+        if (g_reply->disk_limits.max_used != 0.0) {
             strcat(buf, "Review preferences for maximum disk space used.");
-        } else if (sreply.disk_limits.max_frac != 0.0) {
+        } else if (g_reply->disk_limits.max_frac != 0.0) {
             strcat(buf, "Review preferences for maximum disk percentage used.");
-        } else if (sreply.disk_limits.min_free != 0.0) {
+        } else if (g_reply->disk_limits.min_free != 0.0) {
             strcat(buf, "Review preferences for minimum disk free space allowed.");
         }
-        USER_MESSAGE um(buf, "high");
-        sreply.insert_message(um);
-        sreply.set_delay(DELAY_DISK_SPACE);
+        g_reply->insert_message(USER_MESSAGE(buf, "high"));
+        g_reply->set_delay(DELAY_DISK_SPACE);
         return 1;
     }
     
@@ -106,41 +106,37 @@ int delete_file_from_host(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& sreply) {
     // the order in which it reports files is fixed.
     // If this is false, we need to sort files into order by name!
     //
-    int j = sreply.host.id % nfiles;
-    FILE_INFO& fi = sreq.file_infos[j];
-    sreply.file_deletes.push_back(fi);
-    log_messages.printf(MSG_DEBUG,
-        "[HOST#%d]: delete file %s (make space)\n", sreply.host.id, fi.name
-    );
+    int j = g_reply->host.id % nfiles;
+    FILE_INFO& fi = g_request->file_infos[j];
+    g_reply->file_deletes.push_back(fi);
+    if (config.debug_locality) {
+        log_messages.printf(MSG_NORMAL,
+            "[locality] [HOST#%d]: delete file %s (make space)\n", g_reply->host.id, fi.name
+        );
+    }
 
     // give host 4 hours to nuke the file and come back.
     // This might in general be too soon, since host needs to complete any work
     // that depends upon this file, before it will be removed by core client.
     //
     sprintf(buf, "BOINC will delete file %s when no longer needed", fi.name);
-    USER_MESSAGE um(buf, "low");
-    sreply.insert_message(um);
-    sreply.set_delay(DELAY_DELETE_FILE);
+    g_reply->insert_message(USER_MESSAGE(buf, "low"));
+    g_reply->set_delay(DELAY_DELETE_FILE);
     return 0;
 }   
 
 // returns true if the host already has the file, or if the file is
 // included with a previous result being sent to this host.
 //
-bool host_has_file(
-    SCHEDULER_REQUEST& request,
-    SCHEDULER_REPLY& reply,
-    char *filename,
-    bool skip_last_wu
-) {
+bool host_has_file(char *filename, bool skip_last_wu) {
     int i, uplim;
     bool has_file=false;
 
     // loop over files already on host to see if host already has the
     // file
     //
-    for (i=0; i<(int)request.file_infos.size(); i++) {
-        FILE_INFO& fi = request.file_infos[i];
+    for (i=0; i<(int)g_request->file_infos.size(); i++) {
+        FILE_INFO& fi = g_request->file_infos[i];
         if (!strcmp(filename, fi.name)) {
             has_file=true;
             break;
@@ -148,16 +144,18 @@ bool host_has_file(
     }
 
     if (has_file) {
-        log_messages.printf(MSG_DEBUG,
-            "[HOST#%d] Already has file %s\n", reply.host.id, filename
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] [HOST#%d] Already has file %s\n", g_reply->host.id, filename
+            );
+        }
         return true;
     }
 
     // loop over files being sent to host to see if this file has
     // already been counted.
     //
-    uplim=(int)reply.wus.size();
+    uplim=(int)g_reply->wus.size();
     if (skip_last_wu) {
         uplim--;
     }
@@ -165,7 +163,7 @@ bool host_has_file(
     for (i=0; i<uplim; i++) {
         char wu_filename[256];
 
-        if (extract_filename(reply.wus[i].name, wu_filename)) {
+        if (extract_filename(g_reply->wus[i].name, wu_filename)) {
             // work unit does not appear to contain a file name
             continue;
         }
@@ -178,9 +176,11 @@ bool host_has_file(
     }
 
     if (has_file) {
-        log_messages.printf(MSG_DEBUG,
-            "[HOST#%d] file %s already in scheduler reply(%d)\n", reply.host.id, filename, i
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] [HOST#%d] file %s already in scheduler reply(%d)\n", g_reply->host.id, filename, i
+            );
+        }
         return true;
     }
  
@@ -200,10 +200,7 @@ bool host_has_file(
 // space in the work request should be adjusted by the calling
 // routine, in the same way as if there was no scheduling locality.
 //
-int decrement_disk_space_locality(
-    WORKUNIT& wu, SCHEDULER_REQUEST& request,
-    SCHEDULER_REPLY& reply
-) {
+int decrement_disk_space_locality( WORKUNIT& wu) {
     char filename[256], path[512];
     int filesize;
     struct stat buf;
@@ -212,8 +209,7 @@ int decrement_disk_space_locality(
     //
     if (extract_filename(wu.name, filename)) {
         log_messages.printf(MSG_CRITICAL,
-            "No filename found in WU#%d (%s)\n",
-            wu.id, wu.name
+            "No filename found in [WU#%d %s]\n", wu.id, wu.name
         );
         return -1;
     }
@@ -223,7 +219,7 @@ int decrement_disk_space_locality(
     // corresponds to the one that we are (possibly) going to send!
     // So make a copy and pop the current WU off the end.
 
-    if (!host_has_file(request, reply, filename, true))
+    if (!host_has_file(filename, true))
         return 1;
 
     // If we are here, then the host ALREADY has the file, or its size
@@ -245,11 +241,13 @@ int decrement_disk_space_locality(
     filesize=buf.st_size;
     
     if (filesize<wu.rsc_disk_bound) {
-        reply.wreq.disk_available -= (wu.rsc_disk_bound-filesize);
-        log_messages.printf(MSG_DEBUG,
-            "[HOST#%d] reducing disk needed for WU by %d bytes (length of %s)\n",
-            reply.host.id, filesize, filename
-        );
+        g_wreq->disk_available -= (wu.rsc_disk_bound-filesize);
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] [HOST#%d] reducing disk needed for WU by %d bytes (length of %s)\n",
+                g_reply->host.id, filesize, filename
+            );
+        }
         return 0;
     }
                   
@@ -266,10 +264,7 @@ int decrement_disk_space_locality(
 // - already sent a result for this WU
 // - no app_version available
 //
-static int possibly_send_result(
-    DB_RESULT& result,
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply
-) {
+static int possibly_send_result(DB_RESULT& result) {
     DB_WORKUNIT wu;
     DB_RESULT result2;
     int retval, count;
@@ -279,43 +274,40 @@ static int possibly_send_result(
     retval = wu.lookup_id(result.workunitid);
     if (retval) return ERR_DB_NOT_FOUND;
 
-    bavp = get_app_version(sreq, reply, wu);
+    bavp = get_app_version(wu, true);
 
-    if (!bavp && anonymous(sreq.platforms.list[0])) {
+    if (!bavp && anonymous(g_request->platforms.list[0])) {
         char help_msg_buf[512];
         sprintf(help_msg_buf,
             "To get more %s work, finish current work, stop BOINC, remove app_info.xml file, and restart.",
             config.long_name
         );
-        USER_MESSAGE um(help_msg_buf, "high");
-        reply.insert_message(um);
-        reply.set_delay(DELAY_ANONYMOUS);
+        g_reply->insert_message(USER_MESSAGE(help_msg_buf, "high"));
+        g_reply->set_delay(DELAY_ANONYMOUS);
     }
 
     if (!bavp) return ERR_NO_APP_VERSION;
 
     APP* app = ssp->lookup_app(wu.appid);
-    if (wu_is_infeasible_fast(wu, sreq, reply, *app)) {
+    if (wu_is_infeasible_fast(wu, *app, *bavp)) {
         return ERR_INSUFFICIENT_RESOURCE;
     }
 
     if (config.one_result_per_user_per_wu) {
-        sprintf(buf, "where userid=%d and workunitid=%d", reply.user.id, wu.id);
+        sprintf(buf, "where userid=%d and workunitid=%d", g_reply->user.id, wu.id);
         retval = result2.count(count, buf);
         if (retval) return ERR_DB_NOT_FOUND;
         if (count > 0) return ERR_WU_USER_RULE;
     }
 
-    return add_result_to_reply(result, wu, sreq, reply, bavp);
+    return add_result_to_reply(result, wu, bavp, true);
 }
 
 // returns true if the work generator can not make more work for this
 // file, false if it can.
 //
 static bool work_generation_over(char *filename) {
-    char fullpath[512];
-    sprintf(fullpath, "../locality_scheduling/no_work_available/%s", filename);
-    return boinc_file_exists(fullpath);
+    return boinc_file_exists(config.project_path("locality_scheduling/no_work_available/%s", filename));
 }
 
 // Ask the WU generator to make more WUs for this file.
@@ -324,14 +316,16 @@ static bool work_generation_over(char *filename) {
 // (no way to be sure if it suceeded).
 //
 int make_more_work_for_file(char* filename) {
-    char fullpath[512];
+    const char *fullpath;
 
     if (work_generation_over(filename)) {
         // since we found this file, it means that no work remains for this WU.
         // So give up trying to interact with the WU generator.
-        log_messages.printf(MSG_DEBUG,
-            "work generator says no work remaining for file %s\n", filename
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] work generator says no work remaining for file %s\n", filename
+            );
+        }
         return -1;
     }
         
@@ -339,15 +333,17 @@ int make_more_work_for_file(char* filename) {
     // directory as a way of indicating that we need work for this file.
     // If this operation fails, don't worry or tarry!
     //
-    sprintf(fullpath, "../locality_scheduling/need_work/%s", filename);
+    fullpath = config.project_path("locality_scheduling/need_work/%s", filename);
     if (boinc_touch_file(fullpath)) {
         log_messages.printf(MSG_CRITICAL, "unable to touch %s\n", fullpath);
         return -1;
     }
 
-    log_messages.printf(MSG_DEBUG,
-        "touched %s: need work for file %s\n", fullpath, filename
-    );
+    if (config.debug_locality) {
+        log_messages.printf(MSG_NORMAL,
+            "[locality] touched %s: need work for file %s\n", fullpath, filename
+        );
+    }
     return 0;
 }
 
@@ -358,21 +354,21 @@ int make_more_work_for_file(char* filename) {
 //
 //
 
-std::vector<string> filenamelist;
+std::vector<std::string> filenamelist;
 int list_type = 0; // 0: none, 1: slowhost, 2: fasthost
 
 static void build_working_set_namelist(bool slowhost) {
     glob_t globbuf;
     int retglob;
     unsigned int i;
-    const char *pattern = "../locality_scheduling/work_available/*";
+    const char *pattern = config.project_path("locality_scheduling/work_available/*");
     const char *errtype = "unrecognized error";
     const char *hosttype = "fasthost";
 
 #ifdef EINSTEIN_AT_HOME
     if (slowhost) {
         hosttype = "slowhost";
-        pattern = "../locality_scheduling/work_available/*_0[0-3]*";
+        pattern = config.project_path("locality_scheduling/work_available/*_0[0-3]*");
     }
 #endif
 
@@ -384,11 +380,15 @@ static void build_working_set_namelist(bool slowhost) {
         if (globbuf.gl_pathc==1 && !strcmp(pattern, globbuf.gl_pathv[0])) {
             errtype = "empty directory";
         } else {
-            for (i=0; i<globbuf.gl_pathc; i++)
+            for (i=0; i<globbuf.gl_pathc; i++) {
                 filenamelist.push_back(globbuf.gl_pathv[i]);
-            log_messages.printf(MSG_DEBUG,
-                "build_working_set_namelist(%s): pattern %s has %d matches\n", hosttype, pattern, globbuf.gl_pathc
-            );
+            }
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] build_working_set_namelist(%s): pattern %s has %d matches\n",
+                    hosttype, pattern, globbuf.gl_pathc
+                );
+            }
             globfree(&globbuf);
             return;
         }
@@ -431,15 +431,15 @@ static int get_working_set_filename(char *filename, bool slowhost) {
         // take out a random file and remove it from the vector
         //
         int random_file_num = rand() % filenamelist.size();
-        string thisname = filenamelist[random_file_num];
+        std::string thisname = filenamelist[random_file_num];
         filenamelist[random_file_num] = filenamelist.back();
         filenamelist.pop_back();
 
         // locate trailing file name
         //
-        string slash = "/";
-        string::size_type last_slash_pos = thisname.rfind(slash);
-        if (last_slash_pos == string::npos) {
+        std::string slash = "/";
+        std::string::size_type last_slash_pos = thisname.rfind(slash);
+        if (last_slash_pos == std::string::npos) {
             errtype = "no trailing slash";
         } else {
             // extract file name
@@ -449,9 +449,12 @@ static int get_working_set_filename(char *filename, bool slowhost) {
             } else {
                 thisname = thisname.substr(1);
                 strcpy(filename, thisname.c_str());
-                log_messages.printf(MSG_DEBUG,
-                    "get_working_set_filename(%s): returning %s\n", hosttype, filename
-                );
+                if (config.debug_locality) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[locality] get_working_set_filename(%s): returning %s\n",
+                        hosttype, filename
+                    );
+                }
                 return 0;
             }
         }
@@ -465,9 +468,7 @@ static int get_working_set_filename(char *filename, bool slowhost) {
 
 
 static void flag_for_possible_removal(char* filename) {
-    char path[256];
-    sprintf(path, "../locality_scheduling/working_set_removal/%s", filename);
-    boinc_touch_file(path);
+    boinc_touch_file(config.project_path("locality_scheduling/working_set_removal/%s", filename));
     return;
 }
 
@@ -479,7 +480,6 @@ static void flag_for_possible_removal(char* filename) {
 static int send_results_for_file(
     char* filename,
     int& nsent,
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply,
     bool /*in_working_set*/
 ) {
     DB_RESULT result, prev_result;
@@ -488,7 +488,7 @@ static int send_results_for_file(
 
     nsent = 0;
 
-    if (!work_needed(sreq, reply, true)) {
+    if (!work_needed(true)) {
         return 0;
     }
 
@@ -501,11 +501,11 @@ static int send_results_for_file(
     sprintf(pattern, "%s__", filename);
     escape_mysql_like_pattern(pattern, escaped_pattern);
     sprintf(buf, "where userid=%d and name like binary '%s%%'",
-        reply.user.id, escaped_pattern
+        g_reply->user.id, escaped_pattern
     );
 #else
     sprintf(buf, "where userid=%d and name>binary '%s__' and name<binary '%s__~'",
-        reply.user.id, filename, filename
+        g_reply->user.id, filename, filename
     );
 #endif
     retval_max = result.max_id(maxid, buf);
@@ -519,11 +519,14 @@ static int send_results_for_file(
     for (i=0; i<100; i++) {     // avoid infinite loop
         int query_retval;
 
-        if (!work_needed(sreq, reply, true)) break;
+        if (!work_needed(true)) break;
 
-        log_messages.printf(MSG_DEBUG,
-            "in_send_results_for_file(%s, %d) prev_result.id=%d\n", filename, i, prev_result.id
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] in_send_results_for_file(%s, %d) prev_result.id=%d\n",
+                filename, i, prev_result.id
+            );
+        }
 
         // find unsent result with next larger ID than previous largest ID
         //
@@ -574,9 +577,11 @@ static int send_results_for_file(
             // or if an attempt to make more work fails.
             //
             make_work_retval=make_more_work_for_file(filename);
-            log_messages.printf(MSG_DEBUG,
-                "make_more_work_for_file(%s, %d)=%d\n", filename, i, make_work_retval
-            );
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] make_more_work_for_file(%s, %d)=%d\n", filename, i, make_work_retval
+                );
+            }
           
             if (make_work_retval) {
                 // can't make any more work for this file
@@ -608,9 +613,11 @@ static int send_results_for_file(
                 // arrive here if and only if there exist no further
                 // unsent results for this file.
                 flag_for_possible_removal(filename);
-                log_messages.printf(MSG_DEBUG,
-                    "No remaining work for file %s (%d), flagging for removal\n", filename, i
-                );
+                if (config.debug_locality) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[locality] No remaining work for file %s (%d), flagging for removal\n", filename, i
+                    );
+                }
                 break;
             } // make_work_retval
 
@@ -633,7 +640,7 @@ static int send_results_for_file(
             // we found an unsent result, so try sending it.
             // This *should* always work.
             //
-            retval_send = possibly_send_result(result, sreq, reply);
+            retval_send = possibly_send_result(result);
             boinc_db.commit_transaction();
 
             // if no app version or not enough resources, give up completely
@@ -666,10 +673,12 @@ static int send_results_for_file(
             // will return ERR_DB_NOT_FOUND
             //
             } else if (retval_send != ERR_DB_NOT_FOUND) {
-                log_messages.printf(MSG_DEBUG,
-                    "possibly_send_result [RESULT#%d]: %s\n",
-                    result.id, boincerror(retval_send)
-                );
+                if (config.debug_locality) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[locality] possibly_send_result [RESULT#%d]: %s\n",
+                        result.id, boincerror(retval_send)
+                    );
+                }
             }
 
             prev_result = result;
@@ -696,15 +705,18 @@ static int send_results_for_file(
 //    min_resultname = R.filename;
 //
 static int send_new_file_work_deterministic_seeded(
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply,
     int& nsent, const char *start_f, const char *end_f
 ) {
     DB_RESULT result;
     char filename[256], min_resultname[256], query[1024];
     int retval;
 
-    log_messages.printf(MSG_DEBUG,
-        "send_new_file_work_deterministic_seeded() start=%s end=%s\n", start_f, end_f?end_f:"+Inf");
+    if (config.debug_locality) {
+        log_messages.printf(MSG_NORMAL,
+            "[locality] send_new_file_work_deterministic_seeded() start=%s end=%s\n",
+            start_f, end_f?end_f:"+Inf"
+        );
+    }
 
     strcpy(min_resultname, start_f);
     while (1) {
@@ -732,15 +744,17 @@ static int send_new_file_work_deterministic_seeded(
         retval = extract_filename(result.name, filename);
         if (retval) return retval; // not locality scheduled, now what???
 
-        log_messages.printf(MSG_DEBUG,
-            "send_new_file_work_deterministic will try filename %s\n", filename
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] send_new_file_work_deterministic will try filename %s\n", filename
+            );
+        }
 
-        retval = send_results_for_file(filename, nsent, sreq, reply, false);
+        retval = send_results_for_file(filename, nsent, false);
 
         if (retval==ERR_NO_APP_VERSION || retval==ERR_INSUFFICIENT_RESOURCE) return retval;
 
-        if (nsent>0 || !work_needed(sreq, reply, true)) break; 
+        if (nsent>0 || !work_needed(true)) break; 
         // construct a name which is lexically greater than the name of any result
         // which uses this file.
         sprintf(min_resultname, "%s__~", filename);
@@ -749,20 +763,22 @@ static int send_new_file_work_deterministic_seeded(
 }
 
 
-static bool is_host_slow(SCHEDULER_REQUEST& sreq) {
+static bool is_host_slow() {
     // 0.0013 defines about the slowest 20% of E@H hosts.
     // should make this a config parameter in the future,
     // if this idea works.
     //
 
     static int speed_not_printed = 1;
-    double hostspeed = sreq.host.claimed_credit_per_cpu_sec;
+    double hostspeed = g_request->host.claimed_credit_per_cpu_sec;
 
     if (speed_not_printed) {
         speed_not_printed = 0;
-        log_messages.printf(MSG_DEBUG,
-            "Host speed %f\n", hostspeed
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] Host speed %f\n", hostspeed
+            );
+        }
     }
     if (hostspeed < 0.0013) return true;
     return false;
@@ -771,31 +787,29 @@ static bool is_host_slow(SCHEDULER_REQUEST& sreq) {
 // Returns 0 if this has sent additional new work.  Returns non-zero
 // if it has not sent any new work.
 //
-static int send_new_file_work_deterministic(
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply
-) {
+static int send_new_file_work_deterministic() {
     char start_filename[256];
     int getfile_retval, nsent=0;
 
     // get random filename as starting point for deterministic search
     // If at this point, we have probably failed to find a suitable file
     // for a slow host, so ignore speed of host.
-    if ((getfile_retval = get_working_set_filename(start_filename, /* is_host_slow(sreq) */ false))) {
+    if ((getfile_retval = get_working_set_filename(start_filename, /* is_host_slow() */ false))) {
         strcpy(start_filename, "");
     }
   
     // start deterministic search with randomly chosen filename, go to
     // lexical maximum
-    send_new_file_work_deterministic_seeded(sreq, reply, nsent, start_filename, NULL);
+    send_new_file_work_deterministic_seeded(nsent, start_filename, NULL);
     if (nsent) {
         return 0;
     }
 
     // continue deterministic search at lexically first possible
     // filename, continue to randomly choosen one
-    if (!getfile_retval && work_needed(sreq, reply, true)) {
+    if (!getfile_retval && work_needed(true)) {
         send_new_file_work_deterministic_seeded(
-            sreq, reply, nsent, "", start_filename
+            nsent, "", start_filename
         );
         if (nsent) {
             return 0;
@@ -806,35 +820,31 @@ static int send_new_file_work_deterministic(
 }
 
 
-static int send_new_file_work_working_set(
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply
-) {
+static int send_new_file_work_working_set() {
     char filename[256];
     int retval, nsent;
 
-    retval = get_working_set_filename(filename, is_host_slow(sreq));
+    retval = get_working_set_filename(filename, is_host_slow());
     if (retval) return retval;
 
-    log_messages.printf(MSG_DEBUG,
-        "send_new_file_working_set will try filename %s\n", filename
-    );
+    if (config.debug_locality) {
+        log_messages.printf(MSG_NORMAL,
+            "[locality] send_new_file_working_set will try filename %s\n", filename
+        );
+    }
 
-    return send_results_for_file(filename, nsent, sreq, reply, true);
+    return send_results_for_file(filename, nsent, true);
 }
 
 // prototype
-static int send_old_work(
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply, int t_min, int t_max
-);
+static int send_old_work(int t_min, int t_max);
 
 // The host doesn't have any files for which work is available.
 // Pick new file to send.  Returns nonzero if no work is available.
 //
-static int send_new_file_work(
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply
-) {
+static int send_new_file_work() {
 
-    while (work_needed(sreq, reply, true)) {
+    while (work_needed(true)) {
         int retval_sow, retval_snfwws;
         double frac=((double)rand())/(double)RAND_MAX;
         int now   = time(0);
@@ -848,37 +858,43 @@ static int send_new_file_work(
         // timeout/2 ago.  We might consider enclosing this in a while
         // loop and trying several times.
         //
-        log_messages.printf(MSG_DEBUG,
-            "send_new_file_work(): try to send old work\n"
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] send_new_file_work(): try to send old work\n"
+            );
+        }
 
-        retval_sow=send_old_work(sreq, reply, start, end);
+        retval_sow=send_old_work(start, end);
 
         if (retval_sow==ERR_NO_APP_VERSION || retval_sow==ERR_INSUFFICIENT_RESOURCE) return retval_sow;
 
     
-        while (work_needed(sreq, reply, true) && retry<5) {
-            log_messages.printf(MSG_DEBUG,
-                "send_new_file_work(%d): try to send from working set\n", retry
-            );
+        while (work_needed(true) && retry<5) {
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] send_new_file_work(%d): try to send from working set\n", retry
+                );
+            }
             retry++;
-            retval_snfwws=send_new_file_work_working_set(sreq, reply);
+            retval_snfwws=send_new_file_work_working_set();
             if (retval_snfwws==ERR_NO_APP_VERSION || retval_snfwws==ERR_INSUFFICIENT_RESOURCE) return retval_snfwws;
 
         }    
 
-        if (work_needed(sreq, reply, true)) {
-            log_messages.printf(MSG_DEBUG,
-                "send_new_file_work(): try deterministic method\n"
-            );
-            if (send_new_file_work_deterministic(sreq, reply)) {
+        if (work_needed(true)) {
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] send_new_file_work(): try deterministic method\n"
+                );
+            }
+            if (send_new_file_work_deterministic()) {
                 // if no work remains at all,
                 // we learn it here and return nonzero.
                 //
                 return 1;
             }
         }
-    } // while reply.work_needed(sreq, reply, true)
+    } // while g_reply->work_needed(true)
     return 0;
 }
 
@@ -890,15 +906,13 @@ static int send_new_file_work(
 // This looks for work created in the range t_min < t < t_max.  Use
 // t_min=INT_MIN if you wish to leave off the left constraint.
 //
-static int send_old_work(
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply, int t_min, int t_max
-) {
+static int send_old_work(int t_min, int t_max) {
     char buf[1024], filename[256];
     int retval, extract_retval, nsent;
     DB_RESULT result;
     int now=time(0);
 
-    if (!work_needed(sreq, reply, true)) {
+    if (!work_needed(true)) {
         return 0;
     }
 
@@ -918,23 +932,28 @@ static int send_old_work(
 
     retval = result.lookup(buf);
     if (!retval) {
-        retval = possibly_send_result(result, sreq, reply);
+        retval = possibly_send_result(result);
         boinc_db.commit_transaction();
         if (!retval) {
             double age=(now-result.create_time)/3600.0;
-            log_messages.printf(MSG_DEBUG,
-                "send_old_work(%s) sent result created %.1f hours ago [RESULT#%d]\n", result.name, age, result.id
-            );
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] send_old_work(%s) sent result created %.1f hours ago [RESULT#%d]\n",
+                    result.name, age, result.id
+                );
+            }
             extract_retval=extract_filename(result.name, filename);
             if (!extract_retval) {
-                send_results_for_file(filename, nsent, sreq, reply, false);
+                send_results_for_file(filename, nsent, false);
             } else {
                 // David, is this right?  Is this the only place in
                 // the locality scheduler that non-locality work //
                 // gets done?
-                log_messages.printf(MSG_DEBUG,
-                    "Note: sent NON-LOCALITY result %s\n", result.name
-                );
+                if (config.debug_locality) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[locality] Note: sent NON-LOCALITY result %s\n", result.name
+                    );
+                }
             }
         } else if (retval == ERR_NO_APP_VERSION || retval==ERR_INSUFFICIENT_RESOURCE) {
             // if no app version found or no resources, give up completely!
@@ -949,16 +968,20 @@ static int send_old_work(
         double older=(now-t_max)/3600.0;
         if (t_min != INT_MIN) {
             double young=(now-t_min)/3600.0;
-            log_messages.printf(MSG_DEBUG,
-                "send_old_work() no feasible result younger than %.1f hours and older than %.1f hours\n",
-                young, older
-            );
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] send_old_work() no feasible result younger than %.1f hours and older than %.1f hours\n",
+                    young, older
+                );
+            }
         }
         else {
-            log_messages.printf(MSG_DEBUG,
-                "send_old_work() no feasible result older than %.1f hours\n",
-                older
-            );
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] send_old_work() no feasible result older than %.1f hours\n",
+                    older
+                );
+            }
         }
     }
 
@@ -973,9 +996,26 @@ bool file_info_order(const FILE_INFO& fi1, const FILE_INFO& fi2) {
     return false;
 }
 
-void send_work_locality(
-    SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply
-) {
+bool is_sticky_file(char*fname) {
+    for (unsigned int i=0; i<config.locality_scheduling_sticky_file->size(); i++) {
+        if (!regexec(&((*config.locality_scheduling_sticky_file)[i]), fname, 0, NULL, 0)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool is_workunit_file(char*fname) {
+    for (unsigned int i=0; i<config.locality_scheduling_workunit_file->size(); i++) {
+        if (!regexec(&((*config.locality_scheduling_workunit_file)[i]), fname, 0, NULL, 0)) {
+            return true;
+        }
+    }
+    return false;
+}
+        
+void send_work_locality() {
     int i, nsent, nfiles, j;
 
     // seed the random number generator
@@ -983,9 +1023,9 @@ void send_work_locality(
     srand(seed); 
 
 #ifdef EINSTEIN_AT_HOME
-    std::vector<FILE_INFO> eah_copy = sreq.file_infos;
-    sreq.file_infos.clear();
-    sreq.files_not_needed.clear();
+    std::vector<FILE_INFO> eah_copy = g_request->file_infos;
+    g_request->file_infos.clear();
+    g_request->files_not_needed.clear();
     nfiles = (int) eah_copy.size();
     for (i=0; i<nfiles; i++) {
         char *fname = eah_copy[i].name;
@@ -1002,49 +1042,64 @@ void send_work_locality(
                         strncmp("l1_", fname, 3) &&
                         strncmp("L1_", fname, 3)
                        );
-
+#if 0
         // here, put a list of patterns of ALL files that are still needed to be
         // sticky, but are not 'data' files for locality scheduling purposes, eg they
         // do not have associated WU with names FILENAME__*
         //
-        bool data_files = strncmp("grid_", fname, 5) && strncmp("skygrid_", fname, 8) && strncmp("Config_", fname, 7);
-        if (strlen(fname)==15 && !strncmp("l1_", fname, 3)) data_files = false;
+        bool data_files =
+            strncmp("grid_", fname, 5)
+            && strncmp("skygrid_", fname, 8)
+            && strncmp("Config_", fname, 7);
+        if (strlen(fname)==15 && !strncmp("l1_", fname, 3)) {
+            data_files = false;
+        }
+#endif
 
 
-        if (!useful) {
+        if (is_workunit_file(fname)) {
             // these files WILL be deleted from the host
             //
-            sreq.files_not_needed.push_back(eah_copy[i]);
-            log_messages.printf(MSG_DEBUG,
-                "[HOST#%d] adding file %s to files_not_needed list\n", reply.host.id, fname
-            );
-        } else if (!data_files) {
+            g_request->files_not_needed.push_back(eah_copy[i]);
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] [HOST#%d] adding file %s to files_not_needed list\n",
+                    g_reply->host.id, fname
+                );
+            }
+        } else if (is_sticky_file(fname)) {
             // these files MIGHT be deleted from host if we need to make
             // disk space there
             //
-            sreq.file_delete_candidates.push_back(eah_copy[i]);
-            log_messages.printf(MSG_DEBUG,
-                "[HOST#%d] removing file %s from file_infos list\n", reply.host.id, fname
-            );
+            g_request->file_delete_candidates.push_back(eah_copy[i]);
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] [HOST#%d] removing file %s from file_infos list\n",
+                    g_reply->host.id, fname
+                );
+            }
         } else {
             // these are files that we will use for locality scheduling and
             // to search for work
             //
-            sreq.file_infos.push_back(eah_copy[i]);
+            g_request->file_infos.push_back(eah_copy[i]);
         }
     }
 #endif // EINSTEIN_AT_HOME
 
-    nfiles = (int) sreq.file_infos.size();
+    nfiles = (int) g_request->file_infos.size();
     for (i=0; i<nfiles; i++)
-        log_messages.printf(MSG_DEBUG,
-                "[HOST#%d] has file %s\n", reply.host.id, sreq.file_infos[i].name
-        );
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] [HOST#%d] has file %s\n",
+                g_reply->host.id, g_request->file_infos[i].name
+            );
+        }
 
     // Look for work in order of increasing file name, or randomly?
     //
     if (config.locality_scheduling_sorted_order) {
-        sort(sreq.file_infos.begin(), sreq.file_infos.end(), file_info_order);
+        sort(g_request->file_infos.begin(), g_request->file_infos.end(), file_info_order);
         j = 0;
     } else {
         if (!nfiles) nfiles = 1;
@@ -1055,22 +1110,22 @@ void send_work_locality(
     // high-bandwidth connections, since asking dial-up users to upload
     // (presumably large) data files is onerous.
     //
-    if (config.locality_scheduling_send_timeout && sreq.host.n_bwdown>100000) {
+    if (config.locality_scheduling_send_timeout && g_request->host.n_bwdown>100000) {
         int until=time(0)-config.locality_scheduling_send_timeout;
-        int retval_sow=send_old_work(sreq, reply, INT_MIN, until);
+        int retval_sow=send_old_work(INT_MIN, until);
         if (retval_sow==ERR_NO_APP_VERSION || retval_sow==ERR_INSUFFICIENT_RESOURCE) return;
     }
 
     // send work for existing files
     //
-    for (i=0; i<(int)sreq.file_infos.size(); i++) {
+    for (i=0; i<(int)g_request->file_infos.size(); i++) {
         int k = (i+j)%nfiles;
         int retval_srff;
 
-        if (!work_needed(sreq, reply, true)) break;
-        FILE_INFO& fi = sreq.file_infos[k];
+        if (!work_needed(true)) break;
+        FILE_INFO& fi = g_request->file_infos[k];
         retval_srff=send_results_for_file(
-            fi.name, nsent, sreq, reply, false
+            fi.name, nsent, false
         );
 
         if (retval_srff==ERR_NO_APP_VERSION || retval_srff==ERR_INSUFFICIENT_RESOURCE) return;
@@ -1081,11 +1136,14 @@ void send_work_locality(
         // If the work was not sent for other (dynamic) reason such as insufficient
         // cpu, then DON'T delete the file.
         //
-        if (nsent == 0 && work_needed(sreq, reply, true) && config.file_deletion_strategy == 1) {
-            reply.file_deletes.push_back(fi);
-            log_messages.printf(MSG_DEBUG,
-                "[HOST#%d]: delete file %s (not needed)\n", reply.host.id, fi.name
-            );
+        if (nsent == 0 && work_needed(true) && config.file_deletion_strategy == 1) {
+            g_reply->file_deletes.push_back(fi);
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] [HOST#%d]: delete file %s (not needed)\n",
+                    g_reply->host.id, fi.name
+                );
+            }
 #ifdef EINSTEIN_AT_HOME
             // For name matching pattern h1_XXXX.XX_S5R2
             // generate corresponding l1_XXXX.XX_S5R2 pattern and delete it also
@@ -1093,10 +1151,13 @@ void send_work_locality(
             if (strlen(fi.name)==15 && !strncmp("h1_", fi.name, 3)) {
                 FILE_INFO fi_l = fi;
                 fi_l.name[0]='l';
-                reply.file_deletes.push_back(fi_l);
-                log_messages.printf(MSG_DEBUG,
-                    "[HOST#%d]: delete file %s (not needed)\n", reply.host.id, fi_l.name
-                );
+                g_reply->file_deletes.push_back(fi_l);
+                if (config.debug_locality) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[locality] [HOST#%d]: delete file %s (not needed)\n",
+                        g_reply->host.id, fi_l.name
+                    );
+                }
             }
 #endif
         } // nsent==0
@@ -1104,42 +1165,44 @@ void send_work_locality(
 
     // send new files if needed
     //
-    if (work_needed(sreq, reply, true)) {
-        send_new_file_work(sreq, reply);
+    if (work_needed(true)) {
+        send_new_file_work();
     }
 }
 
 // send instructions to delete useless files
 //
-void send_file_deletes(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& sreply) {
-    int num_useless = sreq.files_not_needed.size();
+void send_file_deletes() {
+    int num_useless = g_request->files_not_needed.size();
     int i;
     for (i=0; i<num_useless; i++) {
         char buf[256];
-        FILE_INFO& fi = sreq.files_not_needed[i];
-        sreply.file_deletes.push_back(fi);
-        log_messages.printf(MSG_DEBUG,
-            "[HOST#%d]: delete file %s (not needed)\n", sreply.host.id, fi.name
-        );
+        FILE_INFO& fi = g_request->files_not_needed[i];
+        g_reply->file_deletes.push_back(fi);
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] [HOST#%d]: delete file %s (not needed)\n",
+                g_reply->host.id, fi.name
+            );
+        }
         sprintf(buf, "BOINC will delete file %s (no longer needed)", fi.name);
-        USER_MESSAGE um(buf, "low");
-        sreply.insert_message(um);
+        g_reply->insert_message(USER_MESSAGE(buf, "low"));
      }
 
     // if we got no work, and we have no file space, delete some files
     //
-    if (sreply.results.size()==0 && (sreply.wreq.disk.insufficient || sreply.wreq.disk_available<0)) {
+    if (g_reply->results.size()==0 && (g_reply->wreq.disk.insufficient || g_reply->wreq.disk_available<0)) {
         // try to delete a file to make more space.
         // Also give some hints to the user about what's going wrong
         // (lack of disk space).
         //
-        delete_file_from_host(sreq, sreply);
+        delete_file_from_host();
     }
 
-    if (sreply.results.size()==0 && sreply.hostid && sreq.work_req_seconds>1.0) {
-        debug_sched(sreq, sreply, "../debug_sched");
-    } else if (max_allowable_disk(sreq, sreply)<0 || (sreply.wreq.disk.insufficient || sreply.wreq.disk_available<0)) {
-        debug_sched(sreq, sreply, "../debug_sched");
+    if (g_reply->results.size()==0 && g_reply->hostid && g_request->work_req_seconds>1.0) {
+        debug_sched("debug_sched");
+    } else if (max_allowable_disk()<0 || (g_reply->wreq.disk.insufficient || g_reply->wreq.disk_available<0)) {
+        debug_sched("debug_sched");
     }
 }
 
@@ -1188,4 +1251,4 @@ void send_file_deletes(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& sreply) {
 
 // (8) If addtional results are needed, return to step 4 above.
 
-const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 16246 2008-10-21 23:16:07Z davea $";
+const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 18825 2009-08-10 04:49:02Z davea $";

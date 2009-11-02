@@ -22,36 +22,69 @@ require_once("../inc/util_basic.inc");
 class BoincDb extends DbConn {
     static $instance;
 
+    // connect to the database (possibly to a read-only replica)
+    // NOTE: choice of replica can be made only at the page level.
+    // If there's a page that's guaranteed to do only reads, put
+    // BoincDb::get(true);
+    // at the top of it.
+    //
+    static function get_aux($readonly) {
+        $config = get_config();
+        $user = parse_config($config, '<db_user>');
+        $passwd = parse_config($config, '<db_passwd>');
+        $host = parse_config($config, '<db_host>');
+        $replica_host = parse_config($config, '<replica_db_host>');
+        $name = parse_config($config, '<db_name>');
+        if ($host == null) {
+            $host = "localhost";
+        }
+        $instance = new DbConn();
+        if ($readonly && $replica_host) {
+            $retval = $instance->init_conn($user, $passwd, $replica_host, $name);
+            if ($retval) {
+                self::$instance = $instance;
+                return $instance;
+            }
+        }
+        $retval = $instance->init_conn($user, $passwd, $host, $name);
+        if (!$retval) {
+            $instance = null;
+        } else {
+            $instance->do_query("use $name");
+                // needed for places where we do direct queries
+        }
+        self::$instance = $instance;
+        return $instance;
+    }
+
+    // same, but
+    // 1) check for a cached connection
+    // 2) check whether the "stop_web" trigger file is present
+    //
     static function get($readonly = false) {
-        if (!isset($instance)) {
+        if (!isset(self::$instance)) {
             if (web_stopped()) {
-                show_page("Project down for maintenence",
+                show_page("Project down for maintenance",
                     "Please check back in a few hours."
                 );
                 exit;
             }
-            $config = get_config();
-            $user = parse_config($config, '<db_user>');
-            $passwd = parse_config($config, '<db_passwd>');
-            $host = parse_config($config, '<db_host>');
-            $replica_host = parse_config($config, '<replica_db_host>');
-            $name = parse_config($config, '<db_name>');
-            if ($host == null) {
-                $host = "localhost";
+            self::get_aux($readonly);
+            if (!self::$instance) {
+                show_page(
+                    "Project is down",
+                    "The project's database server is down.
+                    Please check back in a few hours."
+                );
+                exit;
             }
-            $instance = new DbConn();
-            if ($readonly && $replica_host) {
-                $retval = $instance->init_conn($user, $passwd, $replica_host, $name);
-                if ($retval) return $instance;
-            }
-            $retval = $instance->init_conn($user, $passwd, $host, $name);
-            if (!$retval) return null;
         }
-        return $instance;
+        return self::$instance;
     }
+
     static function escape_string($string) {
         $db = self::get();
-        return $db->base_escape_string($string);
+        return parent::base_escape_string(trim($string));
     }
     static function error() {
         $db = self::get();

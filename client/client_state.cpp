@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cpp.h"
-
 #ifdef _WIN32
 #include "boinc_win.h"
 #else
@@ -33,8 +31,15 @@
 #endif
 #endif
 
+#ifdef __EMX__
+#define INCL_DOS
+#include <os2.h>
+#endif
+
+#include "cpp.h"
 #include "parse.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "util.h"
 #include "error_numbers.h"
 #include "filesys.h"
@@ -55,6 +60,8 @@
 using std::max;
 
 CLIENT_STATE gstate;
+COPROC_CUDA* coproc_cuda;
+COPROC_ATI* coproc_ati;
 
 CLIENT_STATE::CLIENT_STATE():
     lookup_website_op(&gui_http),
@@ -101,6 +108,10 @@ CLIENT_STATE::CLIENT_STATE():
     network_mode.set(RUN_MODE_AUTO, 0);
     started_by_screensaver = false;
     requested_exit = false;
+    requested_suspend = false;
+    requested_resume = false;
+    cleanup_completed = false;
+    in_abort_sequence = false;
     master_fetch_period = MASTER_FETCH_PERIOD;
     retry_cap = RETRY_CAP;
     master_fetch_retry_cap = MASTER_FETCH_RETRY_CAP;
@@ -115,9 +126,9 @@ CLIENT_STATE::CLIENT_STATE():
     disable_graphics = false;
     work_fetch_no_new_work = false;
     cant_write_state_file = false;
+    unsigned_apps_ok = false;
 
     debt_interval_start = 0;
-    total_wall_cpu_time_this_debt_interval = 0;
     retry_shmem_time = 0;
     must_schedule_cpus = true;
     must_enforce_cpu_schedule = true;
@@ -131,6 +142,7 @@ CLIENT_STATE::CLIENT_STATE():
     launched_by_manager = false;
     initialized = false;
     last_wakeup_time = dtime();
+    abort_jobs_on_exit = false;
 }
 
 void CLIENT_STATE::show_proxy_info() {
@@ -151,10 +163,18 @@ void CLIENT_STATE::show_proxy_info() {
 
 void CLIENT_STATE::show_host_info() {
     char buf[256], buf2[256];
+
+    nbytes_to_string(host_info.m_cache, 0, buf, sizeof(buf));
     msg_printf(NULL, MSG_INFO,
         "Processor: %d %s %s",
         host_info.p_ncpus, host_info.p_vendor, host_info.p_model
     );
+    if (host_info.m_cache > 0) {
+    msg_printf(NULL, MSG_INFO,
+        "Processor: %s cache",
+        buf
+    );
+    }
     msg_printf(NULL, MSG_INFO,
         "Processor features: %s", host_info.p_features
     );
@@ -211,6 +231,7 @@ int CLIENT_STATE::init() {
         );
     }
 
+    config.show();
     log_flags.show();
 
     msg_printf(NULL, MSG_INFO, "Libraries: %s", curl_version());
@@ -233,52 +254,83 @@ int CLIENT_STATE::init() {
     parse_account_files();
     parse_statistics_files();
 
+    host_info.clear_host_info();
+    host_info.get_host_info();
+    set_ncpus();
+    show_host_info();
+    if (!config.no_gpus) {
+        vector<string> descs;
+        vector<string> warnings;
+        coprocs.get(config.use_all_gpus, descs, warnings);
+        for (i=0; i<descs.size(); i++) {
+            msg_printf(NULL, MSG_INFO, descs[i].c_str());
+        }
+        if (log_flags.coproc_debug) {
+            for (i=0; i<warnings.size(); i++) {
+                msg_printf(NULL, MSG_INFO, warnings[i].c_str());
+            }
+        }
+        if (coprocs.coprocs.size() == 0) {
+            msg_printf(NULL, MSG_INFO, "No usable GPUs found");
+        }
+#if 0
+        fake_cuda(coprocs, 2);
+        msg_printf(NULL, MSG_INFO, "Faking an NVIDIA GPU");
+#endif
+#if 0
+        fake_ati(coprocs, 2);
+        msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
+#endif
+        coproc_cuda = (COPROC_CUDA*)coprocs.lookup("CUDA");
+        coproc_ati = (COPROC_ATI*)coprocs.lookup("ATI");
+    }
+
     // check for app_info.xml file in project dirs.
     // If find, read app info from there, set project.anonymous_platform
-    // NOTE: this is being done before CPU speed has been read,
+    // - this must follow coproc.get() (need to know if GPUs are present)
+    // - this is being done before CPU speed has been read,
     // so we'll need to patch up avp->flops later;
     //
     check_anonymous();
+
+    cpu_benchmarks_set_defaults();  // for first time, make sure p_fpops nonzero
 
     // Parse the client state file,
     // ignoring any <project> tags (and associated stuff)
     // for projects with no account file
     //
-    host_info.clear_host_info();
-    cpu_benchmarks_set_defaults();  // for first time, make sure p_fpops nonzero
     parse_state_file();
+
+    // parse account files again,
+    // now that we know the host's venue on each project
+    //
     parse_account_files_venue();
 
-    host_info.get_host_info();
-    set_ncpus();
-    show_host_info();
     show_proxy_info();
 
     // fill in avp->flops for anonymous project
     //
     for (i=0; i<app_versions.size(); i++) {
         APP_VERSION* avp = app_versions[i];
-        if (!avp->flops) avp->flops = host_info.p_fpops;
+        if (!avp->flops) {
+            if (!avp->avg_ncpus) {
+                avp->avg_ncpus = 1;
+            }
+            avp->flops = avp->avg_ncpus * host_info.p_fpops;
+
+            // for GPU apps, use conservative estimate:
+            // assume app will run at peak CPU speed, not peak GPU
+            //
+            if (avp->ncudas) {
+                avp->flops += avp->ncudas * host_info.p_fpops;
+            }
+            if (avp->natis) {
+                avp->flops += avp->natis * host_info.p_fpops;
+            }
+        }
     }
 
     check_clock_reset();
-
-    vector<string> strs = coprocs.get();
-    for (i=0; i<strs.size(); i++) {
-        msg_printf(NULL, MSG_INFO, strs[i].c_str());
-    }
-#if 0
-    fake_cuda(coprocs, 1);
-#endif
-    if (coprocs.coprocs.size() == 0) {
-        msg_printf(NULL, MSG_INFO, "No coprocessors");
-    } else {
-        for (i=0; i<coprocs.coprocs.size(); i++) {
-            COPROC* c = coprocs.coprocs[i];
-            c->description(buf);
-            msg_printf(NULL, MSG_INFO, "Coprocessor: %s", buf);
-        }
-    }
 
     // Check to see if we can write the state file.
     //
@@ -295,13 +347,16 @@ int CLIENT_STATE::init() {
     //
     parse_preferences_for_user_files();
 
-    print_summary();
+    if (log_flags.state_debug) {
+        print_summary();
+    }
     do_cmdline_actions();
 
-    // if new version of core client,
-    // - run CPU benchmarks
-    // - contact reference site or some project (to trigger firewall alert)
+    // check if version or platform has changed.
+    // Either of these is evidence that we're running a different
+    // client than previously.
     //
+    bool new_client = false;
     if ((core_client_version.major != old_major_version)
         || (core_client_version.minor != old_minor_version)
         || (core_client_version.release != old_release)
@@ -313,6 +368,20 @@ int CLIENT_STATE::init() {
             core_client_version.minor,
             core_client_version.release
         );
+        new_client = true;
+    }
+    if (statefile_platform_name.size() && strcmp(get_primary_platform(), statefile_platform_name.c_str())) {
+        msg_printf(NULL, MSG_INFO,
+            "Platform changed from %s to %s",
+            statefile_platform_name.c_str(), get_primary_platform()
+        );
+        new_client = true;
+    }
+    // if new version of client,
+    // - run CPU benchmarks
+    // - contact reference site (or some project) to trigger firewall alert
+    //
+    if (new_client) {
         run_cpu_benchmarks = true;
         if (config.dont_contact_ref_site) {
             if (projects.size() > 0) {
@@ -323,7 +392,8 @@ int CLIENT_STATE::init() {
         }
     }
 
-    // show host IDs and venues on various projects
+
+    // show projects
     //
     for (i=0; i<projects.size(); i++) {
         p = projects[i];
@@ -333,10 +403,8 @@ int CLIENT_STATE::init() {
             strcpy(buf, "not assigned yet");
         }
         msg_printf(p, MSG_INFO,
-            "URL: %s; Computer ID: %s; location: %s; project prefs: %s",
-            p->master_url,
-            buf, strlen(p->host_venue)?p->host_venue:"(none)",
-            p->using_venue_specific_prefs?p->host_venue:"default"
+            "URL %s; Computer ID %s; resource share %.0f",
+            p->master_url, buf, p->resource_share
         );
         if (p->ended) {
             msg_printf(p, MSG_INFO, "Project has ended - OK to detach");
@@ -349,6 +417,7 @@ int CLIENT_STATE::init() {
     //
     request_schedule_cpus("Startup");
     request_work_fetch("Startup");
+    work_fetch.init();
     debt_interval_start = now;
 
     // set up the project and slot directories
@@ -385,15 +454,6 @@ int CLIENT_STATE::init() {
         if (retval) return retval;
     }
 
-    // If platform name changed, print warning
-    //
-    if (statefile_platform_name.size() && strcmp(get_primary_platform(), statefile_platform_name.c_str())) {
-        msg_printf(NULL, MSG_INFO,
-            "Platform changed from %s to %s",
-            statefile_platform_name.c_str(), get_primary_platform()
-        );
-    }
-
 #ifdef SANDBOX
     get_project_gid();
 #endif
@@ -402,6 +462,10 @@ int CLIENT_STATE::init() {
     if (sandbox_account_service_token != NULL) g_use_sandbox = true;
 #endif
 
+    // Check to see if a proxy server can be detected.
+    proxy_info.need_autodetect_proxy_settings = true;
+    proxy_info.have_autodetect_proxy_settings = false;
+
     check_file_existence();
     if (!boinc_file_exists(ALL_PROJECTS_LIST_FILENAME)) {
         all_projects_list_check_time = 0;
@@ -409,6 +473,7 @@ int CLIENT_STATE::init() {
     all_projects_list_check();
 
     auto_update.init();
+
     http_ops->cleanup_temp_files();
     
     initialized = true;
@@ -463,6 +528,9 @@ void CLIENT_STATE::do_io_or_sleep(double x) {
         //
         if (loops++ > 99) {
             boinc_sleep(.01);
+#ifdef __EMX__
+            DosSleep(0);
+#endif
             break;
         }
 
@@ -527,6 +595,18 @@ bool CLIENT_STATE::poll_slow_events() {
     if (user_active != old_user_active) {
         request_schedule_cpus("Idle state change");
     }
+
+#if 0
+    // NVIDIA provides an interface for finding if a GPU is
+    // running a graphics app.  ATI doesn't as far as I know
+    //
+    if (coproc_cuda && user_active && !global_prefs.run_gpu_if_user_active) {
+        if (coproc_cuda->check_running_graphics_app()) {
+            request_schedule_cpus("GPU state change");
+        }
+    }
+#endif
+
 #ifdef __APPLE__
     // Mac screensaver launches client if not already running.
     // OS X quits screensaver when energy saver puts display to sleep,
@@ -608,10 +688,9 @@ bool CLIENT_STATE::poll_slow_events() {
     // and handle_finished_apps() must be done before possibly_schedule_cpus()
 
 	check_project_timeout();
-    auto_update.poll();
+    //auto_update.poll();
     POLL_ACTION(active_tasks           , active_tasks.poll      );
     POLL_ACTION(garbage_collect        , garbage_collect        );
-    POLL_ACTION(update_results         , update_results         );
     POLL_ACTION(gui_http               , gui_http.poll          );
     POLL_ACTION(gui_rpc_http           , gui_rpcs.poll          );
     if (!network_suspended) {
@@ -622,13 +701,11 @@ bool CLIENT_STATE::poll_slow_events() {
         POLL_ACTION(handle_pers_file_xfers , handle_pers_file_xfers );
     }
     POLL_ACTION(handle_finished_apps   , handle_finished_apps   );
+    POLL_ACTION(update_results         , update_results         );
     if (!tasks_suspended) {
         POLL_ACTION(possibly_schedule_cpus, possibly_schedule_cpus          );
         POLL_ACTION(enforce_schedule    , enforce_schedule  );
         tasks_restarted = true;
-    }
-    if (!tasks_suspended && !network_suspended) {
-        POLL_ACTION(compute_work_requests, compute_work_requests          );
     }
     if (!network_suspended) {
         POLL_ACTION(scheduler_rpc          , scheduler_rpc_poll     );
@@ -713,9 +790,6 @@ APP_VERSION* CLIENT_STATE::lookup_app_version(
         APP_VERSION* avp = app_versions[i];
         if (avp->app != app) continue;
         if (version_num != avp->version_num) continue;
-        if (app->project->anonymous_platform) {
-            return avp;
-        }
         if (strcmp(avp->platform, platform)) continue;
         if (strcmp(avp->plan_class, plan_class)) continue;
         return avp;
@@ -795,7 +869,10 @@ int CLIENT_STATE::link_app_version(PROJECT* p, APP_VERSION* avp) {
 
         // any file associated with an app version must be signed
         //
-        fip->signature_required = true;
+        if (!unsigned_apps_ok) {
+            fip->signature_required = true;
+        }
+
         file_ref.file_info = fip;
     }
     return 0;
@@ -872,41 +949,40 @@ int CLIENT_STATE::link_result(PROJECT* p, RESULT* rp) {
 void CLIENT_STATE::print_summary() {
     unsigned int i;
     double t;
-    if (!log_flags.state_debug) return;
 
-    msg_printf(0, MSG_INFO, "[state_debug] CLIENT_STATE::print_summary(): Client state summary:\n");
-    msg_printf(0, MSG_INFO, "%d projects:\n", (int)projects.size());
+    msg_printf(0, MSG_INFO, "[state_debug] Client state summary:");
+    msg_printf(0, MSG_INFO, "%d projects:", (int)projects.size());
     for (i=0; i<projects.size(); i++) {
         t = projects[i]->min_rpc_time;
         if (t) {
-            msg_printf(0, MSG_INFO, "    %s min RPC %f.0 seconds from now\n", projects[i]->master_url, t-now);
+            msg_printf(0, MSG_INFO, "    %s min RPC %f.0 seconds from now", projects[i]->master_url, t-now);
         } else {
-            msg_printf(0, MSG_INFO, "    %s\n", projects[i]->master_url);
+            msg_printf(0, MSG_INFO, "    %s", projects[i]->master_url);
         }
     }
-    msg_printf(0, MSG_INFO, "%d file_infos:\n", (int)file_infos.size());
+    msg_printf(0, MSG_INFO, "%d file_infos:", (int)file_infos.size());
     for (i=0; i<file_infos.size(); i++) {
-        msg_printf(0, MSG_INFO, "    %s status:%d %s\n", file_infos[i]->name, file_infos[i]->status, file_infos[i]->pers_file_xfer?"active":"inactive");
+        msg_printf(0, MSG_INFO, "    %s status:%d %s", file_infos[i]->name, file_infos[i]->status, file_infos[i]->pers_file_xfer?"active":"inactive");
     }
-    msg_printf(0, MSG_INFO, "%d app_versions\n", (int)app_versions.size());
+    msg_printf(0, MSG_INFO, "%d app_versions", (int)app_versions.size());
     for (i=0; i<app_versions.size(); i++) {
-        msg_printf(0, MSG_INFO, "    %s %d\n", app_versions[i]->app_name, app_versions[i]->version_num);
+        msg_printf(0, MSG_INFO, "    %s %d", app_versions[i]->app_name, app_versions[i]->version_num);
     }
-    msg_printf(0, MSG_INFO, "%d workunits\n", (int)workunits.size());
+    msg_printf(0, MSG_INFO, "%d workunits", (int)workunits.size());
     for (i=0; i<workunits.size(); i++) {
-        msg_printf(0, MSG_INFO, "    %s\n", workunits[i]->name);
+        msg_printf(0, MSG_INFO, "    %s", workunits[i]->name);
     }
-    msg_printf(0, MSG_INFO, "%d results\n", (int)results.size());
+    msg_printf(0, MSG_INFO, "%d results", (int)results.size());
     for (i=0; i<results.size(); i++) {
-        msg_printf(0, MSG_INFO, "    %s state:%d\n", results[i]->name, results[i]->state());
+        msg_printf(0, MSG_INFO, "    %s state:%d", results[i]->name, results[i]->state());
     }
-    msg_printf(0, MSG_INFO, "%d persistent file xfers\n", (int)pers_file_xfers->pers_file_xfers.size());
+    msg_printf(0, MSG_INFO, "%d persistent file xfers", (int)pers_file_xfers->pers_file_xfers.size());
     for (i=0; i<pers_file_xfers->pers_file_xfers.size(); i++) {
-        msg_printf(0, MSG_INFO, "    %s http op state: %d\n", pers_file_xfers->pers_file_xfers[i]->fip->name, (pers_file_xfers->pers_file_xfers[i]->fxp?pers_file_xfers->pers_file_xfers[i]->fxp->http_op_state:-1));
+        msg_printf(0, MSG_INFO, "    %s http op state: %d", pers_file_xfers->pers_file_xfers[i]->fip->name, (pers_file_xfers->pers_file_xfers[i]->fxp?pers_file_xfers->pers_file_xfers[i]->fxp->http_op_state:-1));
     }
-    msg_printf(0, MSG_INFO, "%d active tasks\n", (int)active_tasks.active_tasks.size());
+    msg_printf(0, MSG_INFO, "%d active tasks", (int)active_tasks.active_tasks.size());
     for (i=0; i<active_tasks.active_tasks.size(); i++) {
-        msg_printf(0, MSG_INFO, "    %s\n", active_tasks.active_tasks[i]->result->name);
+        msg_printf(0, MSG_INFO, "    %s", active_tasks.active_tasks[i]->result->name);
     }
 }
 
@@ -918,12 +994,32 @@ int CLIENT_STATE::nresults_for_project(PROJECT* p) {
     return n;
 }
 
+bool CLIENT_STATE::abort_unstarted_late_jobs() {
+    bool action = false;
+    if (now < 1235668593) return false; // skip if user reset system clock
+    for (unsigned int i=0; i<results.size(); i++) {
+        RESULT* rp = results[i];
+        if (!rp->not_started()) continue;
+        if (rp->report_deadline > now) continue;
+        msg_printf(rp->project, MSG_INFO,
+            "Aborting task %s; not started and deadline has passed",
+            rp->name
+        );
+        rp->abort_inactive(ERR_UNSTARTED_LATE);
+        action = true;
+    }
+    return action;
+}
+
 bool CLIENT_STATE::garbage_collect() {
+    bool action;
     static double last_time=0;
-    if (gstate.now - last_time < 1.0) return false;
+    if (gstate.now - last_time < GARBAGE_COLLECT_PERIOD) return false;
     last_time = gstate.now;
 
-    bool action = garbage_collect_always();
+    action = abort_unstarted_late_jobs();
+    if (action) return true;
+    action = garbage_collect_always();
     if (action) return true;
 
     // Detach projects that are marked for detach when done
@@ -1123,7 +1219,10 @@ bool CLIENT_STATE::garbage_collect_always() {
             found = false;
             for (j=0; j<app_versions.size(); j++) {
                 avp2 = app_versions[j];
-                if (avp2->app==avp->app && avp2->version_num>avp->version_num) {
+                if (avp2->app==avp->app
+                    && (!strcmp(avp2->plan_class, avp->plan_class))
+                    && avp2->version_num>avp->version_num
+                ) {
                     found = true;
                     break;
                 }
@@ -1150,31 +1249,39 @@ bool CLIENT_STATE::garbage_collect_always() {
         }
     }
 
-    // reference count files involved in PERS_FILE_XFER or FILE_XFER
-    // (this seems redundant, but apparently not)
+    // reference-count sticky files not marked for deletion
     //
-    for (i=0; i<file_xfers->file_xfers.size(); i++) {
-        file_xfers->file_xfers[i]->fip->ref_cnt++;
+    
+    for (fi_iter = file_infos.begin(); fi_iter!=file_infos.end(); fi_iter++) {
+        fip = *fi_iter;
+        if (!fip->sticky) continue;
+        if (fip->status < 0) continue;
+        if (fip->marked_for_delete) continue;
+        fip->ref_cnt++;
     }
-    for (i=0; i<pers_file_xfers->pers_file_xfers.size(); i++) {
-        pers_file_xfers->pers_file_xfers[i]->fip->ref_cnt++;
+
+    // remove PERS_FILE_XFERs (and associated FILE_XFERs and HTTP_OPs)
+    // for unreferenced files
+    //
+    vector<PERS_FILE_XFER*>::iterator pfx_iter;
+    pfx_iter = pers_file_xfers->pers_file_xfers.begin();
+    while (pfx_iter != pers_file_xfers->pers_file_xfers.end()) {
+        PERS_FILE_XFER* pfx = *pfx_iter;
+        if (pfx->fip->ref_cnt == 0) {
+            pfx->suspend();
+            delete pfx;
+            pfx_iter = pers_file_xfers->pers_file_xfers.erase(pfx_iter);
+        } else {
+            pfx_iter++;
+        }
     }
 
     // delete FILE_INFOs (and corresponding files) that are not referenced
-    // Don't do this if sticky and not marked for delete
     //
     fi_iter = file_infos.begin();
     while (fi_iter != file_infos.end()) {
         fip = *fi_iter;
-        bool exempt = fip->sticky;
-        if (fip->status < 0) exempt = false;
-        if (fip->marked_for_delete) exempt = false;
-        if (fip->ref_cnt==0 && !exempt) {
-            if (fip->pers_file_xfer) {
-                pers_file_xfers->remove(fip->pers_file_xfer);
-                delete fip->pers_file_xfer;
-                fip->pers_file_xfer = 0;
-            }
+        if (fip->ref_cnt==0) {
             fip->delete_file();
             if (log_flags.state_debug) {
                 msg_printf(0, MSG_INFO,
@@ -1190,7 +1297,7 @@ bool CLIENT_STATE::garbage_collect_always() {
         }
     }
 
-    if (action) {
+    if (action && log_flags.state_debug) {
         print_summary();
     }
 
@@ -1209,7 +1316,7 @@ bool CLIENT_STATE::update_results() {
     static double last_time=0;
     int retval;
 
-    if (gstate.now - last_time < 1.0) return false;
+    if (gstate.now - last_time < UPDATE_RESULTS_PERIOD) return false;
     last_time = gstate.now;
 
     result_iter = results.begin();
@@ -1396,6 +1503,7 @@ int CLIENT_STATE::report_result_error(RESULT& res, const char* format, ...) {
 // - delete all workunits and results
 // - delete all apps and app_versions
 // - garbage collect to delete unneeded files
+// - clear debts and backoffs
 //
 // Note: does NOT delete persistent files or user-supplied files;
 // does not delete project dir
@@ -1479,6 +1587,9 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
 
     project->duration_correction_factor = 1;
     project->ams_resource_share = -1;
+    project->min_rpc_time = 0;
+	project->short_term_debt = 0;
+    project->pwf.reset(project);
     write_state_file();
     return 0;
 }
@@ -1573,6 +1684,9 @@ int CLIENT_STATE::detach_project(PROJECT* project) {
     delete project;
     write_state_file();
 
+    adjust_debts();
+    request_schedule_cpus("Detach");
+    request_work_fetch("Detach");
     return 0;
 }
 
@@ -1582,13 +1696,11 @@ int CLIENT_STATE::detach_project(PROJECT* project) {
 // e.g. flush buffers, but why bother)
 //
 int CLIENT_STATE::quit_activities() {
-    int retval;
-
     // calculate long-term debts (for state file)
     //
     adjust_debts();
 
-    retval = active_tasks.exit_tasks();
+    int retval = active_tasks.exit_tasks();
     if (retval) {
         msg_printf(NULL, MSG_INTERNAL_ERROR,
             "Couldn't exit tasks: %s", boincerror(retval)
@@ -1640,8 +1752,8 @@ void CLIENT_STATE::check_clock_reset() {
         if (p->next_rpc_time) {
             p->next_rpc_time = now;
         }
-        p->next_file_xfer_up = 0;
-        p->next_file_xfer_down = 0;
+        p->download_backoff.next_xfer_time = 0;
+        p->upload_backoff.next_xfer_time = 0;
     }
     for (i=0; i<pers_file_xfers->pers_file_xfers.size(); i++) {
         PERS_FILE_XFER* pfx = pers_file_xfers->pers_file_xfers[i];
@@ -1651,4 +1763,41 @@ void CLIENT_STATE::check_clock_reset() {
     // RESULT: could change report_deadline, but not clear how
 }
 
-const char *BOINC_RCSID_e836980ee1 = "$Id: client_state.cpp 16638 2008-12-07 02:29:41Z romw $";
+// the following is done on client exit if the
+// "abort_jobs_on_exit" flag is present.
+// Abort jobs, and arrange to tell projects about it.
+//
+void CLIENT_STATE::start_abort_sequence() {
+    unsigned int i;
+
+    in_abort_sequence = true;
+
+    for (i=0; i<results.size(); i++) {
+        RESULT* rp = results[i];
+        rp->project->sched_rpc_pending = RPC_REASON_USER_REQ;
+        if (rp->computing_done()) continue;
+        ACTIVE_TASK* atp = lookup_active_task_by_result(rp);
+        if (atp) {
+            atp->abort_task(ERR_ABORTED_ON_EXIT, "aborting on client exit");
+        } else {
+            rp->abort_inactive(ERR_ABORTED_ON_EXIT);
+        }
+    }
+    for (i=0; i<projects.size(); i++) {
+        PROJECT* p = projects[i];
+        p->min_rpc_time = 0;
+    }
+}
+
+// The second part of the above; check if RPCs are done
+//
+bool CLIENT_STATE::abort_sequence_done() {
+    unsigned int i;
+    for (i=0; i<projects.size(); i++) {
+        PROJECT* p = projects[i];
+        if (p->sched_rpc_pending == RPC_REASON_USER_REQ) return false;
+    }
+    return true;
+}
+
+const char *BOINC_RCSID_e836980ee1 = "$Id: client_state.cpp 19329 2009-10-16 19:35:52Z romw $";

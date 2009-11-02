@@ -22,12 +22,8 @@
 // - suspend/resume/quit/abort
 // - reporting CPU time
 // - loss of heartbeat from core client
-//
-// Does NOT handle:
 // - checkpointing
-// If your app does checkpointing,
-// and there's some way to figure out when it's done it,
-// this program could be modified to report to the core client.
+//      (at the level of task; or potentially within task)
 //
 // See http://boinc.berkeley.edu/wrapper.php for details
 // Contributor: Andrew J. Younge (ajy4490@umiacs.umd.edu)
@@ -69,8 +65,6 @@ struct TASK {
     string stderr_filename;
     string checkpoint_filename;
         // name of task's checkpoint file, if any
-    double checkpoint_cpu_time;
-        // CPU time at last checkpoint
     string command_line;
     double weight;
         // contribution of this task to overall fraction done
@@ -125,7 +119,9 @@ int TASK::parse(XML_PARSER& xp) {
     stat_first = true;
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) {
-            fprintf(stderr, "SCHED_CONFIG::parse(): unexpected text %s\n", tag);
+            fprintf(stderr, "%s TASK::parse(): unexpected text %s\n",
+                boinc_msg_prefix(), tag
+            );
             continue;
         }
         if (!strcmp(tag, "/task")) {
@@ -160,7 +156,7 @@ int parse_job_file() {
     boinc_resolve_filename(JOB_FILENAME, buf, 1024);
     FILE* f = boinc_fopen(buf, "r");
     if (!f) {
-        fprintf(stderr, "can't open job file %s\n", buf);
+        fprintf(stderr, "%s can't open job file %s\n", boinc_msg_prefix(), buf);
         return ERR_FOPEN;
     }
     mf.init_file(f);
@@ -169,7 +165,9 @@ int parse_job_file() {
     if (!xp.parse_start("job_desc")) return ERR_XML_PARSE;
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) {
-            fprintf(stderr, "SCHED_CONFIG::parse(): unexpected text %s\n", tag);
+            fprintf(stderr, "%s SCHED_CONFIG::parse(): unexpected text %s\n",
+                boinc_msg_prefix(), tag
+            );
             continue;
         }
         if (!strcmp(tag, "/job_desc")) {
@@ -257,14 +255,12 @@ int TASK::run(int argct, char** argvt) {
     // Append wrapper's command-line arguments to those in the job file.
     //
     for (int i=1; i<argct; i++){
+        command_line += string(" ");
         command_line += argvt[i];
-        if ((i+1) < argct){
-            command_line += string(" ");
-        }
     }
 
-    fprintf(stderr, "wrapper: running %s (%s)\n",
-        app_path, command_line.c_str()
+    fprintf(stderr, "%s wrapper: running %s (%s)\n",
+        boinc_msg_prefix(), app_path, command_line.c_str()
     );
 
 #ifdef _WIN32
@@ -443,24 +439,10 @@ void poll_boinc_messages(TASK& task) {
 
 double TASK::cpu_time() {
 #ifdef _WIN32
-    FILETIME creation_time, exit_time, kernel_time, user_time;
-    ULARGE_INTEGER tKernel, tUser;
-    LONGLONG totTime;
-
-    int retval = GetProcessTimes(
-        pid_handle, &creation_time, &exit_time, &kernel_time, &user_time
-    );
-    if (retval == 0) {
-        return wall_cpu_time;
-    }
-
-    tKernel.LowPart  = kernel_time.dwLowDateTime;
-    tKernel.HighPart = kernel_time.dwHighDateTime;
-    tUser.LowPart    = user_time.dwLowDateTime;
-    tUser.HighPart   = user_time.dwHighDateTime;
-    totTime = tKernel.QuadPart + tUser.QuadPart;
-
-    return totTime / 1.e7;
+    double x;
+    int retval = boinc_process_cpu_time(pid_handle, x);
+    if (retval) return wall_cpu_time;
+    return x;
 #elif defined(__APPLE__)
     // There's no easy way to get another process's CPU time in Mac OS X
     //
@@ -470,14 +452,13 @@ double TASK::cpu_time() {
 #endif
 }
 
-void send_status_message(TASK& task, double frac_done) {
+void send_status_message(
+    TASK& task, double frac_done, double checkpoint_cpu_time
+) {
     double current_cpu_time = task.starting_cpu + task.cpu_time();
-    if (task.has_checkpointed()) {
-        task.checkpoint_cpu_time = current_cpu_time;
-    }
     boinc_report_app_status(
         current_cpu_time,
-        task.checkpoint_cpu_time,
+        checkpoint_cpu_time,
         frac_done
     );
 }
@@ -512,7 +493,9 @@ int main(int argc, char** argv) {
     BOINC_OPTIONS options;
     int retval, ntasks;
     unsigned int i;
-    double cpu, total_weight=0, w=0;
+    double total_weight=0, w=0;
+    double checkpoint_cpu_time;
+        // overall CPU time at last checkpoint
 
     for (i=1; i<(unsigned int)argc; i++) {
         if (!strcmp(argv[i], "--graphics")) {
@@ -539,7 +522,7 @@ int main(int argc, char** argv) {
         boinc_finish(retval);
     }
 
-    read_checkpoint(ntasks, cpu);
+    read_checkpoint(ntasks, checkpoint_cpu_time);
     if (ntasks > (int)tasks.size()) {
         fprintf(stderr, "Checkpoint file: ntasks %d too large\n", ntasks);
         boinc_finish(1);
@@ -553,8 +536,7 @@ int main(int argc, char** argv) {
         if ((int)i<ntasks) continue;
         double frac_done = w/total_weight;
 
-        task.starting_cpu = cpu;
-        task.checkpoint_cpu_time = cpu;
+        task.starting_cpu = checkpoint_cpu_time;
         retval = task.run(argc, argv);
         if (retval) {
             fprintf(stderr, "can't run app: %d\n", retval);
@@ -576,11 +558,15 @@ int main(int argc, char** argv) {
                 break;
             }
             poll_boinc_messages(task);
-            send_status_message(task, frac_done);
+            send_status_message(task, frac_done, checkpoint_cpu_time);
+            if (task.has_checkpointed()) {
+                checkpoint_cpu_time = task.starting_cpu + task.cpu_time();
+                write_checkpoint(i, checkpoint_cpu_time);
+            }
             boinc_sleep(POLL_PERIOD);
         }
-        cpu += task.final_cpu_time;
-        write_checkpoint(i+1, cpu);
+        checkpoint_cpu_time = task.starting_cpu + task.final_cpu_time;
+        write_checkpoint(i+1, checkpoint_cpu_time);
     }
     boinc_finish(0);
 }

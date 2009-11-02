@@ -28,7 +28,7 @@
 #include <string>
 
 #ifndef _WIN32
-#include <stdio.h>
+#include <cstdio>
 #endif
 
 #define MAX_FILE_XFERS_PER_PROJECT      2
@@ -38,71 +38,74 @@
 class XML_PARSER;
 
 struct LOG_FLAGS {
-    // on by default, user-readable
+    // on by default; intended for all users
     //
-        /// task start and finish
-    bool task;
-        /// file transfer start and finish
     bool file_xfer;
-        /// interactions with schedulers
+        // file transfer start and finish
     bool sched_ops;
+        // interactions with schedulers
+    bool task;
+        // task start and finish
 
     // off by default; intended for developers and testers
     //
-        /// preemption and resumption
-    bool cpu_sched;
-        /// explain scheduler decisions
-    bool cpu_sched_debug;
-        /// results of rr simulator
-    bool rr_simulation;
-        /// changes to debt
-    bool debt_debug;
-        /// task start and control details, and when apps checkpoint
-    bool task_debug;
-        /// work fetch policy 
-    bool work_fetch_debug;
-
-        /// show unparsed XML lines
-    bool unparsed_xml;
-        /// print textual summary of CLIENT_STATE initially
-        /// and after each scheduler RPC and garbage collect
-        /// also show actions of garbage collector
-        /// also show when state file is read or written
-    bool state_debug;
-        /// show completion of FILE_XFER
-    bool file_xfer_debug;
-    bool sched_op_debug;
-    bool http_debug;
-    bool proxy_debug;
-        /// changes in on_frac, active_frac, connected_frac
-    bool time_debug;
-    bool http_xfer_debug;
-        /// debug CPU benchmarks
-    bool benchmark_debug;
-        /// show what polls are responding
-    bool poll_debug;
-    bool guirpc_debug;
-    bool scrsave_debug;
-        /// show shared-mem message to apps
-    bool app_msg_send;
-        /// show shared-mem message from apps
     bool app_msg_receive;
-        /// memory usage
-	bool mem_usage_debug;
-	bool network_status_debug;
+        // show shared-mem message from apps
+    bool app_msg_send;
+        // show shared-mem message to apps
+    bool benchmark_debug;
+        // debug CPU benchmarks
     bool checkpoint_debug;
-        /// show coproc reserve/free
-	bool coproc_debug;
+    bool coproc_debug;
+        // show coproc reserve/free and startup msgs
+    bool cpu_sched;
+        // preemption and resumption
+    bool cpu_sched_debug;
+        // explain scheduler decisions
+    bool dcf_debug;
+        // show changes to duration correction factors
+    bool debt_debug;
+        // changes to debt
+    bool file_xfer_debug;
+        // show completion of FILE_XFER
+    bool guirpc_debug;
+    bool http_debug;
+    bool http_xfer_debug;
+    bool mem_usage_debug;
+        // memory usage
+    bool network_status_debug;
+    bool poll_debug;
+        // show what polls are responding
+    bool proxy_debug;
+    bool rr_simulation;
+        // results of rr simulator
+    bool sched_op_debug;
+    bool scrsave_debug;
+    bool slot_debug;
+        // allocation of slots
+    bool state_debug;
+        // print textual summary of CLIENT_STATE initially
+        // and after each scheduler RPC and garbage collect
+        // also show actions of garbage collector
+    bool statefile_debug;
+        // show when and why state file is written
+    bool task_debug;
+        // task start and control details, and when apps checkpoint
+    bool time_debug;
+        // changes in on_frac, active_frac, connected_frac
+    bool unparsed_xml;
+        // show unparsed XML lines
+    bool work_fetch_debug;
+        // work fetch policy 
 
     LOG_FLAGS();
-    void defaults();
     int parse(XML_PARSER&);
     void show();
 };
 
 struct CONFIG {
     bool dont_check_file_sizes;
-	bool http_1_0;
+    bool http_1_0;
     int save_stats_days;
     int ncpus;
     int max_file_xfers;
@@ -128,11 +131,16 @@ struct CONFIG {
     std::string client_version_check_url;
     std::string client_download_url;
     std::string network_test_url;
+    bool no_gpus;
+    bool zero_debts;
+    bool no_priority_change;
+    bool use_all_gpus;
 
     CONFIG();
-    void defaults();
+    void clear();
     int parse(FILE*);
     int parse_options(XML_PARSER&);
+    void show();
 };
 
 extern LOG_FLAGS log_flags;

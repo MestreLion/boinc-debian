@@ -31,7 +31,6 @@
 // check_set() and check_pair().
 // See doc/validate.php for a description.
 
-using namespace std;
 
 #include "config.h"
 #include <unistd.h>
@@ -47,6 +46,7 @@ using namespace std;
 #include "str_util.h"
 #include "error_numbers.h"
 
+#include "credit.h"
 #include "sched_config.h"
 #include "sched_util.h"
 #include "sched_msgs.h"
@@ -110,9 +110,7 @@ void update_error_rate(DB_HOST& host, bool valid) {
 // Grant credit to host, user and team, and update host error rate.
 //
 int is_valid(RESULT& result, WORKUNIT& wu) {
-    DB_USER user;
     DB_HOST host;
-    DB_TEAM team;
     DB_CREDITED_JOB credited_job;
     int retval;
     char buf[256];
@@ -126,51 +124,10 @@ int is_valid(RESULT& result, WORKUNIT& wu) {
         return retval;
     }
 
-    retval = user.lookup_id(host.userid);
-    if (retval) {
-        log_messages.printf(MSG_CRITICAL,
-            "[RESULT#%d] lookup of user %d failed %d\n",
-            result.id, host.userid, retval
-        );
-        return retval;
-    }
-
-    update_average(
-        result.sent_time, result.granted_credit, CREDIT_HALF_LIFE,
-        user.expavg_credit, user.expavg_time
-    );
-    sprintf(
-        buf, "total_credit=total_credit+%f, expavg_credit=%f, expavg_time=%f",
-        result.granted_credit,  user.expavg_credit, user.expavg_time
-    ); 
-    retval = user.update_field(buf);
-    if (retval) {
-        log_messages.printf(MSG_CRITICAL,
-            "[RESULT#%d] update of user %d failed %d\n",
-            result.id, host.userid, retval
-        );
-    }
-
-    update_average(
-        result.sent_time, result.granted_credit, CREDIT_HALF_LIFE,
-        host.expavg_credit, host.expavg_time
-    );
+    grant_credit(host, result.sent_time, result.cpu_time, result.granted_credit);
 
     double turnaround = result.received_time - result.sent_time;
     compute_avg_turnaround(host, turnaround);
-
-        
-    // compute new credit per CPU time
-    //
-    retval = update_credit_per_cpu_sec(
-        result.granted_credit, result.cpu_time, host.credit_per_cpu_sec
-    );
-    if (retval) {
-        log_messages.printf(MSG_CRITICAL,
-            "[RESULT#%d][HOST#%d] claimed too much credit (%f) in too little CPU time (%f)\n",
-            result.id, result.hostid, result.granted_credit, result.cpu_time
-        );
-    }
 
     double old_error_rate = host.error_rate;
     if (!is_unreplicated(wu)) {
@@ -178,8 +135,8 @@ int is_valid(RESULT& result, WORKUNIT& wu) {
     }
     sprintf(
         buf,
-        "total_credit=total_credit+%f, expavg_credit=%f, expavg_time=%f, avg_turnaround=%f, credit_per_cpu_sec=%f, error_rate=%f",
-        result.granted_credit,  host.expavg_credit, host.expavg_time, host.avg_turnaround, host.credit_per_cpu_sec, host.error_rate
+        "avg_turnaround=%f, error_rate=%f",
+        host.avg_turnaround, host.error_rate
     );
     retval = host.update_field(buf);
     if (retval) {
@@ -193,42 +150,19 @@ int is_valid(RESULT& result, WORKUNIT& wu) {
         host.id, old_error_rate, host.error_rate
     );
 
-    if (user.teamid) {
-        retval = team.lookup_id(user.teamid);
-        if (retval) {
-            log_messages.printf(MSG_CRITICAL,
-                "[RESULT#%d] lookup of team %d failed %d\n",
-                result.id, user.teamid, retval
-            );
-            return retval;
-        }
-        update_average(result.sent_time, result.granted_credit, CREDIT_HALF_LIFE, team.expavg_credit, team.expavg_time);
-        sprintf(
-            buf, "total_credit=total_credit+%f, expavg_credit=%f, expavg_time=%f",
-            result.granted_credit,  team.expavg_credit, team.expavg_time
-        );
-        retval = team.update_field(buf);
-        if (retval) {
-            log_messages.printf(MSG_CRITICAL,
-                "[RESULT#%d] update of team %d failed %d\n",
-                result.id, team.id, retval
-            );
-        }
-    }
-
     if (update_credited_job) {
-        credited_job.userid = user.id;
+        credited_job.userid = host.userid;
         credited_job.workunitid = long(wu.opaque);
         retval = credited_job.insert();
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
                 "[RESULT#%d] Warning: credited_job insert failed (userid: %d workunit: %f err: %d)\n",
-                result.id, user.id, wu.opaque, retval
+                result.id, host.userid, wu.opaque, retval
             );
         } else {
             log_messages.printf(MSG_DEBUG,
                 "[RESULT#%d %s] added credited_job record [WU#%d OPAQUE#%f USER#%d]\n",
-                result.id, result.name, wu.id, wu.opaque, user.id
+                result.id, result.name, wu.id, wu.opaque, host.userid
             );
         }
     }
@@ -273,7 +207,7 @@ int is_invalid(WORKUNIT& wu, RESULT& result) {
 //
 int handle_wu(
     DB_VALIDATOR_ITEM_SET& validator, std::vector<VALIDATOR_ITEM>& items
-) { 
+) {
     int canonical_result_index = -1;
     bool update_result, retry;
     TRANSITION_TIME transition_time = NO_CHANGE;
@@ -298,7 +232,7 @@ int handle_wu(
             RESULT& result = items[i].res;
 
             if (result.id == wu.canonical_resultid) {
-                canonical_result_index = i; 
+                canonical_result_index = i;
             }
         }
         if (canonical_result_index == -1) {
@@ -374,7 +308,7 @@ int handle_wu(
             }
             if (update_result) {
                 log_messages.printf(MSG_NORMAL,
-                    "[RESULT#%d %s] granted_credit %f\n", 
+                    "[RESULT#%d %s] granted_credit %f\n",
                     result.id, result.name, result.granted_credit
                 );
 
@@ -422,7 +356,7 @@ int handle_wu(
                 "[WU#%d %s] Enough for quorum, checking set.\n",
                 wu.id, wu.name
             );
-           
+
             retval = check_set(results, wu, canonicalid, credit, retry);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
@@ -609,15 +543,13 @@ bool do_validate_scan() {
     DB_VALIDATOR_ITEM_SET validator;
     std::vector<VALIDATOR_ITEM> items;
     bool found=false;
-    int retval;
+    int retval, i=0;
 
     // loop over entries that need to be checked
     //
     while (1) {
         retval = validator.enumerate(
-            app.id, one_pass_N_WU?one_pass_N_WU:SELECT_LIMIT,
-            wu_id_modulus, wu_id_remainder,
-            items
+            app.id, SELECT_LIMIT, wu_id_modulus, wu_id_remainder, items
         );
         if (retval) {
             if (retval != ERR_DB_NOT_FOUND) {
@@ -630,6 +562,7 @@ bool do_validate_scan() {
         }
         retval = handle_wu(validator, items);
         if (!retval) found = true;
+        if (++i == one_pass_N_WU) break;
     }
     return found;
 }
@@ -639,7 +572,9 @@ int main_loop() {
     bool did_something;
     char buf[256];
 
-    retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
+    retval = boinc_db.open(
+        config.db_name, config.db_host, config.db_user, config.db_passwd
+    );
     if (retval) {
         log_messages.printf(MSG_CRITICAL, "boinc_db.open failed: %d\n", retval);
         exit(1);
@@ -658,11 +593,11 @@ int main_loop() {
         if (!did_something) {
             if (one_pass) break;
 #ifdef GCL_SIMULATOR
-             char nameforsim[64];
-             sprintf(nameforsim, "validator%i", app.id);
-             continue_simulation(nameforsim);
-             signal(SIGUSR2, simulator_signal_handler);
-             pause();
+            char nameforsim[64];
+            sprintf(nameforsim, "validator%i", app.id);
+            continue_simulation(nameforsim);
+            signal(SIGUSR2, simulator_signal_handler);
+            pause();
 #else
             sleep(sleep_interval);
 #endif
@@ -736,7 +671,10 @@ int main(int argc, char** argv) {
         } else if (!strcmp(argv[i], "-credit_from_wu")) {
             credit_from_wu = true;
         } else {
-            fprintf(stderr, "Invalid option '%s'\nTry `%s --help` for more information\n", argv[i], argv[0]);
+            fprintf(stderr,
+                "Invalid option '%s'\nTry `%s --help` for more information\n",
+                argv[i], argv[0]
+            );
             log_messages.printf(MSG_CRITICAL, "unrecognized arg: %s\n", argv[i]);
             exit(1);
         }
@@ -744,15 +682,17 @@ int main(int argc, char** argv) {
 
     // -app is required
     if (app_name[0] == 0) {
-      fprintf (stderr, "\nERROR: use '-app' to specify the application to run the validator for.\n");
-      printf (usage, argv[0] );
-      exit(1);      
+        fprintf(stderr,
+            "\nERROR: use '-app' to specify the application to run the validator for.\n"
+        );
+        printf (usage, argv[0] );
+        exit(1);      
     }
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse ../config.xml: %s\n", boincerror(retval)
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -771,4 +711,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_634dbda0b9 = "$Id: validator.cpp 16097 2008-09-30 18:21:41Z davea $";
+const char *BOINC_RCSID_634dbda0b9 = "$Id: validator.cpp 18832 2009-08-13 03:35:26Z davea $";

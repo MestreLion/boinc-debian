@@ -58,6 +58,15 @@ void MIOFILE::init_buf_write(char* _buf, int _len) {
 	wbuf[0] = 0;
 }
 
+bool MIOFILE::eof() {
+    if (f) {
+        if (!feof(f)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 #ifndef _USING_FCGI_
 
 int MIOFILE::printf(const char* format, ...) {
@@ -150,4 +159,4 @@ int copy_element_contents(MIOFILE& in, const char* end_tag, string& str) {
     return ERR_XML_PARSE;
 }
 
-const char *BOINC_RCSID_37339d4dc0 = "$Id: miofile.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_37339d4dc0 = "$Id: miofile.cpp 18409 2009-06-13 21:03:45Z romw $";

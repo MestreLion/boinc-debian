@@ -1,23 +1,20 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
-
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "ProjectPropertiesPage.h"
 #endif
@@ -113,9 +110,10 @@ bool CProjectPropertiesPage::Create( CBOINCBaseWizard* parent )
  
     m_bProjectPropertiesSucceeded = false;
     m_bProjectPropertiesURLFailure = false;
+    m_bProjectPropertiesCommunicationFailure = false;
     m_bProjectAccountCreationDisabled = false;
     m_bProjectClientAccountCreationDisabled = false;
-    m_bNetworkConnectionDetected = false;
+    m_bNetworkConnectionNotDetected = false;
     m_bServerReportedError = false;
     m_bTermsOfUseRequired = true;
     m_iBitmapIndex = 0;
@@ -187,16 +185,16 @@ wxWizardPageEx* CProjectPropertiesPage::GetNext() const
     if (CHECK_CLOSINGINPROGRESS()) {
         // Cancel Event Detected
         return PAGE_TRANSITION_NEXT(ID_COMPLETIONERRORPAGE);
-    } else if (GetProjectPropertiesSucceeded() && GetProjectAlreadyAttached()) {
-        // Already attach to the project
-        return PAGE_TRANSITION_NEXT(ID_ERRALREADYATTACHEDPAGE);
     } else if (GetProjectPropertiesSucceeded() && GetTermsOfUseRequired()) {
         // Terms of Use are required before requesting account information
         return PAGE_TRANSITION_NEXT(ID_TERMSOFUSEPAGE);
+    } else if (GetProjectPropertiesSucceeded() && GetCredentialsAlreadyAvailable()) {
+        // Credentials are already available, do whatever we need to do.
+        return PAGE_TRANSITION_NEXT(ID_PROJECTPROCESSINGPAGE);
     } else if (GetProjectPropertiesSucceeded()) {
         // We were successful in retrieving the project properties
         return PAGE_TRANSITION_NEXT(ID_ACCOUNTINFOPAGE);
-    } else if (GetProjectPropertiesURLFailure() && !GetNetworkConnectionDetected()) {
+    } else if (GetProjectPropertiesCommunicationFailure() && GetNetworkConnectionNotDetected()) {
         // No Internet Connection
         return PAGE_TRANSITION_NEXT(ID_ERRPROXYINFOPAGE);
     } else if (GetProjectPropertiesURLFailure()) {
@@ -340,9 +338,10 @@ void CProjectPropertiesPage::OnPageChanged( wxWizardExEvent& event ) {
 
     SetProjectPropertiesSucceeded(false);
     SetProjectPropertiesURLFailure(false);
+    SetProjectPropertiesCommunicationFailure(false);
     SetProjectAccountCreationDisabled(false);
     SetProjectClientAccountCreationDisabled(false);
-    SetNetworkConnectionDetected(false);
+    SetNetworkConnectionNotDetected(false);
     SetNextState(PROJPROP_INIT);
 
     CProjectPropertiesPageEvent TransitionEvent(wxEVT_PROJECTPROPERTIES_STATECHANGE, this);
@@ -374,7 +373,6 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
     wxTimeSpan tsExecutionTime;
     wxString strBuffer = wxEmptyString;
     bool bPostNewEvent = true;
-    bool bSuccessfulCondition = false;
     int  iReturnValue = 0;
  
     wxASSERT(pDoc);
@@ -392,9 +390,6 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
             break;
         case PROJPROP_RETRPROJECTPROPERTIES_EXECUTE:
             // Attempt to retrieve the project's account creation policies
-            pDoc->rpc.get_project_config(
-                (const char*)pWAP->m_ProjectInfoPage->GetProjectURL().mb_str()
-            );
  
             // Wait until we are done processing the request.
             dtStartExecutionTime = wxDateTime::Now();
@@ -402,12 +397,19 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
             tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
             iReturnValue = 0;
             pc->clear();
-            pc->error_num = ERR_IN_PROGRESS;
-            while ((!iReturnValue && (ERR_IN_PROGRESS == pc->error_num)) &&
-                   tsExecutionTime.GetSeconds() <= 60 &&
-                   !CHECK_CLOSINGINPROGRESS()
-                  )
-            {
+            pc->error_num = ERR_RETRY;
+            while (
+                !iReturnValue &&
+                ((ERR_IN_PROGRESS == pc->error_num) || (ERR_RETRY == pc->error_num)) &&
+                tsExecutionTime.GetSeconds() <= 60 &&
+                !CHECK_CLOSINGINPROGRESS()
+            ) {
+                if (ERR_RETRY == pc->error_num) {
+                    pDoc->rpc.get_project_config(
+                        (const char*)pWAP->m_ProjectInfoPage->GetProjectURL().mb_str()
+                    );
+                }
+
                 dtCurrentExecutionTime = wxDateTime::Now();
                 tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
                 iReturnValue = pDoc->rpc.get_project_config_poll(*pc);
@@ -417,83 +419,54 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
                 ::wxSafeYield(GetParent());
             }
  
-            // We either successfully retrieved the project's account creation 
-            //   policies or we were able to talk to the web server and found out
-            //   they do not support account creation through the wizard.  In either
-            //   case we should claim success and set the correct flags to show the
-            //   correct 'next' page.
-            bSuccessfulCondition = 
-                (!iReturnValue) && (!pc->error_num) ||
-                (!iReturnValue) && (ERR_ACCT_CREATION_DISABLED == pc->error_num);
-            if (bSuccessfulCondition && !CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIES)) {
+            if (
+                !iReturnValue
+                && (!pc->error_num || pc->error_num == ERR_ACCT_CREATION_DISABLED)
+            ) {
+                // We either successfully retrieved the project's
+                // account creation policies or we were able to talk
+                // to the web server and found out they do not support
+                // account creation through the wizard.
+                // In either case, claim success and set the correct flags
+                // to show the correct 'next' page.
+                //
                 SetProjectPropertiesSucceeded(true);
+                SetProjectAccountCreationDisabled(pc->account_creation_disabled);
+                SetProjectClientAccountCreationDisabled(pc->client_account_creation_disabled);
+                SetTermsOfUseRequired(!pc->terms_of_use.empty());
 
-                bSuccessfulCondition = pc->account_creation_disabled;
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRACCOUNTCREATIONDISABLED)) {
-                    SetProjectAccountCreationDisabled(true);
-                } else {
-                    SetProjectAccountCreationDisabled(false);
-                }
-
-                bSuccessfulCondition = 
-                    (ERR_ALREADY_ATTACHED == pDoc->rpc.project_attach(
-                        (const char*)pWAP->m_ProjectInfoPage->GetProjectURL().mb_str(),
-                        "", "")
-                    );
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTALREADYATTACHED)) {
-                    SetProjectAlreadyAttached(true);
-                } else {
-                    SetProjectAlreadyAttached(false);
-                }
-
-                bSuccessfulCondition = pc->client_account_creation_disabled;
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRCLIENTACCOUNTCREATIONDISABLED)) {
-                    SetProjectClientAccountCreationDisabled(true);
-                } else {
-                    SetProjectClientAccountCreationDisabled(false);
-                }
- 
-                bSuccessfulCondition = !pc->terms_of_use.empty();
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRTERMSOFUSEREQUIRED)) {
-                    SetTermsOfUseRequired(true);
-                } else {
-                    SetTermsOfUseRequired(false);
-                }
- 
-                SetNextState(PROJPROP_CLEANUP);
             } else {
+
                 SetProjectPropertiesSucceeded(false);
+                SetProjectPropertiesURLFailure(pc->error_num == ERR_FILE_NOT_FOUND);
 
-                bSuccessfulCondition = 
-                    (!iReturnValue) && (ERR_FILE_NOT_FOUND == pc->error_num) ||
-                    (!iReturnValue) && (ERR_GETHOSTBYNAME == pc->error_num) ||
-                    (!iReturnValue) && (ERR_XML_PARSE == pc->error_num);
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIESURL)) {
-                    SetProjectPropertiesURLFailure(true);
-                } else {
-                    SetProjectPropertiesURLFailure(false);
-                }
+                bool comm_failure = !iReturnValue && (
+                    (ERR_GETHOSTBYNAME == pc->error_num)
+                    || (ERR_CONNECT == pc->error_num)
+                    || (ERR_XML_PARSE == pc->error_num)
+                    || (ERR_PROJECT_DOWN == pc->error_num)
+                );
+                SetProjectPropertiesCommunicationFailure(comm_failure);
 
-                bSuccessfulCondition = 
-                    ((!iReturnValue) && (ERR_FILE_NOT_FOUND != pc->error_num)) &&
-                    ((!iReturnValue) && (ERR_GETHOSTBYNAME != pc->error_num)) &&
-                    ((!iReturnValue) && (ERR_XML_PARSE != pc->error_num)) &&
-                    (!iReturnValue);
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIESURL)) {
-                    SetServerReportedError(true);
+                bool server_reported_error = !iReturnValue && (
+                    (ERR_FILE_NOT_FOUND != pc->error_num)
+                    && (ERR_GETHOSTBYNAME != pc->error_num)
+                    && (ERR_CONNECT != pc->error_num)
+                    && (ERR_XML_PARSE != pc->error_num)
+                    && (ERR_PROJECT_DOWN != pc->error_num)
+                );
+                SetServerReportedError(server_reported_error);
 
+                if (server_reported_error) {
                     strBuffer = pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->GetLabel();
 				    if (pc->error_msg.size()) {
                         strBuffer += wxString(pc->error_msg.c_str(), wxConvUTF8) + wxString(wxT("\n"));
                     }
                     pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->SetLabel(strBuffer);
-
-                } else {
-                    SetServerReportedError(false);
                 }
-
-                SetNextState(PROJPROP_DETERMINENETWORKSTATUS_BEGIN);
             }
+
+            SetNextState(PROJPROP_DETERMINENETWORKSTATUS_BEGIN);
             break;
         case PROJPROP_DETERMINENETWORKSTATUS_BEGIN:
             SetNextState(PROJPROP_DETERMINENETWORKSTATUS_EXECUTE);
@@ -521,14 +494,19 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
                 ::wxSafeYield(GetParent());
             }
 
-            bSuccessfulCondition = NETWORK_STATUS_WANT_CONNECTION != status.network_status;
-            if (bSuccessfulCondition && !CHECK_DEBUG_FLAG(WIZDEBUG_ERRNETDETECTION)) {
-                SetNetworkConnectionDetected(true);
-            } else {
-                SetNetworkConnectionDetected(false);
-            }
-            SetNextState(PROJPROP_CLEANUP);
+            SetNetworkConnectionNotDetected(NETWORK_STATUS_WANT_CONNECTION == status.network_status);
 
+            SetNextState(PROJPROP_DETERMINEACCOUNTINFOSTATUS_BEGIN);
+            break;
+        case PROJPROP_DETERMINEACCOUNTINFOSTATUS_BEGIN:
+            SetNextState(PROJPROP_DETERMINEACCOUNTINFOSTATUS_EXECUTE);
+            break;
+        case PROJPROP_DETERMINEACCOUNTINFOSTATUS_EXECUTE:
+            // Determine if the account settings are already pre-populated.
+            //   If so, advance to the Project Processing page.
+            SetCredentialsAlreadyAvailable(pWAP->m_bCredentialsCached || pWAP->m_bCredentialsDetected);
+
+            SetNextState(PROJPROP_CLEANUP);
             break;
         case PROJPROP_CLEANUP:
             FinishProgress(m_pProgressIndicator);
@@ -551,3 +529,4 @@ void CProjectPropertiesPage::OnStateChange( CProjectPropertiesPageEvent& WXUNUSE
         AddPendingEvent(TransitionEvent);
     }
 }
+

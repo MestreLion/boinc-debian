@@ -23,6 +23,7 @@
 #include "config.h"
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cassert>
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -34,6 +35,7 @@
 #include "filesys.h"
 #include "parse.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "client_state.h"
 #include "client_msgs.h"
 #include "log_flags.h"
@@ -41,6 +43,7 @@
 #include "file_names.h"
 
 using std::string;
+using std::sort;
 
 // write account_*.xml file.
 // NOTE: this is called only when
@@ -89,6 +92,9 @@ int PROJECT::parse_account(FILE* in) {
     char buf[256];
     int retval;
     bool in_project_prefs = false;
+    no_cpu = false;
+    no_cuda = false;
+    no_ati = false;
 
     strcpy(master_url, "");
     strcpy(authenticator, "");
@@ -114,6 +120,9 @@ int PROJECT::parse_account(FILE* in) {
             continue;
         } else if (parse_str(buf, "<authenticator>", authenticator, sizeof(authenticator))) continue;
         else if (parse_double(buf, "<resource_share>", resource_share)) continue;
+        else if (parse_bool(buf, "no_cpu", no_cpu)) continue;
+        else if (parse_bool(buf, "no_cuda", no_cuda)) continue;
+        else if (parse_bool(buf, "no_ati", no_ati)) continue;
         else if (parse_str(buf, "<project_name>", project_name, sizeof(project_name))) continue;
         else if (match_tag(buf, "<gui_urls>")) {
             string foo;
@@ -187,7 +196,11 @@ int PROJECT::parse_account_file_venue() {
             continue;
         } else if (parse_double(buf, "<resource_share>", resource_share)) {
             continue;
-        } else {
+        }
+        else if (parse_bool(buf, "no_cpu", no_cpu)) continue;
+        else if (parse_bool(buf, "no_cuda", no_cuda)) continue;
+        else if (parse_bool(buf, "no_ati", no_ati)) continue;
+        else {
             if (log_flags.unparsed_xml) {
                 msg_printf(0, MSG_INFO,
                     "[unparsed_xml] parse_account_file_venue(): unrecognized: %s\n", buf
@@ -247,13 +260,13 @@ int CLIENT_STATE::parse_account_files() {
         retval = project->parse_account(f);
         fclose(f);
         if (retval) {
-            msg_printf(NULL, MSG_INTERNAL_ERROR,
+            msg_printf(project, MSG_INTERNAL_ERROR,
                 "Couldn't parse account file %s", name.c_str()
             );
             delete project;
         } else {
             if (lookup_project(project->master_url)) {
-                msg_printf(NULL, MSG_INFO,
+                msg_printf(project, MSG_INFO,
                     "Duplicate account file %s - ignoring", name.c_str()
                 );
                 delete project;
@@ -491,4 +504,4 @@ int CLIENT_STATE::parse_preferences_for_user_files() {
     return 0;
 }
 
-const char *BOINC_RCSID_497223a3f8 = "$Id: cs_account.cpp 16150 2008-10-07 12:45:06Z davea $";
+const char *BOINC_RCSID_497223a3f8 = "$Id: cs_account.cpp 19254 2009-10-05 20:32:16Z romw $";

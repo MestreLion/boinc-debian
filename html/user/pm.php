@@ -23,7 +23,7 @@ require_once("../inc/forum.inc");
 require_once("../inc/akismet.inc");
 
 function show_block_link($userid) {
-    echo " <a href=\"pm.php?action=block&id=$userid\">";
+    echo " <a href=\"pm.php?action=block&amp;id=$userid\">";
     show_image(REPORT_POST_IMAGE, "Block messages from this user",  "Block user", REPORT_POST_IMAGE_HEIGHT);
     echo "</a>";
 }
@@ -42,7 +42,7 @@ BoincForumPrefs::lookup($logged_in_user);
 
 function make_script() {
     echo "
-        <script>
+        <script type=\"text/javascript\">
         function set_all(val) {
             f = document.msg_list;
             n = f.elements.length;
@@ -99,8 +99,8 @@ function do_inbox($logged_in_user) {
             echo "<td valign=top>".output_transform($msg->content, $options)."<p>";
             $tokens = url_tokens($logged_in_user->authenticator);
 	    echo "<ul class=\"actionlist\">";
-            show_actionlist_button("pm.php?action=delete&id=$msg->id&$tokens", tra("Delete"), "Delete this message");
-            show_actionlist_button("pm.php?action=new&replyto=$msg->id", tra("Reply"), "Reply to this message");
+            show_actionlist_button("pm.php?action=new&amp;replyto=$msg->id", tra("Reply"), "Reply to this message");
+            show_actionlist_button("pm.php?action=delete&amp;id=$msg->id&amp;$tokens", tra("Delete"), "Delete this message");
             echo "</ul></td></tr>\n";
         }
         echo "
@@ -139,8 +139,8 @@ function do_read($logged_in_user) {
     echo "<tr><th>".tra("Date")."</th><td>".time_str($message->date)."</td></tr>";
     echo "<tr><th>".tra("Message")."</th><td>".output_transform($message->content, $options)."</td></tr>";
     echo "<tr><td class=\"pm_footer\"></td><td>\n";
-    echo "<a href=\"pm.php?action=delete&amp;id=$id\">".tra("Delete")."</a>\n";
-    echo " | <a href=\"pm.php?action=new&amp;replyto=$id\">".tra("Reply")."</a>\n";
+    echo "<a href=\"pm.php?action=new&amp;replyto=$id\">".tra("Reply")."</a>\n";
+    echo " | <a href=\"pm.php?action=delete&amp;id=$id\">".tra("Delete")."</a>\n";
     echo " | <a href=\"pm.php?action=inbox\">".tra("Inbox")."</a>\n";
     end_table();
     
@@ -218,7 +218,7 @@ function do_send($logged_in_user) {
         
         foreach ($userlist as $user) {
             check_pm_count($logged_in_user->id);
-            pm_send($user, $subject, $content);
+            pm_send($user, $subject, $content, true);
         }
         
         Header("Location: pm.php?action=inbox&sent=1");

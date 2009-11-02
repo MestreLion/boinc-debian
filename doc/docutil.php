@@ -100,7 +100,8 @@ function page_tail($translatable=false, $is_main=false) {
         ";
     }
     echo "
-        <font color=888888 size='2'>
+        <span class=note>
+        <font color=#888888>
     ";
     if ($translatable) {
         echo "
@@ -113,6 +114,7 @@ function page_tail($translatable=false, $is_main=false) {
     copyright();
     echo "
         </font>
+        </span>
         </body>
         </html>
     ";
@@ -121,6 +123,14 @@ function page_tail($translatable=false, $is_main=false) {
 function html_text($x) {
     return "<pre>".htmlspecialchars($x)."</pre>
     ";
+}
+
+function start_table($extra="width=\"100%\"") {
+    echo "<table class=bordered $extra>";
+}
+
+function end_table() {
+    echo "</table>\n";
 }
 
 function list_start($attrs = 'width="100%"') {
@@ -142,7 +152,7 @@ function list_heading($x, $y, $z=null) {
 function list_heading_array($x) {
     echo "<tr>";
     foreach ($x as $h) {
-        echo "<th>$h</th>";
+        echo "<td class=heading valign=top><center><b>$h</b></center></td>";
     }
     echo "</tr>\n";
 }
@@ -163,7 +173,7 @@ function list_item($x, $y, $z=null) {
 function list_item_array($x) {
     echo "<tr>";
     foreach ($x as $h) {
-        echo "<td valign=top>$h<br></td>";
+        echo "<td valign=top>$h</td>";
     }
     echo "</tr>\n";
 }

@@ -73,6 +73,7 @@
 
 using std::string;
 using std::vector;
+using std::sort;
 
 DISPLAY_INFO::DISPLAY_INFO() {
     memset(this, 0, sizeof(DISPLAY_INFO));
@@ -102,6 +103,7 @@ PROJECT_LIST_ENTRY::~PROJECT_LIST_ENTRY() {
 int PROJECT_LIST_ENTRY::parse(XML_PARSER& xp) {
     char tag[256];
     bool is_tag;
+    string platform;
 
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!strcmp(tag, "/project")) return 0;
@@ -112,6 +114,14 @@ int PROJECT_LIST_ENTRY::parse(XML_PARSER& xp) {
         if (xp.parse_string(tag, "description", description)) continue;
         if (xp.parse_string(tag, "home", home)) continue;
         if (xp.parse_string(tag, "image", image)) continue;
+        if (!strcmp(tag, "platforms")) {
+            while (!xp.get(tag, sizeof(tag), is_tag)) {
+                if (!strcmp(tag, "/platforms")) break;
+                if (xp.parse_string(tag, "name", platform)) {
+                    platforms.push_back(platform);
+                }
+            }
+        }
         xp.skip_unexpected(tag, false, "");
     }
     return ERR_XML_PARSE;
@@ -123,13 +133,71 @@ void PROJECT_LIST_ENTRY::clear() {
     general_area.clear();
     specific_area.clear();
     description.clear();
+    platforms.clear();
     home.clear();
     image.clear();
-    rand = 0.0;
 }
 
-bool PROJECT_LIST_ENTRY::operator<(const PROJECT_LIST_ENTRY& compare) {
-    return rand < compare.rand;
+AM_LIST_ENTRY::AM_LIST_ENTRY() {
+    clear();
+}
+
+AM_LIST_ENTRY::~AM_LIST_ENTRY() {
+    clear();
+}
+
+int AM_LIST_ENTRY::parse(XML_PARSER& xp) {
+    char tag[256];
+    bool is_tag;
+    while (!xp.get(tag, sizeof(tag), is_tag)) {
+        if (!strcmp(tag, "/account_manager")) return 0;
+        if (xp.parse_string(tag, "name", name)) continue;
+        if (xp.parse_string(tag, "url", url)) continue;
+        if (xp.parse_string(tag, "description", description)) continue;
+        if (xp.parse_string(tag, "image", image)) continue;
+    }
+    return 0;
+}
+
+void AM_LIST_ENTRY::clear() {
+    name.clear();
+    url.clear();
+    description.clear();
+    image.clear();
+}
+
+ALL_PROJECTS_LIST::ALL_PROJECTS_LIST() {
+}
+
+ALL_PROJECTS_LIST::~ALL_PROJECTS_LIST() {
+    clear();
+}
+
+bool compare_project_list_entry(const PROJECT_LIST_ENTRY* a, const PROJECT_LIST_ENTRY* b) 
+{
+    return a->name < b->name;
+}
+
+bool compare_am_list_entry(const AM_LIST_ENTRY* a, const AM_LIST_ENTRY* b) 
+{
+    return a->name < b->name;
+}
+
+void ALL_PROJECTS_LIST::shuffle() {
+    sort(projects.begin(), projects.end(), compare_project_list_entry);
+    sort(account_managers.begin(), account_managers.end(), compare_am_list_entry);
+}
+
+void ALL_PROJECTS_LIST::clear() {
+    unsigned int i;
+    for (i=0; i<projects.size(); i++) {
+        delete projects[i];
+    }
+    for (i=0; i<account_managers.size(); i++) {
+        delete account_managers[i];
+    }
+    projects.clear();
+    account_managers.clear();
 }
 
 PROJECT::PROJECT() {
@@ -148,36 +216,6 @@ void PROJECT::get_name(std::string& s) {
     }
 }
 
-void PROJECT::copy(PROJECT& p) {
-    resource_share = p.resource_share;
-    project_name = p.project_name;
-    user_name = p.user_name;
-    team_name = p.team_name;
-    gui_urls = p.gui_urls;
-    user_total_credit = p.user_total_credit;
-    user_expavg_credit = p.user_expavg_credit;
-    host_total_credit = p.host_total_credit;
-    host_expavg_credit = p.host_expavg_credit;
-    disk_usage = p.disk_usage;
-    master_fetch_failures = p.master_fetch_failures;
-    nrpc_failures = p.nrpc_failures;
-    min_rpc_time = p.min_rpc_time;
-    short_term_debt = p.short_term_debt;
-    long_term_debt = p.long_term_debt;
-    duration_correction_factor = p.duration_correction_factor;
-    master_url_fetch_pending = p.master_url_fetch_pending;
-    sched_rpc_pending = p.sched_rpc_pending;
-    non_cpu_intensive = p.non_cpu_intensive;
-    suspended_via_gui = p.suspended_via_gui;
-    dont_request_more_work = p.dont_request_more_work;
-    scheduler_rpc_in_progress = p.scheduler_rpc_in_progress;
-    attached_via_acct_mgr = p.attached_via_acct_mgr;
-    detach_when_done = p.detach_when_done;
-    ended = p.ended;
-    project_files_downloaded_time = p.project_files_downloaded_time;
-    last_rpc_time = p.last_rpc_time;
-}
-
 int PROJECT::parse(MIOFILE& in) {
     char buf[256];
     int retval;
@@ -189,6 +227,7 @@ int PROJECT::parse(MIOFILE& in) {
         if (parse_str(buf, "<project_name>", project_name)) continue;
         if (parse_str(buf, "<user_name>", user_name)) continue;
         if (parse_str(buf, "<team_name>", team_name)) continue;
+        if (parse_int(buf, "<hostid>", hostid)) continue;
         if (parse_double(buf, "<user_total_credit>", user_total_credit)) continue;
         if (parse_double(buf, "<user_expavg_credit>", user_expavg_credit)) continue;
         if (parse_double(buf, "<host_total_credit>", host_total_credit)) continue;
@@ -197,12 +236,21 @@ int PROJECT::parse(MIOFILE& in) {
         if (parse_int(buf, "<nrpc_failures>", nrpc_failures)) continue;
         if (parse_int(buf, "<master_fetch_failures>", master_fetch_failures)) continue;
         if (parse_double(buf, "<min_rpc_time>", min_rpc_time)) continue;
+        if (parse_double(buf, "<download_backoff>", download_backoff)) continue;
+        if (parse_double(buf, "<upload_backoff>", upload_backoff)) continue;
         if (parse_double(buf, "<short_term_debt>", short_term_debt)) continue;
-        if (parse_double(buf, "<long_term_debt>", long_term_debt)) continue;
+        if (parse_double(buf, "<long_term_debt>", cpu_long_term_debt)) continue;
+        if (parse_double(buf, "<cpu_backoff_time>", cpu_backoff_time)) continue;
+        if (parse_double(buf, "<cpu_backoff_interval>", cpu_backoff_interval)) continue;
+        if (parse_double(buf, "<cuda_debt>", cuda_debt)) continue;
+        if (parse_double(buf, "<cuda_backoff_time>", cuda_backoff_time)) continue;
+        if (parse_double(buf, "<cuda_backoff_interval>", cuda_backoff_interval)) continue;
+        if (parse_double(buf, "<ati_debt>", ati_debt)) continue;
+        if (parse_double(buf, "<ati_backoff_time>", ati_backoff_time)) continue;
+        if (parse_double(buf, "<ati_backoff_interval>", ati_backoff_interval)) continue;
         if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
         if (parse_bool(buf, "master_url_fetch_pending", master_url_fetch_pending)) continue;
         if (parse_int(buf, "<sched_rpc_pending>", sched_rpc_pending)) continue;
-        if (parse_int(buf, "<rr_sim_deadlines_missed>", rr_sim_deadlines_missed)) continue;
         if (parse_bool(buf, "non_cpu_intensive", non_cpu_intensive)) continue;
         if (parse_bool(buf, "suspended_via_gui", suspended_via_gui)) continue;
         if (parse_bool(buf, "dont_request_more_work", dont_request_more_work)) continue;
@@ -231,20 +279,30 @@ int PROJECT::parse(MIOFILE& in) {
 
 void PROJECT::clear() {
     master_url.clear();
-    resource_share = 0.0;
+    resource_share = 0;
     project_name.clear();
     user_name.clear();
     team_name.clear();
-    user_total_credit = 0.0;
-    user_expavg_credit = 0.0;
-    host_total_credit = 0.0;
-    host_expavg_credit = 0.0;
-    disk_usage = 0.0;
+    user_total_credit = 0;
+    user_expavg_credit = 0;
+    host_total_credit = 0;
+    host_expavg_credit = 0;
+    disk_usage = 0;
     nrpc_failures = 0;
     master_fetch_failures = 0;
     min_rpc_time = 0;
+    download_backoff = 0;
+    upload_backoff = 0;
     short_term_debt = 0;
-    long_term_debt = 0;
+    cpu_long_term_debt = 0;
+    cpu_backoff_time = 0;
+    cpu_backoff_interval = 0;
+    cuda_debt = 0;
+    cuda_backoff_time = 0;
+    cuda_backoff_interval = 0;
+    ati_debt = 0;
+    ati_backoff_time = 0;
+    ati_backoff_interval = 0;
     duration_correction_factor = 0;
     master_url_fetch_pending = false;
     sched_rpc_pending = 0;
@@ -337,13 +395,12 @@ void WORKUNIT::clear() {
     name.clear();
     app_name.clear();
     version_num = 0;
-    rsc_fpops_est = 0.0;
-    rsc_fpops_bound = 0.0;
-    rsc_memory_bound = 0.0;
-    rsc_disk_bound = 0.0;
+    rsc_fpops_est = 0;
+    rsc_fpops_bound = 0;
+    rsc_memory_bound = 0;
+    rsc_disk_bound = 0;
     project = NULL;
     app = NULL;
-    avp = NULL;
 }
 
 RESULT::RESULT() {
@@ -357,15 +414,32 @@ RESULT::~RESULT() {
 int RESULT::parse(MIOFILE& in) {
     char buf[256];
     while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</result>")) return 0;
+        if (match_tag(buf, "</result>")) {
+            // if CPU time is nonzero but elapsed time is zero,
+            // we must be talking to an old client.
+            // Set elapsed = CPU
+            // (easier to deal with this here than in the manager)
+            //
+            if (current_cpu_time && !elapsed_time) {
+                elapsed_time = current_cpu_time;
+            }
+            if (final_cpu_time && !final_elapsed_time) {
+                final_elapsed_time = final_cpu_time;
+            }
+            return 0;
+        }
         if (parse_str(buf, "<name>", name)) continue;
         if (parse_str(buf, "<wu_name>", wu_name)) continue;
+        if (parse_int(buf, "<version_num>", version_num)) continue;
+        if (parse_str(buf, "<plan_class>", plan_class)) continue;
         if (parse_str(buf, "<project_url>", project_url)) continue;
-        if (parse_int(buf, "<report_deadline>", report_deadline)) continue;
+        if (parse_double(buf, "<report_deadline>", report_deadline)) continue;
+        if (parse_double(buf, "<received_time>", received_time)) continue;
         if (parse_bool(buf, "ready_to_report", ready_to_report)) continue;
         if (parse_bool(buf, "got_server_ack", got_server_ack)) continue;
         if (parse_bool(buf, "suspended_via_gui", suspended_via_gui)) continue;
         if (parse_bool(buf, "project_suspended_via_gui", project_suspended_via_gui)) continue;
+        if (parse_bool(buf, "coproc_missing", coproc_missing)) continue;
         if (match_tag(buf, "<active_task>")) {
             active_task = true;
             continue;
@@ -373,6 +447,7 @@ int RESULT::parse(MIOFILE& in) {
         if (parse_bool(buf, "supports_graphics", supports_graphics)) continue;
         if (parse_int(buf, "<graphics_mode_acked>", graphics_mode_acked)) continue;
         if (parse_double(buf, "<final_cpu_time>", final_cpu_time)) continue;
+        if (parse_double(buf, "<final_elapsed_time>", final_elapsed_time)) continue;
         if (parse_int(buf, "<state>", state)) continue;
         if (parse_int(buf, "<scheduler_state>", scheduler_state)) continue;
         if (parse_int(buf, "<exit_status>", exit_status)) continue;
@@ -383,8 +458,10 @@ int RESULT::parse(MIOFILE& in) {
             continue;
         }
         if (parse_int(buf, "<app_version_num>", app_version_num)) continue;
+        if (parse_int(buf, "<slot>", slot)) continue;
         if (parse_double(buf, "<checkpoint_cpu_time>", checkpoint_cpu_time)) continue;
         if (parse_double(buf, "<current_cpu_time>", current_cpu_time)) continue;
+        if (parse_double(buf, "<elapsed_time>", elapsed_time)) continue;
         if (parse_double(buf, "<swap_size>", swap_size)) continue;
         if (parse_double(buf, "<working_set_size_smoothed>", working_set_size_smoothed)) continue;
         if (parse_double(buf, "<fraction_done>", fraction_done)) continue;
@@ -402,13 +479,17 @@ int RESULT::parse(MIOFILE& in) {
 void RESULT::clear() {
     name.clear();
     wu_name.clear();
+    version_num = 0;
+    plan_class.clear();
     project_url.clear();
     graphics_exec_path.clear();
     slot_path.clear();
     report_deadline = 0;
+    received_time = 0;
     ready_to_report = false;
     got_server_ack = false;
-    final_cpu_time = 0.0;
+    final_cpu_time = 0;
+    final_elapsed_time = 0;
     state = 0;
     scheduler_state = 0;
     exit_status = 0;
@@ -416,16 +497,19 @@ void RESULT::clear() {
     stderr_out.clear();
     suspended_via_gui = false;
     project_suspended_via_gui = false;
+    coproc_missing = false;
 
     active_task = false;
     active_task_state = 0;
     app_version_num = 0;
-    checkpoint_cpu_time = 0.0;
-    current_cpu_time = 0.0;
-    fraction_done = 0.0;
+    slot = -1;
+    checkpoint_cpu_time = 0;
+    current_cpu_time = 0;
+    fraction_done = 0;
+    elapsed_time = 0;
     swap_size = 0;
     working_set_size_smoothed = 0;
-    estimated_cpu_time_remaining = 0.0;
+    estimated_cpu_time_remaining = 0;
     supports_graphics = false;
     graphics_mode_acked = 0;
     too_large = false;
@@ -435,6 +519,7 @@ void RESULT::clear() {
     app = NULL;
     wup = NULL;
     project = NULL;
+    avp = NULL;
 }
 
 FILE_TRANSFER::FILE_TRANSFER() {
@@ -474,6 +559,7 @@ int FILE_TRANSFER::parse(MIOFILE& in) {
         if (parse_double(buf, "<file_offset>", file_offset)) continue;
         if (parse_double(buf, "<xfer_speed>", xfer_speed)) continue;
         if (parse_str(buf, "<hostname>", hostname)) continue;
+        if (parse_double(buf, "<project_backoff>", project_backoff)) continue;
     }
     return ERR_XML_PARSE;
 }
@@ -482,7 +568,7 @@ void FILE_TRANSFER::clear() {
     name.clear();
     project_url.clear();
     project_name.clear();
-    nbytes = 0.0;
+    nbytes = 0;
     generated_locally = false;
     uploaded = false;
     upload_when_present = false;
@@ -493,12 +579,13 @@ void FILE_TRANSFER::clear() {
     first_request_time = 0;
     next_request_time = 0;
     status = 0;
-    time_so_far = 0.0;
-    bytes_xferred = 0.0;
-    file_offset = 0.0;
-    xfer_speed = 0.0;
+    time_so_far = 0;
+    bytes_xferred = 0;
+    file_offset = 0;
+    xfer_speed = 0;
     hostname.clear();
     project = NULL;
+    project_backoff = 0;
 }
 
 MESSAGE::MESSAGE() {
@@ -611,7 +698,10 @@ void CC_STATE::clear() {
         delete results[i];
     }
     results.clear();
+    platforms.clear();
     executing_as_daemon = false;
+    have_cuda = false;
+    have_ati = false;
 }
 
 PROJECT* CC_STATE::lookup_project(string& str) {
@@ -619,17 +709,6 @@ PROJECT* CC_STATE::lookup_project(string& str) {
     for (i=0; i<projects.size(); i++) {
         if (projects[i]->master_url == str) return projects[i];
     }
-    BOINCTRACE("CAN'T FIND PROJECT %s\n", str.c_str());
-    return 0;
-}
-
-APP* CC_STATE::lookup_app(string& project_url, string& str) {
-    unsigned int i;
-    for (i=0; i<apps.size(); i++) {
-        if (apps[i]->project->master_url != project_url) continue;
-        if (apps[i]->name == str) return apps[i];
-    }
-    BOINCTRACE("CAN'T FIND APP %s\n", str.c_str());
     return 0;
 }
 
@@ -639,43 +718,33 @@ APP* CC_STATE::lookup_app(PROJECT* project, string& str) {
         if (apps[i]->project != project) continue;
         if (apps[i]->name == str) return apps[i];
     }
-    BOINCTRACE("CAN'T FIND APP %s\n", str.c_str());
     return 0;
 }
 
 APP_VERSION* CC_STATE::lookup_app_version(
-    string& project_url, string& str, int version_num
-) {
-    unsigned int i;
-    for (i=0; i<app_versions.size(); i++) {
-        if (app_versions[i]->project->master_url != project_url) continue;
-        if (app_versions[i]->app_name == str && app_versions[i]->version_num == version_num) {
-            return app_versions[i];
-        }
-    }
-    return 0;
-}
-
-APP_VERSION* CC_STATE::lookup_app_version(
-    PROJECT* project, string& str, int version_num
+    PROJECT* project, APP* app, int version_num, string& plan_class
 ) {
     unsigned int i;
     for (i=0; i<app_versions.size(); i++) {
         if (app_versions[i]->project != project) continue;
-        if (app_versions[i]->app_name == str && app_versions[i]->version_num == version_num) {
-            return app_versions[i];
-        }
+        if (app_versions[i]->app != app) continue;
+        if (app_versions[i]->version_num != version_num) continue;
+        if (app_versions[i]->plan_class != plan_class) continue;
+        return app_versions[i];
     }
     return 0;
 }
 
-WORKUNIT* CC_STATE::lookup_wu(string& project_url, string& str) {
+APP_VERSION* CC_STATE::lookup_app_version_old(
+    PROJECT* project, APP* app, int version_num
+) {
     unsigned int i;
-    for (i=0; i<wus.size(); i++) {
-        if (wus[i]->project->master_url != project_url) continue;
-        if (wus[i]->name == str) return wus[i];
+    for (i=0; i<app_versions.size(); i++) {
+        if (app_versions[i]->project != project) continue;
+        if (app_versions[i]->app != app) continue;
+        if (app_versions[i]->version_num != version_num) continue;
+        return app_versions[i];
     }
-    BOINCTRACE("CAN'T FIND WU %s\n", str.c_str());
     return 0;
 }
 
@@ -685,17 +754,6 @@ WORKUNIT* CC_STATE::lookup_wu(PROJECT* project, string& str) {
         if (wus[i]->project != project) continue;
         if (wus[i]->name == str) return wus[i];
     }
-    BOINCTRACE("CAN'T FIND WU %s\n", str.c_str());
-    return 0;
-}
-
-RESULT* CC_STATE::lookup_result(string& project_url, string& str) {
-    unsigned int i;
-    for (i=0; i<results.size(); i++) {
-        if (results[i]->project->master_url != project_url) continue;
-        if (results[i]->name == str) return results[i];
-    }
-    BOINCTRACE("CAN'T FIND RESULT %s\n", str.c_str());
     return 0;
 }
 
@@ -705,27 +763,16 @@ RESULT* CC_STATE::lookup_result(PROJECT* project, string& str) {
         if (results[i]->project != project) continue;
         if (results[i]->name == str) return results[i];
     }
-    BOINCTRACE("CAN'T FIND RESULT %s\n", str.c_str());
     return 0;
 }
 
-ALL_PROJECTS_LIST::ALL_PROJECTS_LIST() {
-}
-
-ALL_PROJECTS_LIST::~ALL_PROJECTS_LIST() {
-    clear();
-}
-
-void ALL_PROJECTS_LIST::shuffle() {
-    sort(projects.begin(), projects.end());
-}
-
-void ALL_PROJECTS_LIST::clear() {
+RESULT* CC_STATE::lookup_result(string& url, string& str) {
     unsigned int i;
-    for (i=0; i<projects.size(); i++) {
-        delete projects[i];
+    for (i=0; i<results.size(); i++) {
+        if (results[i]->project->master_url != url) continue;
+        if (results[i]->name == str) return results[i];
     }
-    projects.clear();
+    return 0;
 }
 
 PROJECTS::~PROJECTS() {
@@ -811,6 +858,8 @@ int ACCT_MGR_INFO::parse(MIOFILE& in) {
         if (parse_str(buf, "<acct_mgr_name>", acct_mgr_name)) continue;
         if (parse_str(buf, "<acct_mgr_url>", acct_mgr_url)) continue;
         if (parse_bool(buf, "have_credentials", have_credentials)) continue;
+        if (parse_bool(buf, "cookie_required", cookie_required)) continue;
+        if (parse_str(buf, "<cookie_failure_url>", cookie_failure_url)) continue;
     }
     return ERR_XML_PARSE;
 }
@@ -819,6 +868,8 @@ void ACCT_MGR_INFO::clear() {
     acct_mgr_name = "";
     acct_mgr_url = "";
     have_credentials = false;
+    cookie_required = false;
+    cookie_failure_url = "";
 }
 
 ACCT_MGR_RPC_REPLY::ACCT_MGR_RPC_REPLY() {
@@ -906,6 +957,8 @@ int PROJECT_CONFIG::parse(MIOFILE& in) {
         if (match_tag(buf, "</project_config>")) return 0;
         if (parse_int(buf, "<error_num>", error_num)) continue;
         if (parse_str(buf, "<name>", name)) continue;
+        if (parse_str(buf, "<master_url>", master_url)) continue;
+        if (parse_int(buf, "<local_revision>", local_revision)) continue;
         if (parse_int(buf, "<min_passwd_length>", min_passwd_length)) continue;
         if (parse_bool(buf, "account_manager", account_manager)) continue;
         if (parse_bool(buf, "uses_username", uses_username)) continue;
@@ -919,6 +972,13 @@ int PROJECT_CONFIG::parse(MIOFILE& in) {
             }
             continue;
         }
+        if (parse_int(buf, "<min_client_version>", min_client_version)) continue;
+        if (parse_bool(buf, "web_stopped", web_stopped)) continue;
+        if (parse_bool(buf, "sched_stopped", sched_stopped)) continue;
+        if (parse_str(buf, "platform_name", msg)) {
+            platforms.push_back(msg);
+            continue;
+        }
     }
     return ERR_XML_PARSE;
 }
@@ -926,6 +986,7 @@ int PROJECT_CONFIG::parse(MIOFILE& in) {
 void PROJECT_CONFIG::clear() {
     error_num = 0;
     name.clear();
+    master_url.clear();
     error_msg.clear();
     terms_of_use.clear();
     min_passwd_length = 6;
@@ -933,6 +994,10 @@ void PROJECT_CONFIG::clear() {
     uses_username = false;
     account_creation_disabled = false;
     client_account_creation_disabled = false;
+    platforms.clear();
+    sched_stopped = false;
+    web_stopped = false;
+    min_client_version = 0;
 }
 
 ACCOUNT_IN::ACCOUNT_IN() {
@@ -1058,6 +1123,7 @@ int RPC_CLIENT::get_state(CC_STATE& state) {
     char buf[256];
     PROJECT* project = NULL;
     RPC rpc(this);
+    string platform;
 
     state.clear();
 
@@ -1070,12 +1136,9 @@ int RPC_CLIENT::get_state(CC_STATE& state) {
             }
             if (match_tag(buf, "</client_state>")) break;
 
-            // the following are to handle responses from pre-5.6 core clients
-            // remove them 6/07
-            if (parse_int(buf, "<major_version>", state.version_info.major)) continue;
-            if (parse_int(buf, "<minor_version>", state.version_info.minor)) continue;
-            if (parse_int(buf, "<release>", state.version_info.release)) continue;
             if (parse_bool(buf, "executing_as_daemon", state.executing_as_daemon)) continue;
+            if (parse_bool(buf, "have_cuda", state.have_cuda)) continue;
+            if (parse_bool(buf, "have_ati", state.have_ati)) continue;
             if (match_tag(buf, "<project>")) {
                 project = new PROJECT();
                 project->parse(rpc.fin);
@@ -1102,7 +1165,6 @@ int RPC_CLIENT::get_state(CC_STATE& state) {
                 wu->parse(rpc.fin);
                 wu->project = project;
                 wu->app = state.lookup_app(project, wu->app_name);
-                wu->avp = state.lookup_app_version(project, wu->app_name, wu->version_num);
                 state.wus.push_back(wu);
                 continue;
             }
@@ -1112,6 +1174,18 @@ int RPC_CLIENT::get_state(CC_STATE& state) {
                 result->project = project;
                 result->wup = state.lookup_wu(project, result->wu_name);
                 result->app = result->wup->app;
+                APP_VERSION* avp;
+                if (result->version_num) {
+                    avp = state.lookup_app_version(
+                        project, result->app, result->version_num,
+                        result->plan_class
+                    );
+                } else {
+                    avp = state.lookup_app_version_old(
+                        project, result->app, result->wup->version_num
+                    );
+                }
+                result->avp = avp;
                 state.results.push_back(result);
                 continue;
             }
@@ -1122,12 +1196,15 @@ int RPC_CLIENT::get_state(CC_STATE& state) {
                 state.global_prefs.parse(xp, "", flag, mask);
                 continue;
             }
+            if (parse_str(buf, "<platform>", platform)) {
+                state.platforms.push_back(platform);
+            }
         }
     }
     return retval;
 }
 
-int RPC_CLIENT::get_results(RESULTS& t) {
+int RPC_CLIENT::get_results(RESULTS& t, bool active_only) {
     int retval;
     SET_LOCALE sl;
     char buf[256];
@@ -1135,7 +1212,10 @@ int RPC_CLIENT::get_results(RESULTS& t) {
 
     t.clear();
 
-    retval = rpc.do_rpc("<get_results/>\n");
+    sprintf(buf, "<get_results>\n<active_only>%d</active_only>\n</get_results>\n",
+        active_only?1:0
+    );
+    retval = rpc.do_rpc(buf);
     if (!retval) {
         while (rpc.fin.fgets(buf, 256)) {
             if (match_tag(buf, "</results>")) break;
@@ -1173,14 +1253,14 @@ int RPC_CLIENT::get_file_transfers(FILE_TRANSFERS& t) {
     return retval;
 }
 
-int RPC_CLIENT::get_simple_gui_info(SIMPLE_GUI_INFO& sgi) {
+int RPC_CLIENT::get_simple_gui_info(SIMPLE_GUI_INFO& info) {
     int retval;
     SET_LOCALE sl;
     char buf[256];
     RPC rpc(this);
 
-    sgi.projects.clear();
-    sgi.results.clear();
+    info.projects.clear();
+    info.results.clear();
 
     retval = rpc.do_rpc("<get_simple_gui_info/>\n");
     if (!retval) {
@@ -1189,79 +1269,16 @@ int RPC_CLIENT::get_simple_gui_info(SIMPLE_GUI_INFO& sgi) {
             else if (match_tag(buf, "<project>")) {
                 PROJECT* project = new PROJECT();
                 project->parse(rpc.fin);
-                sgi.projects.push_back(project);
+                info.projects.push_back(project);
                 continue;
             }
             else if (match_tag(buf, "<result>")) {
                 RESULT* result = new RESULT();
                 result->parse(rpc.fin);
-                sgi.results.push_back(result);
+                info.results.push_back(result);
                 continue;
             }
         }
-    }
-    return retval;
-}
-
-
-// Updates the PROJECT array in the CC_STATE in place;
-// flags any projects that don't exist anymore.
-//
-int RPC_CLIENT::get_simple_gui_info(CC_STATE& state, RESULTS& results) {
-    int retval;
-    SET_LOCALE sl;
-    char buf[256];
-    unsigned int i;
-    static PROJECT project;
-    PROJECT* state_project = NULL;
-    RPC rpc(this);
-
-    results.clear();
-
-    retval = rpc.do_rpc("<get_simple_gui_info/>\n");
-    if (!retval) {
-
-        // mark all projects for deletion (undo if client still has them)
-        //
-        for (i=0; i<state.projects.size(); i++) {
-            state_project = state.projects[i];
-            state_project->flag_for_delete = true;
-        }
-
-        while (rpc.fin.fgets(buf, 256)) {
-            if (match_tag(buf, "</simple_gui_info>")) break;
-            else if (match_tag(buf, "<project>")) {
-                project.clear();
-                project.parse(rpc.fin);
-                state_project = state.lookup_project(project.master_url);
-                if (state_project && (project.master_url == state_project->master_url)) {
-                    state_project->copy(project);
-                    state_project->flag_for_delete = false;
-                } else {
-                    retval = ERR_NOT_FOUND;
-                }
-                continue;
-            }
-            else if (match_tag(buf, "<result>")) {
-                RESULT* result = new RESULT();
-                result->parse(rpc.fin);
-                results.results.push_back(result);
-                continue;
-            }
-        }
-
-        // Does any project need to be deleted?
-        // return cryptic error code if so
-        //
-        if (!retval) {
-            for (i=0; i<state.projects.size(); i++) {
-                state_project = state.projects[i];
-                if (state_project->flag_for_delete) {
-                    retval = ERR_FILE_MISSING;
-                }
-            }
-        }
-
     }
     return retval;
 }
@@ -1292,56 +1309,6 @@ int RPC_CLIENT::get_project_status(PROJECTS& p) {
     return retval;
 }
 
-// Updates the PROJECT array in the CC_STATE in place;
-// flags any projects that don't exist anymore.
-// KLUDGE - doesn't belong here
-//
-int RPC_CLIENT::get_project_status(CC_STATE& state) {
-    int retval;
-    SET_LOCALE sl;
-    unsigned int i;
-    char buf[256];
-    static PROJECT project;
-    PROJECT* state_project = NULL;
-    RPC rpc(this);
-
-    retval = rpc.do_rpc("<get_project_status/>\n");
-    if (!retval) {
-        // flag for delete
-        for (i=0; i<state.projects.size(); i++) {
-            state_project = state.projects[i];
-            state_project->flag_for_delete = true;
-        }
-
-        while (rpc.fin.fgets(buf, 256)) {
-            if (match_tag(buf, "</projects>")) break;
-            else if (match_tag(buf, "<project>")) {
-                project.clear();
-                project.parse(rpc.fin);
-                state_project = state.lookup_project(project.master_url);
-                if (state_project && (project.master_url == state_project->master_url)) {
-                    state_project->copy(project);
-                    state_project->flag_for_delete = false;
-                } else {
-                    retval = ERR_NOT_FOUND;
-                }
-                continue;
-            }
-        }
-
-        // Anything need to be deleted?
-        if (!retval) {
-            for (i=0; i<state.projects.size(); i++) {
-                state_project = state.projects[i];
-                if (state_project->flag_for_delete) {
-                    retval = ERR_FILE_MISSING;
-                }
-            }
-        }
-    }
-    return retval;
-}
-
 int RPC_CLIENT::get_all_projects_list(ALL_PROJECTS_LIST& pl) {
     int retval = 0;
     SET_LOCALE sl;
@@ -1349,6 +1316,7 @@ int RPC_CLIENT::get_all_projects_list(ALL_PROJECTS_LIST& pl) {
     bool is_tag;
     MIOFILE mf;
     PROJECT_LIST_ENTRY* project;
+    AM_LIST_ENTRY* am;
     RPC rpc(this);
 
     pl.clear();
@@ -1362,15 +1330,25 @@ int RPC_CLIENT::get_all_projects_list(ALL_PROJECTS_LIST& pl) {
             project = new PROJECT_LIST_ENTRY();
             retval = project->parse(xp);
             if (!retval) {
-                project->rand = drand();
                 pl.projects.push_back(project);
             } else {
                 delete project;
             }
             continue;
+        } else if (!strcmp(tag, "account_manager")) {
+            am = new AM_LIST_ENTRY();
+            retval = am->parse(xp);
+            if (!retval) {
+                pl.account_managers.push_back(am);
+            } else {
+                delete am;
+            }
+            continue;
         }
     }
+
     pl.shuffle();
+
     return 0;
 }
 
@@ -1753,6 +1731,25 @@ int RPC_CLIENT::get_proxy_settings(GR_PROXY_INFO& p) {
         retval = p.parse(rpc.fin);
     }
     return retval;
+}
+
+int RPC_CLIENT::get_message_count(int& seqno) {
+    int retval;
+    SET_LOCALE sl;
+    char buf[256];
+    RPC rpc(this);
+
+    sprintf(buf,
+        "<get_message_count/>\n"
+    );
+    retval = rpc.do_rpc(buf);
+    if (retval) return retval;
+    while (rpc.fin.fgets(buf, 256)) {
+        if (parse_int(buf, "<seqno>", seqno)) {
+            return 0;
+        }
+    }
+    return ERR_XML_PARSE;
 }
 
 int RPC_CLIENT::get_messages(int seqno, MESSAGES& msgs) {
@@ -2251,7 +2248,7 @@ int RPC_CLIENT::set_debts(vector<PROJECT> projects) {
             "    </project>\n",
             p.master_url.c_str(),
             p.short_term_debt,
-            p.long_term_debt
+            p.cpu_long_term_debt
         );
         s += string(buf);
     }
@@ -2261,4 +2258,4 @@ int RPC_CLIENT::set_debts(vector<PROJECT> projects) {
 }
 
 
-const char *BOINC_RCSID_90e8b8d168="$Id: gui_rpc_client_ops.cpp 16574 2008-11-26 18:22:20Z romw $";
+const char *BOINC_RCSID_90e8b8d168="$Id: gui_rpc_client_ops.cpp 19318 2009-10-16 19:07:56Z romw $";

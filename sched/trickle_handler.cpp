@@ -44,8 +44,20 @@ char variety[256];
 
 extern int handle_trickle(MSG_FROM_HOST&);
 
-// The following is an example;
-// replace it with your own function
+// The following is an example.
+// It echoes whatever the app sent us, as a trickle-down message.
+// Replace it with your own function.
+//
+// Note: you're passed the host ID (in mfh.hostid).
+// From this you can get the HOST and USER records with
+// DB_HOST host;
+// DB_USER user;
+// host.lookup_id(mfh.hostid);
+// user.lookup_id(host.userid);
+//
+// Then you can modify and update these as needed, e.g. to grant credit.
+// (in that case you may also need update the team).
+// See is_valid() in validator.cpp.
 //
 int handle_trickle(MSG_FROM_HOST& mfh) {
     int retval;
@@ -146,10 +158,10 @@ int main(int argc, char** argv) {
         }
     }
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse ../config.xml: %s\n", boincerror(retval)
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -163,4 +175,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_560388f67e = "$Id: trickle_handler.cpp 16324 2008-10-27 21:23:07Z davea $";
+const char *BOINC_RCSID_560388f67e = "$Id: trickle_handler.cpp 18042 2009-05-07 13:54:51Z davea $";

@@ -28,7 +28,6 @@
 #include "sched_config.h"
 #define VERSION 0.3
 
-using namespace std;
 
 DB_WORKUNIT wu;
 DB_RESULT result;
@@ -49,7 +48,7 @@ int main(int argc, char** argv){
     int retval,final;
     string wuname;
     char buf[256];
-    string config_dir = ".";
+    string config_dir = "";
     //parse the input 
     if (argc<2){
         usage(0);
@@ -67,7 +66,7 @@ int main(int argc, char** argv){
     }
     wuname = argv[argc-1]; 
     final =0;
-    retval = config.parse_file((char *) config_dir.c_str());
+    retval = config.parse_file(config_dir.c_str());
     if (retval) {
         fprintf(stderr,"can't read config file\n");
         return -1;
@@ -99,4 +98,4 @@ int main(int argc, char** argv){
     boinc_db.close();
     return final;
 }
-const char *BOINC_RCSID_a63ea0ae5e="$Id: kill_wu.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_a63ea0ae5e="$Id: kill_wu.cpp 18042 2009-05-07 13:54:51Z davea $";

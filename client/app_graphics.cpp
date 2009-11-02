@@ -73,7 +73,7 @@ void ACTIVE_TASK::request_graphics_mode(GRAPHICS_MSG& m) {
     }
 
     if (log_flags.scrsave_debug) {
-        msg_printf(0, MSG_INFO,
+        msg_printf(wup->project, MSG_INFO,
             "[scrsave_debug] ACTIVE_TASK::request_graphics_mode(): requesting graphics mode %s for %s",
             xml_graphics_modes[m.mode], result->name
         );
@@ -102,7 +102,7 @@ void ACTIVE_TASK::check_graphics_mode_ack() {
     if (app_client_shm.shm->graphics_reply.get_msg(buf)) {
         app_client_shm.decode_graphics_msg(buf, gm);
         if (log_flags.scrsave_debug) {
-            msg_printf(0, MSG_INFO,
+            msg_printf(wup->project, MSG_INFO,
                 "[scrsave_debug] ACTIVE_TASK::check_graphics_mode_ack(): got graphics ack %s for %s, previous mode %s",
                 buf, result->name, xml_graphics_modes[graphics_mode_acked]
             );
@@ -139,4 +139,4 @@ bool ACTIVE_TASK::supports_graphics() {
     return true;
 }
 
-const char *BOINC_RCSID_71e9cd9f4d = "$Id: app_graphics.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_71e9cd9f4d = "$Id: app_graphics.cpp 17335 2009-02-23 04:54:04Z davea $";

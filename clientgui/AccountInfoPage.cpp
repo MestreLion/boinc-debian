@@ -1,22 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "AccountInfoPage.h"
@@ -41,7 +38,6 @@
 #include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
 #include "WizardAttachProject.h"
-#include "WizardAccountManager.h"
 #include "ProjectInfoPage.h"
 #include "AccountManagerInfoPage.h"
 #include "AccountInfoPage.h"
@@ -91,6 +87,8 @@ bool CAccountInfoPage::Create( CBOINCBaseWizard* parent )
 
 ////@begin CAccountInfoPage member initialisation
     m_pTitleStaticCtrl = NULL;
+    m_pCookieDetectionFailedStaticCtrl = NULL;
+    m_pCookieDetectionFailedCtrl = NULL;
     m_pAccountQuestionStaticCtrl = NULL;
     m_pAccountInformationStaticCtrl = NULL;
     m_pAccountCreateCtrl = NULL;
@@ -102,6 +100,7 @@ bool CAccountInfoPage::Create( CBOINCBaseWizard* parent )
     m_pAccountConfirmPasswordStaticCtrl = NULL;
     m_pAccountConfirmPasswordCtrl = NULL;
     m_pAccountPasswordRequirmentsStaticCtrl = NULL;
+    m_pAccountManagerLinkLabelStaticCtrl = NULL;
     m_pAccountForgotPasswordCtrl = NULL;
 ////@end CAccountInfoPage member initialisation
  
@@ -133,6 +132,16 @@ void CAccountInfoPage::CreateControls()
     m_pTitleStaticCtrl->Create( itemWizardPage56, wxID_STATIC, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
     m_pTitleStaticCtrl->SetFont(wxFont(10, wxSWISS, wxNORMAL, wxBOLD, FALSE, _T("Verdana")));
     itemBoxSizer57->Add(m_pTitleStaticCtrl, 0, wxALIGN_LEFT|wxGROW|wxALL, 5);
+
+    m_pCookieDetectionFailedStaticCtrl = new wxStaticText;
+    m_pCookieDetectionFailedStaticCtrl->Create( itemWizardPage56, wxID_STATIC, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_pCookieDetectionFailedStaticCtrl->Hide();
+    itemBoxSizer57->Add(m_pCookieDetectionFailedStaticCtrl, 0, wxALIGN_LEFT|wxALL, 5);
+
+    m_pCookieDetectionFailedCtrl = new wxHyperLink;
+    m_pCookieDetectionFailedCtrl->Create( itemWizardPage56, ID_ACCOUNTCOOKIEDETECTIONFAILEDCTRL, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    m_pCookieDetectionFailedCtrl->Hide();
+    itemBoxSizer57->Add(m_pCookieDetectionFailedCtrl, 0, wxALIGN_LEFT|wxALL, 5);
 
     m_pAccountQuestionStaticCtrl = new wxStaticText;
     m_pAccountQuestionStaticCtrl->Create( itemWizardPage56, wxID_STATIC, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
@@ -191,15 +200,19 @@ void CAccountInfoPage::CreateControls()
     m_pAccountPasswordRequirmentsStaticCtrl->SetFont(wxFont(7, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE));
     itemFlexGridSizer64->Add(m_pAccountPasswordRequirmentsStaticCtrl, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
+    m_pAccountManagerLinkLabelStaticCtrl = new wxStaticText;
+    m_pAccountManagerLinkLabelStaticCtrl->Create( itemWizardPage56, ID_ACCOUNTLINKLABELSTATICCTRL, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer57->Add(m_pAccountManagerLinkLabelStaticCtrl, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
     m_pAccountForgotPasswordCtrl = new wxHyperLink;
     m_pAccountForgotPasswordCtrl->Create( itemWizardPage56, ID_ACCOUNTFORGOTPASSWORDCTRL, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    itemFlexGridSizer64->Add(m_pAccountForgotPasswordCtrl, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    itemBoxSizer57->Add(m_pAccountForgotPasswordCtrl, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     // Set validators
     // m_pAccountEmailAddressCtrl is setup when the OnPageChange event is fired since
     //   it can be a username or an email address.
-    m_pAccountPasswordCtrl->SetValidator( wxTextValidator(wxFILTER_ASCII, &m_strAccountPassword) );
-    m_pAccountConfirmPasswordCtrl->SetValidator( wxTextValidator(wxFILTER_ASCII, &m_strAccountConfirmPassword) );
+    m_pAccountPasswordCtrl->SetValidator( wxTextValidator(wxFILTER_NONE, &m_strAccountPassword) );
+    m_pAccountConfirmPasswordCtrl->SetValidator( wxTextValidator(wxFILTER_NONE, &m_strAccountConfirmPassword) );
 ////@end CAccountInfoPage content construction
 
 }
@@ -270,15 +283,19 @@ wxIcon CAccountInfoPage::GetIconResource( const wxString& WXUNUSED(name) )
 void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
     if (event.GetDirection() == false) return;
 
-	PROJECT_CONFIG&        pc = ((CBOINCBaseWizard*)GetParent())->project_config;
+    PROJECT_CONFIG&        pc = ((CBOINCBaseWizard*)GetParent())->project_config;
     CSkinAdvanced*         pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
     CSkinWizardATAM*       pSkinWizardATAM = wxGetApp().GetSkinManager()->GetWizards()->GetWizardATAM();
     CWizardAttachProject*  pWAP = ((CWizardAttachProject*)GetParent());
-    CWizardAccountManager* pWAM = ((CWizardAccountManager*)GetParent());
-
+    wxString               strBaseConfigLocation = wxString(wxT("/Wizards"));
+    wxConfigBase*          pConfig = wxConfigBase::Get(FALSE);
+ 
     wxASSERT(pSkinAdvanced);
     wxASSERT(pSkinWizardATAM);
+    wxASSERT(pWAP);
     wxASSERT(m_pTitleStaticCtrl);
+    wxASSERT(m_pCookieDetectionFailedStaticCtrl);
+    wxASSERT(m_pCookieDetectionFailedCtrl);
     wxASSERT(m_pAccountQuestionStaticCtrl);
     wxASSERT(m_pAccountInformationStaticCtrl);
     wxASSERT(m_pAccountCreateCtrl);
@@ -290,11 +307,18 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
     wxASSERT(m_pAccountConfirmPasswordStaticCtrl);
     wxASSERT(m_pAccountConfirmPasswordCtrl);
     wxASSERT(m_pAccountPasswordRequirmentsStaticCtrl);
+    wxASSERT(m_pAccountManagerLinkLabelStaticCtrl);
     wxASSERT(m_pAccountForgotPasswordCtrl);
     wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
     wxASSERT(wxDynamicCast(pSkinWizardATAM, CSkinWizardATAM));
 
 
+    // We are entering this page, so reterieve the previously used email
+    // address.
+    pConfig->SetPath(strBaseConfigLocation);
+    m_strAccountEmailAddress = pConfig->Read(wxT("DefaultEmailAddress"));
+
+    // Setup the desired controls and default values.
     static bool bRunOnce = true;
     if (bRunOnce) {
         bRunOnce = false;
@@ -305,6 +329,14 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
     }
 
     if (IS_ACCOUNTMANAGERWIZARD()) {
+        if (!(pWAP->m_bCookieRequired && !pWAP->m_bCredentialsDetected)) {
+            m_pCookieDetectionFailedStaticCtrl->Hide();
+            m_pCookieDetectionFailedCtrl->Hide();
+        } else {
+            m_pCookieDetectionFailedStaticCtrl->Show();
+            m_pCookieDetectionFailedCtrl->Show();
+        }
+
         m_pAccountQuestionStaticCtrl->Hide();
         m_pAccountCreateCtrl->SetValue(false);
         m_pAccountCreateCtrl->Hide();
@@ -313,9 +345,14 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
         m_pAccountConfirmPasswordStaticCtrl->Hide();
         m_pAccountConfirmPasswordCtrl->Hide();
         m_pAccountPasswordRequirmentsStaticCtrl->Hide();
-    }
 
-    if (!IS_ACCOUNTMANAGERWIZARD()) {
+        if (pWAP->m_bCookieRequired && !pWAP->m_bCredentialsDetected) {
+            m_pAccountManagerLinkLabelStaticCtrl->Hide();
+            m_pAccountForgotPasswordCtrl->Hide();
+        }
+    } else {
+        m_pCookieDetectionFailedStaticCtrl->Hide();
+        m_pCookieDetectionFailedCtrl->Hide();
         if (pc.account_creation_disabled || pc.client_account_creation_disabled) {
             m_pAccountCreateCtrl->SetValue(false);
             m_pAccountCreateCtrl->Hide();
@@ -326,10 +363,11 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
             m_pAccountCreateCtrl->Enable();
             m_pAccountUseExistingCtrl->Show();
         }
+        m_pAccountManagerLinkLabelStaticCtrl->Hide();
     }
 
     m_pTitleStaticCtrl->SetLabel(
-        _("User information")
+        _("Identify your account ")
     );
 
     if (!IS_ACCOUNTMANAGERWIZARD() && !IS_ACCOUNTMANAGERUPDATEWIZARD()) {
@@ -353,6 +391,18 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
             _("&Yes, existing user")
         );
     } else {
+        if (pWAP->m_bCookieRequired && !pWAP->m_bCredentialsDetected) {
+            m_pCookieDetectionFailedStaticCtrl->SetLabel(
+                _("We were not able to set up your account information\nautomatically.\n\nPlease click on the 'Find logon information' link\nbelow to find out what to put in the email address and\npassword fields.")
+            );
+            m_pCookieDetectionFailedCtrl->SetLabel(
+                _("Find logon information")
+            );
+            m_pCookieDetectionFailedCtrl->SetURL(
+                pWAP->m_strCookieFailureURL
+            );
+        }
+
         if (pSkinAdvanced->IsBranded() && 
             !pSkinWizardATAM->GetAccountInfoMessage().IsEmpty()) {
             m_pAccountInformationStaticCtrl->SetLabel(
@@ -417,6 +467,7 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
             _("&Email address:")
         );
         m_pAccountEmailAddressCtrl->SetValidator( CValidateEmailAddress(& m_strAccountEmailAddress) );
+        m_pAccountEmailAddressCtrl->SetValue(m_strAccountEmailAddress);
     }
 
     if (pc.min_passwd_length) {
@@ -425,19 +476,23 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
         m_pAccountPasswordRequirmentsStaticCtrl->SetLabel( str );
     }
 
-    m_pAccountForgotPasswordCtrl->SetLabel(
-        _("Forgot your password?")
-    );
 
     if (!IS_ACCOUNTMANAGERWIZARD()) {
-        wxASSERT(pWAP);
+        m_pAccountForgotPasswordCtrl->SetLabel(
+            _("Forgot your password?")
+        );
         m_pAccountForgotPasswordCtrl->SetURL(
             wxString(pWAP->m_ProjectInfoPage->GetProjectURL() + _T("get_passwd.php"))
         );
     } else {
-        wxASSERT(pWAM);
+        m_pAccountManagerLinkLabelStaticCtrl->SetLabel(
+            _("If you have not yet registered with this account manager,\nplease do so before proceeding.  Click on the link below\nto register or to retrieve a forgotten password." )
+        );
+        m_pAccountForgotPasswordCtrl->SetLabel(
+            _("Account manager website")
+        );
         m_pAccountForgotPasswordCtrl->SetURL(
-            wxString(pWAM->m_AccountManagerInfoPage->GetProjectURL() + _T("get_passwd.php"))
+            wxString(pWAP->m_AccountManagerInfoPage->GetProjectURL())
         );
     }
 
@@ -449,12 +504,22 @@ void CAccountInfoPage::OnPageChanged( wxWizardExEvent& event ) {
  * wxEVT_WIZARD_PAGE_CHANGING event handler for ID_ACCOUNTINFOPAGE
  */
  
-void CAccountInfoPage::OnPageChanging( wxWizardExEvent& event )
-{
+void CAccountInfoPage::OnPageChanging( wxWizardExEvent& event ) {
     if (event.GetDirection() == false) return;
- 
+
+    wxString               strTitle;
+    wxString               strMessage = wxT("");
+    bool                   bDisplayError = false;
+    wxString               strBaseConfigLocation = wxString(wxT("/Wizards"));
+    wxConfigBase*          pConfig = wxConfigBase::Get(FALSE);
+
     if (!CHECK_CLOSINGINPROGRESS()) {
-        wxString strTitle;
+        // We are leaving this page, so store the email address for future
+        // use.
+        pConfig->SetPath(strBaseConfigLocation);
+        pConfig->Write(wxT("DefaultEmailAddress"), m_strAccountEmailAddress);
+
+        // Construct potiental dialog title
         if (IS_ATTACHTOPROJECTWIZARD()) {
             strTitle = _("Attach to project");
         } else if (IS_ACCOUNTMANAGERWIZARD() && IS_ACCOUNTMANAGERUPDATEWIZARD()) {
@@ -462,8 +527,6 @@ void CAccountInfoPage::OnPageChanging( wxWizardExEvent& event )
         } else if (IS_ACCOUNTMANAGERWIZARD()) {
             strTitle = _("Attach to account manager");
         }
-        wxString strMessage = wxT("");
-        bool     bDisplayError = false;
  
         // Verify minimum password length
         unsigned int iMinLength = ((CBOINCBaseWizard*)GetParent())->project_config.min_passwd_length;
@@ -494,7 +557,7 @@ void CAccountInfoPage::OnPageChanging( wxWizardExEvent& event )
         }
  
         if (bDisplayError) {
-            wxMessageBox(
+            wxGetApp().SafeMessageBox(
                 strMessage,
                 strTitle,
                 wxICON_ERROR | wxOK,
@@ -542,3 +605,4 @@ void CAccountInfoPage::OnAccountCreateCtrlSelected( wxCommandEvent& WXUNUSED(eve
     m_pAccountEmailAddressCtrl->SetFocus();
     Fit();
 }
+

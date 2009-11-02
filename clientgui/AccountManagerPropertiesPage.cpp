@@ -1,23 +1,20 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 //
-
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "AccountManagerPropertiesPage.h"
 #endif
@@ -37,9 +34,11 @@
 #include "MainDocument.h"
 #include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
-#include "WizardAccountManager.h"
+#include "ProjectListCtrl.h"
+#include "WizardAttachProject.h"
 #include "AccountManagerPropertiesPage.h"
 #include "AccountManagerInfoPage.h"
+#include "AccountInfoPage.h"
 #include "CompletionErrorPage.h"
 #include "TermsOfUsePage.h"
 
@@ -114,11 +113,13 @@ bool CAccountManagerPropertiesPage::Create( CBOINCBaseWizard* parent )
  
     m_bProjectPropertiesSucceeded = false;
     m_bProjectPropertiesURLFailure = false;
+    m_bProjectPropertiesCommunicationFailure = false;
     m_bProjectAccountCreationDisabled = false;
     m_bProjectClientAccountCreationDisabled = false;
-    m_bNetworkConnectionDetected = false;
+    m_bNetworkConnectionNotDetected = false;
     m_bServerReportedError = false;
     m_bTermsOfUseRequired = true;
+    m_bCredentialsAlreadyAvailable = false;
     m_iBitmapIndex = 0;
     m_iCurrentState = ACCTMGRPROP_INIT;
  
@@ -181,19 +182,18 @@ void CAccountManagerPropertiesPage::OnPageChanged( wxWizardExEvent& event )
 {
     if (event.GetDirection() == false) return;
  
-    CWizardAccountManager* pWAM = ((CWizardAccountManager*)GetParent());
-
+    CWizardAttachProject*  pWAP = ((CWizardAttachProject*)GetParent());
     wxASSERT(m_pTitleStaticCtrl);
     wxASSERT(m_pPleaseWaitStaticCtrl);
     wxASSERT(m_pProgressIndicator);
-    wxASSERT(pWAM);
+    wxASSERT(pWAP);
 
-    if (!pWAM->m_strProjectName.IsEmpty()) {
+    if (!pWAP->m_strProjectName.IsEmpty()) {
         wxString str;
 
         // %s is the project name
         //    i.e. 'BOINC', 'GridRepublic'
-        str.Printf(_("Communicating with %s."), pWAM->m_strProjectName.c_str());
+        str.Printf(_("Communicating with %s."), pWAP->m_strProjectName.c_str());
 
         m_pTitleStaticCtrl->SetLabel(
             str
@@ -210,9 +210,12 @@ void CAccountManagerPropertiesPage::OnPageChanged( wxWizardExEvent& event )
 
     SetProjectPropertiesSucceeded(false);
     SetProjectPropertiesURLFailure(false);
+    SetProjectPropertiesCommunicationFailure(false);
     SetProjectAccountCreationDisabled(false);
     SetProjectClientAccountCreationDisabled(false);
-    SetNetworkConnectionDetected(false);
+    SetNetworkConnectionNotDetected(false);
+    SetTermsOfUseRequired(true);
+    SetCredentialsAlreadyAvailable(false);
     SetNextState(ACCTMGRPROP_INIT);
 
     CAccountManagerPropertiesPageEvent TransitionEvent(wxEVT_ACCOUNTMANAGERPROPERTIES_STATECHANGE, this);
@@ -235,25 +238,28 @@ void CAccountManagerPropertiesPage::OnCancel( wxWizardExEvent& event ) {
  
 void CAccountManagerPropertiesPage::OnStateChange( CAccountManagerPropertiesPageEvent& WXUNUSED(event) )
 {
-    CMainDocument* pDoc         = wxGetApp().GetDocument();
-    CWizardAccountManager* pWAM = ((CWizardAccountManager*)GetParent());
-    PROJECT_CONFIG* pc          = &pWAM->project_config;
+    CMainDocument*         pDoc = wxGetApp().GetDocument();
+    CWizardAttachProject*  pWAP = ((CWizardAttachProject*)GetParent());
+    PROJECT_CONFIG* pc;
     CC_STATUS status;
     wxDateTime dtStartExecutionTime;
     wxDateTime dtCurrentExecutionTime;
     wxTimeSpan tsExecutionTime;
     wxString strBuffer = wxEmptyString;
     bool bPostNewEvent = true;
-    bool bSuccessfulCondition = false;
     int  iReturnValue = 0;
  
+    pc = &pWAP->project_config;
+
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+    wxASSERT(pWAP);
+    wxASSERT(wxDynamicCast(pWAP, CWizardAttachProject));
  
     switch(GetCurrentState()) {
         case ACCTMGRPROP_INIT:
-            pWAM->DisableNextButton();
-            pWAM->DisableBackButton();
+            pWAP->DisableNextButton();
+            pWAP->DisableBackButton();
             StartProgress(m_pProgressIndicator);
             SetNextState(ACCTMGRPROP_RETRPROJECTPROPERTIES_BEGIN);
             break;
@@ -262,22 +268,26 @@ void CAccountManagerPropertiesPage::OnStateChange( CAccountManagerPropertiesPage
             break;
         case ACCTMGRPROP_RETRPROJECTPROPERTIES_EXECUTE:
             // Attempt to retrieve the project's account creation policies
-            pDoc->rpc.get_project_config(
-                (const char*)pWAM->m_AccountManagerInfoPage->GetProjectURL().mb_str()
-            );
- 
+            
             // Wait until we are done processing the request.
             dtStartExecutionTime = wxDateTime::Now();
             dtCurrentExecutionTime = wxDateTime::Now();
             tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
             iReturnValue = 0;
             pc->clear();
-            pc->error_num = ERR_IN_PROGRESS;
-            while ((!iReturnValue && (ERR_IN_PROGRESS == pc->error_num)) &&
-                   tsExecutionTime.GetSeconds() <= 60 &&
-                   !CHECK_CLOSINGINPROGRESS()
-                  )
-            {
+            pc->error_num = ERR_RETRY;
+            while (
+                !iReturnValue &&
+                ((ERR_IN_PROGRESS == pc->error_num) || (ERR_RETRY == pc->error_num)) &&
+                tsExecutionTime.GetSeconds() <= 60 &&
+                !CHECK_CLOSINGINPROGRESS()
+            ) {
+                if (ERR_RETRY == pc->error_num) {
+                    pDoc->rpc.get_project_config(
+                        (const char*)pWAP->m_AccountManagerInfoPage->GetProjectURL().mb_str()
+                    );
+                }
+
                 dtCurrentExecutionTime = wxDateTime::Now();
                 tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
                 iReturnValue = pDoc->rpc.get_project_config_poll(*pc);
@@ -287,74 +297,58 @@ void CAccountManagerPropertiesPage::OnStateChange( CAccountManagerPropertiesPage
                 ::wxSafeYield(GetParent());
             }
  
-            // We either successfully retrieved the project's account creation 
-            //   policies or we were able to talk to the web server and found out
-            //   they do not support account creation through the wizard.  In either
-            //   case we should claim success and set the correct flags to show the
-            //   correct 'next' page.
-            bSuccessfulCondition = 
-                (!iReturnValue) && (!pc->error_num) ||
-                (!iReturnValue) && (ERR_ACCT_CREATION_DISABLED == pc->error_num);
-            if (bSuccessfulCondition && !CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIES)) {
+            if (
+                !iReturnValue
+                && (!pc->error_num || pc->error_num == ERR_ACCT_CREATION_DISABLED)
+            ) {
+                // We either successfully retrieved the project's account creation 
+                //   policies or we were able to talk to the web server and found out
+                //   they do not support account creation through the wizard.  In either
+                //   case we should claim success and set the correct flags to show the
+                //   correct 'next' page.
                 SetProjectPropertiesSucceeded(true);
+                SetProjectAccountCreationDisabled(pc->account_creation_disabled);
+                SetProjectClientAccountCreationDisabled(pc->client_account_creation_disabled);
+                SetTermsOfUseRequired(!pc->terms_of_use.empty());
 
-                bSuccessfulCondition = pc->account_creation_disabled;
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRACCOUNTCREATIONDISABLED)) {
-                    SetProjectAccountCreationDisabled(true);
-                } else {
-                    SetProjectAccountCreationDisabled(false);
-                }
+                pWAP->m_strProjectName = wxString(pc->name.c_str(), wxConvUTF8);
 
-                bSuccessfulCondition = pc->client_account_creation_disabled;
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRCLIENTACCOUNTCREATIONDISABLED)) {
-                    SetProjectClientAccountCreationDisabled(true);
-                } else {
-                    SetProjectClientAccountCreationDisabled(false);
-                }
-
-                bSuccessfulCondition = !pc->terms_of_use.empty();
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRTERMSOFUSEREQUIRED)) {
-                    SetTermsOfUseRequired(true);
-                } else {
-                    SetTermsOfUseRequired(false);
-                }
-
-                pWAM->m_strProjectName = wxString(pc->name.c_str(), wxConvUTF8);
- 
-                SetNextState(ACCTMGRPROP_CLEANUP);
             } else {
+
                 SetProjectPropertiesSucceeded(false);
+                SetProjectPropertiesURLFailure(pc->error_num == ERR_FILE_NOT_FOUND);
 
-                bSuccessfulCondition = 
-                    (!iReturnValue) && (ERR_FILE_NOT_FOUND == pc->error_num) ||
-                    (!iReturnValue) && (ERR_GETHOSTBYNAME == pc->error_num) ||
-                    (!iReturnValue) && (ERR_XML_PARSE == pc->error_num);
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIESURL)) {
-                    SetProjectPropertiesURLFailure(true);
-                } else {
-                    SetProjectPropertiesURLFailure(false);
-                }
+                bool comm_failure = !iReturnValue && (
+                    (ERR_GETHOSTBYNAME == pc->error_num)
+                    || (ERR_CONNECT == pc->error_num)
+                    || (ERR_XML_PARSE == pc->error_num)
+                    || (ERR_PROJECT_DOWN == pc->error_num)
+                );
+                SetProjectPropertiesCommunicationFailure(comm_failure);
 
-                bSuccessfulCondition = 
-                    ((!iReturnValue) && (ERR_FILE_NOT_FOUND != pc->error_num)) &&
-                    ((!iReturnValue) && (ERR_GETHOSTBYNAME != pc->error_num)) &&
-                    ((!iReturnValue) && (ERR_XML_PARSE != pc->error_num)) &&
-                    (!iReturnValue);
-                if (bSuccessfulCondition || CHECK_DEBUG_FLAG(WIZDEBUG_ERRPROJECTPROPERTIESURL)) {
+                bool server_reported_error = !iReturnValue && (
+                    (ERR_FILE_NOT_FOUND != pc->error_num)
+                    && (ERR_GETHOSTBYNAME != pc->error_num)
+                    && (ERR_CONNECT != pc->error_num)
+                    && (ERR_XML_PARSE != pc->error_num)
+                    && (ERR_PROJECT_DOWN != pc->error_num)
+                );
+                SetServerReportedError(server_reported_error);
+
+                if (server_reported_error) {
                     SetServerReportedError(true);
 
-                    strBuffer = pWAM->m_CompletionErrorPage->m_pServerMessagesCtrl->GetLabel();
-				    if (pc->error_msg.size()) {
+                    strBuffer = pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->GetLabel();
+                    if (pc->error_msg.size()) {
                         strBuffer += wxString(pc->error_msg.c_str(), wxConvUTF8) + wxString(wxT("\n"));
                     }
-                    pWAM->m_CompletionErrorPage->m_pServerMessagesCtrl->SetLabel(strBuffer);
-
+                    pWAP->m_CompletionErrorPage->m_pServerMessagesCtrl->SetLabel(strBuffer);
                 } else {
                     SetServerReportedError(false);
                 }
-
-                SetNextState(ACCTMGRPROP_DETERMINENETWORKSTATUS_BEGIN);
             }
+
+            SetNextState(ACCTMGRPROP_DETERMINENETWORKSTATUS_BEGIN);
             break;
         case ACCTMGRPROP_DETERMINENETWORKSTATUS_BEGIN:
             SetNextState(ACCTMGRPROP_DETERMINENETWORKSTATUS_EXECUTE);
@@ -382,12 +376,17 @@ void CAccountManagerPropertiesPage::OnStateChange( CAccountManagerPropertiesPage
                 ::wxSafeYield(GetParent());
             }
 
-            bSuccessfulCondition = NETWORK_STATUS_WANT_CONNECTION != status.network_status;
-            if (bSuccessfulCondition && !CHECK_DEBUG_FLAG(WIZDEBUG_ERRNETDETECTION)) {
-                SetNetworkConnectionDetected(true);
-            } else {
-                SetNetworkConnectionDetected(false);
-            }
+            SetNetworkConnectionNotDetected(NETWORK_STATUS_WANT_CONNECTION == status.network_status);
+
+            SetNextState(ACCTMGRPROP_DETERMINEACCOUNTINFOSTATUS_BEGIN);
+            break;
+        case ACCTMGRPROP_DETERMINEACCOUNTINFOSTATUS_BEGIN:
+            SetNextState(ACCTMGRPROP_DETERMINEACCOUNTINFOSTATUS_EXECUTE);
+            break;
+        case ACCTMGRPROP_DETERMINEACCOUNTINFOSTATUS_EXECUTE:
+            // Determine if the account settings are already pre-populated.
+            //   If so, advance to the Account Manager Processing page.
+            SetCredentialsAlreadyAvailable(pWAP->m_bCredentialsCached || pWAP->m_bCredentialsDetected);
 
             SetNextState(ACCTMGRPROP_CLEANUP);
             break;
@@ -398,9 +397,9 @@ void CAccountManagerPropertiesPage::OnStateChange( CAccountManagerPropertiesPage
         default:
             // Allow a glimps of what the result was before advancing to the next page.
             wxSleep(1);
-            pWAM->EnableNextButton();
-            pWAM->EnableBackButton();
-            pWAM->SimulateNextButton();
+            pWAP->EnableNextButton();
+            pWAP->EnableBackButton();
+            pWAP->SimulateNextButton();
             bPostNewEvent = false;
             break;
     }
@@ -434,10 +433,13 @@ wxWizardPageEx* CAccountManagerPropertiesPage::GetNext() const
     } else if (GetProjectPropertiesSucceeded() && GetTermsOfUseRequired()) {
         // Terms of Use are required before requesting account information
         return PAGE_TRANSITION_NEXT(ID_TERMSOFUSEPAGE);
+    } else if (GetProjectPropertiesSucceeded() && GetCredentialsAlreadyAvailable()) {
+        // Credentials are already available, do whatever we need to do.
+        return PAGE_TRANSITION_NEXT(ID_ACCOUNTMANAGERPROCESSINGPAGE);
     } else if (GetProjectPropertiesSucceeded()) {
         // We were successful in retrieving the project properties
         return PAGE_TRANSITION_NEXT(ID_ACCOUNTINFOPAGE);
-    } else if (GetProjectPropertiesURLFailure() && !GetNetworkConnectionDetected()) {
+    } else if (GetProjectPropertiesCommunicationFailure() && GetNetworkConnectionNotDetected()) {
         // No Internet Connection
         return PAGE_TRANSITION_NEXT(ID_ERRPROXYINFOPAGE);
     } else if (GetProjectPropertiesURLFailure()) {
@@ -565,3 +567,4 @@ wxIcon CAccountManagerPropertiesPage::GetIconResource( const wxString& WXUNUSED(
     return wxNullIcon;
 ////@end CAccountManagerPropertiesPage icon retrieval
 }
+

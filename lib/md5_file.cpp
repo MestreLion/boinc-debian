@@ -49,7 +49,12 @@ int md5_file(const char* path, char* output, double& nbytes) {
 #endif
     if (!f) {
         fprintf(stderr, "md5_file: can't open %s\n", path);
-        perror("md5_file");
+#ifndef _USING_FCGI_
+        std::perror("md5_file");
+#else
+        FCGI::perror("md5_file");
+#endif
+
         return ERR_FOPEN;
     }
     md5_init(&state);
@@ -121,4 +126,4 @@ int make_random_string(char* out) {
     return 0;
 }
 
-const char *BOINC_RCSID_5a0dc438fe = "$Id: md5_file.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_5a0dc438fe = "$Id: md5_file.cpp 17388 2009-02-26 00:23:23Z korpela $";

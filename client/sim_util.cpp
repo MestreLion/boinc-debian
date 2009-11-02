@@ -31,8 +31,11 @@
 // If dirs are specified, chdir into each directory in sequence,
 // do the above for each one, and write summary info to stdout
 
+#include <math.h>
+
 #include "error_numbers.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "log_flags.h"
 #include "filesys.h"
 #include "network.h"
@@ -136,7 +139,6 @@ void SIM_PROJECT::init() {
     non_cpu_intensive = false;
     verify_files_on_app_start = false;
     short_term_debt = 0;
-    long_term_debt = 0;
     send_file_list = false;
     suspended_via_gui = false;
     dont_request_more_work = false;
@@ -146,16 +148,12 @@ void SIM_PROJECT::init() {
     user_files.clear();
     project_files.clear();
     anticipated_debt = 0;
-    wall_cpu_time_this_debt_interval = 0;
     next_runnable_result = NULL;
-    work_request = 0;
-    work_request_urgency = WORK_FETCH_DONT_NEED;
     duration_correction_factor = 1;
     project_files_downloaded_time = 0;
 
     // Initialize scratch variables.
     rr_sim_status.clear();
-    deadlines_missed = 0;
 
     // sim-specific:
     idle_time = 0;
@@ -181,7 +179,6 @@ void RESULT::clear() {
     stderr_out = "";
     suspended_via_gui = false;
     rr_sim_misses_deadline = false;
-    last_rr_sim_missed_deadline = false;
     fpops_per_cpu_sec = 0;
     fpops_cumulative = 0;
     intops_per_cpu_sec = 0;
@@ -289,7 +286,6 @@ ACTIVE_TASK::ACTIVE_TASK() {
     graphics_mode_ack_timeout = 0;
     quit_time = 0;
     fraction_done = 0;
-    episode_start_cpu_time = 0;
     run_interval_start_wall_time = gstate.now;
     checkpoint_cpu_time = 0;
     checkpoint_wall_time = 0;
@@ -327,14 +323,13 @@ int ACTIVE_TASK::resume_or_start(bool first_time) {
     return 0;
 }
 
-int ACTIVE_TASK_SET::get_free_slot(){
-    return 0;
+void ACTIVE_TASK::get_free_slot(RESULT*){
 }
 int ACTIVE_TASK::init(RESULT* rp) {
     result = rp;
     wup = rp->wup;
     app_version = rp->avp;
-    max_cpu_time = rp->wup->rsc_fpops_bound/gstate.host_info.p_fpops;
+    max_elapsed_time = rp->wup->rsc_fpops_bound/result->avp->flops;
     max_disk_usage = rp->wup->rsc_disk_bound;
     max_mem_usage = rp->wup->rsc_memory_bound;
     cpu_time_left = rp->final_cpu_time;
@@ -564,4 +559,13 @@ int CLIENT_STATE::parse_host(char* name) {
 
 int IP_RESULT::parse(FILE*) {
     return 0;
+}
+
+bool boinc_is_finite(double x) {
+#if defined (HPUX_SOURCE)
+    return _Isfinite(x);
+    return false;
+#else
+    return (finite(x) != 0);
+#endif
 }

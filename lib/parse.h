@@ -21,29 +21,21 @@
 #ifdef _WIN32
 #include "boinc_win.h"
 #else
-#include "config.h"
-#include <stdio.h>
+#include <cstdio>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <math.h>
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>
-extern "C" {
-int finite(double);
-}
-#endif
 #endif
 
 #include "miofile.h"
 
 class XML_PARSER {
-    MIOFILE* f;
     bool scan_nonws(int&);
     int scan_comment();
     int scan_tag(char*, int, char* ab=0, int al=0);
     bool copy_until_tag(char*, int);
 public:
+    MIOFILE* f;
     XML_PARSER(MIOFILE*);
     bool get(char*, int, bool&, char* ab=0, int al=0);
     bool parse_start(const char*);
@@ -55,6 +47,8 @@ public:
 	int element_contents(const char*, char*, int);
     void skip_unexpected(const char*, bool verbose, const char*);
 };
+
+extern bool boinc_is_finite(double);
 
 /////////////// START DEPRECATED XML PARSER
 // Deprecated because it makes assumptions about
@@ -92,15 +86,11 @@ inline bool parse_double(const char* buf, const char* tag, double& x) {
     const char* p = strstr(buf, tag);
     if (!p) return false;
     y = atof(p+strlen(tag));
-#if defined (HPUX_SOURCE)
-    if (_Isfinite(y)) {
-#else
-    if (finite(y)) {
-#endif
-        x = y;
-        return true;
+    if (!boinc_is_finite(y)) {
+        return false;
     }
-    return false;
+    x = y;
+    return true;
 }
 
 extern bool parse(char* , char* );
@@ -124,6 +114,7 @@ extern bool remove_element(char* buf, const char* start, const char* end);
 extern bool str_replace(char* str, const char* old, const char* neww);
 extern char* sgets(char* buf, int len, char* &in);
 extern void xml_escape(const char*, char*, int len);
+extern void xml_unescape(std::string&);
 extern void xml_unescape(const char*, char*, int len);
 extern void extract_venue(const char*, const char*, char*);
 extern int skip_unrecognized(char* buf, MIOFILE&);

@@ -16,13 +16,13 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
-#include <stdlib.h>
-#include <stdio.h>    
-#include <setjmp.h>    
+#include <cstdlib>
+#include <cstdio>    
+#include <csetjmp>    
 #include <unistd.h> 
 #include <pthread.h>
 #include <cstring>
-#include <signal.h>
+#include <csignal>
 #include "x_opengl.h"
 
 #include "app_ipc.h"
@@ -672,4 +672,4 @@ void xwin_graphics_event_loop() {
 }
 
 
-const char *BOINC_RCSID_c457a14644 = "$Id: x_opengl.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_c457a14644 = "$Id: x_opengl.cpp 17388 2009-02-26 00:23:23Z korpela $";

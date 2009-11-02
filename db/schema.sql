@@ -307,7 +307,7 @@ create table profile (
     verification        integer     not null,
         -- UOD screening status: -1 denied, 0 unrated, 1 approved
     primary key (userid)
-);
+) engine=MyISAM;
 
 -- message board category
 -- help desk is a group of categories that are handled separately
@@ -380,7 +380,7 @@ create table thread (
     sticky              tinyint not null default 0,
     locked              tinyint not null default 0,
     primary key (id)
-);
+) engine=MyISAM;
 
 -- postings in a thread (or answers)
 -- Each thread has an initial post
@@ -402,7 +402,7 @@ create table post (
     hidden              integer     not null,
         -- nonzero if hidden by moderators
     primary key (id)
-);
+) engine=MyISAM;
 
 -- subscription to a thread
 --
@@ -594,3 +594,17 @@ create table credit_multiplier (
     multiplier          double          not null default 0
 ) engine=MyISAM;
 
+create table state_counts (
+    appid               integer     not null,
+    last_update_time    integer     not null,
+    result_server_state_2       integer not null,
+    result_server_state_4       integer not null,
+    result_file_delete_state_1  integer not null,
+    result_file_delete_state_2  integer not null,
+    result_server_state_5_and_file_delete_state_0       integer not null,
+    workunit_need_validate_1    integer not null,
+    workunit_assimilate_state_1 integer not null,
+    workunit_file_delete_state_1        integer not null,
+    workunit_file_delete_state_2        integer not null,
+    primary key (appid)
+) engine=MyISAM; 

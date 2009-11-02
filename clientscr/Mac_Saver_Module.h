@@ -34,6 +34,7 @@ extern "C" {
 
 int initBOINCSaver(void);
 int getSSMessage(char **theMessage, int* coveredFreq);
+void windowIsCovered();
 void drawPreview(CGContextRef myContext);
 void closeBOINCSaver(void);
 void print_to_log_file(const char *format, ...);
@@ -68,23 +69,26 @@ protected:
     pid_t           FindProcessPID(char* name, pid_t thePID);
     OSErr           GetpathToBOINCManagerApp(char* path, int maxLen);
     bool            SetError( bool bErrorMode, unsigned int hrError );
-    void            UpdateProgressText(unsigned int hrError);
     void            setSSMessageText(const char *msg);
     void            updateSSMessageText(char *msg);
     void            strip_cr(char *buf);
     char            m_gfx_Switcher_Path[MAXPATHLEN];
-    bool            m_bErrorMode;        // Whether to display an error
+    bool            m_bErrorMode;        // Whether to draw moving logo and possibly display an error
     unsigned int    m_hrError;           // Error code to display
 
     bool            m_wasAlreadyRunning;
     pid_t           m_CoreClientPID;
     int             m_dwBlankScreen;
     time_t          m_dwBlankTime;
-    int             m_iStatusUpdateCounter;
     int             m_iGraphicsStartingMsgCounter;
-    int             m_iLastResultShown;
-    int             m_tLastResultChangeCounter;
-    bool            m_StatusMessageUpdated;
+    bool            m_bDefault_ss_exists;
+    double          m_fGFXDefaultPeriod;
+    double          m_fGFxSciencePeriod;
+    double          m_fGFXChangePeriod;
+    bool            m_bShow_default_ss_first;
+    bool            m_bScience_gfx_running;
+    bool            m_bDefault_gfx_running;
+    bool            m_bConnected;
 
     //
     // Data management layer
@@ -95,10 +99,15 @@ protected:
 
     void*           DataManagementProc();
     static void*    DataManagementProcStub( void* param );
+    int             terminate_v6_screensaver(int& graphics_application);
     int             terminate_screensaver(int& graphics_application, RESULT *worker_app);
+    int             terminate_default_screensaver(int& graphics_application);
     int             launch_screensaver(RESULT* rp, int& graphics_application);
+    int             launch_default_screensaver(char *dir_path, int& graphics_application);
     void            HandleRPCError(void);
     OSErr           KillScreenSaver(void);
+    void            GetDisplayPeriods(char *dir_path);
+    bool            HasProcessExited(pid_t pid, int &exitCode);
     pthread_t       m_hDataManagementThread;
     pid_t           m_hGraphicsApplication;
 
@@ -108,7 +117,7 @@ protected:
 // Count the number of active graphics-capable apps
     int             count_active_graphic_apps(RESULTS& results, RESULT* exclude = NULL);
 
-// Choose a ramdom graphics application from the vector that
+// Choose a random graphics application from the vector that
 //   was passed in.
 
     RESULT*         get_random_graphics_app(RESULTS& results, RESULT* exclude = NULL);
@@ -116,9 +125,7 @@ protected:
     RPC_CLIENT      *rpc;
     CC_STATE        state;
     RESULTS         results;
-    RESULT          m_running_result;
-    bool            m_updating_results;
-
+ 
     bool            m_bResetCoreState;
     bool            m_QuitDataManagementProc;
     bool            m_bV5_GFX_app_is_running;
@@ -128,12 +135,12 @@ protected:
     // Presentation layer
     //
 protected:
-    char            m_MsgBuf[2048];
     char            m_MessageText[2048];
     char*           m_CurrentBannerMessage;
     char*           m_BrandText;
 public:
     int             getSSMessage(char **theMessage, int* coveredFreq);
+    void            windowIsCovered(void);
     void            drawPreview(CGContextRef myContext);
     void            ShutdownSaver();
 

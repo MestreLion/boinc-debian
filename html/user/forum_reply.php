@@ -21,6 +21,7 @@
 
 require_once('../inc/forum_email.inc');
 require_once('../inc/forum.inc');
+require_once('../inc/bbcode_html.inc');
 require_once('../inc/akismet.inc');
 
 $logged_in_user = get_logged_in_user(true);
@@ -81,7 +82,7 @@ if ($content && (!$preview)){
     }
 }
 
-page_head(tra("Post to thread"));
+page_head(tra("Post to thread"),'','','', $bbcode_js);
 
 show_forum_header($logged_in_user);
 
@@ -113,9 +114,8 @@ end_table();
 page_tail();
 
 function show_message_row($thread, $parent_post) {
-    global $g_logged_in_user;
-    global $content;
-    global $preview;
+    global $g_logged_in_user, $bbcode_html;
+    global $content, $preview;
 
     $x1 = "Message:".html_info().post_warning();
     $x2 = "";
@@ -128,9 +128,9 @@ function show_message_row($thread, $parent_post) {
         $x2 .= "&post=".$parent_post->id;
     }
 
-    $x2 .= " method=\"post\">\n";
+    $x2 .= " method=\"post\" name=\"post\" onsubmit=\"return checkForm(this)\">\n";
     $x2 .= form_tokens($g_logged_in_user->authenticator);
-    $x2 .= "<textarea name=\"content\" rows=\"18\" cols=\"80\">";        
+    $x2 .= $bbcode_html."<textarea name=\"content\" rows=\"18\" cols=\"80\">";        
     $no_quote = get_int("no_quote", true)==1;
     if ($preview) {
         $x2 .= htmlspecialchars($content);
@@ -159,5 +159,5 @@ function quote_text($text, $cols = 0) {
     $text = "[quote]" . $text . "[/quote]";
     return $text;
 }
-$cvs_version_tracker[]="\$Id: forum_reply.php 16175 2008-10-09 18:28:55Z davea $";
+$cvs_version_tracker[]="\$Id: forum_reply.php 18488 2009-06-23 17:18:29Z davea $";
 ?>

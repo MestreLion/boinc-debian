@@ -26,6 +26,7 @@
 #include "error_numbers.h"
 #include "client_msgs.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "file_names.h"
 #include "filesys.h"
 #include "client_state.h"
@@ -654,6 +655,8 @@ int ACCT_MGR_INFO::init() {
             retval = xp.element_contents("</signing_key>", signing_key, sizeof(signing_key));
             continue;
         }
+        else if (xp.parse_bool(tag, "cookie_required", cookie_required)) continue;
+        else if (xp.parse_str(tag, "cookie_failure_url", cookie_failure_url, 256)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(NULL, MSG_INFO,
                 "[unparsed_xml] ACCT_MGR_INFO::init: unrecognized %s", tag
@@ -686,4 +689,4 @@ bool ACCT_MGR_INFO::poll() {
     return false;
 }
 
-const char *BOINC_RCSID_8fd9e873bf="$Id: acct_mgr.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_8fd9e873bf="$Id: acct_mgr.cpp 18437 2009-06-16 20:54:44Z davea $";

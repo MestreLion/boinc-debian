@@ -20,7 +20,7 @@
 // with api/setMacIcon() in science applications.
 
 #include "config.h"
-#include <stdio.h>
+#include <cstdio>
 
 int main(int argc, char** argv) {
     int retval = 0;
@@ -75,4 +75,4 @@ int main(int argc, char** argv) {
     return retval;
 }
     
-const char *BOINC_RCSID_fe1ac2ec91="$Id: make_app_icon_h.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_fe1ac2ec91="$Id: make_app_icon_h.cpp 17388 2009-02-26 00:23:23Z korpela $";

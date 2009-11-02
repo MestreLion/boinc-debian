@@ -20,7 +20,7 @@
 
 #include "regex.h"
 #include <vector>
-#include <stdio.h>
+#include <cstdio>
 
 using std::vector;
 
@@ -35,6 +35,7 @@ public:
     char db_passwd[256];
     char db_host[256];
     int shmem_key;
+    char project_dir[256];
     char key_dir[256];
     char download_url[256];
     char download_dir[256];
@@ -47,9 +48,8 @@ public:
     bool one_result_per_host_per_wu;
     bool msg_to_host;
     int min_sendwork_interval;
-    int max_wus_to_send;
     int max_wus_in_progress;
-        // max jobs in progress on a given host (per CPU)
+    int max_wus_in_progress_gpu;
     bool non_cpu_intensive;
     bool verify_files_on_app_start;
     int homogeneous_redundancy;
@@ -58,15 +58,20 @@ public:
     bool ignore_upload_certificates;
     bool dont_generate_upload_certificates;
     bool ignore_delay_bound;
-    int daily_result_quota;     // max results per host per day
+    int gpu_multiplier;             // mult is NCPUS + this*NGPUS
+    int daily_result_quota;         // max results per day is this * mult
+    int max_wus_to_send;            // max results per RPC is this * mult
     int uldl_dir_fanout;        // fanout of ul/dl dirs; 0 if none
     int uldl_dir_levels;
     int locality_scheduling_wait_period;
     int locality_scheduling_send_timeout;
+    vector<regex_t> *locality_scheduling_workunit_file;
+    vector<regex_t> *locality_scheduling_sticky_file;
+    double locality_scheduler_fraction;
     int min_core_client_version;
     int min_core_client_version_announced;
     int min_core_client_upgrade_deadline;
-    bool choose_download_url_by_timezone;
+    char replace_download_url_by_timezone[256];
     bool cache_md5_info;
     bool nowork_skip;
     bool resend_lost_results;
@@ -95,8 +100,8 @@ public:
         // will be sent to reliable hosts
     double reliable_reduced_delay_bound;
         // Reduce the delay bounds for reliable hosts by this percent
-	int granted_credit_ramp_up; 
-	double granted_credit_weight;
+    int granted_credit_ramp_up; 
+    double granted_credit_weight;
     bool distinct_beta_apps;
         // allow users to select beta apps independently
     bool workload_sim;
@@ -125,7 +130,9 @@ public:
     bool use_credit_multiplier;
     bool multiple_clients_per_host;
     bool no_vista_sandbox;
-    bool have_cuda_apps;
+    bool ignore_dcf;
+    int report_max;
+    bool dont_store_success_stderr;
 
     // log flags
     //
@@ -140,19 +147,18 @@ public:
     bool debug_handle_results;
     bool debug_edf_sim_workload;    // show workload for EDF sim
     bool debug_edf_sim_detail;      // show details of EDF sim
+    bool debug_locality;            // locality scheduling
+    bool debug_array;               // debug old-style array scheduling
 
     int parse(FILE*);
-    int parse_file(const char* dir=".");
+    int parse_file(const char *dir = 0);
 
     int upload_path(const char*, char*);
     int download_path(const char*, char*);
+
+    const char *project_path(const char *, ...);
 };
 
 extern SCHED_CONFIG config;
-
-// get the project's home directory
-// (assumed to be the parent of the CWD)
-//
-void get_project_dir(char*, int);
 
 #endif

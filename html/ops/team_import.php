@@ -24,6 +24,18 @@ require_once("../inc/util.inc");
 require_once("../inc/user.inc");
 require_once("../inc/team.inc");
 require_once("../inc/email.inc");
+require_once("../project/project.inc");
+
+if (defined('INVITE_CODES')) {
+    echo "Account creation is protected by invitation codes, so not importing teams";
+    exit;
+}
+
+$config = get_config();
+if (parse_bool($config, "disable_account_creation")) {
+    echo "Account creation is disabled";
+    exit;
+}
 
 // set the following to 1 to print queries but not do anything
 
@@ -98,10 +110,10 @@ function update_team($t, $team, $user) {
         return;
     }
     echo "   updating\n";
-    $url = process_user_text($t->url);
-    $name_html = process_user_text($t->name_html);
-    $description = process_user_text($t->description);
-    $country = process_user_text($t->country);
+    $url = BoincDb::escape_string($t->url);
+    $name_html = BoincDb::escape_string($t->name_html);
+    $description = BoincDb::escape_string($t->description);
+    $country = BoincDb::escape_string($t->country);
     $query = "update team set url='$url', type=$t->type, name_html='$name_html', description='$description', country='$country', seti_id=$t->id where id=$team->id";
     if ($dry_run) {
         echo "   $query\n";

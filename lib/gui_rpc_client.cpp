@@ -85,7 +85,7 @@ int RPC_CLIENT::init(const char* host, int port) {
     if (host) {
         hostent* hep = gethostbyname(host);
         if (!hep) {
-            perror("gethostbyname");
+            //perror("gethostbyname");
             return ERR_GETHOSTBYNAME;
         }
         addr.sin_addr.s_addr = *(int*)hep->h_addr_list[0];
@@ -99,7 +99,7 @@ int RPC_CLIENT::init(const char* host, int port) {
         BOINCTRACE("RPC_CLIENT::init connect 2: Winsock error '%d'\n", WSAGetLastError());
 #endif
         BOINCTRACE("RPC_CLIENT::init connect on %d returned %d\n", sock, retval);
-        perror("connect");
+        //perror("connect");
         close();
         return ERR_CONNECT;
     }
@@ -120,7 +120,7 @@ int RPC_CLIENT::init_asynch(
     if (host) {
         hostent* hep = gethostbyname(host);
         if (!hep) {
-            perror("gethostbyname");
+            //perror("gethostbyname");
             return ERR_GETHOSTBYNAME;
         }
         addr.sin_addr.s_addr = *(int*)hep->h_addr_list[0];
@@ -129,20 +129,19 @@ int RPC_CLIENT::init_asynch(
     }
 
     retval = boinc_socket(sock);
-    BOINCTRACE("RPC_CLIENT::init boinc_socket returned %d\n", sock);
+    BOINCTRACE("init_asynch() boinc_socket: %d\n", sock);
     if (retval) return retval;
 
     retval = boinc_socket_asynch(sock, true);
     if (retval) {
-        BOINCTRACE("RPC_CLIENT::init asynch error: %d\n", retval);
+        BOINCTRACE("init_asynch() boinc_socket_asynch: %d\n", retval);
     }
     start_time = dtime();
     retval = connect(sock, (const sockaddr*)(&addr), sizeof(addr));
     if (retval) {
-        perror("connect");
-        BOINCTRACE("RPC_CLIENT::init connect returned %d\n", retval);
+        //perror("init_asynch(): connect");
+        BOINCTRACE("init_asynch() connect: %d\n", retval);
     }
-    BOINCTRACE("RPC_CLIENT::init attempting connect \n");
     return 0;
 }
 
@@ -159,7 +158,7 @@ int RPC_CLIENT::init_poll() {
     FD_SET(sock, &write_fds);
     FD_SET(sock, &error_fds);
 
-    BOINCTRACE("RPC_CLIENT::init_poll sock = %d\n", sock);
+    BOINCTRACE("init_poll(): sock = %d\n", sock);
 
     tv.tv_sec = tv.tv_usec = 0;
     select(FD_SETSIZE, &read_fds, &write_fds, &error_fds, &tv);
@@ -169,19 +168,19 @@ int RPC_CLIENT::init_poll() {
     } else if (FD_ISSET(sock, &write_fds)) {
         retval = get_socket_error(sock);
         if (!retval) {
-            BOINCTRACE("RPC_CLIENT::init_poll connected to port %d\n", ntohs(addr.sin_port));
+            BOINCTRACE("init_poll(): connected to port %d\n", ntohs(addr.sin_port));
             retval = boinc_socket_asynch(sock, false);
             if (retval) {
-                BOINCTRACE("asynch error: %d\n", retval);
+                BOINCTRACE("init_poll(): boinc_socket_asynch: %d\n", retval);
                 return retval;
             }
             return 0;
         } else {
-            BOINCTRACE("init_poll: get_socket_error(): %d\n", retval);
+            BOINCTRACE("init_poll(): get_socket_error(): %d\n", retval);
         }
     }
     if (dtime() > start_time + timeout) {
-        BOINCTRACE("RPC_CLIENT init timed out\n");
+        BOINCTRACE("asynch init timed out\n");
         return ERR_CONNECT;
     }
     if (retval) {
@@ -190,7 +189,7 @@ int RPC_CLIENT::init_poll() {
             retval = boinc_socket(sock);
             retval = boinc_socket_asynch(sock, true);
             retval = connect(sock, (const sockaddr*)(&addr), sizeof(addr));
-            BOINCTRACE("RPC_CLIENT::init_poll attempting connect\n");
+            BOINCTRACE("init_poll(): retrying connect: %d\n", retval);
             return ERR_RETRY;
         } else {
             return ERR_CONNECT;
@@ -215,6 +214,9 @@ int RPC_CLIENT::authorize(const char* passwd) {
             break;
         }
     }
+
+    free(rpc.mbuf);
+
     if (!found) {
         //fprintf(stderr, "Nonce not found\n");
         return ERR_AUTHENTICATOR;
@@ -246,8 +248,8 @@ int RPC_CLIENT::send_request(const char* p) {
     );
     int n = send(sock, buf, (int)strlen(buf), 0);
     if (n < 0) {
-        printf("send: %d\n", n);
-        perror("send");
+        //printf("send: %d\n", n);
+        //perror("send");
         return ERR_WRITE;
     }
     return 0;
@@ -311,4 +313,22 @@ int RPC::parse_reply() {
     return ERR_NOT_FOUND;
 }
 
-const char *BOINC_RCSID_6802bead97 = "$Id: gui_rpc_client.cpp 16069 2008-09-26 18:20:24Z davea $";
+// If there's a password file, read it
+//
+int read_gui_rpc_password(char* buf) {
+    FILE* f = fopen(GUI_RPC_PASSWD_FILE, "r");
+    if (!f) return ERR_FOPEN;
+    char* p = fgets(buf, 256, f);
+    if (p) {
+        // trim CR
+        //
+        int n = (int)strlen(buf);
+        if (n && buf[n-1]=='\n') {
+            buf[n-1] = 0;
+        }
+    }
+    fclose(f);
+    return 0;
+}
+
+const char *BOINC_RCSID_6802bead97 = "$Id: gui_rpc_client.cpp 18833 2009-08-13 05:08:07Z davea $";

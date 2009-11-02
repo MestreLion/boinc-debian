@@ -152,6 +152,12 @@ int FILE_INFO::verify_file(bool strict, bool show_errors) {
     }
 
     if (nbytes && (nbytes != size) && (!config.dont_check_file_sizes)) {
+        if (show_errors) {
+            msg_printf(project, MSG_INTERNAL_ERROR,
+                "File %s has wrong size: expected %.0f, got %.0f",
+                name, nbytes, size
+            );
+        }
         status = ERR_WRONG_SIZE;
         return ERR_WRONG_SIZE;
     }
@@ -242,7 +248,7 @@ bool CLIENT_STATE::handle_pers_file_xfers() {
     int retval;
     static double last_time;
 
-    if (now - last_time < 1.0) return false;
+    if (now - last_time < PERS_FILE_XFER_START_PERIOD) return false;
     last_time = now;
 
     // Look for FILE_INFOs for which we should start a transfer,
@@ -356,4 +362,4 @@ void CLIENT_STATE::check_file_existence() {
     }
 }
 
-const char *BOINC_RCSID_66410b3cab = "$Id: cs_files.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_66410b3cab = "$Id: cs_files.cpp 19106 2009-09-18 20:55:03Z romw $";

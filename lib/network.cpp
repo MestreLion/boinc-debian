@@ -21,16 +21,31 @@
 
 #ifndef _WIN32
 #include "config.h"
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <cstdio>
+#include <cstdlib>
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
+#include <resolv.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <errno.h>
 #endif
+
+using std::perror;
+using std::sprintf;
 
 #include "error_numbers.h"
 #include "network.h"
@@ -159,9 +174,9 @@ void boinc_close_socket(int sock) {
 }
 
 int get_socket_error(int fd) {
-    boinc_socklen_t intsize = sizeof(int);
     int n;
 #if defined(_WIN32) && defined(USE_WINSOCK)
+    int intsize = sizeof(int);
     getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&n, &intsize);
 #elif defined(__FreeBSD__)
     // workaround for FreeBSD. I don't understand this.
@@ -169,6 +184,7 @@ int get_socket_error(int fd) {
     socklen_t sinsz = sizeof(sin);
     n = getpeername(fd, (struct sockaddr *)&sin, &sinsz);
 #else
+    socklen_t intsize = sizeof(int);
     getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&n, (socklen_t*)&intsize);
 #endif
     return n;
@@ -185,6 +201,13 @@ int WinsockCleanup() {
     return WSACleanup();
 }
 
-
 #endif
-const char *BOINC_RCSID_557bf0741f="$Id: network.cpp 16069 2008-09-26 18:20:24Z davea $";
+
+void reset_dns() {
+#if !defined(_WIN32) && !defined(__APPLE__)
+    // Windows doesn't have this, and it crashes Macs
+    res_init();
+#endif
+}
+
+const char *BOINC_RCSID_557bf0741f="$Id: network.cpp 18439 2009-06-16 21:58:38Z davea $";

@@ -19,12 +19,16 @@
 //
 // Used by screensaver to:
 //  - launch graphics application at given slot number as user & owner boinc_project
-//  - kill graphics application with given process ID
+//  - launch default graphics application as user & owner boinc_project
+//  - kill graphics application with given process ID as user & owner boinc_project
+//
 #include <unistd.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <cerrno>
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>  // for MAXPATHLEN
+#endif
 #include <pwd.h>	// getpwuid
 #include <grp.h>
 
@@ -54,8 +58,10 @@ int main(int argc, char** argv) {
     int         retval;
     int         pid;
 
+    if (argc < 2) return EINVAL;
+
     strlcpy(user_name, "boinc_project", sizeof(user_name));
-    strlcpy(group_name, "boinc_project", sizeof(group_name));
+    strlcpy(group_name, user_name, sizeof(group_name));
 
 #if 0       // For debugging only
     // Allow debugging without running as user or group boinc_project
@@ -84,11 +90,28 @@ int main(int argc, char** argv) {
     print_to_log_file( "current directory = %s", current_dir);
     
     for (int i=0; i<argc; i++) {
-         print_to_log_file("switcher arg %d: %s\n", i, argv[i]);
+         print_to_log_file("switcher arg %d: %s", i, argv[i]);
     }
 #endif
 
-    if (argc < 2) return EINVAL;
+    if (strcmp(argv[1], "-default_gfx") == 0) {
+        strlcpy(resolved_path, "/Library/Application Support/BOINC Data/boincscr", sizeof(resolved_path));
+        argv[2] = resolved_path;
+        
+#if 0           // For debugging only
+    for (int i=2; i<argc; i++) {
+         print_to_log_file("calling execv with arg %d: %s", i-2, argv[i]);
+    }
+#endif
+
+        // For unknown reasons, the graphics application exits with 
+        // "RegisterProcess failed (error = -50)" unless we pass its 
+        // full path twice in the argument list to execv.
+        execv(resolved_path, argv+2);
+        // If we got here execv failed
+        fprintf(stderr, "Process creation (%s) failed: errno=%d\n", resolved_path, errno);
+        return errno;
+    }
     
     if (strcmp(argv[1], "-launch_gfx") == 0) {
         strlcpy(gfx_app_path, BOINCDatSlotsPath, sizeof(gfx_app_path));
@@ -102,7 +125,7 @@ int main(int argc, char** argv) {
         
 #if 0           // For debugging only
     for (int i=2; i<argc; i++) {
-         print_to_log_file("calling execv with arg %d: %s\n", i-2, argv[i]);
+         print_to_log_file("calling execv with arg %d: %s", i-2, argv[i]);
     }
 #endif
 
@@ -118,7 +141,12 @@ int main(int argc, char** argv) {
     if (strcmp(argv[1], "-kill_gfx") == 0) {
         pid = atoi(argv[2]);
         if (! pid) return EINVAL;
-        if ( kill(pid, SIGKILL)) return errno;
+        if ( kill(pid, SIGKILL)) {
+#if 0           // For debugging only
+     print_to_log_file("kill(%d, SIGKILL) returned error %d", pid, errno);
+#endif
+            return errno;
+        }
         return 0;
     }
     

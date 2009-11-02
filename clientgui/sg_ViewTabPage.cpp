@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "sg_ViewTabPage.h"
@@ -88,6 +86,13 @@ CViewTabPage::CViewTabPage(WorkunitNotebook* parent,RESULT* result,std::string n
     //create page
 	CreatePage();
 	project_files_downloaded_time = 0;
+	
+#if wxCHECK_VERSION(2,8,0)
+    // Workaround for unknown problem with newer versions of wxWidgets
+    // Without this, the size of the panel would be reduced to 336,300
+    SetMinSize(wxSize(343, 314));
+#endif
+
 }
 
 CViewTabPage::~CViewTabPage() {
@@ -110,7 +115,7 @@ void CViewTabPage::CreatePage()
         if (resState->app->user_friendly_name.size()) {
             projectFrName = wxString(resState->app->user_friendly_name.c_str(), wxConvUTF8);
         } else {
-            projectFrName = wxString(resState->wup->avp->app_name.c_str(), wxConvUTF8);
+            projectFrName = wxString(resState->avp->app_name.c_str(), wxConvUTF8);
         }
 	} else {
 		projName = wxString("Not Available", wxConvUTF8 );
@@ -322,12 +327,7 @@ void CViewTabPage::UpdateInterface()
 
 void CViewTabPage::CreateSlideShowWindow() {
 	wSlideShow=new wxWindow(this,-1,wxPoint(26,74),wxSize(290,126),wxNO_BORDER);
-#ifdef __WXMAC__
-        // Ugly hack for unknown alignment problem on Mac, requested by Kevin Reed
-	m_canvas = new MyCanvas(wSlideShow, wxPoint(0,-22), wxSize(290,148), GetSlideShow());
-#else
 	m_canvas = new MyCanvas(wSlideShow, wxPoint(0,0), wxSize(290,126), GetSlideShow());
-#endif
 }
 
 
@@ -417,7 +417,7 @@ void CViewTabPage::OnWorkShowGraphics() {
 #if (defined(_WIN32) || defined(__WXMAC__))
     pDoc->GetConnectedComputerName(strMachineName);
     if (!pDoc->IsComputerNameLocal(strMachineName)) {
-        iAnswer = ::wxMessageBox(
+        iAnswer = wxGetApp().SafeMessageBox(
             _("Are you sure you want to display graphics on a remote machine?"),
             _("Show graphics"),
             wxYES_NO | wxICON_QUESTION,
@@ -513,12 +513,6 @@ CSkinSimple* pSkinSimple = wxGetApp().GetSkinManager()->GetSimple();
 
     wxLogTrace(wxT("Function Start/End"), wxT("CViewTabPage::DrawText - Begin"));
     
-#if wxCHECK_VERSION(2,8,0)
-    // Workaround for unknown problem with newer versions of wxWidgets
-    // At this point, the size of the panel has been reduced to 336,300
-    this->SetSize(343,314);
-#endif
-
 #if (defined(__WXMAC__) && (! wxCHECK_VERSION(2,8,0)))
     // wxBufferedDC.GetTextExtent() fails with wxMac-2.6.3, causing Manager to hang
     wxClientDC dc(this);

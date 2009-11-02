@@ -51,9 +51,6 @@
 #include <cstring>
 #endif
 
-
-
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -107,6 +104,7 @@
 #include "filesys.h"
 #include "error_numbers.h"
 #include "str_util.h"
+#include "str_replace.h"
 #include "client_state.h"
 #include "hostinfo_network.h"
 #include "client_msgs.h"
@@ -125,7 +123,7 @@ extern "C" {
 }    // extern "C"
 #endif
 
-NXEventHandle gEventHandle = NULL;
+mach_port_t gEventHandle = NULL;
 #endif  // __APPLE__
 
 #ifdef _HPUX_SOURCE
@@ -140,10 +138,19 @@ NXEventHandle gEventHandle = NULL;
 #include <machine/cpuconf.h>
 #endif
 
+#ifdef __HAIKU__
+#include <OS.h>
+#endif
+
+// Some OS define _SC_PAGE_SIZE instead of _SC_PAGESIZE
+#if defined(_SC_PAGE_SIZE) && !defined(_SC_PAGESIZE)
+#define _SC_PAGESIZE _SC_PAGE_SIZE
+#endif
+
 // The following is intended to be true both on Linux
 // and Debian GNU/kFreeBSD (see trac #521)
 //
-#define LINUX_LIKE_SYSTEM defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)
+#define LINUX_LIKE_SYSTEM (defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(__HAIKU__)
 
 // functions to get name/addr of local host
 
@@ -292,10 +299,6 @@ bool HOST_INFO::host_is_running_on_batteries() {
         // if we haven't found a method so far, give up
         method = NoBattery;
         // fall through
-    case NoBattery:
-         // we have no way to determine if we're on batteries,
-         // so we say we aren't
-        return false;
     case ProcAPM:
         {
             // use /proc/apm
@@ -351,6 +354,11 @@ bool HOST_INFO::host_is_running_on_batteries() {
             // online is 1 if on AC power, 0 if on battery
             return (0 == online);
         }
+    case NoBattery:
+    default:
+         // we have no way to determine if we're on batteries,
+         // so we say we aren't
+        return false;
     }
 #else
     return false;
@@ -675,6 +683,150 @@ static void get_cpu_info_maxosx(HOST_INFO& host) {
 }
 #endif
 
+#ifdef __HAIKU__
+static void get_cpu_info_haiku(HOST_INFO& host) {
+    /* This function has been adapted from Haiku's sysinfo.c
+     * which spits out a bunch of formatted CPU info to
+     * the terminal, it was easier to copy some of the logic
+     * here.
+     */
+    system_info sys_info;
+    int32 cpu = 0; // always use first CPU for now
+    cpuid_info cpuInfo;
+    int32 maxStandardFunction;
+    int32 maxExtendedFunction = 0;
+    
+    char brand_string[256];
+
+    if (get_system_info(&sys_info) != B_OK) {
+        msg_printf(NULL, MSG_INTERNAL_ERROR, "Error getting Haiku system information!\n");
+        return;
+    }
+
+    if (get_cpuid(&cpuInfo, 0, cpu) != B_OK) {
+        // this CPU doesn't support cpuid
+        return;
+    }
+	
+    snprintf(host.p_vendor, sizeof(host.p_vendor), "%.12s",
+        cpuInfo.eax_0.vendor_id);
+    
+    maxStandardFunction = cpuInfo.eax_0.max_eax;
+    if (maxStandardFunction >= 500)
+        maxStandardFunction = 0; /* old Pentium sample chips has
+                                    cpu signature here */
+
+    /* Extended cpuid */
+    get_cpuid(&cpuInfo, 0x80000000, cpu);
+
+    // extended cpuid is only supported if max_eax is greater
+    // than the service id
+    if (cpuInfo.eax_0.max_eax > 0x80000000)
+        maxExtendedFunction = cpuInfo.eax_0.max_eax & 0xff;
+
+    if (maxExtendedFunction >=4 ) {
+        char buffer[49];
+        char *name = buffer;
+        int32 i;
+
+        memset(buffer, 0, sizeof(buffer));
+
+        for (i = 0; i < 3; i++) {
+            cpuid_info nameInfo;
+            get_cpuid(&nameInfo, 0x80000002 + i, cpu);
+
+            memcpy(name, &nameInfo.regs.eax, 4);
+            memcpy(name + 4, &nameInfo.regs.ebx, 4);
+            memcpy(name + 8, &nameInfo.regs.ecx, 4);
+            memcpy(name + 12, &nameInfo.regs.edx, 4);
+            name += 16;
+        }
+
+        // cut off leading spaces (names are right aligned)
+        name = buffer;
+        while (name[0] == ' ')
+            name++;
+
+        // the BIOS may not have set the processor name
+        if (name[0]) {
+            strlcpy(brand_string, name, sizeof(brand_string));
+        } else {
+            // Intel CPUs don't seem to have the genuine vendor field
+            snprintf(brand_string, sizeof(brand_string), "%.12s",
+                cpuInfo.eax_0.vendor_id);
+        }
+    }
+
+    get_cpuid(&cpuInfo, 1, cpu);
+	
+    int family, stepping, model;
+
+    family = cpuInfo.eax_1.family + (cpuInfo.eax_1.family == 0xf ?
+        cpuInfo.eax_1.extended_family : 0);
+
+    // model calculation is different for AMD and INTEL
+    if ((sys_info.cpu_type & B_CPU_x86_VENDOR_MASK) == B_CPU_AMD_x86) {
+        model = cpuInfo.eax_1.model + (cpuInfo.eax_1.model == 0xf ?
+            cpuInfo.eax_1.extended_model << 4 : 0);
+    } else if ((sys_info.cpu_type & B_CPU_x86_VENDOR_MASK) == B_CPU_INTEL_x86) {
+        model = cpuInfo.eax_1.model + ((cpuInfo.eax_1.family == 0xf ||
+            cpuInfo.eax_1.family == 0x6) ? cpuInfo.eax_1.extended_model << 4 : 0);
+    }
+
+    stepping = cpuInfo.eax_1.stepping;
+
+    snprintf(host.p_model, sizeof(host.p_model),
+        "%s [Family %u Model %u Stepping %u]", brand_string, family, model,
+        stepping);
+
+    static const char *kFeatures[32] = {
+        "fpu", "vme", "de", "pse",
+        "tsc", "msr", "pae", "mce",
+        "cx8", "apic", NULL, "sep",
+        "mtrr", "pge", "mca", "cmov",
+        "pat", "pse36", "psnum", "clflush",
+        NULL, "ds", "acpi", "mmx",
+        "fxsr", "sse", "sse2", "ss",
+        "htt", "tm", "ia64", "pbe",
+    };
+
+    int32 found = 0;
+    int32 i;
+    char buf[12];
+
+    for (i = 0; i < 32; i++) {
+        if ((cpuInfo.eax_1.features & (1UL << i)) && kFeatures[i] != NULL) {
+            snprintf(buf, sizeof(buf), "%s%s", found == 0 ? "" : " ", 
+                kFeatures[i]);
+            strlcat(host.p_features, buf, sizeof(host.p_features));
+            found++;
+        }
+    }
+
+    if (maxStandardFunction >= 1) {
+        /* Extended features */
+        static const char *kFeatures2[32] = {
+            "sse3", NULL, "dtes64", "monitor", "ds-cpl", "vmx", "smx" "est",
+            "tm2", "ssse3", "cnxt-id", NULL, NULL, "cx16", "xtpr", "pdcm",
+            NULL, NULL, "dca", "sse4.1", "sse4.2", "x2apic", "movbe", "popcnt",
+            NULL, NULL, "xsave", "osxsave", NULL, NULL, NULL, NULL
+        };
+
+        for (i = 0; i < 32; i++) {
+            if ((cpuInfo.eax_1.extended_features & (1UL << i)) &&
+                kFeatures2[i] != NULL) {
+                snprintf(buf, sizeof(buf), "%s%s", found == 0 ? "" : " ",
+                    kFeatures2[i]);
+                strlcat(host.p_features, buf, sizeof(host.p_features));
+                found++;
+            }
+        }
+    }
+
+    //TODO: there are additional AMD features that probably need to be queried
+}
+#endif
+
 // Rules:
 // - Keep code in the right place
 // - only one level of #if
@@ -694,19 +846,31 @@ int HOST_INFO::get_host_info() {
     CPU_INFO_t    cpuInfo;
     strlcpy( p_vendor, cpuInfo.vendor.company, sizeof(p_vendor));
     strlcpy( p_model, cpuInfo.name.fromID, sizeof(p_model));
+#elif defined(__HAIKU__)
+    get_cpu_info_haiku(*this);
 #elif defined(HAVE_SYS_SYSCTL_H)
     int mib[2];
     size_t len;
 
     // Get machine
+#ifdef IRIX
+    mib[0] = 0;
+    mib[1] = 1;
+#else
     mib[0] = CTL_HW;
     mib[1] = HW_MACHINE;
+#endif
     len = sizeof(p_vendor);
     sysctl(mib, 2, &p_vendor, &len, NULL, 0);
 
     // Get model
+#ifdef IRIX
+    mib[0] = 0;
+    mib[1] = 1;
+#else
     mib[0] = CTL_HW;
     mib[1] = HW_MODEL;
+#endif
     len = sizeof(p_model);
     sysctl(mib, 2, &p_model, &len, NULL, 0);
 #elif defined(__osf__)
@@ -872,6 +1036,8 @@ int HOST_INFO::get_host_info() {
     statfs(".", &fs_info);
     m_swap = (double)fs_info.f_bsize * (double)fs_info.f_bfree;
 
+#elif defined(__HAIKU__)
+#warning HAIKU: missing swapfile size info
 #elif defined(HAVE_VMMETER_H) && defined(HAVE_SYS_SYSCTL_H) && defined(CTL_VM) && defined(VM_METER)
     // MacOSX, I think...
     // <http://www.osxfaq.com/man/3/sysctl.ws>
@@ -906,8 +1072,10 @@ int HOST_INFO::get_host_info() {
     struct utsname u;
     uname(&u);
     safe_strcpy(os_name, u.sysname);
-#ifdef __EMX__ // OS2: version is in u.version
+#if defined(__EMX__) // OS2: version is in u.version
     safe_strcpy(os_version, u.version);
+#elif defined(__HAIKU__)
+    snprintf(os_version, sizeof(os_version), "%s, %s", u.release, u.version); 
 #else
     safe_strcpy(os_version, u.release);
 #endif
@@ -1073,20 +1241,84 @@ inline bool user_idle(time_t t, struct utmp* u) {
 
 #ifdef __APPLE__
 
+// NXIdleTime() is an undocumented Apple API to return user idle time, which 
+// was implemented from before OS 10.0 through OS 10.5.  In OS 10.4, Apple 
+// added the CGEventSourceSecondsSinceLastEventType() API as a replacement for 
+// NXIdleTime().  However, BOINC could not use this newer API when configured 
+// as a pre-login launchd daemon unless that daemon was running as root, 
+// because it could not connect to the Window Server.  So BOINC continued to 
+// use NXIdleTime().  
+//
+// In OS 10.6, Apple removed the NXIdleTime() API.  BOINC can instead use the 
+// IOHIDGetParameter() API in OS 10.6.  When BOINC is a pre-login launchd 
+// daemon running as user boinc_master, this API works properly under OS 10.6 
+// but fails under OS 10.5 and earlier.
+//
+// So we use weak-linking of NxIdleTime() to prevent a run-time crash from the 
+// dynamic linker, and use the IOHIDGetParameter() API if NXIdleTime does not 
+// exist.
+//
 bool HOST_INFO::users_idle(
     bool check_all_logins, double idle_time_to_run, double *actual_idle_time
 ) {
-    double idleTime = 0;
-      
-    if (gEventHandle) {
-        idleTime = NXIdleTime(gEventHandle);    
-    } else {
-        // Initialize Mac OS X idle time measurement / idle detection
-        // Do this here because NXOpenEventStatus() may not be available 
-        // immediately on system startup when running as a deaemon.
-        gEventHandle = NXOpenEventStatus();
-    }
+    static bool     error_posted = false;
+    double          idleTime = 0;
+    io_service_t    service;
+    kern_return_t   kernResult = kIOReturnError; 
+    UInt64          params;
+    IOByteCount     rcnt = sizeof(UInt64);
+            
+    if (error_posted) goto bail;
+
+    if (NXIdleTime) {   // Use NXIdleTime API in OS 10.5 and earlier
+        if (gEventHandle) {
+            idleTime = NXIdleTime(gEventHandle);    
+        } else {
+            // Initialize Mac OS X idle time measurement / idle detection
+            // Do this here because NXOpenEventStatus() may not be available 
+            // immediately on system startup when running as a deaemon.
+            
+            gEventHandle = NXOpenEventStatus();
+            if (!gEventHandle) {
+                if (TickCount() > (120*60)) {        // If system has been up for more than 2 minutes 
+                     msg_printf(NULL, MSG_USER_ERROR,
+                        "User idle detection is disabled: initialization failed."
+                    );
+                    error_posted = true;
+                    goto bail;
+                }
+            }
+        }
+    } else {        // NXIdleTime API does not exist in OS 10.6 and later
+        if (gEventHandle) {
+            kernResult = IOHIDGetParameter( gEventHandle, CFSTR(EVSIOIDLE), sizeof(UInt64), &params, &rcnt );
+            if ( kernResult != kIOReturnSuccess ) {
+                msg_printf(NULL, MSG_USER_ERROR,
+                    "User idle time measurement failed because IOHIDGetParameter failed."
+                );
+                error_posted = true;
+                goto bail;
+            }
+            idleTime = ((double)params) / 1000.0 / 1000.0 / 1000.0;
+        } else {
+            service = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching(kIOHIDSystemClass));
+            if (service) {
+                 kernResult = IOServiceOpen(service, mach_task_self(), kIOHIDParamConnectType, &gEventHandle);
+            }
+            if ( (!service) || (kernResult != KERN_SUCCESS) ) {
+                // When the system first starts up, allow time for HIDSystem to be available if needed
+                if (TickCount() > (120*60)) {        // If system has been up for more than 2 minutes 
+                     msg_printf(NULL, MSG_USER_ERROR,
+                        "Could not connect to HIDSystem: user idle detection is disabled."
+                    );
+                    error_posted = true;
+                    goto bail;
+                }
+            }
+        }   // End gEventHandle == NULL
+    }       // End NXIdleTime API does not exist
     
+ bail:   
     if (actual_idle_time) {
         *actual_idle_time = idleTime;
     }
@@ -1164,4 +1396,4 @@ bool HOST_INFO::users_idle(bool check_all_logins, double idle_time_to_run) {
 
 #endif  // ! __APPLE__
 
-const char *BOINC_RCSID_2cf92d205b = "$Id: hostinfo_unix.cpp 16117 2008-10-02 21:25:40Z boincadm $";
+const char *BOINC_RCSID_2cf92d205b = "$Id: hostinfo_unix.cpp 18437 2009-06-16 20:54:44Z davea $";

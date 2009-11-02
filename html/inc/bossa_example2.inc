@@ -117,13 +117,12 @@ function job_timed_out($job, $inst, $user) {
     $job->set_priority(2);
 }
 
-function show_job_summary($job) {
+function job_summary($job) {
     $info = $job->get_opaque_data();
     return "<a href=".URL_BASE."$info->path>View image</a>";
 }
 
-function show_instance_summary($inst) {
-    $info = $inst->get_opaque_data();
+function instance_summary($info) {
     if ($info->have_ellipse) {
         return "ellipse ($info->cx, $info->cy)";
     } else {
@@ -131,5 +130,6 @@ function show_instance_summary($inst) {
     }
 }
 
-function show_user_summary($user) {
+function user_summary($user) {
+    return "";
 }

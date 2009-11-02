@@ -19,7 +19,7 @@
 #define _TASK_
 
 #ifndef _WIN32
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 #endif
 
@@ -28,6 +28,13 @@
 #include "app_ipc.h"
 #include "procinfo.h"
 
+// values for preempt_type
+//
+#define REMOVE_NEVER        0
+#define REMOVE_MAYBE_USER   1
+#define REMOVE_MAYBE_SCHED  2
+#define REMOVE_ALWAYS       3
+
 class CLIENT_STATE;
 typedef int PROCESS_ID;
 
@@ -35,7 +42,6 @@ typedef int PROCESS_ID;
     // The stderr output of an application is truncated to this length
     // before sending to server,
     // to protect against apps that write unbounded amounts.
-
 
 /// Represents a job in progress.
 
@@ -46,7 +52,6 @@ typedef int PROCESS_ID;
 /// that BOINC doesn't know about.
 
 class ACTIVE_TASK {
-    int _task_state;
 public:
 #ifdef _WIN32
     HANDLE pid_handle, shm_handle;
@@ -59,23 +64,10 @@ public:
     PROCESS_ID pid;
 	PROCINFO procinfo;
 
+    //// START OF ITEMS SAVED IN STATE FILE
+    int _task_state;
         /// subdirectory of slots/ where this runs
     int slot;
-    inline int task_state() {
-        return _task_state;
-    }
-    void set_task_state(int, const char*);
-    int scheduler_state;
-    int next_scheduler_state; // temp
-    int signal;
-        /// App's estimate of how much of the work unit is done.
-
-        /// Passed from the application via an API call;
-        /// will be zero if the app doesn't use this call
-    double fraction_done;
-    double episode_start_cpu_time;
-        /// Wall time at the start of the current run interval
-    double run_interval_start_wall_time;
         /// CPU at the last checkpoint
         /// Note: "CPU time" refers to the sum over all episodes.
         /// (not counting the "lost" time after the last checkpoint
@@ -83,14 +75,26 @@ public:
         /// TODO: debt should be based on FLOPs, not CPU time
         /// CPU time at the start of current episode
     double checkpoint_cpu_time;
-        /// wall time at the last checkpoint
-    double checkpoint_wall_time;
-        /// most recent CPU time reported by app
-    double current_cpu_time;
-        /// current total elapsed (running) time
-    double elapsed_time;
         /// elapsed time at last checkpoint
     double checkpoint_elapsed_time;
+        /// App's estimate of how much of the work unit is done.
+        /// Passed from the application via an API call;
+        /// will be zero if the app doesn't use this call
+    double fraction_done;
+        /// most recent CPU time reported by app
+    double current_cpu_time;
+
+    //// END OF ITEMS SAVED IN STATE FILE
+
+    int scheduler_state;
+    int next_scheduler_state; // temp
+    int signal;
+        /// Wall time at the start of the current run interval
+    double run_interval_start_wall_time;
+        /// wall time at the last checkpoint
+    double checkpoint_wall_time;
+        /// current total elapsed (running) time
+    double elapsed_time;
         /// disk used by output files and temp files of this task
     int current_disk_usage(double&);
         /// directory where process runs (relative)
@@ -101,8 +105,8 @@ public:
         /// (that way don't have to worry about top-level dirs
         /// being non-readable, etc).
     char slot_path[512];
-        /// abort if total CPU exceeds this
-    double max_cpu_time;
+        /// abort if elapsed time exceeds this
+    double max_elapsed_time;
         /// abort if disk usage (in+out+temp) exceeds this
     double max_disk_usage;
         /// abort if memory usage exceeds this
@@ -128,9 +132,11 @@ public:
     APP_CLIENT_SHM app_client_shm;
     MSG_QUEUE graphics_request_queue;
     MSG_QUEUE process_control_queue;
-    bool coprocs_reserved;
-    void reserve_coprocs();
-    void free_coprocs();
+
+    void set_task_state(int, const char*);
+    inline int task_state() {
+        return _task_state;
+    }
 
     // info related to app's graphics mode (win, screensaver, etc.)
     //
@@ -167,6 +173,7 @@ public:
     int init(RESULT*);
     void cleanup_task();
 
+    void get_free_slot(RESULT*);
     int start(bool first_time);         // start a process
     int request_exit();
         // ask the process to exit gracefully,
@@ -190,7 +197,7 @@ public:
         /// return true if this task has exited
     bool has_task_exited();
         /// preempt (via suspend or quit) a running task
-    int preempt(bool quit_task);
+    int preempt(int preempt_type);
     int resume_or_start(bool);
     void send_network_available();
 #ifdef _WIN32
@@ -213,6 +220,8 @@ public:
     int handle_upload_files();
     void upload_notify_app(const FILE_INFO*, const FILE_REF*);
     int copy_output_files();
+    void write_task_state_file();
+    void read_task_state_file();
 
     int write(MIOFILE&);
     int write_gui(MIOFILE&);
@@ -237,13 +246,12 @@ public:
     int exit_tasks(PROJECT* p=0);
     void kill_tasks(PROJECT* p=0);
     int abort_project(PROJECT*);
-    bool get_msgs();
+    void get_msgs();
     bool check_app_exited();
     bool check_rsc_limits_exceeded();
     bool check_quit_timeout_exceeded();
     bool is_slot_in_use(int);
     bool is_slot_dir_in_use(char*);
-    int get_free_slot();
     void send_heartbeats();
     void send_trickle_downs();
     void report_overdue();

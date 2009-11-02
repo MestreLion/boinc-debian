@@ -1,21 +1,19 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "sg_DlgPreferences.h"
@@ -32,6 +30,7 @@
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
 #include "MainDocument.h"
+#include "BOINCBaseFrame.h"
 #include "hyperlink.h"
 #include "version.h"
 
@@ -61,7 +60,7 @@ using std::string;
 
 // Useful arrays used as templates for arrays created at runtime.
 //
-int iTimeOfDayArraySize = 24;
+int iTimeOfDayArraySize = 25;
 wxString astrTimeOfDayStrings[] = {
     wxT("0:00"),
     wxT("1:00"),
@@ -212,7 +211,7 @@ BEGIN_EVENT_TABLE( CPanelPreferences, wxPanel )
     EVT_CHECKBOX( ID_CUSTOMIZEPREFERENCES, CPanelPreferences::OnCustomizePreferencesClick )
     EVT_COMBOBOX( ID_WORKBETWEENBEGIN, CPanelPreferences::OnWorkBetweenBeginSelected )
     EVT_COMBOBOX( ID_CONNECTBETWEENBEGIN, CPanelPreferences::OnConnectBetweenBeginSelected )
-    EVT_BUTTON(ID_SIMPLE_HELP, CPanelPreferences::OnButtonHelp)
+    EVT_BUTTON( ID_SIMPLE_HELP, CPanelPreferences::OnButtonHelp )
 ////@end CPanelPreferences event table entries
 END_EVENT_TABLE()
 
@@ -562,16 +561,21 @@ void CPanelPreferences::OnConnectBetweenBeginSelected( wxCommandEvent& /*event*/
  * wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_SIMPLE_HELP
  */
 
-void CPanelPreferences::OnButtonHelp( wxCommandEvent& WXUNUSED(event) ) {
+void CPanelPreferences::OnButtonHelp( wxCommandEvent& event ) {
     wxLogTrace(wxT("Function Start/End"), wxT("CPanelPreferences::OnHelp - Function Begin"));
 
-	std::string url;
-	url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationWebsite().mb_str();
-	canonicalize_master_url(url);
+    if (IsShown()) {
+        wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
-	wxString wxurl;
-	wxurl.Printf(wxT("%smanager_links.php?target=simple"), url.c_str());
-    wxHyperLink::ExecuteLink(wxurl);
+        wxString wxurl;
+		wxurl.Printf(
+            wxT("%s?target=simple_preferences&version=%s&controlid=%d"),
+            strURL.c_str(),
+            wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
+            event.GetId()
+        );
+        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+    }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CPanelPreferences::OnHelp - Function End"));
 }
@@ -1067,17 +1071,16 @@ void CDlgPreferences::OnHelp(wxHelpEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CDlgPreferences::OnHelp - Function Begin"));
 
     if (IsShown()) {
-		std::string url;
-		url = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl().mb_str();
+    	wxString strURL = wxGetApp().GetSkinManager()->GetAdvanced()->GetOrganizationHelpUrl();
 
 		wxString wxurl;
-	    wxurl.Printf(
+		wxurl.Printf(
             wxT("%s?target=simple_preferences&version=%s&controlid=%d"),
-            url.c_str(),
-            BOINC_VERSION_STRING,
+            strURL.c_str(),
+            wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
-        wxHyperLink::ExecuteLink(wxurl);
+        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CDlgPreferences::OnHelp - Function End"));

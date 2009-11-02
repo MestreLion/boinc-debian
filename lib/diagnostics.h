@@ -150,7 +150,11 @@ extern void set_signal_exit_code(int);
 //
 
 #define BOINCASSERT(expr)   wxASSERT(expr)
+#ifdef _UNICODE
+#define BOINCTRACE          __noop
+#else
 #define BOINCTRACE          wxLogDebug
+#endif
 
 #elif defined(_CONSOLE) && !(defined(__MINGW32__) || defined(__CYGWIN32__))
 
@@ -187,7 +191,9 @@ extern void set_signal_exit_code(int);
 #else  // _DEBUG
 
 #define BOINCASSERT(expr)         
+#ifndef IRIX
 #define BOINCTRACE(...)          
+#endif
 
 #endif // _DEBUG
 

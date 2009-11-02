@@ -243,7 +243,7 @@ int sscan_key_hex(const char* buf, KEY* key, int size) {
 // The output block must be decrypted in its entirety.
 //
 int encrypt_private(R_RSA_PRIVATE_KEY& key, DATA_BLOCK& in, DATA_BLOCK& out) {
-    int n, modulus_len;
+    int n, modulus_len, retval;
 
     modulus_len = (key.bits+7)/8;
     n = in.len;
@@ -252,17 +252,27 @@ int encrypt_private(R_RSA_PRIVATE_KEY& key, DATA_BLOCK& in, DATA_BLOCK& out) {
     }
     RSA* rp = RSA_new();
     private_to_openssl(key, rp);
-    RSA_private_encrypt(n, in.data, out.data, rp, RSA_PKCS1_PADDING);
+    retval = RSA_private_encrypt(n, in.data, out.data, rp, RSA_PKCS1_PADDING);
+    if (retval < 0) {
+        RSA_free(rp);
+        return ERR_CRYPTO;
+    }
     out.len = RSA_size(rp);
     RSA_free(rp);
     return 0;
 }
 
 int decrypt_public(R_RSA_PUBLIC_KEY& key, DATA_BLOCK& in, DATA_BLOCK& out) {
+    int retval;
     RSA* rp = RSA_new();
     public_to_openssl(key, rp);
-    RSA_public_decrypt(in.len, in.data, out.data, rp, RSA_PKCS1_PADDING);
+    retval = RSA_public_decrypt(in.len, in.data, out.data, rp, RSA_PKCS1_PADDING);
+    if (retval < 0) {
+        RSA_free(rp);
+        return ERR_CRYPTO;
+    }
     out.len = RSA_size(rp);
+    RSA_free(rp);
     return 0;
 }
 
@@ -534,8 +544,8 @@ int check_validity_of_cert(
         return 0;
     }
     if (pubKey->type == EVP_PKEY_RSA) {
-        BN_CTX *c;
-        if (!(c = BN_CTX_new())) {
+        BN_CTX *c = BN_CTX_new();
+        if (!c) {
 	        X509_free(cert);
 	        EVP_PKEY_free(pubKey);
 	        BIO_vfree(bio);
@@ -684,4 +694,4 @@ int cert_verify_file(
     return verified;
 }
 
-const char *BOINC_RCSID_4f0c2e42ea = "$Id: crypt.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_4f0c2e42ea = "$Id: crypt.cpp 18309 2009-06-04 23:03:47Z davea $";

@@ -1,6 +1,6 @@
 ## -*- mode: makefile; tab-width: 4 -*-
 
-## $Id: Makefile.am 15375 2008-06-08 22:18:52Z davea $
+## $Id: Makefile.am 16904 2009-01-13 23:06:02Z korpela $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -8,7 +8,7 @@ if ENABLE_CLIENT
   CLIENT_MANS = boinc.1 boinccmd.1
 endif
 
-if BUILD_CLIENTGUI
+if ENABLE_MANAGER
   CLIENTGUI_MANS = boincmgr.1
 endif
 
@@ -18,7 +18,9 @@ endif
 
 man_MANS = $(CLIENT_MANS) $(CLIENTGUI_MANS) $(SERVER_MANS)
 
-%.1: %.xml
+SUFFIXES = .xml .1
+
+.xml.1:
 	$(DOCBOOK2X_MAN) $<
 
 all-local: $(man_MANS)

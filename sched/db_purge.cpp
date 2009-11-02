@@ -42,7 +42,6 @@
 #include <time.h>
 #include <errno.h>
 
-using namespace std;
 
 #include "boinc_db.h"
 #include "util.h"
@@ -53,6 +52,7 @@ using namespace std;
 #include "sched_msgs.h"
 
 #include "error_numbers.h"
+#include "str_util.h"
 
 #define WU_FILENAME_PREFIX              "wu_archive"
 #define RESULT_FILENAME_PREFIX          "result_archive"
@@ -94,6 +94,11 @@ bool time_to_quit() {
     return false;
 }
 
+void fail(const char* msg) {
+    log_messages.printf(MSG_CRITICAL, msg);
+    exit(1);
+}
+
 // Open an archive.  Only subtle thing is that if the user has
 // asked for compression, then we popen(2) a pipe to gzip or zip.
 // This does 'in place' compression.
@@ -103,7 +108,7 @@ void open_archive(const char* filename_prefix, FILE*& f){
     char command[512];
 
     // append appropriate suffix for file type
-    sprintf(path, "../archives/%s_%d.xml", filename_prefix, time_int);
+    strcpy(path, config.project_path("archives/%s_%d.xml", filename_prefix, time_int));
     strcat(path, suffix[compression_type]);
 
     // and construct appropriate command if needed
@@ -119,23 +124,27 @@ void open_archive(const char* filename_prefix, FILE*& f){
         "Opening archive %s\n", path
     );
 
-    // in the case with no compression, just open the file, else open
-    // a pipe to the compression executable.
-    //
-    if (compression_type == COMPRESSION_NONE) {   
-        if (!(f = fopen( path,"w"))) {
-            log_messages.printf(MSG_CRITICAL,
-                "Can't open archive file %s %s\n",
-                path, errno?strerror(errno):""
-            );
-            exit(3);
-        }
-    } else if (!(f = popen(command,"w"))) {
-        log_messages.printf(MSG_CRITICAL,
-            "Can't open pipe %s %s\n", 
-            command, errno?strerror(errno):""
+    if (!(f = fopen(path,"w"))) {
+        char buf[256];
+        sprintf(buf, "Can't open archive file %s %s\n",
+            path, errno?strerror(errno):""
         );
-        exit(4);
+        fail(buf);
+    }
+    if (compression_type == COMPRESSION_NONE) {   
+        // in the case with no compression, just open the file, else open
+        // a pipe to the compression executable.
+        //
+    } else {
+        fclose(f);
+        f = popen(command,"w");
+        if (!f) {
+            log_messages.printf(MSG_CRITICAL,
+                "Can't open pipe %s %s\n", 
+                command, errno?strerror(errno):""
+            );
+            exit(4);
+        }
     }
 
     // set buffering to line buffered, since we are outputing XML on a
@@ -164,7 +173,7 @@ void close_archive(const char *filename, FILE*& fp){
     fp = NULL;
 
     // append appropriate file type
-    sprintf(path, "../archives/%s_%d.xml", filename, time_int);
+    strcpy(path, config.project_path("archives/%s_%d.xml", filename, time_int));
     strcat(path, suffix[compression_type]);
     
     log_messages.printf(MSG_NORMAL,
@@ -226,7 +235,8 @@ void close_db_exit_handler() {
 }
 
 int archive_result(DB_RESULT& result) {
-    fprintf(re_stream,
+    int n;
+    n = fprintf(re_stream,
         "<result_archive>\n"
         "    <id>%d</id>\n",
         result.id
@@ -237,7 +247,7 @@ int archive_result(DB_RESULT& result) {
     char buf[BLOB_SIZE*6];
     xml_escape(result.stderr_out, buf, sizeof(buf));
 
-    fprintf(
+    if (n >= 0) n = fprintf(
         re_stream,
         "  <create_time>%d</create_time>\n"
         "  <workunitid>%d</workunitid>\n"
@@ -297,25 +307,27 @@ int archive_result(DB_RESULT& result) {
         result.mod_time
     );
 
-    fprintf(re_stream,
+    if (n >= 0) n = fprintf(re_stream,
         "</result_archive>\n"
     );
 
-    fprintf(re_index_stream,
+    if (n >= 0) n = fprintf(re_index_stream,
         "%d     %d\n",
         result.id, time_int
     );
+    if (n < 0) fail("fprintf() failed\n");
 
     return 0;
 }
 
 int archive_wu(DB_WORKUNIT& wu) {
-    fprintf(wu_stream,
+    int n;
+    n = fprintf(wu_stream,
         "<workunit_archive>\n"
         "    <id>%d</id>\n",
         wu.id
     );
-    fprintf(wu_stream,
+    if (n >= 0) n = fprintf(wu_stream,
         "  <create_time>%d</create_time>\n"
         "  <appid>%d</appid>\n"
         "  <name>%s</name>\n"
@@ -372,14 +384,16 @@ int archive_wu(DB_WORKUNIT& wu) {
         wu.mod_time
     );
 
-    fprintf(wu_stream,
+    if (n >= 0) n = fprintf(wu_stream,
         "</workunit_archive>\n"
     );
 
-    fprintf(wu_index_stream,
+    if (n >= 0) n = fprintf(wu_index_stream,
         "%d     %d\n",
         wu.id, time_int
     );
+
+    if (n < 0) fail("fprintf() failed\n");
 
     return 0;
 }
@@ -601,10 +615,10 @@ int main(int argc, char** argv) {
         }
     }
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse config file\n"
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -619,7 +633,7 @@ int main(int argc, char** argv) {
         exit(2);
     }
     install_stop_signal_handler();
-    boinc_mkdir("../archives");
+    boinc_mkdir(config.project_path("archives"));
 
     // on exit, either via the check_stop_daemons signal handler, or
     // through a regular call to exit, these functions will be called
@@ -643,4 +657,4 @@ int main(int argc, char** argv) {
     exit(0);
 }
 
-const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 16136 2008-10-06 00:18:36Z davea $";
+const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 18042 2009-05-07 13:54:51Z davea $";

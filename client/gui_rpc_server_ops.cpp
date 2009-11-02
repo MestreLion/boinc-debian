@@ -27,19 +27,27 @@
 
 #ifndef _WIN32
 #include "config.h"
-#include <stdio.h>
+#include <cstdio>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
+#endif
 #include <vector>
-#include <string.h>
+#include <cstring>
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
 #endif
 
 #include "str_util.h"
@@ -105,7 +113,7 @@ static void handle_get_simple_gui_info(MIOFILE& fout) {
         PROJECT* p = gstate.projects[i];
         p->write_state(fout, true);
     }
-    gstate.write_tasks_gui(fout);
+    gstate.write_tasks_gui(fout, false);
     fout.printf("</simple_gui_info>\n");
 }
 
@@ -162,7 +170,10 @@ static void handle_get_disk_usage(MIOFILE& fout) {
         "<d_free>%f</d_free>\n"
         "<d_boinc>%f</d_boinc>\n"
         "<d_allowed>%f</d_allowed>\n",
-        gstate.host_info.d_total, gstate.host_info.d_free, boinc_non_project, d_allowed
+        gstate.host_info.d_total,
+        gstate.host_info.d_free,
+        boinc_non_project,
+        d_allowed
     );
     fout.printf("</disk_usage_summary>\n");
 }
@@ -238,10 +249,12 @@ static void handle_project_op(char* buf, MIOFILE& fout, const char* op) {
         gstate.request_work_fetch("project reset by user");
         gstate.reset_project(p, false);
     } else if (!strcmp(op, "suspend")) {
+        msg_printf(p, MSG_INFO, "suspended by user");
         p->suspended_via_gui = true;
         gstate.request_schedule_cpus("project suspended by user");
         gstate.request_work_fetch("project suspended by user");
     } else if (!strcmp(op, "resume")) {
+        msg_printf(p, MSG_INFO, "resumed by user");
         p->suspended_via_gui = false;
         gstate.request_schedule_cpus("project resumed by user");
         gstate.request_work_fetch("project resumed by user");
@@ -257,18 +270,23 @@ static void handle_project_op(char* buf, MIOFILE& fout, const char* op) {
         gstate.request_schedule_cpus("project detached by user");
         gstate.request_work_fetch("project detached by user");
     } else if (!strcmp(op, "update")) {
+        msg_printf(p, MSG_INFO, "update requested by user");
         p->sched_rpc_pending = RPC_REASON_USER_REQ;
         p->min_rpc_time = 0;
         gstate.request_work_fetch("project updated by user");
     } else if (!strcmp(op, "nomorework")) {
+        msg_printf(p, MSG_INFO, "work fetch suspended by user");
         p->dont_request_more_work = true;
     } else if (!strcmp(op, "allowmorework")) {
+        msg_printf(p, MSG_INFO, "work fetch resumed by user");
         p->dont_request_more_work = false;
         gstate.request_work_fetch("project allowed to fetch work by user");
     } else if (!strcmp(op, "detach_when_done")) {
+        msg_printf(p, MSG_INFO, "detach when done set by user");
         p->detach_when_done = true;
         p->dont_request_more_work = true;
     } else if (!strcmp(op, "dont_detach_when_done")) {
+        msg_printf(p, MSG_INFO, "detach when done cleared by user");
         p->detach_when_done = false;
         p->dont_request_more_work = false;
     }
@@ -387,6 +405,14 @@ static void handle_get_messages(char* buf, MIOFILE& fout) {
     fout.printf("</msgs>\n");
 }
 
+static void handle_get_message_count(char*, MIOFILE& fout) {
+    if (message_descs.size() == 0) {
+        fout.printf("<seqno>0</seqno>\n");
+    } else {
+        fout.printf("<seqno>%d</seqno>\n", message_descs[0]->seqno);
+    }
+}
+
 // <retry_file_transfer>
 //    <project_url>XXX</project_url>
 //    <filename>XXX</filename>
@@ -421,7 +447,7 @@ static void handle_file_transfer_op(char* buf, MIOFILE& fout, const char* op) {
     if (!strcmp(op, "retry")) {
         pfx->next_request_time = 0;
             // leave file-level backoff mode
-        f->project->file_xfer_succeeded(pfx->is_upload);
+        f->project->file_xfer_backoff(pfx->is_upload).file_xfer_succeeded();
             // and leave project-level backoff mode
     } else if (!strcmp(op, "abort")) {
         f->pers_file_xfer->abort();
@@ -456,6 +482,7 @@ static void handle_result_op(char* buf, MIOFILE& fout, const char* op) {
     }
 
     if (!strcmp(op, "abort")) {
+        msg_printf(p, MSG_INFO, "task %s aborted by user", result_name);
         atp = gstate.lookup_active_task_by_result(rp);
         if (atp) {
             atp->abort_task(ERR_ABORTED_VIA_GUI, "aborted by user");
@@ -464,9 +491,11 @@ static void handle_result_op(char* buf, MIOFILE& fout, const char* op) {
         }
         gstate.request_work_fetch("result aborted by user");
     } else if (!strcmp(op, "suspend")) {
+        msg_printf(p, MSG_INFO, "task %s suspended by user", result_name);
         rp->suspended_via_gui = true;
         gstate.request_work_fetch("result suspended by user");
     } else if (!strcmp(op, "resume")) {
+        msg_printf(p, MSG_INFO, "task %s resumed by user", result_name);
         rp->suspended_via_gui = false;
     }
     gstate.request_schedule_cpus("result suspended, resumed or aborted by user");
@@ -506,13 +535,24 @@ static void handle_acct_mgr_info(char*, MIOFILE& fout) {
     fout.printf(
         "<acct_mgr_info>\n"
         "   <acct_mgr_url>%s</acct_mgr_url>\n"
-        "   <acct_mgr_name>%s</acct_mgr_name>\n"
-        "   %s\n"
-        "</acct_mgr_info>\n",
+        "   <acct_mgr_name>%s</acct_mgr_name>\n",
         gstate.acct_mgr_info.acct_mgr_url,
-        gstate.acct_mgr_info.acct_mgr_name,
-        strlen(gstate.acct_mgr_info.login_name)?"<have_credentials/>":""
+        gstate.acct_mgr_info.acct_mgr_name
     );
+
+    if (strlen(gstate.acct_mgr_info.login_name)) {
+        fout.printf("   <have_credentials/>\n");
+    }
+
+    if (gstate.acct_mgr_info.cookie_required) {
+        fout.printf("   <cookie_required/>\n");
+        fout.printf(
+            "   <cookie_failure_url>%s</cookie_failure_url>\n",
+            gstate.acct_mgr_info.cookie_failure_url
+        );
+    }
+
+    fout.printf("</acct_mgr_info>\n");
 }
 
 static void handle_get_statistics(char*, MIOFILE& fout) {
@@ -768,10 +808,15 @@ static void handle_acct_mgr_rpc(char* buf, MIOFILE& fout) {
         if (!bad_arg) {
             name_lc = name;
             downcase_string(name_lc);
-            password_hash = md5_string(password+name_lc);
+            if (!starts_with(password, "hash:")) {
+                password_hash = md5_string(password+name_lc);
+            } else {
+                // Remove 'hash:'
+                password_hash = password.substr(5);
+            }
         }
     } else {
-        if (!strlen(gstate.acct_mgr_info.acct_mgr_url) || !strlen(gstate.acct_mgr_info.acct_mgr_url) || !strlen(gstate.acct_mgr_info.acct_mgr_url)) {
+        if (!strlen(gstate.acct_mgr_info.acct_mgr_url)) {
             bad_arg = true;
             msg_printf(NULL, MSG_INTERNAL_ERROR,
                 "Account manager info missing from config file"
@@ -899,8 +944,8 @@ static void read_all_projects_list_file(MIOFILE& fout) {
 static int set_debt(XML_PARSER& xp) {
     bool is_tag;
     char tag[256], url[256];
-    double short_term_debt = 0.0, long_term_debt = 0.0;
-    bool got_std=false, got_ltd=false;
+    double short_term_debt = 0, long_term_debt = 0, cuda_debt=0, ati_debt=0;
+    bool got_std=false, got_ltd=false, got_cuda_debt=false, got_ati_debt=false;
     strcpy(url, "");
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!strcmp(tag, "/project")) {
@@ -909,7 +954,9 @@ static int set_debt(XML_PARSER& xp) {
             PROJECT* p = gstate.lookup_project(url);
             if (!p) return ERR_NOT_FOUND;
             if (got_std) p->short_term_debt = short_term_debt;
-            if (got_ltd) p->long_term_debt = long_term_debt;
+            if (got_ltd) p->cpu_pwf.debt = long_term_debt;
+            if (got_cuda_debt) p->cuda_pwf.debt = cuda_debt;
+            if (got_ati_debt) p->ati_pwf.debt = ati_debt;
             return 0;
         }
         if (xp.parse_str(tag, "master_url", url, sizeof(url))) continue;
@@ -919,6 +966,14 @@ static int set_debt(XML_PARSER& xp) {
         }
         if (xp.parse_double(tag, "long_term_debt", long_term_debt)) {
             got_ltd = true;
+            continue;
+        }
+        if (xp.parse_double(tag, "cuda_debt", cuda_debt)) {
+            got_cuda_debt = true;
+            continue;
+        }
+        if (xp.parse_double(tag, "ati_debt", ati_debt)) {
+            got_ati_debt = true;
             continue;
         }
         if (log_flags.unparsed_xml) {
@@ -1063,8 +1118,10 @@ int GUI_RPC_CONN::handle_rpc() {
     } else if (match_tag(request_msg, "<get_state")) {
         gstate.write_state_gui(mf);
     } else if (match_tag(request_msg, "<get_results")) {
+        bool active_only = false;
+        parse_bool(request_msg, "active_only", active_only);
         mf.printf("<results>\n");
-        gstate.write_tasks_gui(mf);
+        gstate.write_tasks_gui(mf, active_only);
         mf.printf("</results>\n");
     } else if (match_tag(request_msg, "<get_screensaver_tasks")) {
         handle_get_screensaver_tasks(mf);
@@ -1080,6 +1137,8 @@ int GUI_RPC_CONN::handle_rpc() {
         handle_get_disk_usage(mf);
     } else if (match_tag(request_msg, "<get_messages")) {
         handle_get_messages(request_msg, mf);
+    } else if (match_tag(request_msg, "<get_message_count")) {
+        handle_get_message_count(request_msg, mf);
     } else if (match_tag(request_msg, "<get_host_info")) {
         handle_get_host_info(request_msg, mf);
     } else if (match_tag(request_msg, "<get_statistics")) {
@@ -1088,6 +1147,8 @@ int GUI_RPC_CONN::handle_rpc() {
         handle_get_newer_version(mf);
     } else if (match_tag(request_msg, "<get_cc_status")) {
         handle_get_cc_status(this, mf);
+    } else if (match_tag(request_msg, "<get_all_projects_list/>")) {
+        read_all_projects_list_file(mf);
 
     // Operations that require authentication start here
 
@@ -1157,11 +1218,12 @@ int GUI_RPC_CONN::handle_rpc() {
     } else if (match_tag(request_msg, "<read_cc_config/>")) {
         mf.printf("<success/>\n");
         read_config_file(false);
+        msg_printf(0, MSG_INFO, "Re-read config file");
+        config.show();
+        log_flags.show();
         gstate.set_ncpus();
         gstate.request_schedule_cpus("Core client configuration");
         gstate.request_work_fetch("Core client configuration");
-    } else if (match_tag(request_msg, "<get_all_projects_list/>")) {
-        read_all_projects_list_file(mf);
     } else if (match_tag(request_msg, "<set_debts")) {
         handle_set_debts(request_msg, mf);
     } else {
@@ -1225,4 +1287,4 @@ int GUI_RPC_CONN::handle_rpc() {
     }
     return retval;
 }
-const char *BOINC_RCSID_7bf15dcb49="$Id: gui_rpc_server_ops.cpp 16388 2008-11-02 20:09:59Z davea $";
+const char *BOINC_RCSID_7bf15dcb49="$Id: gui_rpc_server_ops.cpp 19319 2009-10-16 19:10:05Z romw $";

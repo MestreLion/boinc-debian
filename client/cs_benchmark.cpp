@@ -44,7 +44,7 @@
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
-#include <csignal>
+#include <signal.h>
 #if HAVE_SYS_SIGNAL_H
 #include <sys/signal.h>
 #endif
@@ -135,11 +135,24 @@ void benchmark_wait_to_start(int which) {
         if (boinc_file_exists(file_names[which])) {
             break;
         }
+#ifndef _WIN32
+        // UNIX: check if client has died.
+        // Not needed on windows, where we run as thread in client process
+        //
+        if (getppid() == 1) {
+            exit(0);
+        }
+#endif
         boinc_sleep(0.1);
     }
 }
 
 bool benchmark_time_to_stop(int which) {
+#ifndef _WIN32
+    if (getppid() == 1) {
+        exit(0);
+    }
+#endif
     if (boinc_file_exists(file_names[which])) {
         return false;
     }
@@ -177,7 +190,6 @@ int cpu_benchmarks(BENCHMARK_DESC* bdp) {
     }
     host_info.p_iops = vax_mips*1e6;
     host_info.p_membw = 1e9;
-    host_info.m_cache = 1e6;    // TODO: measure the cache
 #ifdef _WIN32
 	}
     bdp->host_info = host_info;
@@ -342,7 +354,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
     static double last_time = 0;
     if (!benchmarks_running) return false;
 
-    if (now < last_time + 1) return false;
+    if (now < last_time + BENCHMARK_POLL_PERIOD) return false;
     last_time = now;
 
     active_tasks.send_heartbeats();
@@ -464,7 +476,6 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
             double p_fpops = 0;
             double p_iops = 0;
             double p_membw = 0;
-            double m_cache = 0;
             for (i=0; i<bm_ncpus; i++) {
                 if (log_flags.benchmark_debug) {
                     msg_printf(0, MSG_INFO,
@@ -482,12 +493,10 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
                 p_iops += benchmark_descs[i].host_info.p_iops;
 #endif
                 p_membw += benchmark_descs[i].host_info.p_membw;
-                m_cache += benchmark_descs[i].host_info.m_cache;
             }
             p_fpops /= bm_ncpus;
             p_iops /= bm_ncpus;
             p_membw /= bm_ncpus;
-            m_cache /= bm_ncpus;
             if (p_fpops > 0) {
                 host_info.p_fpops = p_fpops;
             } else {
@@ -499,7 +508,6 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
                 msg_printf(NULL, MSG_INTERNAL_ERROR, "Benchmark: int unexpectedly zero; ignoring");
             }
             host_info.p_membw = p_membw;
-            host_info.m_cache = m_cache;
             print_benchmark_results();
         }
 
@@ -529,7 +537,7 @@ void CLIENT_STATE::print_benchmark_results() {
 #if 0
     msg_printf(
         NULL, MSG_INFO, "Benchmark results: %.0f million bytes/sec memory bandwidth%s",
-    host_info.p_membw/1e6, (host_info.p_membw_err?" [ERROR]":"")
+        host_info.p_membw/1e6, (host_info.p_membw_err?" [ERROR]":"")
     );
 #endif
 }
@@ -553,4 +561,4 @@ bool CLIENT_STATE::are_cpu_benchmarks_running() {
     return benchmarks_running;
 }
 
-const char *BOINC_RCSID_97ee090db0 = "$Id: cs_benchmark.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_97ee090db0 = "$Id: cs_benchmark.cpp 18054 2009-05-08 02:01:25Z charlief $";

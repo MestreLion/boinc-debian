@@ -27,10 +27,6 @@
 #include <string>
 #include <vector>
 
-#ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif
-
 extern double dtime();
 extern double dday();
 extern void boinc_sleep(double);
@@ -52,7 +48,7 @@ extern char* windows_format_error_string(
     unsigned long dwError, char* pszBuf, int iSize
 );
 extern int boinc_thread_cpu_time(HANDLE thread_handle, double& cpu);
-extern int boinc_process_cpu_time(double& cpu);
+extern int boinc_process_cpu_time(HANDLE process_handle, double& cpu);
 #else
 // setpriority(2) arg to run in background
 // (don't use 20 because
@@ -70,9 +66,19 @@ extern int boinc_calling_thread_cpu_time(double&);
 //
 extern void mysql_timestamp(double, char*);
 
+// fake a crash
+//
 extern void boinc_crash();
-extern int read_file_malloc(const char* path, char*&, int max_len=0, bool tail=false);
-extern int read_file_string(const char* path, std::string&, int max_len=0, bool tail=false);
+
+// read files into memory.
+// Use only for non-binary files; returns null-terminated string.
+//
+extern int read_file_malloc(
+    const char* path, char*& result, size_t max_len=0, bool tail=false
+);
+extern int read_file_string(
+    const char* path, std::string& result, size_t max_len=0, bool tail=false
+);
 
 #ifdef _WIN32
 

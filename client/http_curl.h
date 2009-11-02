@@ -64,7 +64,7 @@ public:
         /// string needed for ssl support
 	char m_curl_ca_bundle_location[256];
         /// string needed for proxy username/password
-	char szCurlProxyUserPwd[128];
+	char m_curl_user_credentials[128];
 
     int content_length;
     double file_offset;
@@ -151,8 +151,7 @@ public:
         const char* infile, double offset     // infile is NULL if no file sent
     );
     bool http_op_done();
-	int set_proxy(PROXY_INFO *new_pi);
-	void setupProxyCurl(bool no_proxy);
+	void setup_proxy_session(bool no_proxy);
 	bool no_proxy_for_url(const char* url);
 	bool is_active() {
 		return curlEasy!=NULL;
@@ -181,7 +180,7 @@ class HTTP_OP_SET {
     std::vector<HTTP_OP*> http_ops;
 public:
     HTTP_OP_SET();
-    int insert(HTTP_OP*);
+    void insert(HTTP_OP*);
     int remove(HTTP_OP*);
     int nops();
 
@@ -196,6 +195,12 @@ public:
 
 };
 
-extern void parse_url(const char* url, char* host, int &port, char* file);
+#define URL_PROTOCOL_UNKNOWN 0
+#define URL_PROTOCOL_HTTP    1
+#define URL_PROTOCOL_HTTPS   2
+#define URL_PROTOCOL_SOCKS   3
+
+extern char* get_user_agent_string();
+extern void parse_url(const char* url, int &protocol, char* host, int &port, char* file);
 
 #endif //__HTTP_H

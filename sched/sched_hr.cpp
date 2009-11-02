@@ -26,10 +26,10 @@
 
 #include "error_numbers.h"
 
-#include "server_types.h"
+#include "sched_types.h"
 #include "sched_config.h"
 #include "sched_msgs.h"
-#include "main.h"
+#include "sched_main.h"
 #include "hr.h"
 #include "sched_hr.h"
 
@@ -50,10 +50,8 @@ bool hr_unknown_platform(HOST& host) {
 
 // quick check for platform compatibility
 //
-bool already_sent_to_different_platform_quick(
-    SCHEDULER_REQUEST& sreq, WORKUNIT& wu, APP& app
-) {
-    if (wu.hr_class && (hr_class(sreq.host, app_hr_type(app)) != wu.hr_class)) {
+bool already_sent_to_different_platform_quick(WORKUNIT& wu, APP& app) {
+    if (wu.hr_class && (hr_class(g_request->host, app_hr_type(app)) != wu.hr_class)) {
         return true;
     }
     return false;
@@ -69,9 +67,7 @@ bool already_sent_to_different_platform_quick(
 //
 // This is "careful" in that it rereads the WU from DB
 //
-bool already_sent_to_different_platform_careful(
-    SCHEDULER_REQUEST& sreq, WORK_REQ& wreq, WORKUNIT& workunit, APP& app
-) {
+bool already_sent_to_different_platform_careful(WORKUNIT& workunit, APP& app) {
     DB_WORKUNIT db_wu;
     int retval, wu_hr_class;
     char buf[256], buf2[256];
@@ -82,16 +78,15 @@ bool already_sent_to_different_platform_careful(
     retval = db_wu.get_field_int("hr_class", wu_hr_class);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "can't get hr_class for %d: %d\n",
-            db_wu.id, retval
+            "can't get hr_class for [WU#%d]: %d\n", db_wu.id, retval
         );
         return true;
     }
-    wreq.hr_reject_temp = false;
-    int host_hr_class = hr_class(sreq.host, app_hr_type(app));
+    g_wreq->hr_reject_temp = false;
+    int host_hr_class = hr_class(g_request->host, app_hr_type(app));
     if (wu_hr_class) {
         if (host_hr_class != wu_hr_class) {
-            wreq.hr_reject_temp = true;
+            g_wreq->hr_reject_temp = true;
         }
     } else {
         // do a "careful update" to make sure the WU's hr_class hasn't
@@ -103,7 +98,7 @@ bool already_sent_to_different_platform_careful(
         if (retval) return true;
         if (boinc_db.affected_rows() != 1) return true;
     }
-    return wreq.hr_reject_temp;
+    return g_wreq->hr_reject_temp;
 }
 
-const char *BOINC_RCSID_4196d9a5b4="$Id: sched_hr.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_4196d9a5b4="$Id: sched_hr.cpp 18825 2009-08-10 04:49:02Z davea $";

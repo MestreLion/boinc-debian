@@ -1,7 +1,20 @@
 
-#include <stdio.h>
-#include <stdlib.h> 
-#include <string.h>
+#include <cstdio>
+#include <cstdlib> 
+#include <cstring>
+
+using std::malloc;
+using std::free;
+using std::size_t;
+
+using std::FILE;
+using std::fopen;
+using std::fclose;
+using std::fprintf;
+using std::fread;
+using std::fseek;
+
+using std::perror;
 
 void bwtorgba(unsigned char *b,unsigned char *l,int n) {
     while(n--) {
@@ -325,8 +338,8 @@ unsigned * read_tga_texture(char *name, int *width, int *height, int*) {
 	// make sure we are loading a supported type 
     if (imageBits != 32 && imageBits != 24 && imageBits != 8) return NULL;
 	base = (unsigned int *)getData (s, size, imageBits);
-	return (unsigned *) base;
 	fclose(s);
+	return (unsigned *) base;
 }
 
 unsigned * read_rgb_texture(const char *name, int *width, int *height, int *components) {
@@ -387,4 +400,4 @@ error:
  	return NULL; 
 }
 
-const char *BOINC_RCSID_97d4f29d84="$Id: texture.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_97d4f29d84="$Id: texture.cpp 17391 2009-02-26 01:11:37Z davea $";

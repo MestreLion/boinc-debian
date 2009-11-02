@@ -142,6 +142,7 @@ public:
 #endif
 
 // parsed version of main init file
+// If you add anything here, update copy()
 //
 struct APP_INIT_DATA {
     int major_version;
@@ -152,9 +153,8 @@ struct APP_INIT_DATA {
     char symstore[256];
     char acct_mgr_url[256];
     char* project_preferences;
-    int userid;
-    int teamid;
     int hostid;
+        // project's DB ID for this host (NOT host CPID)
     char user_name[256];
     char team_name[256];
     char project_dir[256];
@@ -170,6 +170,7 @@ struct APP_INIT_DATA {
     HOST_INFO host_info;
     PROXY_INFO proxy_info;  // in case app wants to use network
     GLOBAL_PREFS global_prefs;
+    double starting_elapsed_time;   // elapsed time, counting previous episodes
 
     // info about the WU
     double rsc_fpops_est;

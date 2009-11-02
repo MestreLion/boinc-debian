@@ -25,7 +25,6 @@
 //
 // return nonzero on error
 
-using namespace std;
 
 #include "config.h"
 #include <unistd.h>
@@ -148,10 +147,10 @@ int main(int argc, char** argv) {
         }
     }
 
-    retval = config.parse_file("..");
+    retval = config.parse_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't parse ../config.xml: %s\n", boincerror(retval)
+            "Can't parse config.xml: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -163,4 +162,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_ff3b9880d4 = "$Id: message_handler.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_ff3b9880d4 = "$Id: message_handler.cpp 18042 2009-05-07 13:54:51Z davea $";

@@ -19,11 +19,11 @@
 #define _BOINC_NETWORK_H_
 
 #include <string.h>
-#ifndef _WIN32
-#include <unistd.h>
-#include "config.h"
-#else
+#ifdef _WIN32
 #include "boinc_win.h"
+#else
+#include <sys/select.h>
+#include <unistd.h>
 #endif
 
 struct FDSET_GROUP {
@@ -46,27 +46,11 @@ extern int boinc_socket_asynch(int sock, bool asynch);
 extern void boinc_close_socket(int sock);
 extern int get_socket_error(int fd);
 extern const char* socket_error_str();
+extern void reset_dns();
 
 #if defined(_WIN32) && defined(USE_WINSOCK)
-typedef int boinc_socklen_t;
-#define SHUT_WR SD_SEND
-#else
-typedef BOINC_SOCKLEN_T boinc_socklen_t;
+typedef int BOINC_SOCKLEN_T;
 #endif
-
-
-#ifndef NETWORK_ALIVE_LAN
-#define NETWORK_ALIVE_LAN   0x00000001
-#endif
-
-#ifndef NETWORK_ALIVE_WAN
-#define NETWORK_ALIVE_WAN   0x00000002
-#endif
-
-#ifndef NETWORK_ALIVE_AOL
-#define NETWORK_ALIVE_AOL   0x00000004
-#endif
-
 
 #if defined(_WIN32) && defined(USE_WINSOCK)
 extern int WinsockInitialize();

@@ -28,10 +28,11 @@
 using std::deque;
 
 #include "log_flags.h"
+#include "str_replace.h"
 #include "client_types.h"
 #include "client_msgs.h"
 
-#define MAX_SAVED_MESSAGES 1000
+#define MAX_SAVED_MESSAGES 2000
 
 // a cache of MAX_SAVED_MESSAGES most recent messages,
 // stored in newest-first order
@@ -78,4 +79,4 @@ void record_message(PROJECT* p, int priority, int now, char* message) {
     message_descs.push_front(mdp);
 }
 
-const char *BOINC_RCSID_9572274f4f = "$Id: client_msgs.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_9572274f4f = "$Id: client_msgs.cpp 18437 2009-06-16 20:54:44Z davea $";

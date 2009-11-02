@@ -1,21 +1,25 @@
-// Berkeley Open Infrastructure for Network Computing
+// This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2005 University of California
+// Copyright (C) 2008 University of California
 //
-// This is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any later version.
+// BOINC is free software; you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License
+// as published by the Free Software Foundation,
+// either version 3 of the License, or (at your option) any later version.
 //
-// This software is distributed in the hope that it will be useful,
+// BOINC is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU Lesser General Public License for more details.
 //
-// To view the GNU Lesser General Public License visit
-// http://www.gnu.org/copyleft/lesser.html
-// or write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU Lesser General Public License
+// along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+///
+/// @defgroup BOINCMgr BOINC Manager
+/// The BOINC Manager
+/// @{
 
 #ifndef _BOINCGUIAPP_H_
 #define _BOINCGUIAPP_H_
@@ -28,6 +32,9 @@
 #include "mac/MacSysMenu.h"     // Must be included before MainDocument.h
 #endif
 
+///
+/// Which view is on display
+///
 #define BOINC_ADVANCEDGUI                   1
 #define BOINC_SIMPLEGUI                     2
 
@@ -37,9 +44,11 @@ class CBOINCBaseFrame;
 class CMainDocument;
 class CTaskBarIcon;
 class CSkinManager;
+class CRPCFinishedEvent;
 
 
 class CBOINCGUIApp : public wxApp {
+
     DECLARE_DYNAMIC_CLASS(CBOINCGUIApp)
 
 protected:
@@ -49,12 +58,11 @@ protected:
     bool                OnCmdLineParsed(wxCmdLineParser &parser);
 
     void                DetectDisplayInfo();
+    void                DetectAccessibilityEnabled();
+    void                DetectRootDirectory();
+    void                DetectDataDirectory();
 
     void                InitSupportedLanguages();
-
-#ifdef __WXMAC__
-    static OSErr        QuitAppleEventHandler( const AppleEvent *appleEvt, AppleEvent* reply, UInt32 refcon );
-#endif
 
     int                 ClientLibraryStartup();
     int                 IdleTrackerAttach();
@@ -77,21 +85,31 @@ protected:
     wxString            m_strBOINCMGRDataDirectory;
     wxString            m_strBOINCArguments;
 
+    bool                m_bAccessibilityEnabled;
+
     bool                m_bBOINCMGRAutoStarted;
     int                 m_iBOINCMGRDisableAutoStart;
     int                 m_iShutdownCoreClient;
     int                 m_iDisplayExitDialog;
 
     bool                m_bGUIVisible;
+    
     int                 m_iGUISelected;
+    bool                m_bDebugSkins;
 
 #ifdef __WXMSW__
     HINSTANCE           m_hClientLibraryDll;
 #endif
+#ifdef __WXMAC__
+    ProcessSerialNumber m_psnCurrentProcess;
+#endif
+
 
     // The last value defined in the wxLanguage enum is wxLANGUAGE_USER_DEFINED.
     // defined in: wx/intl.h
     wxArrayString       m_astrLanguages;
+    
+    int                 m_bSafeMessageBoxDisplayed;
 
 public:
 
@@ -101,29 +119,26 @@ public:
 
     bool                OnInit();
 
-    int                 UpdateSystemIdleDetection();
-
-    int                 StartBOINCScreensaverTest();
-
     wxLocale*           GetLocale()                 { return m_pLocale; }
     CSkinManager*       GetSkinManager()            { return m_pSkinManager; }
     CBOINCBaseFrame*    GetFrame()                  { return m_pFrame; }
     CMainDocument*      GetDocument()               { return m_pDocument; }
-    wxString            GetArguments()              { return m_strBOINCArguments; }
     wxString            GetRootDirectory()          { return m_strBOINCMGRRootDirectory; }
     wxString            GetDataDirectory()          { return m_strBOINCMGRDataDirectory; }
+    wxString            GetArguments()              { return m_strBOINCArguments; }
 #if defined(__WXMSW__) || defined(__WXMAC__)
     CTaskBarIcon*       GetTaskBarIcon()            { return m_pTaskBarIcon; }
+    void                DeleteTaskBarIcon();
 #endif
+
+    bool                IsAccessibilityEnabled()    { return m_bAccessibilityEnabled; }
+
 #ifdef __WXMAC__
     CMacSystemMenu*     GetMacSystemMenu()          { return m_pMacSystemMenu; }
-#endif
-#ifdef __WXMAC__
-    int                 ShouldShutdownCoreClient()
-                                                    { return true; }
+    void                DeleteMacSystemMenu();
+    int                 ShouldShutdownCoreClient()  { return true; }
 #else
-    int                 ShouldShutdownCoreClient()
-                                                    { return m_iShutdownCoreClient; }
+    int                 ShouldShutdownCoreClient()  { return m_iShutdownCoreClient; }
 #endif
 
     int                 GetBOINCMGRDisableAutoStart()
@@ -136,13 +151,45 @@ public:
     void                SetBOINCMGRDisplayExitMessage(int iDisplayExitMessage)
                                                     { m_iDisplayExitDialog = iDisplayExitMessage; }
 
+
     wxArrayString&      GetSupportedLanguages()     { return m_astrLanguages; }
 
     void                FireReloadSkin();
+    void                FrameClosed()               { m_pFrame = NULL; }
+
+    int                 StartBOINCScreensaverTest();
+    int                 StartBOINCDefaultScreensaverTest();
 
     bool                SetActiveGUI(int iGUISelection, bool bShowWindow = true);
+
+    bool                ShowCurrentGUI() { return SetActiveGUI(m_iGUISelected, true); }
+    
+    void                OnRPCFinished( CRPCFinishedEvent& event );
+    void                OnSystemShutDown( wxCloseEvent &event );
     
     int                 ConfirmExit();
+
+    int                 SafeMessageBox(
+                            const wxString& message,
+                            const wxString& caption = wxMessageBoxCaptionStr,
+                            long style = wxOK | wxCENTRE,
+                            wxWindow *parent = NULL,
+                            int x = wxDefaultCoord,
+                            int y = wxDefaultCoord
+                        );
+
+    bool                IsApplicationVisible();
+    void                ShowApplication(bool bShow);
+
+    bool                IsModalDialogDisplayed();
+    bool                IsSafeMesageBoxDisplayed() { return (m_bSafeMessageBoxDisplayed != 0); };
+
+    int                 FilterEvent(wxEvent &event);
+
+
+    int                 UpdateSystemIdleDetection();
+
+DECLARE_EVENT_TABLE()
 };
 
 
@@ -151,3 +198,4 @@ DECLARE_APP(CBOINCGUIApp)
 
 #endif
 
+/// @}

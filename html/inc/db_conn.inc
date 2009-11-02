@@ -50,6 +50,10 @@ class DbConn {
         return $ret;
     }
 
+    function affected_rows() {
+        return mysql_affected_rows($this->db_conn);
+    }
+
     function lookup_fields($table, $classname, $fields, $clause) {
         $query = "select $fields from DBNAME.$table where $clause";
         $result = $this->do_query($query);
@@ -144,7 +148,7 @@ class DbConn {
         return $this->do_query($query);
     }
     function base_escape_string($string) {
-        return mysql_real_escape_string($string, $this->db_conn);
+        return mysql_real_escape_string($string);
     }
     function base_error() {
         return mysql_error($this->db_conn);

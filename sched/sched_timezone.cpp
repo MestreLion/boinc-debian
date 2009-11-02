@@ -20,13 +20,14 @@
 
 #include "config.h"
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 #include <cstring>
 
 #include "parse.h"
 
-#include "server_types.h"
+#include "sched_types.h"
 #include "sched_msgs.h"
+#include "sched_config.h"
 
 #ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
@@ -107,16 +108,16 @@ URLTYPE* read_download_list() {
     
     if (cached) return cached;
 
+    const char *download_servers = config.project_path("download_servers");
 #ifndef _USING_FCGI_
-    FILE *fp=fopen("../download_servers", "r");
+    FILE *fp=fopen(download_servers, "r");
 #else 
-    FCGI_FILE *fp=FCGI::fopen("../download_servers", "r");
+    FCGI_FILE *fp=FCGI::fopen(download_servers, "r");
 #endif
 
-    
     if (!fp) {
         log_messages.printf(MSG_CRITICAL,
-            "File ../download_servers not found or unreadable!\n"
+            "File %s not found or unreadable!\n", download_servers
         );
         return NULL;
     }
@@ -144,9 +145,10 @@ URLTYPE* read_download_list() {
     
     if (!count) {
         log_messages.printf(MSG_CRITICAL,
-            "File ../download_servers contained no valid entries!\n"
+            "File %s contained no valid entries!\n"
             "Format of this file is one or more lines containing:\n"
-            "TIMEZONE_OFFSET_IN_SEC   http://some.url.path\n"
+            "TIMEZONE_OFFSET_IN_SEC   http://some.url.path\n",
+	    download_servers
         );
         free(cached);
         return NULL;
@@ -184,13 +186,13 @@ int make_download_list(char *buffer, char *path, int tz) {
     // Space is to format them nicely
     //
     for (i=0; strlen(serverlist[i].name); i++) {
-        start+=sprintf(start, "%s<url>%s/%s</url>", i?"\n    ":"", serverlist[i].name, path);
+        start+=sprintf(start, "%s<url>%s%s</url>", i?"\n    ":"", serverlist[i].name, path);
     }
 
     // make a second copy in the same order
     //
     for (i=0; strlen(serverlist[i].name); i++) {
-        start+=sprintf(start, "%s<url>%s/%s</url>", "\n    ", serverlist[i].name, path);
+        start+=sprintf(start, "%s<url>%s%s</url>", "\n    ", serverlist[i].name, path);
     }
     
     return (start-buffer);
@@ -205,12 +207,16 @@ int add_download_servers(char *old_xml, char *new_xml, int tz) {
 
     // search for next URL to do surgery on 
     while ((q=strstr(p, "<url>"))) {
+        // p is at current position
+        // q is at beginning of next "<url>" tag
+
         char *s;
         char path[1024];
         int len = q-p;
         
+        // copy everything from p to q to new_xml
+        //
         strncpy(new_xml, p, len);
-        
         new_xml += len;
         
         // locate next instance of </url>
@@ -220,29 +226,35 @@ int add_download_servers(char *old_xml, char *new_xml, int tz) {
         }
         r += strlen("</url>");
         
-        // parse out the URL
+        // r points to the end of the whole "<url>...</url>" tag
+        // parse out the URL into 'path'
         //
         if (!parse_str(q, "<url>", path, 1024)) {
             return 1;
         }
-        
-        // find start of 'download/'
+
+        // check if path contains the string specified in config.xml
         //
-        if (!(s=strstr(path,"download/"))) {
-            return 1;
+        if (!(s=strstr(path,config.replace_download_url_by_timezone))) {
+            // if it doesn't, just copy the whole tag as it is
+            strncpy(new_xml, q, r-q);
+            new_xml += r-q;
+            p=r;
+        } else {
+            // find end of the specified replace string,
+            // i.e. start of the 'path'
+            s += strlen(config.replace_download_url_by_timezone);
+            // insert new download list in place of the original single URL
+            //
+            len = make_download_list(new_xml, s, tz);
+            if (len<0) {
+                return 1;
+            }
+            new_xml += len;
+            // advance pointer to start looking for next <url> tag.
+            //
+            p=r;
         }
-        
-        // insert new download list in place of the original one
-        //
-        len = make_download_list(new_xml, s, tz);
-        if (len<0) {
-            return 1;
-        }
-        new_xml += len;
-        
-        // advance pointer to start looking for next <url> tag.
-        //
-        p=r;
     }
     
     strcpy(new_xml, r);
@@ -252,23 +264,21 @@ int add_download_servers(char *old_xml, char *new_xml, int tz) {
 // replace the download URL for apps with a list of
 // multiple download servers.
 //
-void process_av_timezone(
-    SCHEDULER_REPLY& reply, APP_VERSION* avp, APP_VERSION& av2
-) {
+void process_av_timezone(APP_VERSION* avp, APP_VERSION& av2) {
     int retval;
 
     // set these global variables, needed by the compare()
     // function so that the download URL list can be sorted by timezone
     //
-    tzone=reply.host.timezone;
-    hostid=reply.host.id;
-    retval = add_download_servers(avp->xml_doc, av2.xml_doc, reply.host.timezone);
+    tzone = g_reply->host.timezone;
+    hostid = g_reply->host.id;
+    retval = add_download_servers(avp->xml_doc, av2.xml_doc, g_reply->host.timezone);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
             "add_download_servers(to APP version) failed\n"
         );
         // restore original WU!
-        av2=*avp;
+        av2 = *avp;
     }
 }
 
@@ -276,22 +286,22 @@ void process_av_timezone(
 // multiple download servers.
 //
 void process_wu_timezone(
-    SCHEDULER_REPLY& reply, WORKUNIT& wu2, WORKUNIT& wu3
+    WORKUNIT& wu2, WORKUNIT& wu3
 ) {
     int retval;
 
-    tzone=reply.host.timezone;
-    hostid=reply.host.id;
+    tzone = g_reply->host.timezone;
+    hostid = g_reply->host.id;
         
-    retval = add_download_servers(wu2.xml_doc, wu3.xml_doc, reply.host.timezone);
+    retval = add_download_servers(wu2.xml_doc, wu3.xml_doc, g_reply->host.timezone);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
             "add_download_servers(to WU) failed\n"
         );
         // restore original WU!
-        wu3=wu2;
+        wu3 = wu2;
     }
 }
 
-const char *BOINC_RCSID_28b6ac7093 = "$Id: sched_timezone.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_28b6ac7093 = "$Id: sched_timezone.cpp 18825 2009-08-10 04:49:02Z davea $";
 

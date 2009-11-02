@@ -24,20 +24,23 @@
 //   this result may have been the cause of reset
 //   (need to pass last reset time from client)
 
+#include "config.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <string>
 
-#include "config.h"
 #include "error_numbers.h"
 
-#include "server_types.h"
-#include "sched_shmem.h"
+#include "sched_main.h"
 #include "sched_config.h"
-#include "sched_util.h"
+#include "sched_locality.h"
 #include "sched_msgs.h"
 #include "sched_send.h"
-#include "sched_locality.h"
+#include "sched_shmem.h"
+#include "sched_util.h"
+#include "sched_version.h"
+#include "sched_types.h"
 
 #include "sched_resend.h"
 
@@ -51,7 +54,7 @@
 // TODO: EXPLAIN THE FORMULA FOR NEW DEADLINE
 //
 static int possibly_give_result_new_deadline(
-    DB_RESULT& result, WORKUNIT& wu, SCHEDULER_REPLY& reply
+    DB_RESULT& result, WORKUNIT& wu, BEST_APP_VERSION& bav
 ) {
     const double resend_frac = 0.5;  // range [0, 1)
     int now = time(0);
@@ -66,11 +69,11 @@ static int possibly_give_result_new_deadline(
 
     // If infeasible, return without modifying result
     //
-    if (estimate_cpu_duration(wu, reply) > result_report_deadline-now) {
+    if (estimate_duration(wu, bav) > result_report_deadline-now) {
         if (config.debug_resend) {
-            log_messages.printf(MSG_DEBUG,
-                "[RESULT#%d] [HOST#%d] not resending lost result: can't complete in time\n",
-                result.id, reply.host.id
+            log_messages.printf(MSG_NORMAL,
+                "[resend] [RESULT#%d] [HOST#%d] not resending lost result: can't complete in time\n",
+                result.id, g_reply->host.id
             );
         }
         return 1;
@@ -79,9 +82,9 @@ static int possibly_give_result_new_deadline(
     // update result with new report time and sent time
     //
     if (config.debug_resend) {
-        log_messages.printf(MSG_DEBUG,
-            "[RESULT#%d] [HOST#%d] %s report_deadline (resend lost work)\n",
-            result.id, reply.host.id,
+        log_messages.printf(MSG_NORMAL,
+            "[resend] [RESULT#%d] [HOST#%d] %s report_deadline (resend lost work)\n",
+            result.id, g_reply->host.id,
             result_report_deadline==result.report_deadline?"NO update to":"Updated"
         );
     }
@@ -96,7 +99,7 @@ static int possibly_give_result_new_deadline(
 // 3) aren't present on the host
 // Return true if there were any such jobs
 //
-bool resend_lost_work(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
+bool resend_lost_work() {
     DB_RESULT result;
     std::vector<DB_RESULT>results;
     unsigned int i;
@@ -109,13 +112,13 @@ bool resend_lost_work(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
     int retval;
 
     sprintf(buf, " where hostid=%d and server_state=%d ",
-        reply.host.id, RESULT_SERVER_STATE_IN_PROGRESS
+        g_reply->host.id, RESULT_SERVER_STATE_IN_PROGRESS
     );
     while (!result.enumerate(buf)) {
         bool found = false;
-        for (i=0; i<sreq.other_results.size(); i++) {
-            OTHER_RESULT& orp = sreq.other_results[i];
-            if (!strcmp(orp.name.c_str(), result.name)) {
+        for (i=0; i<g_request->other_results.size(); i++) {
+            OTHER_RESULT& orp = g_request->other_results[i];
+            if (!strcmp(orp.name, result.name)) {
                 found = true;
                 break;
             }
@@ -124,9 +127,9 @@ bool resend_lost_work(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
 
         num_eligible_to_resend++;
         if (config.debug_resend) {
-            log_messages.printf(MSG_DEBUG,
-                "[HOST#%d] found lost [RESULT#%d]: %s\n",
-                reply.host.id, result.id, result.name
+            log_messages.printf(MSG_NORMAL,
+                "[resend] [HOST#%d] found lost [RESULT#%d]: %s\n",
+                g_reply->host.id, result.id, result.name
             );
         }
 
@@ -135,16 +138,17 @@ bool resend_lost_work(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
                 "[HOST#%d] WU not found for [RESULT#%d]\n",
-                reply.host.id, result.id
+                g_reply->host.id, result.id
             );
             continue;
         }
 
-        bavp = get_app_version(sreq, reply, wu);
+        bavp = get_app_version(wu);
         if (!bavp) {
+            APP* app = ssp->lookup_app(wu.appid);
             log_messages.printf(MSG_CRITICAL,
-                "[HOST#%d] no app version [RESULT#%d]\n",
-                reply.host.id, result.id
+                "[HOST#%d] can't resend [RESULT#%d]: no app version for %s\n",
+                g_reply->host.id, result.id, app->name
             );
             continue;
         }
@@ -159,12 +163,12 @@ bool resend_lost_work(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
         if (
             wu.error_mask ||
             wu.canonical_resultid ||
-            possibly_give_result_new_deadline(result, wu, reply)
+            possibly_give_result_new_deadline(result, wu, *bavp)
         ) {
             if (config.debug_resend) {
-                log_messages.printf(MSG_DEBUG,
-                    "[HOST#%d][RESULT#%d] not needed or too close to deadline, expiring\n",
-                    reply.host.id, result.id
+                log_messages.printf(MSG_NORMAL,
+                    "[resend] [HOST#%d][RESULT#%d] not needed or too close to deadline, expiring\n",
+                    g_reply->host.id, result.id
                 );
             }
             result.report_deadline = time(0)-1;
@@ -186,32 +190,36 @@ bool resend_lost_work(SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply) {
             sprintf(warning_msg,
                 "Didn't resend lost result %s (expired)", result.name
             );
-            USER_MESSAGE um(warning_msg, "high");
-            reply.insert_message(um);
+            g_reply->insert_message(USER_MESSAGE(warning_msg, "high"));
         } else {
-            retval = add_result_to_reply(result, wu, sreq, reply, bavp);
+            retval = add_result_to_reply(result, wu, bavp, false);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
                     "[HOST#%d] failed to send [RESULT#%d]\n",
-                    reply.host.id, result.id
+                    g_reply->host.id, result.id
                 );
                 continue;
             }
             sprintf(warning_msg, "Resent lost result %s", result.name);
-            USER_MESSAGE um(warning_msg, "high");
-            reply.insert_message(um);
+            g_reply->insert_message(USER_MESSAGE(warning_msg, "high"));
             num_resent++;
             did_any = true;
+
+            if (g_wreq->njobs_sent >= config.max_wus_to_send) {
+                result.end_enumerate();
+                break;
+            }
         }
     }
 
     if (num_eligible_to_resend && config.debug_resend) {
-        log_messages.printf(MSG_DEBUG,
-            "[HOST#%d] %d lost results, resent %d\n", reply.host.id, num_eligible_to_resend, num_resent 
+        log_messages.printf(MSG_NORMAL,
+            "[resend] [HOST#%d] %d lost results, resent %d\n",
+            g_reply->host.id, num_eligible_to_resend, num_resent 
         );
     }
 
     return did_any;
 }
 
-const char *BOINC_RCSID_3be23838b4="$Id: sched_resend.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_3be23838b4="$Id: sched_resend.cpp 18825 2009-08-10 04:49:02Z davea $";
