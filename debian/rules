@@ -126,7 +126,7 @@ autoreconf-stamp: patch
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
-	cp -f sea/*png clientgui/res
+	#cp -f sea/*png clientgui/res
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	touch $@
 
@@ -149,7 +149,7 @@ build-boinc-client-stamp: autoreconf-stamp
 	dh_testdir
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
-	cp client/boinc.unmodified client/boinc.optimized
+	#cp client/boinc.unmodified client/boinc.optimized
 	touch $@
 
 clean: clean-patched unpatch
@@ -168,10 +168,18 @@ clean-patched:
 	  client/scripts/Makefile \
 	  client/scripts/boinc-client \
 	  clientgui/res/Makefile \
-	  sea/Makefile \
-	  clientgui/res/boincmgr.16x16.png \
-	  clientgui/res/boincmgr.32x32.png \
-	  clientgui/res/boincmgr.48x48.png
+	  sea/Makefile   \
+	  api/libboinc_api.a \
+	  api/libboinc_graphics2.a \
+	  lib/libboinc.a \
+	  packages/solaris/CSW/boincclient/pkginfo \
+	  packages/solaris/CSW/boincclient/prototype \
+	  packages/solaris/CSW/boincdevel/pkginfo \
+	  packages/solaris/CSW/boincdevel/prototype \
+	  packages/solaris/CSW/boinclibs/pkginfo \
+	  packages/solaris/CSW/boinclibs/prototype \
+	  packages/solaris/CSW/boincmanager/pkginfo \
+	  packages/solaris/CSW/boincmanager/prototype
 	debconf-updatepo
 
 install: build install-stamp
@@ -179,14 +187,14 @@ install-stamp:
 	dh install --after dh_auto_test --until dh_install
 	
 	# Install files for the boinc-client package.
-	install -D client/boinc.optimized \
+	install -D client/boinc \
 	  debian/boinc-client/usr/bin/boinc
 	
-	install -D lib/boinccmd.unmodified \
+	install -D client/boinccmd \
 	  debian/boinc-client/usr/bin/boinccmd
 	
 	# Install files for the boinc-manager package.
-	install -D clientgui/boincmgr.unmodified \
+	install -D clientgui/boincmgr \
 	  debian/boinc-manager/usr/bin/boincmgr
 	
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
@@ -199,7 +207,7 @@ install-stamp:
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 	# Correct catalog file perms
-	find ./ -name "*.mo" -exec chmod 644   {} \;
+	find ./ -name "*.po" -exec chmod 644   {} \;
 	# delete empty dirs
 	find debian/boinc-manager/usr/share/locale -type d -empty -delete
 	dh install
