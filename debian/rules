@@ -137,10 +137,11 @@ build-stamp: autoreconf-stamp build-boinc-client-stamp
 	$(MAKE)
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	# Generate binary message catalogs of the BOINC Manager.
+# NEEDs TODO
 	for i in `ls locale/client`; do \
-	  if [ -f "locale/client/$$i/BOINC Manager.po" ]; then \
-	    msgfmt -o "locale/client/$$i/BOINC Manager.mo" \
-	      "locale/client/$$i/BOINC Manager.po"; \
+	  if [ -f "locale/client/$$i/BOINC-Manager.po" ]; then \
+	    msgfmt -o "locale/client/$$i/BOINC-Manager.mo" \
+	      "locale/client/$$i/BOINC-Manager.po"; \
 	  fi; \
 	done;
 	touch $@
@@ -172,6 +173,7 @@ clean-patched:
 	  api/libboinc_api.a \
 	  api/libboinc_graphics2.a \
 	  lib/libboinc.a \
+	  client/boinc \
 	  packages/solaris/CSW/boincclient/pkginfo \
 	  packages/solaris/CSW/boincclient/prototype \
 	  packages/solaris/CSW/boincdevel/pkginfo \
@@ -179,7 +181,13 @@ clean-patched:
 	  packages/solaris/CSW/boinclibs/pkginfo \
 	  packages/solaris/CSW/boinclibs/prototype \
 	  packages/solaris/CSW/boincmanager/pkginfo \
-	  packages/solaris/CSW/boincmanager/prototype
+	  packages/solaris/CSW/boincmanager/prototype \
+	  packages/solaris/CSW/Makefile \
+	  packages/generic/sea/Makefile \
+	  packages/solaris/CSW/boincclient/Makefile \
+	  packages/solaris/CSW/boincdevel/Makefile \
+	  packages/solaris/CSW/boinclibs/Makefile \
+	  packages/solaris/CSW/boincmanager/Makefile
 	debconf-updatepo
 
 install: build install-stamp
@@ -207,7 +215,7 @@ install-stamp:
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 	# Correct catalog file perms
-	find ./ -name "*.po" -exec chmod 644   {} \;
+	find ./ -name "*.mo" -exec chmod 644   {} \;
 	# delete empty dirs
 	find debian/boinc-manager/usr/share/locale -type d -empty -delete
 	dh install

@@ -20,7 +20,7 @@ Description: Upstream place .mo files just in share/locale, on Debian
 +	  $(INSTALL) -d $$mydir/$$ldir/LC_MESSAGES ; \
  	  if [ -f $$ldir/BOINC-Manager.po ] ; then \
 -	    $(INSTALL) $$ldir/BOINC-Manager.po $$mydir/$$ldir/BOINC-Manager.po ; \
-+	    $(INSTALL) "$$ldir/BOINC-Manager.po" "$$mydir/$$ldir/LC_MESSAGES/BOINC-Manager.po" ; \
++	    $(INSTALL) "$$ldir/BOINC-Manager.mo" "$$mydir/$$ldir/LC_MESSAGES/BOINC-Manager.mo" ; \
  	  fi ;\
  	done
  
