@@ -143,7 +143,6 @@ schedule()
         && log_progress_msg "normal")
     fi
     for BPID in ${pid} ${children}; do echo ${BOINC_OOM_ADJ} > /proc/${BPID}/oom_adj; echo; done
-
   fi
   log_end_msg 0
 }
@@ -163,7 +162,6 @@ status()
         schedtool $children
       fi
     fi
-
     log_success_msg "OOM killer status for $DESC:"
     for BPID in ${pid} ${children}; do echo PID ${BPID}: adj `cat /proc/${BPID}/oom_adj`, score `cat /proc/${BPID}/oom_score`; done
 
