@@ -3,11 +3,16 @@ boinc (6.10.17+dfsg-1) unstable; urgency=low
   * New upstream release
   * debian/patches
     + 003_use_sensible-browser.patch updated
+    + 006_correct_catalog_path.patch - refreshed
     + 005_using_hyphen_as_minus.patch removed - Applied upstream
     + 101_check_RSA_returned_values.patch  - Removed - Applied upstream
     + 102_gcc4.4_safe.patch Removed - Applied upstram
     + 006_correct_catalog_path.patch - updated
-  * debian/copyright updated
+    + 002_remove_hardcoded_optimization.patch  Removed, not needed anymore
+    + 004_exclude_sea.patch - Removed - not needed anymore
+    + 001_dont_install_ca-bundle.crt.patch Removed not needed anymore
+  * debian/copyright 
+    + zip/zip and zip/unzip references removed
   * debian/rules
     + Adjust fix-perm for catalog files
 

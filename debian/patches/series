@@ -1,5 +1,2 @@
-#103_fix_ftbfs_on_kfreebsd.patch  --   Needs to be removed maybe
-#001_dont_install_ca-bundle.crt.patch -- needs to be investigate
-#002_remove_hardcoded_optimization.patch -- needs to be investigate
 003_use_sensible-browser.patch 
 006_correct_catalog_path.patch
