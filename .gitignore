@@ -1,0 +1,24 @@
+Makefile.am
+client/Makefile.am
+clientgui/hyperlink.cpp
+config.guess
+config.sub
+locale/client/ar/BOINC Manager.mo
+sched/Makefile.am
+autoreconf-stamp
+build-boinc-client-stamp
+build-stamp
+client/.deps/
+client/Makefile
+client/Makefile.in
+client/boinc
+client/boinc.optimized
+client/boinc.unmodified
+client/boinc_client
+debian/stamp-patched
+Makefile
+Makefile.in
+aclocal.m4
+version.h
+*/*.o
+*/*/*.o
