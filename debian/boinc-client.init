@@ -26,6 +26,7 @@ SCHEDULE=0
 BOINC_USER=boinc
 BOINC_DIR=/var/lib/boinc-client
 BOINC_CLIENT=/usr/bin/boinc
+BOINC_OOM_ADJ=15
 
 # Source defaults file. Edit that file to configure this script.
 if [ -e /etc/default/boinc-client ]; then
@@ -129,10 +130,11 @@ schedule()
       fi
     fi
 
+    children=`ps --ppid $pid -o pid= | tr '\n' ' '`
+
     if [ ! -x "`which schedtool 2>/dev/null`" ]; then
       log_progress_msg "schedtool not found"
     else
-      children=`ps --ppid $pid -o pid= | tr '\n' ' '`
       (schedtool -n 19 -D $pid $children >/dev/null \
         && log_progress_msg "idleprio") || \
       (schedtool -n 19 -B $pid $children >/dev/null \
@@ -140,6 +142,8 @@ schedule()
       (schedtool -n 19 -N $pid $children >/dev/null \
         && log_progress_msg "normal")
     fi
+    for BPID in ${pid} ${children}; do echo ${BOINC_OOM_ADJ} > /proc/${BPID}/oom_adj; echo; done
+
   fi
   log_end_msg 0
 }
@@ -149,16 +153,19 @@ status()
   STATUS="Status of $DESC:"
   if is_running; then
     log_success_msg "$STATUS running"
+    children=`ps --ppid $pid -o pid= | tr '\n' ' '`
     if [ -x "`which schedtool 2>/dev/null`" ]; then
       log_success_msg "Scheduling of $DESC: $pid"
       schedtool $pid
 
-      children=`ps --ppid $pid -o pid= | tr '\n' ' '`
       if [ -n "$children" ]; then
         log_success_msg "Scheduling of $DESC's children: $children"
         schedtool $children
       fi
     fi
+
+    log_success_msg "OOM killer status for $DESC:"
+    for BPID in ${pid} ${children}; do echo PID ${BPID}: adj `cat /proc/${BPID}/oom_adj`, score `cat /proc/${BPID}/oom_score`; done
 
     # Display $BOINC_USER's cpu_share:
     uid=`id -u $BOINC_USER`
