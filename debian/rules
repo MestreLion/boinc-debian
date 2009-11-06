@@ -126,7 +126,6 @@ autoreconf-stamp: patch
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
-	#cp -f sea/*png clientgui/res
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	touch $@
 
@@ -137,7 +136,6 @@ build-stamp: autoreconf-stamp build-boinc-client-stamp
 	$(MAKE)
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	# Generate binary message catalogs of the BOINC Manager.
-# NEEDs TODO
 	for i in `ls locale/client`; do \
 	  if [ -f "locale/client/$$i/BOINC-Manager.po" ]; then \
 	    msgfmt -o "locale/client/$$i/BOINC-Manager.mo" \
