@@ -1,2 +1,3 @@
 003_use_sensible-browser.patch 
 006_correct_catalog_path.patch
+200_don-t-assume_SCHED_BATCH_exist.patch

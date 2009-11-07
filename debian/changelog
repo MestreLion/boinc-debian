@@ -15,6 +15,8 @@ boinc (6.10.17+dfsg-1) unstable; urgency=low
     + 002_remove_hardcoded_optimization.patch  Removed, not needed anymore
     + 004_exclude_sea.patch - Removed - not needed anymore
     + 001_dont_install_ca-bundle.crt.patch Removed not needed anymore
+    + 200__don-t-assume_SCHED_BATCH_exist.patch - Added to Prevent FTBFS
+      on kfreebsd
   * debian/copyright 
     + zip/zip and zip/unzip references removed
   * debian/rules
