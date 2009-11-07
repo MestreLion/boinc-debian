@@ -20,6 +20,7 @@ boinc (6.10.17+dfsg-1) unstable; urgency=low
   * debian/rules
     + Adjust fix-perm for catalog files
   * use omm_adj to prevent boinc use all the system resources (Closes: #534418)
+  * debian/control: Add libsqlite3-dev to B-D
 
  -- Rene Mayorga <rmayorga@debian.org>  Mon, 02 Nov 2009 14:44:14 -0600
 
