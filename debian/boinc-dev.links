@@ -1,7 +1,4 @@
 usr/include/BOINC/boinc_api.h       usr/share/boinc-dev/api/boinc_api.h
-usr/include/BOINC/graphics_api.h    usr/share/boinc-dev/api/graphics_api.h
-usr/include/BOINC/graphics_impl.h   usr/share/boinc-dev/api/graphics_impl.h
-usr/include/BOINC/graphics_lib.h    usr/share/boinc-dev/api/graphics_lib.h
 usr/include/BOINC/gutil.h           usr/share/boinc-dev/api/gutil.h
 usr/include/BOINC/app_ipc.h         usr/share/boinc-dev/lib/app_ipc.h
 usr/include/BOINC/boinc_win.h       usr/share/boinc-dev/lib/boinc_win.h
@@ -18,10 +15,10 @@ usr/include/BOINC/msg_log.h         usr/share/boinc-dev/lib/msg_log.h
 usr/include/BOINC/parse.h           usr/share/boinc-dev/lib/parse.h
 usr/include/BOINC/prefs.h           usr/share/boinc-dev/lib/prefs.h
 usr/include/BOINC/proxy_info.h      usr/share/boinc-dev/lib/proxy_info.h
-usr/include/BOINC/std_fixes.h       usr/share/boinc-dev/lib/std_fixes.h
+usr/include/BOINC/str_replace.h     usr/share/boinc-dev/lib/str_replace.h
 usr/include/BOINC/str_util.h        usr/share/boinc-dev/lib/str_util.h
 usr/include/BOINC/util.h            usr/share/boinc-dev/lib/util.h
-usr/include/BOINC/config.h          usr/share/boinc-dev/config.h
+usr/include/boinc/config.h          usr/share/boinc-dev/config.h
 usr/include/BOINC/version.h         usr/share/boinc-dev/version.h
 
 usr/include/BOINC/api/boinc_gl.h        usr/share/boinc-dev/api/boinc_gl.h
@@ -31,7 +28,4 @@ usr/include/BOINC/lib/md5_file.h        usr/share/boinc-dev/lib/md5_file.h
 
 usr/lib/libboinc.a                  usr/share/boinc-dev/lib/libboinc.a
 usr/lib/libboinc_api.a              usr/share/boinc-dev/api/libboinc_api.a
-usr/lib/libboinc_graphics_api.a     usr/share/boinc-dev/api/libboinc_graphics_api.a
-usr/lib/libboinc_graphics_impl.a    usr/share/boinc-dev/api/libboinc_graphics_impl.a
-usr/lib/libboinc_graphics_lib.a     usr/share/boinc-dev/api/libboinc_graphics_lib.a
 usr/include/boinc 		    usr/include/BOINC

@@ -1,6 +1,9 @@
 boinc (6.10.17+dfsg-2) unstable; urgency=low
 
   * debian/control: remove kboincspy from boinc-client Suggest
+  * include config.h on -dev package (Closes: #556816).
+  * clean-up broken links on boinc-dev
+  * install str_replace.h instead of std_fixes.h on -dev package.
 
  -- Rene Mayorga <rmayorga@debian.org>  Wed, 18 Nov 2009 19:04:45 -0600
 
