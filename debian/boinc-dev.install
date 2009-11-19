@@ -6,4 +6,5 @@ api/reduce.h                    usr/include/boinc/api
 api/boinc_gl.h                  usr/include/boinc/api
 api/txf_util.h                  usr/include/boinc/api
 lib/md5_file.h                  usr/include/boinc/lib
+config.h			usr/include/boinc
 Makefile.am                     usr/share/boinc-dev

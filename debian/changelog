@@ -1,3 +1,9 @@
+boinc (6.10.17+dfsg-2) unstable; urgency=low
+
+  * debian/control: remove kboincspy from boinc-client Suggest
+
+ -- Rene Mayorga <rmayorga@debian.org>  Wed, 18 Nov 2009 19:04:45 -0600
+
 boinc (6.10.17+dfsg-1) unstable; urgency=low
 
   * New upstream release (Closes: #553998)
