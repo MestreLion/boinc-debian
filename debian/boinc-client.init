@@ -142,7 +142,7 @@ schedule()
       (schedtool -n 19 -N $pid $children >/dev/null \
         && log_progress_msg "normal")
     fi
-    for BPID in ${pid} ${children}; do echo ${BOINC_OOM_ADJ} > /proc/${BPID}/oom_adj; echo; done
+    for BPID in ${pid} ${children}; do echo ${BOINC_OOM_ADJ} > /proc/${BPID}/oom_adj 2>/dev/null || true; echo; done
   fi
   log_end_msg 0
 }

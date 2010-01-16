@@ -1,3 +1,12 @@
+boinc (6.10.17+dfsg-3) unstable; urgency=low
+
+  * Ignore errors when setting oom_adj for boinc client,
+    Thanks to Gábor Gombás <gombasg@sztaki.hu> for the bug report
+    and the hint for the solution. (Closes: #559053)
+  * Fix str_replace.h installation path on boinc-dev package
+
+ -- Rene Mayorga <rmayorga@debian.org>  Fri, 15 Jan 2010 19:34:46 -0600
+
 boinc (6.10.17+dfsg-2) unstable; urgency=low
 
   * debian/control: remove kboincspy from boinc-client Suggest
