@@ -216,6 +216,7 @@ int RPC_CLIENT::authorize(const char* passwd) {
     }
 
     free(rpc.mbuf);
+    rpc.mbuf = 0;
 
     if (!found) {
         //fprintf(stderr, "Nonce not found\n");
@@ -331,4 +332,3 @@ int read_gui_rpc_password(char* buf) {
     return 0;
 }
 
-const char *BOINC_RCSID_6802bead97 = "$Id: gui_rpc_client.cpp 18833 2009-08-13 05:08:07Z davea $";

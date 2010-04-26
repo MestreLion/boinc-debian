@@ -169,6 +169,8 @@ void set_rrsim_flops(RESULT* rp) {
     // if the project's total CPU usage is more than its share, scale
     //
     double share_cpus = p->cpu_pwf.runnable_share*gstate.ncpus;
+    if (!share_cpus) share_cpus = gstate.ncpus;
+        // deal with projects w/ resource share = 0
     double r2 = r1;
     if (p->cpu_pwf.sim_nused > share_cpus) {
         r2 *= (share_cpus / p->cpu_pwf.sim_nused);
@@ -182,8 +184,8 @@ void set_rrsim_flops(RESULT* rp) {
 #if 0
     if (log_flags.rr_simulation) {
         msg_printf(p, MSG_INFO,
-            "[rr_sim] set_rrsim_flops: %f (r1 %f r2 %f r3 %f)",
-            rp->rrsim_flops, r1, r2, r3
+            "[rr_sim] set_rrsim_flops: %.2fG (r1 %.4f r2 %.4f r3 %.4f)",
+            rp->rrsim_flops/1e9, r1, r2, r3
         );
     }
 #endif
@@ -225,6 +227,26 @@ void CLIENT_STATE::print_deadline_misses() {
     }
 }
 
+#if 0
+// compute a per-app-version "temporary DCF" based on the elapsed time
+// and fraction done of running jobs
+//
+void compute_temp_dcf() {
+    unsigned int i;
+    for (i=0; i<gstate.app_versions.size(); i++) {
+        gstate.app_versions[i]->temp_dcf = 1;
+    }
+    for (i=0; i<gstate.active_tasks.active_tasks.size(); i++) {
+        ACTIVE_TASK* atp = gstate.active_tasks.active_tasks[i];
+        double x = atp->est_dur(false) / atp->result->estimated_duration(false);
+        APP_VERSION* avp = atp->result->avp;
+        if (x < avp->temp_dcf) {
+            avp->temp_dcf = x;
+        }
+    }
+}
+#endif
+
 void CLIENT_STATE::rr_simulation() {
     PROJECT* p, *pbest;
     RESULT* rp, *rpbest;
@@ -234,6 +256,7 @@ void CLIENT_STATE::rr_simulation() {
     double ar = available_ram();
 
     work_fetch.rr_init();
+    //compute_temp_dcf();
 
     if (log_flags.rr_simulation) {
         msg_printf(0, MSG_INFO,
@@ -266,7 +289,9 @@ void CLIENT_STATE::rr_simulation() {
 
         p = rp->project;
         p->pwf.has_runnable_jobs = true;
-        if (rp->uses_cuda()) {
+        p->cpu_pwf.nused_total += rp->avp->avg_ncpus;
+        if (rp->uses_cuda() && coproc_cuda) {
+            p->cuda_pwf.nused_total += rp->avp->ncudas;
             p->cuda_pwf.has_runnable_jobs = true;
             if (cuda_work_fetch.sim_nused < coproc_cuda->count) {
                 sim_status.activate(rp, 0);
@@ -274,7 +299,8 @@ void CLIENT_STATE::rr_simulation() {
             } else {
                 cuda_work_fetch.pending.push_back(rp);
             }
-        } else if (rp->uses_ati()) {
+        } else if (rp->uses_ati() && coproc_ati) {
+            p->ati_pwf.nused_total += rp->avp->natis;
             p->ati_pwf.has_runnable_jobs = true;
             if (ati_work_fetch.sim_nused < coproc_ati->count) {
                 sim_status.activate(rp, 0);
@@ -320,6 +346,7 @@ void CLIENT_STATE::rr_simulation() {
         for (i=0; i<sim_status.active.size(); i++) {
             rp = sim_status.active[i];
             set_rrsim_flops(rp);
+            //rp->rrsim_finish_delay = rp->avp->temp_dcf*rp->rrsim_flops_left/rp->rrsim_flops;
             rp->rrsim_finish_delay = rp->rrsim_flops_left/rp->rrsim_flops;
             if (!rpbest || rp->rrsim_finish_delay < rpbest->rrsim_finish_delay) {
                 rpbest = rp;

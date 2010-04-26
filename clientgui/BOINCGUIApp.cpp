@@ -80,8 +80,7 @@ bool s_bSkipExitConfirmation = false;
 OSErr QuitAppleEventHandler( const AppleEvent *appleEvt, AppleEvent* reply, UInt32 refcon ) {
         DescType            senderType;
         Size                actualSize;
-        ProcessSerialNumber SenderPSN, ourPSN;
-        Boolean             isSame;
+        ProcessSerialNumber SenderPSN;
         ProcessInfoRec      pInfo;
         FSSpec              fileSpec;
         OSStatus            anErr;
@@ -97,14 +96,6 @@ OSErr QuitAppleEventHandler( const AppleEvent *appleEvt, AppleEvent* reply, UInt
                                     &senderType, &SenderPSN, sizeof(SenderPSN), &actualSize);
 
         if (anErr == noErr) {
-             
-            GetCurrentProcess(&ourPSN);
-
-            anErr = SameProcess(&SenderPSN, &ourPSN, &isSame);
-
-            if (anErr == noErr) {
-                if (!isSame) {
-
                 pInfo.processInfoLength = sizeof( ProcessInfoRec );
                 pInfo.processName = NULL;
                 pInfo.processAppSpec = &fileSpec;
@@ -112,13 +103,11 @@ OSErr QuitAppleEventHandler( const AppleEvent *appleEvt, AppleEvent* reply, UInt
                 anErr = GetProcessInformation(&SenderPSN, &pInfo);
 
                 // Consider a Quit command from our Dock menu as coming from this application
-                if (pInfo.processSignature != 'dock') {
+            if ( (pInfo.processSignature != 'dock') && (pInfo.processSignature != 'BNC!') ) {
                     s_bSkipExitConfirmation = true; // Not from our app, our dock icon or our taskbar icon
                     wxGetApp().ExitMainLoop();  // Prevents wxMac from issuing events to closed frames
-                }
             }
         }
-    }
     
     return wxGetApp().MacHandleAEQuit((AppleEvent*)appleEvt, reply);
 }
@@ -284,55 +273,6 @@ bool CBOINCGUIApp::OnInit() {
     m_pLog->AddTraceMask(wxT("Function Status"));
 
  
-#ifdef SANDBOX
-    // Make sure owners, groups and permissions are correct for the current setting of g_use_sandbox
-    if (!iErrorCode) {
-#if (defined(__WXMAC__) && defined(_DEBUG))     // TODO: implement this for other platforms
-        // GDB can't attach to applications which are running as a different user   
-        //  or group, so fix up data with current user and group during debugging
-        if (check_security(g_use_sandbox, true)) {
-            CreateBOINCUsersAndGroups();
-            SetBOINCDataOwnersGroupsAndPermissions();
-            SetBOINCAppOwnersGroupsAndPermissions(NULL);
-        }
-#endif
-        iErrorCode = check_security(g_use_sandbox, true);
-    }
-
-    if (iErrorCode) {
-
-        ShowApplication(true);
-
-        if (iErrorCode == -1099) {
-            strDialogMessage = 
-                _("You currently are not authorized to manage the client.\nPlease contact your administrator to add you to the 'boinc_master' user group.");
-        } else {
-        strDialogMessage.Printf(
-                _("BOINC ownership or permissions are not set properly; please reinstall BOINC.\n(Error code %d)\n"),
-            iErrorCode
-        );
-
-        }
-        wxMessageDialog* pDlg = new wxMessageDialog(NULL, strDialogMessage, wxT("BOINC Manager"), wxOK);
-
-        pDlg->ShowModal();
-        if (pDlg)
-            pDlg->Destroy();
-
-        return false;
-    }
-#endif      // SANDBOX
-
-    // Enable known image types
-    wxInitAllImageHandlers();
-
-    // Enable additional file system type handlers
-    wxFileSystem::AddHandler(new wxMemoryFSHandler);
-#if wxUSE_FS_INET && wxUSE_STREAMS && wxUSE_SOCKETS
-    wxFileSystem::AddHandler(new wxInternetFSHandler);
-#endif
-
-
     // Initialize the internationalization module
 #ifdef __WXMSW__
     // On Windows, set all locales for this thread on a per-thread basis
@@ -359,6 +299,56 @@ bool CBOINCGUIApp::OnInit() {
     // Note: JAWS for Windows will only speak the context-sensitive
     // help if you use this help provider:
     wxHelpProvider::Set(new wxHelpControllerHelpProvider());
+
+ 
+#ifdef SANDBOX
+    // Make sure owners, groups and permissions are correct for the current setting of g_use_sandbox
+    if (!iErrorCode) {
+#if (defined(__WXMAC__) && defined(_DEBUG))     // TODO: implement this for other platforms
+        // GDB can't attach to applications which are running as a different user   
+        //  or group, so fix up data with current user and group during debugging
+        if (check_security(g_use_sandbox, true)) {
+            CreateBOINCUsersAndGroups();
+            SetBOINCDataOwnersGroupsAndPermissions();
+            SetBOINCAppOwnersGroupsAndPermissions(NULL);
+        }
+#endif
+        iErrorCode = check_security(g_use_sandbox, true);
+    }
+
+    if (iErrorCode) {
+
+        ShowApplication(true);
+
+        if (iErrorCode == -1099) {
+            strDialogMessage = 
+                _("You currently are not authorized to manage the client.\n\nTo run BOINC as this user, please:\n  - reinstall BOINC answering \"Yes\" to the question about\n     non-administrative users\n or\n  - contact your administrator to add you to the 'boinc_master'\n     user group.");
+        } else {
+        strDialogMessage.Printf(
+                _("BOINC ownership or permissions are not set properly; please reinstall BOINC.\n(Error code %d)"),
+            iErrorCode
+        );
+
+        }
+        wxMessageDialog* pDlg = new wxMessageDialog(NULL, strDialogMessage, wxT("BOINC Manager"), wxOK);
+
+        pDlg->ShowModal();
+        if (pDlg)
+            pDlg->Destroy();
+
+        return false;
+    }
+#endif      // SANDBOX
+
+
+    // Enable known image types
+    wxInitAllImageHandlers();
+
+    // Enable additional file system type handlers
+    wxFileSystem::AddHandler(new wxMemoryFSHandler);
+#if wxUSE_FS_INET && wxUSE_STREAMS && wxUSE_SOCKETS
+    wxFileSystem::AddHandler(new wxInternetFSHandler);
+#endif
 
 
     // Initialize the skin manager
@@ -1211,4 +1201,3 @@ int CBOINCGUIApp::FilterEvent(wxEvent &event) {
 #endif
 }
 
-const char *BOINC_RCSID_487cbf3018 = "$Id: BOINCGUIApp.cpp 19047 2009-09-11 20:40:00Z charlief $";

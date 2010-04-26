@@ -69,6 +69,16 @@ wxPieCtrl::wxPieCtrl(wxWindow * parent, wxWindowID id, wxPoint pos,
 	SetSize(sz);
 	m_CanvasBitmap.Create(1,1);
 	RecreateCanvas();
+
+#ifdef __WXMAC__
+    SetupMacAccessibilitySupport();
+#endif
+}
+
+wxPieCtrl::~wxPieCtrl() {
+#ifdef __WXMAC__
+    RemoveMacAccessibilitySupport();
+#endif
 }
 
 /* getter and setter */
@@ -294,7 +304,7 @@ void wxPieCtrl::DrawParts(wxRect& pieRect)
 void wxPieCtrl::DrawLegend(int left, int top)
 {
 	unsigned int i;
-	int dy(m_LegendVerBorder),tw,th,titlew,titleh;
+	int dy(m_LegendVerBorder),tw,th=0,titlew,titleh;
 
 	// First determine the size of the legend box
 	m_CanvasDC.SetFont(m_TitleFont);

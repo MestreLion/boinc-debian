@@ -326,4 +326,3 @@ wxInt32 CViewResources::FormatDiskSpace(double bytes, wxString& strBuffer) const
     return 0;
 }
 
-const char *BOINC_RCSID_5a37b46a6e = "$Id: ViewResources.cpp 17955 2009-05-01 01:32:26Z romw $";

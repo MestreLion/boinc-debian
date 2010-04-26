@@ -18,18 +18,21 @@
 #include "boinc_win.h"
 #include "diagnostics.h"
 #include "error_numbers.h"
-#include "str_util.h"
+#include "url.h"
 #include "util.h"
 #include "win_util.h"
 #include "prefs.h"
 #include "filesys.h"
 #include "network.h"
+
 #include "client_state.h"
 #include "log_flags.h"
 #include "client_msgs.h"
 #include "http_curl.h"
 #include "sandbox.h"
 #include "main.h"
+#include "cs_proxy.h"
+
 #include "sysmon_win.h"
 
 
@@ -124,10 +127,7 @@ static void windows_detect_autoproxy_settings() {
     HINTERNET                 hWinHttp = NULL;
     WINHTTP_AUTOPROXY_OPTIONS autoproxy_options;
     WINHTTP_PROXY_INFO        proxy_info;
-    int                       proxy_protocol = 0;
-    char                      proxy_server[256];
-    int                       proxy_port = 0;
-    char                      proxy_file[256];
+    PARSED_URL purl;
     std::wstring              network_test_url;
     size_t                    pos;
 
@@ -190,22 +190,17 @@ static void windows_detect_autoproxy_settings() {
                 }
 
                 // Parse the remaining url
-                parse_url(
-                    proxy.c_str(),
-                    proxy_protocol,
-                    proxy_server,
-                    proxy_port,
-                    proxy_file
-                );
+                parse_url(proxy.c_str(), purl);
 
                 // Store the results for future use.
-                gstate.proxy_info.autodetect_protocol = proxy_protocol;
-                strcpy(gstate.proxy_info.autodetect_server_name, proxy_server);
-                gstate.proxy_info.autodetect_port = proxy_port;
+                working_proxy_info.autodetect_protocol = purl.protocol;
+                strcpy(working_proxy_info.autodetect_server_name, purl.host);
+                working_proxy_info.autodetect_port = purl.port;
 
                 if (log_flags.proxy_debug) {
                     msg_printf(NULL, MSG_INFO,
-                        "[proxy_debug] automatic proxy detected %s:%d", proxy_server, proxy_port
+                        "[proxy_debug] automatic proxy detected %s:%d",
+                        purl.host, purl.port
                     );
                 }
             }
@@ -217,9 +212,9 @@ static void windows_detect_autoproxy_settings() {
     } else {
         // We can get here if the user is switching from a network that
         // requires a proxy to one that does not require a proxy.
-        gstate.proxy_info.autodetect_protocol = 0;
-        strcpy(gstate.proxy_info.autodetect_server_name, "");
-        gstate.proxy_info.autodetect_port = 0;
+        working_proxy_info.autodetect_protocol = 0;
+        strcpy(working_proxy_info.autodetect_server_name, "");
+        working_proxy_info.autodetect_port = 0;
         if (log_flags.proxy_debug) {
             msg_printf(NULL, MSG_INFO, "[proxy_debug] no automatic proxy detected");
         }
@@ -242,11 +237,11 @@ static LRESULT CALLBACK WindowsMonitorSystemWndProc(
 
                 // System Monitor 1 second timer
                 case 1:
-                    if (gstate.proxy_info.need_autodetect_proxy_settings) {
-                        gstate.proxy_info.have_autodetect_proxy_settings = false;
+                    if (working_proxy_info.need_autodetect_proxy_settings) {
+                        working_proxy_info.have_autodetect_proxy_settings = false;
                         windows_detect_autoproxy_settings();
-                        gstate.proxy_info.need_autodetect_proxy_settings = false;
-                        gstate.proxy_info.have_autodetect_proxy_settings = true;
+                        working_proxy_info.need_autodetect_proxy_settings = false;
+                        working_proxy_info.have_autodetect_proxy_settings = true;
                     }
                 default:
                     break;
@@ -297,7 +292,7 @@ static LRESULT CALLBACK WindowsMonitorSystemWndProc(
                     msg_printf(NULL, MSG_INFO, "Windows is resuming operations");
 
                     // Check for a proxy
-                    gstate.proxy_info.need_autodetect_proxy_settings = true;
+                    working_proxy_info.need_autodetect_proxy_settings = true;
 
                     resume_client();
                     break;
@@ -727,5 +722,3 @@ VOID LogEventInfoMessage(LPTSTR lpszMsg)
     }
 }
 
-
-const char *BOINC_RCSID_ad2dd5eef4 = "$Id: sysmon_win.cpp 19372 2009-10-23 16:58:23Z romw $";

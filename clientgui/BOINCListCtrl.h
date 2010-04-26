@@ -71,7 +71,9 @@ private:
 
     virtual wxString        OnGetItemText(long item, long column) const;
     virtual int             OnGetItemImage(long item) const;
+#if BASEVIEW_STRIPES
     virtual wxListItemAttr* OnGetItemAttr(long item) const;
+#endif
 
     CBOINCBaseView*         m_pParentView;
     wxArrayInt              m_iRowsNeedingProgressBars;
@@ -91,6 +93,17 @@ private:
     void                    DrawProgressBars(void);
     wxScrolledWindow*       GetMainWin(void) { return (wxScrolledWindow*) m_mainWin; }
     wxCoord                 GetHeaderHeight(void) { return m_headerHeight; }
+#ifdef __WXMAC__
+    void                    SetupMacAccessibilitySupport();
+    void                    RemoveMacAccessibilitySupport();
+    CBOINCBaseView*         GetParentView() { return m_pParentView; }
+    
+    HIViewRef               m_headerView;
+    HIViewRef               m_bodyView;
+
+    EventHandlerRef         m_pHeaderAccessibilityEventHandlerRef;
+    EventHandlerRef         m_pBodyAccessibilityEventHandlerRef;
+#endif
 #endif
 };
 

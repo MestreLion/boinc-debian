@@ -105,8 +105,7 @@ bool CAccountInfoPage::Create( CBOINCBaseWizard* parent )
 ////@end CAccountInfoPage member initialisation
  
 ////@begin CAccountInfoPage creation
-    wxBitmap wizardBitmap(wxNullBitmap);
-    wxWizardPageEx::Create( parent, ID_ACCOUNTINFOPAGE, wizardBitmap );
+    wxWizardPageEx::Create( parent, ID_ACCOUNTINFOPAGE );
 
     CreateControls();
     GetSizer()->Fit(this);
@@ -213,6 +212,13 @@ void CAccountInfoPage::CreateControls()
     //   it can be a username or an email address.
     m_pAccountPasswordCtrl->SetValidator( wxTextValidator(wxFILTER_NONE, &m_strAccountPassword) );
     m_pAccountConfirmPasswordCtrl->SetValidator( wxTextValidator(wxFILTER_NONE, &m_strAccountConfirmPassword) );
+    
+#ifdef __WXMAC__
+    //Accessibility
+    HIViewRef buttonView = (HIViewRef)m_pAccountCreateCtrl->GetHandle();
+    HIObjectRef   theObject = (HIObjectRef)HIViewGetSuperview(buttonView);
+    HIObjectSetAccessibilityIgnored(theObject, true);
+#endif
 ////@end CAccountInfoPage content construction
 
 }

@@ -182,4 +182,3 @@ void REDUCED_ARRAY_GEN::add_source_row(float* in) {
     scury++;
 }
 
-const char *BOINC_RCSID_70f1fa52c7 = "$Id: reduce_main.cpp 17388 2009-02-26 00:23:23Z korpela $";

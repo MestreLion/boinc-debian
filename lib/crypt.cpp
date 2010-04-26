@@ -589,7 +589,7 @@ char *check_validity(
     FILE* of = boinc_fopen(origFile, "r");
     if (!of) return NULL;
     MD5_Init(&md5CTX);
-    while (0 != (rbytes = fread(rbuf, 1, sizeof(rbuf), of))) {
+    while (0 != (rbytes = (int)fread(rbuf, 1, sizeof(rbuf), of))) {
 	    MD5_Update(&md5CTX, rbuf, rbytes);
     }
     MD5_Final(md5_md, &md5CTX);
@@ -637,7 +637,7 @@ int cert_verify_file(
     FILE* of = boinc_fopen(origFile, "r");
     if (!of) return false;
     MD5_Init(&md5CTX);
-    while (0 != (rbytes = fread(rbuf, 1, sizeof(rbuf), of))) {
+    while (0 != (rbytes = (int)fread(rbuf, 1, sizeof(rbuf), of))) {
 	    MD5_Update(&md5CTX, rbuf, rbytes);
     }
     MD5_Final(md5_md, &md5CTX);
@@ -694,4 +694,3 @@ int cert_verify_file(
     return verified;
 }
 
-const char *BOINC_RCSID_4f0c2e42ea = "$Id: crypt.cpp 18309 2009-06-04 23:03:47Z davea $";

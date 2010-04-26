@@ -65,9 +65,11 @@ void PROJECT::init() {
     project_specific_prefs = "";
     gui_urls = "";
     resource_share = 100;
-    no_cpu = false;
-    no_cuda = false;
-    no_ati = false;
+    no_cpu_pref = false;
+    no_cuda_pref = false;
+    no_ati_pref = false;
+    cuda_low_mem = false;
+    ati_low_mem = false;
     strcpy(host_venue, "");
     using_venue_specific_prefs = false;
     scheduler_urls.clear();
@@ -81,7 +83,7 @@ void PROJECT::init() {
     user_total_credit = 0;
     user_expavg_credit = 0;
     user_create_time = 0;
-    ams_resource_share = 0;
+    ams_resource_share = -1;
     rpc_seqno = 0;
     hostid = 0;
     host_total_credit = 0;
@@ -99,10 +101,7 @@ void PROJECT::init() {
     anonymous_platform = false;
     non_cpu_intensive = false;
     verify_files_on_app_start = false;
-    short_term_debt = 0;
-    cpu_pwf.reset();
-    cuda_pwf.reset();
-    ati_pwf.reset();
+    pwf.reset(this);
     send_file_list = false;
     send_time_stats_log = 0;
     send_job_log = 0;
@@ -114,7 +113,6 @@ void PROJECT::init() {
     strcpy(code_sign_key, "");
     user_files.clear();
     project_files.clear();
-    anticipated_debt = 0;
     next_runnable_result = NULL;
     duration_correction_factor = 1;
     project_files_downloaded_time = 0;
@@ -189,8 +187,8 @@ int PROJECT::parse_state(MIOFILE& in) {
         if (parse_bool(buf, "dont_request_more_work", dont_request_more_work)) continue;
         if (parse_bool(buf, "detach_when_done", detach_when_done)) continue;
         if (parse_bool(buf, "ended", ended)) continue;
-        if (parse_double(buf, "<short_term_debt>", short_term_debt)) continue;
-        if (parse_double(buf, "<long_term_debt>", cpu_pwf.debt)) continue;
+        if (parse_double(buf, "<short_term_debt>", cpu_pwf.short_term_debt)) continue;
+        if (parse_double(buf, "<long_term_debt>", cpu_pwf.long_term_debt)) continue;
         if (parse_double(buf, "<cpu_backoff_interval>", cpu_pwf.backoff_interval)) continue;
         if (parse_double(buf, "<cpu_backoff_time>", cpu_pwf.backoff_time)) {
             if (cpu_pwf.backoff_time > gstate.now + 28*SECONDS_PER_DAY) {
@@ -198,17 +196,24 @@ int PROJECT::parse_state(MIOFILE& in) {
             }
             continue;
         }
-        if (parse_double(buf, "<cuda_debt>", cuda_pwf.debt)) continue;
+        if (parse_double(buf, "<cuda_short_term_debt>", cuda_pwf.short_term_debt)) continue;
+        if (parse_double(buf, "<cuda_debt>", cuda_pwf.long_term_debt)) continue;
         if (parse_double(buf, "<cuda_backoff_interval>", cuda_pwf.backoff_interval)) continue;
         if (parse_double(buf, "<cuda_backoff_time>", cuda_pwf.backoff_time)) continue;
-        if (parse_double(buf, "<ati_debt>", ati_pwf.debt)) continue;
+        if (parse_double(buf, "<ati_short_term_debt>", ati_pwf.short_term_debt)) continue;
+        if (parse_double(buf, "<ati_debt>", ati_pwf.long_term_debt)) continue;
         if (parse_double(buf, "<ati_backoff_interval>", ati_pwf.backoff_interval)) continue;
         if (parse_double(buf, "<ati_backoff_time>", ati_pwf.backoff_time)) continue;
         if (parse_double(buf, "<resource_share>", x)) continue;
             // not authoritative
         if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
         if (parse_bool(buf, "attached_via_acct_mgr", attached_via_acct_mgr)) continue;
-        if (parse_double(buf, "<ams_resource_share>", ams_resource_share)) continue;
+            // backwards compat - old state files had ams_resource_share = 0
+        if (parse_double(buf, "<ams_resource_share_new>", ams_resource_share)) continue;
+        if (parse_double(buf, "<ams_resource_share>", x)) {
+            if (x > 0) ams_resource_share = x;
+            continue;
+        }
         if (parse_bool(buf, "scheduler_rpc_in_progress", btemp)) continue;
         if (parse_bool(buf, "use_symlinks", use_symlinks)) continue;
         if (log_flags.unparsed_xml) {
@@ -258,9 +263,11 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         "    <long_term_debt>%f</long_term_debt>\n"
         "    <cpu_backoff_interval>%f</cpu_backoff_interval>\n"
         "    <cpu_backoff_time>%f</cpu_backoff_time>\n"
+        "    <cuda_short_term_debt>%f</cuda_short_term_debt>\n"
         "    <cuda_debt>%f</cuda_debt>\n"
         "    <cuda_backoff_interval>%f</cuda_backoff_interval>\n"
         "    <cuda_backoff_time>%f</cuda_backoff_time>\n"
+        "    <ati_short_term_debt>%f</ati_short_term_debt>\n"
         "    <ati_debt>%f</ati_debt>\n"
         "    <ati_backoff_interval>%f</ati_backoff_interval>\n"
         "    <ati_backoff_time>%f</ati_backoff_time>\n"
@@ -291,10 +298,12 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         master_fetch_failures,
         min_rpc_time,
         next_rpc_time,
-        short_term_debt,
-        cpu_pwf.debt, cpu_pwf.backoff_interval, cpu_pwf.backoff_time,
-        cuda_pwf.debt, cuda_pwf.backoff_interval, cuda_pwf.backoff_time,
-        ati_pwf.debt, ati_pwf.backoff_interval, ati_pwf.backoff_time,
+        cpu_pwf.short_term_debt,
+        cpu_pwf.long_term_debt, cpu_pwf.backoff_interval, cpu_pwf.backoff_time,
+        cuda_pwf.short_term_debt, cuda_pwf.long_term_debt,
+        cuda_pwf.backoff_interval, cuda_pwf.backoff_time,
+        ati_pwf.short_term_debt, ati_pwf.long_term_debt,
+        ati_pwf.backoff_interval, ati_pwf.backoff_time,
         resource_share,
         duration_correction_factor,
 		sched_rpc_pending,
@@ -314,7 +323,7 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         use_symlinks?"    <use_symlinks/>\n":""
     );
     if (ams_resource_share >= 0) {
-        out.printf("    <ams_resource_share>%f</ams_resource_share>\n",
+        out.printf("    <ams_resource_share_new>%f</ams_resource_share_new>\n",
             ams_resource_share
         );
     }
@@ -385,7 +394,6 @@ void PROJECT::copy_state_fields(PROJECT& p) {
     sched_rpc_pending = p.sched_rpc_pending;
     trickle_up_pending = p.trickle_up_pending;
     safe_strcpy(code_sign_key, p.code_sign_key);
-    short_term_debt = p.short_term_debt;
     cpu_pwf = p.cpu_pwf;
     cuda_pwf = p.cuda_pwf;
     ati_pwf = p.ati_pwf;
@@ -401,7 +409,7 @@ void PROJECT::copy_state_fields(PROJECT& p) {
     ended = p.ended;
     duration_correction_factor = p.duration_correction_factor;
     ams_resource_share = p.ams_resource_share;
-    if (ams_resource_share > 0) {
+    if (ams_resource_share >= 0) {
         resource_share = ams_resource_share;
     }
     use_symlinks = p.use_symlinks;
@@ -786,7 +794,7 @@ int FILE_INFO::parse(MIOFILE& in, bool from_server) {
             continue;
         }
 
-        strcat(signed_xml, buf);
+        safe_strcat(signed_xml, buf);
         if (parse_str(buf, "<name>", name, sizeof(name))) continue;
         if (parse_str(buf, "<url>", url)) {
             urls.push_back(url);
@@ -1116,6 +1124,7 @@ int APP_VERSION::parse(MIOFILE& in) {
     max_ncpus = 1;
     ncudas = 0;
     natis = 0;
+    gpu_ram = 0;
     app = NULL;
     project = NULL;
     flops = gstate.host_info.p_fpops;
@@ -1135,6 +1144,7 @@ int APP_VERSION::parse(MIOFILE& in) {
         if (parse_double(buf, "<max_ncpus>", max_ncpus)) continue;
         if (parse_double(buf, "<flops>", flops)) continue;
         if (parse_str(buf, "<cmdline>", cmdline, sizeof(cmdline))) continue;
+        if (parse_double(buf, "<gpu_ram>", gpu_ram)) continue;
         if (match_tag(buf, "<coproc>")) {
             COPROC_REQ cp;
             int retval = cp.parse(in);
@@ -1209,6 +1219,12 @@ int APP_VERSION::write(MIOFILE& out, bool write_file_info) {
             "        <count>%f</count>\n"
             "    </coproc>\n",
             natis
+        );
+    }
+    if (gpu_ram) {
+        out.printf(
+            "    <gpu_ram>%f</gpu_ram>\n",
+            gpu_ram
         );
     }
 
@@ -1511,6 +1527,7 @@ void RESULT::clear() {
     strcpy(plan_class, "");
     strcpy(resources, "");
     coproc_missing = false;
+    schedule_backoff = 0;
 }
 
 // parse a <result> element from scheduling server.
@@ -1893,6 +1910,51 @@ void RESULT::abort_inactive(int status) {
     exit_status = status;
 }
 
+// return true if not enough video RAM on the allocated device.
+// This gets called only for coproc jobs without a process yet
+//
+bool RESULT::insufficient_video_ram() {
+    double available_ram;
+    int retval;
+
+    if (avp->ncudas) {
+        retval = coproc_cuda->available_ram(
+            coproc_cuda->device_nums[coproc_indices[0]],
+            available_ram
+        );
+    } else if (avp->natis) {
+        retval = coproc_ati->available_ram(
+            coproc_ati->device_nums[coproc_indices[0]],
+            available_ram
+        );
+    } else {
+        return false;
+    }
+    if (retval) {
+        msg_printf(project, MSG_INFO,
+            "Can't get available GPU RAM: %d", retval
+        );
+        return true;   // it can't get available RAM, driver must be wedged.
+            // Better not use it.
+    }
+    if (!avp->gpu_ram) {
+        // old schedulers don't report gpu RAM
+        return false;
+    }
+
+    if (available_ram < avp->gpu_ram) {
+        if (log_flags.cpu_sched_debug) {
+            msg_printf(project, MSG_INFO,
+                "[cpu_sched_debug] %s: insufficient GPU RAM (%.0fMB < %.0fMB)",
+                name,
+                available_ram/MEGA, avp->gpu_ram/MEGA
+            );
+        }
+        return true;
+    }
+    return false;
+}
+
 MODE::MODE() {
     perm_mode = 0;
     temp_mode = 0;
@@ -1936,4 +1998,3 @@ double MODE::delay() {
 	}
 }
 
-const char *BOINC_RCSID_b81ff9a584 = "$Id: client_types.cpp 19318 2009-10-16 19:07:56Z romw $";

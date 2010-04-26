@@ -21,7 +21,7 @@
   ghost@aladdin.com
 
  */
-/*$Id: md5.c 4979 2005-01-02 18:29:53Z ballen $ */
+/*$Id: md5.c 20874 2010-03-12 17:03:53Z romw $ */
 /*
   Independent implementation of MD5 (RFC 1321).
 
@@ -396,4 +396,3 @@ md5_finish(md5_state_t *pms, md5_byte_t digest[16])
 	digest[i] = (md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
 }
 
-const char *BOINC_RCSID_40448d5426 = "$Id: md5.c 4979 2005-01-02 18:29:53Z ballen $";

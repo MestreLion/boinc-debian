@@ -141,4 +141,3 @@ int mem_usage(double& vm_usage, double& resident_set) {
 #endif
 }
 
-const char *BOINC_RCSID_dc202bfd53 = "$Id: mem_usage.cpp 17388 2009-02-26 00:23:23Z korpela $";

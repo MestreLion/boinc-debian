@@ -90,7 +90,7 @@ public:
     double lambda;
     int parse(XML_PARSER&, char* end_tag);
     bool sample(double);
-    void init();
+    void init(double);
     RANDOM_PROCESS();
 };
 
@@ -226,7 +226,7 @@ private:
     double potentially_runnable_resource_share();
     double nearly_runnable_resource_share();
 public:
-    double runnable_resource_share();
+    double runnable_resource_share(int);
     void request_work_fetch(const char*);
         // Check if work fetch needed.  Called when:
         // - core client starts (CS::init())
@@ -307,6 +307,9 @@ extern bool dcf_stats;
 extern bool cpu_sched_rr_only;
 extern bool dual_dcf;
 extern bool work_fetch_old;
+extern bool gpus_usable;
+
+#define SCHEDULER_RPC_POLL_PERIOD   5.0
 
 #define WORK_FETCH_PERIOD   60
 
@@ -317,3 +320,9 @@ extern bool work_fetch_old;
     // debt is adjusted at least this often,
     // since adjust_debts() is called from enforce_schedule()
 #define HANDLE_FINISHED_APPS_PERIOD 1.0
+
+#define MAX_STD   (86400)
+    // maximum short-term debt
+
+#define START_TIME  946684800
+    // Jan 1 2000

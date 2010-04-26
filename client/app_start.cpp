@@ -83,6 +83,8 @@ using std::string;
 #include "proc_control.h"
 #endif
 
+#include "cs_proxy.h"
+
 #include "app.h"
 
 
@@ -161,8 +163,10 @@ int ACTIVE_TASK::get_shmem_seg_name() {
 
     // ftok() only works if there's a file at the given location
     //
-    FILE* f = boinc_fopen(init_data_path, "w");
-    if (f) fclose(f);
+    if (!boinc_file_exists(init_data_path)) {
+        FILE* f = boinc_fopen(init_data_path, "w");
+        if (f) fclose(f);
+    }
     shmem_seg_name = ftok(init_data_path, 1);
     if (shmem_seg_name == -1) return ERR_SHMEM_NAME;
 #endif
@@ -203,7 +207,7 @@ int ACTIVE_TASK::write_app_init_file() {
     aid.user_expavg_credit = wup->project->user_expavg_credit;
     aid.host_total_credit = wup->project->host_total_credit;
     aid.host_expavg_credit = wup->project->host_expavg_credit;
-    double rrs = gstate.runnable_resource_share();
+    double rrs = gstate.runnable_resource_share(RSC_TYPE_CPU);
     if (rrs) {
         aid.resource_share_fraction = wup->project->resource_share/rrs;
     } else {
@@ -226,6 +230,11 @@ int ACTIVE_TASK::write_app_init_file() {
     aid.starting_elapsed_time = checkpoint_elapsed_time;
 
     sprintf(init_data_path, "%s/%s", slot_dir, INIT_DATA_FILE);
+
+    // delete the file using the switcher (Unix)
+    // in case it's owned by another user and we don't have write access
+    //
+    delete_project_owned_file(init_data_path, false);
     f = boinc_fopen(init_data_path, "w");
     if (!f) {
         msg_printf(wup->project, MSG_INTERNAL_ERROR,
@@ -237,7 +246,7 @@ int ACTIVE_TASK::write_app_init_file() {
 
     aid.host_info = gstate.host_info;
     aid.global_prefs = gstate.global_prefs;
-    aid.proxy_info = gstate.proxy_info;
+    aid.proxy_info = working_proxy_info;
     retval = write_init_data_file(f, aid);
     fclose(f);
     return retval;
@@ -488,6 +497,11 @@ int ACTIVE_TASK::start(bool first_time) {
     }
 
     link_user_files();
+
+    // make sure temporary exit file isn't there
+    //
+    sprintf(file_path, "%s/%s", slot_dir, TEMPORARY_EXIT_FILE);
+    delete_project_owned_file(file_path, true);
 
     if (gstate.exit_before_start) {
         exit(0);
@@ -788,29 +802,35 @@ int ACTIVE_TASK::start(bool first_time) {
         // - the project dir (../../projects/X)
         // - the slot dir (.)
         // - the BOINC dir (../..)
+        // (Mac) /usr/local/cuda/lib/
         // We use relative paths in case higher-level dirs
         // are not readable to the account under which app runs
         //
         char libpath[8192];
+        char newlibs[256];
         get_project_dir(wup->project, buf, sizeof(buf));
+        sprintf(newlibs, "../../%s:.:../..", buf);
+#ifdef __APPLE__
+        strcat(newlibs, ":/usr/local/cuda/lib/");
+#endif
         char* p = getenv("LD_LIBRARY_PATH");
         if (p) {
-            sprintf(libpath, "../../%s:.:../..:%s", buf, p);
+            sprintf(libpath, "%s:%s", newlibs, p);
         } else {
-            sprintf(libpath, "../../%s:.:../..", buf);
+            strcpy(libpath, newlibs);
         }
         setenv("LD_LIBRARY_PATH", libpath, 1);
 
-        // On the Mac, do the same for DYLIB_LIBRARY_PATH
+        // On the Mac, do the same for DYLD_LIBRARY_PATH
         //
 #ifdef __APPLE__
-        p = getenv("DYLIB_LIBRARY_PATH");
+        p = getenv("DYLD_LIBRARY_PATH");
         if (p) {
-            sprintf(libpath, "../../%s:.:../..:%s", buf, p);
+            sprintf(libpath, "%s:%s", newlibs, p);
         } else {
-            sprintf(libpath, "../../%s:.:../..", buf);
+            strcpy(libpath, newlibs);
         }
-        setenv("DYLIB_LIBRARY_PATH", libpath, 1);
+        setenv("DYLD_LIBRARY_PATH", libpath, 1);
 #endif
 
         retval = chdir(slot_dir);
@@ -1051,4 +1071,3 @@ int ACTIVE_TASK::is_native_i386_app(char* exec_path) {
 }
 #endif
 
-const char *BOINC_RCSID_be8bae8cbb = "$Id: app_start.cpp 19321 2009-10-16 19:15:04Z romw $";

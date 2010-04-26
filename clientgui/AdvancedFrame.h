@@ -76,6 +76,7 @@ public:
     void OnWizardDetach( wxCommandEvent& event );
 
     void OnActivitySelection( wxCommandEvent& event );
+    void OnGPUSelection( wxCommandEvent& event );
     void OnNetworkSelection( wxCommandEvent& event );
 
     void OnOptions( wxCommandEvent& event );
@@ -123,15 +124,15 @@ private:
 
     wxString        m_strBaseTitle;
 
-    bool            CreateMenu( bool bRPCsSafe = true );
+    bool            CreateMenu();
     bool            DeleteMenu();
 
-    bool            CreateNotebook( bool bRPCsSafe = true );
+    bool            CreateNotebook();
     bool            RepopulateNotebook();
     bool            CreateNotebookPage( CBOINCBaseView* pwndNewNotebookPage );
     bool            DeleteNotebook();
 
-    bool            CreateStatusbar( bool bRPCsSafe = true );
+    bool            CreateStatusbar();
     bool            DeleteStatusbar();
 
     bool            RestoreState();
@@ -139,6 +140,7 @@ private:
     void            SaveWindowDimensions();
 
     void            UpdateActivityModeControls( CC_STATUS& status );
+    void            UpdateGPUModeControls( CC_STATUS& status );
     void            UpdateNetworkModeControls( CC_STATUS& status );
     void            UpdateRefreshTimerInterval( wxInt32 iCurrentNotebookPage );
 

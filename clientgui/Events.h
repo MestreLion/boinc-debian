@@ -66,20 +66,24 @@
 #define ID_ADVACTIVITYRUNALWAYS                 6010
 #define ID_ADVACTIVITYRUNBASEDONPREPERENCES     6011
 #define ID_ADVACTIVITYSUSPEND                   6012
-#define ID_ADVACTIVITYMENUSEPARATOR             6013
-#define ID_ADVNETWORKRUNALWAYS                  6014
-#define ID_ADVNETWORKRUNBASEDONPREPERENCES      6015
-#define ID_ADVNETWORKSUSPEND                    6016
+#define ID_MENUSEPARATOR1                       6013
+#define ID_ADVACTIVITYGPUALWAYS                 6014
+#define ID_ADVACTIVITYGPUBASEDONPREPERENCES     6015
+#define ID_ADVACTIVITYGPUSUSPEND                6016
+#define ID_MENUSEPARATOR2                       6017
+#define ID_ADVNETWORKRUNALWAYS                  6018
+#define ID_ADVNETWORKRUNBASEDONPREPERENCES      6019
+#define ID_ADVNETWORKSUSPEND                    6020
 
 // Advanced Menu
-#define ID_OPTIONS                              6017
-#define ID_PREFERENCES                          6018
-#define ID_SELECTCOMPUTER                       6019
-#define ID_SHUTDOWNCORECLIENT                   6020
-#define ID_RUNBENCHMARKS                        6021
-#define ID_RETRYCOMMUNICATIONS                  6022
-#define ID_READCONFIG                           6023
-#define ID_READPREFERENCES                      6026
+#define ID_OPTIONS                              6021
+#define ID_PREFERENCES                          6022
+#define ID_SELECTCOMPUTER                       6023
+#define ID_SHUTDOWNCORECLIENT                   6026
+#define ID_RUNBENCHMARKS                        6027
+#define ID_RETRYCOMMUNICATIONS                  6028
+#define ID_READCONFIG                           6029
+#define ID_READPREFERENCES                      6030
 
 // Help Menu
 #define ID_HELPBOINC                            6035  // Locked: Used by manager_links.php
@@ -154,6 +158,7 @@
 // Taskbar/System Tray
 //
 #define ID_TB_SUSPEND                           6801
+#define ID_TB_SUSPEND_GPU                       6802
 
 //
 // Dialogs

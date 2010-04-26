@@ -739,6 +739,21 @@ int CMainDocument::SetActivityRunMode(int iMode, int iTimeout) {
 }
 
 
+int CMainDocument::SetGPURunMode(int iMode, int iTimeout) {
+    CC_STATUS ccs;
+
+    if (IsConnected()) {
+        int retval = rpc.set_gpu_mode(iMode, iTimeout);
+        if (retval) return retval;
+        if (iMode == RUN_MODE_RESTORE) {
+            GetCoreClientStatus(ccs, true);
+        } else {
+            status.network_mode = iMode;
+        }
+    }
+    return 0;
+}
+
 int CMainDocument::SetNetworkRunMode(int iMode, int iTimeout) {
     int       iRetVal = 0;
     CC_STATUS ccs;
@@ -758,33 +773,52 @@ int CMainDocument::SetNetworkRunMode(int iMode, int iTimeout) {
 }
 
 
+// We use 0 to indicate that the RPC has never been called yet, so 
+// set last update time to (time_t)1 here rather than to (time_t)0, 
+// and only if it is currently not zero.
 void CMainDocument::RefreshRPCs() {
 
-    m_dtCachedCCStatusTimestamp = wxDateTime((time_t)0);
-//    m_iGet_status_rpc_result = -1;
+    if (!m_dtCachedCCStatusTimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtCachedCCStatusTimestamp = wxDateTime((time_t)1);
+//      m_iGet_status_rpc_result = -1;
+    }
     
-    m_dtProjecStatusTimestamp = wxDateTime((time_t)0);
-//  m_iGet_project_status1_rpc_result = -1;
+    if (!m_dtProjecStatusTimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtProjecStatusTimestamp = wxDateTime((time_t)1);
+//      m_iGet_project_status1_rpc_result = -1;
+    }
         
-    m_dtResultsTimestamp = wxDateTime((time_t)0);
-//  m_iGet_results_rpc_result = -1;
+    if (!m_dtResultsTimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtResultsTimestamp = wxDateTime((time_t)1);
+//      m_iGet_results_rpc_result = -1;
+    }
         
-    m_dtFileTransfersTimestamp = wxDateTime((time_t)0);
-//  m_iGet_file_transfers_rpc_result = 0;
+    if (!m_dtFileTransfersTimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtFileTransfersTimestamp = wxDateTime((time_t)1);
+//      m_iGet_file_transfers_rpc_result = 0;
+    }
         
 //  m_iGet_messages_rpc_result = -1;
         
-    m_dtDiskUsageTimestamp = wxDateTime((time_t)0);
-//  m_iGet_dsk_usage_rpc_result = -1;
+    if (!m_dtDiskUsageTimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtDiskUsageTimestamp = wxDateTime((time_t)1);
+//      m_iGet_dsk_usage_rpc_result = -1;
+    }
 
-    m_dtStatisticsStatusTimestamp = wxDateTime((time_t)0);
-//  m_iGet_statistics_rpc_result = -1;
+    if (!m_dtStatisticsStatusTimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtStatisticsStatusTimestamp = wxDateTime((time_t)1);
+//      m_iGet_statistics_rpc_result = -1;
+    }
         
-    m_dtCachedSimpleGUITimestamp = wxDateTime((time_t)0);
-//  m_iGet_simple_gui2_rpc_result = -1;
+    if (!m_dtCachedSimpleGUITimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtCachedSimpleGUITimestamp = wxDateTime((time_t)1);
+//      m_iGet_simple_gui2_rpc_result = -1;
+    }
 
-    m_dtCachedAcctMgrInfoTimestamp = wxDateTime((time_t)0);
-    m_iAcct_mgr_info_rpc_result = -1;
+    if (!m_dtCachedAcctMgrInfoTimestamp.IsEqualTo(wxDateTime((time_t)0))) {
+        m_dtCachedAcctMgrInfoTimestamp = wxDateTime((time_t)1);
+        m_iAcct_mgr_info_rpc_result = -1;
+    }
 
 //  m_iGet_state_rpc_result = -1;
 }
@@ -2153,5 +2187,3 @@ int CMainDocument::GetSimpleGUIWorkCount() {
     return iCount;
 }
 
-
-const char *BOINC_RCSID_aa03a835ba = "$Id: MainDocument.cpp 18928 2009-08-27 21:04:52Z charlief $";

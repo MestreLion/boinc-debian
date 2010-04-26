@@ -165,6 +165,7 @@ BEGIN_EVENT_TABLE (CAdvancedFrame, CBOINCBaseFrame)
     EVT_MENU(ID_WIZARDDETACH, CAdvancedFrame::OnWizardDetach)
     // Activity
     EVT_MENU_RANGE(ID_ADVACTIVITYRUNALWAYS, ID_ADVACTIVITYSUSPEND, CAdvancedFrame::OnActivitySelection)
+    EVT_MENU_RANGE(ID_ADVACTIVITYGPUALWAYS, ID_ADVACTIVITYGPUSUSPEND, CAdvancedFrame::OnGPUSelection)
     EVT_MENU_RANGE(ID_ADVNETWORKRUNALWAYS, ID_ADVNETWORKSUSPEND, CAdvancedFrame::OnNetworkSelection)
     // Advanced
     EVT_MENU(ID_OPTIONS, CAdvancedFrame::OnOptions)
@@ -215,9 +216,9 @@ CAdvancedFrame::CAdvancedFrame(wxString title, wxIcon* icon, wxIcon* icon32, wxP
     SetIcons(icons);
 
     // Create UI elements
-    wxCHECK_RET(CreateMenu(false), _T("Failed to create menu bar."));
-    wxCHECK_RET(CreateNotebook(false), _T("Failed to create notebook."));
-    wxCHECK_RET(CreateStatusbar(false), _T("Failed to create status bar."));
+    wxCHECK_RET(CreateMenu(), _T("Failed to create menu bar."));
+    wxCHECK_RET(CreateNotebook(), _T("Failed to create notebook."));
+    wxCHECK_RET(CreateStatusbar(), _T("Failed to create status bar."));
 
     RestoreState();
 
@@ -274,7 +275,7 @@ CAdvancedFrame::~CAdvancedFrame() {
 }
 
 
-bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
+bool CAdvancedFrame::CreateMenu() {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateMenu - Function Begin"));
 
     CMainDocument*     pDoc = wxGetApp().GetDocument();
@@ -289,8 +290,8 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
     wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
 
-    if (bRPCsSafe) {
-        // Account managers have a different menu arrangement
+    // Account managers have a different menu arrangement
+    if (pDoc->IsConnected()) {
         pDoc->rpc.acct_mgr_info(ami);
         is_acct_mgr_detected = ami.acct_mgr_url.size() ? true : false;
     }
@@ -304,9 +305,11 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
         _("Close the %s window"), 
         pSkinAdvanced->GetApplicationName().c_str()
     );
+    strMenuName = _("&Close Window");
+    strMenuName += wxT("\tCtrl+W");
     menuFile->Append(
         ID_CLOSEWINDOW,
-        _("&Close Window\tCTRL+W"),
+        strMenuName,
         strMenuDescription
     );
 
@@ -327,51 +330,45 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
 
     menuView->Append(
         ID_ADVPROJECTSVIEW,
-        _("&Projects\tCTRL+SHIFT+P"),
+        _("&Projects\tCtrl+Shift+P"),
         _("Display projects")
     );
 
     menuView->Append(
         ID_ADVTASKSVIEW,
-        _("&Tasks\tCTRL+SHIFT+T"),
+        _("&Tasks\tCtrl+Shift+T"),
         _("Display tasks")
     );
 
     menuView->Append(
         ID_ADVTRANSFERSVIEW,
-        _("Trans&fers\tCTRL+SHIFT+X"),
+        _("Trans&fers\tCtrl+Shift+X"),
         _("Display transfers")
     );
 
     menuView->Append(
         ID_ADVMESSAGESVIEW,
-        _("&Messages\tCTRL+SHIFT+M"),
+        _("&Messages\tCtrl+Shift+M"),
         _("Display messages")
     );
 
     menuView->Append(
         ID_ADVSTATISTICSVIEW,
-        _("&Statistics\tCTRL+SHIFT+S"),
+        _("&Statistics\tCtrl+Shift+S"),
         _("Display statistics")
     );
 
     menuView->Append(
         ID_ADVRESOURCEUSAGEVIEW,
-        _("&Disk usage\tCTRL+SHIFT+D"),
+        _("&Disk usage\tCtrl+Shift+D"),
         _("Display disk usage")
-    );
-
-    menuView->Append(
-        ID_ADVNEWSVIEW,
-        _("&News\tCTRL+SHIFT+N"),
-        _("Display news")
     );
 
     menuView->AppendSeparator();
 
     menuView->Append(
         ID_CHANGEGUI,
-        _("Simple &View...\tCTRL+SHIFT+V"),
+        _("Simple &View...\tCtrl+Shift+V"),
         _("Display the simple graphical interface.")
     );
 
@@ -409,14 +406,16 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
             strMenuName,
             strMenuDescription
         );
-        strMenuName.Printf(
-            _("&Stop using %s..."), 
-            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
-        );
+
         menuTools->Append(
             ID_WIZARDATTACH, 
             _("Attach to &project..."),
             _("Attach to a project to begin processing work")
+        );
+
+        strMenuName.Printf(
+            _("&Stop using %s..."), 
+            wxString(ami.acct_mgr_name.c_str(), wxConvUTF8).c_str()
         );
         menuTools->Append(
             ID_WIZARDDETACH, 
@@ -444,22 +443,59 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
         _("Stop work regardless of preferences")
     );
 
-#if defined(__WXMSW__) || defined(__WXMAC__)
-    menuActivity->AppendSeparator();
+    if (pDoc->state.have_cuda || pDoc->state.have_ati) {
+
+#ifndef __WXGTK__
+        menuActivity->AppendSeparator();
 #else
-    // for some reason, the above radio items do not display the active
-    // selection on linux (wxGtk library) with the separator here,
-    // so we add a blank disabled menu item instead
-    //
-    menuActivity->Append(
-        ID_ADVACTIVITYMENUSEPARATOR,
-        (const wxChar *) wxT(" "), // wxEmptyString here causes a wxWidgets
-                                   //   assertion when debugging
-        wxEmptyString,
-        wxITEM_NORMAL              // wxITEM_SEPARATOR here causes a wxWidgets
-                                   //   assertion when debugging
-    );
-    menuActivity->Enable(ID_ADVACTIVITYMENUSEPARATOR, false);
+        // for some reason, the above radio items do not display the active
+        // selection on linux (wxGtk library) with the separator here,
+        // so we add a blank disabled menu item instead
+        //
+        wxMenuItem* pItem = menuActivity->Append(
+            ID_MENUSEPARATOR1,
+            (const wxChar *) wxT(" "),
+                // wxEmptyString here causes a wxWidgets assertion when debugging
+            wxEmptyString,
+            wxITEM_NORMAL
+                // wxITEM_SEPARATOR here causes a wxWidgets assertion when debugging
+        );
+        pItem->Enable(false); // disable this menu item
+#endif
+
+        menuActivity->AppendRadioItem(
+            ID_ADVACTIVITYGPUALWAYS,
+            _("Use GPU always"),
+            _("Allow GPU work regardless of preferences")
+        );
+        menuActivity->AppendRadioItem(
+            ID_ADVACTIVITYGPUBASEDONPREPERENCES,
+            _("Use GPU based on &preferences"),
+            _("Allow GPU work according to your preferences")
+        );
+        menuActivity->AppendRadioItem(
+            ID_ADVACTIVITYGPUSUSPEND,
+            _("Use GPU never"),
+            _("Stop GPU work regardless of preferences")
+        );
+    }
+
+#ifndef __WXGTK__
+        menuActivity->AppendSeparator();
+#else
+        // for some reason, the above radio items do not display the active
+        // selection on linux (wxGtk library) with the separator here,
+        // so we add a blank disabled menu item instead
+        //
+        wxMenuItem* pItem = menuActivity->Append(
+            ID_MENUSEPARATOR2,
+            (const wxChar *) wxT(" "),
+                // wxEmptyString here causes a wxWidgets assertion when debugging
+            wxEmptyString,
+            wxITEM_NORMAL
+                // wxITEM_SEPARATOR here causes a wxWidgets assertion when debugging
+        );
+        pItem->Enable(false); // disable this menu item
 #endif
 
     menuActivity->AppendRadioItem(
@@ -469,12 +505,12 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
     );
     menuActivity->AppendRadioItem(
         ID_ADVNETWORKRUNBASEDONPREPERENCES,
-        _("Network activity based on &preferences"),
+        _("Network activity based on pre&ferences"),
         _("Allow network activity according to your preferences")
     );
     menuActivity->AppendRadioItem(
         ID_ADVNETWORKSUSPEND,
-        _("&Network activity suspended"),
+        _("Network activity s&uspended"),
         _("Stop BOINC network activity")
     );
 
@@ -586,10 +622,6 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
         strMenuDescription
     );
 
-#ifndef __WXMAC__
-    menuHelp->AppendSeparator();
-#endif
-
     // %s is the project name
     //    i.e. 'BOINC Manager', 'GridRepublic Manager'
     strMenuName.Printf(
@@ -653,7 +685,7 @@ bool CAdvancedFrame::CreateMenu( bool bRPCsSafe ) {
 }
 
 
-bool CAdvancedFrame::CreateNotebook( bool /* bRPCsSafe */ ) {
+bool CAdvancedFrame::CreateNotebook() {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateNotebook - Function Begin"));
 
     // create frame panel
@@ -677,6 +709,11 @@ bool CAdvancedFrame::CreateNotebook( bool /* bRPCsSafe */ ) {
 
     pPanel->SetSizer(pPanelSizer);
     pPanel->Layout();
+
+#ifdef __WXMAC__
+    //Accessibility
+    HIObjectSetAccessibilityIgnored((HIObjectRef)pPanel->GetHandle(), true);
+#endif
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateNotebook - Function End"));
     return true;
@@ -727,7 +764,7 @@ bool CAdvancedFrame::CreateNotebookPage( CBOINCBaseView* pwndNewNotebookPage) {
 }
 
 
-bool CAdvancedFrame::CreateStatusbar( bool /* bRPCsSafe */ ) {
+bool CAdvancedFrame::CreateStatusbar() {
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::CreateStatusbar - Function Begin"));
 
     if (m_pStatusbar)
@@ -816,10 +853,10 @@ bool CAdvancedFrame::SaveState() {
     //
     pConfig->SetPath(strBaseConfigLocation);
 
-     // Store the latest window dimensions.
+    // Store the latest window dimensions.
     SaveWindowDimensions();
 
-   pConfig->Write(wxT("CurrentPage"), m_pNotebook->GetSelection());
+    pConfig->Write(wxT("CurrentPage"), m_pNotebook->GetSelection());
 
     //
     // Save Page(s) State
@@ -1129,19 +1166,46 @@ void CAdvancedFrame::OnActivitySelection(wxCommandEvent& event) {
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-    switch(event.GetId()) {
-    case ID_ADVACTIVITYRUNALWAYS:
-        pDoc->SetActivityRunMode(RUN_MODE_ALWAYS, 0);
-        break;
-    case ID_ADVACTIVITYSUSPEND:
-        pDoc->SetActivityRunMode(RUN_MODE_NEVER, 0);
-        break;
-    case ID_ADVACTIVITYRUNBASEDONPREPERENCES:
-        pDoc->SetActivityRunMode(RUN_MODE_AUTO, 0);
-        break;
+    if (event.IsChecked()) {
+        switch(event.GetId()) {
+        case ID_ADVACTIVITYRUNALWAYS:
+            pDoc->SetActivityRunMode(RUN_MODE_ALWAYS, 0);
+            break;
+        case ID_ADVACTIVITYSUSPEND:
+            pDoc->SetActivityRunMode(RUN_MODE_NEVER, 0);
+            break;
+        case ID_ADVACTIVITYRUNBASEDONPREPERENCES:
+            pDoc->SetActivityRunMode(RUN_MODE_AUTO, 0);
+            break;
+        }
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnActivitySelection - Function End"));
+}
+
+void CAdvancedFrame::OnGPUSelection(wxCommandEvent& event) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnGPUSelection - Function Begin"));
+
+    CMainDocument* pDoc      = wxGetApp().GetDocument();
+
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+
+    if (event.IsChecked()) {
+        switch(event.GetId()) {
+        case ID_ADVACTIVITYGPUALWAYS:
+            pDoc->SetGPURunMode(RUN_MODE_ALWAYS, 0);
+            break;
+        case ID_ADVACTIVITYGPUSUSPEND:
+            pDoc->SetGPURunMode(RUN_MODE_NEVER, 0);
+            break;
+        case ID_ADVACTIVITYGPUBASEDONPREPERENCES:
+            pDoc->SetGPURunMode(RUN_MODE_AUTO, 0);
+            break;
+        }
+    }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnGPUSelection - Function End"));
 }
 
 
@@ -1153,17 +1217,18 @@ void CAdvancedFrame::OnNetworkSelection(wxCommandEvent& event) {
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-
-    switch(event.GetId()) {
-    case ID_ADVNETWORKRUNALWAYS:
-        pDoc->SetNetworkRunMode(RUN_MODE_ALWAYS, 0);
-        break;
-    case ID_ADVNETWORKSUSPEND:
-        pDoc->SetNetworkRunMode(RUN_MODE_NEVER, 0);
-        break;
-    case ID_ADVNETWORKRUNBASEDONPREPERENCES:
-        pDoc->SetNetworkRunMode(RUN_MODE_AUTO, 0);
-        break;
+    if (event.IsChecked()) {
+        switch(event.GetId()) {
+        case ID_ADVNETWORKRUNALWAYS:
+            pDoc->SetNetworkRunMode(RUN_MODE_ALWAYS, 0);
+            break;
+        case ID_ADVNETWORKSUSPEND:
+            pDoc->SetNetworkRunMode(RUN_MODE_NEVER, 0);
+            break;
+        case ID_ADVNETWORKRUNBASEDONPREPERENCES:
+            pDoc->SetNetworkRunMode(RUN_MODE_AUTO, 0);
+            break;
+        }
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnNetworkSelection - Function End"));
@@ -1617,10 +1682,6 @@ void CAdvancedFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     }
 
 
-    // Update the menus
-    DeleteMenu();
-    CreateMenu();
-
     // Stop all timers so that the wizard is the only thing doing anything
     StopTimers();
 
@@ -1713,6 +1774,12 @@ void CAdvancedFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
         }
     }
 
+    // Update the menus
+    DeleteMenu();
+    CreateMenu();
+#ifdef __WXMAC__
+    wxGetApp().GetMacSystemMenu()->BuildMenu();
+#endif
 
     // Restart timers to continue normal operations.
     StartTimers();
@@ -1770,6 +1837,9 @@ void CAdvancedFrame::OnFrameRender(wxTimerEvent& WXUNUSED(event)) {
                 CC_STATUS  status;
                 if ((pDoc->IsConnected()) && (0 == pDoc->GetCoreClientStatus(status))) {
                     UpdateActivityModeControls(status);
+                    if (pDoc->state.have_cuda || pDoc->state.have_ati) {
+                        UpdateGPUModeControls(status);
+                    }
                     UpdateNetworkModeControls(status);
 
                     if (status.disallow_attach) {
@@ -1877,56 +1947,136 @@ void CAdvancedFrame::ResetReminderTimers() {
 
 
 void CAdvancedFrame::UpdateActivityModeControls( CC_STATUS& status ) {
-    wxMenuBar* pMenuBar      = GetMenuBar();
-
+    wxMenuBar* pMenuBar = GetMenuBar();
     wxASSERT(pMenuBar);
     wxASSERT(wxDynamicCast(pMenuBar, wxMenuBar));
 
-    // Skip if everything is already setup, Linux and possibly a few other platforms
-    //   will emulate a click event for a menu item even when the action of setting
-    //   a controls value wasn't initiated via user interaction. This in turn causes
-    //   the set_* RPC to be called which will cause the state file to become dirty.
     if ((RUN_MODE_ALWAYS == status.task_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYRUNALWAYS)) return;
     if ((RUN_MODE_NEVER == status.task_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYSUSPEND)) return;
     if ((RUN_MODE_AUTO == status.task_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYRUNBASEDONPREPERENCES)) return;
 
-    // Set things up.
-    pMenuBar->Check(ID_ADVACTIVITYRUNALWAYS, false);
-    pMenuBar->Check(ID_ADVACTIVITYSUSPEND, false);
-    pMenuBar->Check(ID_ADVACTIVITYRUNBASEDONPREPERENCES, false);
-    if (RUN_MODE_ALWAYS == status.task_mode)
-        pMenuBar->Check(ID_ADVACTIVITYRUNALWAYS, true);
-    if (RUN_MODE_NEVER == status.task_mode)
-        pMenuBar->Check(ID_ADVACTIVITYSUSPEND, true);
-    if (RUN_MODE_AUTO == status.task_mode)
-        pMenuBar->Check(ID_ADVACTIVITYRUNBASEDONPREPERENCES, true);
+    if (RUN_MODE_ALWAYS == status.task_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVACTIVITYRUNALWAYS)) {
+            pMenuBar->Check(ID_ADVACTIVITYRUNALWAYS, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYSUSPEND)) {
+            pMenuBar->Check(ID_ADVACTIVITYSUSPEND, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYRUNBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVACTIVITYRUNBASEDONPREPERENCES, false);
+        }
+    }
+    if (RUN_MODE_NEVER == status.task_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVACTIVITYSUSPEND)) {
+            pMenuBar->Check(ID_ADVACTIVITYSUSPEND, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYRUNALWAYS)) {
+            pMenuBar->Check(ID_ADVACTIVITYRUNALWAYS, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYRUNBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVACTIVITYRUNBASEDONPREPERENCES, false);
+        }
+    }
+    if (RUN_MODE_AUTO == status.task_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVACTIVITYRUNBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVACTIVITYRUNBASEDONPREPERENCES, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYRUNALWAYS)) {
+            pMenuBar->Check(ID_ADVACTIVITYRUNALWAYS, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYSUSPEND)) {
+            pMenuBar->Check(ID_ADVACTIVITYSUSPEND, false);
+        }
+    }
+}
+
+void CAdvancedFrame::UpdateGPUModeControls( CC_STATUS& status ) {
+    wxMenuBar* pMenuBar = GetMenuBar();
+    wxASSERT(pMenuBar);
+    wxASSERT(wxDynamicCast(pMenuBar, wxMenuBar));
+
+    if ((RUN_MODE_ALWAYS == status.gpu_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYGPUALWAYS)) return;
+    if ((RUN_MODE_NEVER == status.gpu_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYGPUSUSPEND)) return;
+    if ((RUN_MODE_AUTO == status.gpu_mode) && pMenuBar->IsChecked(ID_ADVACTIVITYGPUBASEDONPREPERENCES)) return;
+
+    if (RUN_MODE_ALWAYS == status.gpu_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVACTIVITYGPUALWAYS)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUALWAYS, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYGPUSUSPEND)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUSUSPEND, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYGPUBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUBASEDONPREPERENCES, false);
+        }
+    }
+    if (RUN_MODE_NEVER == status.gpu_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVACTIVITYGPUSUSPEND)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUSUSPEND, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYGPUALWAYS)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUALWAYS, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYGPUBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUBASEDONPREPERENCES, false);
+        }
+    }
+    if (RUN_MODE_AUTO == status.gpu_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVACTIVITYGPUBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUBASEDONPREPERENCES, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYGPUALWAYS)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUALWAYS, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVACTIVITYGPUSUSPEND)) {
+            pMenuBar->Check(ID_ADVACTIVITYGPUSUSPEND, false);
+        }
+    }
 }
 
 
 void CAdvancedFrame::UpdateNetworkModeControls( CC_STATUS& status ) {
-    wxMenuBar* pMenuBar      = GetMenuBar();
-
+    wxMenuBar* pMenuBar = GetMenuBar();
     wxASSERT(pMenuBar);
     wxASSERT(wxDynamicCast(pMenuBar, wxMenuBar));
 
-    // Skip if everything is already setup, Linux and possibly a few other platforms
-    //   will emulate a click event for a menu item even when the action of setting
-    //   a controls value wasn't initiated via user interaction. This in turn causes
-    //   the set_* RPC to be called which will cause the state file to become dirty.
     if ((RUN_MODE_ALWAYS == status.network_mode) && pMenuBar->IsChecked(ID_ADVNETWORKRUNALWAYS)) return;
     if ((RUN_MODE_NEVER == status.network_mode) && pMenuBar->IsChecked(ID_ADVNETWORKSUSPEND)) return;
     if ((RUN_MODE_AUTO == status.network_mode) && pMenuBar->IsChecked(ID_ADVNETWORKRUNBASEDONPREPERENCES)) return;
 
-    // Set things up.
-    pMenuBar->Check(ID_ADVNETWORKRUNALWAYS, false);
-    pMenuBar->Check(ID_ADVNETWORKSUSPEND, false);
-    pMenuBar->Check(ID_ADVNETWORKRUNBASEDONPREPERENCES, false);
-    if (RUN_MODE_ALWAYS == status.network_mode)
-        pMenuBar->Check(ID_ADVNETWORKRUNALWAYS, true);
-    if (RUN_MODE_NEVER == status.network_mode)
-        pMenuBar->Check(ID_ADVNETWORKSUSPEND, true);
-    if (RUN_MODE_AUTO == status.network_mode)
-        pMenuBar->Check(ID_ADVNETWORKRUNBASEDONPREPERENCES, true);
+    if (RUN_MODE_ALWAYS == status.network_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVNETWORKRUNALWAYS)) {
+            pMenuBar->Check(ID_ADVNETWORKRUNALWAYS, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVNETWORKSUSPEND)) {
+            pMenuBar->Check(ID_ADVNETWORKSUSPEND, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVNETWORKRUNBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVNETWORKRUNBASEDONPREPERENCES, false);
+        }
+    }
+    if (RUN_MODE_NEVER == status.network_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVNETWORKSUSPEND)) {
+            pMenuBar->Check(ID_ADVNETWORKSUSPEND, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVNETWORKRUNALWAYS)) {
+            pMenuBar->Check(ID_ADVNETWORKRUNALWAYS, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVNETWORKRUNBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVNETWORKRUNBASEDONPREPERENCES, false);
+        }
+    }
+    if (RUN_MODE_AUTO == status.network_mode) {
+        if (!pMenuBar->IsChecked(ID_ADVNETWORKRUNBASEDONPREPERENCES)) {
+            pMenuBar->Check(ID_ADVNETWORKRUNBASEDONPREPERENCES, true);
+        }
+        if (pMenuBar->IsChecked(ID_ADVNETWORKRUNALWAYS)) {
+            pMenuBar->Check(ID_ADVNETWORKRUNALWAYS, false);
+        }
+        if (pMenuBar->IsChecked(ID_ADVNETWORKSUSPEND)) {
+            pMenuBar->Check(ID_ADVNETWORKSUSPEND, false);
+        }
+    }
 }
 
 
@@ -1988,5 +2138,3 @@ void CAdvancedFrame::StopTimers() {
     m_pFrameRenderTimer->Stop();
 }
 
-
-const char *BOINC_RCSID_d881a56dc5 = "$Id: AdvancedFrame.cpp 19371 2009-10-23 16:57:02Z romw $";

@@ -561,4 +561,3 @@ bool CLIENT_STATE::are_cpu_benchmarks_running() {
     return benchmarks_running;
 }
 
-const char *BOINC_RCSID_97ee090db0 = "$Id: cs_benchmark.cpp 18054 2009-05-08 02:01:25Z charlief $";

@@ -240,4 +240,3 @@ void CLIENT_STATE::free_mem() {
 }
 #endif
 
-const char *BOINC_RCSID_d91498c9e4 = "$Id: check_state.cpp 16069 2008-09-26 18:20:24Z davea $";

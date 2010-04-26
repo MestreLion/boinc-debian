@@ -58,6 +58,11 @@ void GUI_URL::print() {
     );
 }
 
+void PROJECT::print_disk_usage() {
+    printf("   master URL: %s\n", master_url.c_str());
+    printf("   disk usage: %.2fMB\n", disk_usage/MEGA);
+}
+
 void PROJECT::print() {
     unsigned int i;
 
@@ -242,7 +247,7 @@ void DISK_USAGE::print() {
     printf("free: %f\n", d_free);
     for (i=0; i<projects.size(); i++) {
         printf("%d) -----------\n", i+1);
-        projects[i]->print();
+        projects[i]->print_disk_usage();
     }
 }
 
@@ -292,4 +297,3 @@ void ACCOUNT_OUT::print() {
     }
 }
 
-const char *BOINC_RCSID_2bed1889d8="$Id: gui_rpc_client_print.cpp 16069 2008-09-26 18:20:24Z davea $";

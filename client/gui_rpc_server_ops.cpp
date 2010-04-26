@@ -51,6 +51,7 @@
 #endif
 
 #include "str_util.h"
+#include "url.h"
 #include "client_state.h"
 #include "util.h"
 #include "error_numbers.h"
@@ -61,6 +62,7 @@
 #include "file_names.h"
 #include "client_msgs.h"
 #include "client_state.h"
+#include "cs_proxy.h"
 
 using std::string;
 using std::vector;
@@ -313,6 +315,27 @@ static void handle_set_run_mode(char* buf, MIOFILE& fout) {
     fout.printf("<success/>\n");
 }
 
+static void handle_set_gpu_mode(char* buf, MIOFILE& fout) {
+    double duration = 0;
+    int mode;
+    parse_double(buf, "<duration>", duration);
+    if (match_tag(buf, "<always")) {
+        mode = RUN_MODE_ALWAYS;
+    } else if (match_tag(buf, "<never")) {
+        mode = RUN_MODE_NEVER;
+    } else if (match_tag(buf, "<auto")) {
+        mode = RUN_MODE_AUTO;
+    } else if (match_tag(buf, "<restore")) {
+        mode = RUN_MODE_RESTORE;
+    } else {
+        fout.printf("<error>Missing mode</error>\n");
+        return;
+    }
+    gstate.gpu_mode.set(mode, duration);
+    gstate.request_schedule_cpus("GPU mode changed");
+    fout.printf("<success/>\n");
+}
+
 static void handle_set_network_mode(char* buf, MIOFILE& fout) {
     double duration = 0;
     int mode;
@@ -346,10 +369,13 @@ static void handle_run_benchmarks(char* , MIOFILE& fout) {
 static void handle_set_proxy_settings(char* buf, MIOFILE& fout) {
     MIOFILE in;
     in.init_buf_read(buf);
-    gstate.proxy_info.parse(in);
+    gui_proxy_info.parse(in);
+    if (!strlen(gui_proxy_info.http_server_name) && !strlen(gui_proxy_info.socks_server_name)) {
+        gui_proxy_info.present = false;
+    }
     gstate.set_client_state_dirty("Set proxy settings RPC");
     fout.printf("<success/>\n");
-    gstate.show_proxy_info();
+    select_proxy_info();
 
     // tell running apps to reread app_info file (for F@h)
     //
@@ -357,7 +383,7 @@ static void handle_set_proxy_settings(char* buf, MIOFILE& fout) {
 }
 
 static void handle_get_proxy_settings(char* , MIOFILE& fout) {
-    gstate.proxy_info.write(fout);
+    gui_proxy_info.write(fout);
 }
 
 // params:
@@ -504,7 +530,7 @@ static void handle_result_op(char* buf, MIOFILE& fout, const char* op) {
 }
 
 static void handle_get_host_info(char*, MIOFILE& fout) {
-    gstate.host_info.write(fout, false);
+    gstate.host_info.write(fout, false, true);
 }
 
 static void handle_get_screensaver_tasks(MIOFILE& fout) {
@@ -518,8 +544,7 @@ static void handle_get_screensaver_tasks(MIOFILE& fout) {
     for (i=0; i<gstate.active_tasks.active_tasks.size(); i++) {
         atp = gstate.active_tasks.active_tasks[i];
         if ((atp->task_state() == PROCESS_EXECUTING) || 
-                ((atp->task_state() == PROCESS_SUSPENDED) && 
-                        (gstate.suspend_reason & SUSPEND_REASON_CPU_USAGE_LIMIT))) {
+                ((atp->task_state() == PROCESS_SUSPENDED) && (gstate.suspend_reason == SUSPEND_REASON_CPU_THROTTLE))) {
             atp->result->write_gui(fout);
         }
     }
@@ -573,10 +598,13 @@ static void handle_get_cc_status(GUI_RPC_CONN* gr, MIOFILE& fout) {
         "   <task_suspend_reason>%d</task_suspend_reason>\n"
         "   <network_suspend_reason>%d</network_suspend_reason>\n"
         "   <task_mode>%d</task_mode>\n"
-        "   <network_mode>%d</network_mode>\n"
         "   <task_mode_perm>%d</task_mode_perm>\n"
-        "   <network_mode_perm>%d</network_mode_perm>\n"
         "   <task_mode_delay>%f</task_mode_delay>\n"
+        "   <gpu_mode>%d</gpu_mode>\n"
+        "   <gpu_mode_perm>%d</gpu_mode_perm>\n"
+        "   <gpu_mode_delay>%f</gpu_mode_delay>\n"
+        "   <network_mode>%d</network_mode>\n"
+        "   <network_mode_perm>%d</network_mode_perm>\n"
         "   <network_mode_delay>%f</network_mode_delay>\n"
         "   <disallow_attach>%d</disallow_attach>\n"
         "   <simple_gui_only>%ds</simple_gui_only>\n",
@@ -585,10 +613,13 @@ static void handle_get_cc_status(GUI_RPC_CONN* gr, MIOFILE& fout) {
         gstate.suspend_reason,
         gstate.network_suspend_reason,
         gstate.run_mode.get_current(),
-        gstate.network_mode.get_current(),
         gstate.run_mode.get_perm(),
-        gstate.network_mode.get_perm(),
         gstate.run_mode.delay(),
+        gstate.gpu_mode.get_current(),
+        gstate.gpu_mode.get_perm(),
+        gstate.gpu_mode.delay(),
+        gstate.network_mode.get_current(),
+        gstate.network_mode.get_perm(),
         gstate.network_mode.delay(),
         config.disallow_attach?1:0,
         config.simple_gui_only?1:0
@@ -953,10 +984,14 @@ static int set_debt(XML_PARSER& xp) {
             canonicalize_master_url(url);
             PROJECT* p = gstate.lookup_project(url);
             if (!p) return ERR_NOT_FOUND;
-            if (got_std) p->short_term_debt = short_term_debt;
-            if (got_ltd) p->cpu_pwf.debt = long_term_debt;
-            if (got_cuda_debt) p->cuda_pwf.debt = cuda_debt;
-            if (got_ati_debt) p->ati_pwf.debt = ati_debt;
+            if (got_std) {
+                p->cpu_pwf.short_term_debt = short_term_debt;
+                p->cuda_pwf.short_term_debt = short_term_debt;
+                p->ati_pwf.short_term_debt = short_term_debt;
+            }
+            if (got_ltd) p->cpu_pwf.long_term_debt = long_term_debt;
+            if (got_cuda_debt) p->cuda_pwf.long_term_debt = cuda_debt;
+            if (got_ati_debt) p->ati_pwf.long_term_debt = ati_debt;
             return 0;
         }
         if (xp.parse_str(tag, "master_url", url, sizeof(url))) continue;
@@ -1056,6 +1091,11 @@ static void handle_set_cc_config(char* buf, MIOFILE& fout) {
     );
 }
 
+// Some of the RPCs have empty-element request messages.
+// We accept both <foo/> and <foo></foo>
+//
+#define match_req(buf, tag) (match_tag(buf, "<" tag ">") || match_tag(buf, "<" tag "/>"))
+
 int GUI_RPC_CONN::handle_rpc() {
     char request_msg[4096];
     int n, retval=0;
@@ -1087,14 +1127,14 @@ int GUI_RPC_CONN::handle_rpc() {
     // - if we get an unexpected auth1 or auth2, disconnect
 
     mf.printf("<boinc_gui_rpc_reply>\n");
-    if (match_tag(request_msg, "<auth1")) {
+    if (match_req(request_msg, "auth1")) {
         if (got_auth1 && auth_needed) {
             retval = ERR_AUTHENTICATOR;
         } else {
             handle_auth1(mf);
             got_auth1 = true;
         }
-    } else if (match_tag(request_msg, "<auth2")) {
+    } else if (match_req(request_msg, "auth2")) {
         if ((!got_auth1 || got_auth2) && auth_needed) {
             retval = ERR_AUTHENTICATOR;
         } else {
@@ -1113,41 +1153,41 @@ int GUI_RPC_CONN::handle_rpc() {
     // sharing this computer (e.g. what jobs are running)
     // but not for anything sensitive (passwords etc.)
 
-    } else if (match_tag(request_msg, "<exchange_versions")) {
+    } else if (match_req(request_msg, "exchange_versions")) {
         handle_exchange_versions(mf);
-    } else if (match_tag(request_msg, "<get_state")) {
+    } else if (match_req(request_msg, "get_state")) {
         gstate.write_state_gui(mf);
-    } else if (match_tag(request_msg, "<get_results")) {
+    } else if (match_req(request_msg, "get_results")) {
         bool active_only = false;
         parse_bool(request_msg, "active_only", active_only);
         mf.printf("<results>\n");
         gstate.write_tasks_gui(mf, active_only);
         mf.printf("</results>\n");
-    } else if (match_tag(request_msg, "<get_screensaver_tasks")) {
+    } else if (match_req(request_msg, "get_screensaver_tasks")) {
         handle_get_screensaver_tasks(mf);
-    } else if (match_tag(request_msg, "<result_show_graphics")) {
+    } else if (match_req(request_msg, "result_show_graphics")) {
         handle_result_show_graphics(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_file_transfers")) {
+    } else if (match_req(request_msg, "get_file_transfers")) {
         gstate.write_file_transfers_gui(mf);
-    } else if (match_tag(request_msg, "<get_simple_gui_info")) {
+    } else if (match_req(request_msg, "get_simple_gui_info")) {
         handle_get_simple_gui_info(mf);
-    } else if (match_tag(request_msg, "<get_project_status")) {
+    } else if (match_req(request_msg, "get_project_status")) {
         handle_get_project_status(mf);
-    } else if (match_tag(request_msg, "<get_disk_usage")) {
+    } else if (match_req(request_msg, "get_disk_usage")) {
         handle_get_disk_usage(mf);
-    } else if (match_tag(request_msg, "<get_messages")) {
+    } else if (match_req(request_msg, "get_messages")) {
         handle_get_messages(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_message_count")) {
+    } else if (match_req(request_msg, "get_message_count")) {
         handle_get_message_count(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_host_info")) {
+    } else if (match_req(request_msg, "get_host_info")) {
         handle_get_host_info(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_statistics")) {
+    } else if (match_req(request_msg, "get_statistics")) {
         handle_get_statistics(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_newer_version>")) {
+    } else if (match_req(request_msg, "get_newer_version")) {
         handle_get_newer_version(mf);
-    } else if (match_tag(request_msg, "<get_cc_status")) {
+    } else if (match_req(request_msg, "get_cc_status")) {
         handle_get_cc_status(this, mf);
-    } else if (match_tag(request_msg, "<get_all_projects_list/>")) {
+    } else if (match_req(request_msg, "get_all_projects_list")) {
         read_all_projects_list_file(mf);
 
     // Operations that require authentication start here
@@ -1158,64 +1198,66 @@ int GUI_RPC_CONN::handle_rpc() {
             retval = ERR_AUTHENTICATOR;
         }
         sent_unauthorized = true;
-    } else if (match_tag(request_msg, "<project_nomorework")) {
+    } else if (match_req(request_msg, "project_nomorework")) {
          handle_project_op(request_msg, mf, "nomorework");
-     } else if (match_tag(request_msg, "<project_allowmorework")) {
+     } else if (match_req(request_msg, "project_allowmorework")) {
          handle_project_op(request_msg, mf, "allowmorework");
-    } else if (match_tag(request_msg, "<project_detach_when_done")) {
+    } else if (match_req(request_msg, "project_detach_when_done")) {
          handle_project_op(request_msg, mf, "detach_when_done");
-    } else if (match_tag(request_msg, "<project_dont_detach_when_done")) {
+    } else if (match_req(request_msg, "project_dont_detach_when_done")) {
          handle_project_op(request_msg, mf, "dont_detach_when_done");
-    } else if (match_tag(request_msg, "<set_network_mode")) {
+    } else if (match_req(request_msg, "set_network_mode")) {
         handle_set_network_mode(request_msg, mf);
-    } else if (match_tag(request_msg, "<run_benchmarks")) {
+    } else if (match_req(request_msg, "run_benchmarks")) {
         handle_run_benchmarks(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_proxy_settings")) {
+    } else if (match_req(request_msg, "get_proxy_settings")) {
         handle_get_proxy_settings(request_msg, mf);
-    } else if (match_tag(request_msg, "<set_proxy_settings")) {
+    } else if (match_req(request_msg, "set_proxy_settings")) {
         handle_set_proxy_settings(request_msg, mf);
-    } else if (match_tag(request_msg, "<network_available")) {
+    } else if (match_req(request_msg, "network_available")) {
         handle_network_available(request_msg, mf);
-    } else if (match_tag(request_msg, "<abort_file_transfer")) {
+    } else if (match_req(request_msg, "abort_file_transfer")) {
         handle_file_transfer_op(request_msg, mf, "abort");
-    } else if (match_tag(request_msg, "<project_detach")) {
+    } else if (match_req(request_msg, "project_detach")) {
         handle_project_op(request_msg, mf, "detach");
-    } else if (match_tag(request_msg, "<abort_result")) {
+    } else if (match_req(request_msg, "abort_result")) {
         handle_result_op(request_msg, mf, "abort");
-    } else if (match_tag(request_msg, "<suspend_result")) {
+    } else if (match_req(request_msg, "suspend_result")) {
         handle_result_op(request_msg, mf, "suspend");
-    } else if (match_tag(request_msg, "<resume_result")) {
+    } else if (match_req(request_msg, "resume_result")) {
         handle_result_op(request_msg, mf, "resume");
-    } else if (match_tag(request_msg, "<project_suspend")) {
+    } else if (match_req(request_msg, "project_suspend")) {
         handle_project_op(request_msg, mf, "suspend");
-    } else if (match_tag(request_msg, "<project_resume")) {
+    } else if (match_req(request_msg, "project_resume")) {
         handle_project_op(request_msg, mf, "resume");
-    } else if (match_tag(request_msg, "<set_run_mode")) {
+    } else if (match_req(request_msg, "set_run_mode")) {
         handle_set_run_mode(request_msg, mf);
-    } else if (match_tag(request_msg, "<quit")) {
+    } else if (match_req(request_msg, "set_gpu_mode")) {
+        handle_set_gpu_mode(request_msg, mf);
+    } else if (match_req(request_msg, "quit")) {
         handle_quit(request_msg, mf);
-    } else if (match_tag(request_msg, "<acct_mgr_info")) {
+    } else if (match_req(request_msg, "acct_mgr_info")) {
         handle_acct_mgr_info(request_msg, mf);
-    } else if (match_tag(request_msg, "<read_global_prefs_override/>")) {
+    } else if (match_req(request_msg, "read_global_prefs_override")) {
         mf.printf("<success/>\n");
         gstate.read_global_prefs();
         gstate.request_schedule_cpus("Preferences override");
         gstate.request_work_fetch("Preferences override");
-    } else if (match_tag(request_msg, "<get_project_init_status")) {
+    } else if (match_req(request_msg, "get_project_init_status")) {
         handle_get_project_init_status(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_global_prefs_file")) {
+    } else if (match_req(request_msg, "get_global_prefs_file")) {
         handle_get_global_prefs_file(mf);
-    } else if (match_tag(request_msg, "<get_global_prefs_working")) {
+    } else if (match_req(request_msg, "get_global_prefs_working")) {
         handle_get_global_prefs_working(mf);
-    } else if (match_tag(request_msg, "<get_global_prefs_override")) {
+    } else if (match_req(request_msg, "get_global_prefs_override")) {
         handle_get_global_prefs_override(mf);
-    } else if (match_tag(request_msg, "<set_global_prefs_override")) {
+    } else if (match_req(request_msg, "set_global_prefs_override")) {
         handle_set_global_prefs_override(request_msg, mf);
-    } else if (match_tag(request_msg, "<get_cc_config")) {
+    } else if (match_req(request_msg, "get_cc_config")) {
         handle_get_cc_config(mf);
-    } else if (match_tag(request_msg, "<set_cc_config")) {
+    } else if (match_req(request_msg, "set_cc_config")) {
         handle_set_cc_config(request_msg, mf);
-    } else if (match_tag(request_msg, "<read_cc_config/>")) {
+    } else if (match_req(request_msg, "read_cc_config")) {
         mf.printf("<success/>\n");
         read_config_file(false);
         msg_printf(0, MSG_INFO, "Re-read config file");
@@ -1224,7 +1266,7 @@ int GUI_RPC_CONN::handle_rpc() {
         gstate.set_ncpus();
         gstate.request_schedule_cpus("Core client configuration");
         gstate.request_work_fetch("Core client configuration");
-    } else if (match_tag(request_msg, "<set_debts")) {
+    } else if (match_req(request_msg, "set_debts")) {
         handle_set_debts(request_msg, mf);
     } else {
 
@@ -1236,31 +1278,31 @@ int GUI_RPC_CONN::handle_rpc() {
         double saved_time = gstate.gui_rpcs.time_of_last_rpc_needing_network;
         gstate.gui_rpcs.time_of_last_rpc_needing_network = gstate.now;
 
-        if (match_tag(request_msg, "<retry_file_transfer")) {
+        if (match_req(request_msg, "retry_file_transfer")) {
             handle_file_transfer_op(request_msg, mf, "retry");
-        } else if (match_tag(request_msg, "<project_reset")) {
+        } else if (match_req(request_msg, "project_reset")) {
             handle_project_op(request_msg, mf, "reset");
-        } else if (match_tag(request_msg, "<project_update")) {
+        } else if (match_req(request_msg, "project_update")) {
             handle_project_op(request_msg, mf, "update");
-        } else if (match_tag(request_msg, "<get_project_config>")) {
+        } else if (match_req(request_msg, "get_project_config")) {
             handle_get_project_config(request_msg, mf);
-        } else if (match_tag(request_msg, "<get_project_config_poll")) {
+        } else if (match_req(request_msg, "get_project_config_poll")) {
             handle_get_project_config_poll(request_msg, mf);
-        } else if (match_tag(request_msg, "<lookup_account>")) {
+        } else if (match_req(request_msg, "lookup_account")) {
             handle_lookup_account(request_msg, mf);
-        } else if (match_tag(request_msg, "<lookup_account_poll")) {
+        } else if (match_req(request_msg, "lookup_account_poll")) {
             handle_lookup_account_poll(request_msg, mf);
-        } else if (match_tag(request_msg, "<create_account>")) {
+        } else if (match_req(request_msg, "create_account")) {
             handle_create_account(request_msg, mf);
-        } else if (match_tag(request_msg, "<create_account_poll")) {
+        } else if (match_req(request_msg, "create_account_poll")) {
             handle_create_account_poll(request_msg, mf);
-        } else if (match_tag(request_msg, "<project_attach>")) {
+        } else if (match_req(request_msg, "project_attach")) {
             handle_project_attach(request_msg, mf);
-        } else if (match_tag(request_msg, "<project_attach_poll")) {
+        } else if (match_req(request_msg, "project_attach_poll")) {
             handle_project_attach_poll(request_msg, mf);
-        } else if (match_tag(request_msg, "<acct_mgr_rpc>")) {
+        } else if (match_req(request_msg, "acct_mgr_rpc")) {
             handle_acct_mgr_rpc(request_msg, mf);
-        } else if (match_tag(request_msg, "<acct_mgr_rpc_poll")) {
+        } else if (match_req(request_msg, "acct_mgr_rpc_poll")) {
             handle_acct_mgr_rpc_poll(request_msg, mf);
 
         // DON'T JUST ADD NEW RPCS HERE - THINK ABOUT THEIR
@@ -1287,4 +1329,4 @@ int GUI_RPC_CONN::handle_rpc() {
     }
     return retval;
 }
-const char *BOINC_RCSID_7bf15dcb49="$Id: gui_rpc_server_ops.cpp 19319 2009-10-16 19:10:05Z romw $";
+

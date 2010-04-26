@@ -126,4 +126,3 @@ int make_random_string(char* out) {
     return 0;
 }
 
-const char *BOINC_RCSID_5a0dc438fe = "$Id: md5_file.cpp 17388 2009-02-26 00:23:23Z korpela $";

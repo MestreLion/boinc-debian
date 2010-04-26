@@ -446,6 +446,7 @@ void PERS_FILE_XFER::suspend() {
         delete fxp;
         fxp = 0;
     }
+    fip->upload_offset = -1;
 }
 
 PERS_FILE_XFER_SET::PERS_FILE_XFER_SET(FILE_XFER_SET* p) {
@@ -511,4 +512,3 @@ void PERS_FILE_XFER_SET::suspend() {
     }
 }
 
-const char *BOINC_RCSID_76edfcfb49 = "$Id: pers_file_xfer.cpp 19156 2009-09-24 17:53:41Z romw $";

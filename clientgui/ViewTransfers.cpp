@@ -371,8 +371,9 @@ wxString CViewTransfers::OnListGetItemText(long item, long column) const {
             break;
         case COLUMN_PROGRESS:
             // CBOINCListCtrl::DrawProgressBars() will draw this using 
-            // data provided by GetProgressText() and GetProgressValue.
-            strBuffer = wxEmptyString;
+            // data provided by GetProgressText() and GetProgressValue(), 
+            // but we need it here for accessibility programs.
+            strBuffer = transfer->m_strProgress;
             break;
         case COLUMN_SIZE:
             strBuffer = transfer->m_strSize;
@@ -839,5 +840,3 @@ int CViewTransfers::GetTransferCacheAtIndex(CTransfer*& transferPtr, int index) 
     return 0;
 }
 
-
-const char *BOINC_RCSID_7aadb93332 = "$Id: ViewTransfers.cpp 18790 2009-07-31 23:52:47Z davea $";

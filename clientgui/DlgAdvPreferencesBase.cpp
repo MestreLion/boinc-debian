@@ -102,27 +102,74 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
     );
 	sbSizer4->Add( m_chkGPUProcInUse, 0, wxALL, 5 );
 
-	wxFlexGridSizer* fgSizer5;
-	fgSizer5 = new wxFlexGridSizer( 2, 4, 0, 0 );
+    // min idle time
+	wxFlexGridSizer* fgSizer5 = new wxFlexGridSizer( 2, 4, 0, 0 );
 	fgSizer5->AddGrowableCol( 3 );
 	fgSizer5->SetFlexibleDirection( wxHORIZONTAL );
 	fgSizer5->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
-
-	m_staticText26 = new wxStaticText( m_panelProcessor, ID_DEFAULT, _("Only after computer has been idle for"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer5->Add( m_staticText26, 0, wxALL, 5 );
-
-	m_txtProcIdleFor = new wxTextCtrl( m_panelProcessor, ID_TXTPROCIDLEFOR, wxT(""), wxDefaultPosition, wxSize( 50,-1 ), wxTE_RIGHT );
-	m_txtProcIdleFor->SetToolTip( _("do work only after you haven't used the computer for this number of minutes") );
-
+	fgSizer5->Add(
+        new wxStaticText(
+            m_panelProcessor, ID_DEFAULT,
+            _("Only after computer has been idle for"),
+            wxDefaultPosition, wxDefaultSize, 0
+        ),
+        0, wxALL, 5
+    );
+	m_txtProcIdleFor = new wxTextCtrl(
+        m_panelProcessor, ID_TXTPROCIDLEFOR, wxT(""), wxDefaultPosition,
+        wxSize( 50,-1 ), wxTE_RIGHT
+    );
+	m_txtProcIdleFor->SetToolTip(
+        _("do work only after you haven't used the computer for this number of minutes")
+    );
 	fgSizer5->Add( m_txtProcIdleFor, 0, wxALL, 1 );
+	fgSizer5->Add(
+        new wxStaticText(
+            m_panelProcessor, ID_DEFAULT, _("minutes"),
+            wxDefaultPosition, wxDefaultSize, 0
+        ),
+        0, wxALL, 5
+    );
+	fgSizer5->Add(
+        new wxStaticText( m_panelProcessor, ID_DEFAULT, wxT(""), wxDefaultPosition, wxDefaultSize, 0),
+        0, wxALL, 5
+    );
+	sbSizer4->Add( fgSizer5, 0, wxEXPAND, 5);
 
-	m_staticText27 = new wxStaticText( m_panelProcessor, ID_DEFAULT, _("minutes"), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer5->Add( m_staticText27, 0, wxALL, 5 );
+    // max CPU load
+	wxFlexGridSizer* fgSizer13 = new wxFlexGridSizer( 2, 4, 0, 0 );
+	fgSizer13->AddGrowableCol( 3 );
+	fgSizer13->SetFlexibleDirection( wxHORIZONTAL );
+	fgSizer13->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	fgSizer13->Add(
+        new wxStaticText(
+            m_panelProcessor, ID_DEFAULT,
+            _("While processor usage is less than"),
+            wxDefaultPosition, wxDefaultSize, 0
+        ),
+        0, wxALL, 5
+    );
+	m_txtMaxLoad = new wxTextCtrl(
+        m_panelProcessor, ID_TXTMAXLOAD, wxT(""), wxDefaultPosition,
+        wxSize( 30,-1 ), wxTE_RIGHT
+    );
+	m_txtMaxLoad->SetToolTip(
+        _("suspend work if processor usage exceeds this level")
+    );
+	fgSizer13->Add( m_txtMaxLoad, 0, wxALL, 1 );
+	fgSizer13->Add(
+        new wxStaticText(
+            m_panelProcessor, ID_DEFAULT, _("percent (0 means no restriction)"),
+            wxDefaultPosition, wxDefaultSize, 0
+        ),
+        0, wxALL, 5
+    );
+	fgSizer13->Add(
+        new wxStaticText( m_panelProcessor, ID_DEFAULT, wxT(""), wxDefaultPosition, wxDefaultSize, 0),
+        0, wxALL, 5
+    );
+	sbSizer4->Add( fgSizer13, 0, wxEXPAND, 5);
 
-	m_staticText28 = new wxStaticText( m_panelProcessor, ID_DEFAULT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer5->Add( m_staticText28, 0, wxALL, 5 );
-
-	sbSizer4->Add( fgSizer5, 0, wxEXPAND, 5 );
 
 	wxBoxSizer* bSizer111;
 	bSizer111 = new wxBoxSizer( wxHORIZONTAL );
@@ -230,7 +277,7 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	fgSizer3->SetFlexibleDirection( wxHORIZONTAL );
 	fgSizer3->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticText18 = new wxStaticText( m_panelProcessor, ID_DEFAULT, _("Switch between applications between every"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText18 = new wxStaticText( m_panelProcessor, ID_DEFAULT, _("Switch between applications every"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	fgSizer3->Add( m_staticText18, 0, wxALL|wxEXPAND, 5 );
 
 	m_txtProcSwitchEvery = new wxTextCtrl( m_panelProcessor, ID_TXTPROCSWITCHEVERY, wxT(""), wxDefaultPosition, wxSize( 50,-1 ), wxTE_RIGHT );
@@ -597,6 +644,7 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 	bSizer5->Fit( m_panelButtons );
 	bSizer1->Add( m_panelButtons, 0, wxALIGN_BOTTOM|wxALIGN_CENTER_HORIZONTAL|wxALL, 1 );
 
+    bSizer1->Fit( this );
 	this->SetSizer( bSizer1 );
 	this->Layout();
 }

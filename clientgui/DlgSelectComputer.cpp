@@ -209,4 +209,3 @@ void CDlgSelectComputer::OnComputerNameUpdated( wxCommandEvent& WXUNUSED(event) 
     }
 }
 
-const char *BOINC_RCSID_28d78701f5="$Id: DlgSelectComputer.cpp 15762 2008-08-06 18:36:30Z davea $";

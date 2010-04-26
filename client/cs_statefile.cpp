@@ -29,6 +29,8 @@
 #include "util.h"
 #include "error_numbers.h"
 #include "filesys.h"
+
+#include "cs_proxy.h"
 #include "file_names.h"
 #include "client_msgs.h"
 #include "client_state.h"
@@ -375,7 +377,7 @@ int CLIENT_STATE::parse_state_file() {
             continue;
         }
         if (match_tag(buf, "<host_info>")) {
-            retval = host_info.parse(mf);
+            retval = host_info.parse(mf, true);
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Can't parse host info in state file"
@@ -420,6 +422,10 @@ int CLIENT_STATE::parse_state_file() {
             run_mode.set(retval, 0);
             continue;
         }
+        if (parse_int(buf, "<user_gpu_request>", retval)) {
+            gpu_mode.set(retval, 0);
+            continue;
+        }
         if (parse_int(buf, "<user_network_request>", retval)) {
             network_mode.set(retval, 0);
             continue;
@@ -442,7 +448,7 @@ int CLIENT_STATE::parse_state_file() {
             continue;
         }
         if (match_tag(buf, "<proxy_info>")) {
-            retval = proxy_info.parse(mf);
+            retval = gui_proxy_info.parse(mf);
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Can't parse proxy info in state file"
@@ -484,6 +490,24 @@ int CLIENT_STATE::parse_state_file() {
     }
     sort_results();
     fclose(f);
+    
+    // if total resource share is zero, set all shares to 1
+    //
+    if (projects.size()) {
+        unsigned int i;
+        double x=0;
+        for (i=0; i<projects.size(); i++) {
+            x += projects[i]->resource_share;
+        }
+        if (!x) {
+            msg_printf(NULL, MSG_USER_ERROR,
+                "All projects have zero resource share; setting to 100"
+            );
+            for (i=0; i<projects.size(); i++) {
+                projects[i]->resource_share = 100;
+            }
+        }
+    }
     return 0;
 }
 
@@ -634,7 +658,7 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
     int retval;
 
     f.printf("<client_state>\n");
-    retval = host_info.write(f, false);
+    retval = host_info.write(f, false, false);
     if (retval) return retval;
     retval = time_stats.write(f, false);
     if (retval) return retval;
@@ -684,6 +708,7 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
         "<core_client_minor_version>%d</core_client_minor_version>\n"
         "<core_client_release>%d</core_client_release>\n"
         "<user_run_request>%d</user_run_request>\n"
+        "<user_gpu_request>%d</user_gpu_request>\n"
         "<user_network_request>%d</user_network_request>\n"
         "%s"
         "<new_version_check_time>%f</new_version_check_time>\n"
@@ -693,6 +718,7 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
         core_client_version.minor,
         core_client_version.release,
         run_mode.get_perm(),
+        gpu_mode.get_perm(),
         network_mode.get_perm(),
         cpu_benchmarks_pending?"<cpu_benchmarks_pending/>\n":"",
         new_version_check_time,
@@ -704,7 +730,9 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
     for (i=1; i<platforms.size(); i++) {
         f.printf("<alt_platform>%s</alt_platform>\n", platforms[i].name.c_str());
     }
-    proxy_info.write(f);
+    if (gui_proxy_info.present) {
+        gui_proxy_info.write(f);
+    }
     if (strlen(main_host_venue)) {
         f.printf("<host_venue>%s</host_venue>\n", main_host_venue);
     }
@@ -838,7 +866,7 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
     // However, BoincView (which does its own parsing) expects it
     // to be in the get_state() reply, so leave it in for now
     //
-    retval = host_info.write(f, false);
+    retval = host_info.write(f, false, false);
     if (retval) return retval;
     retval = time_stats.write(f, false);
     if (retval) return retval;
@@ -934,4 +962,3 @@ int CLIENT_STATE::write_file_transfers_gui(MIOFILE& f) {
     return 0;
 }
 
-const char *BOINC_RCSID_375ec798cc = "$Id: cs_statefile.cpp 19318 2009-10-16 19:07:56Z romw $";

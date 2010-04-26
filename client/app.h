@@ -83,6 +83,7 @@ public:
     double fraction_done;
         /// most recent CPU time reported by app
     double current_cpu_time;
+    bool once_ran_edf;
 
     //// END OF ITEMS SAVED IN STATE FILE
 
@@ -211,9 +212,10 @@ public:
 
     bool get_app_status_msg();
     bool get_trickle_up_msg();
-    double est_time_to_completion(bool for_work_fetch);
+    double est_dur(bool for_work_fetch);
     bool read_stderr_file();
     bool finish_file_present();
+    bool temporary_exit_file_present(double&);
     bool supports_graphics();
     int write_app_init_file();
     int move_trickle_file();
@@ -238,7 +240,7 @@ public:
     ACTIVE_TASK* lookup_result(RESULT*);
     void init();
     bool poll();
-    void suspend_all(bool leave_apps_in_memory=true);
+    void suspend_all(int reason);
     void unsuspend_all();
     bool is_task_executing();
     void request_tasks_exit(PROJECT* p=0);
@@ -262,7 +264,6 @@ public:
     void free_mem();
     bool slot_taken(int);
     void get_memory_usage();
-    bool exclusive_app_running;
 
     // graphics-related functions
     void graphics_poll();
@@ -273,5 +274,10 @@ public:
     int write(MIOFILE&);
     int parse(MIOFILE&);
 };
+
+extern bool exclusive_app_running;
+extern bool exclusive_gpu_app_running;
+extern bool gpu_suspended;
+extern double non_boinc_cpu_usage;
 
 #endif

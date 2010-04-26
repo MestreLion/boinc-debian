@@ -95,13 +95,6 @@ struct COPROC {
     int count;          // how many are present
     double used;           // how many are in use (used by client)
 
-    // Sometimes coprocs become temporarily unusable
-    // (e.g. while using Remote Desktop on Windows).
-    // The client periodically checks this and puts jobs into limbo.
-    //
-    virtual bool is_usable();   // check if we're usable
-    bool usable;                // current state
-
     // the following are used in both client and server for work-fetch info
     //
     double req_secs;
@@ -137,7 +130,6 @@ struct COPROC {
         req_secs = 0;
         req_instances = 0;
         estimated_delay = 0;
-        usable = true;
         for (int i=0; i<MAX_COPROC_INSTANCES; i++) {
             device_nums[i] = 0;
             running_graphics_app[i] = true;
@@ -165,20 +157,14 @@ struct COPROCS {
             delete coprocs[i];
         }
     }
-#if 0
-#ifndef _USING_FCGI_
-    void write_xml(MIOFILE& out) {
-        for (unsigned int i=0; i<coprocs.size(); i++) {
-            coprocs[i]->write_xml(out);
-        }
-    }
-#endif
-#endif
+    void write_xml(MIOFILE& out);
     void get(
         bool use_all, std::vector<std::string> &descs,
-        std::vector<std::string> &warnings
+        std::vector<std::string> &warnings,
+        std::vector<int>& ignore_cuda_dev,
+        std::vector<int>& ignore_ati_dev
     );
-    int parse(FILE*);
+    int parse(MIOFILE&);
     void summary_string(char*, int);
     COPROC* lookup(const char*);
     bool fully_used() {
@@ -249,12 +235,12 @@ struct COPROC_CUDA : public COPROC {
     virtual ~COPROC_CUDA(){}
     static void get(
         COPROCS&, bool use_all,
-        std::vector<std::string>&, std::vector<std::string>&
+        std::vector<std::string>&, std::vector<std::string>&,
+        std::vector<int>& ignore_devs
     );
 	void description(char*);
     void clear();
-    int parse(FILE*);
-    virtual bool is_usable();
+    int parse(MIOFILE&);
 
     // Estimate of peak FLOPS.
     // FLOPS for a given app may be much less;
@@ -268,6 +254,7 @@ struct COPROC_CUDA : public COPROC {
         double x = (1000.*prop.clockRate) * prop.multiProcessorCount * 8. * 2.;
         return x?x:5e10;
     }
+    int available_ram(int dev, double&);
 
     bool check_running_graphics_app();
 };
@@ -311,17 +298,18 @@ struct COPROC_ATI : public COPROC {
     COPROC_ATI(): COPROC("ATI"){}
     virtual ~COPROC_ATI(){}
     static void get(COPROCS&,
-        std::vector<std::string>&, std::vector<std::string>&
+        std::vector<std::string>&, std::vector<std::string>&,
+        std::vector<int>& ignore_devs
     );
     void description(char*);
     void clear();
-    int parse(FILE*);
-    virtual bool is_usable();
+    int parse(MIOFILE&);
     inline double peak_flops() {
 		double x = attribs.numberOfSIMD * attribs.wavefrontSize * 2.5 * attribs.engineClock * 1.e6;
         // clock is in MHz
         return x?x:5e10;
     }
+    int available_ram(int dev, double&);
 };
 
 #endif

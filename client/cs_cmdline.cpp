@@ -25,13 +25,16 @@
 #include <unistd.h>
 #endif
 
-#include "main.h"
 #include "str_util.h"
+#include "url.h"
 #include "str_replace.h"
 #include "util.h"
+
+#include "main.h"
 #include "client_msgs.h"
 #include "client_state.h"
 #include "sandbox.h"
+#include "cs_proxy.h"
 
 static void print_options(char* prog) {
     printf(
@@ -174,6 +177,8 @@ void CLIENT_STATE::parse_cmdline(int argc, char** argv) {
         } else if (ARG(master_fetch_retry_cap)) {
             if (i == argc-1) show_options = true;
             else master_fetch_retry_cap = atoi(argv[++i]);
+        } else if (ARG(no_gpus)) {
+            config.no_gpus = true;
         } else if (ARG(no_gui_rpc)) {
             no_gui_rpc = true;
         } else if (ARG(no_priority_change)) {
@@ -223,7 +228,13 @@ void CLIENT_STATE::parse_cmdline(int argc, char** argv) {
             if (i == argc-1) show_options = true;
             else safe_strcpy(update_prefs_url, argv[++i]);
         } else if (ARG(version)) {
+#if (defined (__APPLE__) && (defined(__i386__) || defined(__x86_64__)))
+            CLIENT_STATE cs;
+            cs.detect_platforms();
+            printf(BOINC_VERSION_STRING " %s\n", HOSTTYPE);
+#else
             printf(BOINC_VERSION_STRING " " HOSTTYPE "\n");
+#endif
             exit(0);
         } else {
             printf("Unknown option: %s\n", argv[i]);
@@ -241,51 +252,58 @@ void CLIENT_STATE::parse_cmdline(int argc, char** argv) {
 
 void CLIENT_STATE::parse_env_vars() {
     char *p;
-    char temp[256];
-    int proto;
+    PARSED_URL purl;
 
     p = getenv("HTTP_PROXY");
     if (p && strlen(p) > 0) {
-        proxy_info.use_http_proxy = true;
-        parse_url(p, proto, proxy_info.http_server_name, proxy_info.http_server_port, temp);
+        parse_url(p, purl);
+        switch (purl.protocol) {
+        case URL_PROTOCOL_HTTP:
+        case URL_PROTOCOL_HTTPS:
+            env_var_proxy_info.present = true;
+            env_var_proxy_info.use_http_proxy = true;
+            strcpy(env_var_proxy_info.http_user_name, purl.user);
+            strcpy(env_var_proxy_info.http_user_passwd, purl.passwd);
+            strcpy(env_var_proxy_info.http_server_name, purl.host);
+            env_var_proxy_info.http_server_port = purl.port;
+            break;
+        default:
+            msg_printf(0, MSG_USER_ERROR,
+                "The HTTP_PROXY environment variable must specify an HTTP proxy"
+            );
+        }
     }
     p = getenv("HTTP_USER_NAME");
     if (p) {
-        proxy_info.use_http_auth = true;
-        strcpy(proxy_info.http_user_name, p);
+        env_var_proxy_info.use_http_auth = true;
+        strcpy(env_var_proxy_info.http_user_name, p);
         p = getenv("HTTP_USER_PASSWD");
         if (p) {
-            strcpy(proxy_info.http_user_passwd, p);
+            strcpy(env_var_proxy_info.http_user_passwd, p);
         }
-    }
-
-    proxy_info.socks_version = SOCKS_VERSION_5;
-    if (getenv("SOCKS4_SERVER")) {
-        proxy_info.socks_version = SOCKS_VERSION_4;
-    }
-
-    p = getenv("SOCKS4_SERVER");
-    if (p && strlen(p)) {
-        proxy_info.use_socks_proxy = true;
-        parse_url(p, proto, proxy_info.socks_server_name, proxy_info.socks_server_port, temp);
     }
 
 	p = getenv("SOCKS_SERVER");
 	if (!p) p = getenv("SOCKS5_SERVER");
     if (p && strlen(p)) {
-        proxy_info.use_socks_proxy = true;
-        parse_url(p, proto, proxy_info.socks_server_name, proxy_info.socks_server_port, temp);
+        parse_url(p, purl);
+        env_var_proxy_info.present = true;
+        env_var_proxy_info.use_socks_proxy = true;
+        strcpy(env_var_proxy_info.socks5_user_name, purl.user);
+        strcpy(env_var_proxy_info.socks5_user_passwd, purl.passwd);
+        strcpy(env_var_proxy_info.socks_server_name, purl.host);
+        env_var_proxy_info.socks_server_port = purl.port;
     }
 
 	p = getenv("SOCKS5_USER");
 	if (!p) p = getenv("SOCKS_USER");
     if (p) {
-        strcpy(proxy_info.socks5_user_name, p);
+        strcpy(env_var_proxy_info.socks5_user_name, p);
     }
 
 	p = getenv("SOCKS5_PASSWD");
     if (p) {
-        strcpy(proxy_info.socks5_user_passwd, p);
+        strcpy(env_var_proxy_info.socks5_user_passwd, p);
     }
 }
 
@@ -344,4 +362,3 @@ void CLIENT_STATE::do_cmdline_actions() {
     }
 }
 
-const char *BOINC_RCSID_829bd0f60b = "$Id: cs_cmdline.cpp 19316 2009-10-16 19:02:00Z romw $";

@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 19252 2009-10-05 20:18:22Z romw $
+## $Id: Makefile.am 19604 2009-11-18 21:01:20Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -29,6 +29,7 @@ libfcgi_sources = \
     shmem.cpp \
     str_util.cpp \
     synch.cpp \
+	url.cpp \
     util.cpp
 
 generic_sources = \
@@ -58,6 +59,7 @@ generic_sources = \
     str_util.cpp \
     synch.cpp \
     unix_util.cpp \
+	url.cpp \
     util.cpp
 
 if OS_DARWIN
@@ -114,6 +116,7 @@ pkginclude_HEADERS = \
     stackwalker_imports.h \
     stackwalker_win.h \
     str_util.h \
+	url.h \
     util.h \
     win_util.h \
     $(mac_headers)

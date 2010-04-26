@@ -210,4 +210,3 @@ void reset_dns() {
 #endif
 }
 
-const char *BOINC_RCSID_557bf0741f="$Id: network.cpp 18439 2009-06-16 21:58:38Z davea $";

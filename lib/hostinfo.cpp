@@ -67,20 +67,11 @@ void HOST_INFO::clear_host_info() {
     strcpy(os_version, "");
 }
 
-int HOST_INFO::parse(MIOFILE& in) {
+int HOST_INFO::parse(MIOFILE& in, bool benchmarks_only) {
     char buf[1024];
 
-    memset(this, 0, sizeof(HOST_INFO));
     while (in.fgets(buf, sizeof(buf))) {
         if (match_tag(buf, "</host_info>")) return 0;
-        else if (parse_int(buf, "<timezone>", timezone)) continue;
-        else if (parse_str(buf, "<domain_name>", domain_name, sizeof(domain_name))) continue;
-        else if (parse_str(buf, "<ip_addr>", ip_addr, sizeof(ip_addr))) continue;
-        else if (parse_str(buf, "<host_cpid>", host_cpid, sizeof(host_cpid))) continue;
-        else if (parse_int(buf, "<p_ncpus>", p_ncpus)) continue;
-        else if (parse_str(buf, "<p_vendor>", p_vendor, sizeof(p_vendor))) continue;
-        else if (parse_str(buf, "<p_model>", p_model, sizeof(p_model))) continue;
-        else if (parse_str(buf, "<p_features>", p_features, sizeof(p_features))) continue;
         else if (parse_double(buf, "<p_fpops>", p_fpops)) {
             // fix foolishness that could result in negative value here
             //
@@ -96,6 +87,17 @@ int HOST_INFO::parse(MIOFILE& in) {
             continue;
         }
         else if (parse_double(buf, "<p_calculated>", p_calculated)) continue;
+
+        if (benchmarks_only) continue;
+
+        if (parse_int(buf, "<timezone>", timezone)) continue;
+        else if (parse_str(buf, "<domain_name>", domain_name, sizeof(domain_name))) continue;
+        else if (parse_str(buf, "<ip_addr>", ip_addr, sizeof(ip_addr))) continue;
+        else if (parse_str(buf, "<host_cpid>", host_cpid, sizeof(host_cpid))) continue;
+        else if (parse_int(buf, "<p_ncpus>", p_ncpus)) continue;
+        else if (parse_str(buf, "<p_vendor>", p_vendor, sizeof(p_vendor))) continue;
+        else if (parse_str(buf, "<p_model>", p_model, sizeof(p_model))) continue;
+        else if (parse_str(buf, "<p_features>", p_features, sizeof(p_features))) continue;
         else if (parse_double(buf, "<m_nbytes>", m_nbytes)) continue;
         else if (parse_double(buf, "<m_cache>", m_cache)) continue;
         else if (parse_double(buf, "<m_swap>", m_swap)) continue;
@@ -103,6 +105,9 @@ int HOST_INFO::parse(MIOFILE& in) {
         else if (parse_double(buf, "<d_free>", d_free)) continue;
         else if (parse_str(buf, "<os_name>", os_name, sizeof(os_name))) continue;
         else if (parse_str(buf, "<os_version>", os_version, sizeof(os_version))) continue;
+        else if (match_tag(buf, "<coprocs>")) {
+            coprocs.parse(in);
+        }
     }
     return ERR_XML_PARSE;
 }
@@ -110,7 +115,9 @@ int HOST_INFO::parse(MIOFILE& in) {
 // Write the host information, to the client state XML file
 // or in a scheduler request message
 //
-int HOST_INFO::write(MIOFILE& out, bool suppress_net_info) {
+int HOST_INFO::write(
+    MIOFILE& out, bool suppress_net_info, bool include_coprocs
+) {
     out.printf(
         "<host_info>\n"
         "    <timezone>%d</timezone>\n",
@@ -140,8 +147,7 @@ int HOST_INFO::write(MIOFILE& out, bool suppress_net_info) {
         "    <d_total>%f</d_total>\n"
         "    <d_free>%f</d_free>\n"
         "    <os_name>%s</os_name>\n"
-        "    <os_version>%s</os_version>\n"
-        "</host_info>\n",
+        "    <os_version>%s</os_version>\n",
         host_cpid,
         p_ncpus,
         p_vendor,
@@ -158,6 +164,12 @@ int HOST_INFO::write(MIOFILE& out, bool suppress_net_info) {
         d_free,
         os_name,
         os_version
+    );
+    if (include_coprocs) {
+        coprocs.write_xml(out);
+    }
+    out.printf(
+        "</host_info>\n"
     );
     return 0;
 }
@@ -201,4 +213,3 @@ int HOST_INFO::write_cpu_benchmarks(FILE* out) {
     return 0;
 }
 
-const char *BOINC_RCSID_edf7e5c147 = "$Id: hostinfo.cpp 16432 2008-11-05 20:11:45Z davea $";

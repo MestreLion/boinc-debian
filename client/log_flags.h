@@ -62,10 +62,14 @@ struct LOG_FLAGS {
         // preemption and resumption
     bool cpu_sched_debug;
         // explain scheduler decisions
+    bool cpu_sched_status;
+        // show what's running
     bool dcf_debug;
         // show changes to duration correction factors
     bool debt_debug;
-        // changes to debt
+        // changes to long-term debt
+    bool std_debug;
+        // changes to short-term debt
     bool file_xfer_debug;
         // show completion of FILE_XFER
     bool guirpc_debug;
@@ -105,36 +109,40 @@ struct LOG_FLAGS {
 
 struct CONFIG {
     bool dont_check_file_sizes;
+    bool dont_contact_ref_site;
+    std::vector<std::string> exclusive_apps;
+    std::vector<std::string> exclusive_gpu_apps;
+    std::string force_auth;
     bool http_1_0;
     int save_stats_days;
     int ncpus;
+    std::vector<int> ignore_cuda_dev;
+    std::vector<int> ignore_ati_dev;
     int max_file_xfers;
     int max_file_xfers_per_project;
-    bool suppress_net_info;
     bool disallow_attach;
     bool os_random_only;
     bool no_alt_platform;
     bool simple_gui_only;
-    bool dont_contact_ref_site;
     std::vector<std::string> alt_platforms;
     int max_stdout_file_size;
     int max_stderr_file_size;
     bool report_results_immediately;
     double start_delay;
     bool run_apps_manually;
-    std::string force_auth;
     bool allow_multiple_clients;
+    bool stderr_head;
+    bool suppress_net_info;
+    bool use_all_gpus;
     bool use_certs;
     bool use_certs_only;
         // overrides use_certs
-    std::vector<std::string> exclusive_apps;
     std::string client_version_check_url;
     std::string client_download_url;
     std::string network_test_url;
     bool no_gpus;
     bool zero_debts;
     bool no_priority_change;
-    bool use_all_gpus;
 
     CONFIG();
     void clear();

@@ -91,8 +91,7 @@ bool CWelcomePage::Create( CBOINCBaseWizard* parent )
 ////@end CWelcomePage member initialisation
  
 ////@begin CWelcomePage creation
-    wxBitmap wizardBitmap(wxNullBitmap);
-    wxWizardPageEx::Create( parent, ID_WELCOMEPAGE, wizardBitmap );
+    wxWizardPageEx::Create( parent, ID_WELCOMEPAGE );
 
     CreateControls();
     GetSizer()->Fit(this);
@@ -148,6 +147,12 @@ void CWelcomePage::CreateControls()
 
     itemWizardPage2->SetSizer(itemBoxSizer3);
 
+#ifdef __WXMAC__
+    //Accessibility
+    HIViewRef buttonView = (HIViewRef)m_pAttachToProjectCtrl->GetHandle();
+    HIObjectRef   theObject = (HIObjectRef)HIViewGetSuperview(buttonView);
+    HIObjectSetAccessibilityIgnored(theObject, true);
+#endif
 ////@end CWelcomePage content construction
 }
 
@@ -240,7 +245,8 @@ void CWelcomePage::OnPageChanged( wxWizardExEvent& event ) {
 #if defined (_WCG)
     // Determine if we are the World Community Grid version of the client
     // and connected to World Community Grid
-    if ( pDoc->state.lookup_project("http://www.worldcommunitygrid.org/") ) {
+	std::string wcgUrl = "http://www.worldcommunitygrid.org/";
+    if ( pDoc->state.lookup_project(wcgUrl) ) {
         is_wcg_client = true;
     }
 #endif

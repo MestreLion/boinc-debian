@@ -485,4 +485,3 @@ bool GUI_RPC_CONN_SET::quits_sent() {
     return true;
 }
 
-const char *BOINC_RCSID_88dd75dd85 = "$Id: gui_rpc_server.cpp 18440 2009-06-16 22:17:04Z davea $";

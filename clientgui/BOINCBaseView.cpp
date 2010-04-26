@@ -62,8 +62,10 @@ CBOINCBaseView::CBOINCBaseView(wxNotebook* pNotebook) :
 
     SetAutoLayout(TRUE);
 
+#if BASEVIEW_STRIPES    
     m_pWhiteBackgroundAttr = NULL;
     m_pGrayBackgroundAttr = NULL;
+#endif
 }
 
 
@@ -123,8 +125,18 @@ CBOINCBaseView::CBOINCBaseView(
     m_SortArrows->Add( wxIcon( sortdescending_xpm ) );
     m_pListPane->SetImageList(m_SortArrows, wxIMAGE_LIST_SMALL);
     
-    m_pWhiteBackgroundAttr = new wxListItemAttr(*wxBLACK, *wxWHITE, wxNullFont);
-    m_pGrayBackgroundAttr = new wxListItemAttr(*wxBLACK, wxColour(240, 240, 240), wxNullFont);
+#if BASEVIEW_STRIPES    
+    m_pWhiteBackgroundAttr = new wxListItemAttr(
+        wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT),
+        wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW),
+        wxNullFont
+    );
+    m_pGrayBackgroundAttr = new wxListItemAttr(
+        wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT),
+        wxColour(240, 240, 240),
+        wxNullFont
+    );
+#endif
 }
 
 
@@ -143,6 +155,7 @@ CBOINCBaseView::~CBOINCBaseView() {
     m_arrSelectedKeys2.Clear();
     m_iSortedIndexes.Clear();
 
+#if BASEVIEW_STRIPES    
     if (m_pWhiteBackgroundAttr) {
         delete m_pWhiteBackgroundAttr;
         m_pWhiteBackgroundAttr = NULL;
@@ -152,7 +165,8 @@ CBOINCBaseView::~CBOINCBaseView() {
         delete m_pGrayBackgroundAttr;
         m_pGrayBackgroundAttr = NULL;
     }
-}
+#endif
+    }
 
 
 // The name of the view.
@@ -246,9 +260,16 @@ int CBOINCBaseView::FireOnListGetItemImage(long item) const {
 }
 
 
+#if BASEVIEW_STRIPES
 wxListItemAttr* CBOINCBaseView::FireOnListGetItemAttr(long item) const {
     return OnListGetItemAttr(item);
 }
+
+
+wxListItemAttr* CBOINCBaseView::OnListGetItemAttr(long item) const {
+    return item % 2 ? m_pGrayBackgroundAttr : m_pWhiteBackgroundAttr;
+}
+#endif
 
 
 void CBOINCBaseView::OnListRender(wxTimerEvent& event) {
@@ -278,11 +299,12 @@ void CBOINCBaseView::OnListRender(wxTimerEvent& event) {
                     m_pListPane->SetItemCount(iDocCount);
                     m_bNeedSort = true;
                } else {
-                    // We can't just call SetItemCount() here because we need to 
-                    // let the virtual ListCtrl adjust its list of selected rows
-                    // to remove (deselect) any beyond the new last row
+                    // The virtual ListCtrl keeps a separate its list of selected rows; 
+                    // make sure it does not reference any rows beyond the new last row.
+                    // We can ClearSelections() because we called SaveSelections() above.
+                    ClearSelections();
+                    m_pListPane->SetItemCount(iDocCount);
                     for (iIndex = (iCacheCount - 1); iIndex >= iDocCount; --iIndex) {
-                        m_pListPane->DeleteItem(iIndex);
                         iReturnValue = RemoveCacheElement();
                         wxASSERT(!iReturnValue);
                     }
@@ -419,11 +441,6 @@ int CBOINCBaseView::OnListGetItemImage(long WXUNUSED(item)) const {
 }
 
 
-wxListItemAttr* CBOINCBaseView::OnListGetItemAttr(long item) const {
-    return item % 2 ? m_pGrayBackgroundAttr : m_pWhiteBackgroundAttr;
-}
-
-
 int CBOINCBaseView::GetDocCount() {
     return 0;
 }
@@ -509,9 +526,8 @@ bool CBOINCBaseView::SynchronizeCacheItem(wxInt32 WXUNUSED(iRowIndex), wxInt32 W
 void CBOINCBaseView::OnColClick(wxListEvent& event) {
     wxListItem      item;
     int             newSortColumn = event.GetColumn();
-     wxArrayInt selections;
-    int i, j, m;
-    
+    wxArrayInt      selections;
+    int             i, j, m;
 
     item.SetMask(wxLIST_MASK_IMAGE);
     if (newSortColumn == m_iSortColumn) {
@@ -1084,5 +1100,3 @@ wxString CBOINCBaseView::HtmlEntityDecode(wxString strRaw) {
 	return strDecodedHtml;
 }
 
-
-const char *BOINC_RCSID_0a1bd38a5a = "$Id: BOINCBaseView.cpp 19325 2009-10-16 19:24:59Z romw $";

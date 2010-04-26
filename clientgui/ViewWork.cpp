@@ -592,8 +592,9 @@ wxString CViewWork::OnListGetItemText(long item, long column) const {
                 break;
             case COLUMN_PROGRESS:
                 // CBOINCListCtrl::DrawProgressBars() will draw this using 
-                // data provided by GetProgressText() and GetProgressValue.
-                strBuffer = wxEmptyString;
+                // data provided by GetProgressText() and GetProgressValue(), 
+                // but we need it here for accessibility programs.
+                strBuffer = work->m_strProgress;
                 break;
             case COLUMN_TOCOMPLETION:
                 strBuffer = work->m_strTimeToCompletion;
@@ -686,7 +687,7 @@ void CViewWork::UpdateSelection() {
         enableAbort = true;
         
         pDoc->GetCoreClientStatus(status);
-        if (status.task_suspend_reason & ~(SUSPEND_REASON_CPU_USAGE_LIMIT)) {
+        if (status.task_suspend_reason & ~(SUSPEND_REASON_CPU_THROTTLE)) {
             enableShowGraphics = false;
         }
 
@@ -1107,7 +1108,7 @@ void CViewWork::GetDocStatus(wxInt32 item, wxString& strBuffer) const {
         strBuffer += _("GPU missing, ");
     }
 
-	int throttled = status.task_suspend_reason & SUSPEND_REASON_CPU_USAGE_LIMIT;
+	int throttled = status.task_suspend_reason & SUSPEND_REASON_CPU_THROTTLE;
     switch(result->state) {
     case RESULT_NEW:
         strBuffer += _("New"); 
@@ -1196,6 +1197,9 @@ void CViewWork::GetDocStatus(wxInt32 item, wxString& strBuffer) const {
             break;
         case ERR_ABORTED_BY_PROJECT:
             strBuffer += _("Aborted by project");
+            break;
+        case ERR_UNSTARTED_LATE:
+            strBuffer += _("Aborted: not started by deadline");
             break;
         default:
             strBuffer += _("Aborted");
@@ -1287,5 +1291,3 @@ int CViewWork::GetWorkCacheAtIndex(CWork*& workPtr, int index) {
     return 0;
 }
 
-
-const char *BOINC_RCSID_34f860f736 = "$Id: ViewWork.cpp 19318 2009-10-16 19:07:56Z romw $";

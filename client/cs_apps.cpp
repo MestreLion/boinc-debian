@@ -323,4 +323,3 @@ ACTIVE_TASK* ACTIVE_TASK_SET::lookup_result(RESULT* result) {
 }
 #endif
 
-const char *BOINC_RCSID_7bf63ad771 = "$Id: cs_apps.cpp 17396 2009-02-26 03:24:39Z davea $";

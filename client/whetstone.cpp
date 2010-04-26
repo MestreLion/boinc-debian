@@ -278,4 +278,3 @@ int whetstone(double& flops, double& cpu_time, double min_cpu_time) {
     return 0;
 }
 
-const char *BOINC_RCSID_595304be61 = "$Id: whetstone.cpp 17954 2009-04-30 21:48:20Z davea $";

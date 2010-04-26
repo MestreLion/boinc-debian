@@ -210,4 +210,3 @@ void SCOPE_MSG_LOG::printf_file(
     va_end(va);
 }
 
-const char *BOINC_RCSID_2e9a7d8610 = "$Id: msg_log.cpp 16921 2009-01-15 20:23:20Z davea $";

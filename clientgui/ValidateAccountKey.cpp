@@ -137,5 +137,3 @@ bool CValidateAccountKey::CheckValidator() const {
     return TRUE;
 }
 
-
-const char *BOINC_RCSID_0c2c4c6b07 = "$Id: ValidateAccountKey.cpp 15901 2008-08-20 16:07:06Z charlief $";

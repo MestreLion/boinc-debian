@@ -117,5 +117,3 @@ void HOST_INFO::generate_host_cpid() {
 #endif
 }
 
-
-const char *BOINC_RCSID_9275b20aa5 = "$Id: hostinfo_network.cpp 18658 2009-07-22 18:41:02Z davea $";

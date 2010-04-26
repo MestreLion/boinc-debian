@@ -75,6 +75,11 @@
 using std::max;
 using std::min;
 
+bool exclusive_app_running;
+bool exclusive_gpu_app_running;
+bool gpu_suspended;
+double non_boinc_cpu_usage;
+
 #define ABORT_TIMEOUT   60
     // if we send app <abort> request, wait this long before killing it.
     // This gives it time to download symbol files (which can be several MB)
@@ -160,6 +165,7 @@ ACTIVE_TASK::ACTIVE_TASK() {
     checkpoint_cpu_time = 0;
     checkpoint_wall_time = 0;
     current_cpu_time = 0;
+    once_ran_edf = false;
     elapsed_time = 0;
     checkpoint_elapsed_time = 0;
     have_trickle_down = false;
@@ -294,6 +300,7 @@ void ACTIVE_TASK_SET::free_mem() {
 bool app_running(vector<PROCINFO>& piv, const char* p) {
     for (unsigned int i=0; i<piv.size(); i++) {
         PROCINFO& pi = piv[i];
+        //msg_printf(0, MSG_INFO, "running: [%s]", pi.command);
         if (!strcmp(pi.command, p)) {
             return true;
         }
@@ -305,6 +312,8 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     static double last_mem_time=0;
     unsigned int i;
 	int retval;
+    static bool first = true;
+    static double last_cpu_time;
 
     double diff = gstate.now - last_mem_time;
     if (diff < 10) return;
@@ -345,23 +354,55 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     }
 
     exclusive_app_running = false;
+    bool old_egar = exclusive_gpu_app_running;
+    exclusive_gpu_app_running = false;
     for (i=0; i<config.exclusive_apps.size(); i++) {
         if (app_running(piv, config.exclusive_apps[i].c_str())) {
             exclusive_app_running = true;
             break;
         }
     }
+    for (i=0; i<config.exclusive_gpu_apps.size(); i++) {
+        if (app_running(piv, config.exclusive_gpu_apps[i].c_str())) {
+            exclusive_gpu_app_running = true;
+            break;
+        }
+    }
+    if (old_egar != exclusive_gpu_app_running) {
+        gstate.request_schedule_cpus("Exclusive GPU app status changed");
+    }
 
-#if 0
-    // the following is not useful because most OSs don't
-    // move idle processes out of RAM, so physical memory is always full
+    // get info on non-BOINC processes.
+    // mem usage info is not useful because most OSs don't
+    // move idle processes out of RAM, so physical memory is always full.
+    // Also (at least on Win) page faults are used for various things,
+    // not all of them generate disk I/O,
+    // so they're not useful for detecting paging/thrashing.
     //
+    PROCINFO pi;
     procinfo_other(pi, piv);
-    msg_printf(NULL, MSG_INFO, "All others: RAM %.2fMB, page %.2fMB, user %.3f, kernel %.3f",
-        pi.working_set_size/MEGA, pi.swap_size/MEGA,
-        pi.user_time, pi.kernel_time
-    );
-#endif
+    if (log_flags.mem_usage_debug) {
+        msg_printf(NULL, MSG_INFO,
+            "[mem_usage_debug] All others: RAM %.2fMB, page %.2fMB, user %.3f, kernel %.3f",
+            pi.working_set_size/MEGA, pi.swap_size/MEGA,
+            pi.user_time, pi.kernel_time
+        );
+    }
+    double new_cpu_time = pi.user_time + pi.kernel_time;
+    if (first) {
+        first = false;
+    } else {
+        non_boinc_cpu_usage = (new_cpu_time - last_cpu_time)/(diff*gstate.host_info.p_ncpus);
+        // processes might have exited in the last 10 sec,
+        // causing this to be negative.
+        if (non_boinc_cpu_usage < 0) non_boinc_cpu_usage = 0;
+        if (log_flags.mem_usage_debug) {
+            msg_printf(NULL, MSG_INFO,
+                "[mem_usage_debug] non-BOINC CPU usage: %.2f%%", non_boinc_cpu_usage*100
+            );
+        }
+    }
+    last_cpu_time = new_cpu_time;
 }
 
 // Do periodic checks on running apps:
@@ -517,10 +558,12 @@ int ACTIVE_TASK::write(MIOFILE& fout) {
         "    <active_task_state>%d</active_task_state>\n"
         "    <app_version_num>%d</app_version_num>\n"
         "    <slot>%d</slot>\n"
+        "    <pid>%d</pid>\n"
         "    <checkpoint_cpu_time>%f</checkpoint_cpu_time>\n"
         "    <checkpoint_elapsed_time>%f</checkpoint_elapsed_time>\n"
         "    <fraction_done>%f</fraction_done>\n"
         "    <current_cpu_time>%f</current_cpu_time>\n"
+        "    <once_ran_edf>%d</once_ran_edf>\n"
         "    <swap_size>%f</swap_size>\n"
         "    <working_set_size>%f</working_set_size>\n"
         "    <working_set_size_smoothed>%f</working_set_size_smoothed>\n"
@@ -530,10 +573,12 @@ int ACTIVE_TASK::write(MIOFILE& fout) {
         task_state(),
         app_version->version_num,
         slot,
+        pid,
         checkpoint_cpu_time,
         checkpoint_elapsed_time,
         fraction_done,
         current_cpu_time,
+        once_ran_edf?1:0,
         procinfo.swap_size,
         procinfo.working_set_size,
         procinfo.working_set_size_smoothed,
@@ -549,6 +594,7 @@ int ACTIVE_TASK::write_gui(MIOFILE& fout) {
         "    <active_task_state>%d</active_task_state>\n"
         "    <app_version_num>%d</app_version_num>\n"
         "    <slot>%d</slot>\n"
+        "    <pid>%d</pid>\n"
         "    <scheduler_state>%d</scheduler_state>\n"
         "    <checkpoint_cpu_time>%f</checkpoint_cpu_time>\n"
         "    <fraction_done>%f</fraction_done>\n"
@@ -563,6 +609,7 @@ int ACTIVE_TASK::write_gui(MIOFILE& fout) {
         task_state(),
         app_version->version_num,
         slot,
+        pid,
         scheduler_state,
         checkpoint_cpu_time,
         fraction_done,
@@ -676,6 +723,7 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
             current_cpu_time = checkpoint_cpu_time;
             continue;
         }
+        else if (parse_bool(buf, "once_ran_edf", once_ran_edf)) continue;
         else if (parse_double(buf, "<fraction_done>", fraction_done)) continue;
         else if (parse_double(buf, "<checkpoint_elapsed_time>", checkpoint_elapsed_time)) {
             elapsed_time = checkpoint_elapsed_time;
@@ -698,8 +746,6 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
     return ERR_XML_PARSE;
 }
 
-// Write XML information about this active task set
-//
 int ACTIVE_TASK_SET::write(MIOFILE& fout) {
     unsigned int i;
     int retval;
@@ -713,8 +759,6 @@ int ACTIVE_TASK_SET::write(MIOFILE& fout) {
     return 0;
 }
 
-// Parse XML information about an active task set
-//
 int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
     ACTIVE_TASK* atp;
     char buf[256];
@@ -794,7 +838,7 @@ void MSG_QUEUE::msg_queue_poll(MSG_CHANNEL& channel) {
 // if the last message in the buffer is "msg", remove it and return 1
 //
 int MSG_QUEUE::msg_queue_purge(const char* msg) {
-	int count = msgs.size();
+	int count = (int)msgs.size();
 	if (!count) return 0;
 	vector<string>::iterator iter = msgs.begin();
 	for (int i=0; i<count-1; i++) {
@@ -833,10 +877,7 @@ void ACTIVE_TASK_SET::report_overdue() {
         double diff = (gstate.now - atp->result->report_deadline)/86400;
         if (diff > 0) {
             msg_printf(atp->result->project, MSG_USER_ERROR,
-                "Task %s is %.2f days overdue.", atp->result->name, diff
-            );
-            msg_printf(atp->result->project, MSG_USER_ERROR,
-                "You may not get credit for it.  Consider aborting it."
+                "Task %s is %.2f days overdue; you may not get credit for it.  Consider aborting it.", atp->result->name, diff
             );
         }
     }
@@ -936,4 +977,3 @@ void ACTIVE_TASK_SET::init() {
 
 #endif
 
-const char *BOINC_RCSID_778b61195e = "$Id: app.cpp 19255 2009-10-05 20:34:14Z romw $";

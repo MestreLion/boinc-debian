@@ -1,4 +1,4 @@
-// $Id: stackwalker_win.cpp 18365 2009-06-11 02:14:36Z romw $
+// $Id: stackwalker_win.cpp 20874 2010-03-12 17:03:53Z romw $
 //
 
 /*////////////////////////////////////////////////////////////////////////////
@@ -1008,4 +1008,3 @@ static void ShowStackRM(HANDLE hThread, CONTEXT& Context)
     LeaveCriticalSection(&g_csFileOpenClose);
 }
 
-const char *BOINC_RCSID_e8b4633192 = "$Id: stackwalker_win.cpp 18365 2009-06-11 02:14:36Z romw $";

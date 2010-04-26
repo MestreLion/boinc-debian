@@ -39,10 +39,11 @@
 
 class CDlgItemProperties : public wxDialog {
 	DECLARE_DYNAMIC_CLASS( CDlgItemProperties )
+    DECLARE_EVENT_TABLE()
 public:
 	CDlgItemProperties(wxWindow* parent=NULL);//to act as standard constructor set a default value
 	virtual ~CDlgItemProperties();
-	//
+    //
 	void renderInfos(PROJECT* project);
 	void renderInfos(RESULT* result);
 private:
@@ -53,6 +54,8 @@ private:
 	wxString FormatStatus(RESULT* result);
 	wxString FormatTime(float fBuffer);
 	//generic layout methods
+    bool SaveState();
+    bool RestoreState();
 	void addSection(const wxString& title);
 	void addProperty(const wxString& name, const wxString& value);
 protected:
@@ -60,6 +63,7 @@ protected:
         wxScrolledWindow* m_scrolledWindow;
         wxGridBagSizer* m_gbSizer;
         wxButton* m_btnClose;
+        wxString m_strBaseConfigLocation;
 };
 
 #endif // _DLGITEMPROPERTIES_H_

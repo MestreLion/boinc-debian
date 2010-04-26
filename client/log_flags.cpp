@@ -30,12 +30,14 @@
 
 #include "error_numbers.h"
 #include "common_defs.h"
-#include "file_names.h"
-#include "client_state.h"
-#include "client_msgs.h"
 #include "parse.h"
 #include "str_util.h"
 #include "filesys.h"
+
+#include "file_names.h"
+#include "client_state.h"
+#include "client_msgs.h"
+#include "cs_proxy.h"
 
 using std::string;
 
@@ -76,8 +78,10 @@ int LOG_FLAGS::parse(XML_PARSER& xp) {
         if (xp.parse_bool(tag, "coproc_debug", coproc_debug)) continue;
         if (xp.parse_bool(tag, "cpu_sched", cpu_sched)) continue;
         if (xp.parse_bool(tag, "cpu_sched_debug", cpu_sched_debug)) continue;
+        if (xp.parse_bool(tag, "cpu_sched_status", cpu_sched_status)) continue;
         if (xp.parse_bool(tag, "dcf_debug", dcf_debug)) continue;
         if (xp.parse_bool(tag, "debt_debug", debt_debug)) continue;
+        if (xp.parse_bool(tag, "std_debug", std_debug)) continue;
         if (xp.parse_bool(tag, "file_xfer_debug", file_xfer_debug)) continue;
         if (xp.parse_bool(tag, "guirpc_debug", guirpc_debug)) continue;
         if (xp.parse_bool(tag, "http_debug", http_debug)) continue;
@@ -134,6 +138,7 @@ void LOG_FLAGS::show() {
     show_flag(buf, coproc_debug, "coproc_debug");
     show_flag(buf, cpu_sched, "cpu_sched");
     show_flag(buf, cpu_sched_debug, "cpu_sched_debug");
+    show_flag(buf, cpu_sched_status, "cpu_sched_status");
     show_flag(buf, dcf_debug, "dcf_debug");
     show_flag(buf, debt_debug, "debt_debug");
     show_flag(buf, file_xfer_debug, "file_xfer_debug");
@@ -150,6 +155,7 @@ void LOG_FLAGS::show() {
     show_flag(buf, slot_debug, "slot_debug");
     show_flag(buf, state_debug, "state_debug");
     show_flag(buf, statefile_debug, "statefile_debug");
+    show_flag(buf, std_debug, "std_debug");
     show_flag(buf, task_debug, "task_debug");
     show_flag(buf, time_debug, "time_debug");
     show_flag(buf, unparsed_xml, "unparsed_xml");
@@ -160,10 +166,17 @@ void LOG_FLAGS::show() {
     }
 }
 
+static void show_gpu_ignore(vector<int>& devs, const char* name) {
+    for (unsigned int i=0; i<devs.size(); i++) {
+        msg_printf(NULL, MSG_INFO, "Config: ignoring %s GPU %d", name, devs[i]);
+    }
+}
+
 // TODO: show other config options
 //
 void CONFIG::show() {
-    if (config.ncpus>=0) {
+    unsigned int i;
+    if (config.ncpus>0) {
         msg_printf(NULL, MSG_INFO, "Config: use at most %d CPUs", config.ncpus);
     }
     if (config.no_gpus) {
@@ -181,12 +194,28 @@ void CONFIG::show() {
     if (config.zero_debts) {
         msg_printf(NULL, MSG_INFO, "Config: zero long-term debts on startup");
     }
+    show_gpu_ignore(ignore_cuda_dev, "NVIDIA");
+    show_gpu_ignore(ignore_ati_dev, "ATI");
+    for (i=0; i<exclusive_apps.size(); i++) {
+        msg_printf(NULL, MSG_INFO,
+            "Config: don't compute while %s is running",
+            exclusive_apps[i].c_str()
+        );
+    }
+    for (i=0; i<exclusive_gpu_apps.size(); i++) {
+        msg_printf(NULL, MSG_INFO,
+            "Config: don't use GPUs while %s is running",
+            exclusive_gpu_apps[i].c_str()
+        );
+    }
 }
 
 CONFIG::CONFIG() {
     clear();
 }
 
+// this is called first thing by client
+//
 void CONFIG::clear() {
     allow_multiple_clients = false;
     alt_platforms.clear();
@@ -196,8 +225,11 @@ void CONFIG::clear() {
     dont_check_file_sizes = false;
     dont_contact_ref_site = false;
     exclusive_apps.clear();
+    exclusive_gpu_apps.clear();
     force_auth = "default";
     http_1_0 = false;
+    ignore_cuda_dev.clear();
+    ignore_ati_dev.clear();
     max_file_xfers = MAX_FILE_XFERS;
     max_file_xfers_per_project = MAX_FILE_XFERS_PER_PROJECT;
     max_stderr_file_size = 0;
@@ -213,6 +245,7 @@ void CONFIG::clear() {
     save_stats_days = 30;
     simple_gui_only = false;
     start_delay = 0;
+    stderr_head = false;
     suppress_net_info = false;
     use_all_gpus = false;
     use_certs = false;
@@ -224,8 +257,19 @@ int CONFIG::parse_options(XML_PARSER& xp) {
     char tag[1024], path[256];
     bool is_tag, btemp;
     string s;
+    int n;
 
-    clear();
+    //clear();
+    // don't do this here because some options are set by cmdline args,
+    // which are parsed first
+    // but do clear these, which aren't accessable via cmdline:
+    //
+    alt_platforms.clear();
+    exclusive_apps.clear();
+    exclusive_gpu_apps.clear();
+    ignore_cuda_dev.clear();
+    ignore_ati_dev.clear();
+
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) {
             msg_printf(NULL, MSG_USER_ERROR,
@@ -267,11 +311,23 @@ int CONFIG::parse_options(XML_PARSER& xp) {
             exclusive_apps.push_back(s);
             continue;
         }
+        if (xp.parse_string(tag, "exclusive_gpu_app", s)) {
+            exclusive_gpu_apps.push_back(s);
+            continue;
+        }
         if (xp.parse_string(tag, "force_auth", force_auth)) {
             downcase_string(force_auth);
             continue;
         }
         if (xp.parse_bool(tag, "http_1_0", http_1_0)) continue;
+        if (xp.parse_int(tag, "ignore_cuda_dev", n)) {
+            ignore_cuda_dev.push_back(n);
+            continue;
+        }
+        if (xp.parse_int(tag, "ignore_ati_dev", n)) {
+            ignore_ati_dev.push_back(n);
+            continue;
+        }
         if (xp.parse_int(tag, "max_file_xfers", max_file_xfers)) continue;
         if (xp.parse_int(tag, "max_file_xfers_per_project", max_file_xfers_per_project)) continue;
         if (xp.parse_int(tag, "max_stderr_file_size", max_stderr_file_size)) continue;
@@ -287,8 +343,9 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_bool(tag, "os_random_only", os_random_only)) continue;
 #ifndef SIM
         if (!strcmp(tag, "proxy_info")) {
-            int retval = gstate.proxy_info.parse(*xp.f);
+            int retval = config_proxy_info.parse_config(*xp.f);
             if (retval) return retval;
+            continue;
         }
 #endif
         if (xp.parse_bool(tag, "report_results_immediately", report_results_immediately)) continue;
@@ -296,6 +353,7 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_int(tag, "save_stats_days", save_stats_days)) continue;
         if (xp.parse_bool(tag, "simple_gui_only", simple_gui_only)) continue;
         if (xp.parse_double(tag, "start_delay", start_delay)) continue;
+        if (xp.parse_bool(tag, "stderr_head", stderr_head)) continue;
         if (xp.parse_bool(tag, "suppress_net_info", suppress_net_info)) continue;
         if (xp.parse_bool(tag, "use_all_gpus", use_all_gpus)) continue;
         if (xp.parse_bool(tag, "use_certs", use_certs)) continue;
@@ -371,4 +429,3 @@ int read_config_file(bool init) {
     return 0;
 }
 
-const char *BOINC_RCSID_5f23de6652 = "$Id: log_flags.cpp 19316 2009-10-16 19:02:00Z romw $";

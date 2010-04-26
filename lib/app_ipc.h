@@ -195,6 +195,7 @@ struct APP_INIT_DATA {
     APP_INIT_DATA(const APP_INIT_DATA&);  // copy constructor
     APP_INIT_DATA &operator=(const APP_INIT_DATA&);
     void copy(const APP_INIT_DATA&);      // actually do the copy here
+    void clear();
     ~APP_INIT_DATA();
 };
 
@@ -215,6 +216,7 @@ int parse_graphics_file(FILE* f, GRAPHICS_INFO* gi);
 //
 #define INIT_DATA_FILE    "init_data.xml"
 #define BOINC_FINISH_CALLED_FILE "boinc_finish_called"
+#define TEMPORARY_EXIT_FILE "boinc_temporary_exit"
 #define TRICKLE_UP_FILENAME "trickle_up.xml"
 #define STDERR_FILE           "stderr.txt"
 #define STDOUT_FILE           "stdout.txt"

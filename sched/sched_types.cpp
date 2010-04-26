@@ -350,7 +350,9 @@ const char* SCHEDULER_REQUEST::parse(FILE* fin) {
             continue;
         }
         if (match_tag(buf, "coprocs")) {
-            coprocs.parse(fin);
+            MIOFILE mf;
+            mf.init_file(fin);
+            coprocs.parse(mf);
             coproc_cuda = (COPROC_CUDA*)coprocs.lookup("CUDA");
             coproc_ati = (COPROC_ATI*)coprocs.lookup("ATI");
             continue;
@@ -1226,4 +1228,4 @@ void PROJECT_FILES::init() {
     read_file_malloc(config.project_path("project_files.xml"), text);
 }
 
-const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 18910 2009-08-25 18:44:19Z romw $";
+const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 19823 2009-12-08 19:22:08Z romw $";

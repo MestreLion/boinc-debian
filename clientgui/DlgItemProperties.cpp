@@ -23,15 +23,24 @@
 #include "util.h"
 #include "DlgItemProperties.h"
 #include "BOINCGUIApp.h"
+#include "BOINCBaseFrame.h"
+#include "AdvancedFrame.h"
 #include "Events.h"
 #include "error_numbers.h"
 
 IMPLEMENT_DYNAMIC_CLASS(CDlgItemProperties, wxDialog)
 
+BEGIN_EVENT_TABLE(CDlgItemProperties, wxDialog)
+END_EVENT_TABLE()
+
 /* Constructor */
 CDlgItemProperties::CDlgItemProperties(wxWindow* parent) : 
     wxDialog( parent, ID_ANYDIALOG, wxEmptyString, wxDefaultPosition, 
                 wxSize( 503,480 ), wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER ) {
+    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
+    wxASSERT(pFrame);
+    if (!pFrame) return;
+
 	SetSizeHints( wxDefaultSize, wxDefaultSize );
 	SetExtraStyle( wxWS_EX_VALIDATE_RECURSIVELY );
 	
@@ -64,12 +73,99 @@ CDlgItemProperties::CDlgItemProperties(wxWindow* parent) :
 	Centre( wxBOTH );
 
 	m_current_row=0;
+
+    int currentTabView = pFrame->GetCurrentViewPage();
+    switch(currentTabView) {
+        case VW_PROJ:
+        m_strBaseConfigLocation = wxString(wxT("/DlgProjectProperties/"));
+        break;
+        case VW_TASK:
+        m_strBaseConfigLocation = wxString(wxT("/DlgTaskProperties/"));
+        break;
+        default:
+        m_strBaseConfigLocation = wxString(wxT("/DlgProperties/"));
+        break;
+    }
+
+	RestoreState();
 }
 
 // destructor
 CDlgItemProperties::~CDlgItemProperties() {
+	SaveState();
 }
 
+/* saves dialog size and (on Mac) position */
+bool CDlgItemProperties::SaveState() {
+    wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
+
+    wxASSERT(pConfig);
+	if (!pConfig) return false;
+
+	pConfig->SetPath(m_strBaseConfigLocation);
+	pConfig->Write(wxT("Width"), GetSize().GetWidth());
+	pConfig->Write(wxT("Height"), GetSize().GetHeight());
+#ifdef __WXMAC__
+    pConfig->Write(wxT("XPos"), GetPosition().x);
+    pConfig->Write(wxT("YPos"), GetPosition().y);
+#endif
+	return true;
+}
+
+/* restores former dialog size and (on Mac) position */
+bool CDlgItemProperties::RestoreState() {
+    wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
+	int				iWidth, iHeight;
+
+	wxASSERT(pConfig);
+
+    if (!pConfig) return false;
+
+	pConfig->SetPath(m_strBaseConfigLocation);
+
+	pConfig->Read(wxT("Width"), &iWidth, wxDefaultCoord);
+	pConfig->Read(wxT("Height"), &iHeight, wxDefaultCoord);
+
+#ifndef __WXMAC__
+    // Set size to saved values or defaults if no saved values
+    SetSize(iWidth, iHeight);	
+#else
+	int				iTop, iLeft;
+    
+    pConfig->Read(wxT("YPos"), &iTop, wxDefaultCoord);
+    pConfig->Read(wxT("XPos"), &iLeft, wxDefaultCoord);
+    
+    // If either co-ordinate is less then 0 then set it equal to 0 to ensure
+    // it displays on the screen.
+    if ((iLeft < 0) && (iLeft != wxDefaultCoord)) iLeft = 30;
+    if ((iTop < 0) && (iTop != wxDefaultCoord)) iTop = 30;
+
+    // Set size and position to saved values or defaults if no saved values
+    SetSize(iLeft, iTop, iWidth, iHeight, wxSIZE_USE_EXISTING);
+
+    // Now make sure window is on screen
+    GetScreenPosition(&iLeft, &iTop);
+    GetSize(&iWidth, &iHeight);
+    
+    Rect titleRect = {iTop, iLeft, iTop+22, iLeft+iWidth };
+    InsetRect(&titleRect, 5, 5);                // Make sure at least a 5X5 piece visible
+    RgnHandle displayRgn = NewRgn();
+    CopyRgn(GetGrayRgn(), displayRgn);          // Region encompassing all displays
+    Rect menuRect = ((**GetMainDevice())).gdRect;
+    menuRect.bottom = GetMBarHeight() + menuRect.top;
+    RgnHandle menuRgn = NewRgn();
+    RectRgn(menuRgn, &menuRect);                // Region hidden by menu bar
+    DiffRgn(displayRgn, menuRgn, displayRgn);   // Subtract menu bar region
+    if (!RectInRgn(&titleRect, displayRgn)) {
+        iTop = iLeft = 30;
+        SetSize(iLeft, iTop, iWidth, iHeight, wxSIZE_USE_EXISTING);
+    }
+    DisposeRgn(menuRgn);
+    DisposeRgn(displayRgn);
+#endif
+
+	return true;
+}
 // show project properties
 //
 void CDlgItemProperties::renderInfos(PROJECT* project_in) {
@@ -143,13 +239,14 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
 	
     if (!project->non_cpu_intensive) {
 	    addSection(_("Scheduling"));
-	    addProperty(_("CPU scheduling priority"),wxString::Format(wxT("%0.2f"), project->short_term_debt));
+	    addProperty(_("CPU scheduling priority"),wxString::Format(wxT("%0.2f"), project->cpu_short_term_debt));
 	    addProperty(_("CPU work fetch priority"),wxString::Format(wxT("%0.2f"), project->cpu_long_term_debt));
         double x = project->cpu_backoff_time - dtime();
         if (x<0) x = 0;
         addProperty(_("CPU work fetch deferred for"), FormatTime(x));
         addProperty(_("CPU work fetch deferral interval"), FormatTime(project->cpu_backoff_interval));
         if (pDoc->state.have_cuda) {
+            addProperty(_("NVIDIA GPU scheduling priority"),wxString::Format(wxT("%0.2f"), project->cuda_short_term_debt));
             addProperty(_("NVIDIA GPU work fetch priority"),wxString::Format(wxT("%0.2f"), project->cuda_debt));
             x = project->cuda_backoff_time - dtime();
             if (x<0) x = 0;
@@ -157,6 +254,7 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
             addProperty(_("NVIDIA GPU work fetch deferral interval"), FormatTime(project->cuda_backoff_interval));
         }
         if (pDoc->state.have_ati) {
+            addProperty(_("ATI GPU scheduling priority"),wxString::Format(wxT("%0.2f"), project->ati_short_term_debt));
             addProperty(_("ATI GPU work fetch priority"),wxString::Format(wxT("%0.2f"), project->ati_debt));
             x = project->ati_backoff_time - dtime();
             if (x<0) x = 0;
@@ -201,6 +299,9 @@ void CDlgItemProperties::renderInfos(RESULT* result) {
 		addProperty(_("Working set size"), FormatDiskSpace(result->working_set_size_smoothed));
         if (result->slot >= 0) {
             addProperty(_("Directory"), wxString::Format(wxT("slots/%d"), result->slot));
+        }
+        if (result->pid) {
+            addProperty(_("Process ID"), wxString::Format(wxT("%d"), result->pid));
         }
 	} else if (result->state >= RESULT_COMPUTE_ERROR) {
 		addProperty(_("CPU time"), FormatTime(result->final_cpu_time));
@@ -295,7 +396,7 @@ wxString CDlgItemProperties::FormatStatus(RESULT* result) {
 
     doc->GetCoreClientStatus(status);
     
-	int throttled = status.task_suspend_reason & SUSPEND_REASON_CPU_USAGE_LIMIT;
+	int throttled = status.task_suspend_reason & SUSPEND_REASON_CPU_THROTTLE;
     switch(result->state) {
     case RESULT_NEW:
         strBuffer = _("New"); 
