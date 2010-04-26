@@ -37,10 +37,12 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#include "win_util.h"
 #endif
 
 #include <string>
 #include <cstring>
+#include <list>
 
 #include "str_util.h"
 #include "util.h"
@@ -49,6 +51,7 @@
 
 #include "client_msgs.h"
 #include "log_flags.h"
+#include "app.h"
 
 #ifdef SIM
 #include "sim.h"
@@ -57,9 +60,7 @@
 #endif
 
 using std::vector;
-
-#define MAX_STD   (86400)
-    // maximum short-term debt
+using std::list;
 
 #define DEADLINE_CUSHION    0
     // try to finish jobs this much in advance of their deadline
@@ -87,20 +88,9 @@ struct PROC_RESOURCES {
     //
     bool can_schedule(RESULT* rp) {
         if (rp->uses_coprocs()) {
-            if (gstate.user_active && !gstate.global_prefs.run_gpu_if_user_active) {
-#if 1
-                return false;
-#else
-                if (rp->avp->natis) {
-                    return false;
-                }
-                // if it's NVIDIA, defer deciding because
-                // some GPUs may not be running user apps
-                //
-#endif
-            }
+            if (gpu_suspended) return false;
             if (sufficient_coprocs(
-                *rp->avp, log_flags.cpu_sched_debug, "cpu_sched_debug")
+                *rp->avp, log_flags.cpu_sched_debug)
             ) {
                 return true;
             } else {
@@ -127,9 +117,7 @@ struct PROC_RESOURCES {
         ncpus_used += rp->avp->avg_ncpus;
     }
 
-    bool sufficient_coprocs(
-        APP_VERSION& av, bool log_flag, const char* prefix
-    ) {
+    bool sufficient_coprocs(APP_VERSION& av, bool log_flag) {
         double x;
         COPROC* cp2;
         if (av.ncudas) {
@@ -150,8 +138,8 @@ struct PROC_RESOURCES {
         if (cp2->used + x > cp2->count) {
             if (log_flag) {
                 msg_printf(NULL, MSG_INFO,
-                    "[%s] rr_sim: insufficient coproc %s (%f + %f > %d)",
-                    prefix, cp2->type, cp2->used, x, cp2->count
+                    "[cpu_sched_debug] insufficient coproc %s (%f + %f > %d)",
+                    cp2->type, cp2->used, x, cp2->count
                 );
             }
             return false;
@@ -188,59 +176,48 @@ struct PROC_RESOURCES {
     }
 };
 
+bool gpus_usable = true;
+#ifndef SIM
 // see whether there's been a change in coproc usability;
 // if so set or clear "coproc_missing" flags and return true.
 //
-#include "filesys.h"
-bool check_coproc_usable(COPROC* cp) {
+bool check_coprocs_usable() {
+#ifdef _WIN32
     unsigned int i;
-    bool is_cuda = (cp==coproc_cuda);
-    bool new_usable = cp->is_usable();
-    //bool new_usable = !boinc_file_exists("unusable");
-    if (cp->usable) {
+    bool new_usable = !is_remote_desktop();
+    if (gpus_usable) {
         if (!new_usable) {
-            cp->usable = false;
+            gpus_usable = false;
             for (i=0; i<gstate.results.size(); i++) {
                 RESULT* rp = gstate.results[i];
-                if (is_cuda?rp->avp->ncudas:rp->avp->natis) {
+                if (rp->avp->ncudas || rp->avp->natis) {
                     rp->coproc_missing = true;
                 }
             }
             msg_printf(NULL, MSG_INFO,
-                "%s GPU has become unusable; disabling tasks",
-                is_cuda?"NVIDIA":"ATI"
+                "GPUs have become unusable; disabling tasks"
             );
             return true;
         }
     } else {
         if (new_usable) {
-            cp->usable = true;
+            gpus_usable = true;
             for (i=0; i<gstate.results.size(); i++) {
                 RESULT* rp = gstate.results[i];
-                if (is_cuda?rp->avp->ncudas:rp->avp->natis) {
+                if (rp->avp->ncudas || rp->avp->natis) {
                     rp->coproc_missing = false;
                 }
             }
             msg_printf(NULL, MSG_INFO,
-                "%s GPU has become usable; enabling tasks",
-                is_cuda?"NVIDIA":"ATI"
+                "GPUs have become usable; enabling tasks"
             );
             return true;
         }
     }
+#endif
     return false;
 }
-
-bool check_coprocs_usable() {
-    bool change = false;
-    if (coproc_cuda && check_coproc_usable(coproc_cuda)) {
-        change = true;
-    }
-    if (coproc_ati && check_coproc_usable(coproc_ati)) {
-        change = true;
-    }
-    return change;
-}
+#endif
 
 // return true if the task has finished its time slice
 // and has checkpointed in last 10 secs
@@ -344,10 +321,10 @@ RESULT* CLIENT_STATE::largest_debt_project_best_result() {
         PROJECT* p = projects[i];
         if (!p->next_runnable_result) continue;
         if (p->non_cpu_intensive) continue;
-        if (first || p->anticipated_debt > best_debt) {
+        if (first || p->cpu_pwf.anticipated_debt > best_debt) {
             first = false;
             best_project = p;
-            best_debt = p->anticipated_debt;
+            best_debt = p->cpu_pwf.anticipated_debt;
         }
     }
     if (!best_project) return NULL;
@@ -355,7 +332,7 @@ RESULT* CLIENT_STATE::largest_debt_project_best_result() {
     if (log_flags.cpu_sched_debug) {
         msg_printf(best_project, MSG_INFO,
             "[cpu_sched_debug] highest debt: %f %s",
-            best_project->anticipated_debt,
+            best_project->cpu_pwf.anticipated_debt,
             best_project->next_runnable_result->name
         );
     }
@@ -415,6 +392,7 @@ RESULT* CLIENT_STATE::earliest_deadline_result(bool coproc_only) {
     RESULT *best_result = NULL;
     ACTIVE_TASK* best_atp = NULL;
     unsigned int i;
+    bool only_deadline_misses = true;
 
     for (i=0; i<results.size(); i++) {
         RESULT* rp = results[i];
@@ -422,34 +400,42 @@ RESULT* CLIENT_STATE::earliest_deadline_result(bool coproc_only) {
         if (rp->already_selected) continue;
         PROJECT* p = rp->project;
         if (p->non_cpu_intensive) continue;
+
+        // treat projects with DCF>90 as if they had deadline misses
+        //
         if (coproc_only) {
             if (!rp->uses_coprocs()) continue;
-
-            // TODO: break this out by resource type
             if (rp->avp->ncudas) {
-                if (!p->cuda_pwf.deadlines_missed_copy
-                    && p->duration_correction_factor < 90.0
-                ) {
-                    continue;
+                if (p->duration_correction_factor < 90.0) {
+                    if (!p->cuda_pwf.deadlines_missed_copy) {
+                        continue;
+                    }
+                } else {
+                    only_deadline_misses = false;
                 }
             } else if (rp->avp->natis) {
-                if (!p->ati_pwf.deadlines_missed_copy
-                    && p->duration_correction_factor < 90.0
-                ) {
-                    continue;
+                if (p->duration_correction_factor < 90.0) {
+                    if (!p->ati_pwf.deadlines_missed_copy) {
+                        continue;
+                    }
+                } else {
+                    only_deadline_misses = false;
                 }
             }
         } else {
             if (rp->uses_coprocs()) continue;
-            // treat projects with DCF>90 as if they had deadline misses
-            //
-            if (!p->cpu_pwf.deadlines_missed_copy
-                && p->duration_correction_factor < 90.0
-            ) {
-                continue;
+            if (p->duration_correction_factor < 90.0) {
+                if (!p->cpu_pwf.deadlines_missed_copy) {
+                    continue;
+                }
+            } else {
+                only_deadline_misses = false;
             }
         }
-
+        
+        if (only_deadline_misses && !rp->rr_sim_misses_deadline) {
+            continue;
+        }
         bool new_best = false;
         if (best_result) {
             if (rp->report_deadline < best_result->report_deadline) {
@@ -484,7 +470,7 @@ RESULT* CLIENT_STATE::earliest_deadline_result(bool coproc_only) {
 
     if (log_flags.cpu_sched_debug) {
         msg_printf(best_result->project, MSG_INFO,
-            "[cpu_sched_debug] earliest deadline: %f %s",
+            "[cpu_sched_debug] earliest deadline: %.0f %s",
             best_result->report_deadline, best_result->name
         );
     }
@@ -518,11 +504,6 @@ void CLIENT_STATE::reset_debt_accounting() {
 //
 void CLIENT_STATE::adjust_debts() {
     unsigned int i;
-    double total_short_term_debt = 0;
-    double rrs;
-    int nprojects=0, nrprojects=0;
-    PROJECT *p;
-    double share_frac;
     double elapsed_time = now - debt_interval_start;
 
     // If the elapsed time is more than 2*DEBT_ADJUST_PERIOD
@@ -546,62 +527,25 @@ void CLIENT_STATE::adjust_debts() {
         return;
     }
 
+    // total up how many instance-seconds projects got
+    //
     for (i=0; i<active_tasks.active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks.active_tasks[i];
         if (atp->scheduler_state != CPU_SCHED_SCHEDULED) continue;
-        p = atp->result->project;
+        PROJECT* p = atp->result->project;
         if (p->non_cpu_intensive) continue;
         work_fetch.accumulate_inst_sec(atp, elapsed_time);
     }
 
-    // adjust long term debts
-    //
-    cpu_work_fetch.update_debts();
+    cpu_work_fetch.update_long_term_debts();
+    cpu_work_fetch.update_short_term_debts();
     if (coproc_cuda) {
-        cuda_work_fetch.update_debts();
+        cuda_work_fetch.update_long_term_debts();
+        cuda_work_fetch.update_short_term_debts();
     }
     if (coproc_ati) {
-        ati_work_fetch.update_debts();
-    }
-
-    // adjust short term debts
-    //
-    rrs = runnable_resource_share();
-    for (i=0; i<projects.size(); i++) {
-        p = projects[i];
-        if (p->non_cpu_intensive) continue;
-        nprojects++;
-
-        if (p->runnable()) {
-            nrprojects++;
-            share_frac = p->resource_share/rrs;
-            p->short_term_debt += share_frac*cpu_work_fetch.secs_this_debt_interval
-                - p->cpu_pwf.secs_this_debt_interval;
-            total_short_term_debt += p->short_term_debt;
-        } else {
-            p->short_term_debt = 0;
-            p->anticipated_debt = 0;
-        }
-    }
-
-    // short-term debt:
-    //  normalize so mean is zero, and limit abs value at MAX_STD
-    //
-    if (nrprojects) {
-        double avg_short_term_debt = total_short_term_debt / nrprojects;
-        for (i=0; i<projects.size(); i++) {
-            p = projects[i];
-            if (p->non_cpu_intensive) continue;
-            if (p->runnable()) {
-                p->short_term_debt -= avg_short_term_debt;
-                if (p->short_term_debt > MAX_STD) {
-                    p->short_term_debt = MAX_STD;
-                }
-                if (p->short_term_debt < -MAX_STD) {
-                    p->short_term_debt = -MAX_STD;
-                }
-            }
-        }
+        ati_work_fetch.update_long_term_debts();
+        ati_work_fetch.update_short_term_debts();
     }
 
     reset_debt_accounting();
@@ -639,11 +583,11 @@ bool CLIENT_STATE::possibly_schedule_cpus() {
 // Check whether the job can be run:
 // - it will fit in RAM
 // - we have enough shared-mem segments (old Mac problem)
-// If so, update proc_rsc accordingly and return true
+// If so, update proc_rsc and anticipated debts, and return true
 //
 static bool schedule_if_possible(
     RESULT* rp, ACTIVE_TASK* atp, PROC_RESOURCES& proc_rsc,
-    double rrs, double expected_payoff, const char* description
+    const char* description
 ) {
     if (atp) {
         // see if it fits in available RAM
@@ -685,14 +629,39 @@ static bool schedule_if_possible(
             return false;
         }
     }
+
     if (log_flags.cpu_sched_debug) {
         msg_printf(rp->project, MSG_INFO,
             "[cpu_sched_debug] scheduling %s (%s)", rp->name, description
         );
     }
     proc_rsc.schedule(rp);
-    rp->project->anticipated_debt -= (rp->project->resource_share / rrs) * expected_payoff;
+    double dt = gstate.global_prefs.cpu_scheduling_period();
+
+    // project STD at end of scheduling period
+    //
+    rp->project->cpu_pwf.anticipated_debt -= dt*rp->avp->avg_ncpus/cpu_work_fetch.ninstances;
+    rp->project->cuda_pwf.anticipated_debt -= dt*rp->avp->ncudas/cuda_work_fetch.ninstances;
+    rp->project->ati_pwf.anticipated_debt -= dt*rp->avp->natis/ati_work_fetch.ninstances;
     return true;
+}
+
+// If a job J once ran in EDF,
+// and its project has another job of the same resource type
+// marked as deadline miss, mark J as deadline miss.
+// This avoids domino-effect preemption
+//
+static void promote_once_ran_edf() {
+    for (unsigned int i=0; i<gstate.active_tasks.active_tasks.size(); i++) {
+        ACTIVE_TASK* atp = gstate.active_tasks.active_tasks[i];
+        if (atp->once_ran_edf) {
+            RESULT* rp = atp->result;
+            PROJECT* p = rp->project;
+            if (p->deadlines_missed(rp->avp->rsc_type())) {
+                rp->rr_sim_misses_deadline = true;
+            }
+        }
+    }
 }
 
 // CPU scheduler - decide which results to run.
@@ -701,9 +670,7 @@ static bool schedule_if_possible(
 void CLIENT_STATE::schedule_cpus() {
     RESULT* rp;
     PROJECT* p;
-    double expected_payoff;
     unsigned int i;
-    double rrs = runnable_resource_share();
     PROC_RESOURCES proc_rsc;
     ACTIVE_TASK* atp;
     bool can_run;
@@ -711,7 +678,7 @@ void CLIENT_STATE::schedule_cpus() {
     proc_rsc.ncpus = ncpus;
     proc_rsc.ncpus_used = 0;
     proc_rsc.ram_left = available_ram();
-    proc_rsc.coprocs.clone(coprocs, false);
+    proc_rsc.coprocs.clone(host_info.coprocs, false);
 
     if (log_flags.cpu_sched_debug) {
         msg_printf(0, MSG_INFO, "[cpu_sched_debug] schedule_cpus(): start");
@@ -724,6 +691,10 @@ void CLIENT_STATE::schedule_cpus() {
         print_deadline_misses();
     }
 
+    // avoid preemption of jobs that once ran EDF
+    //
+    promote_once_ran_edf();
+
     // set temporary variables
     //
     for (i=0; i<results.size(); i++) {
@@ -734,7 +705,9 @@ void CLIENT_STATE::schedule_cpus() {
     for (i=0; i<projects.size(); i++) {
         p = projects[i];
         p->next_runnable_result = NULL;
-        p->anticipated_debt = p->short_term_debt;
+        p->cpu_pwf.anticipated_debt = p->cpu_pwf.short_term_debt;
+        p->cuda_pwf.anticipated_debt = p->cuda_pwf.short_term_debt;
+        p->ati_pwf.anticipated_debt = p->ati_pwf.short_term_debt;
         p->cpu_pwf.deadlines_missed_copy = p->cpu_pwf.deadlines_missed;
         p->cuda_pwf.deadlines_missed_copy = p->cuda_pwf.deadlines_missed;
         p->ati_pwf.deadlines_missed_copy = p->ati_pwf.deadlines_missed;
@@ -752,7 +725,6 @@ void CLIENT_STATE::schedule_cpus() {
         }
     }
 
-    expected_payoff = global_prefs.cpu_scheduling_period();
     ordered_scheduled_results.clear();
 
     // choose coproc jobs from projects with coproc deadline misses
@@ -764,8 +736,7 @@ void CLIENT_STATE::schedule_cpus() {
         if (!proc_rsc.can_schedule(rp)) continue;
         atp = lookup_active_task_by_result(rp);
         can_run = schedule_if_possible(
-            rp, atp, proc_rsc, rrs, expected_payoff,
-            "coprocessor job, EDF"
+            rp, atp, proc_rsc, "coprocessor job, EDF"
         );
         if (!can_run) continue;
         if (rp->avp->ncudas) {
@@ -773,6 +744,7 @@ void CLIENT_STATE::schedule_cpus() {
         } else if (rp->avp->natis) {
             rp->project->ati_pwf.deadlines_missed_copy--;
         }
+        rp->edf_scheduled = true;
         ordered_scheduled_results.push_back(rp);
     }
 
@@ -785,8 +757,7 @@ void CLIENT_STATE::schedule_cpus() {
         if (!proc_rsc.can_schedule(rp)) continue;
         atp = lookup_active_task_by_result(rp);
         can_run = schedule_if_possible(
-            rp, atp, proc_rsc, rrs, expected_payoff,
-            "coprocessor job, FIFO"
+            rp, atp, proc_rsc, "coprocessor job, FIFO"
         );
         if (!can_run) continue;
         ordered_scheduled_results.push_back(rp);
@@ -804,8 +775,7 @@ void CLIENT_STATE::schedule_cpus() {
         if (!proc_rsc.can_schedule(rp)) continue;
         atp = lookup_active_task_by_result(rp);
         can_run = schedule_if_possible(
-            rp, atp, proc_rsc, rrs, expected_payoff,
-            "CPU job, EDF"
+            rp, atp, proc_rsc, "CPU job, EDF"
         );
         if (!can_run) continue;
         rp->project->cpu_pwf.deadlines_missed_copy--;
@@ -825,14 +795,13 @@ void CLIENT_STATE::schedule_cpus() {
         atp = lookup_active_task_by_result(rp);
         if (!proc_rsc.can_schedule(rp)) continue;
         can_run = schedule_if_possible(
-            rp, atp, proc_rsc, rrs, expected_payoff,
-            "CPU job, debt order"
+            rp, atp, proc_rsc, "CPU job, debt order"
         );
         if (!can_run) continue;
         ordered_scheduled_results.push_back(rp);
     }
 
-    request_enforce_schedule("schedule_cpus");
+    request_enforce_schedule(NULL, "schedule_cpus");
 }
 
 static inline bool in_ordered_scheduled_results(ACTIVE_TASK* atp) {
@@ -858,9 +827,13 @@ static void promote_multi_thread_jobs(vector<RESULT*>& runnable_jobs) {
             if (first_non_mt != runnable_jobs.end()) {
                 cur = runnable_jobs.erase(cur);
                 runnable_jobs.insert(first_non_mt, rp);
+                cpus_used = 0;
+                first_non_mt = runnable_jobs.end();
+                cur = runnable_jobs.begin();
+                continue;
             }
         } else {
-            if (first_non_mt != runnable_jobs.end()) {
+            if (first_non_mt == runnable_jobs.end()) {
                 first_non_mt = cur;
             }
         }
@@ -874,12 +847,12 @@ static void promote_multi_thread_jobs(vector<RESULT*>& runnable_jobs) {
 static inline bool more_important(RESULT* r0, RESULT* r1) {
     // favor jobs in danger of deadline miss
     //
-    bool miss0 = r0->rr_sim_misses_deadline;
-    bool miss1 = r1->rr_sim_misses_deadline;
+    bool miss0 = r0->edf_scheduled;
+    bool miss1 = r1->edf_scheduled;
     if (miss0 && !miss1) return true;
     if (!miss0 && miss1) return false;
 
-    // favor coproc jobs, so that if we're RAM-limited
+    // favor coproc jobs, so that e.g. if we're RAM-limited
     // we'll use the GPU instead of the CPU
     //
     bool cp0 = r0->uses_coprocs();
@@ -895,7 +868,7 @@ static inline bool more_important(RESULT* r0, RESULT* r1) {
     if (!unfin0 && unfin1) return false;
 
     // favor jobs selected first by schedule_cpus()
-    // (e.g., because their project has high debt)
+    // (e.g., because their project has high STD)
     //
     if (r0->seqno < r1->seqno) return true;
     if (r0->seqno > r1->seqno) return false;
@@ -904,21 +877,15 @@ static inline bool more_important(RESULT* r0, RESULT* r1) {
     return (r0 < r1);
 }
 
-static void print_job_list(vector<RESULT*>& jobs, bool details) {
+static void print_job_list(vector<RESULT*>& jobs) {
     for (unsigned int i=0; i<jobs.size(); i++) {
         RESULT* rp = jobs[i];
-        if (details) {
-            msg_printf(rp->project, MSG_INFO,
-                "[cpu_sched_debug] %d: %s", i, rp->name
-            );
-        } else {
-            msg_printf(rp->project, MSG_INFO,
-                "[cpu_sched_debug] %d: %s (MD: %s; UTS: %s)",
-                i, rp->name,
-                rp->rr_sim_misses_deadline?"yes":"no",
-                rp->unfinished_time_slice?"yes":"no"
-            );
-        }
+        msg_printf(rp->project, MSG_INFO,
+            "[cpu_sched_debug] %d: %s (MD: %s; UTS: %s)",
+            i, rp->name,
+            rp->edf_scheduled?"yes":"no",
+            rp->unfinished_time_slice?"yes":"no"
+        );
     }
 }
 
@@ -929,7 +896,7 @@ void CLIENT_STATE::append_unfinished_time_slice(
     vector<RESULT*> &runnable_jobs
 ) {
     unsigned int i;
-    int seqno = runnable_jobs.size();
+    int seqno = (int)runnable_jobs.size();
 
     for (i=0; i<active_tasks.active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks.active_tasks[i];
@@ -1082,7 +1049,7 @@ static inline void assign_coprocs(vector<RESULT*> jobs) {
     COPROC* cp;
     double usage;
 
-    gstate.coprocs.clear_usage();
+    gstate.host_info.coprocs.clear_usage();
 
     // fill in pending usage
     //
@@ -1214,17 +1181,19 @@ bool CLIENT_STATE::enforce_schedule() {
     last_time = now;
     bool action = false;
 
+#ifndef SIM
     // check whether GPUs are usable
     //
     if (check_coprocs_usable()) {
         request_schedule_cpus("GPU usability change");
         return true;
     }
+#endif
 
     if (log_flags.cpu_sched_debug) {
         msg_printf(0, MSG_INFO, "[cpu_sched_debug] enforce_schedule(): start");
         msg_printf(0, MSG_INFO, "[cpu_sched_debug] preliminary job list:");
-        print_job_list(ordered_scheduled_results, false);
+        print_job_list(ordered_scheduled_results);
     }
 
     // Set next_scheduler_state to PREEMPT for all tasks
@@ -1260,7 +1229,7 @@ bool CLIENT_STATE::enforce_schedule() {
 
     if (log_flags.cpu_sched_debug) {
         msg_printf(0, MSG_INFO, "[cpu_sched_debug] final job list:");
-        print_job_list(runnable_jobs, true);
+        print_job_list(runnable_jobs);
     }
 
     double ram_left = available_ram();
@@ -1290,6 +1259,11 @@ bool CLIENT_STATE::enforce_schedule() {
     //
     assign_coprocs(runnable_jobs);
 
+    for (i=0; i<projects.size(); i++) {
+        projects[i]->cuda_low_mem = false;
+        projects[i]->ati_low_mem = false;
+    }
+
     // prune jobs that don't fit in RAM or that exceed CPU usage limits.
     // Mark the rest as SCHEDULED
     //
@@ -1297,10 +1271,29 @@ bool CLIENT_STATE::enforce_schedule() {
     bool running_multithread = false;
     for (i=0; i<runnable_jobs.size(); i++) {
         RESULT* rp = runnable_jobs[i];
+        atp = lookup_active_task_by_result(rp);
 
-        // decide if we're already using too many CPUs to run this job
-        //
-        if (!rp->uses_coprocs()) {
+        if (rp->uses_coprocs()) {
+#ifndef SIM
+            // for coproc jobs, make sure there's enough video RAM
+            // currently free on the assigned device
+            //
+            if (!atp || !atp->process_exists()) {
+                if (rp->insufficient_video_ram()) {
+                    if (rp->uses_cuda()) {
+                        rp->project->cuda_low_mem = true;
+                    } else {
+                        rp->project->ati_low_mem = true;
+                    }
+                    rp->schedule_backoff = now + 300; // try again in 5 minutes
+                    request_schedule_cpus("insufficient GPU RAM");
+                    continue;
+                }
+            }
+#endif
+        } else {
+            // see if we're already using too many CPUs to run this job
+            //
             if (ncpus_used >= ncpus) {
                 if (log_flags.cpu_sched_debug) {
                     msg_printf(rp->project, MSG_INFO,
@@ -1317,7 +1310,10 @@ bool CLIENT_STATE::enforce_schedule() {
             // so that a GPU app and a multithread app can run together.
             //
             if (rp->avp->avg_ncpus > 1) {
-                if (ncpus_used + rp->avp->avg_ncpus >= ncpus+1) {
+                if (ncpus_used && (ncpus_used + rp->avp->avg_ncpus >= ncpus+1)) {
+                    // the "ncpus_used &&" is to allow running a job that uses
+                    // more than ncpus (this can happen in pathological cases)
+
                     if (log_flags.cpu_sched_debug) {
                         msg_printf(rp->project, MSG_INFO,
                             "[cpu_sched_debug] not enough CPUs for multithread job, skipping %s",
@@ -1346,7 +1342,6 @@ bool CLIENT_STATE::enforce_schedule() {
             }
         }
 
-        atp = lookup_active_task_by_result(rp);
         if (atp) {
             atp->too_large = false;
             if (atp->procinfo.working_set_size_smoothed > ram_left) {
@@ -1378,7 +1373,7 @@ bool CLIENT_STATE::enforce_schedule() {
     }
 
     if (log_flags.cpu_sched_debug && ncpus_used < ncpus) {
-        msg_printf(0, MSG_INFO, "[cpu_sched_debug] using %f out of %d CPUs",
+        msg_printf(0, MSG_INFO, "[cpu_sched_debug] using %.2f out of %d CPUs",
             ncpus_used, ncpus
         );
         if (ncpus_used < ncpus) {
@@ -1482,8 +1477,17 @@ bool CLIENT_STATE::enforce_schedule() {
                 request_schedule_cpus("start failed");
                 continue;
             }
+            if (atp->result->rr_sim_misses_deadline) {
+                atp->once_ran_edf = true;
+            }
             atp->run_interval_start_wall_time = now;
             app_started = now;
+        }
+        if (log_flags.cpu_sched_status) {
+            msg_printf(atp->result->project, MSG_INFO,
+                "[css] running %s (%s)",
+                atp->result->name, atp->result->resources
+            );
         }
         atp->scheduler_state = CPU_SCHED_SCHEDULED;
         swap_left -= atp->procinfo.swap_size;
@@ -1500,7 +1504,7 @@ bool CLIENT_STATE::enforce_schedule() {
                 "[cpu_sched_debug] coproc quit pending, deferring start"
             );
         }
-        request_enforce_schedule("coproc quit retry");
+        request_enforce_schedule(NULL, "coproc quit retry");
     }
     return action;
 }
@@ -1509,9 +1513,9 @@ bool CLIENT_STATE::enforce_schedule() {
 // Called when a new schedule is computed,
 // and when an app checkpoints.
 //
-void CLIENT_STATE::request_enforce_schedule(const char* where) {
+void CLIENT_STATE::request_enforce_schedule(PROJECT* p, const char* where) {
     if (log_flags.cpu_sched_debug) {
-        msg_printf(0, MSG_INFO, "[cpu_sched_debug] Request enforce CPU schedule: %s", where);
+        msg_printf(p, MSG_INFO, "[cpu_sched_debug] Request enforce CPU schedule: %s", where);
     }
     must_enforce_cpu_schedule = true;
 }
@@ -1560,12 +1564,12 @@ double CLIENT_STATE::total_resource_share() {
 
 // same, but only runnable projects (can use CPU right now)
 //
-double CLIENT_STATE::runnable_resource_share() {
+double CLIENT_STATE::runnable_resource_share(int rsc_type) {
     double x = 0;
     for (unsigned int i=0; i<projects.size(); i++) {
         PROJECT* p = projects[i];
         if (p->non_cpu_intensive) continue;
-        if (p->runnable()) {
+        if (p->runnable(rsc_type)) {
             x += p->resource_share;
         }
     }
@@ -1661,28 +1665,26 @@ void RESULT::set_state(int val, const char* where) {
 }
 
 // called at startup (after get_host_info())
-// and when general prefs have been parsed
+// and when general prefs have been parsed.
+// NOTE: GSTATE.NCPUS MUST BE 1 OR MORE; WE DIVIDE BY IT IN A COUPLE OF PLACES
 //
 void CLIENT_STATE::set_ncpus() {
     int ncpus_old = ncpus;
 
-    if (config.ncpus>=0) {
-        ncpus = config.ncpus;
-    } else if (host_info.p_ncpus>0) {
+    if (config.ncpus>0) {
+        host_info.p_ncpus = config.ncpus;
+    }
+    if (host_info.p_ncpus>0) {
         ncpus = host_info.p_ncpus;
     } else {
         ncpus = 1;
     }
 
-    // if config says no CPUs, honor it
-    //
-    if (ncpus) {
-        if (global_prefs.max_ncpus_pct) {
-            ncpus = (int)((ncpus * global_prefs.max_ncpus_pct)/100);
-            if (ncpus == 0) ncpus = 1;
-        } else if (global_prefs.max_ncpus && global_prefs.max_ncpus < ncpus) {
-            ncpus = global_prefs.max_ncpus;
-        }
+    if (global_prefs.max_ncpus_pct) {
+        ncpus = (int)((ncpus * global_prefs.max_ncpus_pct)/100);
+        if (ncpus == 0) ncpus = 1;
+    } else if (global_prefs.max_ncpus && global_prefs.max_ncpus < ncpus) {
+        ncpus = global_prefs.max_ncpus;
     }
 
     if (initialized && ncpus != ncpus_old) {
@@ -1747,4 +1749,3 @@ void PROJECT::update_duration_correction_factor(ACTIVE_TASK* atp) {
     }
 }
 
-const char *BOINC_RCSID_e830ee1 = "$Id: cpu_sched.cpp 19331 2009-10-16 19:39:38Z romw $";

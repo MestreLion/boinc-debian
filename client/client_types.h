@@ -203,9 +203,17 @@ public:
     std::string gui_urls;
         /// project's resource share relative to other projects.
     double resource_share;
-    bool no_cpu;
-    bool no_cuda;
-    bool no_ati;
+    bool no_cpu_pref;
+    bool no_cuda_pref;
+    bool no_ati_pref;
+        // the following are from the project itself
+    bool no_cpu_apps;
+    bool no_cuda_apps;
+    bool no_ati_apps;
+        // the following set dynamically
+    bool cuda_low_mem;
+    bool ati_low_mem;
+
         /// logically, this belongs in the client state file
         /// rather than the account file.
         /// But we need it in the latter in order to parse prefs.
@@ -234,8 +242,9 @@ public:
     double host_total_credit;
     double host_expavg_credit;
     double host_create_time;
-        /// resource share according to AMS; overrides project
     double ams_resource_share;
+        // resource share according to AMS; overrides project
+        // -1 means not specified by AMS
 
     // stuff related to scheduler RPCs and master fetch
     //
@@ -326,8 +335,8 @@ public:
 
         /// not suspended and not deferred and not no more work
     bool can_request_work();
-        /// has a runnable result
-    bool runnable();
+        /// has a runnable result using the given resource type
+    bool runnable(int rsc_type);
         /// has a result in downloading state
     bool downloading();
         /// runnable or contactable or downloading
@@ -343,14 +352,6 @@ public:
     RR_SIM_PROJECT_STATUS rr_sim_status;
         // temps used in CLIENT_STATE::rr_simulation();
 
-    // "debt" is how much CPU time we owe this project relative to others
-
-        /// computed over runnable projects
-        /// used for CPU scheduling
-    double short_term_debt;
-
-        /// expected debt by the end of the preemption period
-    double anticipated_debt;
         /// the next result to run for this project
     struct RESULT *next_runnable_result;
         /// number of results in UPLOADING state
@@ -368,6 +369,13 @@ public:
         cpu_pwf.reset();
         cuda_pwf.reset();
         ati_pwf.reset();
+    }
+    inline int deadlines_missed(int rsc_type) {
+        switch(rsc_type) {
+        case RSC_TYPE_CUDA: return cuda_pwf.deadlines_missed;
+        case RSC_TYPE_ATI: return ati_pwf.deadlines_missed;
+        }
+        return cpu_pwf.deadlines_missed;
     }
 
         /// # of results being returned in current scheduler op
@@ -422,6 +430,7 @@ struct APP_VERSION {
     double max_ncpus;
     double ncudas;
     double natis;
+    double gpu_ram;
     double flops;
         /// additional cmdline args
     char cmdline[256];
@@ -434,6 +443,7 @@ struct APP_VERSION {
     double max_working_set_size;
         // max working set of tasks using this app version.
         // temp var used in schedule_cpus()
+    //double temp_dcf;
 
     APP_VERSION(){}
     ~APP_VERSION(){}
@@ -444,12 +454,17 @@ struct APP_VERSION {
     void clear_errors();
     int api_major_version();
     bool missing_coproc();
-    bool uses_coproc(int rsc_type) {
+    inline bool uses_coproc(int rsc_type) {
         switch (rsc_type) {
         case RSC_TYPE_CUDA: return (ncudas>0);
         case RSC_TYPE_ATI: return (natis>0);
         }
         return false;
+    }
+    inline int rsc_type() {
+        if (ncudas>0) return RSC_TYPE_CUDA;
+        if (natis>0) return RSC_TYPE_ATI;
+        return RSC_TYPE_CPU;
     }
 };
 
@@ -615,6 +630,10 @@ struct RESULT {
         // keep track of coprocessor reservations
     char resources[256];
         // textual description of resources used
+    bool insufficient_video_ram();
+    double schedule_backoff;
+        // don't try to schedule until this time
+        // (wait for free video RAM)
 };
 
 /// represents an always/auto/never value, possibly temporarily overridden

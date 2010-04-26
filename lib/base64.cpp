@@ -205,4 +205,3 @@ string r_base64_decode (const char* from, size_t length)
     }
 }
 
-const char *BOINC_RCSID_2b47467419 = "$Id: base64.cpp 16069 2008-09-26 18:20:24Z davea $";

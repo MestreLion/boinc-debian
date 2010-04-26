@@ -590,8 +590,9 @@ wxString CViewProjects::OnListGetItemText(long item, long column) const {
                 break;
             case COLUMN_RESOURCESHARE:
                 // CBOINCListCtrl::DrawProgressBars() will draw this using 
-                // data provided by GetProgressText() and GetProgressValue.
-                strBuffer = wxEmptyString;
+                // data provided by GetProgressText() and GetProgressValue(), 
+                // but we need it here for accessibility programs.
+                strBuffer = project->m_strResourceShare;
                 break;
             case COLUMN_STATUS:
                 strBuffer = project->m_strStatus;
@@ -1190,5 +1191,3 @@ int CViewProjects::GetProjectCacheAtIndex(CProject*& projectPtr, int index) {
     return 0;
 }
 
-
-const char *BOINC_RCSID_b4edf777fc = "$Id: ViewProjects.cpp 17955 2009-05-01 01:32:26Z romw $";

@@ -35,6 +35,7 @@
 #include "filesys.h"
 #include "parse.h"
 #include "str_util.h"
+#include "url.h"
 #include "str_replace.h"
 #include "client_state.h"
 #include "client_msgs.h"
@@ -92,9 +93,9 @@ int PROJECT::parse_account(FILE* in) {
     char buf[256];
     int retval;
     bool in_project_prefs = false;
-    no_cpu = false;
-    no_cuda = false;
-    no_ati = false;
+    no_cpu_pref = false;
+    no_cuda_pref = false;
+    no_ati_pref = false;
 
     strcpy(master_url, "");
     strcpy(authenticator, "");
@@ -120,9 +121,9 @@ int PROJECT::parse_account(FILE* in) {
             continue;
         } else if (parse_str(buf, "<authenticator>", authenticator, sizeof(authenticator))) continue;
         else if (parse_double(buf, "<resource_share>", resource_share)) continue;
-        else if (parse_bool(buf, "no_cpu", no_cpu)) continue;
-        else if (parse_bool(buf, "no_cuda", no_cuda)) continue;
-        else if (parse_bool(buf, "no_ati", no_ati)) continue;
+        else if (parse_bool(buf, "no_cpu", no_cpu_pref)) continue;
+        else if (parse_bool(buf, "no_cuda", no_cuda_pref)) continue;
+        else if (parse_bool(buf, "no_ati", no_ati_pref)) continue;
         else if (parse_str(buf, "<project_name>", project_name, sizeof(project_name))) continue;
         else if (match_tag(buf, "<gui_urls>")) {
             string foo;
@@ -175,6 +176,9 @@ int PROJECT::parse_account_file_venue() {
             if (!strcmp(venue, host_venue)) {
                 using_venue_specific_prefs = true;
                 in_right_venue = true;
+                no_cpu_pref = false;    // reset these
+                no_cuda_pref = false;
+                no_ati_pref = false;
             } else {
                 std::string devnull;
                 retval = copy_element_contents(in, "</venue>", devnull);
@@ -197,9 +201,9 @@ int PROJECT::parse_account_file_venue() {
         } else if (parse_double(buf, "<resource_share>", resource_share)) {
             continue;
         }
-        else if (parse_bool(buf, "no_cpu", no_cpu)) continue;
-        else if (parse_bool(buf, "no_cuda", no_cuda)) continue;
-        else if (parse_bool(buf, "no_ati", no_ati)) continue;
+        else if (parse_bool(buf, "no_cpu", no_cpu_pref)) continue;
+        else if (parse_bool(buf, "no_cuda", no_cuda_pref)) continue;
+        else if (parse_bool(buf, "no_ati", no_ati_pref)) continue;
         else {
             if (log_flags.unparsed_xml) {
                 msg_printf(0, MSG_INFO,
@@ -504,4 +508,3 @@ int CLIENT_STATE::parse_preferences_for_user_files() {
     return 0;
 }
 
-const char *BOINC_RCSID_497223a3f8 = "$Id: cs_account.cpp 19254 2009-10-05 20:32:16Z romw $";

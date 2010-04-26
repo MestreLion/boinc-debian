@@ -27,6 +27,8 @@
 using std::string;
 using std::vector;
 
+#include "coproc.h"
+
 #include "acct_mgr.h"
 #include "acct_setup.h"
 #include "app.h"
@@ -41,8 +43,6 @@ using std::vector;
 #include "prefs.h"
 #include "scheduler_op.h"
 #include "time_stats.h"
-#include "http_curl.h"
-#include "coproc.h"
 
 #define WORK_FETCH_DONT_NEED 0
     // project: suspended, deferred, or no new work (can't ask for more work)
@@ -80,14 +80,13 @@ public:
     NET_STATS net_stats;
     GUI_RPC_CONN_SET gui_rpcs;
     TIME_STATS time_stats;
-    PROXY_INFO proxy_info;
     GUI_HTTP gui_http;
-    COPROCS coprocs;
 
     VERSION_INFO core_client_version;
     string statefile_platform_name;
     int file_xfer_giveup_period;
     MODE run_mode;
+    MODE gpu_mode;
     MODE network_mode;
     bool started_by_screensaver;
     bool exit_when_idle;
@@ -216,7 +215,6 @@ public:
 public:
     CLIENT_STATE();
     void show_host_info();
-    void show_proxy_info();
     int init();
         /// Never blocks.
         /// Returns true if it actually did something,
@@ -239,6 +237,7 @@ public:
     bool abort_jobs_on_exit;
     void start_abort_sequence();
     bool abort_sequence_done();
+    int quit_activities();
 private:
     int link_app(PROJECT*, APP*);
     int link_file_info(PROJECT*, FILE_INFO*);
@@ -256,6 +255,10 @@ private:
 
 // --------------- cpu_sched.cpp:
 private:
+    double total_resource_share();
+    double potentially_runnable_resource_share();
+    double nearly_runnable_resource_share();
+    double fetchable_resource_share();
     double debt_interval_start;
     double total_cpu_time_this_debt_interval;
     bool work_fetch_no_new_work;
@@ -271,6 +274,8 @@ private:
     bool enforce_schedule();
     void append_unfinished_time_slice(vector<RESULT*>&);
 public:
+    double runnable_resource_share(int);
+        /// Check if work fetch needed.
     void adjust_debts();
     std::vector <RESULT*> ordered_scheduled_results;
         /// if we fail to start a task due to no shared-mem segments,
@@ -288,7 +293,7 @@ public:
         if (x < 1) x = 1;
         return x;
     }
-    void request_enforce_schedule(const char*);
+    void request_enforce_schedule(PROJECT*, const char*);
         /// Check for reschedule CPUs ASAP.
 
         /// Called when:
@@ -300,6 +305,7 @@ public:
         /// - any project op is done via RPC (suspend/resume)
         /// - any result op is done via RPC (suspend/resume)
     void request_schedule_cpus(const char*);
+    void set_ncpus();
 
 // --------------- cs_account.cpp:
 public:
@@ -315,34 +321,13 @@ private:
         // should be move to a new file, but this will do it for testing
 
 // --------------- cs_apps.cpp:
-private:
-    double total_resource_share();
-    double potentially_runnable_resource_share();
-    double nearly_runnable_resource_share();
-    double fetchable_resource_share();
 public:
-    double runnable_resource_share();
-        /// Check if work fetch needed.
-
-        /// Called when:
-        /// - core client starts (CS::init())
-        /// - task is completed or fails
-        /// - tasks are killed
-        /// - an RPC completes
-        /// - project suspend/detch/attach/reset GUI RPC
-        /// - result suspend/abort GUI RPC
-    void request_work_fetch(const char*);
-    int quit_activities();
-    void set_ncpus();
-    double estimate_cpu_time(WORKUNIT&);
     double get_fraction_done(RESULT* result);
     int input_files_available(RESULT*, bool, FILE_INFO** f=0);
     ACTIVE_TASK* lookup_active_task_by_result(RESULT*);
         /// number of usable cpus
     int ncpus;
 private:
-    int nslots;
-
     int latest_version(APP*, char*);
     int app_finished(ACTIVE_TASK&);
     bool start_apps();
@@ -408,6 +393,14 @@ private:
 
 // --------------- cs_scheduler.cpp:
 public:
+        /// Called when:
+        /// - core client starts (CS::init())
+        /// - task is completed or fails
+        /// - tasks are killed
+        /// - an RPC completes
+        /// - project suspend/detch/attach/reset GUI RPC
+        /// - result suspend/abort GUI RPC
+    void request_work_fetch(const char*);
     int make_scheduler_request(PROJECT*);
     int handle_scheduler_reply(PROJECT*, char* scheduler_url);
     SCHEDULER_OP* scheduler_op;
@@ -491,6 +484,7 @@ extern CLIENT_STATE gstate;
 
 extern COPROC_CUDA* coproc_cuda;
 extern COPROC_ATI* coproc_ati;
+extern bool gpus_usable;
 
 /// return a random double in the range [MIN,min(e^n,MAX))
 
@@ -540,5 +534,8 @@ extern void print_suspend_tasks_message(int);
 #define GUI_HTTP_POLL_PERIOD    1.0
 
 #define CONNECT_ERROR_PERIOD    600.0
+
+#define MAX_STD   (86400)
+    // maximum short-term debt
 
 #endif

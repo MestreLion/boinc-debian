@@ -344,7 +344,9 @@ int read_file_malloc(const char* path, char*& buf, size_t max_len, bool tail) {
 
 // read file (at most max_len chars, if nonzero) into string
 //
-int read_file_string(const char* path, string& result, size_t max_len, bool tail) {
+int read_file_string(
+    const char* path, string& result, size_t max_len, bool tail
+) {
     result.erase();
     int retval;
     char* buf;
@@ -496,7 +498,7 @@ static int get_client_mutex(const char*) {
     if (IsWindows2000Compatible()) {
         strcpy(buf, "Global\\");
     }
-    strcat( buf, RUN_MUTEX);
+    strcat(buf, RUN_MUTEX);
 
     HANDLE h = CreateMutexA(NULL, true, buf);
     if ((h==0) || (GetLastError() == ERROR_ALREADY_EXISTS)) {
@@ -508,8 +510,11 @@ static int get_client_mutex(const char* dir) {
     static FILE_LOCK file_lock;
 
     sprintf(path, "%s/%s", dir, LOCK_FILE_NAME);
-    if (file_lock.lock(path)) {
+    int retval = file_lock.lock(path);
+    if (retval == ERR_FCNTL) {
         return ERR_ALREADY_RUNNING;
+    } else if (retval) {
+        return retval;
     }
 #endif
     return 0;
@@ -517,13 +522,14 @@ static int get_client_mutex(const char* dir) {
 
 int wait_client_mutex(const char* dir, double timeout) {
     double start = dtime();
+    int retval = 0;
     while (1) {
-        int retval = get_client_mutex(dir);
+        retval = get_client_mutex(dir);
         if (!retval) return 0;
         boinc_sleep(1);
         if (dtime() - start > timeout) break;
     }
-    return ERR_ALREADY_RUNNING;
+    return retval;
 }
 
 bool boinc_is_finite(double x) {
@@ -531,8 +537,7 @@ bool boinc_is_finite(double x) {
     return _Isfinite(x);
     return false;
 #else
-    return finite(x);
+    return finite(x) != 0;
 #endif
 }
 
-const char *BOINC_RCSID_ab65c90e1e = "$Id: util.cpp 18772 2009-07-29 23:50:00Z romw $";

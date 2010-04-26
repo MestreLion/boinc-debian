@@ -93,8 +93,7 @@ bool CAccountManagerInfoPage::Create( CBOINCBaseWizard* parent )
     m_bAccountManagerListPopulated = false;
 
 ////@begin CAccountManagerInfoPage creation
-    wxBitmap wizardBitmap(wxNullBitmap);
-    wxWizardPageEx::Create( parent, ID_ACCOUNTMANAGERINFOPAGE, wizardBitmap );
+    wxWizardPageEx::Create( parent, ID_ACCOUNTMANAGERINFOPAGE );
 
     CreateControls();
     GetSizer()->Fit(this);
@@ -155,6 +154,13 @@ void CAccountManagerInfoPage::CreateControls()
 
     // Set validators
     m_pProjectUrlCtrl->SetValidator( CValidateURL( & m_strProjectURL ) );
+    
+#ifdef __WXMAC__
+    //Accessibility
+    HIViewRef listView = (HIViewRef)m_pProjectListCtrl->GetHandle();
+    HIObjectRef   theObject = (HIObjectRef)HIViewGetSuperview(listView);
+    HIObjectSetAccessibilityIgnored(theObject, true);
+#endif
 ////@end CAccountManagerInfoPage content construction
 }
 
@@ -265,7 +271,11 @@ void CAccountManagerInfoPage::OnPageChanged( wxWizardExEvent& event ) {
             m_pProjectListCtrl->Append(
                 wxString(pl.account_managers[i]->url.c_str(), wxConvUTF8),
                 wxString(pl.account_managers[i]->name.c_str(), wxConvUTF8),
+                wxString(pl.account_managers[i]->image.c_str(), wxConvUTF8),
                 wxString(pl.account_managers[i]->description.c_str(), wxConvUTF8),
+                false,
+                false,
+                false,
                 true
             );
         }

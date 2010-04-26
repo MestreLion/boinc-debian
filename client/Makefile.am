@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 18595 2009-07-14 17:50:33Z korpela $
+## $Id: Makefile.am 20170 2010-01-14 22:17:29Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -42,6 +42,7 @@ boinc_client_SOURCES = \
     client_msgs.cpp \
     client_state.cpp \
     client_types.cpp \
+	coproc_detect.cpp \
     cpu_sched.cpp \
     cs_account.cpp \
     cs_apps.cpp \
@@ -50,6 +51,7 @@ boinc_client_SOURCES = \
     cs_files.cpp \
     cs_platforms.cpp \
     cs_prefs.cpp \
+    cs_proxy.cpp \
     cs_scheduler.cpp \
     cs_statefile.cpp \
     cs_trickle.cpp \
@@ -82,6 +84,8 @@ boinc_client_LDADD = $(LIBBOINC) $(LIBBOINC_CRYPT) $(BOINC_EXTRA_LIBS) $(PTHREAD
 boinc_clientdir = $(bindir)
 
 switcher_SOURCES = switcher.cpp
+switcher_LDFLAGS = $(AM_LDFLAGS) -L../lib 
+switcher_LDADD = $(LIBBOINC)
 
 ## since we are using libtool we need some magic to get boinc and boinc_client
 ## to both be installed properly.  The next two rules do that...

@@ -1811,10 +1811,17 @@ CViewStatistics::CViewStatistics(wxNotebook* pNotebook) :
     m_pTaskPane->UpdateControls();
 
     UpdateSelection();
+
+#ifdef __WXMAC__
+    SetupMacAccessibilitySupport();
+#endif
 }
 
 CViewStatistics::~CViewStatistics() {
     EmptyTasks();
+#ifdef __WXMAC__
+    RemoveMacAccessibilitySupport();
+#endif
 }
 
 wxString& CViewStatistics::GetViewName() {
@@ -2109,5 +2116,3 @@ void CViewStatistics::UpdateSelection() {
     CBOINCBaseView::PostUpdateSelection();
 }
 
-
-const char *BOINC_RCSID_7aadb93333 = "$Id: ViewStatistics.cpp 19277 2009-10-07 18:54:42Z romw $";

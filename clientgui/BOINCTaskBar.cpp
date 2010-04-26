@@ -53,6 +53,7 @@ BEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIconEx)
     EVT_MENU(wxID_OPEN, CTaskBarIcon::OnOpen)
     EVT_MENU(ID_OPENWEBSITE, CTaskBarIcon::OnOpenWebsite)
     EVT_MENU(ID_TB_SUSPEND, CTaskBarIcon::OnSuspendResume)
+    EVT_MENU(ID_TB_SUSPEND_GPU, CTaskBarIcon::OnSuspendResumeGPU)
     EVT_MENU(wxID_ABOUT, CTaskBarIcon::OnAbout)
     EVT_MENU(wxID_EXIT, CTaskBarIcon::OnExit)
 
@@ -186,7 +187,7 @@ void CTaskBarIcon::OnOpen(wxCommandEvent& WXUNUSED(event)) {
 #ifdef __WXMSW__
         ::SetForegroundWindow((HWND)pFrame->GetHandle());
 #endif
-	}
+    }
 #ifdef __WXMAC__
     else {
         wxGetApp().ShowCurrentGUI();
@@ -220,26 +221,37 @@ void CTaskBarIcon::OnOpenWebsite(wxCommandEvent& WXUNUSED(event)) {
 
 void CTaskBarIcon::OnSuspendResume(wxCommandEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnSuspendResume - Function Begin"));
-
     CMainDocument* pDoc      = wxGetApp().GetDocument();
     CC_STATUS      status;
-
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
     ResetTaskBar();
-
     pDoc->GetCoreClientStatus(status);
     if (status.task_mode_perm != status.task_mode) {
         pDoc->SetActivityRunMode(RUN_MODE_RESTORE, 0);
     } else {
         pDoc->SetActivityRunMode(RUN_MODE_NEVER, 3600);
     }
-
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnSuspendResume - Function End"));
 }
 
+void CTaskBarIcon::OnSuspendResumeGPU(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnSuspendResumeGPU - Function Begin"));
+    CMainDocument* pDoc      = wxGetApp().GetDocument();
+    CC_STATUS      status;
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
+    ResetTaskBar();
+    pDoc->GetCoreClientStatus(status);
+    if (status.gpu_mode_perm != status.gpu_mode) {
+        pDoc->SetGPURunMode(RUN_MODE_RESTORE, 0);
+    } else {
+        pDoc->SetGPURunMode(RUN_MODE_NEVER, 3600);
+    }
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnSuspendResumeGPU - Function End"));
+}
 void CTaskBarIcon::OnAbout(wxCommandEvent& WXUNUSED(event)) {
     bool bWasVisible;
 
@@ -331,7 +343,7 @@ void CTaskBarIcon::OnMouseMove(wxTaskBarIconEvent& WXUNUSED(event)) {
             }
 
             pDoc->GetCoreClientStatus(status);
-            if (status.task_suspend_reason && !(status.task_suspend_reason & SUSPEND_REASON_CPU_USAGE_LIMIT)) {
+            if (status.task_suspend_reason && !(status.task_suspend_reason & SUSPEND_REASON_CPU_THROTTLE)) {
                 strBuffer.Printf(
                     _("Computation is suspended.")
                 );
@@ -339,7 +351,7 @@ void CTaskBarIcon::OnMouseMove(wxTaskBarIconEvent& WXUNUSED(event)) {
                 strMessage += strBuffer;
             }
 
-            if (status.network_suspend_reason && !(status.network_suspend_reason & SUSPEND_REASON_CPU_USAGE_LIMIT)) {
+            if (status.network_suspend_reason && !(status.network_suspend_reason & SUSPEND_REASON_CPU_THROTTLE)) {
                 strBuffer.Printf(
                     _("Network activity is suspended.")
                 );
@@ -609,6 +621,9 @@ wxMenu *CTaskBarIcon::BuildContextMenu() {
     pMenu->AppendSeparator();
 
     pMenu->AppendCheckItem(ID_TB_SUSPEND, _("Snooze"), wxEmptyString);
+    if (pDoc->state.have_cuda || pDoc->state.have_ati) {
+        pMenu->AppendCheckItem(ID_TB_SUSPEND_GPU, _("Snooze GPU"), wxEmptyString);
+    }
 
     pMenu->AppendSeparator();
 
@@ -690,22 +705,52 @@ void CTaskBarIcon::AdjustMenuItems(wxMenu* pMenu) {
     if (pDoc->WaitingForRPC()) return;
 
     pDoc->GetCoreClientStatus(status);
-    if (RUN_MODE_NEVER == status.task_mode) {
-        if (status.task_mode_perm == status.task_mode) {
+    switch (status.task_mode) {
+    case RUN_MODE_NEVER:
+        switch (status.task_mode_perm) {
+        case RUN_MODE_NEVER:
             pMenu->Check(ID_TB_SUSPEND, false);
             pMenu->Enable(ID_TB_SUSPEND, false);
-        } else {
+            break;
+        default:
             pMenu->Check(ID_TB_SUSPEND, true);
             if (!is_dialog_detected) {
-            pMenu->Enable(ID_TB_SUSPEND, true);
+                pMenu->Enable(ID_TB_SUSPEND, true);
             }
         }
-    } else {
+        if (pDoc->state.have_cuda || pDoc->state.have_ati) {
+            pMenu->Check(ID_TB_SUSPEND_GPU, false);
+            pMenu->Enable(ID_TB_SUSPEND_GPU, false);
+        }
+        break;
+    default:
         pMenu->Check(ID_TB_SUSPEND, false);
-            if (!is_dialog_detected) {
-        pMenu->Enable(ID_TB_SUSPEND, true);
+        if (!is_dialog_detected) {
+            pMenu->Enable(ID_TB_SUSPEND, true);
+        }
+        if (pDoc->state.have_cuda || pDoc->state.have_ati) {
+            switch (status.gpu_mode) {
+            case RUN_MODE_NEVER:
+                switch (status.gpu_mode_perm) {
+                case RUN_MODE_NEVER:
+                    pMenu->Check(ID_TB_SUSPEND_GPU, false);
+                    pMenu->Enable(ID_TB_SUSPEND_GPU, false);
+                    break;
+                default:
+                    pMenu->Check(ID_TB_SUSPEND_GPU, true);
+                    if (!is_dialog_detected) {
+                        pMenu->Enable(ID_TB_SUSPEND_GPU, true);
+                    }
+                }
+                break;
+            default:
+                pMenu->Check(ID_TB_SUSPEND_GPU, false);
+                if (!is_dialog_detected) {
+                    pMenu->Enable(ID_TB_SUSPEND_GPU, true);
+                }
+                break;
             }
+        }
     }
 }
 
-const char *BOINC_RCSID_531575eeaa = "$Id: BOINCTaskBar.cpp 17859 2009-04-23 03:40:49Z romw $";

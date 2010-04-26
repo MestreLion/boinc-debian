@@ -911,6 +911,3 @@ void print_text(const char* string) {
 	glPopAttrib();
 }
 
-
-
-const char *BOINC_RCSID_12bffca9ae = "$Id: gutil.cpp 17954 2009-04-30 21:48:20Z davea $";

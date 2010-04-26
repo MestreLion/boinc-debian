@@ -37,6 +37,7 @@
 #include "log_flags.h"
 #include "str_util.h"
 #include "str_replace.h"
+#include "url.h"
 #include "util.h"
 
 #include "network.h"
@@ -44,6 +45,8 @@
 #include "client_msgs.h"
 #include "base64.h"
 #include "client_state.h"
+#include "cs_proxy.h"
+
 #include "http_curl.h"
 
 using std::min;
@@ -52,60 +55,7 @@ using std::vector;
 static CURLM* g_curlMulti = NULL;
 static char g_user_agent_string[256] = {""};
 static const char g_content_type[] = {"Content-Type: application/x-www-form-urlencoded"};
-
-
-// Breaks a URL down into its protocol, server, port and file components
-// format of url:
-// [http[s]://]host.dom.dom[:port][/dir/file]
-// [socks]://]host.dom.dom[:port][/dir/file]
-//
-void parse_url(const char* url, int &protocol, char* host, int &port, char* file) {
-    char* p;
-    char buf[256];
-
-    // strip off the protocol if present
-    //
-    if (strncmp(url, "http://", 7) == 0) {
-        safe_strcpy(buf, url+7);
-        protocol = URL_PROTOCOL_HTTP;
-    } else if (strncmp(url, "https://", 8) == 0) {
-        safe_strcpy(buf, url+8);
-        protocol = URL_PROTOCOL_HTTPS;
-    } else if (strncmp(url, "socks://", 8) == 0) {
-        safe_strcpy(buf, url+8);
-        protocol = URL_PROTOCOL_SOCKS;
-    } else {
-        safe_strcpy(buf, url);
-        protocol = URL_PROTOCOL_UNKNOWN;
-    }
-
-    // parse and strip off file part if present
-    //
-    p = strchr(buf, '/');
-    if (p) {
-        strcpy(file, p+1);
-        *p = 0;
-    } else {
-        strcpy(file, "");
-    }
-
-    // parse and strip off port if present
-    //
-    p = strchr(buf,':');
-    if (p) {
-        port = atol(p+1);
-        *p = 0;
-    } else {
-        // CMC note:  if they didn't pass in a port #,
-        //    but the url starts with https://, assume they
-        //    want a secure port (HTTPS, port 443)
-        port = (protocol == URL_PROTOCOL_HTTPS) ? 443 : 80;
-    }
-
-    // what remains is the host
-    //
-    strcpy(host, buf);
-}
+static unsigned int g_trace_count = 0;
 
 char* get_user_agent_string() {
     sprintf(g_user_agent_string, "BOINC client (%s %d.%d.%d)",
@@ -113,6 +63,149 @@ char* get_user_agent_string() {
         BOINC_MAJOR_VERSION, BOINC_MINOR_VERSION, BOINC_RELEASE
     );
     return (char*)&g_user_agent_string;
+}
+
+size_t libcurl_write(void *ptr, size_t size, size_t nmemb, HTTP_OP* phop) {
+    // take the stream param as a FILE* and write to disk
+    // TODO: maybe assert stRead == size*nmemb,
+    // add exception handling on phop members
+    //
+    size_t stWrite = fwrite(ptr, size, nmemb, phop->fileOut);
+    if (log_flags.http_xfer_debug) {
+        msg_printf(NULL, MSG_INFO,
+            "[http_xfer_debug] [ID#%d] HTTP: wrote %d bytes", phop->trace_id, (int)stWrite
+        );
+    }
+    phop->bytes_xferred += (double)(stWrite);
+    phop->update_speed();  // this should update the transfer speed
+    return stWrite;
+}
+
+size_t libcurl_read( void *ptr, size_t size, size_t nmemb, HTTP_OP* phop) {
+    // OK here's the deal -- phop points to the calling object,
+    // which has already pre-opened the file.  we'll want to
+    // use pByte as a pointer for fseek calls into the file, and
+    // write out size*nmemb # of bytes to ptr
+
+    // take the stream param as a FILE* and write to disk
+    // if (pByte) delete [] pByte;
+    // pByte = new unsigned char[content_length];
+    // memset(pByte, 0x00, content_length); // may as will initialize it!
+
+    // note that fileIn was opened earlier,
+    // go to lSeek from the top and read from there
+    //
+    size_t stSend = size * nmemb;
+    int stRead = 0;
+
+    if (phop->req1 && !phop->bSentHeader) {
+        // need to send headers first, then data file
+        // so requests from 0 to strlen(req1)-1 are from memory,
+        // and from strlen(req1) to content_length are from the file
+        if (phop->lSeek < (long) strlen(phop->req1)) {
+            // need to read header, either just starting to read
+            // (i.e. this is the first time in this function for this phop)
+            // or the last read didn't ask for the entire header
+
+            stRead = (int)strlen(phop->req1) - phop->lSeek;
+                // how much of header left to read
+
+            // only memcpy if request isn't out of bounds
+            if (stRead < 0) {
+                stRead = 0;
+            } else {
+                memcpy(ptr, (void*)(phop->req1 + phop->lSeek), stRead);
+            }
+            phop->lSeek += (long) stRead;  // increment lSeek to new position
+
+            // Don't count header in bytes transferred.
+            // Otherwise the GUI will show e.g. "400 out of 300 bytes xferred"
+            //phop->bytes_xferred += (double)(stRead);
+
+            // see if we're done with headers
+            if (phop->lSeek >= (long) strlen(phop->req1)) {
+                phop->bSentHeader = true;
+                phop->lSeek = 0;
+            }
+            return stRead;
+        } else {
+            // shouldn't happen
+            phop->bSentHeader = true;
+            phop->lSeek = 0;
+        }
+    }
+    if (phop->fileIn) {
+        long lFileSeek = phop->lSeek + (long) phop->file_offset;
+        fseek(phop->fileIn, lFileSeek, SEEK_SET);
+        if (!feof(phop->fileIn)) {
+            stRead = (int)fread(ptr, 1, stSend, phop->fileIn);
+        }
+        phop->lSeek += (long) stRead;
+        phop->bytes_xferred += (double)(stRead);
+    }
+    phop->update_speed();
+    return stRead;
+}
+
+curlioerr libcurl_ioctl(CURL*, curliocmd cmd, HTTP_OP* phop) {
+    // reset input stream to beginning - resends header
+    // and restarts data back to starting point
+
+    switch(cmd) {
+    case CURLIOCMD_RESTARTREAD:
+        phop->lSeek = 0;
+        phop->bytes_xferred = phop->file_offset;
+        phop->bSentHeader = false;
+        break;
+    default: // should never get here
+        return CURLIOE_UNKNOWNCMD;
+    }
+    return CURLIOE_OK;
+}
+
+void libcurl_logdebug(
+    HTTP_OP* phop, const char* desc, char *data, size_t size
+) {
+    char hdr[256];
+    char buf[2048], *p = buf;
+    size_t copy_size;
+
+    sprintf(hdr, "[ID#%d] %s", phop->trace_id, desc);
+
+    copy_size = min(size, sizeof(buf)-1);
+    strncpy(buf, data, copy_size);
+    buf[copy_size]='\0';
+
+    p = strtok(buf, "\n");
+    while(p) {
+        if (log_flags.http_debug) {
+            msg_printf(0, MSG_INFO,
+                "[http_debug] %s %s\n", hdr, p
+            );
+        }
+        p = strtok(NULL, "\n");
+    }
+}
+
+int libcurl_debugfunction(
+    CURL*, curl_infotype type, char *data, size_t size, HTTP_OP* phop
+) {
+    const char* desc = NULL;
+    switch (type) {
+    case CURLINFO_TEXT:
+        desc = "Info: ";
+        break;
+    case CURLINFO_HEADER_OUT:
+        desc = "Sent header to server:";
+        break;
+    case CURLINFO_HEADER_IN:
+        desc = "Received header from server:";
+        break;
+    default: /* in case a new one is introduced to shock us */
+       return 0;
+    }
+    libcurl_logdebug(phop, desc, data, size);
+    return 0;
 }
 
 void HTTP_OP::init() {
@@ -148,7 +241,7 @@ HTTP_OP::HTTP_OP() {
     http_op_state = HTTP_STATE_IDLE;
     http_op_type = HTTP_OP_NONE;
     http_op_retval = 0;
-    trace_id = 0;
+    trace_id = g_trace_count++;
     pcurlList = NULL; // these have to be NULL, just in constructor
     curlEasy = NULL;
     pcurlFormStart = NULL;
@@ -251,27 +344,23 @@ int HTTP_OP::init_post2(
 // is URL in proxy exception list?
 //
 bool HTTP_OP::no_proxy_for_url(const char* url) {
+    PARSED_URL purl, purl2;
+    char noproxy[256];
+
     if (log_flags.proxy_debug) {
         msg_printf(0, MSG_INFO, "[proxy_debug] HTTP_OP::no_proxy_for_url(): %s", url);
     }
-    char hosturl[256];
-    char file[256];
-    char hostnoproxy[256];
-    char noproxy[256];
-    int protocol;
-    int port;
 
-    // extract the host from the url
-    parse_url(url, protocol, hosturl, port, file);
+    parse_url(url, purl);
 
     // tokenize the noproxy-entry and check for identical hosts
     //
-    strcpy(noproxy, gstate.proxy_info.noproxy_hosts);
+    strcpy(noproxy, working_proxy_info.noproxy_hosts);
     char* token = strtok(noproxy, ",");
-    while(token!= NULL) {
+    while (token != NULL) {
         // extract the host from the no_proxy url
-        parse_url(token, protocol, hostnoproxy, port, file);
-        if (hostnoproxy == hosturl) {
+        parse_url(token, purl2);
+        if (!strcmp(purl.host, purl2.host)) {
             if (log_flags.proxy_debug) {
                 msg_printf(0, MSG_INFO, "[proxy_debug] disabling proxy for %s", url);
             }
@@ -581,11 +670,9 @@ int HTTP_OP::libcurl_exec(
     // turn on debug info if tracing enabled
     //
     if (log_flags.http_debug) {
-        static int trace_count = 0;
         curlErr = curl_easy_setopt(curlEasy, CURLOPT_DEBUGFUNCTION, libcurl_debugfunction);
         curlErr = curl_easy_setopt(curlEasy, CURLOPT_DEBUGDATA, this );
         curlErr = curl_easy_setopt(curlEasy, CURLOPT_VERBOSE, 1L);
-        trace_id = trace_count++;
     }
 
     // last but not least, add this to the curl_multi
@@ -641,144 +728,6 @@ int HTTP_OP_SET::nops() {
     return (int)http_ops.size();
 }
 
-size_t libcurl_write(void *ptr, size_t size, size_t nmemb, HTTP_OP* phop) {
-    // take the stream param as a FILE* and write to disk
-    // TODO: maybe assert stRead == size*nmemb,
-    // add exception handling on phop members
-    //
-    size_t stWrite = fwrite(ptr, size, nmemb, phop->fileOut);
-    if (log_flags.http_xfer_debug) {
-        msg_printf(NULL, MSG_INFO,
-            "[http_xfer_debug] HTTP: wrote %d bytes", (int)stWrite
-        );
-    }
-    phop->bytes_xferred += (double)(stWrite);
-    phop->update_speed();  // this should update the transfer speed
-    return stWrite;
-}
-
-size_t libcurl_read( void *ptr, size_t size, size_t nmemb, HTTP_OP* phop) {
-    // OK here's the deal -- phop points to the calling object,
-    // which has already pre-opened the file.  we'll want to
-    // use pByte as a pointer for fseek calls into the file, and
-    // write out size*nmemb # of bytes to ptr
-
-    // take the stream param as a FILE* and write to disk
-    // if (pByte) delete [] pByte;
-    // pByte = new unsigned char[content_length];
-    // memset(pByte, 0x00, content_length); // may as will initialize it!
-
-    // note that fileIn was opened earlier,
-    // go to lSeek from the top and read from there
-    //
-    size_t stSend = size * nmemb;
-    int stRead = 0;
-
-    if (phop->req1 && !phop->bSentHeader) {
-        // need to send headers first, then data file
-        // so requests from 0 to strlen(req1)-1 are from memory,
-        // and from strlen(req1) to content_length are from the file
-        if (phop->lSeek < (long) strlen(phop->req1)) {
-            // need to read header, either just starting to read
-            // (i.e. this is the first time in this function for this phop)
-            // or the last read didn't ask for the entire header
-
-            stRead = (int)strlen(phop->req1) - phop->lSeek;
-                // how much of header left to read
-
-            // only memcpy if request isn't out of bounds
-            if (stRead < 0) {
-                stRead = 0;
-            } else {
-                memcpy(ptr, (void*)(phop->req1 + phop->lSeek), stRead);
-            }
-            phop->lSeek += (long) stRead;  // increment lSeek to new position
-
-            // Don't count header in bytes transferred.
-            // Otherwise the GUI will show e.g. "400 out of 300 bytes xferred"
-            //phop->bytes_xferred += (double)(stRead);
-
-            // see if we're done with headers
-            if (phop->lSeek >= (long) strlen(phop->req1)) {
-                phop->bSentHeader = true;
-                phop->lSeek = 0;
-            }
-            return stRead;
-        } else {
-            // shouldn't happen
-            phop->bSentHeader = true;
-            phop->lSeek = 0;
-        }
-    }
-    if (phop->fileIn) {
-        long lFileSeek = phop->lSeek + (long) phop->file_offset;
-        fseek(phop->fileIn, lFileSeek, SEEK_SET);
-        if (!feof(phop->fileIn)) {
-            stRead = (int)fread(ptr, 1, stSend, phop->fileIn);
-        }
-        phop->lSeek += (long) stRead;
-        phop->bytes_xferred += (double)(stRead);
-    }
-    phop->update_speed();
-    return stRead;
-}
-
-curlioerr libcurl_ioctl(CURL*, curliocmd cmd, HTTP_OP* phop) {
-    // reset input stream to beginning - resends header
-    // and restarts data back to starting point
-
-    switch(cmd) {
-    case CURLIOCMD_RESTARTREAD:
-        phop->lSeek = 0;
-        phop->bytes_xferred = phop->file_offset;
-        phop->bSentHeader = false;
-        break;
-    default: // should never get here
-        return CURLIOE_UNKNOWNCMD;
-    }
-    return CURLIOE_OK;
-}
-
-int libcurl_debugfunction(
-    CURL*, curl_infotype type,
-    unsigned char *data, size_t size, HTTP_OP* phop
-) {
-    const char *text;
-    char hdr[100];
-    char buf[1024];
-    size_t mysize;
-
-    switch (type) {
-    case CURLINFO_TEXT:
-        if (log_flags.http_debug) {
-            msg_printf(0, MSG_INFO,
-                "[http_debug] [ID#%i] info: %s\n", phop->trace_id, data
-            );
-        }
-        return 0;
-    case CURLINFO_HEADER_OUT:
-        text = "Sent header to server:";
-        break;
-    case CURLINFO_HEADER_IN:
-        text = "Received header from server:";
-        break;
-    default: /* in case a new one is introduced to shock us */
-       return 0;
-    }
-
-    sprintf( hdr,"[ID#%i] %s", phop->trace_id, text);
-    mysize = min(size, sizeof(buf)-1);
-    strncpy(buf, (char *)data, mysize);
-    buf[mysize]='\0';
-    if (log_flags.http_debug) {
-        msg_printf(0, MSG_INFO,
-            "[http_debug] %s %s\n", hdr, buf
-        );
-    }
-    return 0;
-}
-
-
 // Curl self-explanatory setopt params for proxies:
 //    CURLOPT_HTTPPROXYTUNNEL
 //    CURLOPT_PROXYTYPE  (pass in CURLPROXY_HTTP or CURLPROXY_SOCKS5)
@@ -802,7 +751,7 @@ void HTTP_OP::setup_proxy_session(bool no_proxy) {
         return;
     }
 
-    pi = gstate.proxy_info;
+    pi = working_proxy_info;
     if (pi.use_http_proxy) {
         if (log_flags.proxy_debug) {
             msg_printf(
@@ -833,10 +782,7 @@ void HTTP_OP::setup_proxy_session(bool no_proxy) {
         }
 
     } else if (pi.use_socks_proxy) {
-
-        // pi.socks_version selects between socks5 & socks4.
-        // But libcurl only supports socks5, so ignore it.
-        //
+        // CURL only supports SOCKS version 5
         curlErr = curl_easy_setopt(curlEasy, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
         curlErr = curl_easy_setopt(curlEasy, CURLOPT_PROXYPORT, (long) pi.socks_server_port);
         curlErr = curl_easy_setopt(curlEasy, CURLOPT_PROXY, (char*) pi.socks_server_name);
@@ -1174,4 +1120,3 @@ void HTTP_OP_SET::cleanup_temp_files() {
     dir_close(d);
 }
 
-const char *BOINC_RCSID_57f273bb60 = "$Id: http_curl.cpp 19101 2009-09-18 20:48:19Z romw $";

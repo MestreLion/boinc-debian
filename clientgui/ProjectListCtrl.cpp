@@ -26,10 +26,27 @@
 
 ////@begin XPM images
 #include "res/externalweblink.xpm"
+#include "res/nvidiaicon.xpm"
+#include "res/atiicon.xpm"
+#include "res/multicore.xpm"
 ////@end XPM images
 
 
-#if wxUSE_ACCESSIBILITY
+#ifdef __WXMAC__
+
+CProjectListCtrlAccessible::CProjectListCtrlAccessible(wxWindow* win) {
+    mp_win = win;
+    SetupMacAccessibilitySupport();
+}
+
+
+CProjectListCtrlAccessible::~CProjectListCtrlAccessible() {
+    RemoveMacAccessibilitySupport();
+}
+
+#endif
+
+#if wxUSE_ACCESSIBILITY || defined(__WXMAC__)
 
 // Gets the name of the specified object.
 wxAccStatus CProjectListCtrlAccessible::GetName(int childId, wxString* name)
@@ -107,6 +124,72 @@ wxAccStatus CProjectListCtrlAccessible::GetLocation(wxRect& rect, int elementId)
 }
 
 
+// Gets the number of children.
+wxAccStatus CProjectListCtrlAccessible::GetChildCount(int* childCount)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl)
+    {
+        *childCount = (int)pCtrl->GetItemCount();
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Performs the default action. childId is 0 (the action for this object)
+// or > 0 (the action for a child).
+// Return wxACC_NOT_SUPPORTED if there is no default action for this
+// window (e.g. an edit control).
+wxAccStatus CProjectListCtrlAccessible::DoDefaultAction(int childId)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl && (childId != wxACC_SELF))
+    {
+        // Zero-based array index
+        int iRealChildId = childId - 1;
+
+        pCtrl->SetSelection(iRealChildId);
+
+        // Fire Event 
+        ProjectListCtrlEvent evt( 
+            wxEVT_PROJECTLIST_ITEM_CHANGE, 
+            pCtrl->GetItem(iRealChildId)->GetTitle(),  
+            pCtrl->GetItem(iRealChildId)->GetURL(), 
+            true 
+        ); 
+#ifdef __WXMAC__
+        evt.SetEventObject(pCtrl); 
+#else
+        evt.SetEventObject(this); 
+#endif
+
+        pCtrl->GetParent()->AddPendingEvent( evt ); 
+
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+// Returns the description for this object or a child.
+wxAccStatus CProjectListCtrlAccessible::GetDescription(int childId, wxString* description)
+{
+    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
+    if (pCtrl && (childId != wxACC_SELF))
+    {
+        *description = pCtrl->GetItem(childId - 1)->GetDescription().c_str();
+        return wxACC_OK;
+    }
+    // Let the framework handle the other cases.
+    return wxACC_NOT_IMPLEMENTED;
+}
+
+
+#ifndef __WXMAC__
+
 // Navigates from fromId to toId/toObject.
 wxAccStatus CProjectListCtrlAccessible::Navigate(
     wxNavDir navDir, int fromId, int* toId, wxAccessible** toObject
@@ -179,52 +262,6 @@ wxAccStatus CProjectListCtrlAccessible::Navigate(
 }
 
 
-// Gets the number of children.
-wxAccStatus CProjectListCtrlAccessible::GetChildCount(int* childCount)
-{
-    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
-    if (pCtrl)
-    {
-        *childCount = (int)pCtrl->GetItemCount();
-        return wxACC_OK;
-    }
-    // Let the framework handle the other cases.
-    return wxACC_NOT_IMPLEMENTED;
-}
-
-
-// Performs the default action. childId is 0 (the action for this object)
-// or > 0 (the action for a child).
-// Return wxACC_NOT_SUPPORTED if there is no default action for this
-// window (e.g. an edit control).
-wxAccStatus CProjectListCtrlAccessible::DoDefaultAction(int childId)
-{
-    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
-    if (pCtrl && (childId != wxACC_SELF))
-    {
-        // Zero-based array index
-        int iRealChildId = childId - 1;
-
-        pCtrl->SetSelection(iRealChildId);
-
-        // Fire Event 
-        ProjectListCtrlEvent evt( 
-            wxEVT_PROJECTLIST_ITEM_CHANGE, 
-            pCtrl->GetItem(iRealChildId)->GetTitle(),  
-            pCtrl->GetItem(iRealChildId)->GetURL(), 
-            true 
-        ); 
-        evt.SetEventObject(this); 
-
-        pCtrl->GetParent()->AddPendingEvent( evt ); 
-
-        return wxACC_OK;
-    }
-    // Let the framework handle the other cases.
-    return wxACC_NOT_IMPLEMENTED;
-}
-
-
 // Gets the default action for this object (0) or > 0 (the action for a child).
 // Return wxACC_OK even if there is no action. actionName is the action, or the empty
 // string if there is no action.
@@ -237,20 +274,6 @@ wxAccStatus CProjectListCtrlAccessible::GetDefaultAction(int childId, wxString* 
     if (pCtrl && (childId != wxACC_SELF))
     {
         *actionName = _("Click");
-        return wxACC_OK;
-    }
-    // Let the framework handle the other cases.
-    return wxACC_NOT_IMPLEMENTED;
-}
-
-
-// Returns the description for this object or a child.
-wxAccStatus CProjectListCtrlAccessible::GetDescription(int childId, wxString* description)
-{
-    CProjectListCtrl* pCtrl = wxDynamicCast(GetWindow(), CProjectListCtrl);
-    if (pCtrl && (childId != wxACC_SELF))
-    {
-        *description = pCtrl->GetItem(childId - 1)->GetDescription().c_str();
         return wxACC_OK;
     }
     // Let the framework handle the other cases.
@@ -328,8 +351,8 @@ wxAccStatus CProjectListCtrlAccessible::GetSelections(wxVariant* )
     // Let the framework handle the other cases.
     return wxACC_NOT_IMPLEMENTED;
 }
-
-#endif
+#endif      // ifndef __WXMAC__
+#endif      // wxUSE_ACCESSIBILITY || defined(__WXMAC__)
 
 
 /*!
@@ -381,6 +404,16 @@ CProjectListCtrl::CProjectListCtrl( wxWindow* parent )
     Create( parent );
 }
  
+ 
+ #ifdef __WXMAC__
+CProjectListCtrl::~CProjectListCtrl( )
+{
+    if (m_accessible) {
+        delete m_accessible;
+    }
+}
+#endif
+
 /*!
  * CProjectList creator
  */
@@ -397,9 +430,16 @@ bool CProjectListCtrl::Create( wxWindow* parent )
 #if wxUSE_ACCESSIBILITY
     SetAccessible(new CProjectListCtrlAccessible(this));
 #endif
+#ifdef __WXMAC__
+    m_accessible = new CProjectListCtrlAccessible(this);
+#endif
 
     wxMemoryFSHandler::AddFile(wxT("webexternallink.xpm"), wxBitmap(externalweblink_xpm), wxBITMAP_TYPE_XPM);
+    wxMemoryFSHandler::AddFile(wxT("nvidiaicon.xpm"), wxBitmap(nvidiaicon_xpm), wxBITMAP_TYPE_XPM);
+    wxMemoryFSHandler::AddFile(wxT("atiicon.xpm"), wxBitmap(atiicon_xpm), wxBITMAP_TYPE_XPM);
+    wxMemoryFSHandler::AddFile(wxT("multicore.xpm"), wxBitmap(multicore_xpm), wxBITMAP_TYPE_XPM);
 ////@end CProjectListCtrl creation
+
     return TRUE;
 }
 
@@ -448,26 +488,78 @@ void CProjectListCtrl::OnLinkClicked( wxHtmlLinkEvent& event )
 
 void CProjectListCtrl::OnHover( wxHtmlCellEvent& event )
 {
-    event.Skip();
+    long i = 0;
+    wxHtmlCell* pCell = event.GetCell();
+    wxHtmlCell* pRootCell = pCell->GetRootCell();
+    wxString strMulticoreIcon = wxT("multicore");
+    wxString strNvidiaIcon = wxT("nvidiaicon");
+    wxString strATIIcon = wxT("atiicon");
+    wxString strWebsiteIcon = wxT("website");
+    wxString strTooltip = wxEmptyString;
+
+    wxHtmlCell* pAnchor = pCell->GetParent()->GetFirstChild();
+
+    if (pAnchor->Find(wxHTML_COND_ISANCHOR, &strMulticoreIcon)) {
+        strTooltip = _("Multicore CPU Supported");
+    } else if (pAnchor->Find(wxHTML_COND_ISANCHOR, &strNvidiaIcon)) {
+        strTooltip = _("Nvidia GPU Supported");
+    } else if (pAnchor->Find(wxHTML_COND_ISANCHOR, &strATIIcon)) {
+        strTooltip = _("ATI GPU Supported");
+    } else if (pAnchor->Find(wxHTML_COND_ISANCHOR, &strWebsiteIcon)) {
+        strTooltip = _("Project Website");
+    } else {
+        // Convert current HTML cell into an array index
+        pRootCell->GetId().ToLong(&i);
+
+        strTooltip = m_Items[i]->GetDescription();
+    }
+
+    // Set Tooltip to the item currently being hovered over
+    SetToolTip(strTooltip);
 }
 
 
 wxString CProjectListCtrl::OnGetItem(size_t i) const
 {
-    wxString buf = wxEmptyString;
+    wxString strTopRow = wxEmptyString;
+    wxString strBuffer = wxEmptyString;
 
-    buf.Printf(
-        wxT("  <table cellpadding=0 cellspacing=1>")
-        wxT("    <tr>")
-        wxT("      <td width=100%%>%s</td>")
-        wxT("      <td><a href=\"%s\"><img src=\"memory:webexternallink.xpm\"></a></td>")
-        wxT("    </tr>")
-        wxT("  </table>"),
-        m_Items[i]->GetTitle().c_str(),
+
+    //
+    // Top Row
+    // 
+    strTopRow += wxT("<table cellpadding=0 cellspacing=1>");
+
+    strTopRow += wxT("<tr>");
+
+    strBuffer.Printf(
+        wxT("<td width=100%%>%s</td>"),
+        m_Items[i]->GetTitle().c_str()
+    );
+    strTopRow += strBuffer;
+    
+    if (m_Items[i]->IsMulticoreSupported()) {
+        strTopRow += wxT("<td><a name=\"multicore\"><img height=16 width=16 src=\"memory:multicore.xpm\"></a></td>");
+    }
+
+    if (m_Items[i]->IsNvidiaGPUSupported()) {
+        strTopRow += wxT("<td><a name=\"nvidiaicon\"><img height=16 width=16 src=\"memory:nvidiaicon.xpm\"></a></td>");
+    }
+
+    if (m_Items[i]->IsATIGPUSupported()) {
+        strTopRow += wxT("<td><a name=\"atiicon\"><img height=16 width=16 src=\"memory:atiicon.xpm\"></a></td>");
+    }
+
+    strBuffer.Printf(
+        wxT("<td><a name=\"website\"href=\"%s\"><img height=16 width=16 src=\"memory:webexternallink.xpm\"></a></td>"),
         m_Items[i]->GetURL().c_str()
     );
+    strTopRow += strBuffer;
 
-    return buf;
+    strTopRow += wxT("</tr>");
+    strTopRow += wxT("</table>");
+
+    return strTopRow;
 }
 
 
@@ -478,7 +570,11 @@ wxString CProjectListCtrl::OnGetItem(size_t i) const
 bool CProjectListCtrl::Append(
     wxString strURL,
     wxString strTitle,
+    wxString strImage,
     wxString strDescription,
+    bool bNvidiaGPUSupported,
+    bool bATIGPUSupported,
+    bool bMulticoreSupported,
     bool bSupported
 )
 {
@@ -486,7 +582,11 @@ bool CProjectListCtrl::Append(
 
     pItem->SetURL( strURL );
     pItem->SetTitle( strTitle );
+    pItem->SetImage( strImage );
     pItem->SetDescription( strDescription );
+    pItem->SetNvidiaGPUSupported( bNvidiaGPUSupported );
+    pItem->SetATIGPUSupported( bATIGPUSupported );
+    pItem->SetMulticoreSupported( bMulticoreSupported );
     pItem->SetPlatformSupported( bSupported );
 
     m_Items.push_back(pItem);

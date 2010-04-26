@@ -22,11 +22,13 @@
 #endif
 
 #include <cstring>
+
 #include "parse.h"
 #include "error_numbers.h"
 #include "client_msgs.h"
 #include "str_util.h"
 #include "str_replace.h"
+#include "url.h"
 #include "file_names.h"
 #include "filesys.h"
 #include "client_state.h"
@@ -73,7 +75,7 @@ int ACCT_MGR_OP::do_rpc(
         for (i=0; i<gstate.projects.size(); i++) {
             PROJECT* p = gstate.projects[i];
             p->attached_via_acct_mgr = false;
-            p->ams_resource_share = 0;
+            p->ams_resource_share = -1;
         }
         return 0;
     }
@@ -689,4 +691,3 @@ bool ACCT_MGR_INFO::poll() {
     return false;
 }
 
-const char *BOINC_RCSID_8fd9e873bf="$Id: acct_mgr.cpp 18437 2009-06-16 20:54:44Z davea $";

@@ -38,6 +38,9 @@ public:
     wxString GetTitle() const { return m_strTitle ; }
     void SetTitle(wxString value) { m_strTitle = value ; }
 
+    wxString GetImage() const { return m_strImage ; }
+    void SetImage(wxString value) { m_strImage = value ; }
+
     wxString GetOrganization() const { return m_strOrganization ; }
     void SetOrganization(wxString value) { m_strOrganization = value ; }
 
@@ -47,38 +50,80 @@ public:
     wxString GetCategory() const { return m_strCategory ; }
     void SetCategory(wxString value) { m_strCategory = value ; }
 
+    bool IsNvidiaGPUSupported() const { return m_bNvidiaGPUSupported ; }
+    void SetNvidiaGPUSupported(bool value) { m_bNvidiaGPUSupported = value ; }
+
+    bool IsATIGPUSupported() const { return m_bATIGPUSupported ; }
+    void SetATIGPUSupported(bool value) { m_bATIGPUSupported = value ; }
+
+    bool IsMulticoreSupported() const { return m_bMulticoreSupported ; }
+    void SetMulticoreSupported(bool value) { m_bMulticoreSupported = value ; }
+
     bool IsPlatformSupported() const { return m_bSupported ; }
     void SetPlatformSupported(bool value) { m_bSupported = value ; }
 
 private:
     wxString m_strURL;
     wxString m_strTitle;
+    wxString m_strImage;
     wxString m_strOrganization;
     wxString m_strDescription;
     wxString m_strCategory;
+    bool m_bNvidiaGPUSupported;
+    bool m_bATIGPUSupported;
+    bool m_bMulticoreSupported;
     bool m_bSupported;
 };
 
+#if wxUSE_ACCESSIBILITY || defined(__WXMAC__)
 
-#if wxUSE_ACCESSIBILITY
+#ifdef __WXMAC__
 
+#define wxACC_SELF              0
+#define wxACC_OK                noErr
+#define wxAccStatus             OSStatus
+#define wxACC_NOT_IMPLEMENTED   eventNotHandledErr
+#define wxACC_FALSE             eventNotHandledErr
+#define wxAccessible            wxObject
+
+class CProjectListCtrlAccessible
+#else
 class CProjectListCtrlAccessible: public wxWindowAccessible
+#endif
 {
 public:
+
+#ifdef __WXMAC__
+    CProjectListCtrlAccessible(wxWindow* win);
+    virtual ~CProjectListCtrlAccessible();
+#else
     CProjectListCtrlAccessible(wxWindow* win): wxWindowAccessible(win) {}
+#endif
 
     virtual wxAccStatus GetName(int childId, wxString* name);
     virtual wxAccStatus HitTest(const wxPoint& pt, int* childId, wxAccessible** childObject);
     virtual wxAccStatus GetLocation(wxRect& rect, int elementId);
-    virtual wxAccStatus Navigate(wxNavDir navDir, int fromId, int* toId, wxAccessible** toObject);
     virtual wxAccStatus GetChildCount(int* childCount);
     virtual wxAccStatus DoDefaultAction(int childId);
-    virtual wxAccStatus GetDefaultAction(int childId, wxString* actionName);
     virtual wxAccStatus GetDescription(int childId, wxString* description);
+#ifndef __WXMAC__
+    virtual wxAccStatus Navigate(wxNavDir navDir, int fromId, int* toId, wxAccessible** toObject);
+    virtual wxAccStatus GetDefaultAction(int childId, wxString* actionName);
     virtual wxAccStatus GetRole(int childId, wxAccRole* role);
     virtual wxAccStatus GetState(int childId, long* state);
     virtual wxAccStatus Select(int childId, wxAccSelectionFlags selectFlags);
     virtual wxAccStatus GetSelections(wxVariant* selections);
+#endif
+
+#ifdef __WXMAC__
+    wxWindow                *mp_win;
+    HIViewRef               m_listView;
+    EventHandlerRef         m_plistAccessibilityEventHandlerRef;
+    
+    wxWindow *GetWindow() { return mp_win; }
+    void SetupMacAccessibilitySupport();
+    void RemoveMacAccessibilitySupport();
+#endif
 };
 
 #endif
@@ -98,6 +143,9 @@ public:
     CProjectListCtrl( );
 
     CProjectListCtrl( wxWindow* parent );
+#ifdef __WXMAC__
+    ~CProjectListCtrl();
+#endif
 
     /// Creation
     bool Create( wxWindow* parent );
@@ -118,7 +166,11 @@ public:
     bool Append(
         wxString strURL,
         wxString strTitle,
+        wxString strImage,
         wxString strDescription,
+        bool bNvidiaGPUSupported,
+        bool bATIGPUSupported,
+        bool bMulticoreSupported,
         bool bSupported
     );
 
@@ -130,6 +182,10 @@ public:
 
 private:
     std::vector<CProjectListItem*> m_Items;
+
+#ifdef __WXMAC__
+    CProjectListCtrlAccessible*    m_accessible;
+#endif
 };
 
 

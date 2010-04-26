@@ -107,10 +107,11 @@ enum SUSPEND_REASON {
     SUSPEND_REASON_TIME_OF_DAY = 8,
     SUSPEND_REASON_BENCHMARKS = 16,
     SUSPEND_REASON_DISK_SIZE = 32,
-    SUSPEND_REASON_CPU_USAGE_LIMIT = 64,
+    SUSPEND_REASON_CPU_THROTTLE = 64,
     SUSPEND_REASON_NO_RECENT_INPUT = 128,
     SUSPEND_REASON_INITIAL_DELAY = 256,
-    SUSPEND_REASON_EXCLUSIVE_APP_RUNNING = 512
+    SUSPEND_REASON_EXCLUSIVE_APP_RUNNING = 512,
+    SUSPEND_REASON_CPU_USAGE = 1024
 };
 
 // States of a result on a client.
@@ -182,20 +183,14 @@ struct VERSION_INFO {
     bool greater_than(VERSION_INFO&);
 };
 
-#ifdef _WIN32
-#define RUN_MUTEX           "BoincSingleInstance"
-#define REG_BLANK_NAME      "Blank"
-#define REG_BLANK_TIME      "Blank Time"
-#define REG_STARTUP_NAME    "BOINC"
-#define CLIENT_AUTH_FILENAME    "client_auth.xml"
-#else
-#define LOCK_FILE_NAME      "lockfile"
-#endif
-
-#define GRAPHICS_APP_FILENAME "graphics_app"
-#define ASSIGNED_WU_STR "asgn"
+#define RUN_MUTEX                   "BoincSingleInstance"
+#define CLIENT_AUTH_FILENAME        "client_auth.xml"
+#define LOCK_FILE_NAME              "lockfile"
+#define GRAPHICS_APP_FILENAME       "graphics_app"
+#define ASSIGNED_WU_STR             "asgn"
 #define GUI_RPC_PASSWD_FILE         "gui_rpc_auth.cfg"
 #define SS_CONFIG_FILE              "ss_config.xml"
+
 #ifdef _WIN32
 #define DEFAULT_SS_EXECUTABLE       "boincscr.exe"
 #else

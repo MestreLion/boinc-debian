@@ -137,7 +137,9 @@ int ACTIVE_TASK::kill_task(bool restart) {
     cleanup_task();
 	if (restart) {
 		set_task_state(PROCESS_UNINITIALIZED, "kill_task");
-		gstate.request_enforce_schedule("Task restart");
+        char buf[256];
+        sprintf(buf, "restarting %s", result->name);
+		gstate.request_enforce_schedule(result->project, buf);
 	} else {
 		set_task_state(PROCESS_ABORTED, "kill_task");
 	}
@@ -259,6 +261,13 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
             //
             if (finish_file_present()) {
                 set_task_state(PROCESS_EXITED, "handle_exited_app");
+                break;
+            }
+            double x;
+            if (temporary_exit_file_present(x)) {
+                set_task_state(PROCESS_UNINITIALIZED, "temporary exit");
+                will_restart = true;
+                result->schedule_backoff = gstate.now + x;
                 break;
             }
             handle_premature_exit(will_restart);
@@ -383,6 +392,22 @@ bool ACTIVE_TASK::finish_file_present() {
     return (boinc_file_exists(path) != 0);
 }
 
+bool ACTIVE_TASK::temporary_exit_file_present(double& x) {
+    char path[256];
+    sprintf(path, "%s/%s", slot_dir, TEMPORARY_EXIT_FILE);
+    FILE* f = fopen(path, "r");
+    if (!f) return false;
+    int y;
+    int n = fscanf(f, "%d", &y);
+    fclose(f);
+    if (n != 1 || y < 0 || y > 86400) {
+        x = 300;
+    } else {
+        x = y;
+    }
+    return true;
+}
+
 void ACTIVE_TASK_SET::send_trickle_downs() {
     unsigned int i;
     ACTIVE_TASK* atp;
@@ -502,7 +527,7 @@ bool ACTIVE_TASK_SET::check_app_exited() {
 #else
     int pid, stat;
 
-    if ((pid = waitpid(0, &stat, WNOHANG)) > 0) {
+    if ((pid = waitpid(-1, &stat, WNOHANG)) > 0) {
         atp = lookup_pid(pid);
         if (!atp) {
             // if we're running benchmarks, exited process
@@ -638,7 +663,9 @@ bool ACTIVE_TASK::read_stderr_file() {
     int max_len = 63*1024;
     sprintf(path, "%s/%s", slot_dir, STDERR_FILE);
     if (!boinc_file_exists(path)) return false;
-    if (read_file_string(path, stderr_file, max_len, true)) return false;
+    if (read_file_string(path, stderr_file, max_len, !config.stderr_head)) {
+        return false;
+    }
 
     result->stderr_out += "<stderr_txt>\n";
     result->stderr_out += stderr_file;
@@ -775,18 +802,26 @@ int ACTIVE_TASK_SET::abort_project(PROJECT* project) {
 // called only from CLIENT_STATE::suspend_tasks(),
 // e.g. because on batteries, time of day, benchmarking, CPU throttle, etc.
 //
-void ACTIVE_TASK_SET::suspend_all(bool cpu_throttle) {
+void ACTIVE_TASK_SET::suspend_all(int reason) {
     for (unsigned int i=0; i<active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks[i];
         if (atp->task_state() != PROCESS_EXECUTING) continue;
-		if (cpu_throttle) {
+        switch (reason) {
+        case SUSPEND_REASON_CPU_THROTTLE:
 			// if we're doing CPU throttling, don't bother suspending apps
 			// that don't use a full CPU
 			//
 			if (atp->result->project->non_cpu_intensive) continue;
 			if (atp->app_version->avg_ncpus < 1) continue;
             atp->preempt(REMOVE_NEVER);
-		} else {
+            break;
+        case SUSPEND_REASON_BENCHMARKS:
+            atp->preempt(REMOVE_NEVER);
+            break;
+        case SUSPEND_REASON_CPU_USAGE:
+            if (atp->result->project->non_cpu_intensive) break;
+            // fall through
+        default:
             atp->preempt(REMOVE_MAYBE_USER);
         }
     }
@@ -1019,7 +1054,9 @@ void ACTIVE_TASK_SET::get_msgs() {
         }
         if (atp->get_app_status_msg()) {
             if (old_time != atp->checkpoint_cpu_time) {
-                gstate.request_enforce_schedule("Checkpoint reached");
+                char buf[256];
+                sprintf(buf, "%s checkpointed", atp->result->name);
+                gstate.request_enforce_schedule(atp->result->project, buf);
                 atp->checkpoint_wall_time = gstate.now;
                 atp->premature_exit_count = 0;
                 atp->checkpoint_elapsed_time = atp->elapsed_time;
@@ -1105,4 +1142,3 @@ void ACTIVE_TASK::read_task_state_file() {
     }
 }
 
-const char *BOINC_RCSID_10ca137461 = "$Id: app_control.cpp 19314 2009-10-16 18:57:01Z romw $";

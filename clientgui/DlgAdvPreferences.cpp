@@ -95,6 +95,7 @@ CDlgAdvPreferences::~CDlgAdvPreferences() {
 void CDlgAdvPreferences::SetValidators() {
 	//proc page
 	m_txtProcIdleFor->SetValidator(wxTextValidator(wxFILTER_NUMERIC));
+	m_txtMaxLoad->SetValidator(wxTextValidator(wxFILTER_NUMERIC));
 	m_txtProcSwitchEvery->SetValidator(wxTextValidator(wxFILTER_NUMERIC));
 	m_txtProcUseProcessors->SetValidator(wxTextValidator(wxFILTER_NUMERIC));
 	m_txtProcUseCPUTime->SetValidator(wxTextValidator(wxFILTER_NUMERIC));
@@ -133,7 +134,7 @@ void CDlgAdvPreferences::SetSpecialTooltips() {
 	m_txtNetSunday->SetToolTip(TXT_NET_TIME_TOOLTIP);
 }
 
-/* saves selected tab page and dialog size*/
+/* saves dialog siz e*/
 bool CDlgAdvPreferences::SaveState() {
     wxString        strBaseConfigLocation = wxString(wxT("/DlgAdvPreferences/"));
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
@@ -143,16 +144,14 @@ bool CDlgAdvPreferences::SaveState() {
 
 	pConfig->SetPath(strBaseConfigLocation);
 	pConfig->Write(wxT("CurrentPage"),m_Notebook->GetSelection());
-	pConfig->Write(wxT("Width"),this->GetSize().GetWidth());
-	pConfig->Write(wxT("Height"),this->GetSize().GetHeight());
 	return true;
 }
 
-/* restores former selected tab page and dialog size*/
+/* restores former dialog size */
 bool CDlgAdvPreferences::RestoreState() {
     wxString        strBaseConfigLocation = wxString(wxT("/DlgAdvPreferences/"));
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
-	int				p,w,h;
+	int				p;
 
 	wxASSERT(pConfig);
 
@@ -162,9 +161,6 @@ bool CDlgAdvPreferences::RestoreState() {
 
 	pConfig->Read(wxT("CurrentPage"), &p,0);
 	m_Notebook->SetSelection(p);	
-	pConfig->Read(wxT("Width"), &w,-1);
-	pConfig->Read(wxT("Height"), &h,-1);
-	this->SetSize(w,h);	
 
 	return true;
 }
@@ -229,7 +225,11 @@ void CDlgAdvPreferences::ReadPreferenceSettings() {
 	// idle for X minutes
 	buffer.Printf(wxT("%.2f"),prefs.idle_time_to_run);
 	*m_txtProcIdleFor << buffer;
-	// siwtch every X minutes
+
+	buffer.Printf(wxT("%.0f"), prefs.suspend_cpu_usage);
+	*m_txtMaxLoad << buffer;
+
+	// switch every X minutes
 	buffer.Printf(wxT("%.2f"),prefs.cpu_scheduling_period_minutes);
 	*m_txtProcSwitchEvery << buffer;
 	// max cpus
@@ -331,6 +331,11 @@ bool CDlgAdvPreferences::SavePreferencesSettings() {
 		prefs.idle_time_to_run=td;
 		mask.idle_time_to_run=true;
 	}
+
+    m_txtMaxLoad->GetValue().ToDouble(&td);
+    prefs.suspend_cpu_usage=td;
+    mask.suspend_cpu_usage=true;
+
 	//
 	prefs.cpu_times.start_hour=TimeStringToDouble(m_txtProcEveryDayStart->GetValue());
 	mask.start_hour = true;        
@@ -489,6 +494,11 @@ bool CDlgAdvPreferences::ValidateInput() {
 			return false;
 		}
 	}
+    buffer = m_txtMaxLoad->GetValue();
+    if(!IsValidFloatValue(buffer)) {
+        ShowErrorMessage(invMsgFloat, m_txtMaxLoad);
+        return false;
+    }
 	
 	buffer = m_txtProcEveryDayStart->GetValue();
 	if(!IsValidTimeValue(buffer)) {

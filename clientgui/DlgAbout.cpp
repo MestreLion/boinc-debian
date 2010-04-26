@@ -172,7 +172,7 @@ void CDlgAbout::CreateControls() {
     itemFlexGridSizer7->Add(itemStaticText12, 0, wxALIGN_RIGHT|wxALIGN_TOP|wxLEFT|wxRIGHT, 5);
 
     wxStaticText* itemStaticText13 = new wxStaticText;
-    itemStaticText13->Create( itemDialog1, wxID_STATIC, _("(C) 2003-2008 University of California, Berkeley.\nAll Rights Reserved."), wxDefaultPosition, wxDefaultSize, 0 );
+    itemStaticText13->Create( itemDialog1, wxID_STATIC, _("(C) 2003-2010 University of California, Berkeley.\nAll Rights Reserved."), wxDefaultPosition, wxDefaultSize, 0 );
     itemFlexGridSizer7->Add(itemStaticText13, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5);
 
     m_AboutBOINCSloganCtrl = new wxStaticText;
@@ -232,4 +232,3 @@ wxIcon CDlgAbout::GetIconResource(const wxString& WXUNUSED(name)) {
 ////@end CDlgAbout icon retrieval
 }
 
-const char *BOINC_RCSID_b40c2996e6="$Id: DlgAbout.cpp 16381 2008-10-31 22:11:38Z romw $";

@@ -29,6 +29,7 @@
 #include "parse.h"
 #include "filesys.h"
 #include "str_util.h"
+#include "url.h"
 #include "util.h"
 #include "client_msgs.h"
 #include "log_flags.h"
@@ -329,4 +330,3 @@ void CLIENT_STATE::all_projects_list_check() {
     get_project_list_op.do_rpc();
 }
 
-const char *BOINC_RCSID_84df3fc17e="$Id: acct_setup.cpp 19245 2009-10-05 20:05:44Z romw $";

@@ -23,9 +23,10 @@
 
 #include <vector>
 
-#define RSC_TYPE_CPU    0
-#define RSC_TYPE_CUDA   1
-#define RSC_TYPE_ATI    2
+#define RSC_TYPE_ANY    0
+#define RSC_TYPE_CPU    1
+#define RSC_TYPE_CUDA   2
+#define RSC_TYPE_ATI    3
 
 class PROJECT;
 struct RESULT;
@@ -39,13 +40,22 @@ struct RSC_PROJECT_WORK_FETCH {
     // the following are persistent (saved in state file)
     double backoff_time;
     double backoff_interval;
-    double debt;
+    double long_term_debt;
+    double short_term_debt;
 
     // the following used by debt accounting
+    double anticipated_debt;
+        // short-term debt, adjusted by scheduled jobs
     double secs_this_debt_interval;
     inline void reset_debt_accounting() {
         secs_this_debt_interval = 0;
     }
+    double queue_est;
+        // an estimate of instance-secs of queued work;
+        // a temp used in computing overall debts
+    bool anon_skip;
+        // set if this project is anonymous platform
+        // and it has no app version that uses this resource
 
     // the following are used by rr_simulation()
     //
@@ -59,6 +69,7 @@ struct RSC_PROJECT_WORK_FETCH {
         // determines how many instances this project deserves
     bool has_runnable_jobs;
     double sim_nused;
+    double nused_total;     // sum of instances over all runnable jobs
     int deadlines_missed;
     int deadlines_missed_copy;
         // copy of the above used during schedule_cpus()
@@ -67,12 +78,21 @@ struct RSC_PROJECT_WORK_FETCH {
         memset(this, 0, sizeof(*this));
     }
 
-    // whether this project is accumulating debt for this resource
+    // whether this project should accumulate debt for this resource
+    //
     bool debt_eligible(PROJECT*, RSC_WORK_FETCH&);
+
+    inline void zero_debt() {
+        long_term_debt = 0;
+        short_term_debt = 0;
+    }
+
     inline void reset() {
         backoff_time = 0;
         backoff_interval = 0;
-        debt = 0;
+        long_term_debt = 0;
+        short_term_debt = 0;
+        anticipated_debt = 0;
     }
 
     bool may_have_work;
@@ -144,7 +164,7 @@ struct BUSY_TIME_ESTIMATOR {
 struct RSC_WORK_FETCH {
     int rsc_type;
     int ninstances;
-    double speed;   // total FLOPS relative to CPU total FLOPS
+    double relative_speed;   // total FLOPS relative to CPU total FLOPS
 
     // the following used/set by rr_simulation():
     //
@@ -167,13 +187,13 @@ struct RSC_WORK_FETCH {
     void init(int t, int n, double sp) {
         rsc_type = t;
         ninstances = n;
-        speed = sp;
+        relative_speed = sp;
         busy_time_estimator.init(n);
     }
     // the following specify the work request for this resource
     //
     double req_secs;
-    int req_instances;
+    double req_instances;
 
     // debt accounting
     double secs_this_debt_interval;
@@ -188,12 +208,11 @@ struct RSC_WORK_FETCH {
     PROJECT* choose_project(int);
     void accumulate_debt();
     RSC_PROJECT_WORK_FETCH& project_state(PROJECT*);
-    void update_debts();
+    void update_long_term_debts();
+    void update_short_term_debts();
     void print_state(const char*);
     void clear_request();
-    void set_request(PROJECT*, double);
-    double share_request(PROJECT*);
-    void set_shortfall_request(PROJECT*);
+    void set_request(PROJECT*, bool allow_overworked);
     bool may_have_work(PROJECT*);
     RSC_WORK_FETCH() {
         memset(this, 0, sizeof(*this));
@@ -230,7 +249,7 @@ struct WORK_FETCH {
         PROJECT*, SCHEDULER_REPLY*, std::vector<RESULT*>new_results
     );
     void set_initial_work_request();
-    void set_shortfall_requests(PROJECT*);
+    void set_all_requests(PROJECT*);
     void print_state();
     void init();
     void rr_init();

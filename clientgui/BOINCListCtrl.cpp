@@ -55,6 +55,10 @@ CBOINCListCtrl::CBOINCListCtrl(
     
 #if USE_NATIVE_LISTCONTROL
     m_bProgressBarEventPending = false;
+#else
+#ifdef __WXMAC__
+    SetupMacAccessibilitySupport();
+#endif
 #endif
 
     Connect(
@@ -68,6 +72,9 @@ CBOINCListCtrl::CBOINCListCtrl(
 CBOINCListCtrl::~CBOINCListCtrl()
 {
     m_iRowsNeedingProgressBars.Clear();
+#ifdef __WXMAC__
+    RemoveMacAccessibilitySupport();
+#endif
 }
 
 
@@ -246,12 +253,14 @@ int CBOINCListCtrl::OnGetItemImage(long item) const {
 }
 
 
+#if BASEVIEW_STRIPES
 wxListItemAttr* CBOINCListCtrl::OnGetItemAttr(long item) const {
     wxASSERT(m_pParentView);
     wxASSERT(wxDynamicCast(m_pParentView, CBOINCBaseView));
 
     return m_pParentView->FireOnListGetItemAttr(item);
 }
+#endif
 
 
 void CBOINCListCtrl::DrawProgressBars()
@@ -435,4 +444,3 @@ void CBOINCListCtrl::RefreshCell(int row, int col) {
     RefreshRect(r);
 }
 
-const char *BOINC_RCSID_5cf411daa0 = "$Id: BOINCListCtrl.cpp 17006 2009-01-24 00:05:53Z charlief $";

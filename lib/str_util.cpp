@@ -80,56 +80,58 @@ size_t strlcat(char *dst, const char *src, size_t size) {
 #endif // !HAVE_STRLCAT
 
 #if !defined(HAVE_STRCASESTR)
-extern const char *strcasestr(const char *s1, const char *s2) {
-  char *needle, *haystack, *p=NULL;
-  // Is alloca() really less likely to fail with out of memory error 
-  // than strdup?
+const char *strcasestr(const char *s1, const char *s2) {
+    char *needle=NULL, *haystack=NULL, *p=NULL;
+    bool need_free = false;
+    // Is alloca() really less likely to fail with out of memory error 
+    // than strdup?
 #if defined(HAVE_STRDUPA)
-  haystack=strdupa(s1);
-  needle=strdupa(s2);
+    haystack=strdupa(s1);
+    needle=strdupa(s2);
 #elif defined(HAVE_ALLOCA_H) || defined(HAVE_ALLOCA)
-  haystack=(char *)alloca(strlen(s1)+1);
-  needle=(char *)alloca(strlen(s2)+1);
-  if (needle && haystack) {
-    strlcpy(haystack,s1,strlen(s1)+1);
-    strlcpy(needle,s2,strlen(s2)+1);
-  }
-#elif defined(HAVE_STRDUP)
-  haystack=strdup(s1);
-  needle=strdup(s1)
-#else
-  haystack=(char *)malloc(strlen(s1)+1);
-  needle=(char *)malloc(strlen(s2)+1);
-  if (needle && haystack) {
-    strlcpy(haystack,s1,strlen(s1)+1);
-    strlcpy(needle,s2,strlen(s2)+1);
-  }
-#endif
-  if (needle && haystack) {
-    // convert both strings to lower case
-    do {
-      *haystack=tolower(*haystack);
-    } while (*(++haystack));
-    do {
-      *needle=tolower(*needle);
-    } while (*(++needle));
-    // find the substring
-    p=strstr(haystack,needle);
-    // correct the pointer to point to the substring within s1
-    if (p) {
-      // C++ type checking requires const_cast here, although this
-      // is dangerous if s1 points to read only storage.  But the C
-      // function definitely takes a const char * as the first parameter
-      // and returns a char *.  So that's what we'll do.
-      p=const_cast<char *>(s1)+(p-haystack);
+    haystack=(char *)alloca(strlen(s1)+1);
+    needle=(char *)alloca(strlen(s2)+1);
+    if (needle && haystack) {
+        strlcpy(haystack,s1,strlen(s1)+1);
+        strlcpy(needle,s2,strlen(s2)+1);
     }
-  } 
-#if !defined(HAVE_STRDUPA) && !defined(HAVE_ALLOCA) && !defined(HAVE_ALLOC_H)
-  // If we didn't allocate on the stack free our strings
-  if (needle) free(needle);
-  if (haystack) free(haystack);
+#elif defined(HAVE_STRDUP)
+    haystack=strdup(s1);
+    needle=strdup(s1)
+    need_free = true;
+#else
+    haystack=(char *)malloc(strlen(s1)+1);
+    needle=(char *)malloc(strlen(s2)+1);
+    if (needle && haystack) {
+        strlcpy(haystack,s1,strlen(s1)+1);
+        strlcpy(needle,s2,strlen(s2)+1);
+    }
+    need_free = true;
 #endif
-  return p;
+    if (needle && haystack) {
+        // convert both strings to lower case
+        p = haystack;
+        while (*p) {
+            *p = tolower(*p);
+            p++;
+        }
+        p = needle;
+        while (*p) {
+            *p = tolower(*p);
+            p++;
+        }
+        // find the substring
+        p = strstr(haystack, needle);
+        // correct the pointer to point to the substring within s1
+        if (p) {
+            p = const_cast<char *>(s1)+(p-haystack);
+        }
+    } 
+    if (need_free) {
+        if (needle) free(needle);
+        if (haystack) free(haystack);
+    }
+    return p;
 }
 #endif
 // Converts a double precision time (where the value of 1 represents
@@ -294,32 +296,6 @@ int parse_command_line(char* p, char** argv) {
     return argc;
 }
 
-static char x2c(char *what) {
-    register char digit;
-
-    digit = (what[0] >= 'A' ? ((what[0] & 0xdf) - 'A')+10 : (what[0] - '0'));
-    digit *= 16;
-    digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A')+10 : (what[1] - '0'));
-    return(digit);
-}
-
-void c2x(char *what) {
-    char buf[3];
-    char num = atoi(what);
-    char d1 = num / 16;
-    char d2 = num % 16;
-    int abase1, abase2;
-    if (d1 < 10) abase1 = 48;
-    else abase1 = 55;
-    if (d2 < 10) abase2 = 48;
-    else abase2 = 55;
-    buf[0] = d1+abase1;
-    buf[1] = d2+abase2;
-    buf[2] = 0;
-
-    strcpy(what, buf);
-}
-
 // remove whitespace from start and end of a string
 //
 void strip_whitespace(char *str) {
@@ -354,178 +330,6 @@ void strip_whitespace(string& str) {
         if (!isspace(str[n-1])) break;
         str.erase(n-1, 1);
     }
-}
-
-void unescape_url(char *url) {
-    int x,y;
-
-    for (x=0,y=0;url[y];++x,++y) {
-        if ((url[x] = url[y]) == '%') {
-            url[x] = x2c(&url[y+1]);
-            y+=2;
-        }
-    }
-    url[x] = '\0';
-}
-
-void unescape_url_safe(char *url, int url_size) {
-    int x,y;
-
-    for (x=0,y=0; url[y] && (x<url_size);++x,++y) {
-        if ((url[x] = url[y]) == '%') {
-            url[x] = x2c(&url[y+1]);
-            y+=2;
-        }
-    }
-    url[x] = '\0';
-}
-
-// unescape_url needs to be able to handle potentially hostile
-// urls.
-void unescape_url(string& url) {
-    char buf[1024];
-    strncpy(buf, url.c_str(), sizeof(buf));
-    unescape_url_safe(buf, sizeof(buf));
-    url = buf;
-}
-
-void escape_url(char *in, char*out) {
-    int x, y;
-    for (x=0, y=0; in[x]; ++x) {
-        if (isalnum(in[x])) {
-            out[y] = in[x];
-            ++y;
-        } else {
-            out[y] = '%';
-            ++y;
-            out[y] = 0;
-            char buf[256];
-            sprintf(buf, "%d", (char)in[x]);
-            c2x(buf);
-            strcat(out, buf);
-            y += 2;
-        }
-    }
-    out[y] = 0;
-}
-
-void escape_url_safe(const char *in, char*out, int out_size) {
-    int x, y;
-    for (x=0, y=0; in[x] && (y<out_size); ++x) {
-        if (isalnum(in[x])) {
-            out[y] = in[x];
-            ++y;
-        } else {
-            out[y] = '%';
-            ++y;
-            out[y] = 0;
-            char buf[256];
-            sprintf(buf, "%d", (char)in[x]);
-            c2x(buf);
-            strcat(out, buf);
-            y += 2;
-        }
-    }
-    out[y] = 0;
-}
-
-// escape_url needs to be able to handle potentially hostile
-// urls
-void escape_url(string& url) {
-    char buf[1024];
-    escape_url_safe(url.c_str(), buf, sizeof(buf));
-    url = buf;
-}
-
-// Escape a URL for the project directory, cutting off the "http://",
-// converting everthing other than alphanumbers, ., - and _ to "_".
-//
-void escape_url_readable(char *in, char* out) {
-    int x, y;
-    char *temp;
-
-    temp = strstr(in,"://");
-    if (temp) {
-        in = temp + strlen("://");
-    }
-    for (x=0, y=0; in[x]; ++x) {
-        if (isalnum(in[x]) || in[x]=='.' || in[x]=='-' || in[x]=='_') {
-            out[y] = in[x];
-            ++y;
-        } else {
-            out[y] = '_';
-            ++y;
-        }
-    }
-    out[y] = 0;
-}
-
-
-// Canonicalize a master url.
-//   - Convert the first part of a URL (before the "://") to http://,
-// or prepend it
-//   - Remove double slashes in the rest
-//   - Add a trailing slash if necessary
-//
-void canonicalize_master_url(char* url) {
-    char buf[1024];
-    size_t n;
-	bool bSSL = false; // keep track if they sent in https://
-
-    char *p = strstr(url, "://");
-    if (p) {
-		bSSL = (bool) (p == url + 5);
-		strcpy(buf, p+3);
-    } else {
-        strcpy(buf, url);
-    }
-    while (1) {
-        p = strstr(buf, "//");
-        if (!p) break;
-        strcpy(p, p+1);
-    }
-    n = strlen(buf);
-    if (buf[n-1] != '/') {
-        strcat(buf, "/");
-    }
-	sprintf(url, "http%s://%s", (bSSL ? "s" : ""), buf);
-}
-
-void canonicalize_master_url(string& url) {
-    char buf[1024];
-    strcpy(buf, url.c_str());
-    canonicalize_master_url(buf);
-    url = buf;
-}
-
-// is the string a valid master URL, in canonical form?
-//
-bool valid_master_url(char* buf) {
-    char* p, *q;
-    size_t n;
-	bool bSSL = false;
-
-    p = strstr(buf, "http://");
-	if (p != buf) {
-		// allow https
-	    p = strstr(buf, "https://");
-		if (p == buf) {
-			bSSL = true;
-		} else {
-			return false; // no http or https, it's bad!
-	    }
-	}
-	q = p+strlen(bSSL ? "https://" : "http://");
-    p = strstr(q, ".");
-    if (!p) return false;
-    if (p == q) return false;
-    q = p+1;
-    p = strstr(q, "/");
-    if (!p) return false;
-    if (p == q) return false;
-    n = strlen(buf);
-    if (buf[n-1] != '/') return false;
-    return true;
 }
 
 char* time_to_string(double t) {
@@ -589,15 +393,6 @@ string timediff_format(double diff) {
 
     sprintf(buf, "%d weeks %d days %d hrs %d min %d sec", (int)tdiff, days, hours, min, sex);
     return buf;
-}
-
-void escape_project_url(char *in, char* out) {
-    escape_url_readable(in, out);
-    char& last = out[strlen(out)-1];
-    // remove trailing _
-    if (last == '_') {
-        last = '\0';
-    }
 }
 
 void mysql_timestamp(double dt, char* p) {
@@ -879,4 +674,3 @@ int string_substitute(
     return retval;
 }
 
-const char *BOINC_RCSID_ab90e1e = "$Id: str_util.cpp 18663 2009-07-22 22:33:36Z davea $";

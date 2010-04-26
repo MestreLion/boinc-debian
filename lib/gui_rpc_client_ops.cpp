@@ -238,14 +238,16 @@ int PROJECT::parse(MIOFILE& in) {
         if (parse_double(buf, "<min_rpc_time>", min_rpc_time)) continue;
         if (parse_double(buf, "<download_backoff>", download_backoff)) continue;
         if (parse_double(buf, "<upload_backoff>", upload_backoff)) continue;
-        if (parse_double(buf, "<short_term_debt>", short_term_debt)) continue;
+        if (parse_double(buf, "<short_term_debt>", cpu_short_term_debt)) continue;
         if (parse_double(buf, "<long_term_debt>", cpu_long_term_debt)) continue;
         if (parse_double(buf, "<cpu_backoff_time>", cpu_backoff_time)) continue;
         if (parse_double(buf, "<cpu_backoff_interval>", cpu_backoff_interval)) continue;
         if (parse_double(buf, "<cuda_debt>", cuda_debt)) continue;
+        if (parse_double(buf, "<cuda_short_term_debt>", cuda_short_term_debt)) continue;
         if (parse_double(buf, "<cuda_backoff_time>", cuda_backoff_time)) continue;
         if (parse_double(buf, "<cuda_backoff_interval>", cuda_backoff_interval)) continue;
         if (parse_double(buf, "<ati_debt>", ati_debt)) continue;
+        if (parse_double(buf, "<ati_short_term_debt>", ati_short_term_debt)) continue;
         if (parse_double(buf, "<ati_backoff_time>", ati_backoff_time)) continue;
         if (parse_double(buf, "<ati_backoff_interval>", ati_backoff_interval)) continue;
         if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
@@ -293,7 +295,7 @@ void PROJECT::clear() {
     min_rpc_time = 0;
     download_backoff = 0;
     upload_backoff = 0;
-    short_term_debt = 0;
+    cpu_short_term_debt = 0;
     cpu_long_term_debt = 0;
     cpu_backoff_time = 0;
     cpu_backoff_interval = 0;
@@ -459,6 +461,7 @@ int RESULT::parse(MIOFILE& in) {
         }
         if (parse_int(buf, "<app_version_num>", app_version_num)) continue;
         if (parse_int(buf, "<slot>", slot)) continue;
+        if (parse_int(buf, "<pid>", pid)) continue;
         if (parse_double(buf, "<checkpoint_cpu_time>", checkpoint_cpu_time)) continue;
         if (parse_double(buf, "<current_cpu_time>", current_cpu_time)) continue;
         if (parse_double(buf, "<elapsed_time>", elapsed_time)) continue;
@@ -503,6 +506,7 @@ void RESULT::clear() {
     active_task_state = 0;
     app_version_num = 0;
     slot = -1;
+    pid = 0;
     checkpoint_cpu_time = 0;
     current_cpu_time = 0;
     fraction_done = 0;
@@ -1056,12 +1060,15 @@ int CC_STATUS::parse(MIOFILE& in) {
         if (parse_bool(buf, "ams_password_error", ams_password_error)) continue;
         if (parse_bool(buf, "manager_must_quit", manager_must_quit)) continue;
         if (parse_int(buf, "<task_suspend_reason>", task_suspend_reason)) continue;
-        if (parse_int(buf, "<network_suspend_reason>", network_suspend_reason)) continue;
         if (parse_int(buf, "<task_mode>", task_mode)) continue;
-        if (parse_int(buf, "<network_mode>", network_mode)) continue;
         if (parse_int(buf, "<task_mode_perm>", task_mode_perm)) continue;
-        if (parse_int(buf, "<network_mode_perm>", network_mode_perm)) continue;
 		if (parse_double(buf, "<task_mode_delay>", task_mode_delay)) continue;
+        if (parse_int(buf, "<gpu_mode>", gpu_mode)) continue;
+        if (parse_int(buf, "<gpu_mode_perm>", gpu_mode_perm)) continue;
+		if (parse_double(buf, "<gpu_mode_delay>", gpu_mode_delay)) continue;
+        if (parse_int(buf, "<network_suspend_reason>", network_suspend_reason)) continue;
+        if (parse_int(buf, "<network_mode>", network_mode)) continue;
+        if (parse_int(buf, "<network_mode_perm>", network_mode_perm)) continue;
 		if (parse_double(buf, "<network_mode_delay>", network_mode_delay)) continue;
         if (parse_bool(buf, "disallow_attach", disallow_attach)) continue;
         if (parse_bool(buf, "simple_gui_only", simple_gui_only)) continue;
@@ -1625,6 +1632,24 @@ int RPC_CLIENT::set_run_mode(int mode, double duration) {
         "%s\n"
         "  <duration>%f</duration>\n"
         "</set_run_mode>\n",
+        mode_name(mode), duration
+    );
+
+    retval = rpc.do_rpc(buf);
+    return retval;
+}
+
+int RPC_CLIENT::set_gpu_mode(int mode, double duration) {
+    int retval;
+    SET_LOCALE sl;
+    char buf[256];
+    RPC rpc(this);
+
+    sprintf(buf, 
+        "<set_gpu_mode>\n"
+        "%s\n"
+        "  <duration>%f</duration>\n"
+        "</set_gpu_mode>\n",
         mode_name(mode), duration
     );
 
@@ -2247,7 +2272,7 @@ int RPC_CLIENT::set_debts(vector<PROJECT> projects) {
             "        <long_term_debt>%f</long_term_debt>\n"
             "    </project>\n",
             p.master_url.c_str(),
-            p.short_term_debt,
+            p.cpu_short_term_debt,
             p.cpu_long_term_debt
         );
         s += string(buf);
@@ -2258,4 +2283,3 @@ int RPC_CLIENT::set_debts(vector<PROJECT> projects) {
 }
 
 
-const char *BOINC_RCSID_90e8b8d168="$Id: gui_rpc_client_ops.cpp 19318 2009-10-16 19:07:56Z romw $";

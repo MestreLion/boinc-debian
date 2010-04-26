@@ -362,4 +362,3 @@ void CLIENT_STATE::check_file_existence() {
     }
 }
 
-const char *BOINC_RCSID_66410b3cab = "$Id: cs_files.cpp 19106 2009-09-18 20:55:03Z romw $";

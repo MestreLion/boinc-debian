@@ -43,6 +43,7 @@
 #include "parse.h"
 #include "str_util.h"
 #include "str_replace.h"
+#include "url.h"
 #include "util.h"
 
 #include "client_msgs.h"
@@ -81,7 +82,7 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     if (!f) return ERR_FOPEN;
 
     double trs = total_resource_share();
-    double rrs = runnable_resource_share();
+    double rrs = runnable_resource_share(RSC_TYPE_ANY);
     double prrs = potentially_runnable_resource_share();
     double resource_share_fraction, rrs_fraction, prrs_fraction;
     if (trs) {
@@ -211,7 +212,8 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     // update hardware info, and write host info
     //
     host_info.get_host_info();
-    retval = host_info.write(mf, config.suppress_net_info);
+    set_ncpus();
+    retval = host_info.write(mf, config.suppress_net_info, false);
     //if (retval) return retval;
 
     // get and write disk usage
@@ -239,13 +241,8 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
         coproc_ati->estimated_delay = ati_work_fetch.req_secs?ati_work_fetch.busy_time_estimator.get_busy_time():0;
     }
 
-    if (coprocs.coprocs.size()) {
-        fprintf(f, "    <coprocs>\n");
-        for (i=0; i<coprocs.coprocs.size(); i++) {
-            COPROC* c = coprocs.coprocs[i];
-            c->write_xml(mf);
-        }
-        fprintf(f, "    </coprocs>\n");
+    if (host_info.coprocs.coprocs.size()) {
+        host_info.coprocs.write_xml(mf);
     }
 
     // report results
@@ -833,11 +830,11 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
             rp->set_state(RESULT_NEW, "handle_scheduler_reply");
             if (rp->avp->ncudas) {
                 est_cuda_duration += rp->estimated_duration(false);
-                coproc_cuda->usable = true;
+                gpus_usable = true;
                     // trigger a check of whether GPU is actually usable
             } else if (rp->avp->natis) {
                 est_ati_duration += rp->estimated_duration(false);
-                coproc_ati->usable = true;
+                gpus_usable = true;
             } else {
                 est_cpu_duration += rp->estimated_duration(false);
             }
@@ -857,13 +854,13 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
             );
             if (coproc_cuda) {
                 msg_printf(project, MSG_INFO,
-                    "[sched_op_debug] estimated total NVIDIA CPU job duration: %.0f seconds",
+                    "[sched_op_debug] estimated total NVIDIA GPU job duration: %.0f seconds",
                     est_cuda_duration
                 );
             }
             if (coproc_ati) {
                 msg_printf(project, MSG_INFO,
-                    "[sched_op_debug] estimated total ATI CPU job duration: %.0f seconds",
+                    "[sched_op_debug] estimated total ATI GPU job duration: %.0f seconds",
                     est_ati_duration
                 );
             }
@@ -1160,9 +1157,8 @@ PROJECT* CLIENT_STATE::find_project_with_overdue_results() {
 // 
 void CLIENT_STATE::request_work_fetch(const char* where) {
     if (log_flags.work_fetch_debug) {
-        msg_printf(0, MSG_INFO, "[work_fetch_debug] Request work fetch: %s", where);
+        msg_printf(0, MSG_INFO, "[wfd] Request work fetch: %s", where);
     }
     must_check_work_fetch = true;
 }
 
-const char *BOINC_RCSID_d35a4a7711 = "$Id: cs_scheduler.cpp 19327 2009-10-16 19:29:28Z romw $";

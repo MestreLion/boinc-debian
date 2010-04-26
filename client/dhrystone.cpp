@@ -249,5 +249,3 @@ void Proc_5(DS_DATA& dd)
         Bool_Glob = FALSE;
 }
 
-
-const char *BOINC_RCSID_5107112def = "$Id: dhrystone.cpp 16069 2008-09-26 18:20:24Z davea $";

@@ -1396,4 +1396,3 @@ bool HOST_INFO::users_idle(bool check_all_logins, double idle_time_to_run) {
 
 #endif  // ! __APPLE__
 
-const char *BOINC_RCSID_2cf92d205b = "$Id: hostinfo_unix.cpp 18437 2009-06-16 20:54:44Z davea $";

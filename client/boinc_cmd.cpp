@@ -43,6 +43,7 @@ using std::string;
 #include "util.h"
 #include "str_util.h"
 #include "str_replace.h"
+#include "url.h"
 #include "version.h"
 #include "common_defs.h"
 
@@ -507,8 +508,14 @@ int main(int argc, char** argv) {
         while (i < argc) {
             PROJECT proj;
             proj.master_url = string(next_arg(argc, argv, i));
-            proj.short_term_debt = atoi(next_arg(argc, argv, i));
-            proj.cpu_long_term_debt = atoi(next_arg(argc, argv, i));
+            int std = atoi(next_arg(argc, argv, i));
+            proj.cpu_short_term_debt = std;
+            proj.cuda_short_term_debt = std;
+            proj.ati_short_term_debt = std;
+            int ltd = atoi(next_arg(argc, argv, i));
+            proj.cpu_long_term_debt = ltd;
+            proj.cuda_debt = ltd;
+            proj.ati_debt = ltd;
             projects.push_back(proj);
         }
         retval = rpc.set_debts(projects);
@@ -527,4 +534,3 @@ int main(int argc, char** argv) {
     exit(retval);
 }
 
-const char *BOINC_RCSID_77f00010ab = "$Id: boinc_cmd.cpp 18576 2009-07-07 22:58:58Z davea $";

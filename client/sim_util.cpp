@@ -138,7 +138,6 @@ void SIM_PROJECT::init() {
     anonymous_platform = false;
     non_cpu_intensive = false;
     verify_files_on_app_start = false;
-    short_term_debt = 0;
     send_file_list = false;
     suspended_via_gui = false;
     dont_request_more_work = false;
@@ -147,7 +146,6 @@ void SIM_PROJECT::init() {
     strcpy(code_sign_key, "");
     user_files.clear();
     project_files.clear();
-    anticipated_debt = 0;
     next_runnable_result = NULL;
     duration_correction_factor = 1;
     project_files_downloaded_time = 0;
@@ -393,6 +391,10 @@ bool RANDOM_PROCESS::sample(double t) {
             value = true;
         }
     }
+    msg_printf(0, MSG_INFO,
+        "value: %d lambda: %f t %f time_left %f",
+        value, lambda, t, time_left
+    );
     return value;
 }
 
@@ -400,7 +402,8 @@ RANDOM_PROCESS::RANDOM_PROCESS() {
     frac = 1;
 }
 
-void RANDOM_PROCESS::init() {
+void RANDOM_PROCESS::init(double st) {
+    last_time = st;
     value = true;
     time_left = exponential(lambda);
     off_lambda = lambda/frac - lambda;
@@ -490,23 +493,23 @@ int SIM_HOST::parse(XML_PARSER& xp) {
     bool is_tag;
     int retval;
 
-    p_ncpus = 1;
     connection_interval = 0;
+    p_ncpus = 1;
     while(!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) return ERR_XML_PARSE;
         if (!strcmp(tag, "/host")) return 0;
         else if (xp.parse_double(tag, "p_fpops", p_fpops)) continue;
         else if (xp.parse_double(tag, "m_nbytes", m_nbytes)) continue;
-        else if (xp.parse_double(tag, "connection_interval", connection_interval)) continue;
         else if (xp.parse_int(tag, "p_ncpus", p_ncpus)) continue;
+        else if (xp.parse_double(tag, "connection_interval", connection_interval)) continue;
         else if (!strcmp(tag, "available")) {
             retval = available.parse(xp, "/available");
             if (retval) return retval;
-            available.init();
+            available.init(START_TIME);
         } else if (!strcmp(tag, "idle")) {
             retval = idle.parse(xp, "/idle");
             if (retval) return retval;
-            idle.init();
+            idle.init(START_TIME);
         } else {
             printf("unrecognized: %s\n", tag);
             return ERR_XML_PARSE;

@@ -99,7 +99,7 @@ int CLIENT_STATE::check_suspend_processing() {
         return SUSPEND_REASON_INITIAL_DELAY;
     }
 
-    switch(run_mode.get_current()) {
+    switch (run_mode.get_current()) {
     case RUN_MODE_ALWAYS: break;
     case RUN_MODE_NEVER:
         return SUSPEND_REASON_USER_REQ;
@@ -125,8 +125,11 @@ int CLIENT_STATE::check_suspend_processing() {
                 return SUSPEND_REASON_NO_RECENT_INPUT;
             }
         }
-        if (active_tasks.exclusive_app_running) {
+        if (exclusive_app_running) {
             return SUSPEND_REASON_EXCLUSIVE_APP_RUNNING;
+        }
+        if (global_prefs.suspend_cpu_usage && non_boinc_cpu_usage*100 > global_prefs.suspend_cpu_usage) {
+            return SUSPEND_REASON_CPU_USAGE;
         }
     }
 
@@ -137,10 +140,37 @@ int CLIENT_STATE::check_suspend_processing() {
         if (diff >= POLL_INTERVAL/2. && diff < POLL_INTERVAL*10.) {
             debt += diff*global_prefs.cpu_usage_limit/100;
             if (debt < 0) {
-                return SUSPEND_REASON_CPU_USAGE_LIMIT;
+                return SUSPEND_REASON_CPU_THROTTLE;
             } else {
                 debt -= diff;
             }
+        }
+    }
+
+    bool old_gpu_suspended = gpu_suspended;
+    gpu_suspended = false;
+    switch (gpu_mode.get_current()) {
+    case RUN_MODE_ALWAYS:
+        break;
+    case RUN_MODE_NEVER:
+        gpu_suspended = true;
+        break;
+    default:
+        if (exclusive_gpu_app_running) {
+            gpu_suspended = true;
+            break;
+        }
+        if (user_active && !global_prefs.run_gpu_if_user_active) {
+            gpu_suspended = true;
+            break;
+        }
+    }
+
+    if (log_flags.cpu_sched) {
+        if (old_gpu_suspended && !gpu_suspended) {
+            msg_printf(NULL, MSG_INFO, "[cpu_sched] resuming GPU activity");
+        } else if (!old_gpu_suspended && gpu_suspended) {
+            msg_printf(NULL, MSG_INFO, "[cpu_sched] suspending GPU activity");
         }
     }
 
@@ -148,35 +178,19 @@ int CLIENT_STATE::check_suspend_processing() {
 }
 
 static string reason_string(int reason) {
-    string s_reason;
-    if (reason & SUSPEND_REASON_BATTERIES) {
-        s_reason += " - on batteries";
+    switch (reason) {
+    case SUSPEND_REASON_BATTERIES: return " - on batteries";
+    case SUSPEND_REASON_USER_ACTIVE: return " - user is active";
+    case SUSPEND_REASON_USER_REQ: return " - user request";
+    case SUSPEND_REASON_TIME_OF_DAY: return " - time of day";
+    case SUSPEND_REASON_BENCHMARKS: return " - running CPU benchmarks";
+    case SUSPEND_REASON_DISK_SIZE: return " - out of disk space - change global prefs";
+    case SUSPEND_REASON_NO_RECENT_INPUT: return " - no recent user activity";
+    case SUSPEND_REASON_INITIAL_DELAY: return " - initial delay";
+    case SUSPEND_REASON_EXCLUSIVE_APP_RUNNING: return " - an exclusive app is running";
+    case SUSPEND_REASON_CPU_USAGE: return " - CPU usage is too high";
     }
-    if (reason & SUSPEND_REASON_USER_ACTIVE) {
-        s_reason += " - user is active";
-    }
-    if (reason & SUSPEND_REASON_USER_REQ) {
-        s_reason += " - user request";
-    }
-    if (reason & SUSPEND_REASON_TIME_OF_DAY) {
-        s_reason += " - time of day";
-    }
-    if (reason & SUSPEND_REASON_BENCHMARKS) {
-        s_reason += " - running CPU benchmarks";
-    }
-    if (reason & SUSPEND_REASON_DISK_SIZE) {
-        s_reason += " - out of disk space - change global prefs";
-    }
-    if (reason & SUSPEND_REASON_NO_RECENT_INPUT) {
-        s_reason += " - no recent user activity";
-    }
-    if (reason & SUSPEND_REASON_INITIAL_DELAY) {
-        s_reason += " - initial delay";
-    }
-    if (reason & SUSPEND_REASON_EXCLUSIVE_APP_RUNNING) {
-        s_reason += " - an exclusive app is running";
-    }
-    return s_reason;
+    return "";
 }
 
 void print_suspend_tasks_message(int reason) {
@@ -185,20 +199,19 @@ void print_suspend_tasks_message(int reason) {
 }
 
 int CLIENT_STATE::suspend_tasks(int reason) {
-    if (reason == SUSPEND_REASON_CPU_USAGE_LIMIT) {
+    if (reason == SUSPEND_REASON_CPU_THROTTLE) {
         if (log_flags.cpu_sched) {
             msg_printf(NULL, MSG_INFO, "[cpu_sched] Suspending - CPU throttle");
         }
-        active_tasks.suspend_all(true);
     } else {
         print_suspend_tasks_message(reason);
-        active_tasks.suspend_all(false);
     }
+    active_tasks.suspend_all(reason);
     return 0;
 }
 
 int CLIENT_STATE::resume_tasks(int reason) {
-    if (reason == SUSPEND_REASON_CPU_USAGE_LIMIT) {
+    if (reason == SUSPEND_REASON_CPU_THROTTLE) {
         if (log_flags.cpu_sched) {
             msg_printf(NULL, MSG_INFO, "[cpu_sched] Resuming - CPU throttle");
         }
@@ -227,7 +240,7 @@ int CLIENT_STATE::check_suspend_network() {
     if (global_prefs.net_times.suspended()) {
         return SUSPEND_REASON_TIME_OF_DAY;
     }
-    if (active_tasks.exclusive_app_running) {
+    if (exclusive_app_running) {
         return SUSPEND_REASON_EXCLUSIVE_APP_RUNNING;
     }
     return 0;
@@ -395,18 +408,19 @@ void CLIENT_STATE::read_global_prefs() {
         fclose(f);
     }
 
+    msg_printf(NULL, MSG_INFO, "Preferences:");
     msg_printf(NULL, MSG_INFO,
-        "Preferences limit memory usage when active to %.2fMB",
+        "   max memory usage when active: %.2fMB",
         (host_info.m_nbytes*global_prefs.ram_max_used_busy_frac)/MEGA
     );
     msg_printf(NULL, MSG_INFO,
-        "Preferences limit memory usage when idle to %.2fMB",
+        "   max memory usage when idle: %.2fMB",
         (host_info.m_nbytes*global_prefs.ram_max_used_idle_frac)/MEGA
     );
     double x;
     total_disk_usage(x);
     msg_printf(NULL, MSG_INFO,
-        "Preferences limit disk usage to %.2fGB",
+        "   max disk usage: %.2fGB",
         allowed_disk_usage(x)/GIGA
     );
     // max_cpus, bandwidth limits may have changed
@@ -414,11 +428,41 @@ void CLIENT_STATE::read_global_prefs() {
     set_ncpus();
     if (ncpus != host_info.p_ncpus) {
         msg_printf(NULL, MSG_INFO,
-            "Preferences limit # CPUs to %d", ncpus
+            "   max CPUs used: %d", ncpus
+        );
+    }
+    if (!global_prefs.run_if_user_active) {
+        msg_printf(NULL, MSG_INFO, "   don't compute while active");
+    }
+    if (!global_prefs.run_gpu_if_user_active) {
+        msg_printf(NULL, MSG_INFO, "   don't use GPU while active");
+    }
+    if (global_prefs.suspend_cpu_usage) {
+        msg_printf(NULL, MSG_INFO,
+            "   suspend work if non-BOINC CPU load exceeds %.0f %%",
+            global_prefs.suspend_cpu_usage
+        );
+    }
+    if (global_prefs.max_bytes_sec_down) {
+        msg_printf(NULL, MSG_INFO,
+            "   max download rate: %.0f bytes/sec",
+            global_prefs.max_bytes_sec_down
+        );
+    }
+    if (global_prefs.max_bytes_sec_up) {
+        msg_printf(NULL, MSG_INFO,
+            "   max upload rate: %.0f bytes/sec",
+            global_prefs.max_bytes_sec_up
         );
     }
     file_xfers->set_bandwidth_limits(true);
     file_xfers->set_bandwidth_limits(false);
+    msg_printf(NULL, MSG_INFO,
+        "   (to change, visit the web site of an attached project,"
+    );
+    msg_printf(NULL, MSG_INFO,
+        "   or click on Preferences)"
+    );
     request_schedule_cpus("Prefs update");
     request_work_fetch("Prefs update");
 }
@@ -470,4 +514,3 @@ double CLIENT_STATE::max_available_ram() {
     );
 }
 
-const char *BOINC_RCSID_92ad99cddf = "$Id: cs_prefs.cpp 19316 2009-10-16 19:02:00Z romw $";

@@ -56,6 +56,8 @@ typedef void (CALLBACK* ClientLibraryShutdown)();
 #include "prefs.h"
 #include "filesys.h"
 #include "network.h"
+
+#include "cs_proxy.h"
 #include "client_state.h"
 #include "file_names.h"
 #include "log_flags.h"
@@ -210,6 +212,7 @@ static void init_core_client(int argc, char** argv) {
     setbuf(stdout, 0);
     setbuf(stderr, 0);
 
+    config.clear();
     gstate.parse_cmdline(argc, argv);
 
 #ifdef _WIN32
@@ -340,12 +343,14 @@ int boinc_main_loop() {
         return retval;
     }
 
-    log_message_startup("BOINC initialization completed, beginning process execution...");
-
     // must parse env vars after gstate.init();
     // otherwise items will get overwritten with state file info
     //
     gstate.parse_env_vars();
+
+    // do this after parsing env vars
+    //
+    proxy_info_startup();
 
     if (gstate.projects.size() == 0) {
         msg_printf(NULL, MSG_INFO,
@@ -355,6 +360,8 @@ int boinc_main_loop() {
             "Visit http://boinc.berkeley.edu for instructions"
         );
     }
+
+    log_message_startup("Initialization completed");
 
     while (1) {
         if (!gstate.poll_slow_events()) {
@@ -567,5 +574,3 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-
-const char *BOINC_RCSID_f02264aefe = "$Id: main.cpp 18813 2009-08-04 05:52:04Z charlief $";

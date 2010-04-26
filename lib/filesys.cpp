@@ -666,10 +666,10 @@ int FILE_LOCK::lock(const char* filename) {
     }
 
     struct flock fl;
-    fl.l_type=F_WRLCK;
-    fl.l_whence=SEEK_SET;
-    fl.l_start=0;
-    fl.l_len=0;
+    fl.l_type = F_WRLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = 0;
+    fl.l_len = 0;
     if (fcntl(fd, F_SETLK, &fl) == -1) {
         return ERR_FCNTL;
     }
@@ -797,4 +797,3 @@ int get_file_dir(char* filename, char* dir) {
 
 #endif
 
-const char *BOINC_RCSID_636c8d709b = "$Id: filesys.cpp 18437 2009-06-16 20:54:44Z davea $";

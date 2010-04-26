@@ -495,6 +495,12 @@ int RPCThread::ProcessRPCRequest() {
             *(double*)(current_request->arg2)
         );
         break;
+    case RPC_SET_GPU_MODE:
+        retval = (m_pDoc->rpcClient).set_gpu_mode(
+            *(int*)(current_request->arg1), 
+            *(double*)(current_request->arg2)
+        );
+        break;
     case RPC_SET_NETWORK_MODE:
         retval = (m_pDoc->rpcClient).set_network_mode(
             *(int*)(current_request->arg1),
@@ -978,6 +984,7 @@ void CMainDocument::HandleCompletedRPC() {
                 exchangeBuf->version_info = arg1->version_info;
                 exchangeBuf->executing_as_daemon = arg1->executing_as_daemon;
                 exchangeBuf->have_cuda = arg1->have_cuda;
+                exchangeBuf->have_ati = arg1->have_ati;
             }
             break;
         case RPC_GET_RESULTS:

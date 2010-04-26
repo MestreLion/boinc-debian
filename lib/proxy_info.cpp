@@ -32,11 +32,13 @@ int PROXY_INFO::parse(MIOFILE& in) {
 
     memset(this, 0, sizeof(PROXY_INFO));
     while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</proxy_info>")) return 0;
+        if (match_tag(buf, "</proxy_info>")) {
+            present = true;
+            return 0;
+        }
         else if (parse_bool(buf, "use_http_proxy", use_http_proxy)) continue;
         else if (parse_bool(buf, "use_socks_proxy", use_socks_proxy)) continue;
         else if (parse_bool(buf, "use_http_auth", use_http_auth)) continue;
-        else if (parse_int(buf, "<socks_version>", socks_version)) continue;
         else if (parse_str(buf, "<socks_server_name>", socks_server_name, sizeof(socks_server_name))) continue;
         else if (parse_int(buf, "<socks_server_port>", socks_server_port)) continue;
         else if (parse_str(buf, "<http_server_name>", http_server_name, sizeof(http_server_name))) continue;
@@ -50,6 +52,15 @@ int PROXY_INFO::parse(MIOFILE& in) {
     return ERR_XML_PARSE;
 }
 
+int PROXY_INFO::parse_config(MIOFILE& in) {
+    int retval = parse(in);
+    if (retval) return retval;
+    if (strlen(http_server_name)) use_http_proxy = true;
+    if (strlen(socks_server_name)) use_socks_proxy = true;
+    if (strlen(http_user_name)) use_http_auth = true;
+    return 0;
+}
+
 int PROXY_INFO::write(MIOFILE& out) {
     char s5un[2048], s5up[2048], hun[2048], hup[2048];
     xml_escape(socks5_user_name, s5un, sizeof(s5un));
@@ -61,7 +72,6 @@ int PROXY_INFO::write(MIOFILE& out) {
         "%s"
         "%s"
         "%s"
-        "    <socks_version>%d</socks_version>\n"
         "    <socks_server_name>%s</socks_server_name>\n"
         "    <socks_server_port>%d</socks_server_port>\n"
         "    <http_server_name>%s</http_server_name>\n"
@@ -74,7 +84,6 @@ int PROXY_INFO::write(MIOFILE& out) {
         use_http_proxy?"    <use_http_proxy/>\n":"",
         use_socks_proxy?"    <use_socks_proxy/>\n":"",
         use_http_auth?"    <use_http_auth/>\n":"",
-        socks_version,
         socks_server_name,
         socks_server_port,
         http_server_name,
@@ -113,11 +122,9 @@ void PROXY_INFO::clear() {
     strcpy(socks5_user_passwd, "");
     strcpy(http_user_name, "");
     strcpy(http_user_passwd, "");
-    socks_version = 0;
 	strcpy(noproxy_hosts, "");
 	strcpy(autodetect_server_name, "");
     autodetect_port = 80;
     autodetect_protocol = 0;
 }
 
-const char *BOINC_RCSID_af13db88e5 = "$Id: proxy_info.cpp 19101 2009-09-18 20:48:19Z romw $";

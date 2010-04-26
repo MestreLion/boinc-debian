@@ -98,13 +98,13 @@ CLIENT_STATE::CLIENT_STATE():
     exit_after_app_start_secs = 0;
     app_started = 0;
     exit_before_upload = false;
-    proxy_info.clear();
     show_projects = false;
     strcpy(detach_project_url, "");
     strcpy(main_host_venue, "");
     strcpy(attach_project_url, "");
     strcpy(attach_project_auth, "");
     run_mode.set(RUN_MODE_AUTO, 0);
+    gpu_mode.set(RUN_MODE_AUTO, 0);
     network_mode.set(RUN_MODE_AUTO, 0);
     started_by_screensaver = false;
     requested_exit = false;
@@ -143,22 +143,6 @@ CLIENT_STATE::CLIENT_STATE():
     initialized = false;
     last_wakeup_time = dtime();
     abort_jobs_on_exit = false;
-}
-
-void CLIENT_STATE::show_proxy_info() {
-    if (proxy_info.use_http_proxy) {
-        msg_printf(NULL, MSG_INFO, "Using HTTP proxy %s:%d",
-            proxy_info.http_server_name, proxy_info.http_server_port
-        );
-    }
-    if (proxy_info.use_socks_proxy) {
-        msg_printf(NULL, MSG_INFO, "Using SOCKS proxy %s:%d",
-            proxy_info.socks_server_name, proxy_info.socks_server_port
-        );
-    }
-    if (!proxy_info.use_http_proxy && !proxy_info.use_socks_proxy) {
-        msg_printf(NULL, MSG_INFO, "Not using a proxy");
-    }
 }
 
 void CLIENT_STATE::show_host_info() {
@@ -258,10 +242,16 @@ int CLIENT_STATE::init() {
     host_info.get_host_info();
     set_ncpus();
     show_host_info();
+
+    // check for GPUs.
+    //
     if (!config.no_gpus) {
         vector<string> descs;
         vector<string> warnings;
-        coprocs.get(config.use_all_gpus, descs, warnings);
+        host_info.coprocs.get(
+            config.use_all_gpus, descs, warnings,
+            config.ignore_cuda_dev, config.ignore_ati_dev
+        );
         for (i=0; i<descs.size(); i++) {
             msg_printf(NULL, MSG_INFO, descs[i].c_str());
         }
@@ -270,7 +260,7 @@ int CLIENT_STATE::init() {
                 msg_printf(NULL, MSG_INFO, warnings[i].c_str());
             }
         }
-        if (coprocs.coprocs.size() == 0) {
+        if (host_info.coprocs.coprocs.size() == 0) {
             msg_printf(NULL, MSG_INFO, "No usable GPUs found");
         }
 #if 0
@@ -281,8 +271,8 @@ int CLIENT_STATE::init() {
         fake_ati(coprocs, 2);
         msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
 #endif
-        coproc_cuda = (COPROC_CUDA*)coprocs.lookup("CUDA");
-        coproc_ati = (COPROC_ATI*)coprocs.lookup("ATI");
+        coproc_cuda = (COPROC_CUDA*)host_info.coprocs.lookup("CUDA");
+        coproc_ati = (COPROC_ATI*)host_info.coprocs.lookup("ATI");
     }
 
     // check for app_info.xml file in project dirs.
@@ -293,7 +283,9 @@ int CLIENT_STATE::init() {
     //
     check_anonymous();
 
-    cpu_benchmarks_set_defaults();  // for first time, make sure p_fpops nonzero
+    // first time, set p_fpops nonzero to avoid div by zero
+    //
+    cpu_benchmarks_set_defaults();
 
     // Parse the client state file,
     // ignoring any <project> tags (and associated stuff)
@@ -306,9 +298,8 @@ int CLIENT_STATE::init() {
     //
     parse_account_files_venue();
 
-    show_proxy_info();
 
-    // fill in avp->flops for anonymous project
+    // fill in avp->flops for anonymous platform projects
     //
     for (i=0; i<app_versions.size(); i++) {
         APP_VERSION* avp = app_versions[i];
@@ -461,10 +452,6 @@ int CLIENT_STATE::init() {
     get_sandbox_account_service_token();
     if (sandbox_account_service_token != NULL) g_use_sandbox = true;
 #endif
-
-    // Check to see if a proxy server can be detected.
-    proxy_info.need_autodetect_proxy_settings = true;
-    proxy_info.have_autodetect_proxy_settings = false;
 
     check_file_existence();
     if (!boinc_file_exists(ALL_PROJECTS_LIST_FILENAME)) {
@@ -1588,8 +1575,10 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
     project->duration_correction_factor = 1;
     project->ams_resource_share = -1;
     project->min_rpc_time = 0;
-	project->short_term_debt = 0;
     project->pwf.reset(project);
+    project->cpu_pwf.reset();
+    project->cuda_pwf.reset();
+    project->ati_pwf.reset();
     write_state_file();
     return 0;
 }
@@ -1598,7 +1587,7 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
 // - Reset (see above)
 // - delete all file infos
 // - delete account file
-// - delete account directory
+// - delete project directory
 //
 int CLIENT_STATE::detach_project(PROJECT* project) {
     vector<PROJECT*>::iterator project_iter;
@@ -1800,4 +1789,3 @@ bool CLIENT_STATE::abort_sequence_done() {
     return true;
 }
 
-const char *BOINC_RCSID_e836980ee1 = "$Id: client_state.cpp 19329 2009-10-16 19:35:52Z romw $";

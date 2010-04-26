@@ -5,7 +5,7 @@
 // Author:      Julian Smart
 // Modified by:
 // Created:     24/3/98
-// RCS-ID:      $Id: taskbarex.cpp 15585 2008-07-09 16:44:14Z romw $
+// RCS-ID:      $Id: taskbarex.cpp 20874 2010-03-12 17:03:53Z romw $
 // Copyright:   (c)
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////
@@ -430,5 +430,3 @@ LRESULT APIENTRY wxTaskBarIconExWindowProc( HWND hWnd, unsigned msg, UINT wParam
     return wxGetApp().GetTaskBarIcon()->WindowProc((WXHWND) hWnd, msg, wParam, lParam);
 }
 
-
-const char *BOINC_RCSID_46d006c50e = "$Id: taskbarex.cpp 15585 2008-07-09 16:44:14Z romw $";

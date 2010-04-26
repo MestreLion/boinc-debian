@@ -75,4 +75,3 @@ bool GUI_HTTP::poll() {
     return true;
 }
 
-const char *BOINC_RCSID_7c374a67d3="$Id: gui_http.cpp 18988 2009-09-02 15:33:06Z romw $";

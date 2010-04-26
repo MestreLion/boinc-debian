@@ -22,7 +22,7 @@
 #include "stdwx.h"
 #include "ValidateURL.h"
 #include "BOINCGUIApp.h"
-#include "str_util.h"
+#include "url.h"
 
 
 IMPLEMENT_DYNAMIC_CLASS(CValidateURL, wxValidator)
@@ -176,5 +176,3 @@ bool CValidateURL::CheckValidator() const {
     return TRUE;
 }
 
-
-const char *BOINC_RCSID_1f1a9f5f09 = "$Id: ValidateURL.cpp 15901 2008-08-20 16:07:06Z charlief $";

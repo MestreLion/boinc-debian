@@ -39,6 +39,14 @@ CBOINCTaskCtrl::CBOINCTaskCtrl(CBOINCBaseView* pView, wxWindowID iTaskWindowID, 
     SetVirtualSize( 200, 1000 );
     EnableScrolling(false, true);
     SetScrollRate( 0, 10 );
+
+#ifdef __WXMAC__
+    //Accessibility
+    HIObjectSetAccessibilityIgnored((HIObjectRef)GetHandle(), true);
+    HIViewRef parentView = (HIViewRef)m_pParent->GetHandle();
+    HIObjectSetAccessibilityIgnored((HIObjectRef)parentView, true);
+
+#endif
 }
 
 
@@ -162,6 +170,9 @@ wxInt32 CBOINCTaskCtrl::UpdateControls() {
             pGroup->m_pStaticBox = new wxStaticBox(this, wxID_ANY, pGroup->m_strName);
             pGroup->m_pStaticBoxSizer = new wxStaticBoxSizer(pGroup->m_pStaticBox, wxVERTICAL);
             m_pSizer->Add(pGroup->m_pStaticBoxSizer, 0, wxEXPAND|wxALL, 5);
+#ifdef __WXMAC__
+            pGroup->SetupMacAccessibilitySupport();
+#endif
         }
     }
 
@@ -233,5 +244,3 @@ bool CBOINCTaskCtrl::OnRestoreState(wxConfigBase* pConfig) {
     return true;
 }
 
-
-const char *BOINC_RCSID_125ef3d14d = "$Id: BOINCTaskCtrl.cpp 15762 2008-08-06 18:36:30Z davea $";

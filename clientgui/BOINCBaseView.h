@@ -22,9 +22,18 @@
 #pragma interface "BOINCBaseView.cpp"
 #endif
 
+#define BASEVIEW_STRIPES 1
+#define BASEVIEW_RULES 0
+
 #define DEFAULT_TASK_FLAGS             wxTAB_TRAVERSAL | wxADJUST_MINSIZE | wxFULL_REPAINT_ON_RESIZE
+
+#if BASEVIEW_RULES
+#define DEFAULT_LIST_SINGLE_SEL_FLAGS  wxLC_REPORT | wxLC_VIRTUAL | wxLC_HRULES | wxLC_SINGLE_SEL
+#define DEFAULT_LIST_MULTI_SEL_FLAGS   wxLC_REPORT | wxLC_VIRTUAL | wxLC_HRULES
+#else
 #define DEFAULT_LIST_SINGLE_SEL_FLAGS  wxLC_REPORT | wxLC_VIRTUAL | wxLC_SINGLE_SEL
 #define DEFAULT_LIST_MULTI_SEL_FLAGS   wxLC_REPORT | wxLC_VIRTUAL
+#endif
 
 
 class CBOINCTaskCtrl;
@@ -56,8 +65,17 @@ class CTaskItemGroup : wxObject {
 public:
 	CTaskItemGroup();
 	CTaskItemGroup( wxString strName ) :
-		m_strName(strName), m_pStaticBox(NULL), m_pStaticBoxSizer(NULL) { m_Tasks.clear(); };
-    ~CTaskItemGroup() {};
+            m_strName(strName), m_pStaticBox(NULL), m_pStaticBoxSizer(NULL) {
+            m_Tasks.clear();
+#ifdef __WXMAC__
+            m_pTaskGroupAccessibilityEventHandlerRef = NULL;
+#endif
+        };
+    ~CTaskItemGroup() {
+#ifdef __WXMAC__
+        RemoveMacAccessibilitySupport();
+#endif
+    };
     wxButton* button(int i) {return m_Tasks[i]->m_pButton;}
 
     wxString                m_strName;
@@ -66,6 +84,14 @@ public:
     wxStaticBoxSizer*       m_pStaticBoxSizer;
 
 	std::vector<CTaskItem*> m_Tasks;
+
+#ifdef __WXMAC__
+    void                    SetupMacAccessibilitySupport();
+    void                    RemoveMacAccessibilitySupport();
+    
+private:
+    EventHandlerRef         m_pTaskGroupAccessibilityEventHandlerRef;
+#endif
 };
 
 typedef bool     (*ListSortCompareFunc)(int, int);
@@ -107,7 +133,9 @@ public:
     void                    FireOnListDeselected( wxListEvent& event );
     wxString                FireOnListGetItemText( long item, long column ) const;
     int                     FireOnListGetItemImage( long item ) const;
+#if BASEVIEW_STRIPES
     wxListItemAttr*         FireOnListGetItemAttr( long item ) const;
+#endif
     
     int                     GetProgressColumn() { return m_iProgressColumn; }
     virtual double          GetProgressValue(long item);
@@ -120,6 +148,10 @@ public:
 	void                    ClearSavedSelections();
 	void                    ClearSelections();
     void                    RefreshTaskPane();
+
+#ifdef __WXMAC__
+    CBOINCListCtrl*         GetListCtrl() { return m_pListPane; }
+#endif    
  
     std::vector<CTaskItemGroup*> m_TaskGroups;
 
@@ -142,7 +174,6 @@ protected:
     virtual void            OnCacheHint(wxListEvent& event);
     virtual wxString        OnListGetItemText( long item, long column ) const;
     virtual int             OnListGetItemImage( long item ) const;
-    virtual wxListItemAttr* OnListGetItemAttr( long item ) const;
 
     void                    OnColClick(wxListEvent& event);
     
@@ -177,6 +208,13 @@ protected:
     static  wxString        HtmlEntityEncode(wxString strRaw);
     static  wxString        HtmlEntityDecode(wxString strRaw);
 
+#if BASEVIEW_STRIPES
+    virtual wxListItemAttr* OnListGetItemAttr( long item ) const;
+
+    wxListItemAttr*         m_pWhiteBackgroundAttr;
+    wxListItemAttr*         m_pGrayBackgroundAttr;
+#endif
+
     bool                    m_bProcessingTaskRenderEvent;
     bool                    m_bProcessingListRenderEvent;
 
@@ -192,10 +230,6 @@ protected:
 
     CBOINCTaskCtrl*         m_pTaskPane;
     CBOINCListCtrl*         m_pListPane;
-
-    wxListItemAttr*         m_pWhiteBackgroundAttr;
-    wxListItemAttr*         m_pGrayBackgroundAttr;
-
 };
 
 

@@ -8,8 +8,6 @@
 #define _SCREENSAVER_WIN_H
 
 
-#include <multimon.h>
-
 //-----------------------------------------------------------------------------
 // Constants
 //-----------------------------------------------------------------------------
@@ -75,6 +73,15 @@ struct DISPLAY_DEVICE_FULL
 };
 
 
+struct ss_periods
+{
+    double          GFXDefaultPeriod;
+    double          GFXSciencePeriod;
+    double          GFXChangePeriod;
+    bool            Show_default_ss_first;
+};
+
+
 //-----------------------------------------------------------------------------
 // Name: class CScreensaver
 // Desc: Screensaver class
@@ -114,8 +121,13 @@ protected:
     BOOL			m_bErrorMode;        // Whether to display an error
     HRESULT			m_hrError;           // Error code to display
     TCHAR			m_szError[400];      // Error message text
+
+    // Variables for configuration management
     DWORD           m_dwBlankScreen;
     DWORD           m_dwBlankTime;
+    DWORD           m_dwDefaultTime;
+    DWORD           m_dwRunTime;
+    DWORD           m_dwSwitchTime;
     std::string     m_strBOINCInstallDirectory;
     std::string     m_strBOINCDataDirectory;
 
@@ -161,7 +173,7 @@ protected:
 	int             launch_screensaver(RESULT* rp, HANDLE& graphics_application);
 	int             launch_default_screensaver(char *dir_path, HANDLE& graphics_application);
     void            HandleRPCError(void);
-    void            GetDisplayPeriods(char *dir_path);
+    void            GetDefaultDisplayPeriods(struct ss_periods &periods);
     BOOL            HasProcessExited(HANDLE pid_handle, int &exitCode);
     
     // Determine if two RESULT pointers refer to the same task
@@ -189,7 +201,7 @@ protected:
     time_t          m_tThreadCreateTime;
 
     double          m_fGFXDefaultPeriod;
-    double          m_fGFxSciencePeriod;
+    double          m_fGFXSciencePeriod;
     double          m_fGFXChangePeriod;
     bool            m_bShow_default_ss_first;
 
@@ -216,6 +228,12 @@ protected:
 	void			DrawTransparentBitmap(HDC hdc, HBITMAP hBitmap, LONG xStart, LONG yStart, COLORREF cTransparentColor);
 
 	LRESULT         SaverProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+
+    DWORD           ConvertSliderPositionToTime( DWORD dwPosition );
+    DWORD           ConvertTimeToSliderPosition( DWORD dwMinutes );
+    VOID            InitializeDefaultSlider( HWND hwndDlg, UINT uControl );
+    DWORD           GetSliderPosition( HWND hwndDlg, UINT uControl );
+    VOID            SetSliderPosition( HWND hwndDlg, UINT uControl, DWORD dwPosition );
 	INT_PTR         ConfigureDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
     static LRESULT CALLBACK SaverProcStub( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );

@@ -39,7 +39,7 @@
 bool IsUserInGroupBM();
 #endif
 
-static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox);
+static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox, int isManager);
 
 #if (! defined(__WXMAC__) && ! defined(_MAC_INSTALLER))
 static char * PersistentFGets(char *buf, size_t buflen, FILE *f);
@@ -347,10 +347,10 @@ saverName[2] = "Progress Thru Processors";
     retval = stat(full_path, &sbuf);
     if (! retval) {                 // Client can create projects directory if it does not yet exist.  
         if (use_sandbox) {
-            if (sbuf.st_gid != boinc_master_gid)
+            if (sbuf.st_gid != boinc_project_gid)
                 return -1024;
 
-        if ((sbuf.st_mode & 0777) != 0775)
+        if ((sbuf.st_mode & 0777) != 0770)
             return -1025;
         }
         
@@ -358,7 +358,7 @@ saverName[2] = "Progress Thru Processors";
             return -1026;
 
         // Step through project directories
-        retval = CheckNestedDirectories(full_path, 1, use_sandbox);
+        retval = CheckNestedDirectories(full_path, 1, use_sandbox, isManager);
         if (retval)
             return retval;
     }
@@ -369,10 +369,10 @@ saverName[2] = "Progress Thru Processors";
     retval = stat(full_path, &sbuf);
     if (! retval) {                 // Client can create slots directory if it does not yet exist.  
        if (use_sandbox) {
-            if (sbuf.st_gid != boinc_master_gid)
+            if (sbuf.st_gid != boinc_project_gid)
                 return -1027;
 
-            if ((sbuf.st_mode & 0777) != 0775)
+            if ((sbuf.st_mode & 0777) != 0770)
                 return -1028;
         }
         
@@ -380,7 +380,7 @@ saverName[2] = "Progress Thru Processors";
             return -1029;
 
         // Step through slot directories
-        retval = CheckNestedDirectories(full_path, 1, use_sandbox);
+        retval = CheckNestedDirectories(full_path, 1, use_sandbox, isManager);
         if (retval)
             return retval;
     }
@@ -497,7 +497,7 @@ saverName[2] = "Progress Thru Processors";
 }
 
 
-static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox) {
+static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox, int isManager) {
     int             isDirectory;
     char            full_path[MAXPATHLEN];
     struct stat     sbuf;
@@ -579,11 +579,11 @@ static int CheckNestedDirectories(char * basepath, int depth, int use_sandbox) {
         }           // if (!S_ISLNK(sbuf.st_mode))
         
         if (isDirectory && !S_ISLNK(sbuf.st_mode)) {
-            if (use_sandbox && (depth > 1))
-                if ((sbuf.st_uid != boinc_master_uid) && (sbuf.st_gid != boinc_master_gid))
-                    continue;       // We can't check subdirectories owned by boinc_project
-            
-            retval = CheckNestedDirectories(full_path, depth + 1, use_sandbox);
+            if (use_sandbox && (depth > 1)) {
+                if ((! isManager) && (sbuf.st_uid != boinc_master_uid))
+                    continue;       // Client can't check subdirectories owned by boinc_project
+            }
+            retval = CheckNestedDirectories(full_path, depth + 1, use_sandbox, isManager);
             if (retval)
                 break;
         }
@@ -666,15 +666,16 @@ bool IsUserInGroupBM() {
     char                *userName, *groupMember;
     int                 i;
 
-    grp = getgrgid(boinc_master_gid);
+    grp = getgrnam(REAL_BOINC_MASTER_NAME);
     if (grp) {
-
         rgid = getgid();
-        if (rgid == boinc_master_gid) {
+        if (rgid == grp->gr_gid) {
             return true;                // User's primary group is boinc_master
         }
 
-        userName = getlogin();
+        // On some systems with Automatic Login set, getlogin() returns "root" for a 
+        // time after the system is first booted, so we check "USER" environment variable.
+        userName = getenv("USER");
         if (userName) {
             for (i=0; ; i++) {          // Step through all users in group boinc_master
                 groupMember = grp->gr_mem[i];

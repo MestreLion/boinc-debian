@@ -400,4 +400,3 @@ error:
  	return NULL; 
 }
 
-const char *BOINC_RCSID_97d4f29d84="$Id: texture.cpp 17391 2009-02-26 01:11:37Z davea $";
