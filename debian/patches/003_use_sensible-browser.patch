@@ -1,0 +1,18 @@
+Author: Frank S. Thomas <frank@thomas-alfeld.de>
+Description: use sensible-browser only, because upstream's attempt to
+start a browser fails miserably.
+Disclaimer: This patch is Debian-specific. Don't use it for non Debian packages.
+The program "sensible-browser" is part of the essential package debianutils.
+
+--- boinc.orig/clientgui/hyperlink.cpp
++++ boinc/clientgui/hyperlink.cpp
+@@ -171,7 +171,8 @@
+ }
+ 
+ void wxHyperLink::ExecuteLink (const wxString &strLink) {
+-    if (!wxLaunchDefaultBrowser(strLink)) {
++    wxString cmd = wxT("sensible-browser ") + strLink;
++    if (!::wxExecute(cmd, wxEXEC_ASYNC)) {
+         wxString strDialogTitle = wxEmptyString;
+         wxString strDialogMessage = wxEmptyString;
+ 

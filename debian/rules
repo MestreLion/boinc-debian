@@ -1,0 +1,242 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# Uncomment this to compile with gcc-snapshot.
+#export  CC=/usr/lib/gcc-snapshot/bin/gcc
+#export CXX=/usr/lib/gcc-snapshot/bin/g++
+#export CPP=/usr/lib/gcc-snapshot/bin/cpp
+
+include /usr/share/quilt/quilt.make
+
+DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+ifeq ($(DEB_BUILD_GNU_TYPE), $(DEB_HOST_GNU_TYPE))
+  TYPE_FLAGS = --build $(DEB_HOST_GNU_TYPE)
+else
+  TYPE_FLAGS = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+endif
+
+# On some architectures it is required to change the BOINC platform of the
+# core client (with the --with-boinc-platform configure option) to match the
+# official BOINC platform, otherwise it would not download any applications,
+# because projects mostly provide applications for official BOINC platforms
+# only. See http://boinc.berkeley.edu/trac/wiki/BoincPlatforms for the list
+# of official BOINC platforms.
+
+# Change BOINC platform alpha-unknown-linux-gnu to alpha-hp-linux-gnu and
+# declare alpha-unknown-linux-gnu as alternate platform, because some projects
+# offer applications for it.
+ifeq ($(DEB_HOST_GNU_TYPE), alpha-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=alpha-hp-linux-gnu \
+    --with-boinc-alt-platform=alpha-unknown-linux-gnu
+endif
+
+# Change BOINC platform i486-pc-linux-gnu to i686-pc-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), i486-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=i686-pc-linux-gnu
+endif
+
+# Change BOINC platform i486-pc-kfreebsd-gnu to i686-pc-kfreebsd-gnu to be
+# consistent with the official BOINC platform i686-pc-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), i486-kfreebsd-gnu)
+  TYPE_FLAGS += --with-boinc-platform=i686-pc-kfreebsd-gnu
+endif
+
+# Change BOINC platform ia64-unknown-linux-gnu to ia64-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), ia64-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=ia64-linux-gnu
+endif
+
+# Change BOINC platform powerpc-unknown-linux-gnu to powerpc-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), powerpc-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=powerpc-linux-gnu
+endif
+
+# Change BOINC platform powerpc64-unknown-linux-gnu to ppc64-linux-gnu and
+# declare powerpc-linux-gnu as alternate platform.
+ifeq ($(DEB_HOST_GNU_TYPE), powerpc64-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=ppc64-linux-gnu \
+    --with-boinc-alt-platform=powerpc-linux-gnu
+endif
+
+# Change BOINC platform sparc-unknown-linux-gnu to sparc-sun-linux-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), sparc-linux-gnu)
+  TYPE_FLAGS += --with-boinc-platform=sparc-sun-linux-gnu
+endif
+
+# Declare i686-pc-kfreebsd-gnu as alternate platform for
+# x86_64-pc-kfreebsd-gnu.
+ifeq ($(DEB_HOST_GNU_TYPE), x86_64-kfreebsd-gnu)
+  TYPE_FLAGS += --with-boinc-alt-platform=i686-pc-kfreebsd-gnu
+endif
+
+CFLAGS += -g -Wall
+CXXFLAGS += -g -Wall
+LDFLAGS += -Wl,--as-needed
+
+CFLAGS_boinc-client := $(CFLAGS)
+CXXFLAGS_boinc-client := $(CXXFLAGS)
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+  DEB_OPT_FLAGS = -O0
+  DEB_OPT_FLAGS_boinc-client = -O0
+else
+  DEB_OPT_FLAGS = -O2
+  DEB_OPT_FLAGS_boinc-client = -O3
+endif
+
+CFLAGS += $(DEB_OPT_FLAGS)
+CXXFLAGS += $(DEB_OPT_FLAGS)
+
+CFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
+CXXFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
+
+CFGFLAGS = \
+  $(TYPE_FLAGS) \
+  --prefix=/usr \
+  --enable-client \
+  --disable-server \
+  --enable-unicode \
+  --with-ssl \
+  CFLAGS="$(CFLAGS)" \
+  CXXFLAGS="$(CXXFLAGS)" \
+  LDFLAGS="$(LDFLAGS)"
+
+CFGFLAGS_boinc-client = \
+  $(TYPE_FLAGS) \
+  --enable-client \
+  --disable-server \
+  --with-ssl \
+  --without-wx-config \
+  CFLAGS="$(CFLAGS_boinc-client)" \
+  CXXFLAGS="$(CXXFLAGS_boinc-client)" \
+  LDFLAGS="$(LDFLAGS)"
+
+test-stamp:
+	dh_testdir
+	xmllint --nonet --noout \
+	  debian/conffiles/cc_config.xml \
+	  debian/conffiles/global_prefs_override.xml
+	touch $@
+
+autoreconf-stamp: patch
+	dh_testdir
+	cp -f /usr/share/misc/config.guess config.guess
+	cp -f /usr/share/misc/config.sub config.sub
+	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
+	touch $@
+
+build: test-stamp build-stamp
+build-stamp: autoreconf-stamp build-boinc-client-stamp
+	dh_testdir
+	./configure $(CFGFLAGS)
+	$(MAKE)
+	docbook2x-man debian/manpages/update-boinc-applinks.xml
+	# Generate binary message catalogs of the BOINC Manager.
+	for i in `ls locale/client`; do \
+	  if [ -f "locale/client/$$i/BOINC-Manager.po" ]; then \
+	    msgfmt -o "locale/client/$$i/BOINC-Manager.mo" \
+	      "locale/client/$$i/BOINC-Manager.po"; \
+	  fi; \
+	done;
+	touch $@
+
+build-boinc-client-stamp: autoreconf-stamp
+	dh_testdir
+	./configure $(CFGFLAGS_boinc-client)
+	$(MAKE)
+	#cp client/boinc.unmodified client/boinc.optimized
+	touch $@
+
+clean: clean-patched unpatch
+clean-patched:
+	dh clean 
+	dh_clean \
+	  client/boinc.optimized \
+	  update-boinc-applinks.1 \
+	  `find -name Makefile.in` \
+	  aclocal.m4 \
+	  config.h.in \
+	  configure \
+	  locale/client/ar/BOINC\ Manager.mo \
+	  config.guess \
+	  config.sub \
+	  client/scripts/Makefile \
+	  client/scripts/boinc-client \
+	  clientgui/res/Makefile \
+	  sea/Makefile   \
+	  api/libboinc_api.a \
+	  api/libboinc_graphics2.a \
+	  lib/libboinc.a \
+	  client/boinc \
+	  packages/solaris/CSW/boincclient/pkginfo \
+	  packages/solaris/CSW/boincclient/prototype \
+	  packages/solaris/CSW/boincdevel/pkginfo \
+	  packages/solaris/CSW/boincdevel/prototype \
+	  packages/solaris/CSW/boinclibs/pkginfo \
+	  packages/solaris/CSW/boinclibs/prototype \
+	  packages/solaris/CSW/boincmanager/pkginfo \
+	  packages/solaris/CSW/boincmanager/prototype \
+	  packages/solaris/CSW/Makefile \
+	  packages/generic/sea/Makefile \
+	  packages/solaris/CSW/boincclient/Makefile \
+	  packages/solaris/CSW/boincdevel/Makefile \
+	  packages/solaris/CSW/boinclibs/Makefile \
+	  packages/solaris/CSW/boincmanager/Makefile
+	debconf-updatepo
+
+install: build install-stamp
+install-stamp:
+	dh install --after dh_auto_test --until dh_install
+	
+	# Install files for the boinc-client package.
+	install -D client/boinc \
+	  debian/boinc-client/usr/bin/boinc
+	
+	install -D client/boinccmd \
+	  debian/boinc-client/usr/bin/boinccmd
+	
+	# Install files for the boinc-manager package.
+	install -D clientgui/boincmgr \
+	  debian/boinc-manager/usr/bin/boincmgr
+	
+	rm -rf debian/boinc-manager/usr/share/locale/en_US/
+	
+	dh install --before dh_installchangelogs
+	dh_installchangelogs -k checkin_notes
+	dh install --until dh_fixperms
+	chmod 755 \
+	  debian/boinc-client/usr/share/boinc-client/udev-cpu_share \
+	  debian/boinc-client/usr/share/bug/boinc-client/script \
+	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
+	# Correct catalog file perms
+	find ./ -name "*.mo" -exec chmod 644   {} \;
+	# delete empty dirs
+	find debian/boinc-manager/usr/share/locale -type d -empty -delete
+	dh install
+	dh_buildinfo
+	touch $@
+
+binary-arch: install
+	dh binary-arch --before dh_strip
+	dh_strip -a --dbg-package=boinc-dbg
+	dh binary-arch
+
+binary: binary-arch
+
+origDir ?= .
+
+get-orig-source:
+	LATEST_VERSION=`svn list http://boinc.berkeley.edu/svn/tags/ | \
+	  sed 's/boinc_core_release_\(.*\)\//\1/' | \
+	  sort -g -t_ -k1 -k2 -k3 | sed 's/_/./g' | tail -n 1 | tr -d '\n'`; \
+	EXB=/tmp/export-boinc; \
+	wget -O $$EXB "http://git.debian.org/?p=pkg-boinc/scripts.git;a=blob_plain;f=export-boinc;hb=HEAD" --quiet; \
+	chmod +x $$EXB; \
+	$$EXB -r $$LATEST_VERSION -t $(origDir); \
+	rm -f $$EXB
+
+.PHONY: build clean clean-patched install binary-arch binary get-orig-source
