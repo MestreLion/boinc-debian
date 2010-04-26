@@ -7,7 +7,6 @@ Modifications to the upstream source
  Refer to /usr/share/doc/quilt/README.source for details.
 
 
-
 Repackaged upstream source:
 ===========================
  The BOINC project does not distribute source code releases as tarballs,
@@ -30,11 +29,12 @@ Repackaged upstream source:
  Choose 'the right one' of those.  To obtain the .orig.tar.gz
  tarball for BOINC tag 6_10_43 this script is invoked as:
 
-   $ ./export-boinc -r 6.10.43
+   $ ./export-boinc -r 6.10.44
 
  It will take a considerable while to download, the final tarball yields >15MB.
  The script will take care of remove the non-DFSG files from the upstream
  tag.
+
 
 Removed non-dfsg upstream files
 ===============================
@@ -52,5 +52,7 @@ Removed non-dfsg upstream files
 Debian packaging VCS
 =====================
  Very recently, the management of the packaging has moved from subversion
- to a git repository. Again, the Wiki pages hold instructions and offer
- references for the current and future contributors - you?
+ to a git repository. The Wiki pages hold instructions for using git,
+ see http://wiki.debian.org/BOINC/Development/GitUsage for details.
+ The site also offers further references for the current and future
+ contributors - you? Give it a try.
