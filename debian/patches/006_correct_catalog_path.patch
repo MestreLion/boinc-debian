@@ -22,7 +22,7 @@ Index: boinc/locale/Makefile.am
 +	  $(INSTALL) -d "$$mydir/$$ldir"/LC_MESSAGES ; \
  	  if [ -f $$ldir/BOINC-Manager.mo ] ; then \
 -	    $(INSTALL) $$ldir/BOINC-Manager.mo $$mydir/$$ldir/BOINC-Manager.mo ; \
-+	    $(INSTALL) "$$ldir/BOINC-Manager.mo "$$mydir/$$ldir/BOINC-Manager.mo" ; \
++	    $(INSTALL) "$$ldir/BOINC-Manager.mo" "$$mydir/$$ldir/BOINC-Manager.mo" ; \
  	  fi ;\
  	done
  
