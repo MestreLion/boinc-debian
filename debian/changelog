@@ -1,3 +1,9 @@
+boinc (6.10.44+dfsg-1) unstable; urgency=low                                                   
+                                                                                              
+  * New upstream version.                                                                      
+                                                                                               
+ -- Steffen Moeller <moeller@debian.org>  Tue, 27 Apr 2010 01:32:50 +0200                      
+                                                                                               
 boinc (6.10.17+dfsg-3) unstable; urgency=low
 
   * Ignore errors when setting oom_adj for boinc client,
