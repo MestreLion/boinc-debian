@@ -2,7 +2,7 @@ Source: boinc
 Section: net
 Priority: optional
 Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
-Uploaders: Steffen Moeller <steffen_moeller@gmx.de>, 
+Uploaders: Steffen Moeller <moeller@debian.org>, 
  Christoph Martin <christoph.martin@uni-mainz.de>,
  Rene Mayorga <rmayorga@debian.org>
 Standards-Version: 3.8.4
