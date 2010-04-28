@@ -1,9 +1,9 @@
 boinc (6.10.44+dfsg-1) unstable; urgency=low
 
- * New upstream version.                                                                      
- * Bumped policy compilance to 3.8.4 (no changes required)
+  * New upstream version.                                                                      
+  * Bumped policy compilance to 3.8.4 (no changes required)
 
- -- Steffen Moeller <steffen_moeller@gmx.de>  Wed, 28 Apr 2010 01:57:16 +0200
+ -- Steffen Moeller <moeller@debian.org>  Wed, 28 Apr 2010 01:57:16 +0200
 
 boinc (6.10.17+dfsg-3) unstable; urgency=low
 
