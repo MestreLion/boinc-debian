@@ -1,0 +1,27 @@
+# This file is /etc/default/boinc-client, it is a configuration file for the
+# /etc/init.d/boinc-client init script.
+
+# Set this to 1 to enable and to 0 to disable the init script.
+ENABLED="1"
+
+# Set this to 1 to enable advanced scheduling of the BOINC core client and
+# all its sub-processes (reduces the impact of BOINC on the system's
+# performance).
+SCHEDULE="1"
+
+# The BOINC core client will be started with the permissions of this user.
+BOINC_USER="boinc"
+
+# This is the data directory of the BOINC core client.
+BOINC_DIR="/var/lib/boinc-client"
+
+# This is the location of the BOINC core client, that the init script uses.
+# If you do not want to use the client program provided by the boinc-client
+# package, you can specify here an alternative client program.
+#BOINC_CLIENT="/usr/local/bin/boinc"
+BOINC_CLIENT="/usr/bin/boinc"
+
+# Here you can specify additional options to pass to the BOINC core client.
+# Type 'boinc --help' or 'man boinc' for a full summary of allowed options.
+#BOINC_OPTS="--allow_remote_gui_rpc"
+BOINC_OPTS=""

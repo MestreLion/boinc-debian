@@ -1,0 +1,26 @@
+# Author: René Mayorga <rmayorga@debian.org>
+# Description: Check if the system is linux befoore use SCHED_BATCH
+#  This will prevent FTBFS on  kFreeBSD
+#  The patch stills need to be forward to upstream
+Index: boinc-6.10.58/client/app_start.cpp
+===================================================================
+--- boinc-6.10.58.orig/client/app_start.cpp	2010-05-27 21:51:25.000000000 +0200
++++ boinc-6.10.58/client/app_start.cpp	2010-07-13 17:20:00.000000000 +0200
+@@ -24,7 +24,7 @@
+ #include "win_util.h"
+ #else
+ #include "config.h"
+-#ifdef HAVE_SCHED_SETSCHEDULER
++#if defined (HAVE_SCHED_SETSCHEDULER) && defined (__linux__)
+ #include <sched.h>
+ #endif
+ #if HAVE_SYS_TIME_H
+@@ -884,7 +884,7 @@
+                 perror("setpriority");
+             }
+ #endif
+-#ifdef HAVE_SCHED_SETSCHEDULER
++#if defined (HAVE_SCHED_SETSCHEDULER) && defined (__linux__)
+             if (!high_priority) {
+                 struct sched_param p;
+                 p.sched_priority = 0;

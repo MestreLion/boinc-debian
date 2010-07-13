@@ -1,0 +1,38 @@
+<!--
+This is the configuration file cc_config.xml of the BOINC core client.
+For a complete list of all available options and logging flags and their
+meaning see: http://boinc.berkeley.edu/trac/wiki/ClientMessages
+-->
+<cc_config>
+  <options>
+  </options>
+  <log_flags>
+    <task>1</task>
+    <file_xfer>1</file_xfer>
+    <sched_ops>1</sched_ops>
+
+    <cpu_sched>0</cpu_sched>
+    <cpu_sched_debug>0</cpu_sched_debug>
+    <rr_simulation>0</rr_simulation>
+    <debt_debug>0</debt_debug>
+    <task_debug>0</task_debug>
+    <work_fetch_debug>0</work_fetch_debug>
+    <unparsed_xml>0</unparsed_xml>
+    <state_debug>0</state_debug>
+    <file_xfer_debug>0</file_xfer_debug>
+    <sched_op_debug>0</sched_op_debug>
+    <http_debug>0</http_debug>
+    <proxy_debug>0</proxy_debug>
+    <time_debug>0</time_debug>
+    <http_xfer_debug>0</http_xfer_debug>
+    <benchmark_debug>0</benchmark_debug>
+    <poll_debug>0</poll_debug>
+    <guirpc_debug>0</guirpc_debug>
+    <scrsave_debug>0</scrsave_debug>
+    <app_msg_send>0</app_msg_send>
+    <app_msg_receive>0</app_msg_receive>
+    <mem_usage_debug>0</mem_usage_debug>
+    <network_status_debug>0</network_status_debug>
+    <checkpoint_debug>0</checkpoint_debug>
+  </log_flags>
+</cc_config>
