@@ -1,12 +1,14 @@
 Source: boinc
 Section: net
 Priority: optional
-Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-XSBC-Original-Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
+Maintainer: Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>
+XSBC-Original-Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 Uploaders: Steffen Moeller <steffen_moeller@gmx.de>, 
  Christoph Martin <christoph.martin@uni-mainz.de>,
- Rene Mayorga <rmayorga@debian.org>
-Standards-Version: 3.8.3
+ Rene Mayorga <rmayorga@debian.org>,
+ Daniel Hahler <ubuntu@thequod.de>
+DM-Upload-Allowed: yes
+Standards-Version: 3.9.0
 Build-Depends: debhelper (>= 7.0.17ubuntu2), quilt (>= 0.40), po-debconf, dh-buildinfo,
  docbook2x, docbook-xml, autotools-dev, automake1.9 (>= 1.9.3),
  autoconf (>= 2.59), libxml2-utils, gettext, zlib1g-dev, libssl-dev,

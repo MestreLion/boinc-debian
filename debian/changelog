@@ -1,3 +1,12 @@
+boinc (6.10.58-1) lucid; urgency=low
+
+  * Adopted Daniel's changes for Debian, added him to
+    uploaders.
+  * Allowed DM-Upload (for Daniel)
+  * Eye candy in debian/README* and debian/po*
+
+ -- Steffen Moeller <moeller@debian.org>  Wed, 14 Jul 2010 00:44:46 +0200
+
 boinc (6.10.58-0ubuntu2~blueyedppa1~lucid) lucid; urgency=low
 
   * Backport for Lucid.
