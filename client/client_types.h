@@ -211,8 +211,10 @@ public:
     bool no_cuda_apps;
     bool no_ati_apps;
         // the following set dynamically
-    bool cuda_low_mem;
-    bool ati_low_mem;
+    bool cuda_defer_sched;
+        // This project has a CUDA job for which there's insuff. video RAM.
+        // Don't fetch more CUDA jobs; they might have same problem
+    bool ati_defer_sched;
 
         /// logically, this belongs in the client state file
         /// rather than the account file.
@@ -440,6 +442,7 @@ struct APP_VERSION {
     std::vector<FILE_REF> app_files;
     int ref_cnt;
     char graphics_exec_path[512];
+    char graphics_exec_file[256];
     double max_working_set_size;
         // max working set of tasks using this app version.
         // temp var used in schedule_cpus()
@@ -630,10 +633,9 @@ struct RESULT {
         // keep track of coprocessor reservations
     char resources[256];
         // textual description of resources used
-    bool insufficient_video_ram();
     double schedule_backoff;
         // don't try to schedule until this time
-        // (wait for free video RAM)
+        // (wait for free GPU RAM)
 };
 
 /// represents an always/auto/never value, possibly temporarily overridden

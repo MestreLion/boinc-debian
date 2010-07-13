@@ -138,6 +138,7 @@ public:
 
     bool master_url_fetch_pending; // need to fetch and parse the master URL
     int sched_rpc_pending;      // need to contact scheduling server
+        // encodes the reason for the request
     bool non_cpu_intensive;
     bool suspended_via_gui;
     bool dont_request_more_work;
@@ -145,12 +146,16 @@ public:
     bool attached_via_acct_mgr;
     bool detach_when_done;
     bool ended;
+    bool trickle_up_pending;
     double project_files_downloaded_time;
         // when the last project file download was finished
         // (i.e. the time when ALL project files were finished downloading)
     double last_rpc_time;
         // when the last successful scheduler RPC finished
     std::vector<DAILY_STATS> statistics; // credit data over the last x days
+    bool no_cpu_pref;
+    bool no_cuda_pref;
+    bool no_ati_pref;
 
     // NOTE: if you add any data items above,
     // update parse(), and clear() to include them!!
@@ -239,6 +244,7 @@ public:
     bool suspended_via_gui;
     bool project_suspended_via_gui;
     bool coproc_missing;
+    bool gpu_mem_wait;
 
     // the following defined if active
     bool active_task;
@@ -485,6 +491,7 @@ struct ACCT_MGR_RPC_REPLY {
 struct PROJECT_INIT_STATUS {
     std::string url;
     std::string name;
+    std::string team_name;
     bool has_account_key;
 
     PROJECT_INIT_STATUS();
@@ -525,9 +532,10 @@ struct PROJECT_CONFIG {
 struct ACCOUNT_IN {
     std::string url;
     std::string email_addr;
-        // this is the account identifier (email address or user name)
+        // the account identifier (email address or user name)
     std::string user_name;
     std::string passwd;
+    std::string team_name;
 
     ACCOUNT_IN();
     ~ACCOUNT_IN();

@@ -19,10 +19,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#else
+#include "config.h"
 #endif
 
 #ifndef _WIN32
-#include "config.h"
 #include <cmath>
 #include <cstdlib>
 #endif
@@ -30,6 +31,7 @@
 #include "error_numbers.h"
 #include "md5_file.h"
 #include "parse.h"
+#include "util.h"
 #include "str_util.h"
 #include "filesys.h"
 
@@ -506,9 +508,20 @@ int PERS_FILE_XFER_SET::remove(PERS_FILE_XFER* pfx) {
 //
 void PERS_FILE_XFER_SET::suspend() {
     unsigned int i;
-
     for (i=0; i<pers_file_xfers.size(); i++) {
         pers_file_xfers[i]->suspend();
     }
 }
 
+// add a random delay 0..x to all transfers
+// (used when emerging from bandwidth quota suspension)
+//
+void PERS_FILE_XFER_SET::add_random_delay(double x) {
+    unsigned int i;
+    double y = gstate.now + x*drand();
+    for (i=0; i<pers_file_xfers.size(); i++) {
+        if (y > pers_file_xfers[i]->next_request_time) {
+            pers_file_xfers[i]->next_request_time = y;
+        }
+    }
+}

@@ -15,18 +15,24 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "util.h"
+#include "cpp.h"
 
+#ifdef _WIN32
+#include "boinc_win.h"
+#else
+#include "config.h"
+#endif
+
+#include "util.h"
 #include "client_types.h"
 #include "client_msgs.h"
+#include "scheduler_op.h"
+#include "work_fetch.h"
 #ifdef SIM
 #include "sim.h"
 #else
 #include "client_state.h"
 #endif
-
-#include "scheduler_op.h"
-#include "work_fetch.h"
 
 using std::vector;
 
@@ -133,11 +139,11 @@ bool RSC_PROJECT_WORK_FETCH::compute_may_have_work(PROJECT* p, int rsc_type) {
         break;
     case RSC_TYPE_CUDA:
         if (p->no_cuda_pref) return false;
-        if (p->cuda_low_mem) return false;
+        if (p->cuda_defer_sched) return false;
         break;
     case RSC_TYPE_ATI:
         if (p->no_ati_pref) return false;
-        if (p->ati_low_mem) return false;
+        if (p->ati_defer_sched) return false;
         break;
     }
     return (backoff_time < gstate.now);
@@ -946,13 +952,6 @@ void WORK_FETCH::compute_shares() {
         if (!p->pwf.can_fetch_work) continue;
         if (p->cpu_pwf.may_have_work) {
             p->cpu_pwf.fetchable_share = cpu_work_fetch.total_fetchable_share?p->resource_share/cpu_work_fetch.total_fetchable_share:1;
-            if (log_flags.work_fetch_debug) {
-                msg_printf(p, MSG_INFO,
-                    "[wfd] FS: %f = %f/%f\n",
-                    p->cpu_pwf.fetchable_share, p->resource_share,
-                    cpu_work_fetch.total_fetchable_share
-                );
-            }
         }
         if (coproc_cuda && p->cuda_pwf.may_have_work) {
             p->cuda_pwf.fetchable_share = cuda_work_fetch.total_fetchable_share?p->resource_share/cuda_work_fetch.total_fetchable_share:1;
@@ -1296,7 +1295,7 @@ double ACTIVE_TASK::est_dur(bool for_work_fetch) {
     if (wu_est < elapsed_time) wu_est = elapsed_time;
     double frac_est = elapsed_time / fraction_done;
     double fraction_left = 1-fraction_done;
-    double wu_weight = fraction_left * fraction_left;
+    double wu_weight = fraction_left * fraction_left * fraction_left;
     double fd_weight = 1 - wu_weight;
     double x = fd_weight*frac_est + wu_weight*wu_est;
 #if 1

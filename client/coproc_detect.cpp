@@ -18,11 +18,18 @@
 
 // client-specific GPU code.  Mostly GPU detection
 
+#include "cpp.h"
+
 #ifdef _WIN32
+#include "boinc_win.h"
 #ifndef SIM
 #include <nvapi.h>
 #endif
 #else
+#include "config.h"
+#endif
+
+#ifndef _WIN32
 #ifdef __APPLE__
 // Suppress obsolete warning when building for OS 10.3.9
 #define DLOPEN_NO_WARN
@@ -32,12 +39,17 @@
 #include <signal.h>
 #endif
 
-#include "str_util.h"
-
 #include "coproc.h"
+#include "str_util.h"
+#include "util.h"
+
+#include "client_state.h"
+#include "client_msgs.h"
 
 using std::string;
 using std::vector;
+
+//#define MEASURE_AVAILABLE_RAM
 
 static bool in_vector(int n, vector<int>& v) {
     for (unsigned int i=0; i<v.size(); i++) {
@@ -54,6 +66,32 @@ void segv_handler(int) {
 }
 #endif
 
+void COPROC::print_available_ram() {
+#ifdef MEASURE_AVAILABLE_RAM
+    if (gstate.now - last_print_time < 60) return;
+    last_print_time = gstate.now;
+
+    for (int i=0; i<count; i++) {
+        if (available_ram_unknown[i]) {
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc_debug] %s device %d: available RAM unknown",
+                    type, device_nums[i]
+                );
+            }
+        } else {
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc_debug] %s device %d: available RAM %d MB",
+                    type, device_nums[i],
+                    (int)(available_ram[i]/MEGA)
+                );
+            }
+        }
+    }
+#endif
+}
+
 void COPROCS::get(
     bool use_all, vector<string>&descs, vector<string>&warnings,
     vector<int>& ignore_cuda_dev,
@@ -61,8 +99,18 @@ void COPROCS::get(
 ) {
 
 #ifdef _WIN32
-    COPROC_CUDA::get(*this, use_all, descs, warnings, ignore_cuda_dev);
-    COPROC_ATI::get(*this, descs, warnings, ignore_ati_dev);
+    try {
+        COPROC_CUDA::get(*this, use_all, descs, warnings, ignore_cuda_dev);
+    }
+    catch (...) {
+        warnings.push_back("Caught SIGSEGV in NVIDIA GPU detection");
+    }
+    try {
+        COPROC_ATI::get(*this, descs, warnings, ignore_ati_dev);
+    } 
+    catch (...) {
+        warnings.push_back("Caught SIGSEGV in ATI GPU detection");
+    }
 #else
     void (*old_sig)(int) = signal(SIGSEGV, segv_handler);
     if (setjmp(resume)) {
@@ -395,7 +443,7 @@ void COPROC_CUDA::get(
 
 // fake a NVIDIA GPU (for debugging)
 //
-void fake_cuda(COPROCS& coprocs, int count) {
+COPROC_CUDA* fake_cuda(COPROCS& coprocs, double ram, int count) {
    COPROC_CUDA* cc = new COPROC_CUDA;
    strcpy(cc->type, "CUDA");
    cc->count = count;
@@ -405,7 +453,7 @@ void fake_cuda(COPROCS& coprocs, int count) {
    cc->display_driver_version = 18000;
    cc->cuda_version = 2020;
    strcpy(cc->prop.name, "Fake NVIDIA GPU");
-   cc->prop.totalGlobalMem = 256*1024*1024;
+   cc->prop.totalGlobalMem = (unsigned int)ram;
    cc->prop.sharedMemPerBlock = 100;
    cc->prop.regsPerBlock = 8;
    cc->prop.warpSize = 10;
@@ -424,23 +472,69 @@ void fake_cuda(COPROCS& coprocs, int count) {
    cc->prop.textureAlignment = 1000;
    cc->prop.multiProcessorCount = 14;
    coprocs.coprocs.push_back(cc);
+   return cc;
 }
 
-int COPROC_CUDA::available_ram(int devnum, double& ar) {
-    int device;
+// See how much RAM is available on each GPU.
+// If this fails, set "available_ram_unknown"
+//
+void COPROC_CUDA::get_available_ram() {
+#ifdef MEASURE_AVAILABLE_RAM
+    int device, i, retval;
     unsigned int memfree, memtotal;
     unsigned int ctx;
     
-    if (!__cuDeviceGet) return 0;       // avoid crash if faked GPU
-    int retval = (*__cuDeviceGet)(&device, devnum);
-    if (retval) return retval;
-    retval = (*__cuCtxCreate)(&ctx, 0, device);
-    if (retval) return retval;
-    retval = (*__cuMemGetInfo)(&memfree, &memtotal);
-    if (retval) return retval;
-    retval = (*__cuCtxDestroy)(ctx);
-    ar = (double) memfree;
-    return 0;
+    // avoid crash if faked GPU
+    //
+    if (!__cuDeviceGet) {
+        for (i=0; i<count; i++) {
+            available_ram[i] = available_ram_fake[i];
+            available_ram_unknown[i] = false;
+        }
+        return;
+    }
+    for (i=0; i<count; i++) {
+        int devnum = device_nums[i];
+        available_ram[i] = 0;
+        available_ram_unknown[i] = true;
+        retval = (*__cuDeviceGet)(&device, devnum);
+        if (retval) {
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc] cuDeviceGet(%d) returned %d", devnum, retval
+                );
+            }
+            continue;
+        }
+        retval = (*__cuCtxCreate)(&ctx, 0, device);
+        if (retval) {
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc] cuCtxCreate(%d) returned %d", devnum, retval
+                );
+            }
+            continue;
+        }
+        retval = (*__cuMemGetInfo)(&memfree, &memtotal);
+        if (retval) {
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc] cuMemGetInfo(%d) returned %d", devnum, retval
+                );
+            }
+            (*__cuCtxDestroy)(ctx);
+            continue;
+        }
+        (*__cuCtxDestroy)(ctx);
+        available_ram[i] = (double) memfree;
+        available_ram_unknown[i] = false;
+    }
+#else
+    for (int i=0; i<count; i++) {
+        available_ram_unknown[i] = false;
+        available_ram[i] = prop.totalGlobalMem;
+    }
+#endif
 }
 
 // check whether each GPU is running a graphics app (assume yes)
@@ -750,7 +844,7 @@ void COPROC_ATI::get(COPROCS& coprocs,
     retval = (*__calShutdown)();
 }
 
-void fake_ati(COPROCS& coprocs, int count) {
+COPROC_ATI* fake_ati(COPROCS& coprocs, double ram, int count) {
     COPROC_ATI* cc = new COPROC_ATI;
     strcpy(cc->type, "ATI");
     strcpy(cc->version, "1.4.3");
@@ -758,7 +852,7 @@ void fake_ati(COPROCS& coprocs, int count) {
     cc->count = count;
     memset(&cc->attribs, 0, sizeof(cc->attribs));
     memset(&cc->info, 0, sizeof(cc->info));
-    cc->attribs.localRAM = 1024;
+    cc->attribs.localRAM = (int)(ram/MEGA);
     cc->attribs.numberOfSIMD = 32;
     cc->attribs.wavefrontSize = 32;
     cc->attribs.engineClock = 50;
@@ -766,31 +860,70 @@ void fake_ati(COPROCS& coprocs, int count) {
         cc->device_nums[i] = i;
     }
     coprocs.coprocs.push_back(cc);
+    return cc;
 }
 
-int COPROC_ATI::available_ram(int devnum, double& ar) {
+void COPROC_ATI::get_available_ram() {
+#ifdef MEASURE_AVAILABLE_RAM
     CALdevicestatus st;
     CALdevice dev;
-    int retval;
+    int i, retval;
 
     st.struct_size = sizeof(CALdevicestatus);
 
-    if (!__calInit) return 0;   // avoid crash if faked GPU
+    // avoid crash if faked GPU
+    if (!__calInit) {
+        for (i=0; i<count; i++) {
+            available_ram[i] = available_ram_fake[i];
+            available_ram_unknown[i] = false;
+        }
+        return;
+    }
+    for (i=0; i<count; i++) {
+        available_ram[i] = 0;
+        available_ram_unknown[i] = true;
+    }
     retval = (*__calInit)();
-    if (retval) return retval;
-    retval = (*__calDeviceOpen)(&dev, devnum);
     if (retval) {
-        (*__calShutdown)();
-        return retval;
+        if (log_flags.coproc_debug) {
+            msg_printf(0, MSG_INFO,
+                "[coproc] calInit() returned %d", retval
+            );
+        }
+        return;
     }
-    retval = (*__calDeviceGetStatus)(&st, dev);
-    if (retval) {
+
+    for (i=0; i<count; i++) {
+        int devnum = device_nums[i];
+        retval = (*__calDeviceOpen)(&dev, devnum);
+        if (retval) {
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc] calDeviceOpen(%d) returned %d", devnum, retval
+                );
+            }
+            continue;
+        }
+        retval = (*__calDeviceGetStatus)(&st, dev);
+        if (retval) {
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc] calDeviceGetStatus(%d) returned %d",
+                    devnum, retval
+                );
+            }
+            (*__calDeviceClose)(dev);
+            continue;
+        }
+        available_ram[i] = st.availLocalRAM*MEGA;
+        available_ram_unknown[i] = false;
         (*__calDeviceClose)(dev);
-        (*__calShutdown)();
-        return retval;
     }
-    ar = st.availLocalRAM*MEGA;
-    (*__calDeviceClose)(dev);
     (*__calShutdown)();
-    return 0;
+#else
+    for (int i=0; i<count; i++) {
+        available_ram_unknown[i] = false;
+        available_ram[i] = attribs.localRAM*MEGA;
+    }
+#endif
 }

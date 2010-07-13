@@ -23,10 +23,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#else
+#include "config.h"
 #endif
 
 #ifndef _WIN32
-#include "config.h"
 #include <cassert>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -58,6 +59,7 @@ bool CLIENT_STATE::start_new_file_xfer(PERS_FILE_XFER& pfx) {
     int ntotal=0, nproj=0;
 
     if (network_suspended) return false;
+    if (file_xfers_suspended) return false;
 
 
     // limit the number of file transfers per project

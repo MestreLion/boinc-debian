@@ -2,22 +2,22 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOINC Manager 6.10\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-09 17:53-0500\n"
-"PO-Revision-Date: 2010-01-31 21:50+0900\n"
+"POT-Creation-Date: 2010-05-17 11:04-0500\n"
+"PO-Revision-Date: 2010-05-23 09:55+0900\n"
 "Last-Translator: Lee Kangsan <treppolse@gmail.com>\n"
 "Language-Team: BOINC@KOREA\n"
-"Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: ko\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Pootle 1.2.1\n"
 "X-Poedit-Language: Korean\n"
-"X-Poedit-SearchPath-0: clientgui\n"
 "X-Poedit-SourceCharset: utf-8\n"
-"X-Poedit-Basepath: C:\\Src\\BOINCSVN\\branches\\boinc_core_release_6_10\n"
+"X-Poedit-Basepath: C:\\Src\\BOINCSVN\\trunk\\boinc\n"
 "X-BOINC-UTF8-Marker: 简体中文, 日本語\n"
 "X-Poedit-Country: KOREA, REPUBLIC OF\n"
+"X-Poedit-SearchPath-0: clientgui\n"
 
 #: clientgui/AccountInfoPage.cpp:376
 msgid "Identify your account "
@@ -267,12 +267,12 @@ msgid "Display the simple graphical interface."
 msgstr "간단한 형태의 그래픽 인터페이스로 표시합니다."
 
 #: clientgui/AdvancedFrame.cpp:392
-msgid "Attach to &project or account manager..."
-msgstr "프로젝트 혹은 계정 관리자 연결(&P)..."
+msgid "&Attach to project or account manager..."
+msgstr "프로젝트 혹은 계정 관리자 연결(&A)..."
 
 #: clientgui/AdvancedFrame.cpp:393
-msgid "Attach to a project or account manager to begin processing work"
-msgstr "작업을 시작할 프로젝트 또는 계정 관리자에 연결합니다"
+msgid "Volunteer for any or all of 30+ projects in many areas of science"
+msgstr "많은 과학 분야의 30개 이상 프로젝트중에서 하나 혹은 전부 참여하는 기여자"
 
 #: clientgui/AdvancedFrame.cpp:397
 #, c-format
@@ -506,12 +506,12 @@ msgstr "도움말(&H)"
 msgid "Attaching to project or account manager..."
 msgstr "프로젝트 또는 계정 관리자에 연결중..."
 
-#: clientgui/AdvancedFrame.cpp:1121
+#: clientgui/AdvancedFrame.cpp:1122
 #, c-format
 msgid "%s - Detach from %s"
 msgstr "%s - %s를 분리"
 
-#: clientgui/AdvancedFrame.cpp:1126
+#: clientgui/AdvancedFrame.cpp:1127
 #, c-format
 msgid ""
 "If you stop using %s,\n"
@@ -526,22 +526,22 @@ msgstr ""
 "\n"
 "정말로 %s 사용을 중지하겠습니까?"
 
-#: clientgui/AdvancedFrame.cpp:1303
+#: clientgui/AdvancedFrame.cpp:1313
 #, c-format
 msgid "%s - Language Selection"
 msgstr "%s - 언어 선택"
 
-#: clientgui/AdvancedFrame.cpp:1310
+#: clientgui/AdvancedFrame.cpp:1320
 #, c-format
 msgid "The %s's default language has been changed, in order for this change to take affect you must restart the %s."
 msgstr "%s가 기본 언어로 설정되었습니다. 이 설정은 %s을(를) 재시작해야 적용됩니다."
 
-#: clientgui/AdvancedFrame.cpp:1473
+#: clientgui/AdvancedFrame.cpp:1483
 #, c-format
 msgid "%s - Shutdown the current client..."
 msgstr "%s - 현재 클라이언트 종료..."
 
-#: clientgui/AdvancedFrame.cpp:1482
+#: clientgui/AdvancedFrame.cpp:1492
 #, c-format
 msgid ""
 "%s will shut down the currently connected client,\n"
@@ -550,31 +550,31 @@ msgstr ""
 "%s는 현재 연결된 클라이언트에서 종료될 것이며,\n"
 "또다른 호스트로 연결해서 명령을 내릴 수 있습니다.\n"
 
-#: clientgui/AdvancedFrame.cpp:1529
+#: clientgui/AdvancedFrame.cpp:1539
 msgid "Retrying communications for project(s)..."
 msgstr "프로젝트와의 통신 재시도 중..."
 
-#: clientgui/AdvancedFrame.cpp:1725
+#: clientgui/AdvancedFrame.cpp:1735
 #, c-format
 msgid "%s"
 msgstr "%s"
 
-#: clientgui/AdvancedFrame.cpp:1734
+#: clientgui/AdvancedFrame.cpp:1744
 #, c-format
 msgid "%s has successfully attached to %s"
 msgstr "%s는 성공적으로 %s에 연결되었습니다"
 
-#: clientgui/AdvancedFrame.cpp:1865
+#: clientgui/AdvancedFrame.cpp:1875
 #, c-format
 msgid "%s - (%s)"
 msgstr "%s - (%s)"
 
-#: clientgui/AdvancedFrame.cpp:1868
+#: clientgui/AdvancedFrame.cpp:1878
 #, c-format
 msgid "Connecting to %s"
 msgstr "%s에 접속 중"
 
-#: clientgui/AdvancedFrame.cpp:1871
+#: clientgui/AdvancedFrame.cpp:1881
 #, c-format
 msgid "Connected to %s (%s)"
 msgstr "%s (%s)에 접속됨"
@@ -711,7 +711,7 @@ msgstr ""
 "'고급\\컴퓨터 선택...'메뉴 옵션을 이용해서 %s 클라이언트로 연결하십시오.\n"
 "로컬 컴퓨터로 연결되면 호스트 이름을 'localhost'로 바꿔주십시오."
 
-#: clientgui/BOINCBaseView.cpp:723
+#: clientgui/BOINCBaseView.cpp:766
 msgid "Web sites"
 msgstr "웹 사이트"
 
@@ -1038,31 +1038,31 @@ msgstr "네트워크 컴퓨팅을 위한 Berkeley 개방형 하부구조체"
 msgid "&OK"
 msgstr "확인"
 
-#: clientgui/DlgAdvPreferences.cpp:485
+#: clientgui/DlgAdvPreferences.cpp:500
 msgid "invalid float"
 msgstr "invalid float"
 
-#: clientgui/DlgAdvPreferences.cpp:486
+#: clientgui/DlgAdvPreferences.cpp:501
 msgid "invalid time, format is HH:MM"
 msgstr "잘못된 시간, 올바른 형식은 HH:MM"
 
-#: clientgui/DlgAdvPreferences.cpp:487
+#: clientgui/DlgAdvPreferences.cpp:502
 msgid "invalid time interval, format is HH:MM-HH:MM"
 msgstr "잘못된 시간 간격, 올바른 형식은 HH:MM-HH:MM"
 
-#: clientgui/DlgAdvPreferences.cpp:601
+#: clientgui/DlgAdvPreferences.cpp:616
 msgid "invalid input value detected"
 msgstr "잘못된 입력값 발견"
 
-#: clientgui/DlgAdvPreferences.cpp:603
+#: clientgui/DlgAdvPreferences.cpp:618
 msgid "Validation Error"
 msgstr "인증 오류"
 
-#: clientgui/DlgAdvPreferences.cpp:747
+#: clientgui/DlgAdvPreferences.cpp:762
 msgid "Do you really want to clear all local preferences ?"
 msgstr "정말로 모든 로컬 환경설정을 지우겠습니까?"
 
-#: clientgui/DlgAdvPreferences.cpp:748
+#: clientgui/DlgAdvPreferences.cpp:763
 msgid "Confirmation"
 msgstr "확인됨"
 
@@ -1131,20 +1131,19 @@ msgid "minutes"
 msgstr "분"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:147
-#, fuzzy
 msgid "While processor usage is less than"
-msgstr "프로세서 사용률"
+msgstr "이보다 적게 프로세서 사용"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:157
 msgid "suspend work if processor usage exceeds this level"
-msgstr ""
+msgstr "프로세서 사용량이 설정량 초과시 작업 일시 중지"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:162
 msgid "percent (0 means no restriction)"
-msgstr ""
+msgstr "퍼센트 (0은 제한 없음)"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:177
-#: clientgui/DlgAdvPreferencesBase.cpp:402
+#: clientgui/DlgAdvPreferencesBase.cpp:427
 msgid "Every day between hours of"
 msgstr "매일 이 시간 사이"
 
@@ -1153,7 +1152,7 @@ msgid "start work at this time"
 msgstr "이 시간에 작업을 시작"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:185
-#: clientgui/DlgAdvPreferencesBase.cpp:410
+#: clientgui/DlgAdvPreferencesBase.cpp:435
 msgid "and"
 msgstr "부터"
 
@@ -1162,52 +1161,52 @@ msgid "stop work at this time"
 msgstr "이 시간에 작업을 중지"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:193
-#: clientgui/DlgAdvPreferencesBase.cpp:418
+#: clientgui/DlgAdvPreferencesBase.cpp:443
 msgid "(no restriction if equal)"
 msgstr "(똑같으면 제한이 없음)"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:198
-#: clientgui/DlgAdvPreferencesBase.cpp:423
+#: clientgui/DlgAdvPreferencesBase.cpp:448
 msgid "Day-of-week override:"
 msgstr "일주일 중 작업할 날:"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:203
-#: clientgui/DlgAdvPreferencesBase.cpp:428
+#: clientgui/DlgAdvPreferencesBase.cpp:453
 msgid "check box to specify hours for this day of week"
 msgstr "일주일 중 작업 일과 시간을 체크"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:213
-#: clientgui/DlgAdvPreferencesBase.cpp:438
+#: clientgui/DlgAdvPreferencesBase.cpp:463
 msgid "Monday"
 msgstr "월요일"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:220
-#: clientgui/DlgAdvPreferencesBase.cpp:445
+#: clientgui/DlgAdvPreferencesBase.cpp:470
 msgid "Tuesday"
 msgstr "화요일"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:227
-#: clientgui/DlgAdvPreferencesBase.cpp:452
+#: clientgui/DlgAdvPreferencesBase.cpp:477
 msgid "Wednesday"
 msgstr "수요일"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:234
-#: clientgui/DlgAdvPreferencesBase.cpp:459
+#: clientgui/DlgAdvPreferencesBase.cpp:484
 msgid "Thursday"
 msgstr "목요일"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:241
-#: clientgui/DlgAdvPreferencesBase.cpp:466
+#: clientgui/DlgAdvPreferencesBase.cpp:491
 msgid "Friday"
 msgstr "금요일"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:248
-#: clientgui/DlgAdvPreferencesBase.cpp:473
+#: clientgui/DlgAdvPreferencesBase.cpp:498
 msgid "Saturday"
 msgstr "토요일"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:255
-#: clientgui/DlgAdvPreferencesBase.cpp:480
+#: clientgui/DlgAdvPreferencesBase.cpp:505
 msgid "Sunday"
 msgstr "일요일"
 
@@ -1216,7 +1215,6 @@ msgid "Other options"
 msgstr "다른 선택 사항"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:280
-#, fuzzy
 msgid "Switch between applications every"
 msgstr "이 시간 이후로 응용 프로그램을 바꿈"
 
@@ -1230,11 +1228,11 @@ msgid "% of the processors"
 msgstr "% (프로세서 중)"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:299
-#: clientgui/DlgAdvPreferencesBase.cpp:515
-#: clientgui/DlgAdvPreferencesBase.cpp:537
-#: clientgui/DlgAdvPreferencesBase.cpp:558
-#: clientgui/DlgAdvPreferencesBase.cpp:581
-#: clientgui/DlgAdvPreferencesBase.cpp:591
+#: clientgui/DlgAdvPreferencesBase.cpp:540
+#: clientgui/DlgAdvPreferencesBase.cpp:562
+#: clientgui/DlgAdvPreferencesBase.cpp:583
+#: clientgui/DlgAdvPreferencesBase.cpp:606
+#: clientgui/DlgAdvPreferencesBase.cpp:616
 msgid "Use at most"
 msgstr "최대 사용량"
 
@@ -1251,24 +1249,41 @@ msgstr "프로세서 사용률"
 msgid "General options"
 msgstr "일반적인 선택 사항"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:331
+#: clientgui/DlgAdvPreferencesBase.cpp:333
 msgid "Maximum download rate"
 msgstr "최대 다운로드 속도"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:337
-#: clientgui/DlgAdvPreferencesBase.cpp:346
+#: clientgui/DlgAdvPreferencesBase.cpp:339
+#: clientgui/DlgAdvPreferencesBase.cpp:348
 msgid "KBytes/sec."
 msgstr "KB/s."
 
-#: clientgui/DlgAdvPreferencesBase.cpp:340
+#: clientgui/DlgAdvPreferencesBase.cpp:342
 msgid "Maximum upload rate"
 msgstr "최대 업로드 속도"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:349
+#: clientgui/DlgAdvPreferencesBase.cpp:353
+msgid "Transfer at most"
+msgstr "최대 전송량"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:359
+msgid "Mbytes"
+msgstr "MB"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:362
+msgid "every"
+msgstr "매"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:368
+#: clientgui/DlgAdvPreferencesBase.cpp:382
+msgid "days"
+msgstr "일"
+
+#: clientgui/DlgAdvPreferencesBase.cpp:374
 msgid "Connect about every"
 msgstr "접속 주기"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:353
+#: clientgui/DlgAdvPreferencesBase.cpp:378
 msgid ""
 "this computer is connected to the Internet about every X days\n"
 "(0 if it's always connected)"
@@ -1276,43 +1291,39 @@ msgstr ""
 "이 컴퓨터는 X일동안 계속 인터넷에 접속되어 있습니다\n"
 "(0은 항상 접속됨)"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:357
-msgid "days"
-msgstr "일"
-
-#: clientgui/DlgAdvPreferencesBase.cpp:360
+#: clientgui/DlgAdvPreferencesBase.cpp:385
 msgid "Additional work buffer"
 msgstr "추가 작업 버퍼"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:366
+#: clientgui/DlgAdvPreferencesBase.cpp:391
 msgid "days (max. 10)"
 msgstr "일 (최대 10)"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:369
+#: clientgui/DlgAdvPreferencesBase.cpp:394
 msgid " Skip image file verification"
 msgstr "이미지 파일 검증 건너뛰기"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:371
+#: clientgui/DlgAdvPreferencesBase.cpp:396
 msgid "check this if your Internet provider modifies image files"
 msgstr "인터넷 제공자가 이미지 파일을 수정하면 체크하세요"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:380
+#: clientgui/DlgAdvPreferencesBase.cpp:405
 msgid "Connect options"
 msgstr "접속 옵션"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:382
+#: clientgui/DlgAdvPreferencesBase.cpp:407
 msgid "Confirm before connecting to internet"
 msgstr "인터넷 접속 전에 확인"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:384
+#: clientgui/DlgAdvPreferencesBase.cpp:409
 msgid "if checked, a confirmation dialog will be displayed before trying to connect to the Internet"
 msgstr "체크되면, 인터넷 접속 시도 전에 확인 다이얼로그가 표시됩니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:388
+#: clientgui/DlgAdvPreferencesBase.cpp:413
 msgid "Disconnect when done"
 msgstr "완료되면 접속 끊기"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:390
+#: clientgui/DlgAdvPreferencesBase.cpp:415
 msgid ""
 "if checked, BOINC hangs up when network usage is done\n"
 "(only relevant for dialup-connection)"
@@ -1320,115 +1331,115 @@ msgstr ""
 "체크되면, BOINC는 완료시 네트워크 사용을 중단합니다\n"
 "(전화 접속에만 해당됨)"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:397
+#: clientgui/DlgAdvPreferencesBase.cpp:422
 msgid "Network usage allowed"
 msgstr "네트워크 사용 허가"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:406
+#: clientgui/DlgAdvPreferencesBase.cpp:431
 msgid "network usage start hour"
 msgstr "네트워크 사용 시작 시간"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:414
+#: clientgui/DlgAdvPreferencesBase.cpp:439
 msgid "network usage stop hour"
 msgstr "네트워크 사용 중단 시간"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:499
+#: clientgui/DlgAdvPreferencesBase.cpp:524
 msgid "network usage"
 msgstr "네트워크 사용량"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:507
-#: clientgui/DlgItemProperties.cpp:213
+#: clientgui/DlgAdvPreferencesBase.cpp:532
+#: clientgui/DlgItemProperties.cpp:215
 msgid "Disk usage"
 msgstr "디스크 사용량"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:519
+#: clientgui/DlgAdvPreferencesBase.cpp:544
 msgid "the maximum disk space used by BOINC (in Gigabytes)"
 msgstr "BOINC가 사용하는 최대 디스크 용량 (단위 GB)"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:523
+#: clientgui/DlgAdvPreferencesBase.cpp:548
 msgid "Gigabytes disk space"
 msgstr "GB"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:526
+#: clientgui/DlgAdvPreferencesBase.cpp:551
 msgid "Leave at least"
 msgstr "최소한"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:530
+#: clientgui/DlgAdvPreferencesBase.cpp:555
 msgid "BOINC leaves at least this amount of disk space free (in Gigabytes)"
 msgstr "BOINC는 최소한 이 만큼의 디스크 용량을 빈 공간으로 남겨둡니다 (단위 GB)"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:534
+#: clientgui/DlgAdvPreferencesBase.cpp:559
 msgid "Gigabytes disk space free"
 msgstr "GB를 남겨둡니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:541
+#: clientgui/DlgAdvPreferencesBase.cpp:566
 msgid "BOINC uses at most this percentage of total disk space"
 msgstr "BOINC는 전체 디스크 중 최대 해당 퍼센트만큼 사용합니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:546
+#: clientgui/DlgAdvPreferencesBase.cpp:571
 #, no-c-format
 msgid "% of total disk space"
 msgstr "% (전체 디스크 공간 중)"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:549
+#: clientgui/DlgAdvPreferencesBase.cpp:574
 msgid "Tasks checkpoint to disk at most every"
 msgstr "작업 중간점을 해당 시간마다 디스크 기록"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:555
+#: clientgui/DlgAdvPreferencesBase.cpp:580
 msgid "seconds"
 msgstr "초"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:565
+#: clientgui/DlgAdvPreferencesBase.cpp:590
 #, no-c-format
 msgid "% of page file (swap space)"
 msgstr "% of page file (스왑 영역)"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:573
+#: clientgui/DlgAdvPreferencesBase.cpp:598
 msgid "Memory usage"
 msgstr "메모리 사용량"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:588
+#: clientgui/DlgAdvPreferencesBase.cpp:613
 #, no-c-format
 msgid "% when computer is in use"
 msgstr "%를 컴퓨터 사용 시 씁니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:598
+#: clientgui/DlgAdvPreferencesBase.cpp:623
 #, no-c-format
 msgid "% when computer is idle"
 msgstr "%를 컴퓨터가 대기 중일때 씁니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:603
+#: clientgui/DlgAdvPreferencesBase.cpp:628
 msgid " Leave applications in memory while suspended"
 msgstr "일시 정지시 응용 프로그램을 메모리에서 비웁니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:605
+#: clientgui/DlgAdvPreferencesBase.cpp:630
 msgid "if checked, suspended work units are left in memory"
 msgstr "체크되면 일시 정지시 작업 유닛을 메모리에서 비웁니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:614
+#: clientgui/DlgAdvPreferencesBase.cpp:639
 msgid "disk and memory usage"
 msgstr "디스크와 메모리 사용량"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:627
+#: clientgui/DlgAdvPreferencesBase.cpp:652
 msgid "OK"
 msgstr "확인"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:628
+#: clientgui/DlgAdvPreferencesBase.cpp:653
 msgid "save all values and close the dialog"
 msgstr "모든 값을 저장하고 창을 닫습니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:633
+#: clientgui/DlgAdvPreferencesBase.cpp:658
 msgid "close the dialog without saving"
 msgstr "저장하지 않고 창을 닫습니다"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:637
+#: clientgui/DlgAdvPreferencesBase.cpp:662
 #: clientgui/Localization.cpp:35
 #: clientgui/Localization.cpp:121
 #: clientgui/Localization.cpp:139
 msgid "Help"
 msgstr "도움말"
 
-#: clientgui/DlgAdvPreferencesBase.cpp:638
+#: clientgui/DlgAdvPreferencesBase.cpp:663
 msgid "shows the preferences web page"
 msgstr "환경 설정 웹 페이지를 보여줍니다"
 
@@ -1490,339 +1501,357 @@ msgstr "취소(&C)"
 msgid "Don't show this dialog again."
 msgstr "이 창을 다시 보여주지 않습니다."
 
-#: clientgui/DlgItemProperties.cpp:63
+#: clientgui/DlgItemProperties.cpp:66
 msgid "&Close"
 msgstr "닫기"
 
-#: clientgui/DlgItemProperties.cpp:195
+#: clientgui/DlgItemProperties.cpp:197
 msgid "Properties of project "
 msgstr "프로젝트 속성"
 
-#: clientgui/DlgItemProperties.cpp:199
+#: clientgui/DlgItemProperties.cpp:201
 #: clientgui/DlgOptions.cpp:205
 msgid "General"
 msgstr "일반"
 
-#: clientgui/DlgItemProperties.cpp:200
+#: clientgui/DlgItemProperties.cpp:202
 msgid "Master URL"
 msgstr "마스터 URL"
 
-#: clientgui/DlgItemProperties.cpp:201
+#: clientgui/DlgItemProperties.cpp:203
 msgid "User name"
 msgstr "사용자 이름"
 
-#: clientgui/DlgItemProperties.cpp:202
+#: clientgui/DlgItemProperties.cpp:204
 msgid "Team name"
 msgstr "팀 이름"
 
-#: clientgui/DlgItemProperties.cpp:203
+#: clientgui/DlgItemProperties.cpp:205
 msgid "Resource share"
 msgstr "자원 공유"
 
-#: clientgui/DlgItemProperties.cpp:205
+#: clientgui/DlgItemProperties.cpp:207
 msgid "Scheduler RPC deferred for"
 msgstr "스케줄러 RPC 지연"
 
-#: clientgui/DlgItemProperties.cpp:208
+#: clientgui/DlgItemProperties.cpp:210
 msgid "File downloads deferred for"
 msgstr "파일 다운로드 지연"
 
-#: clientgui/DlgItemProperties.cpp:211
+#: clientgui/DlgItemProperties.cpp:213
 msgid "File uploads deferred for"
 msgstr "파일 업로드 지연"
 
-#: clientgui/DlgItemProperties.cpp:214
+#: clientgui/DlgItemProperties.cpp:216
 msgid "Computer ID"
 msgstr "컴퓨터 ID"
 
-#: clientgui/DlgItemProperties.cpp:215
+#: clientgui/DlgItemProperties.cpp:217
 msgid "Non CPU intensive"
 msgstr "CPU 비 집약적"
 
-#: clientgui/DlgItemProperties.cpp:215
-#: clientgui/DlgItemProperties.cpp:216
 #: clientgui/DlgItemProperties.cpp:217
 #: clientgui/DlgItemProperties.cpp:218
 #: clientgui/DlgItemProperties.cpp:219
 #: clientgui/DlgItemProperties.cpp:220
 #: clientgui/DlgItemProperties.cpp:221
+#: clientgui/DlgItemProperties.cpp:222
+#: clientgui/DlgItemProperties.cpp:223
 msgid "yes"
 msgstr "예"
 
-#: clientgui/DlgItemProperties.cpp:215
-#: clientgui/DlgItemProperties.cpp:216
 #: clientgui/DlgItemProperties.cpp:217
 #: clientgui/DlgItemProperties.cpp:218
 #: clientgui/DlgItemProperties.cpp:219
 #: clientgui/DlgItemProperties.cpp:220
 #: clientgui/DlgItemProperties.cpp:221
+#: clientgui/DlgItemProperties.cpp:222
+#: clientgui/DlgItemProperties.cpp:223
 msgid "no"
 msgstr "아니오"
 
-#: clientgui/DlgItemProperties.cpp:216
+#: clientgui/DlgItemProperties.cpp:218
 msgid "Suspended via GUI"
 msgstr "GUI를 통해서 일시정지"
 
-#: clientgui/DlgItemProperties.cpp:217
+#: clientgui/DlgItemProperties.cpp:219
 msgid "Don't request more work"
 msgstr "더 이상 작업을 요청하지 않습니다"
 
-#: clientgui/DlgItemProperties.cpp:218
+#: clientgui/DlgItemProperties.cpp:220
 msgid "Scheduler call in progress"
 msgstr "현재 진행중인 스케쥴러 부르기"
 
-#: clientgui/DlgItemProperties.cpp:219
+#: clientgui/DlgItemProperties.cpp:221
 msgid "Attached via account manager"
 msgstr "계정 관리자에 연결됨"
 
-#: clientgui/DlgItemProperties.cpp:220
+#: clientgui/DlgItemProperties.cpp:222
 msgid "Detach when done"
 msgstr "완료시 분리"
 
-#: clientgui/DlgItemProperties.cpp:221
+#: clientgui/DlgItemProperties.cpp:223
 msgid "Ended"
 msgstr "끝남"
 
-#: clientgui/DlgItemProperties.cpp:222
+#: clientgui/DlgItemProperties.cpp:224
 msgid "Credit"
 msgstr "크레딧"
 
-#: clientgui/DlgItemProperties.cpp:223
+#: clientgui/DlgItemProperties.cpp:225
 msgid "User"
 msgstr "사용자"
 
-#: clientgui/DlgItemProperties.cpp:230
+#: clientgui/DlgItemProperties.cpp:232
 msgid "Host"
 msgstr "호스트"
 
-#: clientgui/DlgItemProperties.cpp:239
+#: clientgui/DlgItemProperties.cpp:241
 msgid "Scheduling"
 msgstr "스케쥴 조정"
 
-#: clientgui/DlgItemProperties.cpp:240
+#: clientgui/DlgItemProperties.cpp:243
+#: clientgui/DlgItemProperties.cpp:253
+#: clientgui/DlgItemProperties.cpp:264
+msgid "Project preference"
+msgstr "프로젝트 환경 설정"
+
+#: clientgui/DlgItemProperties.cpp:243
+msgid "Don't fetch CPU tasks"
+msgstr "CPU 작업을 받지 않음"
+
+#: clientgui/DlgItemProperties.cpp:245
 msgid "CPU scheduling priority"
 msgstr "CPU 예약 순위"
 
-#: clientgui/DlgItemProperties.cpp:241
+#: clientgui/DlgItemProperties.cpp:246
 msgid "CPU work fetch priority"
 msgstr "CPU 작업 할당 순위"
 
-#: clientgui/DlgItemProperties.cpp:244
+#: clientgui/DlgItemProperties.cpp:249
 msgid "CPU work fetch deferred for"
 msgstr "CPU가 이 시간 이후로 작업"
 
-#: clientgui/DlgItemProperties.cpp:245
+#: clientgui/DlgItemProperties.cpp:250
 msgid "CPU work fetch deferral interval"
 msgstr "CPU가 이 시간 이후로 작업"
 
-#: clientgui/DlgItemProperties.cpp:247
+#: clientgui/DlgItemProperties.cpp:253
+msgid "Don't fetch NVIDIA GPU tasks"
+msgstr "NVIDIA GPU 작업을 받지 않음"
+
+#: clientgui/DlgItemProperties.cpp:255
 msgid "NVIDIA GPU scheduling priority"
 msgstr "NVIDIA GPU 예약 순위"
 
-#: clientgui/DlgItemProperties.cpp:248
+#: clientgui/DlgItemProperties.cpp:256
 msgid "NVIDIA GPU work fetch priority"
 msgstr "NVIDIA GPU 작업 할당 순위"
 
-#: clientgui/DlgItemProperties.cpp:251
+#: clientgui/DlgItemProperties.cpp:259
 msgid "NVIDIA GPU work fetch deferred for"
 msgstr "NVIDIA GPU가 이 시간 이후로 작업"
 
-#: clientgui/DlgItemProperties.cpp:252
+#: clientgui/DlgItemProperties.cpp:260
 msgid "NVIDIA GPU work fetch deferral interval"
 msgstr "NVIDIA GPU가 이 시간 이후로 작업"
 
-#: clientgui/DlgItemProperties.cpp:255
+#: clientgui/DlgItemProperties.cpp:264
+msgid "Don't fetch ATI GPU tasks"
+msgstr "ATI GPU 작업을 받지 않음"
+
+#: clientgui/DlgItemProperties.cpp:266
 msgid "ATI GPU scheduling priority"
 msgstr "ATI GPU 예약 순위"
 
-#: clientgui/DlgItemProperties.cpp:256
+#: clientgui/DlgItemProperties.cpp:267
 msgid "ATI GPU work fetch priority"
 msgstr "ATI GPU 작업 할당 순위"
 
-#: clientgui/DlgItemProperties.cpp:259
+#: clientgui/DlgItemProperties.cpp:270
 msgid "ATI GPU work fetch deferred for"
 msgstr "ATI GPU가 이 시간 이후로 작업"
 
-#: clientgui/DlgItemProperties.cpp:260
+#: clientgui/DlgItemProperties.cpp:271
 msgid "ATI GPU work fetch deferral interval"
 msgstr "ATI GPU 작업 지연 간격"
 
-#: clientgui/DlgItemProperties.cpp:262
+#: clientgui/DlgItemProperties.cpp:273
 msgid "Duration correction factor"
 msgstr "지연 정정 값"
 
-#: clientgui/DlgItemProperties.cpp:272
+#: clientgui/DlgItemProperties.cpp:283
 msgid "Properties of task "
 msgstr "작업 속성"
 
-#: clientgui/DlgItemProperties.cpp:276
+#: clientgui/DlgItemProperties.cpp:287
 msgid "Application"
 msgstr "애플리케이션"
 
-#: clientgui/DlgItemProperties.cpp:277
+#: clientgui/DlgItemProperties.cpp:288
 msgid "Workunit name"
 msgstr "워크유닛 이름"
 
-#: clientgui/DlgItemProperties.cpp:278
+#: clientgui/DlgItemProperties.cpp:289
 msgid "State"
 msgstr "상태"
 
-#: clientgui/DlgItemProperties.cpp:281
+#: clientgui/DlgItemProperties.cpp:292
 msgid "Received"
 msgstr "수신됨"
 
-#: clientgui/DlgItemProperties.cpp:284
+#: clientgui/DlgItemProperties.cpp:295
 msgid "Report deadline"
 msgstr "리포트 마감 시한"
 
-#: clientgui/DlgItemProperties.cpp:286
+#: clientgui/DlgItemProperties.cpp:297
 msgid "Resources"
 msgstr "자원"
 
-#: clientgui/DlgItemProperties.cpp:289
+#: clientgui/DlgItemProperties.cpp:300
 msgid "CPU time at last checkpoint"
 msgstr "마지막 기록 지점의 CPU 시간"
 
-#: clientgui/DlgItemProperties.cpp:290
-#: clientgui/DlgItemProperties.cpp:305
+#: clientgui/DlgItemProperties.cpp:301
+#: clientgui/DlgItemProperties.cpp:316
 msgid "CPU time"
 msgstr "CPU 시간"
 
-#: clientgui/DlgItemProperties.cpp:292
-#: clientgui/DlgItemProperties.cpp:306
+#: clientgui/DlgItemProperties.cpp:303
+#: clientgui/DlgItemProperties.cpp:317
 msgid "Elapsed time"
 msgstr "지난 시간"
 
-#: clientgui/DlgItemProperties.cpp:294
+#: clientgui/DlgItemProperties.cpp:305
 msgid "Estimated time remaining"
 msgstr "남은 시간 추정"
 
-#: clientgui/DlgItemProperties.cpp:295
+#: clientgui/DlgItemProperties.cpp:306
 msgid "Fraction done"
 msgstr "분류 완료"
 
-#: clientgui/DlgItemProperties.cpp:296
+#: clientgui/DlgItemProperties.cpp:307
 msgid "Virtual memory size"
 msgstr "가상 메모리 크기"
 
-#: clientgui/DlgItemProperties.cpp:297
+#: clientgui/DlgItemProperties.cpp:308
 msgid "Working set size"
 msgstr "설정한 크기로 작업 중"
 
-#: clientgui/DlgItemProperties.cpp:299
+#: clientgui/DlgItemProperties.cpp:310
 msgid "Directory"
 msgstr "디렉토리"
 
-#: clientgui/DlgItemProperties.cpp:302
+#: clientgui/DlgItemProperties.cpp:313
 msgid "Process ID"
 msgstr "프로세스 ID"
 
-#: clientgui/DlgItemProperties.cpp:400
+#: clientgui/DlgItemProperties.cpp:411
 msgid "New"
 msgstr "새로 만들기"
 
-#: clientgui/DlgItemProperties.cpp:404
+#: clientgui/DlgItemProperties.cpp:415
 msgid "Download failed"
 msgstr "다운로드 실패"
 
-#: clientgui/DlgItemProperties.cpp:406
+#: clientgui/DlgItemProperties.cpp:417
 msgid "Downloading"
 msgstr "다운로드 중"
 
-#: clientgui/DlgItemProperties.cpp:411
+#: clientgui/DlgItemProperties.cpp:422
 msgid "Project suspended by user"
 msgstr "사용자에 의해 일시 정지된 프로젝트"
 
-#: clientgui/DlgItemProperties.cpp:413
+#: clientgui/DlgItemProperties.cpp:424
 msgid "Task suspended by user"
 msgstr "사용자가 작업을 일시 정지했습니다"
 
-#: clientgui/DlgItemProperties.cpp:415
+#: clientgui/DlgItemProperties.cpp:426
 msgid "Suspended"
 msgstr "일시 정지됨"
 
-#: clientgui/DlgItemProperties.cpp:417
+#: clientgui/DlgItemProperties.cpp:428
 msgid " - on batteries"
 msgstr " - 배터리 가동"
 
-#: clientgui/DlgItemProperties.cpp:420
+#: clientgui/DlgItemProperties.cpp:431
 msgid " - user active"
 msgstr " - 사용자가 활동합니다"
 
-#: clientgui/DlgItemProperties.cpp:423
+#: clientgui/DlgItemProperties.cpp:434
 msgid " - computation suspended"
 msgstr " - 계산이 일시 정지되었습니다"
 
-#: clientgui/DlgItemProperties.cpp:426
+#: clientgui/DlgItemProperties.cpp:437
 msgid " - time of day"
 msgstr " - 설정한 시간이 아닙니다"
 
-#: clientgui/DlgItemProperties.cpp:429
+#: clientgui/DlgItemProperties.cpp:440
 msgid " - CPU benchmarks"
 msgstr " - CPU 벤치마크"
 
-#: clientgui/DlgItemProperties.cpp:432
+#: clientgui/DlgItemProperties.cpp:443
 msgid " - need disk space"
 msgstr " - 디스크 공간이 부족합니다"
 
-#: clientgui/DlgItemProperties.cpp:436
+#: clientgui/DlgItemProperties.cpp:447
 msgid "Waiting for memory"
 msgstr " - 디스크 공간이 부족합니다"
 
-#: clientgui/DlgItemProperties.cpp:438
+#: clientgui/DlgItemProperties.cpp:449
 msgid "Waiting for shared memory"
 msgstr "공유된 메모리가 비길 기다리고 있습니다"
 
-#: clientgui/DlgItemProperties.cpp:441
+#: clientgui/DlgItemProperties.cpp:452
 msgid "Running, high priority"
 msgstr "높은 우선 순위로 실행 중"
 
-#: clientgui/DlgItemProperties.cpp:443
+#: clientgui/DlgItemProperties.cpp:454
 msgid "Running"
 msgstr "실행 중"
 
-#: clientgui/DlgItemProperties.cpp:446
+#: clientgui/DlgItemProperties.cpp:457
 msgid "Waiting to run"
 msgstr "실행 대기 중"
 
-#: clientgui/DlgItemProperties.cpp:448
-#: clientgui/DlgItemProperties.cpp:451
+#: clientgui/DlgItemProperties.cpp:459
+#: clientgui/DlgItemProperties.cpp:462
 msgid "Ready to start"
 msgstr "시작 대기"
 
-#: clientgui/DlgItemProperties.cpp:455
+#: clientgui/DlgItemProperties.cpp:466
 msgid "Computation error"
 msgstr "계산 오류"
 
-#: clientgui/DlgItemProperties.cpp:459
+#: clientgui/DlgItemProperties.cpp:470
 msgid "Upload failed"
 msgstr "업로드 실패"
 
-#: clientgui/DlgItemProperties.cpp:461
+#: clientgui/DlgItemProperties.cpp:472
 msgid "Uploading"
 msgstr "업로드 중"
 
-#: clientgui/DlgItemProperties.cpp:467
+#: clientgui/DlgItemProperties.cpp:478
 msgid "Aborted by user"
 msgstr "사용자에 의해 중지됨"
 
-#: clientgui/DlgItemProperties.cpp:470
+#: clientgui/DlgItemProperties.cpp:481
 msgid "Aborted by project"
 msgstr "프로젝트가 중지되었습니다"
 
-#: clientgui/DlgItemProperties.cpp:473
+#: clientgui/DlgItemProperties.cpp:484
 msgid "Aborted"
 msgstr "중지됨"
 
-#: clientgui/DlgItemProperties.cpp:478
+#: clientgui/DlgItemProperties.cpp:489
 msgid "Acknowledged"
 msgstr "다운로드 성공"
 
-#: clientgui/DlgItemProperties.cpp:480
+#: clientgui/DlgItemProperties.cpp:491
 msgid "Ready to report"
 msgstr "리포트 준비 됨"
 
-#: clientgui/DlgItemProperties.cpp:482
+#: clientgui/DlgItemProperties.cpp:493
 #, c-format
 msgid "Error: invalid state '%d'"
 msgstr "오류: 잘못된 상태 '%d'"
@@ -2170,11 +2199,11 @@ msgstr "World Community Grid가 주관하는 프로젝트를 알아봅니다"
 msgid "Starting client services; please wait..."
 msgstr "클라이언트 서비스를 시작합니다; 잠시 기다려 주세요..."
 
-#: clientgui/MainDocument.cpp:1073
+#: clientgui/MainDocument.cpp:1093
 msgid "Retrieving system state; please wait..."
 msgstr "시스템 상태를 검색 중 입니다; 잠시만 기다려 주세요..."
 
-#: clientgui/MainDocument.cpp:1082
+#: clientgui/MainDocument.cpp:1102
 msgid "Retrieving host information; please wait..."
 msgstr "호스트 정보를 검색 중 입니다; 잠시만 기다려 주세요..."
 
@@ -2251,19 +2280,19 @@ msgstr "이미 이 프로젝트에 연결되어 있습니다. 다른 프로젝�
 msgid "Click"
 msgstr "Click"
 
-#: clientgui/ProjectListCtrl.cpp:506
+#: clientgui/ProjectListCtrl.cpp:503
 msgid "Multicore CPU Supported"
 msgstr "멀티코어 CPU 지원됨"
 
-#: clientgui/ProjectListCtrl.cpp:508
+#: clientgui/ProjectListCtrl.cpp:505
 msgid "Nvidia GPU Supported"
 msgstr "Nvidia GPU 지원됨"
 
-#: clientgui/ProjectListCtrl.cpp:510
+#: clientgui/ProjectListCtrl.cpp:507
 msgid "ATI GPU Supported"
 msgstr "ATI GPU 지원됨"
 
-#: clientgui/ProjectListCtrl.cpp:512
+#: clientgui/ProjectListCtrl.cpp:509
 msgid "Project Website"
 msgstr "프로젝트 웹 사이트"
 
@@ -2276,7 +2305,7 @@ msgstr ""
 "프로젝트 서버와 통신하고 있습니다\n"
 "잠시 기다려 주세요..."
 
-#: clientgui/ProjectProcessingPage.cpp:498
+#: clientgui/ProjectProcessingPage.cpp:499
 msgid ""
 "Required wizard file(s) are missing from the target server.\n"
 "(lookup_account.php/create_account.php)\n"
@@ -2289,7 +2318,6 @@ msgid "Network communication failure"
 msgstr "네트워크 통신 실패"
 
 #: clientgui/ProxyInfoPage.cpp:199
-#, fuzzy
 msgid ""
 "The World Community Grid - BOINC software failed to communicate\n"
 "over the Internet. The most likely reasons are:\n"
@@ -2306,9 +2334,9 @@ msgid ""
 "Click Next to configure BOINC's proxy settings."
 msgstr ""
 "The World Community Grid - BOINC 소프트웨어는 인터넷을 통한\n"
-"통신에 실패했습니다. 이유는 대부분:\n"
+"통신에 실패했습니다. 이유는 대부분 다음과 같습니다:\n"
 "\n"
-"1) 접속 문제. 네트워크 또는 모뎀 연결을 점검하세요\n"
+"1) 접속 문제. 네트워크 또는 모뎀 연결이 잘 되있나 점검하세요\n"
 "그리고나서 이전을 눌러서 다시 시도하세요.\n"
 "\n"
 "2) 개인 방화벽 소프트웨어가 World Community Grid\n"
@@ -2454,15 +2482,12 @@ msgstr "모든 메시지를 클립보드에 복사"
 #: clientgui/sg_DlgMessages.cpp:202
 #: clientgui/sg_DlgMessages.cpp:210
 msgid "Copy the selected messages to the clipboard. You can select multiple messages by holding down the shift or command key while clicking on messages."
-msgstr ""
-"선택한 메세지를 클립보드로 복사합니다. 메세지를 클릭하는 동안 shift 키나 control 키를 눌러 여러 메세지를 선택할 수 있습니다"
+msgstr "선택한 메세지를 클립보드로 복사합니다. 메세지를 클릭하는 동안 shift 키나 control 키를 눌러 여러 메세지를 선택할 수 있습니다"
 
 #: clientgui/sg_DlgMessages.cpp:204
 #: clientgui/sg_DlgMessages.cpp:212
 msgid "Copy the selected messages to the clipboard. You can select multiple messages by holding down the shift or control key while clicking on messages."
-msgstr ""
-"클립보드에 선택한 메시지를 복사합니다. 메시지를 클릭하는 동안 Shift나 Control 키를 누른 상태에서 여러 메시지를 선택할 수 "
-"있습니다."
+msgstr "클립보드에 선택한 메시지를 복사합니다. 메시지를 클릭하는 동안 Shift나 Control 키를 누른 상태에서 여러 메시지를 선택할 수 있습니다."
 
 #: clientgui/sg_DlgMessages.cpp:252
 #: clientgui/sg_DlgPreferences.cpp:509
@@ -2702,10 +2727,6 @@ msgstr "중지: 응용 프로그램 시작이 지연되었습니다"
 msgid "Click to show project graphics"
 msgstr "클릭하면 프로젝트 그래픽을 보여줍니다"
 
-#: clientgui/sg_ProjectsComponent.cpp:106
-msgid "Attach to an additional project"
-msgstr "부가적인 프로젝트를 연결"
-
 #: clientgui/sg_ProjectsComponent.cpp:123
 msgid "Synchronize projects with account manager system"
 msgstr "계정 관리자 시스템과 프로젝트를 동기화"
@@ -2787,19 +2808,19 @@ msgstr "남은 시간:"
 msgid "Elapsed Time: "
 msgstr "지난 시간:"
 
-#: clientgui/TermsOfUsePage.cpp:218
+#: clientgui/TermsOfUsePage.cpp:219
 msgid "Terms of Use"
 msgstr "사용 계약"
 
-#: clientgui/TermsOfUsePage.cpp:222
+#: clientgui/TermsOfUsePage.cpp:223
 msgid "Please read the following terms of use:"
 msgstr "다음 사용 계약을 읽어주세요:"
 
-#: clientgui/TermsOfUsePage.cpp:231
+#: clientgui/TermsOfUsePage.cpp:232
 msgid "I agree to the terms of use."
 msgstr "사용 계약에 동의합니다."
 
-#: clientgui/TermsOfUsePage.cpp:237
+#: clientgui/TermsOfUsePage.cpp:238
 msgid "I do not agree with the terms of use."
 msgstr "사용 계약에 동의하지 않습니다."
 
@@ -2915,38 +2936,38 @@ msgid "Copy selected messages"
 msgstr "선택한 메시지 복사"
 
 #: clientgui/ViewMessages.cpp:106
-#: clientgui/ViewMessages.cpp:502
+#: clientgui/ViewMessages.cpp:533
 msgid "Show only this project"
 msgstr "이 프로젝만 보여주기"
 
 #: clientgui/ViewMessages.cpp:107
-#: clientgui/ViewMessages.cpp:503
+#: clientgui/ViewMessages.cpp:534
 msgid "Show only the messages for the selected project."
 msgstr "선택한 프로젝의 메세지만 보여줍니다."
 
-#: clientgui/ViewMessages.cpp:164
+#: clientgui/ViewMessages.cpp:195
 #: clientgui/ViewMessagesGrid.cpp:157
 msgid "Messages"
 msgstr "메시지"
 
-#: clientgui/ViewMessages.cpp:187
+#: clientgui/ViewMessages.cpp:218
 #: clientgui/ViewMessagesGrid.cpp:179
 msgid "Copying all messages to the clipboard..."
 msgstr "모든 메시지를 클립보드에 복사 중..."
 
-#: clientgui/ViewMessages.cpp:223
+#: clientgui/ViewMessages.cpp:254
 msgid "Copying selected messages to the clipboard..."
 msgstr "선택한 메시지를 클립보드로 복사하고 있습니다..."
 
-#: clientgui/ViewMessages.cpp:286
+#: clientgui/ViewMessages.cpp:317
 msgid "Filtering messages..."
 msgstr "메세지를 걸러내고 있습니다..."
 
-#: clientgui/ViewMessages.cpp:494
+#: clientgui/ViewMessages.cpp:525
 msgid "Show all messages"
 msgstr "모든 메시지 보여주기"
 
-#: clientgui/ViewMessages.cpp:495
+#: clientgui/ViewMessages.cpp:526
 msgid "Show messages for all projects."
 msgstr "모든 프로젝트의 메세지를 보여줍니다."
 
@@ -3031,9 +3052,7 @@ msgstr "프로젝트 다시 설정"
 
 #: clientgui/ViewProjects.cpp:195
 msgid "Delete all files and tasks associated with this project, and get new tasks.  You can update the project first to report any completed tasks."
-msgstr ""
-"이 프로젝트와 관련된 모든 작업과 파일들을 삭제하고 새 작업을 받아옵니다. 그 전에 먼저 완료된 작업을 보고하도록 업데이트할 수 "
-"있습니다."
+msgstr "이 프로젝트와 관련된 모든 작업과 파일들을 삭제하고 새 작업을 받아옵니다. 그 전에 먼저 완료된 작업을 보고하도록 업데이트할 수 있습니다."
 
 #: clientgui/ViewProjects.cpp:201
 msgid "Detach"
@@ -3156,7 +3175,11 @@ msgstr "스케줄러 요청을 기다리고 있는 중"
 msgid "Scheduler request in progress"
 msgstr "스케쥴러 요청을 진행"
 
-#: clientgui/ViewProjects.cpp:1074
+#: clientgui/ViewProjects.cpp:1071
+msgid "Trickle up message pending"
+msgstr "Trickle up 메세지가 지연됨"
+
+#: clientgui/ViewProjects.cpp:1077
 msgid "Communication deferred "
 msgstr "통신 연기됨 "
 
@@ -3365,16 +3388,24 @@ msgstr "속도"
 msgid "Transfers"
 msgstr "전송"
 
-#: clientgui/ViewTransfers.cpp:271
+#: clientgui/ViewTransfers.cpp:275
+msgid ""
+"Network activity is suspended.\n"
+"You can enable it using the Activity menu."
+msgstr ""
+"네트워크 활동이 일시 정지되었습니다.\n"
+"활동 메뉴에서 다시 활성화시킬 수 있습니다."
+
+#: clientgui/ViewTransfers.cpp:283
 #: clientgui/ViewTransfersGrid.cpp:190
 msgid "Retrying transfer now..."
 msgstr "현재 전송을 다시 시도 중..."
 
-#: clientgui/ViewTransfers.cpp:309
+#: clientgui/ViewTransfers.cpp:321
 msgid "Aborting transfer..."
 msgstr "전송 취소 중..."
 
-#: clientgui/ViewTransfers.cpp:322
+#: clientgui/ViewTransfers.cpp:334
 #, c-format
 msgid ""
 "Are you sure you want to abort this file transfer '%s'?\n"
@@ -3385,30 +3416,38 @@ msgstr ""
 "주의: 전송 중지하기는 작업을 무효화하여 해당 작업에\n"
 "대한 크레디트를 받지 못하게 됩니다."
 
-#: clientgui/ViewTransfers.cpp:328
+#: clientgui/ViewTransfers.cpp:340
 msgid "Abort File Transfer"
 msgstr "파일 전송 취소"
 
-#: clientgui/ViewTransfers.cpp:751
+#: clientgui/ViewTransfers.cpp:763
 #: clientgui/ViewTransfersGrid.cpp:419
 msgid "Retry in "
 msgstr "다시 시도 "
 
-#: clientgui/ViewTransfers.cpp:763
+#: clientgui/ViewTransfers.cpp:771
+msgid "Suspended upload"
+msgstr "업로드가 일시 정지됨"
+
+#: clientgui/ViewTransfers.cpp:772
+msgid "Suspended download"
+msgstr "다운로드가 일시 정지됨"
+
+#: clientgui/ViewTransfers.cpp:778
 #: clientgui/ViewTransfersGrid.cpp:431
 msgid "Upload pending"
 msgstr "업로드를 기다리고 있는 중"
 
-#: clientgui/ViewTransfers.cpp:763
+#: clientgui/ViewTransfers.cpp:778
 #: clientgui/ViewTransfersGrid.cpp:431
 msgid "Download pending"
 msgstr "다운로드를 기다리고 있는 중"
 
-#: clientgui/ViewTransfers.cpp:770
+#: clientgui/ViewTransfers.cpp:785
 msgid " (project backoff: "
 msgstr " (프로젝트 전송 지연: "
 
-#: clientgui/ViewTransfers.cpp:770
+#: clientgui/ViewTransfers.cpp:785
 msgid ")"
 msgstr ")"
 
@@ -3548,16 +3587,25 @@ msgstr "이 작업을 일시 중지"
 msgid "GPU missing, "
 msgstr "GPU 탐지 실패,"
 
-#: clientgui/ViewWork.cpp:1149
+#: clientgui/ViewWork.cpp:1122
+#: clientgui/ViewWork.cpp:1198
+msgid " (suspended)"
+msgstr " (일시 정지됨)"
+
+#: clientgui/ViewWork.cpp:1152
 msgid " - an exclusive app is running"
 msgstr " - 독점 프로그램이 실행 중"
 
-#: clientgui/ViewWork.cpp:1168
+#: clientgui/ViewWork.cpp:1171
 #: clientgui/ViewWorkGrid.cpp:822
 msgid " (non-CPU-intensive)"
 msgstr "(CPU 비 집약적)"
 
-#: clientgui/ViewWork.cpp:1202
+#: clientgui/ViewWork.cpp:1186
+msgid " (waiting for GPU memory)"
+msgstr " (GPU 메모리가 비길 기다리는 중)"
+
+#: clientgui/ViewWork.cpp:1211
 msgid "Aborted: not started by deadline"
 msgstr "취소됨: 마감 기한이 지났습니다"
 
@@ -3637,11 +3685,11 @@ msgstr "World Community Grid 연구 응용 프로그램을 바꿉니다"
 msgid "To continue, click Next."
 msgstr "계속하려면, 다음을 누르세요."
 
-#: clientgui/WizardAttachProject.cpp:610
+#: clientgui/WizardAttachProject.cpp:614
 msgid "Do you really want to cancel?"
 msgstr "정말 취소할까요?"
 
-#: clientgui/WizardAttachProject.cpp:611
+#: clientgui/WizardAttachProject.cpp:615
 msgid "Question"
 msgstr "질문"
 
@@ -3682,77 +3730,82 @@ msgstr "OnDropTarget: index by HitTest = %i"
 msgid "Pie Ctrl"
 msgstr "Pie Ctrl"
 
-#: clientgui/mac/MacAccessiblity.cpp:184
+#: clientgui/mac/MacAccessiblity.cpp:171
 msgid "for accessibility support, please select advanced from the view menu or type command shift a"
 msgstr "장애인 지원을 위해서는 보기 메뉴에서 고급 보기를 선택하거나 shift a를 입력하세요"
 
-#: clientgui/mac/MacAccessiblity.cpp:245
+#: clientgui/mac/MacAccessiblity.cpp:216
 msgid "This panel contains graphs showing user totals for projects"
 msgstr "이 패널은 해당 프로젝트의 전체 사용자를 보여주는 그래프를 포함합니다"
 
-#: clientgui/mac/MacAccessiblity.cpp:528
-#: clientgui/mac/MacAccessiblity.cpp:636
-msgid "blank"
-msgstr "공백"
+#: clientgui/mac/MacAccessiblity.cpp:635
+msgid "list headers"
+msgstr "목록 헤더"
 
-#: clientgui/mac/MacAccessiblity.cpp:530
-msgid "list of "
-msgstr "목록"
-
-#: clientgui/mac/MacAccessiblity.cpp:533
-msgid " is empty"
-msgstr " 가 없습니다"
-
-#: clientgui/mac/MacAccessiblity.cpp:605
+#: clientgui/mac/MacAccessiblity.cpp:639
 #, c-format
-msgid "%d of %d; "
-msgstr "%d %d "
+msgid "list of %s"
+msgstr "%s 목록"
 
-#: clientgui/mac/MacAccessiblity.cpp:607
-msgid "current sort column "
-msgstr "현재 정렬 컬럼"
+#: clientgui/mac/MacAccessiblity.cpp:641
+#, c-format
+msgid "list of %s is empty"
+msgstr "%s 목록이 비었습니다"
 
-#: clientgui/mac/MacAccessiblity.cpp:609
-msgid " descending order "
-msgstr " 내림차순 정렬"
+#: clientgui/mac/MacAccessiblity.cpp:742
+#, c-format
+msgid "; current sort column %d of %d; descending order; "
+msgstr ", 현재 %d %d 컬럼 정렬: 내림차순 정렬:"
 
-#: clientgui/mac/MacAccessiblity.cpp:609
-msgid " ascending order "
-msgstr " 오름차순 정렬"
+#: clientgui/mac/MacAccessiblity.cpp:744
+#, c-format
+msgid "; current sort column %d of %d; ascending order; "
+msgstr ", 현재 %d %d 컬럼 정렬: 오름차순 정렬:"
 
-#: clientgui/mac/MacAccessiblity.cpp:611
-msgid "column "
-msgstr "컬럼"
+#: clientgui/mac/MacAccessiblity.cpp:747
+#, c-format
+msgid "; column %d of %d; "
+msgstr ", 컬럼 %d %d,"
 
-#: clientgui/mac/MacAccessiblity.cpp:618
+#: clientgui/mac/MacAccessiblity.cpp:754
 msgid "list is empty"
 msgstr "목록이 비었습니다"
 
-#: clientgui/mac/MacAccessiblity.cpp:621
-#: clientgui/mac/MacAccessiblity.cpp:1198
-msgid "selected "
-msgstr "선택됨"
-
-#: clientgui/mac/MacAccessiblity.cpp:626
+#: clientgui/mac/MacAccessiblity.cpp:757
+#: clientgui/mac/MacAccessiblity.cpp:769
 #, c-format
-msgid "row %d "
-msgstr "줄 %d"
+msgid "; row %d; "
+msgstr ", 줄 %d,"
 
-#: clientgui/mac/MacAccessiblity.cpp:629
+#: clientgui/mac/MacAccessiblity.cpp:761
 #, c-format
-msgid "of %d; "
-msgstr "%d "
+msgid "; selected row %d of %d; "
+msgstr ", 줄 %d %d가 선택됨,"
 
-#: clientgui/mac/MacAccessiblity.cpp:632
+#: clientgui/mac/MacAccessiblity.cpp:763
 #, c-format
-msgid "column %d; "
-msgstr "컬럼 %d"
+msgid "; selected row %d ; "
+msgstr ", 줄 %d가 선택됨 ,"
 
-#: clientgui/mac/MacAccessiblity.cpp:1160
+#: clientgui/mac/MacAccessiblity.cpp:767
+#, c-format
+msgid "; row %d of %d; "
+msgstr ", 줄 %d %d,"
+
+#: clientgui/mac/MacAccessiblity.cpp:775
+msgid "blank"
+msgstr "공백"
+
+#: clientgui/mac/MacAccessiblity.cpp:1411
 msgid "list of projects or account managers"
 msgstr "계정 관리자 혹은 프로젝트 목록"
 
-#: clientgui/mac/MacAccessiblity.cpp:1202
+#: clientgui/mac/MacAccessiblity.cpp:1448
+#, c-format
+msgid "selected row %d of %d; "
+msgstr "줄 %d %d가 선택됨,"
+
+#: clientgui/mac/MacAccessiblity.cpp:1450
 #, c-format
 msgid "row %d of %d; "
 msgstr "줄 %d %d"
@@ -3764,3 +3817,23 @@ msgstr "작업 시작 및 중지 시간을 HH:MM-HH:MM 형식대로 입력해 �
 #: clientgui/DlgAdvPreferences.h:30
 msgid "specify network usage start and stop hours in format HH:MM-HH:MM"
 msgstr "네트워크 사용 시작 및 중지 시간을 HH:MM-HH:MM 형식대로 입력해 주세요"
+
+#~ msgid "Attach to a project or account manager to begin processing work"
+#~ msgstr "작업을 시작할 프로젝트 또는 계정 관리자에 연결합니다"
+#~ msgid "Attach to an additional project"
+#~ msgstr "부가적인 프로젝트를 연결"
+#~ msgid " is empty"
+#~ msgstr " 가 없습니다"
+#~ msgid "%d of %d; "
+#~ msgstr "%d %d "
+#~ msgid "current sort column "
+#~ msgstr "현재 정렬 컬럼"
+#~ msgid " descending order "
+#~ msgstr " 내림차순 정렬"
+#~ msgid " ascending order "
+#~ msgstr " 오름차순 정렬"
+#~ msgid "column "
+#~ msgstr "컬럼"
+#~ msgid "of %d; "
+#~ msgstr "%d "
+

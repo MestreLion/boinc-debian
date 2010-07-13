@@ -260,6 +260,7 @@ int PROJECT::parse(MIOFILE& in) {
         if (parse_bool(buf, "scheduler_rpc_in_progress", scheduler_rpc_in_progress)) continue;
         if (parse_bool(buf, "attached_via_acct_mgr", attached_via_acct_mgr)) continue;
         if (parse_bool(buf, "detach_when_done", detach_when_done)) continue;
+        if (parse_bool(buf, "trickle_up_pending", trickle_up_pending)) continue;
         if (match_tag(buf, "<gui_urls>")) {
             while (in.fgets(buf, 256)) {
                 if (match_tag(buf, "</gui_urls>")) break;
@@ -275,6 +276,9 @@ int PROJECT::parse(MIOFILE& in) {
         }
         if (parse_double(buf, "<project_files_downloaded_time>", project_files_downloaded_time)) continue;
         if (parse_double(buf, "<last_rpc_time>", last_rpc_time)) continue;
+        if (parse_bool(buf, "no_cpu_pref", no_cpu_pref)) continue;
+        if (parse_bool(buf, "no_cuda_pref", no_cuda_pref)) continue;
+        if (parse_bool(buf, "no_ati_pref", no_ati_pref)) continue;
     }
     return ERR_XML_PARSE;
 }
@@ -315,10 +319,14 @@ void PROJECT::clear() {
     scheduler_rpc_in_progress = false;
     attached_via_acct_mgr = false;
     detach_when_done = false;
+    trickle_up_pending = false;
     project_files_downloaded_time = 0;
     last_rpc_time = 0;
     gui_urls.clear();
     statistics.clear();
+    no_cpu_pref = false;
+    no_cuda_pref = false;
+    no_ati_pref = false;
 }
 
 APP::APP() {
@@ -442,6 +450,7 @@ int RESULT::parse(MIOFILE& in) {
         if (parse_bool(buf, "suspended_via_gui", suspended_via_gui)) continue;
         if (parse_bool(buf, "project_suspended_via_gui", project_suspended_via_gui)) continue;
         if (parse_bool(buf, "coproc_missing", coproc_missing)) continue;
+        if (parse_bool(buf, "gpu_mem_wait", gpu_mem_wait)) continue;
         if (match_tag(buf, "<active_task>")) {
             active_task = true;
             continue;
@@ -501,6 +510,7 @@ void RESULT::clear() {
     suspended_via_gui = false;
     project_suspended_via_gui = false;
     coproc_missing = false;
+    gpu_mem_wait = false;
 
     active_task = false;
     active_task_state = 0;
@@ -934,6 +944,7 @@ int PROJECT_INIT_STATUS::parse(MIOFILE& in) {
         if (match_tag(buf, "</get_project_init_status>")) return 0;
         if (parse_str(buf, "<url>", url)) continue;
         if (parse_str(buf, "<name>", name)) continue;
+        if (parse_str(buf, "<team_name>", team_name)) continue;
         if (parse_bool(buf, "has_account_key", has_account_key)) continue;
     }
     return ERR_XML_PARSE;
@@ -1017,6 +1028,7 @@ void ACCOUNT_IN::clear() {
     email_addr.clear();
     user_name.clear();
     passwd.clear();
+    team_name.clear();
 }
 
 ACCOUNT_OUT::ACCOUNT_OUT() {
@@ -2045,11 +2057,13 @@ int RPC_CLIENT::create_account(ACCOUNT_IN& ai) {
         "   <email_addr>%s</email_addr>\n"
         "   <passwd_hash>%s</passwd_hash>\n"
         "   <user_name>%s</user_name>\n"
+        "   <team_name>%s</team_name>\n"
         "</create_account>\n",
         ai.url.c_str(),
         ai.email_addr.c_str(),
         passwd_hash.c_str(),
-        ai.user_name.c_str()
+        ai.user_name.c_str(),
+        ai.team_name.c_str()
     );
 
     retval =  rpc.do_rpc(buf);

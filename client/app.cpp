@@ -177,8 +177,8 @@ ACTIVE_TASK::ACTIVE_TASK() {
     quit_time = 0;
     memset(&procinfo, 0, sizeof(procinfo));
 #ifdef _WIN32
-    pid_handle = 0;
-    shm_handle = 0;
+    process_handle = NULL;
+    shm_handle = NULL;
 #endif
     premature_exit_count = 0;
 }
@@ -213,9 +213,9 @@ void ACTIVE_TASK::set_task_state(int val, const char* where) {
 //
 void ACTIVE_TASK::cleanup_task() {
 #ifdef _WIN32
-    if (pid_handle) {
-        CloseHandle(pid_handle);
-        pid_handle = NULL;
+    if (process_handle) {
+        CloseHandle(process_handle);
+        process_handle = NULL;
     }
     // detach from shared mem.
     // This will destroy shmem seg since we're the last attachment
@@ -281,7 +281,6 @@ int ACTIVE_TASK::init(RESULT* rp) {
     return 0;
 }
 
-#if 0
 // Deallocate memory to prevent unneeded reporting of memory leaks
 //
 void ACTIVE_TASK_SET::free_mem() {
@@ -295,7 +294,6 @@ void ACTIVE_TASK_SET::free_mem() {
         delete at;
     }
 }
-#endif
 
 bool app_running(vector<PROCINFO>& piv, const char* p) {
     for (unsigned int i=0; i<piv.size(); i++) {
@@ -336,7 +334,7 @@ void ACTIVE_TASK_SET::get_memory_usage() {
             unsigned long last_page_fault_count = pi.page_fault_count;
             memset(&pi, 0, sizeof(pi));
             pi.id = atp->pid;
-            procinfo_app(pi, piv);
+            procinfo_app(pi, piv, atp->app_version->graphics_exec_file);
             pi.working_set_size_smoothed = .5*pi.working_set_size_smoothed + pi.working_set_size;
 
             int pf = pi.page_fault_count - last_page_fault_count;

@@ -165,10 +165,22 @@ int ACTIVE_TASK::get_shmem_seg_name() {
     //
     if (!boinc_file_exists(init_data_path)) {
         FILE* f = boinc_fopen(init_data_path, "w");
-        if (f) fclose(f);
+        if (f) {
+            fclose(f);
+        } else {
+            msg_printf(wup->project, MSG_INTERNAL_ERROR,
+                "error: can't open file for shmem seg name"
+            );
+        }
     }
     shmem_seg_name = ftok(init_data_path, 1);
-    if (shmem_seg_name == -1) return ERR_SHMEM_NAME;
+    if (shmem_seg_name == -1) {
+        msg_printf(wup->project, MSG_INTERNAL_ERROR,
+            "error: can't open file for shmem seg name: %d", errno
+        );
+        perror("ftok");
+        return ERR_SHMEM_NAME;
+    }
 #endif
     return 0;
 }
@@ -408,6 +420,7 @@ int ACTIVE_TASK::start(bool first_time) {
     }
 
     current_cpu_time = checkpoint_cpu_time;
+    elapsed_time = checkpoint_elapsed_time;
 
     graphics_request_queue.init(result->name);        // reset message queues
     process_control_queue.init(result->name);
@@ -529,7 +542,7 @@ int ACTIVE_TASK::start(bool first_time) {
         // fill in core client's PID so we won't think app has exited
         //
         pid = GetCurrentProcessId();
-        pid_handle = GetCurrentProcess();
+        process_handle = GetCurrentProcess();
         set_task_state(PROCESS_EXECUTING, "start");
         return 0;
     }
@@ -646,7 +659,7 @@ int ACTIVE_TASK::start(bool first_time) {
         goto error;
     }
     pid = process_info.dwProcessId;
-    pid_handle = process_info.hProcess;
+    process_handle = process_info.hProcess;
     CloseHandle(process_info.hThread);  // thread handle is not used
 #elif defined(__EMX__)
 

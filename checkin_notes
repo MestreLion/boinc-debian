@@ -1052,7 +1052,7 @@ Rom    1 Apr 2010
 
 Charlie  1 Apr 2010
     - Mac: Update build instructions to replace dead link for 
-        downloading JPEG 6b sources.  (Checked in to 6.10.44 tag.)
+        downloading JPEG 6b sources.
     
      mac_build/
         HowToBuildBOINC_XCode.rtf
@@ -1061,7 +1061,6 @@ Charlie  3 Apr 2010
     - Mac: Build with c-ares 1.6.0 instead of c-ares 1.7.0, because the newer 
         c-ares has problems resolving host names on OS 10.6 with default 
         settings when used with AT&T U-Verse 2Wire gateway routers and Airport.
-        (Checked in to 6.10.44 tag.)
         
      mac_build/
         buildc-ares.sh
@@ -1070,3 +1069,782 @@ Charlie  3 Apr 2010
         setupForBoinc.sh
         boinc.xcodeproj/
             project.pbxproj
+
+David  28 Mar 2010
+	- Manager: fix bug in task properties app name display
+
+	lib/
+		gui_rpc_client_ops.cpp
+
+David  29 Mar 2010
+	- client/manager: show "No CPU prefs" etc. in project properties
+
+	client/
+		client_types.cpp
+	clientgui/
+		DlgItemProperties.cpp
+	lib/
+		gui_rpc_client.h
+		gui_rpc_client_ops.cpp
+
+David  30 Mar 2010
+    - client/manager/GUI RPC: project_info.xml file can contain <team_name>.
+        If present, and a new user account is created,
+        it will be made a member of that team if it exists.
+
+    clientgui/
+        AdvancedFrame.cpp
+        WizardAttachProject.cpp,h
+        ProjectProcessingPage.cpp
+        sg_BoincSimpleGUI.cpp
+    html/user;
+        create_account.php
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+    client/
+        acct_setup.cpp,h
+
+Rom    30 Mar 2010
+    - MGR: Bad things happen when you don't initialize default values
+        for variables under wxWidgets.
+        
+    clientgui/
+        TermsOfUsePage.cpp
+
+David  30 Mar 2010
+    - client: NVIDIA peak FLOPS estimate was wrong for Fermi
+        (32 cores, not 8)
+
+    lib/
+        coproc.h
+
+David  31 Mar 2010
+    - client: delete project_init.xml if attached to any project.
+    - manager: avoid divide by zero if the only project
+        has zero resource share
+
+    client/
+        gui_rpc_server_ops.cpp
+    clientgui/
+        MainDocument.cpp
+
+David  31 Mar 2010
+    - client: Fermi compute capability is 2, not 3
+
+    lib/
+        coproc.h
+
+David  31 Mar 2010
+    - client: give dynamic estimate (based on fraction done)
+        a greater weight in time-to-completion estimate
+
+    client/
+        work_fetch.cpp
+
+David  4 Apr 2010
+    - Client: fix bug that caused wrong jobs to be run EDF
+        (needed to initialize a var inside loop, not outside)
+
+    client/
+        cpu_sched.cpp
+
+David  4 Apr 2010
+    - client: clean out project dir on reset.  fixes #978
+
+    client/
+        client_state.cpp
+
+David  5 Apr 2010
+    - client: read_file_malloc() must open file in binary mode,
+        else it won't get the right part of the file
+
+    lib/
+        util.cpp
+
+Rom    6 Apr 2010
+    - Tag for 6.10.45 release, all platforms
+      boinc_core_release_6_10_45
+
+    /
+        configure.ac
+        version.h
+
+David  6 Apr 2010
+	- client: don't include graphics apps in non-BOINC CPU time
+
+	client/
+		app.cpp
+		client_state.cpp,h
+	lib/
+		procinfo.h
+		procinfo_win.cpp
+
+Charlie  7 Apr 2010
+    - Mac SS: Optimize screensaver for OS 10.6.
+	- client: don't include graphics apps in non-BOINC CPU time (Mac).
+
+    clientscr/
+        Mac_Saver_ModuleView.m
+        screensaver.cpp
+	lib/
+		procinfo_mac.cpp
+    
+David  7 Apr 2010
+	- client: don't include graphics apps in non-BOINC CPU time (Unix).
+
+	lib/
+		procinfo_win.cpp
+		procinfo_unix.cpp
+
+David  7 Apr 2010
+    - client: allow zero resource shares from account managers
+
+    client/
+        acct_mgr.cpp
+
+David  7 Apr 2010
+    - client: "allow_remote_gui_rpc" is available via cc_config.xml
+        as well as command-line.
+    - client: show allow_remote_gui_rpc option,
+        and contents of remote_host.cfg, in message log on startup
+    - client: code cleanup: move some options from
+        CLIENT_STATE to OPTIONS
+
+    client/
+        client_state.cpp,h
+        cs_cmdline.cpp
+        gui_rpc_server.cpp
+        log_flags.cpp,h
+        main.cpp
+        sim.h
+
+David  7 Apr 2010
+    - client: revert [21035]; remove project_init.xml only if
+        attached to the project it specifies
+        (requested by Kevin Reed)
+
+    client/
+        gui_rpc_server_ops.cpp
+
+Rom    8 Apr 2010
+    - WINSETUP: Add support for the <team_name> tag in the Windows
+        installer for the auto created project_init.xml file.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.rc
+        CACreateProjectInitFile.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+Charlie  9 Apr 2010
+    SS: Ignore SUSPEND_REASON_CPU_USAGE in SS coordinator, so it won't kill 
+        graphics apps for short-term CPU usage spikes (such as anti-virus.)
+    
+    clientscr/
+        screensaver.cpp
+
+Charlie  9 Apr 2010
+	- client: Fix bug in determining non-BOINC CPU time (Mac).
+
+	lib/
+		procinfo_mac.cpp
+
+Charlie  16 Apr 2010
+    - Mac Installer: Set uninstaller's writeable-by-user permission bit so 
+        3rd-party Unarchiver can inflate the Zip file (from Eric Myers).
+    
+    mac_installer/
+        make_GridRepublic.sh
+        make_ProgThruProc.sh
+        release_boinc.sh
+
+Charlie  17 Apr 2010
+    - Mac Installer: AddRemoveUser utility accepts both full / login user 
+        names and short / Posix user names.
+
+    mac_installer/
+        AddRemoveUser.cpp
+
+Charlie  17 Apr 2010
+	- client: Fix compile break.
+
+	lib/
+		procinfo_mac.cpp
+
+
+Charlie  19 Apr 2010
+    - Mac Installer: PostInstall gets short / Posix user name from getpwnam(),
+        writes additional diagnostic information to installer log.
+
+    mac_installer/
+        PostInstall.cpp
+
+David  7 Apr 2010
+    - client: attempt to fix bug where a GPU would be assigned
+        to multiple jobs at the same time.
+        I fixed one error (reference arg to assign_coprocs())
+        but I can't see why this would explain the problem.
+        I added a lot of extra <coproc_debug> log messages.
+
+    client/
+        cpu_sched.cpp
+
+David  15 Apr 2010
+	- client: get rid of spurious "Using proxy settings from GUI" message
+
+	client/
+		cs_prefs.cpp
+		gui_rpc_server_ops.cpp
+	lib/
+		proxy_info.cpp
+
+David  16 Apr 2010
+	- client: fix bug in mechanism that inhibits work fetch
+		for a GPU if it lacks available memory
+
+	client/
+		client_state.cpp
+		coproc_detect.cpp
+		cpu_sched.cpp
+
+David  17 Apr 2010
+    - client: improve GPU scheduling
+        old: assign GPUs, then check available RAM
+            Problem: may cause starvation on multi-GPU systems.
+        new: use available RAM info in the assignment process.
+            Prevents starvation, also reduces the number of driver calls.
+
+    client/
+        client_state.cpp
+        client_types.cpp,h
+        coproc_detect.cpp
+        cpu_sched.cpp
+    lib/
+        coproc.h
+
+David  17 Apr 2010
+	- client: when a GPU job finishes, clear the "schedule backoff"
+		of other jobs of that type.
+		They're waiting for GPU RAM, which may now be available.
+	- client: bug fix in GPU RAM availability
+	- client: fix testing setup for GPU RAM availability
+
+	client/
+		app_control.cpp
+		client_state.cpp
+		coproc_detect.cpp
+		cpu_sched.cpp
+	lib/
+		coproc.h
+
+David  19 Apr 2010
+    - client: clean up logic related to GPU available memory.
+        If a driver call to get available mem fail, mark the GPU as unusable.
+
+    client/
+        client_msgs.h
+        client_types.cpp,h
+        coproc_detect.cpp
+        cpu_sched.cpp
+        work_fetch.cpp
+    lib/
+        coproc.h
+
+Rom    20 Apr 2010
+    - Tag for 6.10.46 release, all platforms
+      boinc_core_release_6_10_46
+
+    /
+        configure.ac
+        version.h
+
+David  20 Apr 2010
+    - client: show "waiting for GPU memory" in task status
+
+	client/
+		client_types.cpp
+		cpu_sched.cpp
+	clientgui/
+		ViewWork.cpp
+	lib/
+		gui_rpc_client.h
+		gui_rpc_client_ops.cpp
+
+Rom    21 Apr 2010
+    - Tag for 6.10.47 release, all platforms
+      boinc_core_release_6_10_47
+
+    /
+        configure.ac
+        version.h
+
+David  21 Apr 2010
+    - client: keep track of daily history of network transfers
+	- client: bug fixes for the above
+
+    client/
+        client_state.cpp,h
+        file_names.h
+        http_curl.cpp
+        net_stats.cpp,h
+
+David  21 Apr 2010
+    - client: add preference for limiting network xfers in last N days
+        (no GUI yet)
+	- client: bug fixes for the above
+
+    lib/
+        prefs.cpp,h
+        common_defs.h
+    client/
+        client_stte.cpp
+        net_stats.cpp,h
+        cs_prefs.cpp
+
+David  22 Apr 2010
+    - client: fix bug with NVIDIA GPUs.
+        Some of them allow only 1 CUDA context at a time.
+        You need to create a CUDA context to get available VRAM.
+        So the client would run a CUDA job, then immediately kill it.
+        Solution:
+        - If a GPU app is running,
+            let it keep running regardless of available VRAM
+            (if it's still running, it has enough VRAM).
+        - But don't start new apps if there's not enough available VRAM,
+            or it the amount is unknown
+            (if the client can't create a CUDA context,
+            the app won't be able to either)
+    - client: if <coproc_debug> is set, print available GPU RAM periodically
+
+    client/
+        coproc_detect.cpp
+        cpu_sched.cpp
+    lib/
+        coproc.h
+
+Rom    22 Apr 2010
+    - Tag for 6.10.48 release, all platforms
+      boinc_core_release_6_10_48
+
+    /
+        configure.ac
+        version.h
+
+Rom    23 Apr 2010
+    - CC: Reduce how often the client reports the amount of available
+        VRAM to once every 60 seconds.
+
+    client/
+        coproc_detect.cpp
+        cpu_sched.cpp
+    lib/
+        coproc.h
+
+David  23 Apr 2010
+    - rename prefs.daily_xfer_period to daily_xfer_period_days
+
+    lib/
+        prefs.cpp,h
+    client/
+        cs_prefs.cpp
+        
+David  23 Apr 2010
+    - manager: add network quota to advanced prefs dialog
+
+    clientgui/
+        DlgAdvPreferences.cpp
+        DlgAdvPreferencesBase.cpp
+        DlgAdvPreferencesBase.h
+
+David  23 Apr 2010
+    - client: Win: kill runaway apps using TerminateProcess()
+        rather than TerminateProcessById().
+        The latter doesn't work in protected mode.
+    - client: pid_handle => process_handle.  misnomer
+
+    client/
+        app.cpp,h
+        app_start.cpp
+        app_control.cpp
+
+David  23 Apr 2010
+    - client: report daily xfer stats in scheduler request
+        (not used by scheduler, but maybe later)
+
+    client/
+        net_stats.cpp,h
+        cs_prefs.cpp
+        cs_scheduler.cpp
+
+Rom    26 Apr 2010
+    - Tag for 6.10.49 release, all platforms
+      boinc_core_release_6_10_49
+
+    /
+        configure.ac
+        version.h
+
+David  26 Apr 2010
+    - client: clean up network suspension logic.
+        There are now separate flags for
+        "file_xfers_suspended": don't do file transfers
+        "network_suspended": don't do any network comm
+            (scheduler RPCs, RSS fetch, master fetch, etc.)
+        The policy:
+        if preferences/settings say no network
+        (quota exceeded, no-network mode, user active, time, excl. app)
+        then:
+            file_xfers_suspended = true
+            if (no recent network-related RPC) network_suspended = true
+
+    client/
+        client_state.cpp,h
+        cs_files.cpp
+        cs_prefs.cpp
+        cs_scheduler.cpp
+
+David  27 Apr 2010
+    - client: write daily net history on shutdown
+    - client: remove extraneous calls to calShutdown()
+        in ATIs available-RAM code.
+
+    client
+        coproc_detect.cpp
+        net_status.cpp,h
+        main.cpp
+        cs_scheduler.cpp
+
+David  28 Apr 2010
+    - client: network bandwidth total was counting 1 day too many
+    - client simulator: start GPU support
+
+    client/
+        net_stats.cpp
+
+Rom    28 Apr 2010
+    - Tag for 6.10.50 release, all platforms
+      boinc_core_release_6_10_50
+
+    /
+        configure.ac
+        version.h
+
+Charlie  30 Apr 2010
+    - client: Restore RUN_MODE_ALWAYS functionality in network suspension 
+        logic which as lost in code cleanup of 26 Apr 2010.
+
+        cs_prefs.pp
+
+Charlie  30 Apr 2010
+    - Tag for 6.10.51 release, all platforms
+      boinc_core_release_6_10_51
+
+    /
+        configure.ac
+        version.h
+
+David  2 Mar 2010
+    - client: fix messages: asking for X instances doesn't mean
+        that X instances are idle
+
+    client/
+        scheduler_op.cpp
+
+David  30 Apr 2010
+	- manager: if user clicks Retry in Transfer tab while network is suspended,
+		show an alert.
+	- manager: in transfers tab, show it if transfers are suspended
+		because network is suspended
+	- manager: in tasks tab, if a task is downloading or uploading
+		and network is suspended, show it
+
+	client/
+		work_fetch.cpp
+	clientgui/
+		ViewTransfers.cpp
+		ViewWork.cpp
+
+David  3 May 2010
+    - client: day boundary for "transfer at most X in N days"
+        is midnight local time, not UTC
+
+    client/
+        sim.cpp
+        net_stats.cpp
+
+Rom    3 May 2010
+    - client: fix build break
+    
+    client/
+        net_stats.cpp
+
+David  6 May 2010
+	- manager: fix tooltip msgs
+
+	clientgui/
+		AdvancedFrame.cpp
+		sg_ProjectsComponent.cpp
+
+Rom    6 May 2010
+    - Tag for 6.10.52 release, all platforms
+      boinc_core_release_6_10_52
+
+    /
+        configure.ac
+        version.h
+
+David  7 May 2010
+    - client: when emerge from bandwidth quota network suspension,
+        add 0..1hr random delay to existing transfers,
+        to avoid DDOS effect
+
+    client/
+        client_state.cpp
+        pers_file_xfer.cpp,h
+
+David  7 May 2010
+    - manager: if a project has pending trickle up,
+        show it in the project status
+
+    clientgui/
+        ViewProjects.cpp
+    lib/
+        gui_rpc_client_ops.cpp
+        gui_rpc_client.h
+
+David  8 May 2010
+    - client: fix time-zone offset in net BW quota
+
+    client/
+        net_stats.cpp
+
+Rom    6 May 2010
+    - Tag for 6.10.53 release, all platforms
+      boinc_core_release_6_10_53
+
+    /
+        configure.ac
+        version.h
+
+David  11 May 2010
+    - client: enable bandwidth quota limit only if both
+        #MB and #days are nonzero.
+
+    client/
+        cs_prefs.cpp
+
+David  11 May 2010
+    - client: fix memory leak
+
+    lib/
+        coproc.h
+
+David  11 May 2010
+    - client: on resume from net bandwidth quota suspend,
+        apply same random backoff to all transfers.
+    - client: when changing ncpus via config file,
+        don't modify host_info.p_ncpus
+    - client: show effective #CPUs separately from physical #
+
+    client/
+        client_state.cpp,h
+        pers_file_xfer.cpp
+        cpu_sched.cpp
+
+David  11 May 2010
+	- client: clear config before rereading config file.
+		This means that, e.g. if you remove <ncpus>
+		it will revert to the actual number.
+		However, it also means that any config params
+		set via command line will be overridden.
+
+	client/
+		log_flags.cpp
+
+David  12 May 2010
+	- client: fix crashing bug.
+		Deleting records in ~COPROCS() was bad,
+		since we copy HOST_INFO to APP_INIT_DATA,
+		leading to a double deletion.
+
+	client/
+		cpu_sched.cpp
+	lib/
+		coproc.h
+
+Rom    12 May 2010
+    - Tag for 6.10.54 release, all platforms
+      boinc_core_release_6_10_54
+
+    /
+        configure.ac
+        version.h
+
+David  12 May 2010
+    - client: make GPU available RAM measurement #ifdef-selectable,
+        and default it to off
+    - client: if we print available GPU RAM (which we now don't)
+        have a separate timer per GPU type
+
+    client/
+        client_state.cpp
+        coproc_detect.cpp
+    lib/
+        coproc.h
+
+Rom    12 May 2010
+    - Tag for 6.10.55 release, all platforms
+      boinc_core_release_6_10_55
+
+    /
+        configure.ac
+        version.h
+
+David  14 May 2010
+	- client: fix bug that randomly caused idle GPUs
+
+	client/
+		coproc_detect.cpp
+
+Rom    14 May 2010
+    - Tag for 6.10.56 release, all platforms
+      boinc_core_release_6_10_56
+
+    /
+        configure.ac
+        version.h
+
+Charlie  17 May 2010
+    - MGR: Rework Mac accessibility for better compatibility with OS 10.6.
+
+    clientgui/
+        BOINCListCtrl.cpp, .h
+        mac/
+            MacAccessiblity.cpp, .h
+
+Charlie  24 May 2010
+    - MGR: If get_results RPC takes x seconds, do it no more often than 
+        once every (x * GET_RESULTS_FREQUENCY_FACTOR) seconds.  
+        GET_RESULTS_FREQUENCY_FACTOR is currently defined as 10.
+        NOTE: we must measure the RPC time in the RPC thread, so this 
+        code assumes that dtime() is thread-safe, or at least that any 
+        error introduced due to thread preemption is small.
+
+    clientgui/
+        AsyncRPC.cpp, .h
+        MainDocument.cpp, .h
+
+Charlie  24 May 2010
+    - MGR: Temporarily back out my changes from earlier today.
+
+    clientgui/
+        AsyncRPC.cpp, .h
+        MainDocument.cpp, .h
+
+Rom    27 May 2010
+    - boinccmd: Add --set_gpu_mode to command line tool.
+    
+    client/
+        boinc_cmd.cpp
+
+David  19 May 2010
+    - boinccmd: don't authorize if no password found or given
+
+    client/
+        boinc_cmd.cpp
+
+David  18 May 2010
+    - client: don't promote multithread jobs ahead of EDF jobs
+
+    client/
+        cpu_sched.cpp
+
+Rom    27 May 2010
+    - client: fix elasped time tracking bug
+        (from Kevin Reed)
+    
+    client/
+        app_start.cpp
+
+Rom    27 May 2010
+    - Tag for 6.10.57 release, all platforms
+      boinc_core_release_6_10_57
+
+    /
+        configure.ac
+        version.h
+
+Charlie  7 Jun 2010
+    - client: Display Mac OS Version as well as Darwin version in Messages tab.
+        
+    client/
+        client_state.cpp
+
+Charlie  7 Jun 2010
+    - Mac: Remove references to OS 10.3.9 SDK, fix script build phases in XCode 
+        project so it can be built using either XCode 3.2 under OS 10.6 or 
+        XCode 3.1 under OS 10.5.
+        
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie  9 Jun 2010
+    - Mac installer: Create script to build installer for Campus Party (installs 
+        custom project_init.xml file.)
+    
+    mac_installer/
+        release_campus_party.sh
+
+David  30 Mar 2010
+    - finish up the auto-team feature
+
+    html/user/
+        account_finish_action.php
+        create_account.php
+
+Charlie  9 Jun 2010
+    - Mac Installer: fix typos in installer build script.
+    
+    mac_installer/
+        release_boinc.sh
+
+Charlie  18 Jun 2010
+    - lib: Fix the value returned from get_mac_addresses() on Macintosh 
+        computers.  It has returned the value of kernResult, which is 0
+        on success, instead of true for success, since the routine was 
+        first written in November 2008.  This causes the client to 
+        generate a new random CPID every time the client is launched.
+    
+    lib/
+        mac_address.cpp
+
+Rom    18 Jun 2010
+    - Re-enable the memory leak detection code for the 6.10 branch.
+    
+    <Various Files>
+
+Rom    30 Jun 2010
+    - WIN: Treat Windows SEH exceptions as C++ exceptions so they can be trapped
+        using the standard try/catch handlers.
+    - WIN: Wrap the coproc detection stuff in C++ exception handlers. If for some
+        reason the Nvidia or ATI APIs cause an exception don't use the GPUs and
+        don't crash BOINC.
+        
+    client/
+        coproc_detect.cpp
+    win_build/
+        *.vcproj
+
+Rom    1 July 2010
+    - Tag for 6.10.58 release, all platforms
+      boinc_core_release_6_10_58
+
+    /
+        configure.ac
+        version.h

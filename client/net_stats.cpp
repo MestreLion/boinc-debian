@@ -21,6 +21,7 @@
 // NET_STATUS keeps track of whether we have a physical connection,
 // and whether we need one
 
+#include "cpp.h"
 
 #ifdef _WIN32
 #include "boinc_win.h"
@@ -30,12 +31,12 @@
 #include <cmath>
 #endif
 
-#include "cpp.h"
 #include "parse.h"
 #include "time.h"
 #include "str_util.h"
 #include "error_numbers.h"
 #include "util.h"
+#include "filesys.h"
 
 #include "client_msgs.h"
 #include "client_state.h"
@@ -46,6 +47,7 @@
 
 #define NET_RATE_HALF_LIFE  (7*86400)
 
+DAILY_XFER_HISTORY daily_xfer_history;
 NET_STATUS net_status;
 
 NET_STATS::NET_STATS() {
@@ -265,3 +267,136 @@ void NET_STATUS::poll() {
 	}
 }
 
+int DAILY_XFER::parse(XML_PARSER& xp) {
+    char tag[1024];
+    bool is_tag;
+
+    while (!xp.get(tag, sizeof(tag), is_tag)) {
+        if (!strcmp(tag, "/dx")) return 0;
+        if (xp.parse_int(tag, "when", when)) continue;
+        if (xp.parse_double(tag, "up", up)) continue;
+        if (xp.parse_double(tag, "down", down)) continue;
+    }
+    return ERR_XML_PARSE;
+}
+
+void DAILY_XFER::write(FILE* f) {
+    fprintf(f,
+        "<dx>\n"
+        "   <when>%d</when>\n"
+        "   <up>%f</up>\n"
+        "   <down>%f</down>\n"
+        "</dx>\n",
+        when, up, down
+    );
+}
+
+inline int current_day() {
+    return (int)((gstate.now + gstate.host_info.timezone)/86400);
+}
+
+DAILY_XFER* DAILY_XFER_HISTORY::today() {
+    int d = current_day();
+    for (unsigned int i=0; i<daily_xfers.size(); i++) {
+        DAILY_XFER& dx = daily_xfers[i];
+        if (dx.when == d) {
+            return &dx;
+        }
+    }
+    DAILY_XFER dx;
+    dx.when = d;
+    daily_xfers.push_front(dx);
+    return &(daily_xfers.front());
+}
+
+void DAILY_XFER_HISTORY::add(size_t x, bool upload) {
+    DAILY_XFER* dxp = today();
+    if (upload) {
+        dxp->up += x;
+    } else {
+        dxp->down += x;
+    }
+    dirty = true;
+}
+
+void DAILY_XFER_HISTORY::init() {
+    FILE* f = fopen(DAILY_XFER_HISTORY_FILENAME, "r");
+    if (!f) return;
+
+    MIOFILE mf;
+    XML_PARSER xp(&mf);
+    mf.init_file(f);
+    bool is_tag;
+    char tag[256];
+
+    int d = current_day();
+
+    if (!xp.parse_start("daily_xfers")) {
+        fclose(f);
+        return;
+    }
+    while (!xp.get(tag, sizeof(tag), is_tag)) {
+        if (!is_tag) continue;
+        if (!strcmp(tag, "dx")) {
+            DAILY_XFER dx;
+            int retval = dx.parse(xp);
+            if (!retval && d - dx.when < 365) {
+                // discard records after a year
+                daily_xfers.push_back(dx);
+            }
+        }
+    }
+    fclose(f);
+}
+
+void DAILY_XFER_HISTORY::poll() {
+    static double last_time= 0;
+
+    if (!dirty) return;
+    if (gstate.now - last_time < DAILY_XFER_HISTORY_PERIOD) return;
+    last_time = gstate.now;
+    write_state();
+}
+
+
+void DAILY_XFER_HISTORY::write_state() {
+    FILE* f = fopen(TEMP_FILE_NAME, "w");
+    if (!f) return;
+    fprintf(f, "<daily_xfers>\n");
+    for (unsigned int i=0; i<daily_xfers.size(); i++) {
+        DAILY_XFER& dx = daily_xfers[i];
+        dx.write(f);
+    }
+    int n = fprintf(f, "</daily_xfers>\n");
+    fclose(f);
+    if (n > 0) {
+        int retval = boinc_rename(TEMP_FILE_NAME, DAILY_XFER_HISTORY_FILENAME);
+        if (!retval) {
+            dirty = false;
+        }
+    }
+}
+
+void DAILY_XFER_HISTORY::totals(int ndays, double& up, double& down) {
+    int d = (current_day() - ndays);
+    up = down = 0;
+    for (unsigned int i=0; i<daily_xfers.size(); i++) {
+        DAILY_XFER& dx = daily_xfers[i];
+        if (dx.when <= d) break;
+        up += dx.up;
+        down += dx.down;
+    }
+}
+
+void DAILY_XFER_HISTORY::write_scheduler_request(MIOFILE& mf, int ndays) {
+    double up, down;
+    totals(ndays, up, down);
+    mf.printf(
+        "<daily_xfer_history>\n"
+        "   <ndays>%d</ndays>\n"
+        "   <up>%f</up>\n"
+        "   <down>%f</down>\n"
+        "</daily_xfer_history>\n",
+        ndays, up, down
+    );
+}

@@ -19,12 +19,15 @@
 // when to compute, how much disk to use, etc.
 //
 
+#include "cpp.h"
+
 #ifdef _WIN32
 #include "boinc_win.h"
+#else
+#include "config.h"
 #endif
 
 #ifndef _WIN32
-#include "config.h"
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -177,25 +180,30 @@ int CLIENT_STATE::check_suspend_processing() {
     return 0;
 }
 
-static string reason_string(int reason) {
+const char* CLIENT_STATE::suspend_reason_string(int reason) {
     switch (reason) {
-    case SUSPEND_REASON_BATTERIES: return " - on batteries";
-    case SUSPEND_REASON_USER_ACTIVE: return " - user is active";
-    case SUSPEND_REASON_USER_REQ: return " - user request";
-    case SUSPEND_REASON_TIME_OF_DAY: return " - time of day";
-    case SUSPEND_REASON_BENCHMARKS: return " - running CPU benchmarks";
-    case SUSPEND_REASON_DISK_SIZE: return " - out of disk space - change global prefs";
-    case SUSPEND_REASON_NO_RECENT_INPUT: return " - no recent user activity";
-    case SUSPEND_REASON_INITIAL_DELAY: return " - initial delay";
-    case SUSPEND_REASON_EXCLUSIVE_APP_RUNNING: return " - an exclusive app is running";
-    case SUSPEND_REASON_CPU_USAGE: return " - CPU usage is too high";
+    case SUSPEND_REASON_BATTERIES: return "on batteries";
+    case SUSPEND_REASON_USER_ACTIVE: return "user is active";
+    case SUSPEND_REASON_USER_REQ: return "user request";
+    case SUSPEND_REASON_TIME_OF_DAY: return "time of day";
+    case SUSPEND_REASON_BENCHMARKS: return "running CPU benchmarks";
+    case SUSPEND_REASON_DISK_SIZE: return "out of disk space - change global prefs";
+    case SUSPEND_REASON_NO_RECENT_INPUT: return "no recent user activity";
+    case SUSPEND_REASON_INITIAL_DELAY: return "initial delay";
+    case SUSPEND_REASON_EXCLUSIVE_APP_RUNNING: return "an exclusive app is running";
+    case SUSPEND_REASON_CPU_USAGE: return "CPU usage is too high";
+    case SUSPEND_REASON_NETWORK_QUOTA_EXCEEDED: return "network bandwidth limit exceeded";
     }
-    return "";
+    return "unknown reason";
 }
 
 void print_suspend_tasks_message(int reason) {
-    string s_reason = "Suspending computation" + reason_string(reason);
-    msg_printf(NULL, MSG_INFO, s_reason.c_str());
+    char buf[256];
+    sprintf(buf,
+        "Suspending computation - %s",
+        gstate.suspend_reason_string(reason)
+    );
+    msg_printf(NULL, MSG_INFO, buf);
 }
 
 int CLIENT_STATE::suspend_tasks(int reason) {
@@ -224,39 +232,64 @@ int CLIENT_STATE::resume_tasks(int reason) {
     return 0;
 }
 
-int CLIENT_STATE::check_suspend_network() {
+// Check whether to set network_suspended and file_xfers_suspended.
+//
+void CLIENT_STATE::check_suspend_network() {
+    network_suspended = false;
+    file_xfers_suspended = false;
+    network_suspend_reason = 0;
+
     // no network traffic if we're allowing unsigned apps
     //
-    if (unsigned_apps_ok) return SUSPEND_REASON_USER_REQ;
+    if (unsigned_apps_ok) {
+        network_suspended = true;
+        file_xfers_suspended = true;
+        network_suspend_reason = SUSPEND_REASON_USER_REQ;
+        return;
+    }
+
+    // was there a recent GUI RPC that needs network?
+    //
+    bool recent_rpc = gui_rpcs.recent_rpc_needs_network(
+        ALLOW_NETWORK_IF_RECENT_RPC_PERIOD
+    );
 
     switch(network_mode.get_current()) {
-    case RUN_MODE_ALWAYS: return 0;
+    case RUN_MODE_ALWAYS: 
+        return;
     case RUN_MODE_NEVER:
-        return SUSPEND_REASON_USER_REQ;
+        file_xfers_suspended = true;
+        if (!recent_rpc) network_suspended = true;
+        network_suspend_reason = SUSPEND_REASON_USER_REQ;
     }
+
+    if (global_prefs.daily_xfer_limit_mb && global_prefs.daily_xfer_period_days) {
+        double up, down;
+        daily_xfer_history.totals(
+            global_prefs.daily_xfer_period_days, up, down
+        );
+        if (up+down > global_prefs.daily_xfer_limit_mb*MEGA) {
+            file_xfers_suspended = true;
+            if (!recent_rpc) network_suspended = true;
+            network_suspend_reason = SUSPEND_REASON_NETWORK_QUOTA_EXCEEDED;
+        }
+    }
+
     if (!global_prefs.run_if_user_active && user_active) {
-        return SUSPEND_REASON_USER_ACTIVE;
+        file_xfers_suspended = true;
+        if (!recent_rpc) network_suspended = true;
+        network_suspend_reason = SUSPEND_REASON_USER_ACTIVE;
     }
     if (global_prefs.net_times.suspended()) {
-        return SUSPEND_REASON_TIME_OF_DAY;
+        file_xfers_suspended = true;
+        if (!recent_rpc) network_suspended = true;
+        network_suspend_reason = SUSPEND_REASON_TIME_OF_DAY;
     }
     if (exclusive_app_running) {
-        return SUSPEND_REASON_EXCLUSIVE_APP_RUNNING;
+        file_xfers_suspended = true;
+        if (!recent_rpc) network_suspended = true;
+        network_suspend_reason = SUSPEND_REASON_EXCLUSIVE_APP_RUNNING;
     }
-    return 0;
-}
-
-int CLIENT_STATE::suspend_network(int reason) {
-    string s_reason;
-    s_reason = "Suspending network activity" + reason_string(reason);
-    msg_printf(NULL, MSG_INFO, s_reason.c_str());
-    pers_file_xfers->suspend();
-    return 0;
-}
-
-int CLIENT_STATE::resume_network() {
-    msg_printf(NULL, MSG_INFO, "Resuming network activity");
-    return 0;
 }
 
 // call this only after parsing global prefs
@@ -458,10 +491,7 @@ void CLIENT_STATE::read_global_prefs() {
     file_xfers->set_bandwidth_limits(true);
     file_xfers->set_bandwidth_limits(false);
     msg_printf(NULL, MSG_INFO,
-        "   (to change, visit the web site of an attached project,"
-    );
-    msg_printf(NULL, MSG_INFO,
-        "   or click on Preferences)"
+        "   (to change preferences, visit the web site of an attached project, or select Preferences in the Manager)"
     );
     request_schedule_cpus("Prefs update");
     request_work_fetch("Prefs update");

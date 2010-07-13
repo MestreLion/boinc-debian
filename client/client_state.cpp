@@ -15,10 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "cpp.h"
+
 #ifdef _WIN32
 #include "boinc_win.h"
 #else
 #include "config.h"
+#endif
+
+#ifndef _WIN32
 #include <unistd.h>
 #include <csignal>
 #include <cstdio>
@@ -36,17 +41,12 @@
 #include <os2.h>
 #endif
 
-#include "cpp.h"
 #include "parse.h"
 #include "str_util.h"
 #include "str_replace.h"
 #include "util.h"
 #include "error_numbers.h"
 #include "filesys.h"
-#ifdef _WIN32
-#include "proc_control.h"
-#endif
-
 #include "file_names.h"
 #include "hostinfo.h"
 #include "hostinfo_network.h"
@@ -56,6 +56,9 @@
 #include "shmem.h"
 #include "sandbox.h"
 #include "client_state.h"
+#ifdef _WIN32
+#include "proc_control.h"
+#endif
 
 using std::max;
 
@@ -77,7 +80,6 @@ CLIENT_STATE::CLIENT_STATE():
     exit_before_start = false;
     exit_after_finish = false;
     check_all_logins = false;
-    allow_remote_gui_rpc = false;
     cmdline_gui_rpc_port = 0;
     run_cpu_benchmarks = false;
     skip_cpu_benchmarks = false;
@@ -142,7 +144,6 @@ CLIENT_STATE::CLIENT_STATE():
     launched_by_manager = false;
     initialized = false;
     last_wakeup_time = dtime();
-    abort_jobs_on_exit = false;
 }
 
 void CLIENT_STATE::show_host_info() {
@@ -153,6 +154,9 @@ void CLIENT_STATE::show_host_info() {
         "Processor: %d %s %s",
         host_info.p_ncpus, host_info.p_vendor, host_info.p_model
     );
+    if (ncpus != host_info.p_ncpus) {
+        msg_printf(NULL, MSG_INFO, "Using %d CPUs", ncpus);
+    }
     if (host_info.m_cache > 0) {
     msg_printf(NULL, MSG_INFO,
         "Processor: %s cache",
@@ -162,9 +166,18 @@ void CLIENT_STATE::show_host_info() {
     msg_printf(NULL, MSG_INFO,
         "Processor features: %s", host_info.p_features
     );
+#ifdef __APPLE__
+    int major, minor, rev;
+    sscanf(host_info.os_version, "%d.%d.%d", &major, &minor, &rev);
+    msg_printf(NULL, MSG_INFO,
+        "OS: Mac OS X 10.%d.%d (%s %s)", major-4, minor, 
+        host_info.os_name, host_info.os_version
+    );
+#else
     msg_printf(NULL, MSG_INFO,
         "OS: %s: %s", host_info.os_name, host_info.os_version
     );
+#endif
 
     nbytes_to_string(host_info.m_nbytes, 0, buf, sizeof(buf));
     nbytes_to_string(host_info.m_swap, 0, buf2, sizeof(buf2));
@@ -193,6 +206,8 @@ int CLIENT_STATE::init() {
     client_start_time = now;
     scheduler_op->url_random = drand();
 
+    daily_xfer_history.init();
+    
     detect_platforms();
     time_stats.start();
 
@@ -264,12 +279,16 @@ int CLIENT_STATE::init() {
             msg_printf(NULL, MSG_INFO, "No usable GPUs found");
         }
 #if 0
-        fake_cuda(coprocs, 2);
         msg_printf(NULL, MSG_INFO, "Faking an NVIDIA GPU");
+        coproc_cuda = fake_cuda(host_info.coprocs, 256*MEGA, 2);
+        coproc_cuda->available_ram_fake[0] = 256*MEGA;
+        coproc_cuda->available_ram_fake[1] = 192*MEGA;
 #endif
 #if 0
-        fake_ati(coprocs, 2);
         msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
+        coproc_ati = fake_ati(host_info.coprocs, 512*MEGA, 2);
+        coproc_ati->available_ram_fake[0] = 256*MEGA;
+        coproc_ati->available_ram_fake[1] = 192*MEGA;
 #endif
         coproc_cuda = (COPROC_CUDA*)host_info.coprocs.lookup("CUDA");
         coproc_ati = (COPROC_ATI*)host_info.coprocs.lookup("ATI");
@@ -644,22 +663,43 @@ bool CLIENT_STATE::poll_slow_events() {
         cpu_benchmarks_poll();
     }
 
-    network_suspend_reason = check_suspend_network();
-
-    // if a recent GUI RPC needs network access, allow it
-    //
-    if (gui_rpcs.recent_rpc_needs_network(300)) {
-        network_suspend_reason = 0;
-    }
+    int old_network_suspend_reason = network_suspend_reason;
+    bool old_network_suspended = network_suspended;
+    check_suspend_network();
     if (network_suspend_reason) {
-        if (!network_suspended) {
-            suspend_network(network_suspend_reason);
-            network_suspended = true;
+        if (!old_network_suspend_reason) {
+            char buf[256];
+            if (network_suspended) {
+                sprintf(buf,
+                    "Suspending network activity - %s",
+                    suspend_reason_string(network_suspend_reason)
+                );
+            } else {
+                sprintf(buf,
+                    "Suspending file transfers - %s",
+                    suspend_reason_string(network_suspend_reason)
+                );
+            }
+            msg_printf(NULL, MSG_INFO, buf);
+            pers_file_xfers->suspend();
         }
     } else {
-        if (network_suspended) {
-            resume_network();
-            network_suspended = false;
+        if (old_network_suspend_reason) {
+            if (old_network_suspended) {
+                msg_printf(NULL, MSG_INFO, "Resuming network activity");
+            } else {
+                msg_printf(NULL, MSG_INFO, "Resuming file transfers");
+            }
+        }
+
+        // if we're emerging from a bandwidth quota suspension,
+        // add a random delay to avoid DDOS effect
+        //
+        if (
+            old_network_suspend_reason == SUSPEND_REASON_NETWORK_QUOTA_EXCEEDED
+            && network_mode.get_current() == RUN_MODE_AUTO
+        ) {
+            pers_file_xfers->add_random_delay(3600);
         }
     }
 
@@ -682,6 +722,7 @@ bool CLIENT_STATE::poll_slow_events() {
     POLL_ACTION(gui_rpc_http           , gui_rpcs.poll          );
     if (!network_suspended) {
         net_status.poll();
+        daily_xfer_history.poll();
         POLL_ACTION(acct_mgr               , acct_mgr_info.poll     );
         POLL_ACTION(file_xfers             , file_xfers->poll       );
         POLL_ACTION(pers_file_xfers        , pers_file_xfers->poll  );
@@ -834,7 +875,8 @@ int CLIENT_STATE::link_app_version(PROJECT* p, APP_VERSION* avp) {
         return ERR_NOT_UNIQUE;
     }
     
-    avp->graphics_exec_path[0] = 0;
+    strcpy(avp->graphics_exec_path, "");
+    strcpy(avp->graphics_exec_file, "");
 
     for (i=0; i<avp->app_files.size(); i++) {
         FILE_REF& file_ref = avp->app_files[i];
@@ -852,6 +894,7 @@ int CLIENT_STATE::link_app_version(PROJECT* p, APP_VERSION* avp) {
             get_pathname(fip, relpath, sizeof(relpath));
             relative_to_absolute(relpath, path);
             strlcpy(avp->graphics_exec_path, path, sizeof(avp->graphics_exec_path));
+            strcpy(avp->graphics_exec_file, fip->name);
         }
 
         // any file associated with an app version must be signed
@@ -1570,6 +1613,10 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
             }
         }
         garbage_collect_always();
+
+        char buf[1024];
+        get_project_dir(project, buf, sizeof(buf));
+        client_clean_out_dir(buf, "reset or detach project");
     }
 
     project->duration_correction_factor = 1;
@@ -1789,3 +1836,63 @@ bool CLIENT_STATE::abort_sequence_done() {
     return true;
 }
 
+void CLIENT_STATE::free_mem() {
+    vector<PROJECT*>::iterator proj_iter;
+    vector<APP*>::iterator app_iter;
+    vector<FILE_INFO*>::iterator fi_iter;
+    vector<APP_VERSION*>::iterator av_iter;
+    vector<WORKUNIT*>::iterator wu_iter;
+    vector<RESULT*>::iterator res_iter;
+    PROJECT *proj;
+    APP *app;
+    FILE_INFO *fi;
+    APP_VERSION *av;
+    WORKUNIT *wu;
+    RESULT *res;
+
+    proj_iter = projects.begin();
+    while (proj_iter != projects.end()) {
+        proj = projects[0];
+        proj_iter = projects.erase(proj_iter);
+        delete proj;
+    }
+
+    app_iter = apps.begin();
+    while (app_iter != apps.end()) {
+        app = apps[0];
+        app_iter = apps.erase(app_iter);
+        delete app;
+    }
+
+    fi_iter = file_infos.begin();
+    while (fi_iter != file_infos.end()) {
+        fi = file_infos[0];
+        fi_iter = file_infos.erase(fi_iter);
+        delete fi;
+    }
+
+    av_iter = app_versions.begin();
+    while (av_iter != app_versions.end()) {
+        av = app_versions[0];
+        av_iter = app_versions.erase(av_iter);
+        delete av;
+    }
+
+    wu_iter = workunits.begin();
+    while (wu_iter != workunits.end()) {
+        wu = workunits[0];
+        wu_iter = workunits.erase(wu_iter);
+        delete wu;
+    }
+
+    res_iter = results.begin();
+    while (res_iter != results.end()) {
+        res = results[0];
+        res_iter = results.erase(res_iter);
+        delete res;
+    }
+
+    active_tasks.free_mem();
+
+    cleanup_messages();
+}
