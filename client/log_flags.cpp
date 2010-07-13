@@ -19,10 +19,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#else
+#include "config.h"
 #endif
 
 #ifndef _WIN32
-#include "config.h"
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>
@@ -176,22 +177,22 @@ static void show_gpu_ignore(vector<int>& devs, const char* name) {
 //
 void CONFIG::show() {
     unsigned int i;
-    if (config.ncpus>0) {
+    if (ncpus>0) {
         msg_printf(NULL, MSG_INFO, "Config: use at most %d CPUs", config.ncpus);
     }
-    if (config.no_gpus) {
+    if (no_gpus) {
         msg_printf(NULL, MSG_INFO, "Config: don't use coprocessors");
     }
-    if (config.no_priority_change) {
+    if (no_priority_change) {
         msg_printf(NULL, MSG_INFO, "Config: run apps at regular priority");
     }
-    if (config.report_results_immediately) {
+    if (report_results_immediately) {
         msg_printf(NULL, MSG_INFO, "Config: report completed tasks immediately");
     }
-    if (config.use_all_gpus) {
+    if (use_all_gpus) {
         msg_printf(NULL, MSG_INFO, "Config: use all coprocessors");
     }
-    if (config.zero_debts) {
+    if (zero_debts) {
         msg_printf(NULL, MSG_INFO, "Config: zero long-term debts on startup");
     }
     show_gpu_ignore(ignore_cuda_dev, "NVIDIA");
@@ -208,6 +209,27 @@ void CONFIG::show() {
             exclusive_gpu_apps[i].c_str()
         );
     }
+    if (allow_remote_gui_rpc) {
+        msg_printf(NULL, MSG_INFO,
+            "Config: GUI RPC allowed from any host"
+        );
+    }
+    FILE* f = fopen(REMOTEHOST_FILE_NAME, "r");
+    if (f) {
+        msg_printf(NULL, MSG_INFO,
+            "Config: GUI RPC allowed from:"
+        );
+        char buf[256];
+        while (fgets(buf, 256, f)) {
+            strip_whitespace(buf);
+            if (!(buf[0] =='#' || buf[0] == ';') && strlen(buf) > 0 ) {
+                msg_printf(NULL, MSG_INFO,
+                    "Config:   %s", buf
+                );
+            }
+        }
+        fclose(f);
+    }
 }
 
 CONFIG::CONFIG() {
@@ -217,7 +239,9 @@ CONFIG::CONFIG() {
 // this is called first thing by client
 //
 void CONFIG::clear() {
+    abort_jobs_on_exit = false;
     allow_multiple_clients = false;
+    allow_remote_gui_rpc = false;
     alt_platforms.clear();
     client_version_check_url = "http://boinc.berkeley.edu/download.php?xml=1";
     client_download_url = "http://boinc.berkeley.edu/download.php";
@@ -280,11 +304,9 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (!strcmp(tag, "/options")) {
             return 0;
         }
-        if (xp.parse_bool(tag, "abort_jobs_on_exit", btemp)) {
-            gstate.abort_jobs_on_exit = btemp;
-            continue;
-        }
+        if (xp.parse_bool(tag, "abort_jobs_on_exit", abort_jobs_on_exit)) continue;
         if (xp.parse_bool(tag, "allow_multiple_clients", allow_multiple_clients)) continue;
+        if (xp.parse_bool(tag, "allow_remote_gui_rpc", allow_remote_gui_rpc)) continue;
         if (xp.parse_string(tag, "alt_platform", s)) {
             alt_platforms.push_back(s);
             continue;
@@ -421,6 +443,7 @@ int read_config_file(bool init) {
 
     if (!init) {
         msg_printf(NULL, MSG_INFO, "Re-reading cc_config.xml");
+        config.clear();
     }
     f = boinc_fopen(CONFIG_FILE, "r");
     if (!f) return ERR_FOPEN;

@@ -15,12 +15,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "cpp.h"
+
 #ifdef _WIN32
 #include "boinc_win.h"
+#else
+#include "config.h"
 #endif
 
 #ifndef _WIN32
-#include "config.h"
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
@@ -251,18 +254,18 @@ int SCHEDULER_OP::start_rpc(PROJECT* p) {
     }
     if (log_flags.sched_op_debug) {
         msg_printf(p, MSG_INFO,
-            "[sched_op_debug] CPU work request: %.2f seconds; %.2f idle CPUs",
+            "[sched_op_debug] CPU work request: %.2f seconds; %.2f CPUs",
             cpu_work_fetch.req_secs, cpu_work_fetch.req_instances
         );
         if (coproc_cuda) {
             msg_printf(p, MSG_INFO,
-                "[sched_op_debug] NVIDIA GPU work request: %.2f seconds; %.2f idle GPUs",
+                "[sched_op_debug] NVIDIA GPU work request: %.2f seconds; %.2f GPUs",
                 cuda_work_fetch.req_secs, cuda_work_fetch.req_instances
             );
         }
         if (coproc_ati) {
             msg_printf(p, MSG_INFO,
-                "[sched_op_debug] ATI GPU work request: %.2f seconds; %.2f idle GPUs",
+                "[sched_op_debug] ATI GPU work request: %.2f seconds; %.2f GPUs",
                 ati_work_fetch.req_secs, ati_work_fetch.req_instances
             );
         }

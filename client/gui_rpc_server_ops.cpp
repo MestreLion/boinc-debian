@@ -17,16 +17,19 @@
 
 // GUI RPC server side (the actual RPCs)
 
-#ifdef _WIN32
-#include "boinc_win.h"
-#endif
+#include "cpp.h"
 
 #ifdef __APPLE__
 #include <Carbon/Carbon.h>
 #endif
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include "boinc_win.h"
+#else
 #include "config.h"
+#endif
+
+#ifndef _WIN32
 #include <cstdio>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -370,9 +373,6 @@ static void handle_set_proxy_settings(char* buf, MIOFILE& fout) {
     MIOFILE in;
     in.init_buf_read(buf);
     gui_proxy_info.parse(in);
-    if (!strlen(gui_proxy_info.http_server_name) && !strlen(gui_proxy_info.socks_server_name)) {
-        gui_proxy_info.present = false;
-    }
     gstate.set_client_state_dirty("Set proxy settings RPC");
     fout.printf("<success/>\n");
     select_proxy_info();
@@ -644,22 +644,24 @@ static void handle_get_project_init_status(char*, MIOFILE& fout) {
     // If we're already attached to the project specified in the
     // project init file, delete the file.
     //
-    for (unsigned i=0; i<gstate.projects.size(); i++) {
-        PROJECT* p = gstate.projects[i];
-        if (!strcmp(p->master_url, gstate.project_init.url)) {
-            gstate.project_init.remove();
-            break;
-        }
+    for (unsigned i=0; i<gstate.projects.size(); i++) { 
+        PROJECT* p = gstate.projects[i]; 
+        if (!strcmp(p->master_url, gstate.project_init.url)) { 
+            gstate.project_init.remove(); 
+            break; 
+        } 
     }
 
     fout.printf(
         "<get_project_init_status>\n"
         "    <url>%s</url>\n"
         "    <name>%s</name>\n"
+        "    <team_name>%s</team_name>\n"
         "    %s\n"
         "</get_project_init_status>\n",
         gstate.project_init.url,
         gstate.project_init.name,
+        gstate.project_init.team_name,
         strlen(gstate.project_init.account_key)?"<has_account_key/>":""
     );
 }

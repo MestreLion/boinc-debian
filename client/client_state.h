@@ -94,7 +94,6 @@ public:
     bool exit_after_finish;
     bool check_all_logins;
     bool user_active;       // there has been recent mouse/kbd input
-    bool allow_remote_gui_rpc;
     int cmdline_gui_rpc_port;
     bool show_projects;
     bool requested_exit;
@@ -142,9 +141,12 @@ public:
 
         /// Don't use CPU.  See check_suspend_activities for logic
     bool tasks_suspended;
-        /// Don't use network.  See check_suspend_network for logic
-    bool network_suspended;
+        // Don't run apps.
     int suspend_reason;
+    bool network_suspended;
+        // Don't use network.
+    bool file_xfers_suspended;
+        // Don't do file xfers (but allow other network activity).
     int network_suspend_reason;
         /// true if --daemon is on the commandline
 
@@ -234,7 +236,6 @@ public:
     int report_result_error(RESULT&, const char *format, ...);
     int reset_project(PROJECT*, bool detaching);
     bool no_gui_rpc;
-    bool abort_jobs_on_exit;
     void start_abort_sequence();
     bool abort_sequence_done();
     int quit_activities();
@@ -327,6 +328,11 @@ public:
     ACTIVE_TASK* lookup_active_task_by_result(RESULT*);
         /// number of usable cpus
     int ncpus;
+        // Act like there are this many CPUs.
+        // By default this is the # of physical CPUs,
+        // but it can be changed in two ways:
+        // - type <ncpus>N</ncpus> in the config file
+        // - type the max_ncpus_pct pref
 private:
     int latest_version(APP*, char*);
     int app_finished(ACTIVE_TASK&);
@@ -378,15 +384,14 @@ public:
     int allowed_project_disk_usage(double&);
     int suspend_tasks(int reason);
     int resume_tasks(int reason=0);
-    int suspend_network(int reason);
-    int resume_network();
     void read_global_prefs();
     int save_global_prefs(char* prefs, char* url, char* sched);
     double available_ram();
     double max_available_ram();
+    const char* suspend_reason_string(int reason);
 private:
     int check_suspend_processing();
-    int check_suspend_network();
+    void check_suspend_network();
     void install_global_prefs();
     PROJECT* global_prefs_source_project();
     void show_global_prefs_source(bool);
@@ -534,6 +539,13 @@ extern void print_suspend_tasks_message(int);
 #define GUI_HTTP_POLL_PERIOD    1.0
 
 #define CONNECT_ERROR_PERIOD    600.0
+
+#define ALLOW_NETWORK_IF_RECENT_RPC_PERIOD  300
+    // if there has been a GUI RPC within this period
+    // that requires network access (e.g. attach to project)
+    // allow it even if setting is "no access"
+
+#define DAILY_XFER_HISTORY_PERIOD   60
 
 #define MAX_STD   (86400)
     // maximum short-term debt

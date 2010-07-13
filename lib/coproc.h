@@ -118,6 +118,12 @@ struct COPROC {
     int device_num;     // temp used in scan process
     bool running_graphics_app[MAX_COPROC_INSTANCES];
         // is this GPU running a graphics app (NVIDIA only)
+    double available_ram[MAX_COPROC_INSTANCES];
+    bool available_ram_unknown[MAX_COPROC_INSTANCES];
+        // couldn't get available RAM; don't start new apps on this instance
+    double available_ram_fake[MAX_COPROC_INSTANCES];
+
+    double last_print_time;
 
 #ifndef _USING_FCGI_
     virtual void write_xml(MIOFILE&);
@@ -133,6 +139,9 @@ struct COPROC {
         for (int i=0; i<MAX_COPROC_INSTANCES; i++) {
             device_nums[i] = 0;
             running_graphics_app[i] = true;
+            available_ram[i] = 0;
+            available_ram_fake[i] = 0;
+            available_ram_unknown[i] = true;
         }
     }
     COPROC(const char* t){
@@ -144,6 +153,7 @@ struct COPROC {
     }
     virtual ~COPROC(){}
     int parse(MIOFILE&);
+    void print_available_ram();
 };
 
 struct COPROCS {
@@ -151,12 +161,7 @@ struct COPROCS {
         // so any structure that includes this needs to do it manually
 
     COPROCS(){}
-    ~COPROCS(){}
-    void delete_coprocs(){
-        for (unsigned int i=0; i<coprocs.size(); i++) {
-            delete coprocs[i];
-        }
-    }
+    ~COPROCS(){}    // don't delete coprocs; else crash in APP_INIT_DATA logic
     void write_xml(MIOFILE& out);
     void get(
         bool use_all, std::vector<std::string> &descs,
@@ -197,6 +202,11 @@ struct COPROCS {
             }
         }
     }
+    inline void delete_coprocs() {
+        for (unsigned int i=0; i<coprocs.size(); i++) {
+            delete coprocs[i];
+        }
+    }
 };
 
 // the following copied from /usr/local/cuda/include/driver_types.h
@@ -215,7 +225,7 @@ struct cudaDeviceProp {
   int    maxGridSize[3]; 
   int    clockRate;
   int totalConstMem; 
-  int    major;
+  int    major;     // compute capability
   int    minor;
   int textureAlignment;
   int    deviceOverlap;
@@ -248,19 +258,17 @@ struct COPROC_CUDA : public COPROC {
     //
     inline double peak_flops() {
         // clock rate is scaled down by 1000;
-        // each processor has 8 cores;
+        // each processor has 8 or 32 cores;
         // each core can do 2 ops per clock
         //
-        double x = (1000.*prop.clockRate) * prop.multiProcessorCount * 8. * 2.;
+        int cores_per_proc = (prop.major>=2)?32:8;
+        double x = (1000.*prop.clockRate) * prop.multiProcessorCount * cores_per_proc * 2.;
         return x?x:5e10;
     }
-    int available_ram(int dev, double&);
+    void get_available_ram();
 
     bool check_running_graphics_app();
 };
-
-void fake_cuda(COPROCS&, int);
-void fake_ati(COPROCS&, int);
 
 enum CUdevice_attribute_enum {
   CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1,
@@ -309,7 +317,10 @@ struct COPROC_ATI : public COPROC {
         // clock is in MHz
         return x?x:5e10;
     }
-    int available_ram(int dev, double&);
+    void get_available_ram();
 };
+
+extern COPROC_CUDA* fake_cuda(COPROCS&, double, int);
+extern COPROC_ATI* fake_ati(COPROCS&, double, int);
 
 #endif

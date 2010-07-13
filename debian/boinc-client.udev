@@ -1,1 +1,0 @@
-SUBSYSTEM=="kernel", DEVPATH=="/kernel/uids/*", ACTION=="add", RUN+="/usr/share/boinc-client/udev-cpu_share"

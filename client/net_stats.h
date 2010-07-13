@@ -22,6 +22,9 @@
 #ifndef _NET_STATS_
 #define _NET_STATS_
 
+#include <deque>
+using std::deque;
+
 #ifndef _WIN32
 #include <cstdio>
 #endif
@@ -109,6 +112,35 @@ struct LOOKUP_WEBSITE_OP: public GUI_HTTP_OP {
     }
 };
 
+struct DAILY_XFER {
+    int when;
+    double up;
+    double down;
+    DAILY_XFER() {
+        when = 0;
+        up = down = 0;
+    }
+    int parse(XML_PARSER&);
+    void write(FILE*);
+};
+
+struct DAILY_XFER_HISTORY {
+    deque<DAILY_XFER> daily_xfers;
+    bool dirty;
+
+    DAILY_XFER* today();
+    void add(size_t, bool upload);
+    void init();
+    void poll();
+    void totals(int ndays, double& up, double& down);
+    void write_state();
+    void write_scheduler_request(MIOFILE&, int ndays);
+    DAILY_XFER_HISTORY() {
+        dirty = false;
+    }
+};
+
 extern NET_STATUS net_status;
+extern DAILY_XFER_HISTORY daily_xfer_history;
 
 #endif

@@ -17,10 +17,15 @@
 
 // command-line parsing, and handling of 1-time actions
 
+#include "cpp.h"
+
 #ifdef _WIN32
 #include "boinc_win.h"
 #else
 #include "config.h"
+#endif
+
+#ifndef _WIN32
 #include <cstdio>
 #include <unistd.h>
 #endif
@@ -112,11 +117,11 @@ void CLIENT_STATE::parse_cmdline(int argc, char** argv) {
     for (i=1; i<argc; i++) {
         if (0) {
         } else if (ARG(abort_jobs_on_exit)) {
-            abort_jobs_on_exit = true;
+            config.abort_jobs_on_exit = true;
         } else if (ARG(allow_multiple_clients)) {
             config.allow_multiple_clients = true;
         } else if (ARG(allow_remote_gui_rpc)) {
-            allow_remote_gui_rpc = true;
+            config.allow_remote_gui_rpc = true;
         } else if (ARG(attach_project)) {
             if (i >= argc-2) {
                 show_options = true;
