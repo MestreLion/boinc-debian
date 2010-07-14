@@ -9,4 +9,3 @@ lib/md5_file.h                  usr/include/boinc/lib
 lib/str_replace.h		usr/include/boinc
 config.h			usr/include/boinc
 Makefile.am                     usr/share/boinc-dev
-lib/coproc.h			usr/include/boinc

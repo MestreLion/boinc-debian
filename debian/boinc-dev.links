@@ -20,7 +20,7 @@ usr/include/BOINC/str_util.h        usr/share/boinc-dev/lib/str_util.h
 usr/include/BOINC/util.h            usr/share/boinc-dev/lib/util.h
 usr/include/boinc/config.h          usr/share/boinc-dev/config.h
 usr/include/BOINC/version.h         usr/share/boinc-dev/version.h
-usr/include/boinc/coproc.h	    usr/share/boinc-dev/lib/coproc.h
+
 
 usr/include/BOINC/api/boinc_gl.h        usr/share/boinc-dev/api/boinc_gl.h
 usr/include/BOINC/api/graphics_data.h   usr/share/boinc-dev/api/graphics_data.h
