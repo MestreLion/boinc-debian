@@ -1,51 +1,29 @@
-boinc (6.10.58-1) lucid; urgency=low
+boinc (6.10.58-1) unstable; urgency=low
 
+  [ Steffen Moeller ]
   * Adopted Daniel's changes for Debian, added him to
     uploaders.
   * Allowed DM-Upload (for Daniel)
   * Eye candy in debian/README* and debian/po*
   * Updated my email address
 
- -- Steffen Moeller <moeller@debian.org>  Wed, 14 Jul 2010 00:44:46 +0200
-
-boinc (6.10.58-0ubuntu2~blueyedppa1~lucid) lucid; urgency=low
-
-  * Backport for Lucid.
-
- -- Daniel Hahler <ubuntu@thequod.de>  Tue, 13 Jul 2010 22:55:35 +0200
-
-boinc (6.10.58-0ubuntu2) maverick; urgency=low
-
+  [ Daniel Hahler ]
   * Refresh patches, especially 006_correct_catalog_path.patch
-  * New release fixes LP: #452213
-
- -- Daniel Hahler <ubuntu@thequod.de>  Tue, 13 Jul 2010 22:50:29 +0200
-
-boinc (6.10.58-0ubuntu1) maverick; urgency=low
-
   * New upstream release
-
- -- Daniel Hahler <ubuntu@thequod.de>  Tue, 13 Jul 2010 22:29:47 +0200
-
-boinc (6.10.17+dfsg-3ubuntu2) maverick; urgency=low
-
   * Check that files exist on which we tweak permissions
-    during post-installation (LP: #572612)
+    during post-installation
+  * Bump build-depend on debhelper to install udev rules into
+    /lib/udev/rules.d, add Breaks on udev to get correct version.
+  * Provide meta package "boinc", which depends on boinc-client and
+     boinc-manager.
+  * debian/control: libmysqlclient15-dev -> libmysqlclient-dev
 
- -- Daniel Hahler <ubuntu@thequod.de>  Sun, 02 May 2010 00:39:26 +0200
+  [ Rene Mayorga ]
+  * Set the correct distribution (unstable).
+  * Trim some Ubuntu's specific changelog entries and merge all 
+    last Daniel's changes on this changelog enty.
 
-boinc (6.10.17+dfsg-3ubuntu1) lucid; urgency=low
-
-  * Merge from debian testing.  Remaining changes:
-    - Bump build-depend on debhelper to install udev rules into
-      /lib/udev/rules.d, add Breaks on udev to get correct version.
-    - Provide meta package "boinc", which depends on boinc-client and
-      boinc-manager.
-    - debian/control: libmysqlclient15-dev -> libmysqlclient-dev 
-      transition.
-  * Fixes LP: #512977
-
- -- Daniel Hahler <ubuntu@thequod.de>  Sat, 13 Mar 2010 01:06:53 +0100
+ -- Rene Mayorga <rmayorga@debian.org>  Tue, 13 Jul 2010 18:58:58 -0600
 
 boinc (6.10.17+dfsg-3) unstable; urgency=low
 
@@ -62,21 +40,6 @@ boinc (6.10.17+dfsg-2ubuntu2) lucid; urgency=low
 
  -- Ilya Barygin <barygin@gmail.com>  Tue, 26 Jan 2010 14:05:12 +0300
 
-boinc (6.10.17+dfsg-2ubuntu1) lucid; urgency=low
-
-  * Merge from Debian testing, remaining changes:
-    - Bump build-depend on debhelper to install udev rules into
-      /lib/udev/rules.d, add Breaks on udev to get correct version.
-    - Provide meta package "boinc", which depends on boinc-client and
-      boinc-manager.
-    - debian/control: libmysqlclient15-dev -> libmysqlclient-dev 
-      transition. 
-  * Drop Ubuntu patch, package builds without it:
-    - Fix FTBFS, added 103_include_config_h.patch, use system functions
-      when available
-
- -- Ilya Barygin <barygin@gmail.com>  Tue, 26 Jan 2010 01:06:53 +0300
-
 boinc (6.10.17+dfsg-2) unstable; urgency=low
 
   * debian/control: remove kboincspy from boinc-client Suggest
@@ -85,25 +48,6 @@ boinc (6.10.17+dfsg-2) unstable; urgency=low
   * install str_replace.h instead of std_fixes.h on -dev package.
 
  -- Rene Mayorga <rmayorga@debian.org>  Wed, 18 Nov 2009 19:04:45 -0600
-
-boinc (6.10.17+dfsg-1ubuntu2) lucid; urgency=low
-
-  * debian/control: libmysqlclient15-dev -> libmysqlclient-dev 
-    transition. 
-
- -- Chuck Short <zulcss@ubuntu.com>  Thu, 14 Jan 2010 14:37:48 -0500
-
-boinc (6.10.17+dfsg-1ubuntu1) lucid; urgency=low
-
-  * Merge from debian testing (LP: #490942), remaining changes:
-    - Bump build-depend on debhelper to install udev rules into
-      /lib/udev/rules.d, add Breaks on udev to get correct version.
-    - Provide meta package "boinc", which depends on boinc-client and
-      boinc-manager.
-    - Fix FTBFS, added 103_include_config_h.patch, use system functions
-      when available (LP: #447933)
-
- -- Andres Rodriguez <andreserl@ubuntu.com>  Tue, 01 Dec 2009 12:52:23 -0500
 
 boinc (6.10.17+dfsg-1) unstable; urgency=low
 
@@ -149,18 +93,6 @@ boinc (6.4.5+dfsg-2ubuntu2) karmic; urgency=low
     when available (LP: #447933)
 
  -- Joao Pinto <joao.pinto@getdeb.net>  Sat, 10 Oct 2009 11:42:30 +0100
-
-boinc (6.4.5+dfsg-2ubuntu1) karmic; urgency=low
-
-  * Merge from debian unstable (LP: #396665), remaining changes:
-    - Bump build-depend on debhelper to install udev rules into
-      /lib/udev/rules.d, add Breaks on udev to get correct version.
-    - Provide meta package "boinc", which depends on boinc-client and
-      boinc-manager.
-  * debian/patches:
-    - 102_wxPanel_instead_wxControl_r17501.patch. Dropped. Included Upstream.
-
- -- Andres Rodriguez <andreserl@ubuntu.com>  Tue, 07 Jul 2009 12:42:18 -0500
 
 boinc (6.4.5+dfsg-2) unstable; urgency=low
 
@@ -233,14 +165,6 @@ boinc (6.2.18-4) unstable; urgency=low
 
  -- Rene Mayorga <rmayorga@debian.org>  Sat, 21 Mar 2009 13:44:13 -0600
 
-boinc (6.2.18-3ubuntu1) jaunty; urgency=low
-
-  * Merge from debian unstable (LP: #335074), remaining changes:
-    - Bump build-depend on debhelper to install udev rules into
-      /lib/udev/rules.d, add Breaks on udev to get correct version.
-
- -- Daniel Hahler <ubuntu@thequod.de>  Sat, 28 Feb 2009 22:01:52 +0100
-
 boinc (6.2.18-3) unstable; urgency=low
 
   * Uploaded to unstable
@@ -300,16 +224,6 @@ boinc (6.2.18-1) experimental; urgency=low
 
  -- Frank S. Thomas <fst@debian.org>  Thu, 21 Aug 2008 20:25:31 +0200
 
-boinc (6.2.14-3ubuntu1) jaunty; urgency=low
-
-  * Merge from Debian unstable (LP: #326599). Remaining Ubuntu changes:
-    - Bump build-depend on debhelper to install udev rules into
-      /lib/udev/rules.d, add Breaks on udev to get correct version.
-  * Do not check for "/RebootPending.txt", which is only used on
-    Windows (LP: #297447)
-
- -- Daniel Hahler <ubuntu@thequod.de>  Sun, 08 Feb 2009 18:04:23 +0100
-
 boinc (6.2.14-3) unstable; urgency=low
 
   * Add debian/patches/101_check_RSA_returned_values.patch 
@@ -322,13 +236,6 @@ boinc (6.2.14-3) unstable; urgency=low
   * debian/control - add myself to uploaders
 
  -- Rene Mayorga <rmayorga@debian.org.sv>  Tue, 13 Jan 2009 14:05:38 -0600
-
-boinc (6.2.14-2ubuntu1) jaunty; urgency=low
-
-  * Bump build-depend on debhelper to install udev rules into
-    /lib/udev/rules.d, add Breaks on udev to get correct version.
-
- -- Scott James Remnant <scott@ubuntu.com>  Tue, 13 Jan 2009 02:06:21 +0000
 
 boinc (6.2.14-2) unstable; urgency=low
 
