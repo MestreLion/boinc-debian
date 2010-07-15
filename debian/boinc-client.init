@@ -114,6 +114,18 @@ stop()
   log_end_msg 0
 }
 
+chrt_many()
+{
+   POLICY="$1"
+   PRIO="$2"
+   NICE="$3"
+   shift 3
+   for i in "$@"; do
+     chrt -p $POLICY $PRIO $i || return
+     renice -n $NICE -p $i
+   done
+}
+
 schedule()
 {
   log_begin_msg "Setting up scheduling for $DESC and children:"
@@ -132,14 +144,14 @@ schedule()
 
     children=`ps --ppid $pid -o pid= | tr '\n' ' '`
 
-    if [ ! -x "`which schedtool 2>/dev/null`" ]; then
-      log_progress_msg "schedtool not found"
+    if [ ! -x "`which chrt 2>/dev/null`" ]; then
+      log_progress_msg "chrt not found"
     else
-      (schedtool -n 19 -D $pid $children >/dev/null \
+      (chrt_many --idle 0 19 $pid $children >/dev/null \
         && log_progress_msg "idleprio") || \
-      (schedtool -n 19 -B $pid $children >/dev/null \
+      (chrt_many --batch 0 19 $pid $children >/dev/null \
         && log_progress_msg "batch") || \
-      (schedtool -n 19 -N $pid $children >/dev/null \
+      (chrt_many --other 0 19 $pid $children >/dev/null \
         && log_progress_msg "normal")
     fi
     for BPID in ${pid} ${children}; do echo ${BOINC_OOM_ADJ} > /proc/${BPID}/oom_adj 2>/dev/null || true; echo; done
@@ -153,13 +165,15 @@ status()
   if is_running; then
     log_success_msg "$STATUS running"
     children=`ps --ppid $pid -o pid= | tr '\n' ' '`
-    if [ -x "`which schedtool 2>/dev/null`" ]; then
+    if [ -x "`which chrt 2>/dev/null`" ]; then
       log_success_msg "Scheduling of $DESC: $pid"
-      schedtool $pid
+      chrt -p $pid
 
       if [ -n "$children" ]; then
         log_success_msg "Scheduling of $DESC's children: $children"
-        schedtool $children
+        for i in $children; do
+          chrt -p $i
+        done
       fi
     fi
     log_success_msg "OOM killer status for $DESC:"
