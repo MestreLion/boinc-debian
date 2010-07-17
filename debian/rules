@@ -8,8 +8,6 @@
 #export CXX=/usr/lib/gcc-snapshot/bin/g++
 #export CPP=/usr/lib/gcc-snapshot/bin/cpp
 
-include /usr/share/quilt/quilt.make
-
 DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
@@ -122,7 +120,7 @@ test-stamp:
 	  debian/conffiles/global_prefs_override.xml
 	touch $@
 
-autoreconf-stamp: patch
+autoreconf-stamp:
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
@@ -151,7 +149,7 @@ build-boinc-client-stamp: autoreconf-stamp
 	#cp client/boinc.unmodified client/boinc.optimized
 	touch $@
 
-clean: clean-patched unpatch
+clean: clean-patched 
 clean-patched:
 	dh clean 
 	dh_clean \
@@ -224,6 +222,9 @@ binary-arch: install
 	dh binary-arch --before dh_strip
 	dh_strip -a --dbg-package=boinc-dbg
 	dh binary-arch
+
+binary-indep: 
+	# nothing to do
 
 binary: binary-arch
 

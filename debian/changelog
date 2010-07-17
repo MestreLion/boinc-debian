@@ -1,11 +1,14 @@
-boinc (6.10.58+dfsg-2) UNRELEASED; urgency=low
+boinc (6.10.58+dfsg-2) unstable; urgency=low
 
+  [ Daniel Hahler ]
   * Use chrt instead of schedtool (LP: #527639)
     - debian/control, debian/boinc-client.init
+  [ Steffen Moeller ]
   * Removed from source tree for DFSG compliance
     - samples/glut
+  * Adopted source format 3.0 (quilt)
 
- -- Daniel Hahler <ubuntu@thequod.de>  Tue, 13 Jul 2010 23:49:19 +0200
+ -- Daniel Hahler <ubuntu@thequod.de>  Sat, 17 Jul 2010 22:08:09 +0200
 
 boinc (6.10.58+dfsg-1) unstable; urgency=low
 
