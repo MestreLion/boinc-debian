@@ -1,11 +1,8 @@
 Modifications to the upstream source
 ====================================
- This package uses quilt to manage all modifications to the upstream
- source. Changes are stored in the source package as diffs in
- debian/patches and applied during the build.
-
- Refer to /usr/share/doc/quilt/README.source for details.
-
+ This package uses the Debian quilt format to manage all modifications
+ to the upstream source. Changes are stored in the source package as
+ diffs in debian/patches and applied during the build.
 
 Repackaged upstream source:
 ===========================
@@ -31,7 +28,7 @@ Repackaged upstream source:
 
    $ ./export-boinc -r 6.10.44
 
- It will take a considerable while to download, the final tarball yields >15MB.
+ It will take a considerable while to download as the final tarball yields >15MB.
  The script will take care of remove the non-DFSG files from the upstream
  tag.
 
