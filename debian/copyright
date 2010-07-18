@@ -28,19 +28,17 @@ License: other
   suitability of this software for any purpose.  It is provided "as is"
   without express or implied warranty.
 
-Files: api/texfont.[cpp|h], samples/glut/glutbitmap.h
+Files: api/texfont.[cpp|h]
 Copyright: © 1997 Mark J. Kilgard
 License: other
  This program is freely distributable without licensing fees and is
  provided without guarantee or warrantee expressed or implied.
  This program is -not- in the public domain.
+ 
+ The author clearly stated in an independent thread that this license
+ shall include the right to modify the code, see
+   http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=131997#71
 
-Files: samples/glut/glut.h
-Copyright: © 1994, 1995, 1996, 1998 Mark J. Kilgard
-License: other
- This program is freely distributable without licensing fees and is
- provided without guarantee or warrantee expressed or implied.
- This program is -not- in the public domain.
 
 Files: samples/jpeglib/*
 Copyright: © 1991-1997, Thomas G. Lane.
