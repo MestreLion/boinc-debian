@@ -27,3 +27,8 @@ test-stamp
 build-stamp
 config.h
 config.h.in
+.pc/
+aclocal.m4
+autom4te.cache/
+autoreconf-stamp
+
