@@ -24,13 +24,17 @@ Repackaged upstream source:
 
  The latest tags upstream presents at http://boinc.berkeley.edu/svn/tags/ .
  Choose 'the right one' of those.  To obtain the .orig.tar.gz
- tarball for BOINC tag 6_10_43 this script is invoked as:
+ tarball for BOINC tag 6_10_58 this script is invoked as:
 
-   $ ./export-boinc -r 6.10.44
+   $ ./export-boinc -r 6.10.58
 
  It will take a considerable while to download as the final tarball yields >15MB.
  The script will take care of remove the non-DFSG files from the upstream
  tag.
+
+ Above process is integrated into debian/rules's get-orig-source target. It will
+ download the very latest version unless an environment variable VERSION was set:
+   $ VERSION=6.10.58 ./debian/rules get-orig-source
 
 
 Removed non-dfsg upstream files

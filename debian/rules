@@ -234,10 +234,11 @@ get-orig-source:
 	LATEST_VERSION=`svn list http://boinc.berkeley.edu/svn/tags/ | \
 	  sed 's/boinc_core_release_\(.*\)\//\1/' | \
 	  sort -g -t_ -k1 -k2 -k3 | sed 's/_/./g' | tail -n 1 | tr -d '\n'`; \
+	if [ -z "$$VERSION" ]; then VERSION=$$LATEST_VERSION; fi ; \
 	EXB=/tmp/export-boinc; \
 	wget -O $$EXB "http://git.debian.org/?p=pkg-boinc/scripts.git;a=blob_plain;f=export-boinc;hb=HEAD" --quiet; \
 	chmod +x $$EXB; \
-	$$EXB -r $$LATEST_VERSION -t $(origDir); \
+	$$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
 .PHONY: build clean clean-patched install binary-arch binary get-orig-source
