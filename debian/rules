@@ -151,6 +151,7 @@ build-boinc-client-stamp: autoreconf-stamp
 
 clean: clean-patched 
 clean-patched:
+	$(RM) -r .pc
 	dh clean 
 	dh_clean \
 	  client/boinc.optimized \
