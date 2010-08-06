@@ -1,3 +1,10 @@
+boinc (6.10.58+dfsg-3) UNRELEASED; urgency=low
+
+  * Added -client dependency on util-linux,
+    many thanks to Sandro for this (Closes: #537695)
+
+ -- Steffen Moeller <moeller@debian.org>  Fri, 06 Aug 2010 22:36:58 +0200
+
 boinc (6.10.58+dfsg-2) unstable; urgency=low
 
   [ Daniel Hahler ]

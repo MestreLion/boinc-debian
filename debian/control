@@ -7,7 +7,7 @@ Uploaders: Steffen Moeller <moeller@debian.org>,
  Rene Mayorga <rmayorga@debian.org>,
  Daniel Hahler <ubuntu@thequod.de>
 DM-Upload-Allowed: yes
-Standards-Version: 3.9.0
+Standards-Version: 3.9.1.0
 Build-Depends: debhelper (>= 7.0.17ubuntu2), po-debconf, dh-buildinfo,
  docbook2x, docbook-xml, autotools-dev, automake1.9 (>= 1.9.3),
  autoconf (>= 2.59), libxml2-utils, gettext, zlib1g-dev, libssl-dev,
@@ -37,7 +37,7 @@ Description: metapackage for the BOINC client and the manager
 Package: boinc-client
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3), adduser,
- lsb-base (>= 3.0-6), ca-certificates
+ lsb-base (>= 3.0-6), ca-certificates, util-linux
 Suggests: boinc-app-seti, boinc-manager
 Breaks: udev (<< 136-1)
 Description: core client for the BOINC distributed computing infrastructure
