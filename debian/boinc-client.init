@@ -154,7 +154,9 @@ schedule()
       (chrt_many --other 0 19 $pid $children >/dev/null \
         && log_progress_msg "normal")
     fi
-    for BPID in ${pid} ${children}; do echo ${BOINC_OOM_ADJ} > /proc/${BPID}/oom_adj 2>/dev/null || true; echo; done
+    for BPID in ${pid} ${children}; do
+      echo ${BOINC_OOM_AD} > /proc/${BPID}/oom_adj 2>/dev/null || true
+    done
   fi
   log_end_msg 0
 }
