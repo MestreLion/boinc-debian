@@ -169,7 +169,8 @@ schedule()
       (chrt_many --batch 0 19 $pid $children >/dev/null \
         && log_progress_msg "batch") || \
       (chrt_many --other 0 19 $pid $children >/dev/null \
-        && log_progress_msg "normal")
+        && log_progress_msg "normal") || \
+      log_progress_msg "chrt failed"
     fi
     for BPID in ${pid} ${children}; do
       echo ${BOINC_OOM_AD} > /proc/${BPID}/oom_adj 2>/dev/null || true

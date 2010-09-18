@@ -9,8 +9,10 @@ boinc (6.10.58+dfsg-3) UNRELEASED; urgency=low
     action. This fixes the post-removal script to be run too early,
     when the system user might be still logged in and cannot be
     deleted (LP: #583434). It also fixes the "restart" action.
+  * debian/boinc-client.init: schedule: do not fail if chrt fails
+    (LP: #629649).
 
- -- Daniel Hahler <ubuntu@thequod.de>  Sat, 18 Sep 2010 23:31:47 +0200
+ -- Daniel Hahler <ubuntu@thequod.de>  Sun, 19 Sep 2010 00:18:08 +0200
 
 boinc (6.10.58+dfsg-2) unstable; urgency=low
 
