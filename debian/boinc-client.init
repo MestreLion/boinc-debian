@@ -107,6 +107,23 @@ stop()
   else
     start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE \
       --user $BOINC_USER --exec $BOINC_CLIENT
+
+		# Wait until really stopped - $pid is set from is_running
+		# (waiting for max 60s (600 cycles at 100ms))
+		i=0
+		while kill -0 "$pid" 2> /dev/null;  do
+			if [ $i = '600' ]; then
+				break;
+			else
+				if [ $i = '0' ]; then
+					echo -n " ... waiting "
+				elif [ $(($i%10)) = 0 ]; then
+					echo -n "."
+				fi
+				i=$(($i+1))
+				sleep .1
+			fi
+		done
   fi
 
   rm -f "$BOINC_DIR/lockfile"
