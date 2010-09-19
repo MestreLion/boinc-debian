@@ -4,6 +4,8 @@ boinc (6.10.58+dfsg-3) unstable; urgency=low
   * Added -client dependency on util-linux,
     many thanks to Sandro for this (Closes: #537695)
   * Bumped policy to 3.9.1.0
+  * Added the first graphical libraries as suggested
+    dependencies of the boinc-manager package.
 
   [ Daniel Hahler ]
   * debian/boinc-client.init: wait until BOINC has ended for "stop"
