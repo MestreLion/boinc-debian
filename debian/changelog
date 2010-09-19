@@ -1,8 +1,9 @@
-boinc (6.10.58+dfsg-3) UNRELEASED; urgency=low
+boinc (6.10.58+dfsg-3) unstable; urgency=low
 
   [ Steffen Moeller ]
   * Added -client dependency on util-linux,
     many thanks to Sandro for this (Closes: #537695)
+  * Bumped policy to 3.9.1.0
 
   [ Daniel Hahler ]
   * debian/boinc-client.init: wait until BOINC has ended for "stop"
