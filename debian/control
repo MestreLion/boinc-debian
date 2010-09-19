@@ -60,6 +60,7 @@ Section: x11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: boinc-client
+Suggests: libgl1-mesa-glx, libxt6
 Description: GUI to control and monitor the BOINC core client
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
