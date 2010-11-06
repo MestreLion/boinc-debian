@@ -13,7 +13,7 @@ BOINC_DIR=/var/lib/boinc-client
 rm_boinc_dir()
 {
     if [ -d "$BOINC_DIR" ]; then
-        rm -r "$BOINC_DIR"
+        rm -rf "$BOINC_DIR"
     fi
     if getent passwd boinc >/dev/null; then
         if [ -x "`which deluser 2>/dev/null`" ]; then
