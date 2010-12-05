@@ -160,7 +160,7 @@ clean-patched:
 		$(RM) -r .pc ; \
 	fi
 	
-	find -name Makefile.in | xargs -r rm
+	find . -name Makefile.in -o -name "*.a" | xargs -r rm
 	dh clean autoreconf-stamp build-boinc-client-stamp build-stamp
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	dh_clean \
