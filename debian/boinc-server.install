@@ -85,8 +85,11 @@ lib/crypt_prog		     usr/lib/boinc-server/bin
 #usr/bin/wu_check		     usr/lib/boinc-server/bin
 sched/wu_check		             usr/lib/boinc-server/bin
 
-usr/libexec/sched  		     usr/lib/boinc-server
+#usr/libexec/sched  		     usr/lib/boinc-server
 
-usr/libexec/examples/1sec            usr/lib/boinc-server/apps
-usr/libexec/examples/concat          usr/lib/boinc-server/apps
-usr/libexec/examples/upper_case      usr/lib/boinc-server/apps
+#usr/libexec/examples/1sec            usr/lib/boinc-server/apps
+apps/1sec                            usr/lib/boinc-server/apps
+#usr/libexec/examples/concat          usr/lib/boinc-server/apps
+apps/concat                          usr/lib/boinc-server/apps
+#usr/libexec/examples/upper_case      usr/lib/boinc-server/apps
+apps/upper_case                      usr/lib/boinc-server/apps
