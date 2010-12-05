@@ -143,7 +143,13 @@ build-stamp: build-boinc-client-stamp build-boinc-manager-and-server-stamp
 
 build-boinc-manager-and-server-stamp: autoreconf
 	dh_testdir
+	echo
+	echo "Configuring for build-boinc-manager-and-server"
+	echo
 	./configure $(CFGFLAGS)
+	echo
+	echo "Making build-boinc-manager-and-server"
+	echo
 	$(MAKE)
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	# Generate binary message catalogs of the BOINC Manager.
@@ -159,10 +165,27 @@ build-boinc-manager-and-server-stamp: autoreconf
 
 build-boinc-client-stamp: autoreconf
 	dh_testdir
+	echo
+	echo "Configuring build-boinc-client"
+	echo
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
 	#cp client/boinc.unmodified client/boinc.optimized
+	echo
+	echo "Making build-boinc-client"
+	echo
 	touch $@
+
+BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
+	sched/delete_file sched/feeder sched/file_deleter \
+	sched/file_upload_handler sched/get_file sched/make_work \
+	sched/message_handler sched/request_file_list sched/sample_assimilator \
+	sched/sample_bitwise_validator sched/sample_dummy_assimilator \
+	sched/sample_trivial_validator sched/sample_work_generator \
+	sched/sched_driver sched/send_file sched/show_shmem \
+	sched/single_job_assimilator sched/transitioner sched/trickle_handler \
+	sched/update_stats sched/wu_check
+
 
 clean: clean-patched 
 clean-patched:
@@ -170,11 +193,17 @@ clean-patched:
 		quilt pop -a ; \
 		$(RM) -r .pc ; \
 	fi
+
+	#if [ -d debian/patches ]; then \
+	#	cat debian/patches/*| patch -p1 -R --batch --quiet || true ; \
+	#fi
 	
-	find . -name Makefile.in -o -name "*.a" | xargs -r rm
-	dh clean autoreconf-stamp build-boinc-client-stamp build-stamp
+	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
+	dh clean autoreconf-stamp build-boinc-client-stamp build-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
+	rm -f $(BINARIES)
 	dh_clean \
+	  doc/manpages/*.1 \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
 	  aclocal.m4 \
