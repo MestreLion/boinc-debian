@@ -31,4 +31,5 @@ config.h.in
 aclocal.m4
 autom4te.cache/
 autoreconf-stamp
-
+*/*.po
+version.h
