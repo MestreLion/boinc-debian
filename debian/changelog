@@ -1,4 +1,4 @@
-boinc (6.10.58+dfsg-4) UNRELEASED; urgency=low
+boinc (6.10.58+dfsg-4) experimental; urgency=low
 
   * Added boinc-server package, work mostly done
     by Frank Thomas a few years back.
