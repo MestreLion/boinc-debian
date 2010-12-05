@@ -126,11 +126,14 @@ autoreconf-stamp:
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
 	find . -name "*.php" -o -name "*.php.example" | xargs -L 1 -r chmod 644 --
-	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
+	aclocal-1.9 -I m4 && autoheader && automake-1.9 --add-missing && autoconf
 	touch $@
 
-build: test-stamp build-stamp
-build-stamp: autoreconf build-boinc-client-stamp
+build: test-stamp autoreconf build-stamp
+build-stamp: build-boinc-client-stamp build-boinc-manager-and-server-stamp
+	touch $@
+
+build-boinc-manager-and-server-stamp: autoreconf
 	dh_testdir
 	./configure $(CFGFLAGS)
 	$(MAKE)
@@ -176,9 +179,6 @@ clean-patched:
 	  client/scripts/boinc-client \
 	  clientgui/res/Makefile \
 	  sea/Makefile   \
-	  api/libboinc_api.a \
-	  api/libboinc_graphics2.a \
-	  lib/libboinc.a \
 	  client/boinc \
 	  packages/solaris/CSW/boincclient/pkginfo \
 	  packages/solaris/CSW/boincclient/prototype \
@@ -252,3 +252,4 @@ get-orig-source:
 	rm -f $$EXB
 
 .PHONY: build clean clean-patched autoreconf install binary-arch binary get-orig-source
+
