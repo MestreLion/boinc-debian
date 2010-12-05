@@ -145,11 +145,11 @@ build-stamp: build-boinc-client-and-server-stamp build-boinc-manager-stamp
 build-boinc-manager-stamp: autoreconf-stamp
 	dh_testdir
 	echo
-	echo "Configuring for build-boinc-manager-and-server"
+	echo "Configuring for build-boinc-manager"
 	echo
 	./configure $(CFGFLAGS)
 	echo
-	echo "Making build-boinc-manager-and-server"
+	echo "Making build-boinc-manager"
 	echo
 	$(MAKE)
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
