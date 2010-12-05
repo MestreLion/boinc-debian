@@ -120,6 +120,7 @@ test-stamp:
 	  debian/conffiles/global_prefs_override.xml
 	touch $@
 
+autoreconf: autoreconf-stamp
 autoreconf-stamp:
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
@@ -128,7 +129,7 @@ autoreconf-stamp:
 	touch $@
 
 build: test-stamp build-stamp
-build-stamp: autoreconf-stamp build-boinc-client-stamp
+build-stamp: autoreconf build-boinc-client-stamp
 	dh_testdir
 	./configure $(CFGFLAGS)
 	$(MAKE)
@@ -144,7 +145,7 @@ build-stamp: autoreconf-stamp build-boinc-client-stamp
 	fi
 	touch $@
 
-build-boinc-client-stamp: autoreconf-stamp
+build-boinc-client-stamp: autoreconf
 	dh_testdir
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
@@ -157,7 +158,7 @@ clean-patched:
 		quilt pop -a ; \
 		$(RM) -r .pc ; \
 	fi
-	dh clean 
+	dh clean autoreconf-stamp build-boinc-client-stamp build-stamp
 	dh_clean \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
@@ -247,4 +248,4 @@ get-orig-source:
 	$$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: build clean clean-patched install binary-arch binary get-orig-source
+.PHONY: build clean clean-patched autoreconf install binary-arch binary get-orig-source

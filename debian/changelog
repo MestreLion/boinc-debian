@@ -2,6 +2,9 @@ boinc (6.10.58+dfsg-4) experimental; urgency=low
 
   * Added boinc-server package, work mostly done
     by Frank Thomas a few years back.
+  * Removing dependency on util-linux which is
+    an essential package (lintian error)
+  * Some changes (cleanups?) to debian/rules.
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 05 Dec 2010 20:05:52 +0100
 
