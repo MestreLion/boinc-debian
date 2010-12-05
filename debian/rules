@@ -108,6 +108,7 @@ CFGFLAGS = \
 
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
+  --prefix=/usr \
   --enable-client \
   --enable-server \
   --enable-fcgi \
@@ -132,16 +133,16 @@ autoreconf-stamp:
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
-	find . -name "*.php" -o -name "*.php.example" | xargs -L 1 -r chmod 644 --
+	find html -name "*.php" -o -name "*.php.example" | xargs -L 1 -r chmod 644 --
 	if [ ! -r ltmain.sh ]; then libtoolize; fi
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 --add-missing && autoconf
 	touch $@
 
 build: test-stamp autoreconf build-stamp
-build-stamp: build-boinc-client-stamp build-boinc-manager-and-server-stamp
+build-stamp: build-boinc-client-and-server-stamp build-boinc-manager-stamp
 	touch $@
 
-build-boinc-manager-and-server-stamp: autoreconf
+build-boinc-manager-stamp: autoreconf-stamp
 	dh_testdir
 	echo
 	echo "Configuring for build-boinc-manager-and-server"
@@ -163,17 +164,17 @@ build-boinc-manager-and-server-stamp: autoreconf
 	fi
 	touch $@
 
-build-boinc-client-stamp: autoreconf
+build-boinc-client-and-server-stamp: autoreconf-stamp
 	dh_testdir
-	echo
-	echo "Configuring build-boinc-client"
-	echo
+	@echo
+	@echo "Configuring build-boinc-client-and-server"
+	@echo
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
 	#cp client/boinc.unmodified client/boinc.optimized
-	echo
-	echo "Making build-boinc-client"
-	echo
+	@echo
+	@echo "Making build-boinc-client-and-server"
+	@echo
 	touch $@
 
 BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
@@ -199,7 +200,7 @@ clean-patched:
 	#fi
 	
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
-	dh clean autoreconf-stamp build-boinc-client-stamp build-stamp lib/crypt_prog
+	dh clean autoreconf-stamp build-boinc-manager-stamp build-boinc-client-and-server-stamp build-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	rm -f $(BINARIES)
 	dh_clean \
@@ -233,7 +234,7 @@ clean-patched:
 	  packages/solaris/CSW/boincmanager/Makefile
 	debconf-updatepo
 
-install: build install-stamp
+install: build-stamp install-stamp
 install-stamp:
 	dh install --after dh_auto_test --until dh_install
 	
