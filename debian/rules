@@ -153,7 +153,10 @@ build-boinc-client-stamp: autoreconf-stamp
 
 clean: clean-patched 
 clean-patched:
-	$(RM) -r .pc
+	if [ -d .pc ]; then  \
+		quilt pop -a ; \
+		$(RM) -r .pc ; \
+	fi
 	dh clean 
 	dh_clean \
 	  client/boinc.optimized \
