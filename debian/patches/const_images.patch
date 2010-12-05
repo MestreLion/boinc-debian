@@ -1,0 +1,128 @@
+Index: boinc-6.12.8/clientgui/res/atiicon.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/atiicon.xpm	2010-12-05 21:04:45.000000000 +0100
++++ boinc-6.12.8/clientgui/res/atiicon.xpm	2010-12-05 21:04:57.000000000 +0100
+@@ -3,7 +3,7 @@
+ //
+ 
+ /* XPM */
+-static char *atiicon_xpm[] = {
++static const char *atiicon_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "16 16 249 2",
+ "n. c #A6222E",
+Index: boinc-6.12.8/clientgui/res/externalweblink.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/externalweblink.xpm	2010-12-05 21:04:45.000000000 +0100
++++ boinc-6.12.8/clientgui/res/externalweblink.xpm	2010-12-05 21:05:02.000000000 +0100
+@@ -16,7 +16,7 @@
+ // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ /* XPM */
+-static char *externalweblink_xpm[] = {
++static const char *externalweblink_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "16 16 8 1",
+ "  c None",
+Index: boinc-6.12.8/clientgui/res/gridrepublic16.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/gridrepublic16.xpm	2010-12-05 21:04:45.000000000 +0100
++++ boinc-6.12.8/clientgui/res/gridrepublic16.xpm	2010-12-05 21:05:09.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *gridrepublic16_xpm[] = {
++static const char *gridrepublic16_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "16 16 158 2",
+ "s. c Black",
+Index: boinc-6.12.8/clientgui/res/gridrepublic32.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/gridrepublic32.xpm	2010-12-05 21:04:45.000000000 +0100
++++ boinc-6.12.8/clientgui/res/gridrepublic32.xpm	2010-12-05 21:05:12.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *gridrepublic32_xpm[] = {
++static const char *gridrepublic32_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "32 32 212 2",
+ ":. c #3C4248",
+Index: boinc-6.12.8/clientgui/res/macbadgemask.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/macbadgemask.xpm	2010-12-05 21:04:45.000000000 +0100
++++ boinc-6.12.8/clientgui/res/macbadgemask.xpm	2010-12-05 21:05:16.000000000 +0100
+@@ -16,7 +16,7 @@
+ // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ /* XPM */
+-static char *macbadgemask[] = {
++static const char *macbadgemask[] = {
+ /* width height ncolors chars_per_pixel */
+ "128 128 6 1",
+ /* colors */
+Index: boinc-6.12.8/clientgui/res/macdisconnectbadge.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/macdisconnectbadge.xpm	2010-12-05 21:04:45.000000000 +0100
++++ boinc-6.12.8/clientgui/res/macdisconnectbadge.xpm	2010-12-05 21:05:23.000000000 +0100
+@@ -16,7 +16,7 @@
+ // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ /* XPM */
+-static char *macdisconnectbadge[] = {
++static const char *macdisconnectbadge[] = {
+ /* width height ncolors chars_per_pixel */
+ "128 128 7 1",
+ /* colors */
+Index: boinc-6.12.8/clientgui/res/macsnoozebadge.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/macsnoozebadge.xpm	2010-12-05 21:04:46.000000000 +0100
++++ boinc-6.12.8/clientgui/res/macsnoozebadge.xpm	2010-12-05 21:05:27.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *macsnoozebadge[] = {
++static const char *macsnoozebadge[] = {
+ /* width height ncolors chars_per_pixel */
+ "128 128 6 1",
+ /* colors */
+Index: boinc-6.12.8/clientgui/res/multicore.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/multicore.xpm	2010-12-05 21:04:46.000000000 +0100
++++ boinc-6.12.8/clientgui/res/multicore.xpm	2010-12-05 21:05:31.000000000 +0100
+@@ -16,7 +16,7 @@
+ // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ /* XPM */
+-static char *multicore_xpm[] = {
++static const char *multicore_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "16 16 91 1",
+ "O c Black",
+Index: boinc-6.12.8/clientgui/res/nvidiaicon.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/nvidiaicon.xpm	2010-12-05 21:04:46.000000000 +0100
++++ boinc-6.12.8/clientgui/res/nvidiaicon.xpm	2010-12-05 21:05:43.000000000 +0100
+@@ -3,7 +3,7 @@
+ //
+ 
+ /* XPM */
+-static char *nvidiaicon_xpm[] = {
++static const char *nvidiaicon_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "16 16 103 2",
+ "V  c #6DB400",
+Index: boinc-6.12.8/clientgui/res/warning.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/warning.xpm	2010-12-05 21:04:46.000000000 +0100
++++ boinc-6.12.8/clientgui/res/warning.xpm	2010-12-05 21:05:52.000000000 +0100
+@@ -1,5 +1,5 @@
+ /* XPM */
+-static char *warning_xpm[] = {
++static const char *warning_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "48 48 9 1",
+ "@ c Black",

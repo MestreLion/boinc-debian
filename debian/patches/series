@@ -1,3 +1,4 @@
+const_images.patch
 lib_Makefile_am_order.patch
 flops_not_found.patch
 003_use_sensible-browser.patch 
