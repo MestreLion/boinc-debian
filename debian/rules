@@ -162,7 +162,7 @@ clean-patched:
 	
 	find -name Makefile.in | xargs -r rm
 	dh clean autoreconf-stamp build-boinc-client-stamp build-stamp
-	dh_clean py/build py/lib.linux-x86_64-2.6
+	rm -rf  py/build py/lib.linux-x86_64-2.6
 	dh_clean \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
