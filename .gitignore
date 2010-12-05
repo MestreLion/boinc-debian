@@ -33,4 +33,6 @@ autom4te.cache/
 autoreconf-stamp
 */*.po
 version.h
-.gitignore
+./.gitignore
+*/*.php
+lib/crypt_prog
