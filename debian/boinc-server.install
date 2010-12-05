@@ -1,8 +1,10 @@
 db/init_db                           usr/share/boinc-server/db
 db/*.sql                             usr/share/boinc-server/db
-usr/lib/python2.6/site-packages/boinc_path_config.py    usr/share/python-support/boinc-server/Boinc
+#usr/lib/python2.6/site-packages/boinc_path_config.py    usr/share/python-support/boinc-server/Boinc
+sched/boinc_path_config.py 	     usr/share/python-support/boinc-server/Boinc
 html                                 usr/share/boinc-server
 py/Boinc/*.py                        usr/share/python-support/boinc-server/Boinc
+
 #sched/db_dump_spec.xml              usr/share/boinc-server/sched
 #test/uc_result                      usr/share/boinc-server/test
 #test/uc_wu_nodelete                 usr/share/boinc-server/test
@@ -13,33 +15,78 @@ py/Boinc/*.py                        usr/share/python-support/boinc-server/Boinc
 #tools/project.xml                   usr/share/boinc-server/tools
 #tools/run_in_ops                    usr/share/boinc-server/tools
 #tools/watch_tcp                     usr/share/boinc-server/tools
-usr/bin/calculate_credit_multiplier  usr/share/boinc-server/tools
-usr/bin/create_work		     usr/lib/boinc-server/bin
-usr/bin/crypt_prog		     usr/lib/boinc-server/bin
-usr/bin/dbcheck_files_exist          usr/share/boinc-server/tools
-usr/bin/delete_file		     usr/lib/boinc-server/bin
-usr/bin/dir_hier_move		     usr/lib/boinc-server/bin
-usr/bin/dir_hier_path		     usr/lib/boinc-server/bin
-usr/bin/get_file		     usr/lib/boinc-server/bin
-usr/bin/grep_logs                    usr/share/boinc-server/tools
-usr/bin/make_project                 usr/share/boinc-server/tools
-usr/bin/make_work		     usr/lib/boinc-server/bin
-usr/bin/parse_config                 usr/share/boinc-server/tools
-usr/bin/request_file_list	     usr/lib/boinc-server/bin
-usr/bin/sched_driver		     usr/lib/boinc-server/bin
-usr/libexec/sched  		     usr/lib/boinc-server
-usr/bin/send_file		     usr/lib/boinc-server/bin
-usr/bin/show_shmem		     usr/lib/boinc-server/bin
-usr/bin/sign_executable              usr/lib/boinc-server/bin
-usr/bin/start            	     usr/share/boinc-server/bin
-usr/bin/status		 	     usr/share/boinc-server/bin
-usr/bin/stop			     usr/share/boinc-server/bin
+
+#usr/bin/calculate_credit_multiplier  usr/share/boinc-server/tools
+tools/calculate_credit_multiplier  usr/share/boinc-server/tools
+#usr/bin/dbcheck_files_exist          usr/share/boinc-server/tools
+tools/dbcheck_files_exist            usr/share/boinc-server/tools
+#usr/bin/grep_logs                    usr/share/boinc-server/tools
+tools/grep_logs                      usr/share/boinc-server/tools
+#usr/bin/make_project                 usr/share/boinc-server/tools
+tools/make_project                   usr/share/boinc-server/tools
+#usr/bin/parse_config                 usr/share/boinc-server/tools
+tools/parse_config                 usr/share/boinc-server/tools
+#usr/bin/update_versions              usr/share/boinc-server/tools
+tools/update_versions                usr/share/boinc-server/tools
+#usr/bin/upgrade                      usr/share/boinc-server/tools
+tools/upgrade                        usr/share/boinc-server/tools
+#usr/bin/vote_monitor		     usr/share/boinc-server/bin
+tools/vote_monitor		     usr/share/boinc-server/bin
+#usr/bin/xadd                         usr/share/boinc-server/tools
+tools/xadd                            usr/share/boinc-server/tools
+
+#usr/bin/sign_executable              usr/lib/boinc-server/tools
+tools/sign_executable              usr/lib/boinc-server/tools
+#usr/bin/dir_hier_move		     usr/lib/boinc-server/bin
+tools/dir_hier_move		     usr/lib/boinc-server/bin
+#usr/bin/dir_hier_path		     usr/lib/boinc-server/bin
+tools/dir_hier_path		     usr/lib/boinc-server/bin
+
+#usr/bin/create_work		     usr/lib/boinc-server/bin
+tools/create_work		     usr/lib/boinc-server/bin
+
+
+sched/census	                    usr/lib/boinc-server/bin
+sched/cgi			    usr/lib/boinc-server/bin
+sched/db_dump			    usr/lib/boinc-server/bin
+sched/db_purge			    usr/lib/boinc-server/bin
+#usr/bin/delete_file		     usr/lib/boinc-server/bin
+sched/delete_file	            usr/lib/boinc-server/bin
+sched/feeder				usr/lib/boinc-server/bin
+sched/file_deleter				usr/lib/boinc-server/bin
+#usr/bin/get_file		     usr/lib/boinc-server/bin
+sched/get_file			    usr/lib/boinc-server/bin
+#usr/bin/make_work		     usr/lib/boinc-server/bin
+sched/make_work		     usr/lib/boinc-server/bin
+sched/message_handler				usr/lib/boinc-server/bin
+#usr/bin/request_file_list	     usr/lib/boinc-server/bin
+sched/request_file_list		     usr/lib/boinc-server/bin
+#usr/bin/sched_driver		     usr/lib/boinc-server/bin
+sched/sched_driver		    usr/lib/boinc-server/bin
+#usr/bin/send_file		     usr/lib/boinc-server/bin
+sched/send_file		    usr/lib/boinc-server/bin
+#usr/bin/start            	     usr/share/boinc-server/bin
+sched/start			    usr/lib/boinc-server/bin
+#usr/bin/status		 	     usr/share/boinc-server/bin
+sched/status		    usr/lib/boinc-server/bin
+#usr/bin/stop			     usr/share/boinc-server/bin
+sched/stop			     usr/share/boinc-server/bin
+#usr/bin/show_shmem		     usr/lib/boinc-server/bin
+sched/show_shmem		     usr/lib/boinc-server/bin
+sched/trickle_handler		    usr/lib/boinc-server/bin
+sched/update_stats		    usr/lib/boinc-server/bin
+sched/wu_check		    usr/lib/boinc-server/bin
+
+#usr/bin/crypt_prog		     usr/lib/boinc-server/bin
+lib/crypt_prog		     usr/lib/boinc-server/bin
 #usr/bin/switcher		     usr/lib/boinc-server/bin	# also in client
-usr/bin/update_versions              usr/share/boinc-server/tools
-usr/bin/upgrade                      usr/share/boinc-server/tools
-usr/bin/vote_monitor		     usr/share/boinc-server/bin
-usr/bin/wu_check		     usr/lib/boinc-server/bin
-usr/bin/xadd                         usr/share/boinc-server/tools
+
+
+#usr/bin/wu_check		     usr/lib/boinc-server/bin
+sched/wu_check		             usr/lib/boinc-server/bin
+
+usr/libexec/sched  		     usr/lib/boinc-server
+
 usr/libexec/examples/1sec            usr/lib/boinc-server/apps
 usr/libexec/examples/concat          usr/lib/boinc-server/apps
 usr/libexec/examples/upper_case      usr/lib/boinc-server/apps
