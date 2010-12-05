@@ -96,7 +96,7 @@ CFGFLAGS = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
   --enable-client \
-  --disable-server \
+  --enable-server \
   --enable-unicode \
   --with-ssl \
   CFLAGS="$(CFLAGS)" \
