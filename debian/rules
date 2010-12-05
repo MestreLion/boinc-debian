@@ -134,12 +134,14 @@ build-stamp: autoreconf-stamp build-boinc-client-stamp
 	$(MAKE)
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 	# Generate binary message catalogs of the BOINC Manager.
-	for i in `ls locale/client`; do \
-	  if [ -f "locale/client/$$i/BOINC-Manager.po" ]; then \
-	    msgfmt -o "locale/client/$$i/BOINC-Manager.mo" \
+	if [ -d localte/client ]; then \
+	  for i in `ls locale/client`; do \
+	    if [ -f "locale/client/$$i/BOINC-Manager.po" ]; then \
+	     msgfmt -o "locale/client/$$i/BOINC-Manager.mo" \
 	      "locale/client/$$i/BOINC-Manager.po"; \
-	  fi; \
-	done;
+	    fi; \
+	  done; \
+	fi
 	touch $@
 
 build-boinc-client-stamp: autoreconf-stamp
