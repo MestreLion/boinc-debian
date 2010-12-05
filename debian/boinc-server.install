@@ -34,7 +34,7 @@ usr/bin/sign_executable              usr/lib/boinc-server/bin
 usr/bin/start            	     usr/share/boinc-server/bin
 usr/bin/status		 	     usr/share/boinc-server/bin
 usr/bin/stop			     usr/share/boinc-server/bin
-usr/bin/switcher		     usr/lib/boinc-server/bin
+#usr/bin/switcher		     usr/lib/boinc-server/bin	# also in client
 usr/bin/update_versions              usr/share/boinc-server/tools
 usr/bin/upgrade                      usr/share/boinc-server/tools
 usr/bin/vote_monitor		     usr/share/boinc-server/bin
