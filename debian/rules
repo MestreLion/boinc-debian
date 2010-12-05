@@ -95,10 +95,13 @@ CXXFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
 CFGFLAGS = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
-  --enable-client \
-  --enable-server \
+  --disable-client \
+  --disable-server \
+  --disable-fcgi \
+  --enable-manager \
   --enable-unicode \
   --with-ssl \
+  --with-x \
   CFLAGS="$(CFLAGS)" \
   CXXFLAGS="$(CXXFLAGS)" \
   LDFLAGS="$(LDFLAGS)"
@@ -106,9 +109,13 @@ CFGFLAGS = \
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
   --enable-client \
-  --disable-server \
+  --enable-server \
+  --enable-fcgi \
+  --disable-manager \
+  --enable-unicode \
   --with-ssl \
   --without-wx-config \
+  --without-x \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)" \
   LDFLAGS="$(LDFLAGS)"
@@ -126,6 +133,7 @@ autoreconf-stamp:
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
 	find . -name "*.php" -o -name "*.php.example" | xargs -L 1 -r chmod 644 --
+	if [ ! -r ltmain.sh ]; then libtoolize; fi
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 --add-missing && autoconf
 	touch $@
 
