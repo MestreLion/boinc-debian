@@ -126,3 +126,549 @@ Index: boinc-6.12.8/clientgui/res/warning.xpm
  /* columns rows colors chars-per-pixel */
  "48 48 9 1",
  "@ c Black",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/advanced_link_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/advanced_link_image.xpm	2010-12-05 22:19:57.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/advanced_link_image.xpm	2010-12-05 22:20:25.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *advanced_link_image_xpm[] = {
++static const char *advanced_link_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "101 20 108 2",
+ "0  c #9CC2D4",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/attach_project_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/attach_project_button.xpm	2010-12-05 22:19:57.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/attach_project_button.xpm	2010-12-05 22:20:28.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *attach_project_button_xpm[] = {
++static const char *attach_project_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "81 18 235 2",
+ "aX c #99B8D2",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/attach_project_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/attach_project_clicked_button.xpm	2010-12-05 22:19:57.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/attach_project_clicked_button.xpm	2010-12-05 22:20:31.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *attach_project_clicked_button_xpm[] = {
++static const char *attach_project_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "81 18 235 2",
+ "aX c #99B8D2",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/background_image.xpm	2010-12-05 22:19:57.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/background_image.xpm	2010-12-05 22:20:35.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *background_image_xpm[] = {
++static const char *background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "410 540 126 2",
+ "q  c #E3FBBA",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/cancel_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/cancel_button.xpm	2010-12-05 22:19:57.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/cancel_button.xpm	2010-12-05 22:20:36.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *cancel_button_xpm[] = {
++static const char *cancel_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 83 1",
+ "i c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/cancel_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/cancel_clicked_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/cancel_clicked_button.xpm	2010-12-05 22:20:38.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *cancel_clicked_button_xpm[] = {
++static const char *cancel_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 84 1",
+ "i c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/close_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/close_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/close_button.xpm	2010-12-05 22:20:39.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *close_button_xpm[] = {
++static const char *close_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 126 2",
+ "f  c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/close_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/close_clicked_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/close_clicked_button.xpm	2010-12-05 22:20:40.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *close_clicked_button_xpm[] = {
++static const char *close_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 122 2",
+ "f  c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/connecting_indicator_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/connecting_indicator_image.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/connecting_indicator_image.xpm	2010-12-05 22:20:42.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *connecting_indicator_image_xpm[] = {
++static const char *connecting_indicator_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "14 15 14 1",
+ "  c Black",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/copy_all_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/copy_all_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/copy_all_button.xpm	2010-12-05 22:20:44.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *copy_all_button_xpm[] = {
++static const char *copy_all_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 114 2",
+ "k  c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/copy_all_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/copy_all_clicked_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/copy_all_clicked_button.xpm	2010-12-05 22:20:45.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *copy_all_clicked_button_xpm[] = {
++static const char *copy_all_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 113 2",
+ "k  c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/copy_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/copy_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/copy_button.xpm	2010-12-05 22:20:46.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *copy_button_xpm[] = {
++static const char *copy_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 95 2",
+ "g  c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/copy_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/copy_clicked_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/copy_clicked_button.xpm	2010-12-05 22:20:48.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *copy_clicked_button_xpm[] = {
++static const char *copy_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 93 2",
+ "g  c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/dialog_background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/dialog_background_image.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/dialog_background_image.xpm	2010-12-05 22:20:51.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *dialog_background_image_xpm[] = {
++static const char *dialog_background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "800 598 64 1",
+ "l c #E5FBC3",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/error_indicator_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/error_indicator_image.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/error_indicator_image.xpm	2010-12-05 22:20:52.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *error_indicator_image_xpm[] = {
++static const char *error_indicator_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "69 20 46 1",
+ "  c Black",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/help_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/help_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/help_button.xpm	2010-12-05 22:20:54.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *help_button_xpm[] = {
++static const char *help_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "18 18 58 1",
+ "0 c #6370B5",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/help_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/help_clicked_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/help_clicked_button.xpm	2010-12-05 22:20:55.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *help_clicked_button_xpm[] = {
++static const char *help_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "18 18 58 1",
+ "0 c #6370B5",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/left_arrow_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/left_arrow_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/left_arrow_button.xpm	2010-12-05 22:20:57.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *left_arrow_button_xpm[] = {
++static const char *left_arrow_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "20 20 157 2",
+ "h. c #709F9C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/left_arrow_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/left_arrow_clicked_button.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/left_arrow_clicked_button.xpm	2010-12-05 22:20:58.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *left_arrow_clicked_button_xpm[] = {
++static const char *left_arrow_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "20 20 158 2",
+ ";. c #95BBB4",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/messages_alert_link_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/messages_alert_link_image.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/messages_alert_link_image.xpm	2010-12-05 22:20:59.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *messages_alert_link_image_xpm[] = {
++static const char *messages_alert_link_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "70 20 157 2",
+ "y. c #CC5A6C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/messages_link_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/messages_link_image.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/messages_link_image.xpm	2010-12-05 22:21:01.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *messages_link_image_xpm[] = {
++static const char *messages_link_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "70 20 138 2",
+ "e  c #9CC2D4",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/preferences_link_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/preferences_link_image.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/preferences_link_image.xpm	2010-12-05 22:21:02.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *preferences_link_image_xpm[] = {
++static const char *preferences_link_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "81 20 115 2",
+ "&  c #9CC2D4",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/project_area_background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/project_area_background_image.xpm	2010-12-05 22:19:58.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/project_area_background_image.xpm	2010-12-05 22:21:04.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *project_area_background_image_xpm[] = {
++static const char *project_area_background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "343 113 32 1",
+ "@ c #B8E0E4",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/project_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/project_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/project_image.xpm	2010-12-05 22:21:06.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *project_image_xpm[] = {
++static const char *project_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "40 40 205 2",
+ "!  c #E4C137",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/resume_link_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/resume_link_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/resume_link_image.xpm	2010-12-05 22:21:08.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *resume_link_image_xpm[] = {
++static const char *resume_link_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "59 20 74 1",
+ "H c #C4E2E4",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/right_arrow_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/right_arrow_button.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/right_arrow_button.xpm	2010-12-05 22:21:09.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *right_arrow_button_xpm[] = {
++static const char *right_arrow_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "20 20 201 2",
+ "w  c #578887",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/right_arrow_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/right_arrow_clicked_button.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/right_arrow_clicked_button.xpm	2010-12-05 22:21:10.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *right_arrow_clicked_button_xpm[] = {
++static const char *right_arrow_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "20 20 208 2",
+ "C  c #90B7B1",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/save_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/save_button.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/save_button.xpm	2010-12-05 22:21:12.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *save_button_xpm[] = {
++static const char *save_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 95 2",
+ "k  c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/save_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/save_clicked_button.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/save_clicked_button.xpm	2010-12-05 22:21:13.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *save_clicked_button_xpm[] = {
++static const char *save_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "82 18 90 1",
+ "k c #44429C",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/spacer_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/spacer_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/spacer_image.xpm	2010-12-05 22:21:14.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *spacer_image_xpm[] = {
++static const char *spacer_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "2 11 8 1",
+ "  c Black",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/state_indicator_background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/state_indicator_background_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/state_indicator_background_image.xpm	2010-12-05 22:21:17.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *state_indicator_background_image_xpm[] = {
++static const char *state_indicator_background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "264 35 181 2",
+ "h  c Black",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/suspend_link_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/suspend_link_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/suspend_link_image.xpm	2010-12-05 22:21:19.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *suspend_link_image_xpm[] = {
++static const char *suspend_link_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "59 20 71 1",
+ "r c #C4E2E4",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/synchronize_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/synchronize_button.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/synchronize_button.xpm	2010-12-05 22:21:20.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *synchronize_button_xpm[] = {
++static const char *synchronize_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "81 18 187 2",
+ "Q. c #4C53A7",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/synchronize_clicked_button.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/synchronize_clicked_button.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/synchronize_clicked_button.xpm	2010-12-05 22:21:21.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *synchronize_clicked_button_xpm[] = {
++static const char *synchronize_clicked_button_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "81 18 242 2",
+ "kX c #99B8D2",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_active_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_active_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_active_image.xpm	2010-12-05 22:21:23.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_active_image_xpm[] = {
++static const char *workunit_active_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "16 16 103 2",
+ "Q  c #C8F6C9",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_animation_background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_animation_background_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_animation_background_image.xpm	2010-12-05 22:21:24.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_animation_background_image_xpm[] = {
++static const char *workunit_animation_background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "294 146 22 1",
+ "O c Black",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_animation_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_animation_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_animation_image.xpm	2010-12-05 22:21:25.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_animation_image_xpm[] = {
++static const char *workunit_animation_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "260 61 128 2",
+ "   c Black",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_area_background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_area_background_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_area_background_image.xpm	2010-12-05 22:21:26.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_area_background_image_xpm[] = {
++static const char *workunit_area_background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "343 314 32 1",
+ ". c #333399",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_gauge_background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_gauge_background_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_gauge_background_image.xpm	2010-12-05 22:21:28.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_gauge_background_image_xpm[] = {
++static const char *workunit_gauge_background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "258 18 116 2",
+ "Q  c #BADDE2",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_gauge_progress_indicator_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_gauge_progress_indicator_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_gauge_progress_indicator_image.xpm	2010-12-05 22:21:29.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_gauge_progress_indicator_image_xpm[] = {
++static const char *workunit_gauge_progress_indicator_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "8 7 37 1",
+ "@ c #26323F",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_suspended_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_suspended_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_suspended_image.xpm	2010-12-05 22:21:30.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_suspended_image_xpm[] = {
++static const char *workunit_suspended_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "16 16 103 2",
+ "Q  c #C8F6C9",
+Index: boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_tab_area_background_image.xpm
+===================================================================
+--- boinc-6.12.8.orig/clientgui/res/skins/default/graphic/workunit_tab_area_background_image.xpm	2010-12-05 22:19:59.000000000 +0100
++++ boinc-6.12.8/clientgui/res/skins/default/graphic/workunit_tab_area_background_image.xpm	2010-12-05 22:21:31.000000000 +0100
+@@ -18,7 +18,7 @@
+ // 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ 
+ /* XPM */
+-static char *workunit_tab_area_background_image_xpm[] = {
++static const char *workunit_tab_area_background_image_xpm[] = {
+ /* columns rows colors chars-per-pixel */
+ "343 24 221 2",
+ "T. c #D4C6A4",

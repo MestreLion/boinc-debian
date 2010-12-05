@@ -5,3 +5,4 @@ flops_not_found.patch
 006_correct_catalog_path.patch
 200_don-t-assume_SCHED_BATCH_exist.patch
 texfont_removal.patch
+debian-changes-6.10.58+dfsg-4
