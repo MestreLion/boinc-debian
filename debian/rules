@@ -125,6 +125,7 @@ autoreconf-stamp:
 	dh_testdir
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
+	find . -name "*.php" -o -name "*.php.example" | xargs -L 1 -r chmod 644 --
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 && autoconf
 	touch $@
 
@@ -158,11 +159,13 @@ clean-patched:
 		quilt pop -a ; \
 		$(RM) -r .pc ; \
 	fi
+	
+	find -name Makefile.in | xargs -r rm
 	dh clean autoreconf-stamp build-boinc-client-stamp build-stamp
+	dh_clean py/build py/lib.linux-x86_64-2.6
 	dh_clean \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
-	  `find -name Makefile.in` \
 	  aclocal.m4 \
 	  config.h.in \
 	  configure \
