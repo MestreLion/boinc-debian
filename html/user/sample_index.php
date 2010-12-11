@@ -25,8 +25,6 @@ require_once("../inc/sanitize_html.inc");
 require_once("../inc/translation.inc");
 require_once("../inc/text_transform.inc");
 require_once("../project/project.inc");
-require_once("../project/project_news.inc");
-
 
 function show_nav() {
     $config = get_config();
@@ -48,10 +46,10 @@ function show_nav() {
         <ul>
         <li><a href=\"info.php\">".tra("Read our rules and policies")."</a>
         <li> This project uses BOINC.
-            If you're already running BOINC, select Attach to Project.
+            If you're already running BOINC, select Add Project.
             If not, <a target=\"_new\" href=\"http://boinc.berkeley.edu/download.php\">download BOINC</a>.
         <li> When prompted, enter <br><b>".$master_url."</b>
-        <li> If you're running a command-line or pre-5.0 version of BOINC,
+        <li> If you're running a command-line version of BOINC,
             <a href=\"create_account_form.php\">create an account</a> first.
         <li> If you have any problems,
             <a target=\"_new\" href=\"http://boinc.berkeley.edu/help.php\">get help here</a>.
@@ -60,6 +58,7 @@ function show_nav() {
         <h2>Returning participants</h2>
         <ul>
         <li><a href=\"home.php\">Your account</a> - view stats, modify preferences
+        <li><a href=server_status.php>Server status</a>
         <li><a href=\"team.php\">Teams</a> - create or join a team
         <li><a href=\"cert1.php\">Certificate</a>
         <li> <a href=\"apps.php\">".tra("Applications")."</a>
@@ -88,11 +87,7 @@ $stopped = web_stopped();
 $rssname = PROJECT . " RSS 2.0" ;
 $rsslink = URL_BASE . "rss_main.php";
 
-$charset = tra("CHARSET");
-
-if ($charset != "CHARSET") {
-    header("Content-type: text/html; charset=$charset");
-}
+header("Content-type: text/html; charset=utf-8");
 
 echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
 
@@ -145,14 +140,9 @@ echo "
     <h2>News</h2>
     <p>
 ";
-show_news($project_news, 5);
-if (count($project_news) > 5) {
-    echo "<a href=\"old_news.php\">...more</a>";
-}
+include("motd.php");
+show_news(0, 5);
 echo "
-    <p class=\"smalltext\">
-    News is available as an
-    <a href=\"rss_main.php\">RSS feed</a> <img src=\"img/rss_icon.gif\" alt=\"RSS\">.</p>
     </td>
     </tr></table>
 ";

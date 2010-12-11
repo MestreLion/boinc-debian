@@ -68,11 +68,9 @@ struct LOG_FLAGS {
         // show changes to duration correction factors
     bool debt_debug;
         // changes to long-term debt
-    bool std_debug;
-        // changes to short-term debt
     bool file_xfer_debug;
         // show completion of FILE_XFER
-    bool guirpc_debug;
+    bool gui_rpc_debug;
     bool http_debug;
     bool http_xfer_debug;
     bool mem_usage_debug;
@@ -93,6 +91,8 @@ struct LOG_FLAGS {
         // also show actions of garbage collector
     bool statefile_debug;
         // show when and why state file is written
+    bool std_debug;
+        // changes to short-term debt
     bool task_debug;
         // task start and control details, and when apps checkpoint
     bool time_debug;
@@ -101,6 +101,7 @@ struct LOG_FLAGS {
         // show unparsed XML lines
     bool work_fetch_debug;
         // work fetch policy 
+    bool notice_debug;
 
     LOG_FLAGS();
     int parse(XML_PARSER&);
@@ -119,32 +120,39 @@ struct CONFIG {
     bool dont_contact_ref_site;
     std::vector<std::string> exclusive_apps;
     std::vector<std::string> exclusive_gpu_apps;
+    bool exit_after_finish;
+    bool exit_when_idle;
+    bool fetch_minimal_work;
     std::string force_auth;
     bool http_1_0;
-    int save_stats_days;
-    int ncpus;
     std::vector<int> ignore_cuda_dev;
     std::vector<int> ignore_ati_dev;
     int max_file_xfers;
     int max_file_xfers_per_project;
-    bool os_random_only;
-    bool no_alt_platform;
-    bool simple_gui_only;
-    int max_stdout_file_size;
     int max_stderr_file_size;
+    int max_stdout_file_size;
+    int max_tasks_reported;
+    int ncpus;
+    std::string network_test_url;
+    bool no_alt_platform;
+    bool no_gpus;
+    bool no_info_fetch;
+    bool no_priority_change;
+    bool os_random_only;
     bool report_results_immediately;
-    double start_delay;
     bool run_apps_manually;
+    int save_stats_days;
+    bool skip_cpu_benchmarks;
+    bool simple_gui_only;
+    double start_delay;
     bool stderr_head;
     bool suppress_net_info;
+    bool unsigned_apps_ok;
     bool use_all_gpus;
     bool use_certs;
     bool use_certs_only;
         // overrides use_certs
-    std::string network_test_url;
-    bool no_gpus;
     bool zero_debts;
-    bool no_priority_change;
 
     CONFIG();
     void clear();

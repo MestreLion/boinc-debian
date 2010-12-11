@@ -25,12 +25,9 @@
 #include "boinc_win.h"
 #include "sysmon_win.h"
 #include "win_util.h"
-
-extern HINSTANCE g_hClientLibraryDll;
-typedef BOOL (CALLBACK* ClientLibraryStartup)();
-typedef BOOL (CALLBACK* IdleTrackerStartup)();
-typedef void (CALLBACK* IdleTrackerShutdown)();
-typedef void (CALLBACK* ClientLibraryShutdown)();
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
 
 #else
 #include "config.h"
@@ -58,6 +55,7 @@ typedef void (CALLBACK* ClientLibraryShutdown)();
 #include "prefs.h"
 #include "filesys.h"
 #include "network.h"
+#include "idlemon.h"
 
 #include "cs_proxy.h"
 #include "client_state.h"
@@ -69,57 +67,9 @@ typedef void (CALLBACK* ClientLibraryShutdown)();
 
 #include "main.h"
 
-
-int initialize();
-int finalize();
-
-
-// Display a message to the user.
-// Depending on the priority, the message may be more or less obtrusive
-//
-void show_message(PROJECT *p, char* msg, int priority) {
-    const char* x;
-    char message[1024];
-    time_t now = time(0);
-    char* time_string = time_to_string((double)now);
-
-    // Cycle the log files if we need to
-    diagnostics_cycle_logs();
-
-    if (priority == MSG_INTERNAL_ERROR) {
-        strcpy(message, "[error] ");
-        strlcpy(message+8, msg, sizeof(message)-8);
-    } else {
-        strlcpy(message, msg, sizeof(message));
-    }
-
-    // trim trailing \n's
-    //
-    while (strlen(message)&&message[strlen(message)-1] == '\n') {
-        message[strlen(message)-1] = 0;
-    }
-
-    if (p) {
-        x = p->get_project_name();
-    } else {
-        x = "---";
-    }
-
-    record_message(p, priority, (int)now, message);
-
-    printf("%s [%s] %s\n", time_string, x, message);
-    if (gstate.executing_as_daemon) {
-#ifdef _WIN32
-        char event_message[2048];
-        sprintf(event_message, "%s [%s] %s\n", time_string,  x, message);
-        ::OutputDebugString(event_message);
-#endif
-    }
-}
-
 // Log informational messages to system specific places
 //
-void log_message_startup(char* msg) {
+void log_message_startup(const char* msg) {
     char evt_msg[2048];
     snprintf(evt_msg, sizeof(evt_msg),
         "%s\n",
@@ -140,7 +90,7 @@ void log_message_startup(char* msg) {
 
 // Log error messages to system specific places
 //
-void log_message_error(char* msg) {
+void log_message_error(const char* msg) {
     char evt_msg[2048];
 #ifdef _WIN32
     snprintf(evt_msg, sizeof(evt_msg),
@@ -167,7 +117,7 @@ void log_message_error(char* msg) {
     }
 }
 
-void log_message_error(char* msg, int error_code) {
+void log_message_error(const char* msg, int error_code) {
     char evt_msg[2048];
     snprintf(evt_msg, sizeof(evt_msg),
         "%s\n"
@@ -216,6 +166,7 @@ static void init_core_client(int argc, char** argv) {
 
     config.clear();
     gstate.parse_cmdline(argc, argv);
+    gstate.now = dtime();
 
 #ifdef _WIN32
     if (!config.allow_multiple_clients) {
@@ -249,6 +200,18 @@ static void init_core_client(int argc, char** argv) {
 
     diagnostics_init(flags, "stdoutdae", "stderrdae");
 
+#ifdef _WIN32
+    // Specify which allocation will cause a debugger to break.  Use a previous
+    // memory leak detection report which looks like this:
+    //   {650} normal block at 0x000000000070A6F0, 24 bytes long.
+    //   Data: <  N     P p     > 80 1E 4E 00 00 00 00 00 50 AE 70 00 00 00 00 00
+    //_CrtSetBreakAlloc(650);
+    //_CrtSetBreakAlloc(651);
+    //_CrtSetBreakAlloc(652);
+    //_CrtSetBreakAlloc(653);
+    //_CrtSetBreakAlloc(654);
+#endif
+
     read_config_file(true);
 
     // Set the max file sizes of the logs based on user preferences.
@@ -277,15 +240,8 @@ static void init_core_client(int argc, char** argv) {
 #endif
 }
 
-int initialize() {
+static int initialize() {
     int retval;
-
-#ifdef _WIN32
-    g_hClientLibraryDll = LoadLibrary("boinc.dll");
-    if(!g_hClientLibraryDll) {
-        log_message_error("Failed to initialize the BOINC Client Library.");
-    }
-#endif
 
     if (!config.allow_multiple_clients) {
         retval = wait_client_mutex(".", 10);
@@ -307,36 +263,18 @@ int initialize() {
 	curl_init();
 
 #ifdef _WIN32
-    if(g_hClientLibraryDll) {
-        ClientLibraryStartup fnClientLibraryStartup;
-        IdleTrackerStartup fnIdleTrackerStartup;
-
-        fnClientLibraryStartup = (ClientLibraryStartup)GetProcAddress(g_hClientLibraryDll, "ClientLibraryStartup");
-        if(fnClientLibraryStartup) {
-            if(!fnClientLibraryStartup()) {
-                log_message_error(
-                    "Failed to initialize the BOINC Client Library Interface."
-                    "BOINC will not be able to determine if the user is idle or not...\n"
-                );
-            }
-        }
-
-        fnIdleTrackerStartup = (IdleTrackerStartup)GetProcAddress(g_hClientLibraryDll, "IdleTrackerStartup");
-        if(fnIdleTrackerStartup) {
-            if(!fnIdleTrackerStartup()) {
-                log_message_error(
-                    "Failed to initialize the BOINC Client Library Interface."
-                    "BOINC will not be able to determine if the user is idle or not...\n"
-                );
-            }
-        }
+    if(!startup_idle_monitor()) {
+        log_message_error(
+            "Failed to initialize the BOINC idle monitor interface."
+            "BOINC will not be able to determine if the user is idle or not...\n"
+        );
     }
-
 #endif
+
     return 0;
 }
 
-int finalize() {
+static int finalize() {
     static bool finalized = false;
     if (finalized) return 0;
     finalized = true;
@@ -344,26 +282,7 @@ int finalize() {
     daily_xfer_history.write_state();
 
 #ifdef _WIN32
-    if(g_hClientLibraryDll) {
-        IdleTrackerShutdown fnIdleTrackerShutdown;
-        ClientLibraryShutdown fnClientLibraryShutdown;
-
-        fnIdleTrackerShutdown = (IdleTrackerShutdown)GetProcAddress(g_hClientLibraryDll, "IdleTrackerShutdown");
-        if(fnIdleTrackerShutdown) {
-            fnIdleTrackerShutdown();
-        }
-
-        fnClientLibraryShutdown = (ClientLibraryShutdown)GetProcAddress(g_hClientLibraryDll, "ClientLibraryShutdown");
-        if(fnClientLibraryShutdown) {
-            fnClientLibraryShutdown();
-        }
-
-        if(!FreeLibrary(g_hClientLibraryDll)) {
-            log_message_error("Failed to cleanup the BOINC Idle Detection Interface");
-        }
-
-        g_hClientLibraryDll = NULL;
-    }
+    shutdown_idle_monitor();
 
 #ifdef USE_WINSOCK
     if (WinsockCleanup()) {
@@ -380,6 +299,7 @@ int finalize() {
 
     gstate.free_mem();
 
+    diagnostics_finish();
     gstate.cleanup_completed = true;
     return 0;
 }

@@ -1,4 +1,4 @@
-// $Id: stackwalker_win.cpp 20874 2010-03-12 17:03:53Z romw $
+// $Id: stackwalker_win.cpp 21457 2010-05-11 19:10:29Z romw $
 //
 
 /*////////////////////////////////////////////////////////////////////////////
@@ -42,8 +42,14 @@
  *//////////////////////////////////////////////////////////////////////////////
 
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#endif
+
+#ifdef _MSC_VER
+#define snprintf _snprintf
 #endif
 
 #include "diagnostics.h"

@@ -27,7 +27,6 @@
 #include "parse.h"
 #include "error_numbers.h"
 #include "Events.h"
-#include "hyperlink.h"
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
 #include "MainDocument.h"
@@ -40,10 +39,8 @@
 #include "sg_DlgPreferences.h"
 #include "sg_ProjectsComponent.h"
 #include "wizardex.h"
-#include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
-#include "WizardAttachProject.h"
-//#include "WizardAccountManager.h"
+#include "WizardAttach.h"
 #include "app_ipc.h"
 #include "version.h"
 
@@ -76,7 +73,6 @@ CProjectsComponent::CProjectsComponent(CSimplePanel* parent,wxPoint coord) :
     wxASSERT(parent);
 	m_maxNumOfIcons = 6; // max number of icons in component
 	m_leftIndex = 0;
-    lastMessageId = 0;
 	CreateComponent();
 
 	receivedErrorMessage = false;
@@ -311,13 +307,13 @@ void CProjectsComponent::UpdateProjectArray() {
 				bool found = false;
 				std::vector<StatImageLoader*>::iterator j;
 				for(j=m_statProjects.begin(); j < m_statProjects.end(); j++) {
-					if ( project->master_url == (*j)->m_prjUrl ) {
+					if (!strcmp(project->master_url, (*j)->project_url)) {
 						found = true;
 						break;
 					}
 				}
 				if ( !found ) {
-					StatImageLoader *i_statW = new StatImageLoader(this,project->master_url);
+					StatImageLoader *i_statW = new StatImageLoader(this, project->master_url);
 					i_statW->LoadImage();
 					m_statProjects.push_back(i_statW);
 					// recurse in case there is more then one change
@@ -328,7 +324,7 @@ void CProjectsComponent::UpdateProjectArray() {
 			PROJECT* project = NULL;
 			std::vector<StatImageLoader*>::iterator i;
 			for(i=m_statProjects.begin(); i < m_statProjects.end(); i++) {
-				project = pDoc->state.lookup_project((*i)->m_prjUrl);
+				project = pDoc->state.lookup_project((*i)->project_url);
 				if ( project == NULL ) {
 					(*i)->Show(false);
 					delete (*i);
@@ -406,7 +402,7 @@ void CProjectsComponent::OnHelp(wxCommandEvent& event) {
         event.GetId()
     );
 
-    wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+    wxLaunchDefaultBrowser(wxurl);
         
     wxLogTrace(wxT("Function Start/End"), wxT("CProjectsComponent::OnHelp - Function End"));
 }
@@ -527,7 +523,7 @@ void CProjectsComponent::OnWizardUpdate(wxCommandEvent& /*event*/) {
 
 	    pPanel->SetDlgOpen(true);
 
-        CWizardAttachProject* pWizard = new CWizardAttachProject(this);
+        CWizardAttach* pWizard = new CWizardAttach(this);
 
         pWizard->SyncToAccountManager();
 
@@ -734,28 +730,17 @@ void CProjectsComponent::OnEraseBackground(wxEraseEvent& event){
 
 
 void CProjectsComponent::OnMessageCheck(wxTimerEvent& WXUNUSED(event)) {
-	CMainDocument* pDoc     = wxGetApp().GetDocument();
-	MESSAGE* message;
-
-	// Only look at the messages recieved since the last time we looked
-	if ( pDoc->GetMessageCount() > (int) lastMessageId ) {
-		// Loop through and check for any messages recieved that are error messages
-		for(size_t i=lastMessageId; i < pDoc->messages.messages.size(); i++) {
-			lastMessageId = i+1;
-			message = pDoc->message((unsigned int) i);
-			if ( message != NULL && message->priority == MSG_USER_ERROR ) {
-				receivedErrorMessage = true;
-				checkForMessagesTimer->Stop();
-				break;
-			}
-		}
+	CMainDocument* pDoc = wxGetApp().GetDocument();
+	if ( pDoc->GetUnreadNoticeCount() ) {
+        receivedErrorMessage = true;
+        checkForMessagesTimer->Stop();
 	}
 }
 
 
 void CProjectsComponent::MessagesViewed() {
-	receivedErrorMessage = false;
 	CMainDocument* pDoc = wxGetApp().GetDocument();
-	lastMessageId = pDoc->GetMessageCount();
+	receivedErrorMessage = false;
+	pDoc->UpdateUnreadNoticeState();
 	checkForMessagesTimer->Start();
 }

@@ -21,6 +21,17 @@ require_once('../inc/util.inc');
 require_once('../inc/countries.inc');
 require_once('../inc/translation.inc');
 
+$next_url = sanitize_local_url(get_str('next_url', true));
+
+if (defined('SECURE_URL_BASE')
+    && strstr(SECURE_URL_BASE, "https://")
+    && !$_SERVER['HTTPS']
+) {
+    Header("Location: ".SECURE_URL_BASE."/create_account_form.php?next_url=$next_url");
+    exit;
+
+}
+
 page_head(tra("Create an account"));
 
 $config = get_config();
@@ -33,12 +44,10 @@ if (parse_bool($config, "disable_account_creation")) {
     exit();
 }
 
-$next_url = get_str('next_url', true);
-
 $wac = parse_bool($config, "web_account_creation");
 if (!$wac) {
     echo "<p>
-        <b>".tra("NOTE: If you use BOINC version 5.2+ with the BOINC Manager, don't use this form. Just run BOINC, select Attach Project, and enter an email address and password.")."</b></p>
+        <b>".tra("NOTE: If you use the BOINC Manager, don't use this form. Just run BOINC, select Add Project, and enter an email address and password.")."</b></p>
     ";
 }
 
@@ -108,6 +117,6 @@ echo "
     </form>
 ";
 
-$cvs_version_tracker[]="\$Id: create_account_form.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: create_account_form.php 22471 2010-10-07 17:41:29Z romw $";  //Generated automatically - do not edit
 page_tail();
 ?>

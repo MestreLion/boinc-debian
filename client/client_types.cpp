@@ -68,6 +68,12 @@ void PROJECT::init() {
     no_cpu_pref = false;
     no_cuda_pref = false;
     no_ati_pref = false;
+    no_cpu_apps = false;
+    no_cuda_apps = false;
+    no_ati_apps = false;
+    no_cpu_ams = false;
+    no_cuda_ams = false;
+    no_ati_ams = false;
     cuda_defer_sched = false;
     ati_defer_sched = false;
     strcpy(host_venue, "");
@@ -105,6 +111,7 @@ void PROJECT::init() {
     send_file_list = false;
     send_time_stats_log = 0;
     send_job_log = 0;
+    send_full_workload = false;
     suspended_via_gui = false;
     dont_request_more_work = false;
     detach_when_done = false;
@@ -120,6 +127,16 @@ void PROJECT::init() {
 
     // Initialize scratch variables.
     rr_sim_status.clear();
+
+#ifdef SIM
+    idle_time = 0;
+    idle_time_sumsq = 0;
+    completed_task_count = 0;
+    completions_ratio_mean = 0.0;
+    completions_ratio_s = 0.0;
+    completions_ratio_stdev = 0.1;  // for the first couple of completions - guess.
+    completions_required_stdevs = 3.0;
+#endif
 }
 
 // parse project fields from client_state.xml
@@ -181,14 +198,20 @@ int PROJECT::parse_state(MIOFILE& in) {
         if (parse_bool(buf, "send_file_list", send_file_list)) continue;
         if (parse_int(buf, "<send_time_stats_log>", send_time_stats_log)) continue;
         if (parse_int(buf, "<send_job_log>", send_job_log)) continue;
+        if (parse_bool(buf, "send_full_workload", send_full_workload)) continue;
         if (parse_bool(buf, "non_cpu_intensive", non_cpu_intensive)) continue;
         if (parse_bool(buf, "verify_files_on_app_start", verify_files_on_app_start)) continue;
         if (parse_bool(buf, "suspended_via_gui", suspended_via_gui)) continue;
         if (parse_bool(buf, "dont_request_more_work", dont_request_more_work)) continue;
         if (parse_bool(buf, "detach_when_done", detach_when_done)) continue;
         if (parse_bool(buf, "ended", ended)) continue;
+#ifdef USE_REC
+        if (parse_double(buf, "<rec>", pwf.rec)) continue;
+        if (parse_double(buf, "<rec_time>", pwf.rec_time)) continue;
+#else
         if (parse_double(buf, "<short_term_debt>", cpu_pwf.short_term_debt)) continue;
         if (parse_double(buf, "<long_term_debt>", cpu_pwf.long_term_debt)) continue;
+#endif
         if (parse_double(buf, "<cpu_backoff_interval>", cpu_pwf.backoff_interval)) continue;
         if (parse_double(buf, "<cpu_backoff_time>", cpu_pwf.backoff_time)) {
             if (cpu_pwf.backoff_time > gstate.now + 28*SECONDS_PER_DAY) {
@@ -196,18 +219,29 @@ int PROJECT::parse_state(MIOFILE& in) {
             }
             continue;
         }
+#ifndef USE_REC
         if (parse_double(buf, "<cuda_short_term_debt>", cuda_pwf.short_term_debt)) continue;
         if (parse_double(buf, "<cuda_debt>", cuda_pwf.long_term_debt)) continue;
+#endif
         if (parse_double(buf, "<cuda_backoff_interval>", cuda_pwf.backoff_interval)) continue;
         if (parse_double(buf, "<cuda_backoff_time>", cuda_pwf.backoff_time)) continue;
+#ifndef USE_REC
         if (parse_double(buf, "<ati_short_term_debt>", ati_pwf.short_term_debt)) continue;
         if (parse_double(buf, "<ati_debt>", ati_pwf.long_term_debt)) continue;
+#endif
         if (parse_double(buf, "<ati_backoff_interval>", ati_pwf.backoff_interval)) continue;
         if (parse_double(buf, "<ati_backoff_time>", ati_pwf.backoff_time)) continue;
         if (parse_double(buf, "<resource_share>", x)) continue;
             // not authoritative
         if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
         if (parse_bool(buf, "attached_via_acct_mgr", attached_via_acct_mgr)) continue;
+        if (parse_bool(buf, "no_cpu_apps", no_cpu_apps)) continue;
+        if (parse_bool(buf, "no_cuda_apps", no_cuda_apps)) continue;
+        if (parse_bool(buf, "no_ati_apps", no_ati_apps)) continue;
+        if (parse_bool(buf, "no_cpu_ams", no_cpu_ams)) continue;
+        if (parse_bool(buf, "no_cuda_ams", no_cuda_ams)) continue;
+        if (parse_bool(buf, "no_ati_ams", no_ati_ams)) continue;
+
             // backwards compat - old state files had ams_resource_share = 0
         if (parse_double(buf, "<ams_resource_share_new>", ams_resource_share)) continue;
         if (parse_double(buf, "<ams_resource_share>", x)) {
@@ -216,6 +250,7 @@ int PROJECT::parse_state(MIOFILE& in) {
         }
         if (parse_bool(buf, "scheduler_rpc_in_progress", btemp)) continue;
         if (parse_bool(buf, "use_symlinks", use_symlinks)) continue;
+        if (parse_bool(buf, "anonymous_platform", btemp)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
                 "[unparsed_xml] PROJECT::parse_state(): unrecognized: %s", buf
@@ -259,16 +294,25 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         "    <master_fetch_failures>%d</master_fetch_failures>\n"
         "    <min_rpc_time>%f</min_rpc_time>\n"
         "    <next_rpc_time>%f</next_rpc_time>\n"
+#ifdef USE_REC
+        "    <rec>%f</rec>\n"
+        "    <rec_time>%f</rec_time>\n"
+#else
         "    <short_term_debt>%f</short_term_debt>\n"
         "    <long_term_debt>%f</long_term_debt>\n"
+#endif
         "    <cpu_backoff_interval>%f</cpu_backoff_interval>\n"
         "    <cpu_backoff_time>%f</cpu_backoff_time>\n"
+#ifndef USE_REC
         "    <cuda_short_term_debt>%f</cuda_short_term_debt>\n"
         "    <cuda_debt>%f</cuda_debt>\n"
+#endif
         "    <cuda_backoff_interval>%f</cuda_backoff_interval>\n"
         "    <cuda_backoff_time>%f</cuda_backoff_time>\n"
+#ifndef USE_REC
         "    <ati_short_term_debt>%f</ati_short_term_debt>\n"
         "    <ati_debt>%f</ati_debt>\n"
+#endif
         "    <ati_backoff_interval>%f</ati_backoff_interval>\n"
         "    <ati_backoff_time>%f</ati_backoff_time>\n"
         "    <resource_share>%f</resource_share>\n"
@@ -276,7 +320,13 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
 		"    <sched_rpc_pending>%d</sched_rpc_pending>\n"
 		"    <send_time_stats_log>%d</send_time_stats_log>\n"
 		"    <send_job_log>%d</send_job_log>\n"
-        "%s%s%s%s%s%s%s%s%s%s%s%s",
+		"    <no_cpu_apps>%d</no_cpu_apps>\n"
+		"    <no_cuda_apps>%d</no_cuda_apps>\n"
+		"    <no_ati_apps>%d</no_ati_apps>\n"
+		"    <no_cpu_ams>%d</no_cpu_ams>\n"
+		"    <no_cuda_ams>%d</no_cuda_ams>\n"
+		"    <no_ati_ams>%d</no_ati_ams>\n"
+        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
         master_url,
         project_name,
         symstore,
@@ -298,20 +348,43 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         master_fetch_failures,
         min_rpc_time,
         next_rpc_time,
+#ifdef USE_REC
+        pwf.rec,
+        pwf.rec_time,
+#else
         cpu_pwf.short_term_debt,
-        cpu_pwf.long_term_debt, cpu_pwf.backoff_interval, cpu_pwf.backoff_time,
-        cuda_pwf.short_term_debt, cuda_pwf.long_term_debt,
-        cuda_pwf.backoff_interval, cuda_pwf.backoff_time,
-        ati_pwf.short_term_debt, ati_pwf.long_term_debt,
-        ati_pwf.backoff_interval, ati_pwf.backoff_time,
+        cpu_pwf.long_term_debt,
+#endif
+        cpu_pwf.backoff_interval,
+        cpu_pwf.backoff_time,
+#ifndef USE_REC
+        cuda_pwf.short_term_debt,
+        cuda_pwf.long_term_debt,
+#endif
+        cuda_pwf.backoff_interval,
+        cuda_pwf.backoff_time,
+#ifndef USE_REC
+        ati_pwf.short_term_debt,
+        ati_pwf.long_term_debt,
+#endif
+        ati_pwf.backoff_interval,
+        ati_pwf.backoff_time,
         resource_share,
         duration_correction_factor,
 		sched_rpc_pending,
         send_time_stats_log,
         send_job_log,
+        no_cpu_apps?1:0,
+        no_cuda_apps?1:0,
+        no_ati_apps?1:0,
+        no_cpu_ams?1:0,
+        no_cuda_ams?1:0,
+        no_ati_ams?1:0,
+        anonymous_platform?"    <anonymous_platform/>\n":"",
         master_url_fetch_pending?"    <master_url_fetch_pending/>\n":"",
         trickle_up_pending?"    <trickle_up_pending/>\n":"",
         send_file_list?"    <send_file_list/>\n":"",
+        send_full_workload?"    <send_full_workload/>\n":"",
         non_cpu_intensive?"    <non_cpu_intensive/>\n":"",
         verify_files_on_app_start?"    <verify_files_on_app_start/>\n":"",
         suspended_via_gui?"    <suspended_via_gui/>\n":"",
@@ -400,7 +473,9 @@ void PROJECT::copy_state_fields(PROJECT& p) {
     cpu_pwf = p.cpu_pwf;
     cuda_pwf = p.cuda_pwf;
     ati_pwf = p.ati_pwf;
+    pwf = p.pwf;
     send_file_list = p.send_file_list;
+    send_full_workload = p.send_full_workload;
     send_time_stats_log = p.send_time_stats_log;
     send_job_log = p.send_job_log;
     non_cpu_intensive = p.non_cpu_intensive;
@@ -451,11 +526,39 @@ int PROJECT::write_statistics(MIOFILE& out, bool /*gui_rpc*/) {
     return 0;
 }
 
-char* PROJECT::get_project_name() {
-    if (strlen(project_name)) {
-        return project_name;
-    } else {
-        return master_url;
+void PROJECT::suspend() {
+    suspended_via_gui = true;
+    gstate.request_schedule_cpus("project suspended");
+    gstate.request_work_fetch("project suspended");
+}
+void PROJECT::resume() {
+    suspended_via_gui = false;
+    gstate.request_schedule_cpus("project resumed");
+    gstate.request_work_fetch("project resumed");
+}
+
+void PROJECT::abort_not_started() {
+    for (unsigned int i=0; i<gstate.results.size(); i++) {
+        RESULT* rp = gstate.results[i];
+        if (rp->project != this) continue;
+        if (rp->not_started()) {
+            rp->abort_inactive(ERR_ABORTED_VIA_GUI);
+        }
+    }
+}
+
+void PROJECT::get_task_durs(double& not_started_dur, double& in_progress_dur) {
+    not_started_dur = 0;
+    in_progress_dur = 0;
+    for (unsigned int i=0; i<gstate.results.size(); i++) {
+        RESULT* rp = gstate.results[i];
+        if (rp->project != this) continue;
+        double d = rp->estimated_time_remaining();
+        if (rp->not_started()) {
+            not_started_dur += d;
+        } else {
+            in_progress_dur += d;
+        }
     }
 }
 
@@ -488,7 +591,7 @@ void FILE_XFER_BACKOFF::file_xfer_failed(PROJECT* p) {
         );
         if (log_flags.file_xfer_debug) {
             msg_printf(p, MSG_INFO,
-                "[file_xfer_debug] project-wide xfer delay for %f sec",
+                "[file_xfer] project-wide xfer delay for %f sec",
                 backoff
             );
         }
@@ -635,6 +738,22 @@ int APP::parse(MIOFILE& in) {
                 "[unparsed_xml] APP::parse(): unrecognized: %s\n", buf
             );
         }
+#ifdef SIM
+        if (parse_double(buf, "<latency_bound>", latency_bound)) continue;
+        if (parse_double(buf, "<fpops_est>", fpops_est)) continue;
+        if (parse_double(buf, "<weight>", weight)) continue;
+        if (parse_double(buf, "<working_set>", working_set)) continue;
+        if (match_tag(buf, "<fpops>")) {
+            XML_PARSER xp(&in);
+            fpops.parse(xp, "/fpops");
+            continue;
+        }
+        if (match_tag(buf, "<checkpoint_period>")) {
+            XML_PARSER xp(&in);
+            checkpoint_period.parse(xp, "/checkpoint_period");
+            continue;
+        }
+#endif
     }
     return ERR_XML_PARSE;
 }
@@ -679,16 +798,6 @@ FILE_INFO::FILE_INFO() {
     strcpy(xml_signature, "");
     strcpy(file_signature, "");
     cert_sigs = 0;
-}
-
-FILE_INFO::~FILE_INFO() {
-    if (pers_file_xfer) {
-        msg_printf(NULL, MSG_INTERNAL_ERROR,
-            "Deleting file %s while in use",
-            name
-        );
-        pers_file_xfer->fip = NULL;
-    }
 }
 
 void FILE_INFO::reset() {
@@ -821,6 +930,10 @@ int FILE_INFO::parse(MIOFILE& in, bool from_server) {
         if (match_tag(buf, "<persistent_file_xfer>")) {
             pfxp = new PERS_FILE_XFER;
             retval = pfxp->parse(in);
+#ifdef SIM
+            delete pfxp;
+            continue;
+#endif
             if (!retval) {
                 pers_file_xfer = pfxp;
             } else {
@@ -864,6 +977,7 @@ int FILE_INFO::parse(MIOFILE& in, bool from_server) {
 int FILE_INFO::write(MIOFILE& out, bool to_server) {
     unsigned int i;
     int retval;
+    char buf[1024];
 
     out.printf(
         "<file_info>\n"
@@ -893,7 +1007,8 @@ int FILE_INFO::write(MIOFILE& out, bool to_server) {
         if (strlen(file_signature)) out.printf("    <file_signature>\n%s</file_signature>\n", file_signature);
     }
     for (i=0; i<urls.size(); i++) {
-        out.printf("    <url>%s</url>\n", urls[i].c_str());
+        xml_escape(urls[i].c_str(), buf, sizeof(buf));
+        out.printf("    <url>%s</url>\n", buf);
     }
     if (!to_server && pers_file_xfer) {
         retval = pers_file_xfer->write(out);
@@ -978,19 +1093,8 @@ const char* FILE_INFO::get_init_url() {
 
 // if a project supplies multiple URLs, try them in order
 // (e.g. in Einstein@home they're ordered by proximity to client).
-// The commented-out code tries them starting from random place.
-// This is appropriate if replication is for load-balancing.
-// TODO: add a flag saying which mode to use.
 //
-#if 1
     current_url = 0;
-#else
-    double temp;
-    temp = rand();
-    temp *= urls.size();
-    temp /= RAND_MAX;
-    current_url = (int)temp;
-#endif
     start_url = current_url;
     return urls[current_url].c_str();
 }
@@ -1265,10 +1369,10 @@ void APP_VERSION::get_file_errors(string& str) {
 }
 
 bool APP_VERSION::missing_coproc() {
-    if (ncudas && !coproc_cuda) {
+    if (ncudas && gstate.host_info.coprocs.cuda.count==0) {
         return true;
     }
-    if (natis && !coproc_ati) {
+    if (natis && gstate.host_info.coprocs.ati.count==0) {
         return true;
     }
     return false;
@@ -1514,6 +1618,9 @@ void RESULT::clear() {
     got_server_ack = false;
     final_cpu_time = 0;
     final_elapsed_time = 0;
+#ifdef SIM
+    peak_flop_count = 0;
+#endif
     exit_status = 0;
     stderr_out = "";
     suspended_via_gui = false;
@@ -1727,6 +1834,8 @@ int RESULT::write(MIOFILE& out, bool to_server) {
     return 0;
 }
 
+#ifndef SIM
+
 int RESULT::write_gui(MIOFILE& out) {
     out.printf(
         "<result>\n"
@@ -1753,7 +1862,7 @@ int RESULT::write_gui(MIOFILE& out) {
         state(),
         report_deadline,
         received_time,
-        estimated_time_remaining(false)
+        estimated_time_remaining()
     );
     if (got_server_ack) out.printf("    <got_server_ack/>\n");
     if (ready_to_report) out.printf("    <ready_to_report/>\n");
@@ -1791,9 +1900,9 @@ int RESULT::write_gui(MIOFILE& out) {
         char buf[256];
         strcpy(buf, "");
         if (atp && atp->task_state() == PROCESS_EXECUTING) {
-            if (avp->ncudas && coproc_cuda->count>1) {
+            if (avp->ncudas && gstate.host_info.coprocs.cuda.count>1) {
                 sprintf(buf, " (device %d)", coproc_indices[0]);
-            } else if (avp->natis && coproc_ati->count>1) {
+            } else if (avp->natis && gstate.host_info.coprocs.ati.count>1) {
                 sprintf(buf, " (device %d)", coproc_indices[0]);
             }
         }
@@ -1804,6 +1913,8 @@ int RESULT::write_gui(MIOFILE& out) {
     out.printf("</result>\n");
     return 0;
 }
+
+#endif
 
 // Returns true if the result's output files are all either
 // successfully uploaded or have unrecoverable errors
@@ -1841,6 +1952,7 @@ void RESULT::clear_uploaded_flags() {
 }
 
 bool PROJECT::some_download_stalled() {
+#ifndef SIM
     unsigned int i;
     for (i=0; i<gstate.pers_file_xfers->pers_file_xfers.size(); i++) {
         PERS_FILE_XFER* pfx = gstate.pers_file_xfers->pers_file_xfers[i];
@@ -1848,6 +1960,7 @@ bool PROJECT::some_download_stalled() {
         if (pfx->is_upload) continue;
         if (pfx->next_request_time > gstate.now) return true;
     }
+#endif
     return false;
 }
 
@@ -1855,6 +1968,7 @@ bool PROJECT::some_download_stalled() {
 // is downloading and backed off
 //
 bool RESULT::some_download_stalled() {
+#ifndef SIM
     unsigned int i;
     FILE_INFO* fip;
     PERS_FILE_XFER* pfx;
@@ -1873,6 +1987,7 @@ bool RESULT::some_download_stalled() {
             return true;
         }
     }
+#endif
     return false;
 }
 

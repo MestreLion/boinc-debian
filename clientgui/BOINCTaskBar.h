@@ -23,8 +23,10 @@
 #endif
 
 
-#ifdef __WXMSW__
+#if   defined(__WXMSW__)
 #include "msw/taskbarex.h"
+#elif defined(__WXGTK__)
+#include "gtk/taskbarex.h"
 #else
 #define wxTaskBarIconEx         wxTaskBarIcon
 #define wxTaskBarIconExEvent    wxTaskBarIconEvent
@@ -43,16 +45,17 @@ public:
     void OnSuspendResumeGPU(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
-    void OnShutdown(wxTaskBarIconExEvent& event);
 
     void OnIdle(wxIdleEvent& event);
     void OnClose(wxCloseEvent& event);
     void OnRefresh(CTaskbarEvent& event);
     void OnReloadSkin(CTaskbarEvent& event);
 
-    void OnMouseMove(wxTaskBarIconEvent& event);
+    void OnNotificationClick(wxTaskBarIconExEvent& event);
+    void OnNotificationTimeout(wxTaskBarIconExEvent& event);
+    void OnAppRestore(wxTaskBarIconExEvent& event);
+    void OnShutdown(wxTaskBarIconExEvent& event);
     void OnLButtonDClick(wxTaskBarIconEvent& event);
-    void OnContextMenu(wxTaskBarIconExEvent& event);
     void OnRButtonDown(wxTaskBarIconEvent& event);
     void OnRButtonUp(wxTaskBarIconEvent& event);
 
@@ -61,13 +64,38 @@ public:
     wxMenu *BuildContextMenu();
     void AdjustMenuItems(wxMenu* menu);
 
-#ifdef __APPLE__
-    wxMenu *CreatePopupMenu();
-    bool SetIcon(const wxIcon& icon);
-#endif
+#ifdef __WXMAC__
+private:
+    NMRecPtr   m_pNotificationRequest;
 
-#ifndef __WXMSW__
+    void MacRequestUserAttention();
+    void MacCancelUserAttentionRequest();
+    
+public:
+    wxMenu *CreatePopupMenu();
+    bool SetIcon(const wxIcon& icon, const wxString& message = wxEmptyString);
+
     inline bool IsBalloonsSupported() {
+        return false;
+    }
+    
+#define BALLOONTYPE_INFO 0
+
+    bool SetBalloon(
+        const wxIcon& icon, 
+        const wxString title = wxEmptyString,
+        const wxString message = wxEmptyString,
+        unsigned int iconballoon = BALLOONTYPE_INFO
+    ) {
+        return false;
+    }
+
+    bool QueueBalloon(
+        const wxIcon& icon, 
+        const wxString title = wxEmptyString,
+        const wxString message = wxEmptyString,
+        unsigned int iconballoon = BALLOONTYPE_INFO
+    ) {
         return false;
     }
 #endif
@@ -75,20 +103,23 @@ public:
     wxIcon     m_iconTaskBarNormal;
     wxIcon     m_iconTaskBarDisconnected;
     wxIcon     m_iconTaskBarSnooze;
-    wxString   m_strDefaultTitle;
+    
+    wxIcon     m_iconCurrentIcon;
+
     bool       m_bTaskbarInitiatedShutdown;
 
 private:
-    wxDateTime m_dtLastHoverDetected;
-
     bool       m_bMouseButtonPressed;
 
+    wxDateTime m_dtLastNotificationAlertExecuted;
+
     void       ResetTaskBar();
-
     void       DisplayContextMenu();
-    
-    DECLARE_EVENT_TABLE()
 
+    void       UpdateTaskbarStatus();
+    void       UpdateNoticeStatus();
+
+    DECLARE_EVENT_TABLE()
 };
 
 

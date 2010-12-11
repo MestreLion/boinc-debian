@@ -22,7 +22,9 @@
 
 ini_set("memory_limit", "1024M");
 
+$cli_only = true;
 require_once("../inc/forum_db.inc");
+require_once("../inc/util_ops.inc");
 
 function update_thread_timestamps() {
     $threads = BoincThread::enum();
@@ -43,10 +45,11 @@ function update_thread_timestamps() {
 function update_user_posts() {
     $users = BoincUser::enum();
     foreach ($users as $user) {
+        BoincForumPrefs::lookup($user);
         $num = BoincPost::count("user=$user->id");
-        if ($num != $user->posts) {
+        if ($num != $user->prefs->posts) {
             echo "user $user->id: $user->posts $num\n";
-            $user->update("posts=$num");
+            $user->prefs->update("posts=$num");
         }
     }
 }

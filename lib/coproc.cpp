@@ -15,26 +15,28 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
-#endif
-
-#ifndef _USING_FCGI_
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
+#ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
 #else
 #include <cstdio>
 #endif
-
 #include <cstring>
 #include <cstdlib>
+#endif
+
+#ifdef _WIN32
+#include "win_util.h"
+#endif
 
 #include "error_numbers.h"
 #include "filesys.h"
 #include "parse.h"
-#include "str_util.h"
-#ifdef _WIN32
-#include "win_util.h"
-#endif
+#include "util.h"
 
 #include "coproc.h"
 
@@ -91,26 +93,35 @@ int COPROC::parse(MIOFILE& fin) {
     return ERR_XML_PARSE;
 }
 
+#ifndef _USING_FCGI_
+void COPROC::write_request(MIOFILE& f) {
+    f.printf(
+        "   <req_secs>%f</req_secs>\n"
+        "   <req_instances>%f</req_instances>\n"
+        "   <estimated_delay>%f</estimated_delay>\n",
+        req_secs,
+        req_instances,
+        estimated_delay
+    );
+}
+#endif
+
 void COPROCS::summary_string(char* buf, int len) {
     char bigbuf[8192], buf2[1024];
 
     strcpy(bigbuf, "");
-    for (unsigned int i=0; i<coprocs.size(); i++) {
-        COPROC* cp = coprocs[i];
-        if (!strcmp(cp->type, "CUDA")) {
-            COPROC_CUDA* cp2 = (COPROC_CUDA*) cp;
-            int mem = (int)(cp2->prop.dtotalGlobalMem/MEGA);
-            sprintf(buf2, "[CUDA|%s|%d|%dMB|%d]",
-                cp2->prop.name, cp2->count, mem, cp2->display_driver_version
-            );
-            strcat(bigbuf, buf2);
-        } else if (!strcmp(cp->type, "ATI")){
-            COPROC_ATI* cp2 =(COPROC_ATI*) cp;
-            sprintf(buf2,"[CAL|%s|%d|%dMB|%s]",
-                cp2->name, cp2->count, cp2->attribs.localRAM, cp2->version
-            );
-            strcat(bigbuf,buf2);
-        }
+    if (cuda.count) {
+        int mem = (int)(cuda.prop.dtotalGlobalMem/MEGA);
+        sprintf(buf2, "[CUDA|%s|%d|%dMB|%d]",
+            cuda.prop.name, cuda.count, mem, cuda.display_driver_version
+        );
+        strcat(bigbuf, buf2);
+    }
+    if (ati.count) {
+        sprintf(buf2,"[CAL|%s|%d|%dMB|%s]",
+            ati.name, ati.count, ati.attribs.localRAM, ati.version
+        );
+        strcat(bigbuf,buf2);
     }
     bigbuf[len-1] = 0;
     strcpy(buf, bigbuf);
@@ -118,51 +129,40 @@ void COPROCS::summary_string(char* buf, int len) {
 
 int COPROCS::parse(MIOFILE& fin) {
     char buf[1024];
+    int retval;
 
     while (fin.fgets(buf, sizeof(buf))) {
         if (match_tag(buf, "</coprocs>")) {
             return 0;
         }
         if (strstr(buf, "<coproc_cuda>")) {
-            COPROC_CUDA* cc = new COPROC_CUDA;
-            int retval = cc->parse(fin);
-            if (!retval) {
-                coprocs.push_back(cc);
+            retval = cuda.parse(fin);
+            if (retval) {
+                cuda.clear();
             }
         }
         if (strstr(buf, "<coproc_ati>")) {
-            COPROC_ATI* cc = new COPROC_ATI;
-            int retval = cc->parse(fin);
-            if (!retval) {
-                coprocs.push_back(cc);
+            retval = ati.parse(fin);
+            if (retval) {
+                ati.clear();
             }
         }
     }
     return ERR_XML_PARSE;
 }
 
-void COPROCS::write_xml(MIOFILE& mf) {
+void COPROCS::write_xml(MIOFILE& mf, bool include_request) {
 #ifndef _USING_FCGI_
     mf.printf("    <coprocs>\n");
-    for (unsigned i=0; i<coprocs.size(); i++) {
-        COPROC* c = coprocs[i];
-        c->write_xml(mf);
+    if (cuda.count) {
+        cuda.write_xml(mf, include_request);
+    }
+    if (ati.count) {
+        ati.write_xml(mf, include_request);
     }
     mf.printf("    </coprocs>\n");
 #endif
 }
-
-COPROC* COPROCS::lookup(const char* type) {
-    for (unsigned int i=0; i<coprocs.size(); i++) {
-        COPROC* cp = coprocs[i];
-        if (!strcmp(type, cp->type)) return cp;
-    }
-    return NULL;
-}
-
-#ifdef _WIN32
-
-#endif
 
 void COPROC_CUDA::description(char* buf) {
     char vers[256];
@@ -178,14 +178,18 @@ void COPROC_CUDA::description(char* buf) {
 }
 
 #ifndef _USING_FCGI_
-void COPROC_CUDA::write_xml(MIOFILE& f) {
+void COPROC_CUDA::write_xml(MIOFILE& f, bool include_request) {
     f.printf(
         "<coproc_cuda>\n"
         "   <count>%d</count>\n"
-        "   <name>%s</name>\n"
-        "   <req_secs>%f</req_secs>\n"
-        "   <req_instances>%f</req_instances>\n"
-        "   <estimated_delay>%f</estimated_delay>\n"
+        "   <name>%s</name>\n",
+        count,
+        prop.name
+    );
+    if (include_request) {
+        write_request(f);
+    }
+    f.printf(
         "   <drvVersion>%d</drvVersion>\n"
         "   <cudaVersion>%d</cudaVersion>\n"
         "   <totalGlobalMem>%u</totalGlobalMem>\n"
@@ -204,11 +208,6 @@ void COPROC_CUDA::write_xml(MIOFILE& f) {
         "   <deviceOverlap>%d</deviceOverlap>\n"
         "   <multiProcessorCount>%d</multiProcessorCount>\n"
         "</coproc_cuda>\n",
-        count,
-        prop.name,
-        req_secs,
-        req_instances,
-        estimated_delay,
         display_driver_version,
         cuda_version,
         (unsigned int)prop.totalGlobalMem,
@@ -325,17 +324,18 @@ int COPROC_CUDA::parse(MIOFILE& fin) {
 ////////////////// ATI STARTS HERE /////////////////
 
 #ifndef _USING_FCGI_
-void COPROC_ATI::write_xml(MIOFILE& f) {
+void COPROC_ATI::write_xml(MIOFILE& f, bool include_request) {
     f.printf(
         "<coproc_ati>\n"
-    );
-
-    f.printf(
         "   <count>%d</count>\n"
-        "   <name>%s</name>\n"
-        "   <req_secs>%f</req_secs>\n"
-        "   <req_instances>%f</req_instances>\n"
-        "   <estimated_delay>%f</estimated_delay>\n"
+        "   <name>%s</name>\n",
+        count,
+        name
+    );
+    if (include_request) {
+        write_request(f);
+    }
+    f.printf(
         "   <target>%d</target>\n"
         "   <localRAM>%d</localRAM>\n"
         "   <uncachedRemoteRAM>%d</uncachedRemoteRAM>\n"
@@ -351,11 +351,6 @@ void COPROC_ATI::write_xml(MIOFILE& f) {
         "   <maxResource2DWidth>%d</maxResource2DWidth>\n"
         "   <maxResource2DHeight>%d</maxResource2DHeight>\n"
         "   <CALVersion>%s</CALVersion>\n",
-        count,
-        name,
-        req_secs,
-        req_instances,
-        estimated_delay,
         attribs.target,
         attribs.localRAM,
         attribs.uncachedRemoteRAM,
@@ -406,7 +401,12 @@ int COPROC_ATI::parse(MIOFILE& fin) {
     clear();
 
     while (fin.fgets(buf, sizeof(buf))) {
-        if (strstr(buf, "</coproc_ati>")) return 0;
+        if (strstr(buf, "</coproc_ati>")) {
+            int major, minor, release;
+            sscanf(version, "%d.%d.%d", &major, &minor, &release);
+            version_num = major*1000000 + minor*1000 + release;
+            return 0;
+        }
         if (parse_int(buf, "<count>", count)) continue;
         if (parse_str(buf, "<name>", name, sizeof(name))) continue;
         if (parse_double(buf, "<req_secs>", req_secs)) continue;
@@ -481,4 +481,3 @@ void COPROC_ATI::description(char* buf) {
         name, version, attribs.localRAM/1024.*1024., peak_flops()/1.e9
     );
 }
-

@@ -31,20 +31,26 @@
 #endif
 #include <stdlib.h>
 #include <string>
+#include <iostream>
 
 #include "boinc_db.h"
 #include "str_util.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
 
-void usage(char** argv) {
+void usage(char* name) {
     fprintf(stderr,
         "Arrange to delete a file from a host.\n\n"
-        "Usage: %s -host_id H -file_name F\n",
-        argv[0]
+        "Usage: %s OPTION...\n\n"
+        "Options:\n"
+        "  --file_name F                 Specify te file to delete.\n"
+        "  --host_id H                   Specify the coresponding host\n"
+        "  [-h | --help]                 Show this help text.\n"
+        "  [-v | --version]              Show version information.\n",
+        name
     );
-    exit(0);
 }
 
 int delete_host_file(int host_id, const char* file_name) {
@@ -75,21 +81,36 @@ int main(int argc, char** argv) {
     check_stop_daemons();
 
     for (i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-host_id")) {
-            host_id = atoi(argv[++i]);
-        } else if(!strcmp(argv[i], "-file_name")) {
-            strcpy(file_name, argv[++i]);
-        } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
-            usage(argv);
+        if (is_arg(argv[i], "host_id")) {
+            if (!argv[++i]) {
+                fprintf(stderr, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            host_id = atoi(argv[i]);
+        } else if (is_arg(argv[i], "file_name")) {
+            if (!argv[++i]) {
+                fprintf(stderr, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            strcpy(file_name, argv[i]);
+        } else if (is_arg(argv[i], "help") || is_arg(argv[i], "h")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (is_arg(argv[i], "version") || is_arg(argv[i], "v")) {
+            printf("%s\n", SVN_VERSION);
             exit(0);
         } else {
-            fprintf(stderr, "bad arg %s\n", argv[i]);
-            usage(argv);
+            fprintf(stderr, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
 
     if (!strlen(file_name) || host_id == 0) {
-        usage(argv);
+        usage(argv[0]);
+        exit(1);
     }
 
     retval = config.parse_file();
@@ -111,4 +132,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_f6337b04b0 = "$Id: delete_file.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_f6337b04b0 = "$Id: delete_file.cpp 21181 2010-04-15 03:13:56Z davea $";

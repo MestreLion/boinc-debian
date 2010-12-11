@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 20170 2010-01-14 22:17:29Z romw $
+## $Id: Makefile.am 22578 2010-10-21 16:14:27Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -49,12 +49,14 @@ boinc_client_SOURCES = \
     cs_benchmark.cpp \
     cs_cmdline.cpp \
     cs_files.cpp \
+    cs_notice.cpp \
     cs_platforms.cpp \
     cs_prefs.cpp \
     cs_proxy.cpp \
     cs_scheduler.cpp \
     cs_statefile.cpp \
     cs_trickle.cpp \
+	current_version.cpp \
     dhrystone.cpp \
     dhrystone2.cpp \
     file_names.cpp \

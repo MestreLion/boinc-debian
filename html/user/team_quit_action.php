@@ -29,11 +29,11 @@ if ($user->teamid == $team->id) {
     user_quit_team($user);
     Header("Location: home.php");
 } else {
-    page_head("Unable to quit team");
-    echo "Team doesn't exist, or you don't belong to it.\n";
+    page_head(tra("Unable to quit team"));
+    echo tra("Team doesn't exist, or you don't belong to it.");
 }
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_quit_action.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_quit_action.php 20582 2010-02-16 01:06:03Z davea $";  //Generated automatically - do not edit
 ?>

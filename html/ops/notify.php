@@ -27,8 +27,9 @@
 // We use a 1-hour slop factor to err on the side of twice.
 //
 
+$cli_only = true;
 require_once("../inc/boinc_db.inc");
-require_once("../inc/util.inc");
+require_once("../inc/util_ops.inc");
 require_once("../project/project.inc");
 
 // delete notifications older than 90 days

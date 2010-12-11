@@ -18,14 +18,10 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#ifdef _WIN32
-#include "boinc_win.h"
-#else
 #include <cstdio>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#endif
 
 #include "miofile.h"
 
@@ -33,11 +29,13 @@ class XML_PARSER {
     bool scan_nonws(int&);
     int scan_comment();
     int scan_tag(char*, int, char* ab=0, int al=0);
+    int scan_cdata(char*, int);
     bool copy_until_tag(char*, int);
 public:
     MIOFILE* f;
     XML_PARSER(MIOFILE*);
     bool get(char*, int, bool&, char* ab=0, int al=0);
+    int get_aux(char* buf, int len, char* attr_buf, int attr_len);
     bool parse_start(const char*);
     bool parse_str(char*, const char*, char*, int);
     bool parse_string(char*, const char*, std::string&);

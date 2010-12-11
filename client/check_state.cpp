@@ -24,12 +24,10 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cassert>
 #endif
 
+#include "client_msgs.h"
 #include "client_state.h"
 
 void CLIENT_STATE::check_project_pointer(PROJECT* p) {
@@ -176,7 +174,6 @@ void CLIENT_STATE::check_all() {
     }
 }
 
-#if 0
 // Deallocate memory.  Can be used to check for memory leaks.
 // Turned off for now.
 //
@@ -237,6 +234,10 @@ void CLIENT_STATE::free_mem() {
     }
 
     active_tasks.free_mem();
-}
-#endif
 
+    message_descs.cleanup();
+    delete http_ops;
+    delete file_xfers;
+    delete pers_file_xfers;
+    delete scheduler_op;
+}

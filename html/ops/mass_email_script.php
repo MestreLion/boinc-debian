@@ -38,9 +38,11 @@
 //
 // see http://boinc.berkeley.edu/mass_email.php for info
 
+$cli_only = true;
 require_once('../project/project.inc');
 require_once('../inc/email.inc');
 require_once('../inc/db.inc');
+require_once('../inc/util_ops.inc');
 
 db_init();
 set_time_limit(0);
@@ -166,7 +168,7 @@ function replace($user, $template) {
         $user->name,
         gmdate('d F Y', $user->create_time),
         number_format($user->total_credit, 0),
-        URL_BASE."opt_out.php?code=".salted_key($user->authenticator)."&userid=$user->id",
+        opt_out_url($user),
         floor((time() - $user->last_rpc_time) / 86400),
     );
     return preg_replace($pat, $rep, $template);

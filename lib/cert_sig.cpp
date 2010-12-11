@@ -15,12 +15,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+#if   defined(_WIN32) && !defined(__STDWX_H__)
+#include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
 #include "config.h"
 #ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
 #else
 #include <cstdio>
 #endif
+#endif
+
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 #include "miofile.h"
 #include "error_numbers.h"
 #include "cert_sig.h"
@@ -57,14 +68,14 @@ int CERT_SIGS::count() {
 
 int CERT_SIGS::parse(XML_PARSER &xp) {
     CERT_SIG sig;
-    int is_tag = false;
-    int in_entry = false;
-    int in_sig = false;
-    int parsed_one = false;
+    bool is_tag = false;
+    bool in_entry = false;
+    bool in_sig = false;
+    bool parsed_one = false;
     char tag[4096];
     char buf[256];
     
-    while (!xp.get(tag, sizeof(tag), (bool&)is_tag)) {
+    while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!strcmp(tag, "/signatures")) {
             //printf("CERT_SIGS::parse() ends.\n");
             //fflush(stdout);
@@ -166,12 +177,12 @@ int CERT_SIGS::parse_buffer(char* buf) {
 int CERT_SIGS::parse_buffer_embed(char* buf) {
     MIOFILE mf;
     char tag[4096];
-    int is_tag;
+    bool is_tag;
     int s_found = false;
 
     mf.init_buf_read(buf);
     XML_PARSER xp(&mf);
-    while (!xp.get(tag, sizeof(tag), (bool&)is_tag)) {
+    while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!strcmp(tag, "signatures")) {
             s_found = true;
             break;

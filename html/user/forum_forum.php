@@ -29,9 +29,13 @@ $start = get_int("start", true);
 if (!$start) $start = 0;
 
 $forum = BoincForum::lookup_id($id);
+if (!$forum) error_page("no forum");
 $user = get_logged_in_user(false);
 
 if (!is_forum_visible_to_user($forum, $user)) {
+    if ($user) {
+        remove_subscriptions_forum($user->id, $id);
+    }
     error_page("Not visible");
 }
 
@@ -87,18 +91,22 @@ echo '
     <td colspan=2>
 ';
 
-show_button("forum_post.php?id=$id", "New thread", "Add a new thread to this forum");
+if (user_can_create_thread($user, $forum)) {
+    show_button(
+        "forum_post.php?id=$id", "New thread", "Add a new thread to this forum"
+    );
+}
 
 echo "</td>
-	<td valign=top align=\"right\">
+    <td valign=top align=\"right\">
     <input type=\"hidden\" name=\"id\" value=\"$forum->id\">
 ";
 echo select_from_array("sort", $forum_sort_styles, $sort_style);
 echo "<input type=\"submit\" value=\"Sort\">
-	</td>
-	</tr>
-	</table>
-	</form>
+    </td>
+    </tr>
+    </table>
+    </form>
 ";
 
 show_forum($forum, $start, $sort_style, $user);
@@ -156,12 +164,6 @@ function show_forum($forum, $start, $sort_style, $user) {
         }
         
         echo "<td width=\"1%\" align=\"right\"><nobr>";
-        if ($user && ($thread->rating()>$user->prefs->high_rating_threshold)) {
-            show_image(EMPHASIZE_IMAGE, "This message has a high average rating", "Highly rated");
-        }
-        if ($user && ($thread->rating()<$user->prefs->low_rating_threshold)) {
-            show_image(FILTER_IMAGE, "This message has a low average rating", "Low rated");
-        }
         if ($thread->hidden) {
             echo "[hidden]";
         }
@@ -195,12 +197,11 @@ function show_forum($forum, $start, $sort_style, $user) {
         echo "</nobr></td>";
 
         $titlelength = 48;
-        $title = $thread->title;
+        $title = cleanup_title($thread->title);
         if (strlen($title) > $titlelength) {
-            $title = substr($title,0,$titlelength)."...";
+            $title = substr($title, 0, $titlelength)."...";
         }
-        $title = cleanup_title($title);
-        echo '<td class="threadline"><a href="forum_thread.php?id='.$thread->id.'"><b>'.$title.'</b></a><br></td>';
+        echo "<td class=\"threadline\"><a href=\"forum_thread.php?id=$thread->id\"><b>$title</b></a><br></td>";
         $n = ($n+1)%2;
 
         echo '

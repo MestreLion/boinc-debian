@@ -59,7 +59,7 @@ void GUI_URL::print() {
 }
 
 void PROJECT::print_disk_usage() {
-    printf("   master URL: %s\n", master_url.c_str());
+    printf("   master URL: %s\n", master_url);
     printf("   disk usage: %.2fMB\n", disk_usage/MEGA);
 }
 
@@ -67,7 +67,7 @@ void PROJECT::print() {
     unsigned int i;
 
     printf("   name: %s\n", project_name.c_str());
-    printf("   master URL: %s\n", master_url.c_str());
+    printf("   master URL: %s\n", master_url);
     printf("   user_name: %s\n", user_name.c_str());
     printf("   team_name: %s\n", team_name.c_str());
     printf("   resource share: %f\n", resource_share);
@@ -92,18 +92,18 @@ void PROJECT::print() {
 }
 
 void APP::print() {
-    printf("   name: %s\n", name.c_str());
+    printf("   name: %s\n", name);
     printf("   Project: %s\n", project->project_name.c_str());
 }
 
 void APP_VERSION::print() {
-    printf("   application: %s\n", app->name.c_str());
+    printf("   application: %s\n", app->name);
     printf("   version: %.2f\n", version_num/100.0);
     printf("   project: %s\n", project->project_name.c_str());
 }
 
 void WORKUNIT::print() {
-    printf("   name: %s\n", name.c_str());
+    printf("   name: %s\n", name);
     printf("   FP estimate: %f\n", rsc_fpops_est);
     printf("   FP bound: %f\n", rsc_fpops_bound);
     printf("   memory bound: %f\n", rsc_memory_bound);
@@ -111,9 +111,9 @@ void WORKUNIT::print() {
 }
 
 void RESULT::print() {
-    printf("   name: %s\n", name.c_str());
-    printf("   WU name: %s\n", wu_name.c_str());
-    printf("   project URL: %s\n", project_url.c_str());
+    printf("   name: %s\n", name);
+    printf("   WU name: %s\n", wu_name);
+    printf("   project URL: %s\n", project_url);
     time_t foo = (time_t)report_deadline;
     printf("   report deadline: %s", ctime(&foo));
     printf("   ready to report: %s\n", ready_to_report?"yes":"no");
@@ -125,7 +125,7 @@ void RESULT::print() {
     printf("   signal: %d\n", signal);
     printf("   suspended via GUI: %s\n", suspended_via_gui?"yes":"no");
     printf("   active_task_state: %d\n", active_task_state);
-    printf("   stderr_out: %s\n", stderr_out.c_str());
+    //printf("   stderr_out: %s\n", stderr_out.c_str());
     printf("   app version num: %d\n", app_version_num);
     printf("   checkpoint CPU time: %f\n", checkpoint_cpu_time);
     printf("   current CPU time: %f\n", current_cpu_time);
@@ -195,7 +195,7 @@ void SIMPLE_GUI_INFO::print() {
         printf("%d) -----------\n", i+1);
         projects[i]->print();
     }
-    printf("\n======== Results ========\n");
+    printf("\n======== Tasks ========\n");
     for (i=0; i<results.size(); i++) {
         printf("%d) -----------\n", i+1);
         results[i]->print();
@@ -224,11 +224,54 @@ void CC_STATE::print() {
         printf("%d) -----------\n", i+1);
         wus[i]->print();
     }
-    printf("\n======== Results ========\n");
+    printf("\n======== Tasks ========\n");
     for (i=0; i<results.size(); i++) {
         printf("%d) -----------\n", i+1);
         results[i]->print();
     }
+}
+
+void print_status(
+    const char* name, int reason, int mode, int mode_perm, double delay
+) {
+    printf("%s status\n", name);
+    if (reason) {
+        printf("    suspended: %s\n", suspend_reason_string(reason));
+    } else {
+        printf("    not suspended\n");
+    }
+    printf(
+        "    current mode: %s\n"
+        "    perm mode: %s\n"
+        "    perm becomes current in %.0f sec\n",
+        run_mode_string(mode),
+        run_mode_string(mode_perm),
+        delay
+    );
+}
+
+void CC_STATUS::print() {
+    printf("network connection status: %s\n",
+        network_status_string(network_status)
+    );
+    print_status("CPU",
+        task_suspend_reason,
+        task_mode,
+        task_mode_perm,
+        task_mode_delay
+    );
+    print_status("GPU",
+        gpu_suspend_reason,
+        gpu_mode,
+        gpu_mode_perm,
+        gpu_mode_delay
+    );
+    print_status("Network",
+        network_suspend_reason,
+        network_mode,
+        network_mode_perm,
+        network_mode_delay
+    );
 }
 
 void PROJECTS::print() {
@@ -253,7 +296,7 @@ void DISK_USAGE::print() {
 
 void RESULTS::print() {
     unsigned int i;
-    printf("\n======== Results ========\n");
+    printf("\n======== Tasks ========\n");
     for (i=0; i<results.size(); i++) {
         printf("%d) -----------\n", i+1);
         results[i]->print();

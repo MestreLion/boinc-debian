@@ -26,9 +26,9 @@ db_init();
 $user = get_logged_in_user();
 check_tokens($user->authenticator);
 
-$action = get_str("action", true);
-$subset = get_str("subset");
-$venue = get_str("venue");
+$action = sanitize_tags(get_str("action", true));
+$subset = sanitize_tags(get_str("subset"));
+$venue = sanitize_tags(get_str("venue"));
 $columns = get_int("cols", true);
 $c = $columns?"&cols=$columns":"";
 check_venue($venue);
@@ -40,7 +40,7 @@ if ($action) {
         $prefs->$venue = $prefs;
         $error = prefs_global_parse_form($new_prefs);
         if ($error != false) {
-            $title = "Edit ".subset_name($subset)." preferences";
+            $title = tra("Edit %1 preferences", subset_name($subset));
             if ($venue) $title = "$title for $venue";
             page_head($title);
             $x = $venue?"&venue=$venue":"";
@@ -62,10 +62,10 @@ if ($action) {
 
         $project_error = prefs_project_parse_form($new_prefs);
         $error = prefs_resource_parse_form($new_prefs);
-        if ($project_has_beta) prefs_beta_parse_form($new_prefs);
+        if (isset($project_has_beta) && $project_has_beta) prefs_beta_parse_form($new_prefs);
 
         if ($error != false || $project_error != false) {
-            $title = "Edit ".subset_name($subset)." preferences";
+            $title = tra("Edit %1 preferences", subset_name($subset));
             if ($venue) $title = "$title for $venue";
             page_head($title);
             $x = $venue?"&venue=$venue":"";
@@ -83,7 +83,7 @@ if ($action) {
         }
     }
 } else {
-    $title = "Add ".subset_name($subset)." preferences for $venue";
+    $title = tra("Add %1 preferences for %2", subset_name($subset), $venue);
     page_head($title);
 
     if ($subset == "global") {
@@ -94,5 +94,5 @@ if ($action) {
     print_prefs_form("add", $subset, $venue, $user, $prefs, $columns);
 }
 page_tail();
-$cvs_version_tracker[]="\$Id: add_venue.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: add_venue.php 22315 2010-09-04 22:13:27Z davea $";  //Generated automatically - do not edit
 ?>

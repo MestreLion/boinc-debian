@@ -138,10 +138,11 @@ if(defined('INVITE_CODES')) {
 // return to it without getting "Repost form data" stuff
 
 $next_url = post_str('next_url', true);
+$next_url = sanitize_local_url($next_url);
 if ($next_url) {
-    Header("Location: $next_url");
+    Header("Location: ".URL_BASE."$next_url");
 } else {
-    Header("Location: home.php");
+    Header("Location: ".URL_BASE."home.php");
     send_cookie('init', "1", true);
     send_cookie('via_web', "1", true);
 }

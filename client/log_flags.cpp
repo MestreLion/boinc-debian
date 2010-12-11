@@ -19,11 +19,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#ifdef _MSC_VER
+#define chdir _chdir
+#endif
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>
@@ -62,8 +62,11 @@ int LOG_FLAGS::parse(XML_PARSER& xp) {
 
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) {
-            msg_printf(NULL, MSG_USER_ERROR,
-               "Unexpected text %s in %s", tag, CONFIG_FILE
+            msg_printf_notice(NULL, false,
+                "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=log_flags",
+                "%s: %s",
+                _("Unexpected text in cc_config.xml"),
+                tag
             );
             continue;
         }
@@ -84,7 +87,7 @@ int LOG_FLAGS::parse(XML_PARSER& xp) {
         if (xp.parse_bool(tag, "debt_debug", debt_debug)) continue;
         if (xp.parse_bool(tag, "std_debug", std_debug)) continue;
         if (xp.parse_bool(tag, "file_xfer_debug", file_xfer_debug)) continue;
-        if (xp.parse_bool(tag, "guirpc_debug", guirpc_debug)) continue;
+        if (xp.parse_bool(tag, "gui_rpc_debug", gui_rpc_debug)) continue;
         if (xp.parse_bool(tag, "http_debug", http_debug)) continue;
         if (xp.parse_bool(tag, "http_xfer_debug", http_xfer_debug)) continue;
         if (xp.parse_bool(tag, "mem_usage_debug", mem_usage_debug)) continue;
@@ -101,9 +104,13 @@ int LOG_FLAGS::parse(XML_PARSER& xp) {
         if (xp.parse_bool(tag, "time_debug", time_debug)) continue;
         if (xp.parse_bool(tag, "unparsed_xml", unparsed_xml)) continue;
         if (xp.parse_bool(tag, "work_fetch_debug", work_fetch_debug)) continue;
+        if (xp.parse_bool(tag, "notice_debug", notice_debug)) continue;
 
-        msg_printf(NULL, MSG_USER_ERROR, "Unrecognized tag in %s: <%s>\n",
-            CONFIG_FILE, tag
+        msg_printf_notice(NULL, false,
+            "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=log_flags",
+            "%s: <%s>",
+            _("Unrecognized tag in cc_config.xml"),
+            tag
         );
         xp.skip_unexpected(tag, true, "LOG_FLAGS::parse");
     }
@@ -143,7 +150,7 @@ void LOG_FLAGS::show() {
     show_flag(buf, dcf_debug, "dcf_debug");
     show_flag(buf, debt_debug, "debt_debug");
     show_flag(buf, file_xfer_debug, "file_xfer_debug");
-    show_flag(buf, guirpc_debug, "guirpc_debug");
+    show_flag(buf, gui_rpc_debug, "gui_rpc_debug");
     show_flag(buf, http_debug, "http_debug");
     show_flag(buf, http_xfer_debug, "http_xfer_debug");
     show_flag(buf, mem_usage_debug, "mem_usage_debug");
@@ -161,6 +168,7 @@ void LOG_FLAGS::show() {
     show_flag(buf, time_debug, "time_debug");
     show_flag(buf, unparsed_xml, "unparsed_xml");
     show_flag(buf, work_fetch_debug, "work_fetch_debug");
+    show_flag(buf, notice_debug, "notice_debug");
 
     if (strlen(buf)) {
         msg_printf(NULL, MSG_INFO, "log flags: %s", buf);
@@ -178,10 +186,13 @@ static void show_gpu_ignore(vector<int>& devs, const char* name) {
 void CONFIG::show() {
     unsigned int i;
     if (ncpus>0) {
-        msg_printf(NULL, MSG_INFO, "Config: use at most %d CPUs", config.ncpus);
+        msg_printf(NULL, MSG_INFO, "Config: simulate %d CPUs", config.ncpus);
     }
     if (no_gpus) {
         msg_printf(NULL, MSG_INFO, "Config: don't use coprocessors");
+    }
+    if (no_info_fetch) {
+        msg_printf(NULL, MSG_INFO, "Config: don't fetch project list or client version info");
     }
     if (no_priority_change) {
         msg_printf(NULL, MSG_INFO, "Config: run apps at regular priority");
@@ -194,6 +205,9 @@ void CONFIG::show() {
     }
     if (zero_debts) {
         msg_printf(NULL, MSG_INFO, "Config: zero long-term debts on startup");
+    }
+    if (fetch_minimal_work) {
+        msg_printf(NULL, MSG_INFO, "Config: fetch minimal work");
     }
     show_gpu_ignore(ignore_cuda_dev, "NVIDIA");
     show_gpu_ignore(ignore_ati_dev, "ATI");
@@ -250,6 +264,9 @@ void CONFIG::clear() {
     dont_contact_ref_site = false;
     exclusive_apps.clear();
     exclusive_gpu_apps.clear();
+    exit_after_finish = false;
+    exit_when_idle = false;
+    fetch_minimal_work = false;
     force_auth = "default";
     http_1_0 = false;
     ignore_cuda_dev.clear();
@@ -258,19 +275,23 @@ void CONFIG::clear() {
     max_file_xfers_per_project = MAX_FILE_XFERS_PER_PROJECT;
     max_stderr_file_size = 0;
     max_stdout_file_size = 0;
+    max_tasks_reported = 0;
     ncpus = -1;
     network_test_url = "http://www.google.com/";
     no_alt_platform = false;
     no_gpus = false;
+    no_info_fetch = false;
     no_priority_change = false;
     os_random_only = false;
     report_results_immediately = false;
     run_apps_manually = false;
     save_stats_days = 30;
     simple_gui_only = false;
+    skip_cpu_benchmarks = false;
     start_delay = 0;
     stderr_head = false;
     suppress_net_info = false;
+    unsigned_apps_ok = false;
     use_all_gpus = false;
     use_certs = false;
     use_certs_only = false;
@@ -279,7 +300,7 @@ void CONFIG::clear() {
 
 int CONFIG::parse_options(XML_PARSER& xp) {
     char tag[1024], path[256];
-    bool is_tag, btemp;
+    bool is_tag;
     string s;
     int n;
 
@@ -296,8 +317,11 @@ int CONFIG::parse_options(XML_PARSER& xp) {
 
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) {
-            msg_printf(NULL, MSG_USER_ERROR,
-               "Unexpected text %s in %s", tag, CONFIG_FILE
+            msg_printf_notice(NULL, false,
+                "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
+                "%s: %s",
+                _("Unexpected text in cc_config.xml"),
+                tag
             );
             continue;
         }
@@ -330,13 +354,25 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_bool(tag, "dont_check_file_sizes", dont_check_file_sizes)) continue;
         if (xp.parse_bool(tag, "dont_contact_ref_site", dont_contact_ref_site)) continue;
         if (xp.parse_string(tag, "exclusive_app", s)) {
-            exclusive_apps.push_back(s);
+            if (!strstr(s.c_str(), "boinc")) {
+                exclusive_apps.push_back(s);
+            }
             continue;
         }
         if (xp.parse_string(tag, "exclusive_gpu_app", s)) {
-            exclusive_gpu_apps.push_back(s);
+            if (!strstr(s.c_str(), "boinc")) {
+                exclusive_gpu_apps.push_back(s);
+            }
             continue;
         }
+        if (xp.parse_bool(tag, "exit_after_finish", exit_after_finish)) continue;
+        if (xp.parse_bool(tag, "exit_when_idle", exit_when_idle)) {
+            if (exit_when_idle) {
+                report_results_immediately = true;
+            }
+            continue;
+        }
+        if (xp.parse_bool(tag, "fetch_minimal_work", fetch_minimal_work)) continue;
         if (xp.parse_string(tag, "force_auth", force_auth)) {
             downcase_string(force_auth);
             continue;
@@ -354,6 +390,7 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_int(tag, "max_file_xfers_per_project", max_file_xfers_per_project)) continue;
         if (xp.parse_int(tag, "max_stderr_file_size", max_stderr_file_size)) continue;
         if (xp.parse_int(tag, "max_stdout_file_size", max_stdout_file_size)) continue;
+        if (xp.parse_int(tag, "max_tasks_reported", max_tasks_reported)) continue;
         if (xp.parse_int(tag, "ncpus", ncpus)) continue;
         if (xp.parse_string(tag, "network_test_url", network_test_url)) {
             downcase_string(network_test_url);
@@ -361,6 +398,7 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         }
         if (xp.parse_bool(tag, "no_alt_platform", no_alt_platform)) continue;
         if (xp.parse_bool(tag, "no_gpus", no_gpus)) continue;
+        if (xp.parse_bool(tag, "no_info_fetch", no_info_fetch)) continue;
         if (xp.parse_bool(tag, "no_priority_change", no_priority_change)) continue;
         if (xp.parse_bool(tag, "os_random_only", os_random_only)) continue;
 #ifndef SIM
@@ -374,28 +412,21 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_bool(tag, "run_apps_manually", run_apps_manually)) continue;
         if (xp.parse_int(tag, "save_stats_days", save_stats_days)) continue;
         if (xp.parse_bool(tag, "simple_gui_only", simple_gui_only)) continue;
+        if (xp.parse_bool(tag, "skip_cpu_benchmarks", skip_cpu_benchmarks)) continue;
         if (xp.parse_double(tag, "start_delay", start_delay)) continue;
         if (xp.parse_bool(tag, "stderr_head", stderr_head)) continue;
         if (xp.parse_bool(tag, "suppress_net_info", suppress_net_info)) continue;
+        if (xp.parse_bool(tag, "unsigned_apps_ok", unsigned_apps_ok)) continue;
         if (xp.parse_bool(tag, "use_all_gpus", use_all_gpus)) continue;
         if (xp.parse_bool(tag, "use_certs", use_certs)) continue;
         if (xp.parse_bool(tag, "use_certs_only", use_certs_only)) continue;
         if (xp.parse_bool(tag, "zero_debts", zero_debts)) continue;
-        if (xp.parse_bool(tag, "skip_cpu_benchmarks", btemp)) {
-            gstate.skip_cpu_benchmarks = btemp;
-            continue;
-        }
-        if (xp.parse_bool(tag, "unsigned_apps_ok", btemp)) {
-            gstate.unsigned_apps_ok = btemp;
-            continue;
-        }
-        if (xp.parse_bool(tag, "exit_after_finish", btemp)) {
-            gstate.exit_after_finish = btemp;
-            continue;
-        }
 
-        msg_printf(NULL, MSG_USER_ERROR, "Unrecognized tag in %s: <%s>\n",
-            CONFIG_FILE, tag
+        msg_printf_notice(NULL, false,
+            "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
+            "%s: <%s>",
+            _("Unrecognized tag in cc_config.xml"),
+            tag
         );
         xp.skip_unexpected(tag, true, "CONFIG::parse_options");
     }
@@ -410,13 +441,20 @@ int CONFIG::parse(FILE* f) {
 
     mf.init_file(f);
     if (!xp.parse_start("cc_config")) {
-        msg_printf(NULL, MSG_USER_ERROR, "Missing start tag in %s", CONFIG_FILE);
+        msg_printf_notice(NULL, false,
+            "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
+            "%s",
+            _("Missing start tag in cc_config.xml")
+        );
         return ERR_XML_PARSE;
     }
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) {
-            msg_printf(NULL, MSG_USER_ERROR,
-               "Unexpected text %s in %s", tag, CONFIG_FILE
+            msg_printf_notice(NULL, false,
+                "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
+                "%s: %s",
+                _("Unexpected text in cc_config.xml"),
+                tag
             );
             continue;
         }
@@ -429,12 +467,19 @@ int CONFIG::parse(FILE* f) {
             parse_options(xp);
             continue;
         }
-        msg_printf(NULL, MSG_USER_ERROR, "Unparsed tag in %s: <%s>\n",
-            CONFIG_FILE, tag
+        msg_printf_notice(NULL, false,
+            "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
+            "%s: <%s>",
+            _("Unrecognized tag in cc_config.xml"),
+            tag
         );
         xp.skip_unexpected(tag, true, "CONFIG.parse");
     }
-    msg_printf(NULL, MSG_USER_ERROR, "Missing end tag in %s", CONFIG_FILE);
+    msg_printf_notice(NULL, false,
+        "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
+        "%s",
+        _("Missing end tag in cc_config.xml")
+    );
     return ERR_XML_PARSE;
 }
 

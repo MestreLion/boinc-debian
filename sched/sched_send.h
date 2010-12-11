@@ -30,7 +30,7 @@ extern int add_result_to_reply(
     bool locality_scheduling
 );
 
-inline bool anonymous(PLATFORM* platform) {
+inline bool is_anonymous(PLATFORM* platform) {
     return (!strcmp(platform->name, "anonymous"));
 }
 
@@ -49,7 +49,11 @@ extern bool app_core_compatible(WORK_REQ& wreq, APP_VERSION& av);
 #define INFEASIBLE_BANDWIDTH    9
 #define INFEASIBLE_CUSTOM       10
 
-extern int wu_is_infeasible_fast(WORKUNIT&, APP&, BEST_APP_VERSION&);
+extern int wu_is_infeasible_fast(
+    WORKUNIT&,
+    int res_server_state, int res_priority, double res_report_deadline,
+    APP&, BEST_APP_VERSION&
+);
  
 extern double max_allowable_disk();
 
@@ -67,4 +71,6 @@ extern bool work_needed(bool);
 extern void send_work_setup();
 extern int effective_ncpus();
 extern int preferred_app_message_index;
+extern void update_n_jobs_today();
+
 #endif

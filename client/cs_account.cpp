@@ -21,14 +21,11 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
-#include <cassert>
 #include <cstring>
+#include <cassert>
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -440,21 +437,21 @@ int CLIENT_STATE::add_project(
     strip_whitespace(canonical_master_url);
     canonicalize_master_url(canonical_master_url);
     if (!valid_master_url(canonical_master_url)) {
-        msg_printf(0, MSG_USER_ERROR, "Invalid URL: %s", canonical_master_url);
+        msg_printf(0, MSG_INFO, "Invalid URL: %s", canonical_master_url);
         return ERR_INVALID_URL;
     }
 
     safe_strcpy(auth, _auth);
     strip_whitespace(auth);
     if (!strlen(auth)) {
-        msg_printf(0, MSG_USER_ERROR, "Missing account key");
+        msg_printf(0, MSG_INFO, "Missing account key");
         return ERR_AUTHENTICATOR;
     }
 
     // check if we're already attached to this project
     //
     if (lookup_project(canonical_master_url)) {
-        msg_printf(0, MSG_USER_ERROR, "Already attached to %s", canonical_master_url);
+        msg_printf(0, MSG_INFO, "Already attached to %s", canonical_master_url);
         return ERR_ALREADY_ATTACHED;
     }
 

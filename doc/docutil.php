@@ -1,5 +1,8 @@
 <?php
 
+require_once("../inc/util_basic.inc");
+require_once("../inc/translation.inc");
+
 if (0) {
     $x = $_SERVER['PHP_SELF'];
     $path = "/tmp/php_pids/".getmypid();
@@ -15,7 +18,7 @@ function search_form() {
     <input type=hidden name=sitesearch value=\"http://boinc.berkeley.edu\">
     <span class=\"nobar\">
     <input class=small name=q size=20>
-    <input class=small type=submit value=Search>
+    <input class=small type=submit value=".tra("Search").">
     </span>
     </form>
 ";
@@ -77,7 +80,8 @@ function copyright() {
     echo "
         Copyright &copy; $y University of California.
         Permission is granted to copy, distribute and/or modify this document
-        under the terms of the GNU Free Documentation License,
+        under the terms of the 
+        <a href=http://www.gnu.org/copyleft/fdl.html>GNU Free Documentation License</a>,
         Version 1.2 or any later version published by the Free Software Foundation.
     ";
 }
@@ -95,7 +99,7 @@ function page_tail($translatable=false, $is_main=false) {
     if (!$is_main) {
         echo "
             <center>
-            <a href=\"/\">Return to BOINC main page</a>
+            <a href=\"/\">".tra("Return to BOINC main page")."</a>
             </center><p>
         ";
     }
@@ -104,8 +108,13 @@ function page_tail($translatable=false, $is_main=false) {
         <font color=#888888>
     ";
     if ($translatable) {
-        echo "
-            This page is <a href=\"trac/wiki/TranslateIntro\">translatable</a>.<br>
+        echo 
+            sprintf(
+                tra("This page is %stranslatable%s."),
+                "<a href=\"trac/wiki/TranslateIntro\">",
+                "</a>"
+            ),
+            "<br>
         ";
     }
     echo "
@@ -123,14 +132,6 @@ function page_tail($translatable=false, $is_main=false) {
 function html_text($x) {
     return "<pre>".htmlspecialchars($x)."</pre>
     ";
-}
-
-function start_table($extra="width=\"100%\"") {
-    echo "<table class=bordered $extra>";
-}
-
-function end_table() {
-    echo "</table>\n";
 }
 
 function list_start($attrs = 'width="100%"') {
@@ -152,7 +153,7 @@ function list_heading($x, $y, $z=null) {
 function list_heading_array($x) {
     echo "<tr>";
     foreach ($x as $h) {
-        echo "<td class=heading valign=top><center><b>$h</b></center></td>";
+        echo "<th>$h</th>";
     }
     echo "</tr>\n";
 }
@@ -195,7 +196,7 @@ function list_end() {
     echo "</table><p>\n";
 }
 
-function error_page($x) {
+function boinc_error_page($x) {
     page_head("Error");
     echo $x;
     page_tail();
@@ -214,31 +215,15 @@ function block_end() {
     ";
 }
 
-function get_str($name) {
-    if (isset($_GET[$name])) {
-        $x = $_GET[$name];
-        $x = trim($x);
-        return mysql_real_escape_string($x);
-    }
-    return null;
-}
-
 function show_link($url) {
     echo "<br><a href=$url>$url</a>";
 }
 
-function parse_element($xml, $tag) {
-    $element = null;
-    $closetag = "</" . substr($tag,1);
-    $x = strstr($xml, $tag);
-    if ($x) {
-        if (strstr($tag, "/>")) return $tag;
-        $y = substr($x, strlen($tag));
-        $n = strpos($y, $closetag);
-        if ($n) {
-            $element = substr($y, 0, $n);
-        }
+function get_str2($x) {
+    if (array_key_exists($x, $_GET)) {
+        return $_GET[$x];
     }
-    return trim($element);
+    return null;
 }
+
 ?>

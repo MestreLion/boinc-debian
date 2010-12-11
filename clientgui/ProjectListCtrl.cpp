@@ -20,8 +20,19 @@
 #endif
 
 #include "stdwx.h"
+#include "diagnostics.h"
+#include "util.h"
+#include "mfile.h"
+#include "miofile.h"
+#include "parse.h"
+#include "error_numbers.h"
+#include "wizardex.h"
+#include "error_numbers.h"
 #include "BOINCGUIApp.h"
-#include "BOINCWizards.h"
+#include "SkinManager.h"
+#include "MainDocument.h"
+#include "BOINCBaseWizard.h"
+#include "WizardAttach.h"
 #include "ProjectListCtrl.h"
 
 ////@begin XPM images
@@ -31,6 +42,8 @@
 #include "res/multicore.xpm"
 ////@end XPM images
 
+
+#if wxUSE_ACCESSIBILITY || defined(__WXMAC__)
 
 #ifdef __WXMAC__
 
@@ -46,14 +59,12 @@ CProjectListCtrlAccessible::~CProjectListCtrlAccessible() {
 
 #endif
 
-#if wxUSE_ACCESSIBILITY || defined(__WXMAC__)
-
 // Gets the name of the specified object.
 wxAccStatus CProjectListCtrlAccessible::GetName(int childId, wxString* name)
 {
     if (childId == wxACC_SELF)
     {
-        *name = wxT("Project List");
+        *name = _("Project List");
     }
     else
     {
@@ -98,25 +109,21 @@ wxAccStatus CProjectListCtrlAccessible::GetLocation(wxRect& rect, int elementId)
     {
         // List item
         wxSize cCtrlSize = pCtrl->GetClientSize();
-        int    iItemWidth = cCtrlSize.GetWidth();
-        int    iItemHeight = pCtrl->GetTotalClientHeight() / (int)pCtrl->GetItemCount();
 
         // Set the initial control postition to the absolute coords of the upper
         //   left hand position of the control
         rect.SetPosition(pCtrl->GetScreenPosition());
-        rect.width = iItemWidth - 1;
-        rect.height = iItemHeight - 1;
+        rect.width = cCtrlSize.GetWidth() - 1;
+        rect.height = pCtrl->GetItemHeight(elementId - 1) - 1;
 
-        if (1 == elementId)
-        {
-            // First child
+        // Items can have different heights
+        int    firstVisibleItem = (int)pCtrl->GetFirstVisibleLine();
+        int    yOffset = 0;
+        for (int i=firstVisibleItem; i<(elementId - 1); ++i) {
+            yOffset += pCtrl->GetItemHeight((size_t)i);
         }
-        else
-        {
-            // Other children
-            rect.SetTop(rect.GetTop() + ((elementId - 1) * iItemHeight) + 1);
-            rect.height -= 1;
-        }
+        rect.SetTop(rect.GetTop() + yOffset);
+        rect.height -= 1;
         return wxACC_OK;
     }
     // Let the framework handle the other cases.
@@ -606,14 +613,3 @@ CProjectListItem* CProjectListCtrl::GetItem(
 {
     return m_Items[iIndex];
 }
-
-
-/*!
- * Return the total height of all the client items.
- */
- 
-wxCoord CProjectListCtrl::GetTotalClientHeight()
-{
-    return EstimateTotalHeight();
-}
-

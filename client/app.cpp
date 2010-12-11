@@ -28,7 +28,6 @@
 #endif
 
 #ifndef _WIN32
-
 #include <unistd.h>
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
@@ -51,15 +50,8 @@
 #include <cstdio>
 #include <cmath>
 #include <cstdlib>
-
 #endif
 
-#ifdef SIM
-#include "sim.h"
-#else
-#include "client_state.h"
-#include "client_types.h"
-#endif
 
 #include "error_numbers.h"
 #include "filesys.h"
@@ -67,6 +59,10 @@
 #include "parse.h"
 #include "shmem.h"
 #include "str_util.h"
+#include "str_replace.h"
+#include "util.h"
+
+#include "client_state.h"
 #include "client_msgs.h"
 #include "procinfo.h"
 #include "sandbox.h"
@@ -77,17 +73,45 @@ using std::min;
 
 bool exclusive_app_running;
 bool exclusive_gpu_app_running;
-bool gpu_suspended;
+int gpu_suspend_reason;
 double non_boinc_cpu_usage;
 
-#define ABORT_TIMEOUT   60
-    // if we send app <abort> request, wait this long before killing it.
-    // This gives it time to download symbol files (which can be several MB)
-    // and write stack trace to stderr
-#define QUIT_TIMEOUT    10
-    // Same, for <quit>.  Shorter because no stack trace is generated
-
 ACTIVE_TASK::~ACTIVE_TASK() {
+}
+
+ACTIVE_TASK::ACTIVE_TASK() {
+    result = NULL;
+    wup = NULL;
+    app_version = NULL;
+    pid = 0;
+    slot = 0;
+    _task_state = PROCESS_UNINITIALIZED;
+    scheduler_state = CPU_SCHED_UNINITIALIZED;
+    signal = 0;
+    strcpy(slot_dir, "");
+    graphics_mode_acked = MODE_UNSUPPORTED;
+    graphics_mode_ack_timeout = 0;
+    fraction_done = 0;
+    run_interval_start_wall_time = gstate.now;
+    checkpoint_cpu_time = 0;
+    checkpoint_wall_time = 0;
+    current_cpu_time = 0;
+    once_ran_edf = false;
+    elapsed_time = 0;
+    checkpoint_elapsed_time = 0;
+    have_trickle_down = false;
+    send_upload_file_status = false;
+    too_large = false;
+    needs_shmem = false;
+    want_network = 0;
+    premature_exit_count = 0;
+    quit_time = 0;
+    memset(&procinfo, 0, sizeof(procinfo));
+#ifdef _WIN32
+    process_handle = NULL;
+    shm_handle = NULL;
+#endif
+    premature_exit_count = 0;
 }
 
 // preempt this task;
@@ -146,69 +170,6 @@ int ACTIVE_TASK::preempt(int preempt_type) {
     return 0;
 }
 
-#ifndef SIM
-
-ACTIVE_TASK::ACTIVE_TASK() {
-    result = NULL;
-    wup = NULL;
-    app_version = NULL;
-    pid = 0;
-    slot = 0;
-    _task_state = PROCESS_UNINITIALIZED;
-    scheduler_state = CPU_SCHED_UNINITIALIZED;
-    signal = 0;
-    strcpy(slot_dir, "");
-    graphics_mode_acked = MODE_UNSUPPORTED;
-    graphics_mode_ack_timeout = 0;
-    fraction_done = 0;
-    run_interval_start_wall_time = gstate.now;
-    checkpoint_cpu_time = 0;
-    checkpoint_wall_time = 0;
-    current_cpu_time = 0;
-    once_ran_edf = false;
-    elapsed_time = 0;
-    checkpoint_elapsed_time = 0;
-    have_trickle_down = false;
-    send_upload_file_status = false;
-    too_large = false;
-    needs_shmem = false;
-    want_network = 0;
-    premature_exit_count = 0;
-    quit_time = 0;
-    memset(&procinfo, 0, sizeof(procinfo));
-#ifdef _WIN32
-    process_handle = NULL;
-    shm_handle = NULL;
-#endif
-    premature_exit_count = 0;
-}
-
-static const char* task_state_name(int val) {
-    switch (val) {
-    case PROCESS_UNINITIALIZED: return "UNINITIALIZED";
-    case PROCESS_EXECUTING: return "EXECUTING";
-    case PROCESS_SUSPENDED: return "SUSPENDED";
-    case PROCESS_ABORT_PENDING: return "ABORT_PENDING";
-    case PROCESS_EXITED: return "EXITED";
-    case PROCESS_WAS_SIGNALED: return "WAS_SIGNALED";
-    case PROCESS_EXIT_UNKNOWN: return "EXIT_UNKNOWN";
-    case PROCESS_ABORTED: return "ABORTED";
-    case PROCESS_COULDNT_START: return "COULDNT_START";
-    case PROCESS_QUIT_PENDING: return "QUIT_PENDING";
-    }
-    return "Unknown";
-}
-
-void ACTIVE_TASK::set_task_state(int val, const char* where) {
-    _task_state = val;
-    if (log_flags.task_debug) {
-        msg_printf(result->project, MSG_INFO,
-            "[task_debug] task_state=%s for %s from %s",
-            task_state_name(val), result->name, where
-        );
-    }
-}
-
 // called when a process has exited or we've killed it
 //
 void ACTIVE_TASK::cleanup_task() {
@@ -252,23 +213,12 @@ void ACTIVE_TASK::cleanup_task() {
     }
 #endif
 
-    // clear backoff for app's resource;
-    // this addresses the situation where the project has a
-    // "max # jobs in progress" limit, and we're backed off because of that
-    //
-    if (app_version->ncudas) {
-        result->project->cuda_pwf.clear_backoff();
-    } else if (app_version->natis) {
-        result->project->ati_pwf.clear_backoff();
-    } else {
-        result->project->cpu_pwf.clear_backoff();
-    }
-
-    if (gstate.exit_after_finish) {
+    if (config.exit_after_finish) {
         exit(0);
     }
 }
 
+#ifndef SIM
 int ACTIVE_TASK::init(RESULT* rp) {
     result = rp;
     wup = rp->wup;
@@ -280,6 +230,7 @@ int ACTIVE_TASK::init(RESULT* rp) {
     relative_to_absolute(slot_dir, slot_path);
     return 0;
 }
+#endif
 
 // Deallocate memory to prevent unneeded reporting of memory leaks
 //
@@ -295,16 +246,34 @@ void ACTIVE_TASK_SET::free_mem() {
     }
 }
 
+#ifndef SIM
+
 bool app_running(vector<PROCINFO>& piv, const char* p) {
     for (unsigned int i=0; i<piv.size(); i++) {
         PROCINFO& pi = piv[i];
         //msg_printf(0, MSG_INFO, "running: [%s]", pi.command);
-        if (!strcmp(pi.command, p)) {
+        if (!strcasecmp(pi.command, p)) {
             return true;
         }
     }
     return false;
 }
+
+#if 0  // debugging
+void procinfo_show(PROCINFO& pi, vector<PROCINFO>& piv) {
+	unsigned int i;
+	memset(&pi, 0, sizeof(pi));
+	for (i=0; i<piv.size(); i++) {
+		PROCINFO& p = piv[i];
+
+        pi.kernel_time += p.kernel_time;
+        pi.user_time += p.user_time;
+        msg_printf(NULL, MSG_INFO, "%d %s: boinc %d low %d (%f %f) total (%f %f)",
+            p.id, p.command, p.is_boinc_app, p.is_low_priority, p.kernel_time, p.user_time, pi.kernel_time, pi.user_time
+        );
+    }
+}
+#endif
 
 void ACTIVE_TASK_SET::get_memory_usage() {
     static double last_mem_time=0;
@@ -322,32 +291,40 @@ void ACTIVE_TASK_SET::get_memory_usage() {
 	if (retval) {
 		if (log_flags.mem_usage_debug) {
 			msg_printf(NULL, MSG_INTERNAL_ERROR,
-				"[mem_usage_debug] procinfo_setup() returned %d", retval
+				"[mem_usage] procinfo_setup() returned %d", retval
 			);
 		}
 		return;
 	}
     for (i=0; i<active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks[i];
-        if (atp->scheduler_state == CPU_SCHED_SCHEDULED) {
-            PROCINFO& pi = atp->procinfo;
-            unsigned long last_page_fault_count = pi.page_fault_count;
-            memset(&pi, 0, sizeof(pi));
-            pi.id = atp->pid;
-            procinfo_app(pi, piv, atp->app_version->graphics_exec_file);
-            pi.working_set_size_smoothed = .5*pi.working_set_size_smoothed + pi.working_set_size;
+        if (atp->task_state() == PROCESS_UNINITIALIZED) continue;
+        if (atp->pid ==0) continue;
 
-            int pf = pi.page_fault_count - last_page_fault_count;
-            pi.page_fault_rate = pf/diff;
-            if (log_flags.mem_usage_debug) {
-                msg_printf(atp->result->project, MSG_INFO,
-                    "[mem_usage_debug] %s: RAM %.2fMB, page %.2fMB, %.2f page faults/sec, user CPU %.3f, kernel CPU %.3f",
-                    atp->result->name,
-                    pi.working_set_size/MEGA, pi.swap_size/MEGA,
-                    pi.page_fault_rate,
-                    pi.user_time, pi.kernel_time
-                );
-            }
+        // scan all active tasks with a process, even if not scheduled, because
+        // 1) we might have recently suspended a tasks,
+        //    and we still need to count its time
+        // 2) preempted tasks might not actually suspend themselves
+        //    (and we'd count that as non-BOINC CPU usage
+        //    and suspend everything).
+
+        PROCINFO& pi = atp->procinfo;
+        unsigned long last_page_fault_count = pi.page_fault_count;
+        memset(&pi, 0, sizeof(pi));
+        pi.id = atp->pid;
+        procinfo_app(pi, piv, atp->app_version->graphics_exec_file);
+        pi.working_set_size_smoothed = .5*pi.working_set_size_smoothed + pi.working_set_size;
+
+        int pf = pi.page_fault_count - last_page_fault_count;
+        pi.page_fault_rate = pf/diff;
+        if (log_flags.mem_usage_debug) {
+            msg_printf(atp->result->project, MSG_INFO,
+                "[mem_usage] %s: RAM %.2fMB, page %.2fMB, %.2f page faults/sec, user CPU %.3f, kernel CPU %.3f",
+                atp->result->name,
+                pi.working_set_size/MEGA, pi.swap_size/MEGA,
+                pi.page_fault_rate,
+                pi.user_time, pi.kernel_time
+            );
         }
     }
 
@@ -378,10 +355,11 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     // so they're not useful for detecting paging/thrashing.
     //
     PROCINFO pi;
+    //procinfo_show(pi, piv);
     procinfo_other(pi, piv);
     if (log_flags.mem_usage_debug) {
         msg_printf(NULL, MSG_INFO,
-            "[mem_usage_debug] All others: RAM %.2fMB, page %.2fMB, user %.3f, kernel %.3f",
+            "[mem_usage] All others: RAM %.2fMB, page %.2fMB, user %.3f, kernel %.3f",
             pi.working_set_size/MEGA, pi.swap_size/MEGA,
             pi.user_time, pi.kernel_time
         );
@@ -396,53 +374,14 @@ void ACTIVE_TASK_SET::get_memory_usage() {
         if (non_boinc_cpu_usage < 0) non_boinc_cpu_usage = 0;
         if (log_flags.mem_usage_debug) {
             msg_printf(NULL, MSG_INFO,
-                "[mem_usage_debug] non-BOINC CPU usage: %.2f%%", non_boinc_cpu_usage*100
+                "[mem_usage] non-BOINC CPU usage: %.2f%%", non_boinc_cpu_usage*100
             );
         }
     }
     last_cpu_time = new_cpu_time;
 }
 
-// Do periodic checks on running apps:
-// - get latest CPU time and % done info
-// - check if any has exited, and clean up
-// - see if any has exceeded its CPU or disk space limits, and abort it
-//
-bool ACTIVE_TASK_SET::poll() {
-    bool action;
-    unsigned int i;
-    static double last_time = 0;
-    if (gstate.now - last_time < TASK_POLL_PERIOD) return false;
-    last_time = gstate.now;
-
-    action = check_app_exited();
-    send_heartbeats();
-    send_trickle_downs();
-    graphics_poll();
-    process_control_poll();
-    get_memory_usage();
-    action |= check_rsc_limits_exceeded();
-    get_msgs();
-    for (i=0; i<active_tasks.size(); i++) {
-        ACTIVE_TASK* atp = active_tasks[i];
-        if (atp->task_state() == PROCESS_ABORT_PENDING) {
-            if (gstate.now > atp->abort_time + ABORT_TIMEOUT) {
-                atp->kill_task(false);
-            }
-        }
-        if (atp->task_state() == PROCESS_QUIT_PENDING) {
-            if (gstate.now > atp->quit_time + QUIT_TIMEOUT) {
-                atp->kill_task(true);
-            }
-        }
-    }
-
-    if (action) {
-        gstate.set_client_state_dirty("ACTIVE_TASK_SET::poll");
-    }
-
-    return action;
-}
+#endif
 
 // There's a new trickle file.
 // Move it from slot dir to project dir
@@ -512,6 +451,7 @@ bool ACTIVE_TASK_SET::is_slot_dir_in_use(char* dir) {
 // and make a slot dir if needed
 //
 void ACTIVE_TASK::get_free_slot(RESULT* rp) {
+#ifndef SIM
     int j, retval;
     char path[1024];
 
@@ -535,6 +475,7 @@ void ACTIVE_TASK::get_free_slot(RESULT* rp) {
     if (log_flags.slot_debug) {
         msg_printf(rp->project, MSG_INFO, "[slot] assigning slot %d to %s", j, rp->name);
     }
+#endif
 }
 
 bool ACTIVE_TASK_SET::slot_taken(int slot) {
@@ -556,7 +497,6 @@ int ACTIVE_TASK::write(MIOFILE& fout) {
         "    <active_task_state>%d</active_task_state>\n"
         "    <app_version_num>%d</app_version_num>\n"
         "    <slot>%d</slot>\n"
-        "    <pid>%d</pid>\n"
         "    <checkpoint_cpu_time>%f</checkpoint_cpu_time>\n"
         "    <checkpoint_elapsed_time>%f</checkpoint_elapsed_time>\n"
         "    <fraction_done>%f</fraction_done>\n"
@@ -571,7 +511,6 @@ int ACTIVE_TASK::write(MIOFILE& fout) {
         task_state(),
         app_version->version_num,
         slot,
-        pid,
         checkpoint_cpu_time,
         checkpoint_elapsed_time,
         fraction_done,
@@ -585,6 +524,8 @@ int ACTIVE_TASK::write(MIOFILE& fout) {
     fout.printf("</active_task>\n");
     return 0;
 }
+
+#ifndef SIM
 
 int ACTIVE_TASK::write_gui(MIOFILE& fout) {
     fout.printf(
@@ -638,6 +579,8 @@ int ACTIVE_TASK::write_gui(MIOFILE& fout) {
     fout.printf("</active_task>\n");
     return 0;
 }
+
+#endif
 
 int ACTIVE_TASK::parse(MIOFILE& fin) {
     char buf[256], result_name[256], project_master_url[256];
@@ -717,16 +660,10 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
         else if (parse_str(buf, "<project_master_url>", project_master_url, sizeof(project_master_url))) continue;
         else if (parse_int(buf, "<slot>", slot)) continue;
         else if (parse_int(buf, "<active_task_state>", dummy)) continue;
-        else if (parse_double(buf, "<checkpoint_cpu_time>", checkpoint_cpu_time)) {
-            current_cpu_time = checkpoint_cpu_time;
-            continue;
-        }
+        else if (parse_double(buf, "<checkpoint_cpu_time>", checkpoint_cpu_time)) continue;
         else if (parse_bool(buf, "once_ran_edf", once_ran_edf)) continue;
         else if (parse_double(buf, "<fraction_done>", fraction_done)) continue;
-        else if (parse_double(buf, "<checkpoint_elapsed_time>", checkpoint_elapsed_time)) {
-            elapsed_time = checkpoint_elapsed_time;
-            continue;
-        }
+        else if (parse_double(buf, "<checkpoint_elapsed_time>", checkpoint_elapsed_time)) continue;
         else if (parse_int(buf, "<app_version_num>", n)) continue;
         else if (parse_double(buf, "<swap_size>", procinfo.swap_size)) continue;
         else if (parse_double(buf, "<working_set_size>", procinfo.working_set_size)) continue;
@@ -788,6 +725,8 @@ int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
     }
     return ERR_XML_PARSE;
 }
+
+#ifndef SIM
 
 void MSG_QUEUE::init(char* n) {
 	strcpy(name, n);
@@ -866,6 +805,8 @@ bool MSG_QUEUE::timeout(double diff) {
 	return false;
 }
 
+#endif
+
 void ACTIVE_TASK_SET::report_overdue() {
     unsigned int i;
     ACTIVE_TASK* atp;
@@ -874,7 +815,7 @@ void ACTIVE_TASK_SET::report_overdue() {
         atp = active_tasks[i];
         double diff = (gstate.now - atp->result->report_deadline)/86400;
         if (diff > 0) {
-            msg_printf(atp->result->project, MSG_USER_ERROR,
+            msg_printf(atp->result->project, MSG_INFO,
                 "Task %s is %.2f days overdue; you may not get credit for it.  Consider aborting it.", atp->result->name, diff
             );
         }
@@ -932,12 +873,14 @@ bool ACTIVE_TASK_SET::want_network() {
 }
 
 void ACTIVE_TASK_SET::network_available() {
+#ifndef SIM
     for (unsigned int i=0; i<active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks[i];
         if (atp->want_network) {
             atp->send_network_available();
         }
     }
+#endif
 }
 
 void ACTIVE_TASK::upload_notify_app(const FILE_INFO* fip, const FILE_REF* frp) {
@@ -964,14 +907,43 @@ void ACTIVE_TASK_SET::upload_notify_app(FILE_INFO* fip) {
     }
 }
 
+#ifndef SIM
 void ACTIVE_TASK_SET::init() {
     for (unsigned int i=0; i<active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks[i];
         atp->init(atp->result);
         atp->scheduler_state = CPU_SCHED_PREEMPTED;
         atp->read_task_state_file();
+        atp->current_cpu_time = atp->checkpoint_cpu_time;
+        atp->elapsed_time = atp->checkpoint_elapsed_time;
     }
 }
 
 #endif
+
+static const char* task_state_name(int val) {
+    switch (val) {
+    case PROCESS_UNINITIALIZED: return "UNINITIALIZED";
+    case PROCESS_EXECUTING: return "EXECUTING";
+    case PROCESS_SUSPENDED: return "SUSPENDED";
+    case PROCESS_ABORT_PENDING: return "ABORT_PENDING";
+    case PROCESS_EXITED: return "EXITED";
+    case PROCESS_WAS_SIGNALED: return "WAS_SIGNALED";
+    case PROCESS_EXIT_UNKNOWN: return "EXIT_UNKNOWN";
+    case PROCESS_ABORTED: return "ABORTED";
+    case PROCESS_COULDNT_START: return "COULDNT_START";
+    case PROCESS_QUIT_PENDING: return "QUIT_PENDING";
+    }
+    return "Unknown";
+}
+
+void ACTIVE_TASK::set_task_state(int val, const char* where) {
+    _task_state = val;
+    if (log_flags.task_debug) {
+        msg_printf(result->project, MSG_INFO,
+            "[task] task_state=%s for %s from %s",
+            task_state_name(val), result->name, where
+        );
+    }
+}
 

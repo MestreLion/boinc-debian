@@ -33,7 +33,13 @@ check_banished($logged_in_user);
 $forumid = get_int("id");
 $forum = BoincForum::lookup_id($forumid);
 
-check_create_thread_access($logged_in_user, $forum);
+if (!user_can_create_thread($logged_in_user, $forum)) {
+    error_page(
+        "Only project admins may create a thread here.
+        However, you may reply existing threads."
+    );
+}
+check_post_access($logged_in_user, $forum);
 
 $title = post_str("title", true);
 if (!$title) $title = get_str("title", true);
@@ -129,5 +135,5 @@ echo "</form>\n";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_post.php 18487 2009-06-23 17:15:17Z davea $";
+$cvs_version_tracker[]="\$Id: forum_post.php 19951 2009-12-17 00:17:37Z boincadm $";
 ?>

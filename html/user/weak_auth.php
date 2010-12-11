@@ -22,7 +22,7 @@ require_once("../inc/user.inc");
 $url = parse_config(get_config(), "<master_url>");
 
 $user = get_logged_in_user();
-page_head("Weak account key");
+page_head(tra("Weak account key"));
 
 $weak_auth = weak_auth($user);
 
@@ -44,7 +44,7 @@ for ($i=0; $i<strlen($url); $i++) {
 //remove trailing underscore(s)
 $account_file = "account_" . rtrim($url, '_') . ".xml";
 
-echo "<p>",tra("Your 'weak account key' lets you attach computers to your account on this project, without giving the ability to log in to your account or to change it in any way."), " ",
+echo "<p>",tra("Your 'weak account key' lets you link a computer to your account without giving it the ability to log in to your account or to change it in any way."), " ",
 	tra("This mechanism works only with projects that have upgraded their server software 7 Dec 2007 or later."), "</p>",
 	"<p>", tra("Your weak account key for this project is:"), "</p>",
 	"<pre>$weak_auth</pre>",

@@ -25,9 +25,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cassert>
 #include <csignal>
 #endif
@@ -40,11 +37,7 @@
 #include "shmem.h"
 #include "log_flags.h"
 #include "client_msgs.h"
-#ifdef SIM
-#include "sim.h"
-#else
 #include "client_state.h"
-#endif
 
 using std::vector;
 
@@ -74,6 +67,9 @@ bool CLIENT_STATE::handle_finished_apps() {
                 );
             }
             app_finished(*atp);
+            if (!action) {
+                adjust_debts();     // update debts before erasing ACTIVE_TASK
+            }
             iter = active_tasks.active_tasks.erase(iter);
             delete atp;
             set_client_state_dirty("handle_finished_apps");
@@ -209,8 +205,6 @@ int CLIENT_STATE::app_finished(ACTIVE_TASK& at) {
     return 0;
 }
 
-#ifndef SIM
-
 // Returns true iff all the input files for a result are present
 // (both WU and app version)
 // Called from CLIENT_STATE::update_results (with verify=false)
@@ -322,5 +316,3 @@ ACTIVE_TASK* ACTIVE_TASK_SET::lookup_result(RESULT* result) {
     }
     return NULL;
 }
-#endif
-

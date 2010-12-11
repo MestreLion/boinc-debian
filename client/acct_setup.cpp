@@ -19,11 +19,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
-#else 
+#else
 #include "config.h"
+#include <cstring>
 #endif
 
-#include <cstring>
 #include "client_state.h"
 #include "file_names.h"
 #include "parse.h"
@@ -105,7 +105,9 @@ int GET_PROJECT_CONFIG_OP::do_rpc(string master_url) {
         "Fetching configuration file from %s", url.c_str()
     );
 
-    retval = gui_http->do_rpc(this, url, GET_PROJECT_CONFIG_FILENAME);
+    retval = gui_http->do_rpc(
+        this, (char*)url.c_str(), GET_PROJECT_CONFIG_FILENAME, false
+    );
     if (retval) {
         error_num = retval;
     } else {
@@ -140,7 +142,9 @@ int LOOKUP_ACCOUNT_OP::do_rpc(ACCOUNT_IN& ai) {
     escape_url(parameter);
     url += parameter;
 
-    retval = gui_http->do_rpc(this, url, LOOKUP_ACCOUNT_FILENAME);
+    retval = gui_http->do_rpc(
+        this, (char*)url.c_str(), LOOKUP_ACCOUNT_FILENAME, false
+    );
     if (retval) {
         error_num = retval;
     } else {
@@ -186,7 +190,9 @@ int CREATE_ACCOUNT_OP::do_rpc(ACCOUNT_IN& ai) {
         escape_url(parameter);
         url += parameter;
     }
-    retval = gui_http->do_rpc(this, (char*)url.c_str(), CREATE_ACCOUNT_FILENAME);
+    retval = gui_http->do_rpc(
+        this, (char*)url.c_str(), CREATE_ACCOUNT_FILENAME, false
+    );
     if (retval) {
         error_num = retval;
     } else {
@@ -203,95 +209,13 @@ void CREATE_ACCOUNT_OP::handle_reply(int http_op_retval) {
     }
 }
 
-int GET_CURRENT_VERSION_OP::do_rpc() {
-    int retval;
-
-    retval = gui_http->do_rpc(
-        this, config.client_version_check_url, GET_CURRENT_VERSION_FILENAME
-    );
-    if (retval) {
-        error_num = retval;
-    } else {
-        error_num = ERR_IN_PROGRESS;
-    }
-    return retval;
-}
-
-static bool is_version_newer(char* p) {
-    int maj=0, min=0, rel=0;
-
-    sscanf(p, "%d.%d.%d", &maj, &min, &rel);
-    if (maj > gstate.core_client_version.major) return true;
-    if (maj < gstate.core_client_version.major) return false;
-    if (min > gstate.core_client_version.minor) return true;
-    if (min < gstate.core_client_version.minor) return false;
-    if (rel > gstate.core_client_version.release) return true;
-    return false;
-}
-
-static bool parse_version(FILE* f, char* new_version) {
-    char buf[256], buf2[256];
-    bool same_platform = false, newer_version = false;
-    while (fgets(buf, 256, f)) {
-        if (match_tag(buf, "</version>")) {
-            return (same_platform && newer_version);
-        }
-        if (parse_str(buf, "<dbplatform>", buf2, sizeof(buf2))) {
-            same_platform = (strcmp(buf2, gstate.get_primary_platform())==0);
-        }
-        if (parse_str(buf, "<version_num>", buf2, sizeof(buf2))) {
-            newer_version = is_version_newer(buf2);
-            strcpy(new_version, buf2);
-        }
-    }
-    return false;
-}
-
-void GET_CURRENT_VERSION_OP::handle_reply(int http_op_retval) {
-    char buf[256], new_version[256];
-    if (http_op_retval) {
-        error_num = http_op_retval;
-        return;
-    }
-    gstate.new_version_check_time = gstate.now;
-    FILE* f = boinc_fopen(GET_CURRENT_VERSION_FILENAME, "r");
-    if (!f) return;
-    while (fgets(buf, 256, f)) {
-        if (match_tag(buf, "<version>")) {
-            if (parse_version(f, new_version)) {
-                msg_printf(0, MSG_INFO,
-                    "A new version of BOINC (%s) is available",
-                    new_version
-                );
-                msg_printf(0, MSG_INFO,
-                    "Visit %s to download it",
-                    config.client_download_url.c_str()
-                );
-                gstate.newer_version = string(new_version);
-                break;
-            }
-        }
-    }
-    fclose(f);
-}
-
-#define NEW_VERSION_CHECK_PERIOD (14*86400)
-
-void CLIENT_STATE::new_version_check() {
-    if (( new_version_check_time == 0) ||
-        (now - new_version_check_time > NEW_VERSION_CHECK_PERIOD)) {
-            // get_current_version_op.handle_reply() will update new_version_check_time
-            get_current_version_op.do_rpc();
-        }
-}
-
 int GET_PROJECT_LIST_OP::do_rpc() {
     int retval;
     char buf[256];
 
     sprintf(buf, "http://boinc.berkeley.edu/project_list.php");
     retval = gui_http->do_rpc(
-        this, string(buf), ALL_PROJECTS_LIST_FILENAME_TEMP
+        this, buf, ALL_PROJECTS_LIST_FILENAME_TEMP, true
     );
     if (retval) {
         error_num = retval;

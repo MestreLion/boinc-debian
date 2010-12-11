@@ -80,7 +80,7 @@
 #define _WIN32_WINDOWS 0x0500
 #endif
 #ifndef _WIN32_IE
-#define _WIN32_IE 0x0500
+#define _WIN32_IE 0x0501
 #endif
 
 #include <windows.h>
@@ -88,6 +88,7 @@
 #include <shlobj.h>
 #include <userenv.h>
 #include <aclapi.h>
+#include <iphlpapi.h>
 
 #if !defined(__CYGWIN32__) || defined(USE_WINSOCK)
 
@@ -124,7 +125,12 @@ typedef size_t socklen_t;
 
 #include <commctrl.h>
 #include <raserror.h>
+#if defined(__MINGW32__)
+#include <stdint.h>
+#include <imagehlp.h>
+#else
 #include <dbghelp.h>
+#endif
 #include <tlhelp32.h>
 
 #include <io.h>
@@ -157,7 +163,9 @@ typedef LPCSTR PCTSTR, LPCTSTR, PCUTSTR, LPCUTSTR;
 // C headers
 #include <sys/stat.h>
 #include <sys/types.h>
+#if !defined(__MINGW32__)
 #include <fcntl.h>
+#endif
 #include <malloc.h>
 
 #if !defined(__MINGW32__) && !defined(__CYGWIN32__)
@@ -166,6 +174,7 @@ typedef LPCSTR PCTSTR, LPCTSTR, PCUTSTR, LPCUTSTR;
 #endif
 
 #ifdef __cplusplus
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cerrno>
@@ -230,27 +239,6 @@ typedef LPCSTR PCTSTR, LPCTSTR, PCUTSTR, LPCUTSTR;
 #endif
 #endif
 
-
-#ifndef __CYGWIN__
-
-#define vsnprintf               _vsnprintf
-#define snprintf                _snprintf
-#define stprintf                _stprintf
-#define stricmp                 _stricmp
-#define strdup                  _strdup
-#define fdopen                  _fdopen
-#define dup                     _dup
-#define unlink                  _unlink
-#define read                    _read
-#define stat                    _stat
-#define chdir                   _chdir
-#define finite                  _finite
-#define strdate                 _strdate
-#define strtime                 _strtime
-#define getcwd                  _getcwd
-
-#endif
-
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
@@ -261,13 +249,15 @@ extern "C" {
 #endif
 void __cdecl _fpreset (void);
 void __cdecl fpreset (void);
+#if (__GNUC__ < 4) // breaks build on MinGW gcc-4
 #define SetClassLongPtr SetClassLong
 #define GCLP_HICON GCL_HICON
 #define GCLP_HICONSM GCL_HICONSM
+#endif //GNUC
 #ifdef __cplusplus
 }
-#endif
-#endif
+#endif //cplusplus
+#endif //MINGW
 
 // On the Win32 platform include file and line number information for each
 //   memory allocation/deallocation

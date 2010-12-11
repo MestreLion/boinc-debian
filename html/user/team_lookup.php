@@ -22,8 +22,9 @@ require_once("../inc/team.inc");
 
 $format = get_str("format", true);
 $team_id = get_int("team_id", true);
+$team_ids = get_str("team_ids", true);
 
-if ($team_id || ($format == 'xml')) {
+if ($team_id || $team_ids || ($format == 'xml')) {
     require_once ('../inc/xml.inc');
     xml_header();
     $retval = db_init_xml();
@@ -40,10 +41,29 @@ if ($team_id) {
     exit();
 }
 
+if ($team_ids) {
+    $team_id_array = explode(",", $team_ids);
+    echo "<teams>\n";
+    $total = 0;
+    foreach ($team_id_array as $team_id) {
+        if (is_numeric($team_id)) { //make sure only numbers get through
+            $team = lookup_team($team_id);
+            if ($team) {
+                show_team_xml($team);
+                $total++;
+                if ($total == 100) break;
+            }
+            //do not error out
+        }
+    }
+    echo "</teams>\n";
+    exit();
+}
+
 $team_name = get_str("team_name");
 $name_lc = strtolower($team_name);
 $name_lc = escape_pattern($name_lc);
- 
+
 $clause = "name like '%".boinc_real_escape_string($name_lc)."%' order by expavg_credit desc limit 100";
 $teams = BoincTeam::enum($clause);
 
@@ -59,11 +79,11 @@ if ($format == 'xml') {
     exit();
 }
 
-page_head("Search Results");
+page_head(tra("Search Results"));
 if (count($teams)) {
-    echo "<h2>Search results for '".strip_tags($team_name)."'</h2>";
+    echo "<h2>".tra("Search results for '%1'", strip_tags($team_name))."</h2>";
     echo "<p>";
-    echo "You may view these teams' members, statistics, and information.";
+    echo tra("You may view these teams' members, statistics, and information.");
     echo "<ul>";
     foreach($teams as $team) {
         echo "<li>";
@@ -72,15 +92,18 @@ if (count($teams)) {
     }
     echo "</ul>";
     if (count($teams)==100) {
-        echo "
-            More than 100 teams match your search.
-            The first 100 are shown.<br>
+        echo
+            tra("More than 100 teams match your search. The first 100 are shown.")
+            ."<br>
         ";
     }
 }
-echo "End of results<br>";
-echo "If you cannot find the team you are looking for, you may create a team ";
-echo "by clicking <a href=team_create_form.php>here</a>.";
+echo tra(
+    "End of results. %1 If you cannot find the team you are looking for, you may %2create a team%3 yourself.",
+    "<br>",
+    "<a href=team_create_form.php>",
+    "</a>"
+);
 page_tail();
 
 ?>

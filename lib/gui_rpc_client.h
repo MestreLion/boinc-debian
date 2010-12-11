@@ -33,6 +33,8 @@
 #include "prefs.h"
 #include "hostinfo.h"
 #include "common_defs.h"
+#include "notice.h"
+#include "network.h"
 
 struct GUI_URL {
     std::string name;
@@ -103,7 +105,7 @@ public:
 
 class PROJECT {
 public:
-    std::string master_url;
+    char master_url[256];
     double resource_share;
     std::string project_name;
     std::string user_name;
@@ -136,6 +138,7 @@ public:
     double ati_backoff_interval;
     double duration_correction_factor;
 
+    bool anonymous_platform;
     bool master_url_fetch_pending; // need to fetch and parse the master URL
     int sched_rpc_pending;      // need to contact scheduling server
         // encodes the reason for the request
@@ -175,8 +178,8 @@ public:
 
 class APP {
 public:
-    std::string name;
-    std::string user_friendly_name;
+    char name[256];
+    char user_friendly_name[256];
     PROJECT* project;
 
     APP();
@@ -189,9 +192,15 @@ public:
 
 class APP_VERSION {
 public:
-    std::string app_name;
+    char app_name[256];
     int version_num;
-    std::string plan_class;
+    char platform[64];
+    char plan_class[64];
+    double avg_ncpus;
+    double ncudas;
+    double natis;
+    double gpu_ram;
+    double flops;
     APP* app;
     PROJECT* project;
 
@@ -199,14 +208,15 @@ public:
     ~APP_VERSION();
 
     int parse(MIOFILE&);
+    int parse_coproc(MIOFILE&);
     void print();
     void clear();
 };
 
 class WORKUNIT {
 public:
-    std::string name;
-    std::string app_name;
+    char name[256];
+    char app_name[256];
     int version_num;    // backwards compat
     double rsc_fpops_est;
     double rsc_fpops_bound;
@@ -225,11 +235,11 @@ public:
 
 class RESULT {
 public:
-    std::string name;
-    std::string wu_name;
-    std::string project_url;
+    char name[256];
+    char wu_name[256];
+    char project_url[256];
     int version_num;
-    std::string plan_class;
+    char plan_class[64];
     double report_deadline;
     double received_time;
     bool ready_to_report;
@@ -240,7 +250,7 @@ public:
     int scheduler_state;
     int exit_status;
     int signal;
-    std::string stderr_out;
+    //std::string stderr_out;
     bool suspended_via_gui;
     bool project_suspended_via_gui;
     bool coproc_missing;
@@ -265,10 +275,10 @@ public:
     bool too_large;
     bool needs_shmem;
     bool edf_scheduled;
-    std::string graphics_exec_path;
-    std::string slot_path;
+    char graphics_exec_path[512];
+    char slot_path[512];
         // only present if graphics_exec_path is
-    std::string resources;
+    char resources[256];
 
     APP* app;
     WORKUNIT* wup;
@@ -369,20 +379,22 @@ public:
     bool executing_as_daemon;   // true if Client is running as a service / daemon
     bool have_cuda;
     bool have_ati;
+    HOST_INFO host_info;
 
     CC_STATE();
     ~CC_STATE();
 
-    PROJECT* lookup_project(std::string&);
-    APP* lookup_app(PROJECT*, std::string&);
-    APP_VERSION* lookup_app_version(PROJECT*, APP*, int, std::string&);
+    PROJECT* lookup_project(char* url);
+    APP* lookup_app(PROJECT*, char* name);
+    APP_VERSION* lookup_app_version(PROJECT*, APP*, int, char* plan_class);
     APP_VERSION* lookup_app_version_old(PROJECT*, APP*, int);
-    WORKUNIT* lookup_wu(PROJECT*, std::string&);
-    RESULT* lookup_result(PROJECT*, std::string&);
-    RESULT* lookup_result(std::string&, std::string&);
+    WORKUNIT* lookup_wu(PROJECT*, char* name);
+    RESULT* lookup_result(PROJECT*, char* name);
+    RESULT* lookup_result(char* url, char* name);
 
     void print();
     void clear();
+    int parse(MIOFILE&);
 };
 
 class PROJECTS {
@@ -438,6 +450,19 @@ public:
 
     MESSAGES();
     ~MESSAGES();
+
+    void print();
+    void clear();
+};
+
+class NOTICES {
+public:
+    bool complete;
+        // whether vector contains all notices, or just new ones
+    std::vector<NOTICE*> notices;
+
+    NOTICES();
+    ~NOTICES();
 
     void print();
     void clear();
@@ -595,12 +620,13 @@ public:
     double start_time;
     double timeout;
     bool retry;
-    sockaddr_in addr;
+    sockaddr_storage addr;
 
     int send_request(const char*);
     int get_reply(char*&);
     RPC_CLIENT();
     ~RPC_CLIENT();
+    int get_ip_addr(const char* host, int port);
     int init(const char* host, int port=0);
     int init_asynch(
         const char* host, double timeout, bool retry, int port=GUI_RPC_PORT
@@ -640,8 +666,10 @@ public:
     int run_benchmarks();
     int set_proxy_settings(GR_PROXY_INFO&);
     int get_proxy_settings(GR_PROXY_INFO&);
-    int get_messages(int seqno, MESSAGES&);
+    int get_messages(int seqno, MESSAGES&, bool translatable=false);
     int get_message_count(int& seqno);
+    int get_notices(int seqno, NOTICES&);
+    int get_notices_public(int seqno, NOTICES&);
     int file_transfer_op(FILE_TRANSFER&, const char*);
     int result_op(RESULT&, const char*);
     int get_host_info(HOST_INFO&);
@@ -674,7 +702,7 @@ public:
     );
     int acct_mgr_rpc_poll(ACCT_MGR_RPC_REPLY&);
 
-    int get_newer_version(std::string&);
+    int get_newer_version(std::string&, std::string&);
     int read_global_prefs_override();
     int read_cc_config();
     int get_cc_status(CC_STATUS&);
@@ -758,12 +786,9 @@ extern locale_t	uselocale(locale_t) __attribute__((weak_import));
 };
 
 #else
-#ifndef _WIN32
-#include <xlocale.h>
-#endif
 
- struct SET_LOCALE {
-    // Don't need this if we have per-thread locale
+struct SET_LOCALE {
+    // Don't need to juggle locales if we have per-thread locale
     inline SET_LOCALE() {
     }
     inline ~SET_LOCALE() {

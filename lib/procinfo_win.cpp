@@ -20,7 +20,7 @@ typedef NTSTATUS (WINAPI *tNTQSI)(
 static int get_process_information(PVOID* ppBuffer, PULONG pcbBuffer) {
     NTSTATUS Status = STATUS_INFO_LENGTH_MISMATCH;
     HANDLE   hHeap  = GetProcessHeap();
-    HMODULE  hNTDllLib = GetModuleHandle("ntdll.dll");
+    HMODULE  hNTDllLib = GetModuleHandle(_T("ntdll.dll"));
     tNTQSI   pNTQSI = (tNTQSI)GetProcAddress(hNTDllLib, "NtQuerySystemInformation");
     ULONG    cbBuffer = 0;
 
@@ -68,7 +68,7 @@ int get_procinfo_XP(vector<PROCINFO>& pi) {
     ULONG                   cbBuffer = 128*1024;    // 128k initial buffer
     PVOID                   pBuffer = NULL;
     PSYSTEM_PROCESSES       pProcesses = NULL;
-    static DWORD pid = 0;
+    static DWORD            pid = 0;
 
     if (!pid) {
         pid = GetCurrentProcessId();
@@ -96,6 +96,7 @@ int get_procinfo_XP(vector<PROCINFO>& pi) {
         p.kernel_time = ((double) pProcesses->KernelTime.QuadPart)/1e7;
 		p.id = pProcesses->ProcessId;
 		p.parentid = pProcesses->InheritedFromProcessId;
+        p.is_low_priority = (pProcesses->BasePriority <= 4);
         WideCharToMultiByte(CP_ACP, 0,
             pProcesses->ProcessName.Buffer,
             pProcesses->ProcessName.Length,
@@ -103,7 +104,18 @@ int get_procinfo_XP(vector<PROCINFO>& pi) {
             sizeof(p.command),
             NULL, NULL
         );
-		p.is_boinc_app = (p.id == pid) || (strcasestr(p.command, "boinc") != NULL);
+		p.is_boinc_app = (p.id == (int)pid) || (strcasestr(p.command, "boinc") != NULL);
+        
+#ifdef _GRIDREPUBLIC
+        if (!strcmp(p.command, "gridrepublic.exe")) {
+            p.is_boinc_app = true;
+        }
+#endif        
+#ifdef _PROGRESSTHRUPROCESSORS
+        if (!strcmp(p.command, "progressthruprocessors.exe")) {
+            p.is_boinc_app = true;
+        }
+#endif        
         pi.push_back(p);
         if (!pProcesses->NextEntryDelta) {
             break;
@@ -168,18 +180,21 @@ void procinfo_app(PROCINFO& pi, vector<PROCINFO>& piv, char* graphics_exec_file)
 	add_proc_totals(pi, piv, pi.id, graphics_exec_file, 0);
 }
 
-// get totals of all non-BOINC processes
+// get totals of all processes that are not BOINC-related
+// and have priority higher than idle
 //
 void procinfo_other(PROCINFO& pi, vector<PROCINFO>& piv) {
 	unsigned int i;
 	memset(&pi, 0, sizeof(pi));
 	for (i=0; i<piv.size(); i++) {
 		PROCINFO& p = piv[i];
-		if (!p.is_boinc_app && p.id != 0) {     // PID 0 is idle process
-			pi.kernel_time += p.kernel_time;
-			pi.user_time += p.user_time;
-			pi.swap_size += p.swap_size;
-			pi.working_set_size += p.working_set_size;
-		}
+        if (p.id == 0) continue; // PID 0 is idle process
+		if (p.is_boinc_app) continue;
+        if (p.is_low_priority) continue;
+
+        pi.kernel_time += p.kernel_time;
+        pi.user_time += p.user_time;
+        pi.swap_size += p.swap_size;
+        pi.working_set_size += p.working_set_size;
 	}
 }

@@ -27,26 +27,23 @@ class TIME_STATS {
 public:
     double last_update;
 // we maintain an exponentially weighted average of these quantities:
-        /// the fraction of total time this host runs the core client
     double on_frac;
-        /// of the time this host runs the core client,
-        /// the fraction it is connected to the Internet,
-        /// or -1 if not known
+        // the fraction of total time this host runs the core client
     double connected_frac;
-        /// of the time this host runs the core client,
-        /// the fraction it is enabled to work
-        /// (as determined by preferences, manual suspend/resume, etc.)
+        // of the time this host runs the core client,
+        // the fraction it is connected to the Internet,
+        // or -1 if not known
     double active_frac;
-        /// The ratio between CPU time accumulated by BOINC apps
-        /// and the wall time those apps are scheduled at the OS level.
-        /// May be less than one if
-        /// 1) apps page or do I/O
-        /// 2) other CPU-intensive apps run
+        // of the time this host runs the core client,
+        // the fraction it is enabled to use CPU
+        // (as determined by preferences, manual suspend/resume, etc.)
+    double gpu_active_frac;
+        // same, GPU
 
     FILE* time_stats_log;
     double inactive_start;
 
-    void update(int suspend_reason);
+    void update(int suspend_reason, int gpu_suspend_reason);
 
     TIME_STATS();
     int write(MIOFILE&, bool to_server);

@@ -11,17 +11,18 @@
 // platform=x       show only versions for platform x (win/mac/linux/solaris)
 
 require_once("docutil.php");
-
-$xml = $_GET["xml"];
-$dev = $_GET["dev"];
-if (!$xml) $dev=1;
-$pname = $_GET["platform"];
-$min_version = $_GET["min_version"];
-$max_version = $_GET["max_version"];
-$version = $_GET["version"];
-$type_name = $_GET["type"];
-
 require_once("versions.inc");
+
+$xml = get_str2("xml");
+$dev = get_str2("dev");
+$pname = get_str2("platform");
+$min_version = get_str2("min_version");
+$max_version = get_str2("max_version");
+$version = get_str2("version");
+$type_name = get_str2("type");
+$client_info = $_SERVER['HTTP_USER_AGENT'];
+
+if (!$xml) $dev=1;
 
 function dl_item($x, $y) {
     echo "<tr><td valign=top  align=right width=\"30%\">$x</td>
@@ -145,7 +146,7 @@ function show_platform_xml($short_name, $p, $dev) {
 if ($pname && $version) {
     $p = $platforms[$pname];
     if (!$p) {
-        error_page("platform not found");
+        boinc_error_page("platform not found");
     }
     $long_name = $p["name"];
     $va = $p["versions"];
@@ -157,7 +158,7 @@ if ($pname && $version) {
             exit();
         }
     }
-    error_page( "version not found\n");
+    boinc_error_page( "version not found\n");
 }
 
 if ($xml) {
@@ -165,8 +166,10 @@ if ($xml) {
     echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>\n
 <versions>\n
 ";
-    foreach($platforms as $short_name=>$p) {
-        show_platform_xml($short_name, $p, $dev);
+	if (FALSE === strpos($client_info, '6.8.')) {
+        foreach($platforms as $short_name=>$p) {
+            show_platform_xml($short_name, $p, $dev);
+        }
     }
     echo "
 </versions>\n
@@ -190,10 +193,9 @@ if ($xml) {
         list_end();
         echo "
             <h3>GPU computing</h3>
-            If your computer is equipped with an NVIDIA
-            Graphics Processing Unit (GPU),
+            If your computer is equipped with a Graphics Processing Unit (GPU),
             you may be able to
-            <a href=cuda.php>use it to compute faster</a>.
+            <a href=http://boinc.berkeley.edu/wiki/GPU_computing>use it to compute faster</a>.
             <h3>Other platforms</h3>
             If your computer is not of one of these types, you can
             <ul>
@@ -207,16 +209,21 @@ if ($xml) {
         show_linux_info();
     }
     echo "
+        <a name=dotsch>
         <h3>Ubuntu image for USB/diskless/CD-ROM install</h3>
         <a href=http://www.dotsch.de/boinc/Dotsch_UX.html>Dotsch/UX</a>
-        is an ISO-format Linux distribution, based on Ubuntu Linux,
-        with the 6.2.15 BOINC client pre-installed.
+        is an ISO-format Linux distribution, based on Ubuntu Linux.
         It lets you easily install and boot from a USB stick, hard disk and
         from diskless clients,
         and it also has some interfaces to set up the diskless server
         and the clients automatically.
-        <a href=boincdl.ssl.berkeley.edu/dl/dotsch_ux-10.iso>Download</a>
-        the image (515 MB).
+        The current version (1.2) has the 6.10.17 BOINC client pre-installed.
+
+        <ul>
+        <li> <a href=http://boincdl3.ssl.berkeley.edu/mirror/dotsch_ux-12_i386.iso>Dotsch/UX for x86 (32-bit)</a> (585 MB)
+        <li> <a href=http://boincdl3.ssl.berkeley.edu/mirror/dotsch_ux-12_x64.iso>Dotsch/UX for x64 (64-bit)</a> (655 MB)
+        <li> <a href=http://boincdl3.ssl.berkeley.edu/mirror/dotsch_ux-1.2_patch.run>1.1->1.2 upgrade script (32/64 bit)</a> (43 MB)
+        </ul>
 
         <h3>Customizing this page</h3>
         The information on this page can be

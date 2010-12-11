@@ -43,14 +43,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
-#endif
-
-#ifdef SIM
-#include "sim.h"
 #else
-#include "client_state.h"
+#include "config.h"
 #endif
 
+#include "client_state.h"
 #include "coproc.h"
 #include "client_msgs.h"
 
@@ -155,7 +152,7 @@ void set_rrsim_flops(RESULT* rp) {
     // For coproc jobs, use app version estimate
     //
     if (rp->uses_coprocs()) {
-        rp->rrsim_flops = rp->avp->flops * gstate.overall_cpu_frac();
+        rp->rrsim_flops = rp->avp->flops * gstate.overall_gpu_frac();
         return;
     }
     PROJECT* p = rp->project;
@@ -202,7 +199,7 @@ void CLIENT_STATE::print_deadline_misses() {
         rp = results[i];
         if (rp->rr_sim_misses_deadline) {
             msg_printf(rp->project, MSG_INFO,
-                "[cpu_sched_debug] Result %s projected to miss deadline.",
+                "[cpu_sched] Result %s projected to miss deadline.",
                 rp->name
             );
         }
@@ -211,44 +208,24 @@ void CLIENT_STATE::print_deadline_misses() {
         p = projects[i];
         if (p->cpu_pwf.deadlines_missed) {
             msg_printf(p, MSG_INFO,
-                "[cpu_sched_debug] Project has %d projected CPU deadline misses",
+                "[cpu_sched] Project has %d projected CPU deadline misses",
                 p->cpu_pwf.deadlines_missed
             );
         }
         if (p->cuda_pwf.deadlines_missed) {
             msg_printf(p, MSG_INFO,
-                "[cpu_sched_debug] Project has %d projected NVIDIA GPU deadline misses",
+                "[cpu_sched] Project has %d projected NVIDIA GPU deadline misses",
                 p->cuda_pwf.deadlines_missed
             );
         }
         if (p->ati_pwf.deadlines_missed) {
             msg_printf(p, MSG_INFO,
-                "[cpu_sched_debug] Project has %d projected ATI GPU deadline misses",
+                "[cpu_sched] Project has %d projected ATI GPU deadline misses",
                 p->ati_pwf.deadlines_missed
             );
         }
     }
 }
-
-#if 0
-// compute a per-app-version "temporary DCF" based on the elapsed time
-// and fraction done of running jobs
-//
-void compute_temp_dcf() {
-    unsigned int i;
-    for (i=0; i<gstate.app_versions.size(); i++) {
-        gstate.app_versions[i]->temp_dcf = 1;
-    }
-    for (i=0; i<gstate.active_tasks.active_tasks.size(); i++) {
-        ACTIVE_TASK* atp = gstate.active_tasks.active_tasks[i];
-        double x = atp->est_dur(false) / atp->result->estimated_duration(false);
-        APP_VERSION* avp = atp->result->avp;
-        if (x < avp->temp_dcf) {
-            avp->temp_dcf = x;
-        }
-    }
-}
-#endif
 
 void CLIENT_STATE::rr_simulation() {
     PROJECT* p, *pbest;
@@ -259,7 +236,6 @@ void CLIENT_STATE::rr_simulation() {
     double ar = available_ram();
 
     work_fetch.rr_init();
-    //compute_temp_dcf();
 
     if (log_flags.rr_simulation) {
         msg_printf(0, MSG_INFO,
@@ -293,19 +269,19 @@ void CLIENT_STATE::rr_simulation() {
         p = rp->project;
         p->pwf.has_runnable_jobs = true;
         p->cpu_pwf.nused_total += rp->avp->avg_ncpus;
-        if (rp->uses_cuda() && coproc_cuda) {
+        if (rp->uses_cuda() && host_info.have_cuda()) {
             p->cuda_pwf.nused_total += rp->avp->ncudas;
             p->cuda_pwf.has_runnable_jobs = true;
-            if (cuda_work_fetch.sim_nused < coproc_cuda->count) {
+            if (cuda_work_fetch.sim_nused < host_info.coprocs.cuda.count) {
                 sim_status.activate(rp, 0);
                 p->rr_sim_status.activate(rp);
             } else {
                 cuda_work_fetch.pending.push_back(rp);
             }
-        } else if (rp->uses_ati() && coproc_ati) {
+        } else if (rp->uses_ati() && host_info.have_ati()) {
             p->ati_pwf.nused_total += rp->avp->natis;
             p->ati_pwf.has_runnable_jobs = true;
-            if (ati_work_fetch.sim_nused < coproc_ati->count) {
+            if (ati_work_fetch.sim_nused < host_info.coprocs.ati.count) {
                 sim_status.activate(rp, 0);
                 p->rr_sim_status.activate(rp);
             } else {
@@ -313,7 +289,7 @@ void CLIENT_STATE::rr_simulation() {
             }
         } else {
             p->cpu_pwf.has_runnable_jobs = true;
-            if (p->cpu_pwf.sim_nused < ncpus) {
+            if (p->cpu_pwf.sim_nused + rp->avp->avg_ncpus <= ncpus) {
                 sim_status.activate(rp, 0);
                 p->rr_sim_status.activate(rp);
             } else {
@@ -326,12 +302,12 @@ void CLIENT_STATE::rr_simulation() {
     //
     cpu_work_fetch.nidle_now = ncpus - cpu_work_fetch.sim_nused;
     if (cpu_work_fetch.nidle_now < 0) cpu_work_fetch.nidle_now = 0;
-    if (coproc_cuda) {
-        cuda_work_fetch.nidle_now = coproc_cuda->count - cuda_work_fetch.sim_nused;
+    if (host_info.have_cuda()) {
+        cuda_work_fetch.nidle_now = host_info.coprocs.cuda.count - cuda_work_fetch.sim_nused;
         if (cuda_work_fetch.nidle_now < 0) cuda_work_fetch.nidle_now = 0;
     }
-    if (coproc_ati) {
-        ati_work_fetch.nidle_now = coproc_ati->count - ati_work_fetch.sim_nused;
+    if (host_info.have_ati()) {
+        ati_work_fetch.nidle_now = host_info.coprocs.ati.count - ati_work_fetch.sim_nused;
         if (ati_work_fetch.nidle_now < 0) ati_work_fetch.nidle_now = 0;
     }
 
@@ -405,17 +381,18 @@ void CLIENT_STATE::rr_simulation() {
         double end_time = sim_now + rpbest->rrsim_finish_delay;
         double x = end_time - gstate.now;
         cpu_work_fetch.update_saturated_time(x);
-        if (coproc_cuda) {
+        if (host_info.have_cuda()) {
             cuda_work_fetch.update_saturated_time(x);
         }
-        if (coproc_ati) {
+        if (host_info.have_ati()) {
             ati_work_fetch.update_saturated_time(x);
         }
 
         // update busy time
         //
         if (rpbest->rr_sim_misses_deadline) {
-            double dur = rpbest->estimated_time_remaining(false) / gstate.overall_cpu_frac();
+            double frac = rpbest->uses_coprocs()?gstate.overall_gpu_frac():gstate.overall_cpu_frac();
+            double dur = rpbest->estimated_time_remaining() / frac;
             cpu_work_fetch.update_busy_time(dur, rpbest->avp->avg_ncpus);
             if (rpbest->uses_cuda()) {
                 cuda_work_fetch.update_busy_time(dur, rpbest->avp->ncudas);
@@ -433,10 +410,10 @@ void CLIENT_STATE::rr_simulation() {
 
             cpu_work_fetch.accumulate_shortfall(d_time);
 
-            if (coproc_cuda) {
+            if (host_info.have_cuda()) {
                 cuda_work_fetch.accumulate_shortfall(d_time);
             }
-            if (coproc_ati) {
+            if (host_info.have_ati()) {
                 ati_work_fetch.accumulate_shortfall(d_time);
             }
         }
@@ -451,7 +428,7 @@ void CLIENT_STATE::rr_simulation() {
         //
         if (rpbest->uses_cuda()) {
             while (1) {
-                if (cuda_work_fetch.sim_nused >= coproc_cuda->count) break;
+                if (cuda_work_fetch.sim_nused >= host_info.coprocs.cuda.count) break;
                 if (!cuda_work_fetch.pending.size()) break;
                 RESULT* rp = cuda_work_fetch.pending[0];
                 cuda_work_fetch.pending.erase(cuda_work_fetch.pending.begin());
@@ -460,7 +437,7 @@ void CLIENT_STATE::rr_simulation() {
             }
         } else if (rpbest->uses_ati()) {
             while (1) {
-                if (ati_work_fetch.sim_nused >= coproc_ati->count) break;
+                if (ati_work_fetch.sim_nused >= host_info.coprocs.ati.count) break;
                 if (!ati_work_fetch.pending.size()) break;
                 RESULT* rp = ati_work_fetch.pending[0];
                 ati_work_fetch.pending.erase(ati_work_fetch.pending.begin());
@@ -469,9 +446,9 @@ void CLIENT_STATE::rr_simulation() {
             }
         } else {
             while (1) {
-                if (pbest->cpu_pwf.sim_nused >= ncpus) break;
                 RESULT* rp = pbest->rr_sim_status.get_pending();
                 if (!rp) break;
+                if (pbest->cpu_pwf.sim_nused + rp->avp->avg_ncpus > ncpus) break;
                 sim_status.activate(rp, sim_now-now);
                 pbest->rr_sim_status.activate(rp);
             }
@@ -483,10 +460,10 @@ void CLIENT_STATE::rr_simulation() {
     if (sim_now < buf_end) {
         double d_time = buf_end - sim_now;
         cpu_work_fetch.accumulate_shortfall(d_time);
-        if (coproc_cuda) {
+        if (host_info.have_cuda()) {
             cuda_work_fetch.accumulate_shortfall(d_time);
         }
-        if (coproc_ati) {
+        if (host_info.have_ati()) {
             ati_work_fetch.accumulate_shortfall(d_time);
         }
     }

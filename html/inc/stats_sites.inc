@@ -44,7 +44,7 @@ $cpid_stats_sites = array(
 
 $stats_sites = array(
     array(
-        "http://www.myboinc.com/FormulaBoinc/",
+        "http://www.formula-boinc.org/",
         "Formula BOINC",
         "(Team ranking based on position within projects,
         as in Formula 1 racing, rather than total points)"
@@ -101,9 +101,14 @@ $stats_sites = array(
         "Team OcUK stats",
         ""
     ),
+    array("http://statsbzh.boinc-af.org/listteams.php",
+        "SETIBZH Stats",
+        "(cross-project team stats; available in French, English, Spanish, German)"
+    ),
 );
 
 $team_stats_sites = array(
+    array("http://stats.czechnationalteam.cz/", "Czech National Team", "(in Czech)"),
     array("http://www.boincitaly.org/", "BOINC.Italy"),
     array("http://www.spacepage.be/component/option,com_boinc/", "Spacepage"),
     array("http://boinc.radax.net/de_boinc.htm", "BOINC@Austria"),
@@ -194,11 +199,14 @@ function site_list($sites) {
         $s = $sites[$i];
         $url = $s[0];
         $name = $s[1];
-        $comment = $s[2];
+        $comment = array_key_exists(2, $s)?$s[2]:"";
         echo "<li><a href=\"$url\">$name</a> $comment\n";
     }
     echo "</ul>\n";
 }
 
-$cvs_version_tracker[]="\$Id: stats_sites.inc 17954 2009-04-30 21:48:20Z davea $";  //Generated automatically - do not edit
+$GLOBALS['cpid_stats_sites'] = $cpid_stats_sites;
+$GLOBALS['host_sites'] = $host_sites;
+
+$cvs_version_tracker[]="\$Id: stats_sites.inc 22414 2010-09-27 20:34:47Z davea $";  //Generated automatically - do not edit
 ?>

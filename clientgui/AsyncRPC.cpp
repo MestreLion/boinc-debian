@@ -20,7 +20,7 @@
 #endif
 
 #if !(defined(_WIN32) || (defined(__WXMAC__) && (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_4)))
-//#include <xlocale.h>
+#include <xlocale.h>
 //#include "gui_rpc_client.h"
 #endif
 
@@ -32,6 +32,7 @@
 #include "BOINCTaskBar.h"
 #include "error_numbers.h"
 #include "SkinManager.h"
+#include "DlgEventLog.h"
 #include "util.h"
 
 extern bool s_bSkipExitConfirmation;
@@ -273,6 +274,7 @@ void ASYNC_RPC_REQUEST::clear() {
     arg3 = NULL;
     arg4 = NULL;
     completionTime = NULL;
+    RPCExecutionTime = NULL;
     resultPtr = NULL;
     retval = 0;
     isActive = false;
@@ -318,6 +320,7 @@ int AsyncRPC::RPC_Wait(RPC_SELECTOR which_rpc, void *arg1, void *arg2,
     } else {
         request.rpcType = RPC_TYPE_WAIT_FOR_COMPLETION;
     }
+    request.RPCExecutionTime = NULL;
     retval = m_pDoc->RequestRPC(request, hasPriority);
     return retval;
 }
@@ -340,6 +343,7 @@ void *RPCThread::Entry() {
     int retval = 0;
     CRPCFinishedEvent RPC_done_event( wxEVT_RPC_FINISHED );
     ASYNC_RPC_REQUEST *current_request;
+    double startTime = 0;
     wxMutexError mutexErr = wxMUTEX_NO_ERROR;
     wxCondError condErr = wxCOND_NO_ERROR;
 
@@ -393,7 +397,13 @@ void *RPCThread::Entry() {
 
         if (!current_request->isActive)  continue;       // Should never happen
         
+        if (current_request->RPCExecutionTime) {
+            startTime = dtime();
+        }
         retval = ProcessRPCRequest();
+        if (current_request->RPCExecutionTime) {
+            *(current_request->RPCExecutionTime) = dtime() - startTime;
+        }
         
         current_request->retval = retval;
 
@@ -522,10 +532,17 @@ int RPCThread::ProcessRPCRequest() {
     case RPC_GET_PROXY_SETTINGS:
         retval = (m_pDoc->rpcClient).get_proxy_settings(*(GR_PROXY_INFO*)(current_request->arg1));
         break;
+    case RPC_GET_NOTICES:
+        retval = (m_pDoc->rpcClient).get_notices(
+            *(int*)(current_request->arg1), 
+            *(NOTICES*)(current_request->arg2)
+        );
+        break;
     case RPC_GET_MESSAGES:
         retval = (m_pDoc->rpcClient).get_messages(
             *(int*)(current_request->arg1), 
-            *(MESSAGES*)(current_request->arg2)
+            *(MESSAGES*)(current_request->arg2),
+            *(bool*)(current_request->arg3)
         );
         break;
     case RPC_FILE_TRANSFER_OP:
@@ -594,14 +611,17 @@ int RPCThread::ProcessRPCRequest() {
             (const char*)(current_request->arg1), 
             (const char*)(current_request->arg2), 
             (const char*)(current_request->arg3),
-            (bool)(current_request->arg4)
+            (bool)(current_request->arg4 != NULL)
         );
         break;
     case RPC_ACCT_MGR_RPC_POLL:
         retval = (m_pDoc->rpcClient).acct_mgr_rpc_poll(*(ACCT_MGR_RPC_REPLY*)(current_request->arg1));
         break;
     case RPC_GET_NEWER_VERSION:
-        retval = (m_pDoc->rpcClient).get_newer_version(*(std::string*)(current_request->arg1));
+        retval = (m_pDoc->rpcClient).get_newer_version(
+            *(std::string*)(current_request->arg1),
+            *(std::string*)(current_request->arg2)
+        );
         break;
     case RPC_READ_GLOBAL_PREFS_OVERRIDE:
         retval = (m_pDoc->rpcClient).read_global_prefs_override();
@@ -918,7 +938,7 @@ void CMainDocument::HandleCompletedRPC() {
     if (current_rpc_request.which_rpc == 0) return; // already handled by a call from RequestRPC
 
     // Find our completed request in the queue
-    n = RPC_requests.size();
+    n = (int) RPC_requests.size();
     for (i=0; i<n; ++i) {
         if (RPC_requests[i].isSameAs(current_rpc_request)) {
             requestIndex = i;
@@ -1034,6 +1054,16 @@ void CMainDocument::HandleCompletedRPC() {
                 exchangeBuf->d_allowed = arg1->d_allowed;
             }
             break;
+        case RPC_GET_NOTICES:
+            if (current_rpc_request.exchangeBuf && !retval) {
+                NOTICES* arg2 = (NOTICES*)current_rpc_request.arg2;
+                NOTICES* exchangeBuf = (NOTICES*)current_rpc_request.exchangeBuf;
+                arg2->notices.swap(exchangeBuf->notices);
+            }
+            if (!retval) {
+                CachedNoticeUpdate();  // Call this only when notice buffer is stable
+            }
+            break;
         case RPC_GET_MESSAGES:
             if (current_rpc_request.exchangeBuf && !retval) {
                 MESSAGES* arg2 = (MESSAGES*)current_rpc_request.arg2;
@@ -1105,28 +1135,26 @@ void CMainDocument::HandleCompletedRPC() {
         // We must get the frame immediately before using it, 
         // since it may have been changed by SetActiveGUI().
         CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
-
         if (pFrame) {
             CFrameEvent event(wxEVT_FRAME_REFRESHVIEW, pFrame);
             pFrame->ProcessEvent(event);
         }
     }
 
-#if defined(__WXMSW__) || defined(__WXMAC__)
     if (m_bNeedTaskBarRefresh && !m_bWaitingForRPC) {
         m_bNeedTaskBarRefresh = false;
         CTaskBarIcon* pTaskbar = wxGetApp().GetTaskBarIcon();
-
         if (pTaskbar) {
             CTaskbarEvent event(wxEVT_TASKBAR_REFRESH, pTaskbar);
             pTaskbar->ProcessEvent(event);
         }
     }
-#endif
 
-    // CachedMessageUpdate() does not do any RPCs, so it is safe here
-    if (current_rpc_request.rpcType == RPC_TYPE_ASYNC_WITH_UPDATE_MESSAGE_LIST_AFTER) {
-        CachedMessageUpdate();
+    if (current_rpc_request.rpcType == RPC_TYPE_ASYNC_WITH_REFRESH_EVENT_LOG_AFTER) {
+        CDlgEventLog* eventLog = wxGetApp().GetEventLog();
+        if (eventLog) {
+            eventLog->OnRefresh();
+        }
     }
     
     current_rpc_request.clear();
@@ -1167,7 +1195,7 @@ int CMainDocument::CopyProjectsToStateBuffer(PROJECTS& p, CC_STATE& state) {
 
     for (i=0; i<p.projects.size(); i++) {
         state_project = state.lookup_project(p.projects[i]->master_url);
-        if (state_project && (p.projects[i]->master_url == state_project->master_url)) {
+        if (state_project && (!strcmp(p.projects[i]->master_url, state_project->master_url))) {
             // Because the CC_STATE contains several pointers to each element of the 
             // CC_STATE::projects vector, we must update these elements in place.
             *state_project = *(p.projects[i]);
@@ -1199,7 +1227,6 @@ END_EVENT_TABLE()
 IMPLEMENT_CLASS(AsyncRPCDlg, wxDialog)
 
 AsyncRPCDlg::AsyncRPCDlg() : wxDialog( NULL, wxID_ANY, wxT(""), wxDefaultPosition ) {
-    AsyncRPCDlg* itemDialog1 = this;
     CSkinAdvanced*  pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
     wxString exit_label;
     wxASSERT(pSkinAdvanced);
@@ -1212,13 +1239,16 @@ AsyncRPCDlg::AsyncRPCDlg() : wxDialog( NULL, wxID_ANY, wxT(""), wxDefaultPositio
     exit_label.Printf(_("E&xit %s"), pSkinAdvanced->GetApplicationName().c_str());
 #endif
 
+    wxString strCaption;
+    strCaption.Printf(_("%s - Communication"), pSkinAdvanced->GetApplicationName().c_str());
+    SetTitle(strCaption.c_str());
+
     wxBoxSizer *topsizer = new wxBoxSizer( wxVERTICAL );
     wxBoxSizer *icon_text = new wxBoxSizer( wxHORIZONTAL );
 
     icon_text->Add( CreateTextSizer( message ), 0, wxALIGN_CENTER | wxLEFT, 10 );
     topsizer->Add( icon_text, 1, wxCENTER | wxLEFT|wxRIGHT|wxTOP, 10 );
     
-    int center_flag = wxEXPAND;
     wxStdDialogButtonSizer *sizerBtn = CreateStdDialogButtonSizer(0);
     
     wxButton* exitbutton = new wxButton;
@@ -1226,11 +1256,11 @@ AsyncRPCDlg::AsyncRPCDlg() : wxDialog( NULL, wxID_ANY, wxT(""), wxDefaultPositio
     sizerBtn->Add(exitbutton, 0, wxLEFT|wxRIGHT|wxALL, 5);
 
     wxButton* cancelbutton = new wxButton;
-    cancelbutton->Create( itemDialog1, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+    cancelbutton->Create( this, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
     sizerBtn->Add(cancelbutton, 0, wxLEFT|wxRIGHT|wxALL, 5);
     
     if ( sizerBtn )
-        topsizer->Add(sizerBtn, 0, center_flag | wxALL, 10 );
+        topsizer->Add(sizerBtn, 0, wxEXPAND | wxALL, 10 );
 
     SetAutoLayout( true );
     SetSizer( topsizer );

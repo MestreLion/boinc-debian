@@ -22,9 +22,13 @@
 #ifdef _WIN32
 #include "boinc_win.h"
 #include "win_util.h"
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#define strdup   _strdup
+#endif
 #else
 #include "config.h"
-#ifdef HAVE_SCHED_SETSCHEDULER
+#if defined (HAVE_SCHED_SETSCHEDULER) && defined (__linux__)
 #include <sched.h>
 #endif
 #if HAVE_SYS_TIME_H
@@ -103,11 +107,9 @@ typedef BOOL (WINAPI *tDEB)(LPVOID lpEnvironment);
 //
 #ifndef _WIN32
 static void debug_print_argv(char** argv) {
-    msg_printf(0, MSG_INFO, "[task_debug] Arguments:");
+    msg_printf(0, MSG_INFO, "[task] Arguments:");
     for (int i=0; argv[i]; i++) {
-        msg_printf(0, MSG_INFO,
-            "[task_debug]    argv[%d]: %s\n", i, argv[i]
-        );
+        msg_printf(0, MSG_INFO, "[task]    argv[%d]: %s\n", i, argv[i]);
     }
 }
 #endif
@@ -117,7 +119,10 @@ static void debug_print_argv(char** argv) {
 static void coproc_cmdline(
     int rsc_type, RESULT* rp, double ninstances, char* cmdline
 ) {
-    COPROC* coproc = (rsc_type==RSC_TYPE_CUDA)?(COPROC*)coproc_cuda:(COPROC*)coproc_ati;
+    COPROC* coproc = (rsc_type==RSC_TYPE_CUDA)
+        ?(COPROC*)&gstate.host_info.coprocs.cuda
+        :(COPROC*)&gstate.host_info.coprocs.ati
+    ;
     for (int j=0; j<ninstances; j++) {
         int k = rp->coproc_indices[j];
         // sanity check
@@ -201,7 +206,7 @@ int ACTIVE_TASK::write_app_init_file() {
     aid.app_version = app_version->version_num;
     safe_strcpy(aid.app_name, wup->app->name);
     safe_strcpy(aid.symstore, wup->project->symstore);
-    safe_strcpy(aid.acct_mgr_url, gstate.acct_mgr_info.acct_mgr_url);
+    safe_strcpy(aid.acct_mgr_url, gstate.acct_mgr_info.master_url);
     if (wup->project->project_specific_prefs.length()) {
         aid.project_preferences = strdup(wup->project->project_specific_prefs.c_str());
     }
@@ -215,6 +220,7 @@ int ACTIVE_TASK::write_app_init_file() {
     strcpy(aid.authenticator, wup->project->authenticator);
     aid.slot = slot;
     strcpy(aid.wu_name, wup->name);
+    strcpy(aid.result_name, result->name);
     aid.user_total_credit = wup->project->user_total_credit;
     aid.user_expavg_credit = wup->project->user_expavg_credit;
     aid.host_total_credit = wup->project->host_total_credit;
@@ -718,7 +724,7 @@ int ACTIVE_TASK::start(bool first_time) {
 
     if (log_flags.task_debug) {
         msg_printf(wup->project, MSG_INFO,
-            "[task_debug] ACTIVE_TASK::start(): forked process: pid %d\n", pid
+            "[task] ACTIVE_TASK::start(): forked process: pid %d\n", pid
         );
     }
 
@@ -884,7 +890,7 @@ int ACTIVE_TASK::start(bool first_time) {
                 perror("setpriority");
             }
 #endif
-#ifdef HAVE_SCHED_SETSCHEDULER
+#if defined (HAVE_SCHED_SETSCHEDULER) && defined(SCHED_BATCH) && defined (__linux__)
             if (!high_priority) {
                 struct sched_param p;
                 p.sched_priority = 0;
@@ -929,7 +935,7 @@ int ACTIVE_TASK::start(bool first_time) {
 
     if (log_flags.task_debug) {
         msg_printf(wup->project, MSG_INFO,
-            "[task_debug] ACTIVE_TASK::start(): forked process: pid %d\n", pid
+            "[task] ACTIVE_TASK::start(): forked process: pid %d\n", pid
         );
     }
 
@@ -948,7 +954,7 @@ error:
     gstate.report_result_error(*result, buf);
     if (log_flags.task_debug) {
         msg_printf(wup->project, MSG_INFO,
-            "[task_debug] couldn't start app: %s", buf
+            "[task] couldn't start app: %s", buf
         );
     }
     set_task_state(PROCESS_COULDNT_START, "start");

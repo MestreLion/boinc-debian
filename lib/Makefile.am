@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 19604 2009-11-18 21:01:20Z romw $
+## $Id: Makefile.am 22039 2010-07-22 20:08:33Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -51,6 +51,7 @@ generic_sources = \
     miofile.cpp \
     msg_log.cpp \
     network.cpp \
+	notice.cpp \
     parse.cpp \
     prefs.cpp \
     procinfo_unix.cpp \
@@ -89,9 +90,11 @@ endif
 if INSTALL_HEADERS
 pkginclude_HEADERS = \
     app_ipc.h \
+    average.h \
     base64.h \
     boinc_fcgi.h \
     boinc_win.h \
+    cal_boinc.h \
     cert_sig.h \
     common_defs.h \
     coproc.h \
@@ -110,6 +113,7 @@ pkginclude_HEADERS = \
     miofile.h \
     msg_log.h \
     network.h \
+	notice.h \
     parse.h \
     prefs.h \
     proxy_info.h \
@@ -184,7 +188,7 @@ $(LIBBOINC_STATIC): libboinc.la
 
 $(LIBBOINC_CRYPT_STATIC): libboinc_crypt.la
 	rm -f $(LIBBOINC_CRYPT_STATIC)
-	$(LN) .libs/$(LIBBOINC_CRYPT_STATIC)
+	$(LN) .libs/$(LIBBOINC_CRYPT_STATIC) .
 
 $(LIBBOINC_FCGI_STATIC): libboinc_fcgi.la
 	rm -f $(LIBBOINC_FCGI_STATIC)
@@ -208,5 +212,5 @@ msg_test_CXXFLAGS = $(PTHREAD_CFLAGS)
 msg_test_LDADD = $(LIBBOINC)
 crypt_prog_SOURCES = crypt_prog.cpp 
 crypt_prog_CXXFLAGS = $(PTHREAD_CFLAGS)
-crypt_prog_LDADD = $(LIBBOINC) $(LIBBOINC_CRYPT_STATIC) $(SSL_LIBS) 
+crypt_prog_LDADD = $(LIBBOINC_CRYPT_STATIC) $(LIBBOINC) $(SSL_LIBS) 
 

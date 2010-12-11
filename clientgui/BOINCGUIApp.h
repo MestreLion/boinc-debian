@@ -44,6 +44,7 @@ class CBOINCBaseFrame;
 class CMainDocument;
 class CTaskBarIcon;
 class CSkinManager;
+class CDlgEventLog;
 class CRPCFinishedEvent;
 
 
@@ -59,15 +60,15 @@ protected:
 
     void                DetectDisplayInfo();
     void                DetectAccessibilityEnabled();
+    bool                DetectDuplicateInstance();
+    void                DetectExecutableName();
     void                DetectRootDirectory();
     void                DetectDataDirectory();
 
     void                InitSupportedLanguages();
 
-    int                 ClientLibraryStartup();
     int                 IdleTrackerAttach();
     int                 IdleTrackerDetach();
-    int                 ClientLibraryShutdown();
 
     wxConfig*           m_pConfig;
     wxLocale*           m_pLocale;
@@ -77,13 +78,18 @@ protected:
     CBOINCBaseFrame*    m_pFrame;
     CMainDocument*      m_pDocument;
     CTaskBarIcon*       m_pTaskBarIcon;
+    CDlgEventLog*       m_pEventLog;
 #ifdef __WXMAC__
     CMacSystemMenu*     m_pMacSystemMenu;
 #endif
 
+    wxString            m_strBOINCMGRExecutableName;
     wxString            m_strBOINCMGRRootDirectory;
     wxString            m_strBOINCMGRDataDirectory;
+    wxString            m_strHostNameArg;
+    wxString            m_strPasswordArg;
     wxString            m_strBOINCArguments;
+    int                 m_iRPCPortArg;
 
     bool                m_bAccessibilityEnabled;
 
@@ -96,6 +102,7 @@ protected:
     
     int                 m_iGUISelected;
     bool                m_bDebugSkins;
+    bool                m_bMultipleInstancesOK;
 
 #ifdef __WXMSW__
     HINSTANCE           m_hClientLibraryDll;
@@ -123,15 +130,19 @@ public:
     CSkinManager*       GetSkinManager()            { return m_pSkinManager; }
     CBOINCBaseFrame*    GetFrame()                  { return m_pFrame; }
     CMainDocument*      GetDocument()               { return m_pDocument; }
+    wxString            GetExecutableName()         { return m_strBOINCMGRExecutableName; }
     wxString            GetRootDirectory()          { return m_strBOINCMGRRootDirectory; }
     wxString            GetDataDirectory()          { return m_strBOINCMGRDataDirectory; }
+    wxString            GetClientHostNameArg()      { return m_strHostNameArg; }    
+    wxString            GetClientPasswordArg()      { return m_strPasswordArg; }    
     wxString            GetArguments()              { return m_strBOINCArguments; }
-#if defined(__WXMSW__) || defined(__WXMAC__)
+    int                 GetClientRPCPortArg()       { return m_iRPCPortArg; }
+    CDlgEventLog*       GetEventLog()               { return m_pEventLog; }
     CTaskBarIcon*       GetTaskBarIcon()            { return m_pTaskBarIcon; }
     void                DeleteTaskBarIcon();
-#endif
 
     bool                IsAccessibilityEnabled()    { return m_bAccessibilityEnabled; }
+    bool                IsMultipleInstancesOK()    { return m_bMultipleInstancesOK; }
 
 #ifdef __WXMAC__
     CMacSystemMenu*     GetMacSystemMenu()          { return m_pMacSystemMenu; }
@@ -154,6 +165,9 @@ public:
 
     wxArrayString&      GetSupportedLanguages()     { return m_astrLanguages; }
 
+    void                DisplayEventLog(bool bShowWindow = true);
+    void                OnEventLogClose();
+
     void                FireReloadSkin();
     void                FrameClosed()               { m_pFrame = NULL; }
 
@@ -161,11 +175,8 @@ public:
     int                 StartBOINCDefaultScreensaverTest();
 
     bool                SetActiveGUI(int iGUISelection, bool bShowWindow = true);
-
-    bool                ShowCurrentGUI() { return SetActiveGUI(m_iGUISelected, true); }
     
     void                OnRPCFinished( CRPCFinishedEvent& event );
-    void                OnSystemShutDown( wxCloseEvent &event );
     
     int                 ConfirmExit();
 
@@ -178,8 +189,11 @@ public:
                             int y = wxDefaultCoord
                         );
 
+    int                 IsAnotherInstanceRunning();
     bool                IsApplicationVisible();
     void                ShowApplication(bool bShow);
+    bool                ShowInterface();
+    bool                ShowNotifications();
 
     bool                IsModalDialogDisplayed();
     bool                IsSafeMesageBoxDisplayed() { return (m_bSafeMessageBoxDisplayed != 0); };

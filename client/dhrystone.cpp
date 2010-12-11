@@ -42,9 +42,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>

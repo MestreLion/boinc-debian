@@ -63,7 +63,7 @@ public:
     virtual void        OnExit( wxCommandEvent& event );
 
     int                 GetCurrentViewPage();
-
+    virtual void        UpdateNoticesTabText();
     int                 GetReminderFrequency() { return m_iReminderFrequency; }
     wxString            GetDialupConnectionName() { return m_strNetworkDialupConnectionName; }
 
@@ -71,6 +71,9 @@ public:
     void                FireRefreshView();
     void                FireConnect();
     void                FireReloadSkin();
+    void                FireNotification();
+
+    bool                SelectComputer(wxString& hostName, int& portNum, wxString& password, bool required = false);
     void                ShowConnectionBadPasswordAlert( bool bUsedDefaultPassword, int m_iReadGUIRPCAuthFailure );
     void                ShowConnectionFailedAlert();
     void                ShowDaemonStartFailedAlert();
@@ -78,8 +81,9 @@ public:
 
     virtual void        StartTimers();
     virtual void        StopTimers();
+    virtual void        UpdateRefreshTimerInterval();
 
-    void                UpdateStatusText( const wxChar* szStatus );
+    inline void         UpdateStatusText( const wxChar* ){}
 
     void                ShowAlert( 
                             const wxString title,
@@ -89,10 +93,9 @@ public:
                             const FrameAlertEventType alert_event_type = AlertNormal
                         );
 
-    void                ExecuteBrowserLink( const wxString& strLink );
-
     bool                Show( bool bShow = true );
 
+    virtual bool        RestoreState();
     virtual bool        SaveState();
 
 protected:
@@ -105,6 +108,7 @@ protected:
 
     int                 m_iSelectedLanguage;
     int                 m_iReminderFrequency;
+    int                 m_iFrameRefreshRate;
 
     wxString            m_strNetworkDialupConnectionName;
 
@@ -114,7 +118,6 @@ protected:
 
     virtual int         _GetCurrentViewPage();
 
-    virtual bool        RestoreState();
 
     DECLARE_EVENT_TABLE()
 };
@@ -185,7 +188,7 @@ DECLARE_EVENT_TYPE( wxEVT_FRAME_INITIALIZED, 10004 )
 DECLARE_EVENT_TYPE( wxEVT_FRAME_REFRESHVIEW, 10005 )
 DECLARE_EVENT_TYPE( wxEVT_FRAME_UPDATESTATUS, 10006 )
 DECLARE_EVENT_TYPE( wxEVT_FRAME_RELOADSKIN, 10007 )
-
+DECLARE_EVENT_TYPE( wxEVT_FRAME_NOTIFICATION, 10007 )
 END_DECLARE_EVENT_TYPES()
 
 #define EVT_FRAME_ALERT(fn)              DECLARE_EVENT_TABLE_ENTRY(wxEVT_FRAME_ALERT, -1, -1, (wxObjectEventFunction) (wxEventFunction) &fn, NULL),
@@ -194,7 +197,7 @@ END_DECLARE_EVENT_TYPES()
 #define EVT_FRAME_REFRESH(fn)            DECLARE_EVENT_TABLE_ENTRY(wxEVT_FRAME_REFRESHVIEW, -1, -1, (wxObjectEventFunction) (wxEventFunction) &fn, NULL),
 #define EVT_FRAME_UPDATESTATUS(fn)       DECLARE_EVENT_TABLE_ENTRY(wxEVT_FRAME_UPDATESTATUS, -1, -1, (wxObjectEventFunction) (wxEventFunction) &fn, NULL),
 #define EVT_FRAME_RELOADSKIN(fn)         DECLARE_EVENT_TABLE_ENTRY(wxEVT_FRAME_RELOADSKIN, -1, -1, (wxObjectEventFunction) (wxEventFunction) &fn, NULL),
-
+#define EVT_FRAME_NOTIFICATION(fn)       DECLARE_EVENT_TABLE_ENTRY(wxEVT_FRAME_NOTIFICATION, -1, -1, (wxObjectEventFunction) (wxEventFunction) &fn, NULL),
 
 #endif
 

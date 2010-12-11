@@ -26,7 +26,6 @@
 #include "miofile.h"
 #include "parse.h"
 #include "error_numbers.h"
-#include "hyperlink.h"
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
 #include "MainDocument.h"
@@ -35,6 +34,8 @@
 #include "BOINCBaseFrame.h"
 #include "BOINCDialupManager.h"
 #include "Events.h"
+#include "DlgEventLog.h"
+#include "DlgSelectComputer.h"
 
 
 DEFINE_EVENT_TYPE(wxEVT_FRAME_ALERT)
@@ -43,6 +44,7 @@ DEFINE_EVENT_TYPE(wxEVT_FRAME_INITIALIZED)
 DEFINE_EVENT_TYPE(wxEVT_FRAME_REFRESHVIEW)
 DEFINE_EVENT_TYPE(wxEVT_FRAME_UPDATESTATUS)
 DEFINE_EVENT_TYPE(wxEVT_FRAME_RELOADSKIN)
+DEFINE_EVENT_TYPE(wxEVT_FRAME_NOTIFICATION)
 
 
 IMPLEMENT_DYNAMIC_CLASS(CBOINCBaseFrame, wxFrame)
@@ -75,12 +77,10 @@ CBOINCBaseFrame::CBOINCBaseFrame(wxWindow* parent, const wxWindowID id, const wx
     // Configuration Settings
     m_iSelectedLanguage = 0;
     m_iReminderFrequency = 0;
-
     m_strNetworkDialupConnectionName = wxEmptyString;
-
     m_aSelectedComputerMRU.Clear();
-
     m_bShowConnectionFailedAlert = false;
+
 
     m_pDialupManager = new CBOINCDialUpManager();
     wxASSERT(m_pDialupManager->IsOk());
@@ -89,17 +89,18 @@ CBOINCBaseFrame::CBOINCBaseFrame(wxWindow* parent, const wxWindowID id, const wx
     m_pDocumentPollTimer = new wxTimer(this, ID_DOCUMENTPOLLTIMER);
     wxASSERT(m_pDocumentPollTimer);
 
-    m_pDocumentPollTimer->Start(250);                // Send event every 250 milliseconds
+    m_pDocumentPollTimer->Start(250);               // Send event every 250 milliseconds
 
     m_pAlertPollTimer = new wxTimer(this, ID_ALERTPOLLTIMER);
     wxASSERT(m_pAlertPollTimer);
 
-    m_pAlertPollTimer->Start(1000);                  // Send event every 1000 milliseconds
+    m_pAlertPollTimer->Start(1000);                 // Send event every 1000 milliseconds
 
     m_pPeriodicRPCTimer = new wxTimer(this, ID_PERIODICRPCTIMER);
     wxASSERT(m_pPeriodicRPCTimer);
 
-    m_pPeriodicRPCTimer->Start(1000);                  // Send event every 1000 milliseconds
+    m_pPeriodicRPCTimer->Start(1000);               // Send event every 1000 milliseconds
+    m_iFrameRefreshRate = 1000;                     // Refresh frame every 1000 milliseconds
 
     // Limit the number of times the UI can update itself to two times a second
     //   NOTE: Linux and Mac were updating several times a second and eating
@@ -139,8 +140,9 @@ CBOINCBaseFrame::~CBOINCBaseFrame() {
         delete m_pDocumentPollTimer;
     }
 
-    if (m_pDialupManager)
+    if (m_pDialupManager) {
         delete m_pDialupManager;
+    }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::~CBOINCBaseFrame - Function End"));
 }
@@ -156,7 +158,7 @@ void CBOINCBaseFrame::OnPeriodicRPC(wxTimerEvent& WXUNUSED(event)) {
     if (!bAlreadyRunningLoop && m_pPeriodicRPCTimer->IsRunning()) {
         bAlreadyRunningLoop = true;
 
-        pDoc->RunPeriodicRPCs();
+        pDoc->RunPeriodicRPCs(m_iFrameRefreshRate);
         
         bAlreadyRunningLoop = false;
     }
@@ -272,7 +274,6 @@ void CBOINCBaseFrame::OnAlert(CFrameAlertEvent& event) {
                 pTaskbar->m_iconTaskBarNormal,
                 event.m_title,
                 event.m_message,
-                5000,
                 icon_type
             );
         }
@@ -305,21 +306,18 @@ void CBOINCBaseFrame::OnAlert(CFrameAlertEvent& event) {
 void CBOINCBaseFrame::OnClose(wxCloseEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::OnClose - Function Begin"));
 
-#if defined(__WXMSW__) || defined(__WXMAC__)
-    if (!event.CanVeto()
-#ifdef __WXMAC__
-        || IsIconized()
-#endif    
-    ) {
+    if (!event.CanVeto() || IsIconized()) {
         wxGetApp().FrameClosed();
         Destroy();
     } else {
-        Hide();
-    }
+#ifdef __WXGTK__
+        // Apparently aborting a close event just causes the main window to be displayed
+        // again.  Just minimize the window instead.
+        Iconize();
 #else
-    wxGetApp().FrameClosed();
-    Destroy();
+        Hide();
 #endif
+    }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::OnClose - Function End"));
 }
@@ -327,6 +325,26 @@ void CBOINCBaseFrame::OnClose(wxCloseEvent& event) {
 
 void CBOINCBaseFrame::OnCloseWindow(wxCommandEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::OnCloseWindow - Function Begin"));
+
+#ifdef __WXMAC__
+    CFStringRef frontWindowTitle, eventLogTitle;
+    CDlgEventLog* eventLog = wxGetApp().GetEventLog();
+    if (eventLog) {
+        WindowRef win = FrontNonFloatingWindow();
+        if (win) {
+            CopyWindowTitleAsCFString(win, &frontWindowTitle);
+            eventLogTitle = CFStringCreateWithCString(NULL, eventLog->GetTitle().char_str(), kCFStringEncodingUTF8);
+            CFComparisonResult res = CFStringCompare(eventLogTitle, frontWindowTitle, 0);
+            CFRelease(eventLogTitle);
+            CFRelease(frontWindowTitle);
+            if (res == kCFCompareEqualTo) {
+                wxCloseEvent eventClose;
+                eventLog->OnClose(eventClose);
+                return;
+            }
+        }
+    }
+#endif
 
 	Close();
 
@@ -342,28 +360,17 @@ void CBOINCBaseFrame::OnExit(wxCommandEvent& WXUNUSED(event)) {
         // Save state before exiting
         SaveState();
 
-#ifdef __WXMSW__
-        CMainDocument* pDoc = wxGetApp().GetDocument();
-
-        wxASSERT(pDoc);
-        wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-
-        if (wxGetApp().ShouldShutdownCoreClient()) {
-            pDoc->m_pClientManager->EnableBOINCStartedByManager();
-        } else {
-            pDoc->m_pClientManager->DisableBOINCStartedByManager();
-        }
-#endif
-
         // Under wxWidgets 2.8.0, the task bar icons must be deleted for app to exit its main loop
 #ifdef __WXMAC__
         wxGetApp().DeleteMacSystemMenu();
 #endif
-
-        // TaskBarIcon isn't used in Linux
-#if defined(__WXMSW__) || defined(__WXMAC__)
         wxGetApp().DeleteTaskBarIcon();
-#endif
+
+        CDlgEventLog*   eventLog = wxGetApp().GetEventLog();
+        if (eventLog) {
+            eventLog->Destroy();
+        }
+
         Close(true);
     }
 
@@ -373,6 +380,10 @@ void CBOINCBaseFrame::OnExit(wxCommandEvent& WXUNUSED(event)) {
 
 int CBOINCBaseFrame::GetCurrentViewPage() {
     return _GetCurrentViewPage();
+}
+
+
+void CBOINCBaseFrame::UpdateNoticesTabText() {
 }
 
 
@@ -389,7 +400,7 @@ void CBOINCBaseFrame::FireRefreshView() {
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
     
     pDoc->RefreshRPCs();
-    pDoc->RunPeriodicRPCs();
+    pDoc->RunPeriodicRPCs(0);
 }
 
 
@@ -402,6 +413,76 @@ void CBOINCBaseFrame::FireConnect() {
 void CBOINCBaseFrame::FireReloadSkin() {
     CFrameEvent event(wxEVT_FRAME_RELOADSKIN, this);
     AddPendingEvent(event);
+}
+
+
+void CBOINCBaseFrame::FireNotification() {
+    CFrameEvent event(wxEVT_FRAME_NOTIFICATION, this);
+    AddPendingEvent(event);
+}
+
+
+bool CBOINCBaseFrame::SelectComputer(wxString& hostName, int& portNum, wxString& password, bool required) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::SelectComputer - Function Begin"));
+
+    CDlgSelectComputer  dlg(this, required);
+    size_t              lIndex = 0;
+    wxArrayString       aComputerNames;
+    bool                bResult = false;
+    
+    // Lets copy the template store in the system state
+    aComputerNames = m_aSelectedComputerMRU;
+
+    // Lets populate the combo control with the MRU list
+    dlg.m_ComputerNameCtrl->Clear();
+    for (lIndex = 0; lIndex < aComputerNames.Count(); lIndex++) {
+        dlg.m_ComputerNameCtrl->Append(aComputerNames.Item(lIndex));
+    }
+
+    if (wxID_OK == dlg.ShowModal()) {
+        hostName = dlg.m_ComputerNameCtrl->GetValue();
+        // Make a null hostname be the same thing as localhost
+        if (wxEmptyString == hostName) {
+            hostName = wxT("localhost");
+            portNum = GUI_RPC_PORT;
+            password = wxEmptyString;
+        } else {
+            // Parse the remote machine info
+            wxString sHost = dlg.m_ComputerNameCtrl->GetValue(); 
+            long lPort = GUI_RPC_PORT; 
+            int iPos = sHost.Find(wxT(":")); 
+            if (iPos != wxNOT_FOUND) { 
+                wxString sPort = sHost.substr(iPos + 1); 
+                if (!sPort.ToLong(&lPort)) lPort = GUI_RPC_PORT; 
+                sHost.erase(iPos); 
+            }
+            hostName = sHost;
+            portNum = (int)lPort;
+            password = dlg.m_ComputerPasswordCtrl->GetValue();
+        }
+
+        // Insert a copy of the current combo box value to the head of the
+        //   computer names string array
+        if (wxEmptyString != dlg.m_ComputerNameCtrl->GetValue()) {
+            aComputerNames.Insert(dlg.m_ComputerNameCtrl->GetValue(), 0);
+        }
+
+        // Loops through the computer names and remove any duplicates that
+        //   might exist with the new head value
+        for (lIndex = 1; lIndex < aComputerNames.Count(); lIndex++) {
+            if (aComputerNames.Item(lIndex) == aComputerNames.Item(0))
+                aComputerNames.RemoveAt(lIndex);
+        }
+
+        // Store the modified computer name MRU list back to the system state
+        m_aSelectedComputerMRU = aComputerNames;
+        bResult = true;
+    } else {
+        bResult = false;        // User cancelled
+    }
+    
+    wxLogTrace(wxT("Function Start/End"), wxT("CBOINCBaseFrame::SelectComputer - Function End"));
+    return bResult;
 }
 
 
@@ -478,6 +559,11 @@ void CBOINCBaseFrame::ShowConnectionFailedAlert() {
             boinc_sleep(0.5);       // Allow time for Client to restart
             if (pDoc->m_pClientManager->IsBOINCCoreRunning()) {
                 pDoc->Reconnect();        
+                return;
+            }
+        } else {
+            // Don't ask whether to reconnect to local client if it is not running
+            if (!pDoc->m_pClientManager->IsBOINCCoreRunning()) {
                 return;
             }
         }
@@ -587,6 +673,11 @@ void CBOINCBaseFrame::ShowNotCurrentlyConnectedAlert() {
                 pDoc->Reconnect();        
                 return;
             }
+        } else {
+            // Don't ask whether to reconnect to local client if it is not running
+            if (!pDoc->m_pClientManager->IsBOINCCoreRunning()) {
+                return;
+            }
         }
     }
     
@@ -639,20 +730,19 @@ void CBOINCBaseFrame::StopTimers() {
 }
 
 
+void CBOINCBaseFrame::UpdateRefreshTimerInterval() {
+}
+
+#if 0
 void CBOINCBaseFrame::UpdateStatusText(const wxChar* szStatus) {
     CFrameEvent event(wxEVT_FRAME_UPDATESTATUS, this, szStatus);
     ProcessEvent(event);
 }
-
+#endif
 
 void CBOINCBaseFrame::ShowAlert( const wxString title, const wxString message, const int style, const bool notification_only, const FrameAlertEventType alert_event_type ) {
     CFrameAlertEvent event(wxEVT_FRAME_ALERT, this, title, message, style, notification_only, alert_event_type);
     AddPendingEvent(event);
-}
-
-
-void CBOINCBaseFrame::ExecuteBrowserLink(const wxString &strLink) {
-    wxHyperLink::ExecuteLink(strLink);
 }
 
 
@@ -682,7 +772,7 @@ bool CBOINCBaseFrame::SaveState() {
     pConfig->SetPath(strBaseConfigLocation);
 
     pConfig->Write(wxT("Language"), m_iSelectedLanguage);
-    pConfig->Write(wxT("ReminderFrequency"), m_iReminderFrequency);
+    pConfig->Write(wxT("ReminderFrequencyV2"), m_iReminderFrequency);
 
     pConfig->Write(wxT("NetworkDialupConnectionName"), m_strNetworkDialupConnectionName);
 
@@ -739,7 +829,7 @@ bool CBOINCBaseFrame::RestoreState() {
     pConfig->SetPath(strBaseConfigLocation);
 
     pConfig->Read(wxT("Language"), &m_iSelectedLanguage, 0L);
-    pConfig->Read(wxT("ReminderFrequency"), &m_iReminderFrequency, 60L);
+    pConfig->Read(wxT("ReminderFrequencyV2"), &m_iReminderFrequency, 60L);
 
     pConfig->Read(wxT("NetworkDialupConnectionName"), &m_strNetworkDialupConnectionName, wxEmptyString);
 
@@ -770,6 +860,7 @@ bool CBOINCBaseFrame::RestoreState() {
 
 
 bool CBOINCBaseFrame::Show(bool bShow) {
+    bool    retval;
     if (bShow) {
         wxGetApp().ShowApplication(true);
     } else {
@@ -779,7 +870,15 @@ bool CBOINCBaseFrame::Show(bool bShow) {
             }
         }
     }
-    return wxFrame::Show(bShow);
+    
+    CDlgEventLog*   eventLog = wxGetApp().GetEventLog();
+    if (eventLog) {
+        eventLog->Show(bShow);
+    }
+
+    retval = wxFrame::Show(bShow);
+    wxFrame::Raise();
+    return retval;
 }
 
 

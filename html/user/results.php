@@ -34,6 +34,7 @@ $results_per_page = 20;
 $hostid = get_int("hostid", true);
 $userid = get_int("userid", true);
 $offset = get_int("offset", true);
+$appid = get_int("appid", true);
 if (!$offset) $offset=0;
 $state = get_int("state", true);
 if (!$state) $state=0;
@@ -46,6 +47,7 @@ if ($hostid) {
     if (!$host) error_page(tra("No computer with ID %1 found", $hostid));
     $clause = "hostid=$hostid";
     page_head(tra("$s tasks for computer %1", $host->id));
+    $show_host_link = false;
 } else if ($userid){
     $user = get_logged_in_user();
     if ($userid != $user->id) {
@@ -53,11 +55,15 @@ if ($hostid) {
     }
     $clause = "userid=$userid";
     page_head(tra("$s tasks for $user->name"));
+    $show_host_link = true;
 } else {
     error_page(tra("Missing user ID or host ID"));
 }
 
 $clause2 = $clause. $state_clause[$state];
+if ($appid) {
+    $clause2 .= ' AND appid='.$appid;
+}
 
 $query = "$clause2 order by id desc limit $offset,".($results_per_page+1);
 $results = BoincResult::enum($query);
@@ -69,14 +75,15 @@ $info->results_per_page = $results_per_page;
 $info->offset = $offset;
 $info->show_names = $show_names;
 $info->state = $state;
+$info->appid = $appid;
 
 if (count($results)) {
     echo show_result_navigation($info);
-    result_table_start(true, false, $info);
+    result_table_start(true, $show_host_link, $info);
     $i = 0;
     foreach ($results as $result) {
         if ($i >= $results_per_page) break;
-        show_result_row($result, true, false, $show_names, $i);
+        show_result_row($result, true, $show_host_link, $show_names, $i);
         $i++;
     }
     echo "</table>\n";

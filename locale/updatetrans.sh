@@ -3,14 +3,40 @@
 # Automate the compilation of the various locale PO files by automatically
 # generating them at night.
 #
-projname=boincclient610
-projdir=$HOME/pootle/po/$projname
+projname=boincclient612
+projdir=/home/boincadm/pootle/po/$projname
 
 cd $projdir
 
 
 # Update anything that needs updating
 svn update
+
+
+# Iterrate through the various PO files looking for those that need to be added to SVN.
+#
+for file in `find -name 'BOINC-Manager.po'` ; do
+  dir=`dirname $file`
+  locale=`basename $dir`
+  template_name=${projdir}/${locale}/BOINC-Manager
+ 
+  # Add any missing PO files to SVN
+  svn add ${template_name}.po > /dev/null 2> /dev/null
+  svn propset svn:mime-type 'text/plain;charset=UTF-8' ${template_name}.po > /dev/null 2> /dev/null
+done
+
+
+# Iterrate through the various PO files looking for those that need to be added to SVN.
+#
+for file in `find -name 'BOINC-Client.po'` ; do
+  dir=`dirname $file`
+  locale=`basename $dir`
+  template_name=${projdir}/${locale}/BOINC-Client
+ 
+  # Add any missing PO files to SVN
+  svn add ${template_name}.po > /dev/null 2> /dev/null
+  svn propset svn:mime-type 'text/plain;charset=UTF-8' ${template_name}.po > /dev/null 2> /dev/null
+done
 
 
 # Iterrate through the various PO files looking for those that need to be compiled.
@@ -20,20 +46,35 @@ for file in `find -name 'BOINC-Manager.po'` ; do
   locale=`basename $dir`
   template_name=${projdir}/${locale}/BOINC-Manager
  
-  # Remove old MO from previous compilation
-  #
-  rm ${projdir}/BOINC-Manager.mo > /dev/null 2> /dev/null
-
   if test ${template_name}.po -nt ${template_name}.mo
   then
 
-    # Use wget to cause the Pottle system to compile the PO file into an MO file.
-    #
-    # poEdit has a hard time with the Pootle markup in the PO files.
-    #
-    # Example: http://boinc.berkeley.edu/translate/ar/boinctrunk/BOINC-Manager.mo
-    #
-    wget "http://boinc.berkeley.edu/translate/${locale}/${projname}/BOINC-Manager.mo" > /dev/null 2> /dev/null
+    # Compile the PO file into an MO file.
+    pocompile ${template_name}.po ${template_name}.mo 
+    
+    # Add any new MO files to SVN
+    svn add ${template_name}.mo > /dev/null 2> /dev/null
+
+    # Touch each file to adjust timestamps
+    touch ${template_name}.po
+    touch ${template_name}.mo 
+
+  fi  
+done
+
+
+# Iterrate through the various PO files looking for those that need to be compiled.
+#
+for file in `find -name 'BOINC-Client.po'` ; do
+  dir=`dirname $file`
+  locale=`basename $dir`
+  template_name=${projdir}/${locale}/BOINC-Client
+ 
+  if test ${template_name}.po -nt ${template_name}.mo
+  then
+
+    # Compile the PO file into an MO file.
+    pocompile ${template_name}.po ${template_name}.mo > /dev/null 2> /dev/null
     
     # Add any new MO files to SVN
     svn add ${template_name}.mo > /dev/null 2> /dev/null

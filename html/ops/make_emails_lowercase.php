@@ -31,6 +31,7 @@
 // (4) Just to be safe, back up your user database before running this script.
 
 
+$cli_only = true;
 require_once("../inc/util_ops.inc");
 require_once("../inc/db_ops.inc");
 
@@ -108,5 +109,5 @@ if ($confirm != "yes" && $update_needed) {
 mysql_free_result($result);
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: make_emails_lowercase.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: make_emails_lowercase.php 19230 2009-10-02 18:32:40Z davea $";  //Generated automatically - do not edit
 ?>

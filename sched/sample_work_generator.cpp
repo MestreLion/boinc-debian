@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// sample_work_generator.C: an example BOINC work generator.
+// sample_work_generator.cpp: an example BOINC work generator.
 // This work generator has the following properties
 // (you may need to change some or all of these):
 //
@@ -37,6 +37,7 @@
 #include "backend_lib.h"
 #include "parse.h"
 #include "util.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
@@ -137,16 +138,49 @@ void main_loop() {
     }
 }
 
+void usage(char *name) {
+    fprintf(stderr, "This is an example BOINC work generator.\n"
+        "This work generator has the following properties\n"
+        "(you may need to change some or all of these):\n"
+        "- Runs as a daemon, and creates an unbounded supply of work.\n"
+        "  It attempts to maintain a \"cushion\" of 100 unsent job instances.\n"
+        "  (your app may not work this way; e.g. you might create work in batches)\n"
+        "- Creates work for the application \"uppercase\".\n"
+        "- Creates a new input file for each job;\n"
+        "  the file (and the workunit names) contain a timestamp\n"
+        "  and sequence number, so that they're unique.\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options:\n"
+        "  [ -d X ]                    Sets debug level to X.\n"
+        "  [ -h | --help ]             Shows this help text.\n"
+        "  [ -v | --version ]          Shows version information.\n",
+        name
+    );
+}
+
 int main(int argc, char** argv) {
     int i, retval;
 
     for (i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-d")) {
-            log_messages.set_debug_level(atoi(argv[++i]));
+        if (is_arg(argv[i], "d")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int dl = atoi(argv[i]);
+            log_messages.set_debug_level(dl);
+            if (dl == 4) g_print_queries = true;
+        } else if (is_arg(argv[i], "h") || is_arg(argv[i], "help")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
         } else {
-            log_messages.printf(MSG_CRITICAL,
-                "bad cmdline arg: %s", argv[i]
-            );
+            log_messages.printf(MSG_CRITICAL, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
 

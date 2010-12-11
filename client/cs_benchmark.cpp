@@ -34,12 +34,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
 #include <string>
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -55,6 +49,10 @@
 #include <sys/signal.h>
 #endif
 #include <unistd.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #endif
 
 #include "error_numbers.h"
@@ -91,6 +89,10 @@
 #define BM_SLEEP    4
 #define BM_DONE     5
 static int bm_state;
+
+static bool did_benchmarks = false;
+    // true if we successfully did benchmarks.
+    // don't do them again during this run of client
 
 #define BENCHMARK_PERIOD        (SECONDS_PER_DAY*5)
     // rerun CPU benchmarks this often (hardware may have been upgraded)
@@ -223,10 +225,10 @@ void CLIENT_STATE::start_cpu_benchmarks() {
         return;
     }
 
-    if (skip_cpu_benchmarks) {
+    if (config.skip_cpu_benchmarks) {
         if (log_flags.benchmark_debug) {
             msg_printf(0, MSG_INFO,
-                "[benchmark_debug] start_cpu_benchmarks(): Skipping CPU benchmarks"
+                "[benchmark] start_cpu_benchmarks(): Skipping CPU benchmarks"
             );
         }
 		cpu_benchmarks_set_defaults();
@@ -282,6 +284,7 @@ void CLIENT_STATE::start_cpu_benchmarks() {
 // flag is set or it's been 5 days since we last ran
 //
 bool CLIENT_STATE::should_run_cpu_benchmarks() {
+    if (did_benchmarks) return false;
     // Note: if skip_cpu_benchmarks we still should "run" cpu benchmarks
     // (we'll just use default values in cpu_benchmarks())
     //
@@ -382,7 +385,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
         if (now - cpu_benchmarks_start > FP_START) {
             if (log_flags.benchmark_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[benchmark_debug] Starting floating-point benchmark"
+                    "[benchmark] Starting floating-point benchmark"
                 );
             }
             make_benchmark_file(BM_TYPE_FP);
@@ -393,7 +396,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
         if (now - cpu_benchmarks_start > FP_END) {
             if (log_flags.benchmark_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[benchmark_debug] Ended floating-point benchmark"
+                    "[benchmark] Ended floating-point benchmark"
                 );
             }
             remove_benchmark_file(BM_TYPE_FP);
@@ -404,7 +407,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
         if (now - cpu_benchmarks_start > INT_START) {
             if (log_flags.benchmark_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[benchmark_debug] Starting integer benchmark"
+                    "[benchmark] Starting integer benchmark"
                 );
             }
             make_benchmark_file(BM_TYPE_INT);
@@ -415,7 +418,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
         if (now - cpu_benchmarks_start > INT_END) {
             if (log_flags.benchmark_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[benchmark_debug] Ended integer benchmark"
+                    "[benchmark] Ended integer benchmark"
                 );
             }
             remove_benchmark_file(BM_TYPE_INT);
@@ -426,7 +429,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
         if (now - cpu_benchmarks_start > OVERALL_END) {
             if (log_flags.benchmark_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[benchmark_debug] Ended benchmark"
+                    "[benchmark] Ended benchmark"
                 );
             }
             bm_state = BM_DONE;
@@ -455,7 +458,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
         if (benchmark_descs[i].done) {
             if (log_flags.benchmark_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[benchmark_debug] CPU %d has finished", i
+                    "[benchmark] CPU %d has finished", i
                 );
             }
             ndone++;
@@ -467,7 +470,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
     }
     if (log_flags.benchmark_debug) {
         msg_printf(0, MSG_INFO,
-            "[benchmark_debug] %d out of %d CPUs done", ndone, bm_ncpus
+            "[benchmark] %d out of %d CPUs done", ndone, bm_ncpus
         );
     }
     if (ndone == bm_ncpus) {
@@ -481,7 +484,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
             for (i=0; i<bm_ncpus; i++) {
                 if (log_flags.benchmark_debug) {
                     msg_printf(0, MSG_INFO,
-                        "[benchmark_debug] CPU %d: fp %f int %f intloops %f inttime %f",
+                        "[benchmark] CPU %d: fp %f int %f intloops %f inttime %f",
                         i, benchmark_descs[i].host_info.p_fpops,
                         benchmark_descs[i].host_info.p_iops,
                         benchmark_descs[i].int_loops,
@@ -511,6 +514,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
             }
             host_info.p_membw = p_membw;
             print_benchmark_results();
+            did_benchmarks = true;
         }
 
         // scale duration correction factor according to change in benchmarks.

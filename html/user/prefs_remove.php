@@ -43,18 +43,18 @@ if ($confirmed) {
     }
     Header("Location: prefs.php?subset=$subset$c");
 } else {
-    page_head("Confirm delete preferences");
+    page_head(tra("Confirm delete preferences"));
     $tokens = url_tokens($user->authenticator);
-    echo "
-        <p>
-        Are you sure you want to delete your separate ", subset_name($subset),
-        " preferences for $venue?
-        <br><br>
-        <a href=prefs_remove.php?subset=$subset&amp;venue=$venue&amp;confirmed=yes$c$tokens>Yes</a>
-        | <a href=prefs.php?subset=$subset$c>Cancel</a>
-    ";
+    echo "<p>".
+        tra("Are you sure you want to delete your separate %1 preferences for %2?", subset_name($subset), $venue).
+        "</p><br><br>\n";
+    show_button(
+        "prefs_remove.php?subset=$subset&amp;venue=$venue&amp;confirmed=yes$c$tokens",
+        tra("Yes"), tra("Remove preferences")
+    );
+    show_button("prefs.php?subset=$subset$c", tra("Cancel"), tra("Cancel"));
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: prefs_remove.php 17278 2009-02-17 17:39:57Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: prefs_remove.php 20568 2010-02-15 04:30:25Z davea $";  //Generated automatically - do not edit
 ?>

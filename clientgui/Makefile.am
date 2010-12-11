@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 18114 2009-05-15 08:30:35Z charlief $
+## $Id: Makefile.am 22261 2010-08-17 21:58:36Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -49,9 +49,12 @@ boincmgr_SOURCES = \
     BOINCClientManager.cpp \
     BOINCDialupManager.cpp \
     BOINCGUIApp.cpp \
+    BOINCHtmlLBox.cpp \
+    BOINCInternetFSHandler.cpp \
     BOINCListCtrl.cpp \
     BOINCTaskBar.cpp \
     BOINCTaskCtrl.cpp \
+    BOINCVListBox.cpp \
     browser.cpp \
     CompletionErrorPage.cpp \
     CompletionPage.cpp \
@@ -60,17 +63,20 @@ boincmgr_SOURCES = \
     DlgAbout.cpp 		\
     DlgAdvPreferences.cpp \
     DlgAdvPreferencesBase.cpp \
+    DlgEventLog.cpp \
+    DlgEventLogListCtrl.cpp \
     DlgExitMessage.cpp \
     DlgGenericMessage.cpp \
     DlgItemProperties.cpp \
     DlgOptions.cpp \
     DlgSelectComputer.cpp \
-    hyperlink.cpp \
+    gtk/taskbarex.cpp \
     LogBOINC.cpp \
     MainDocument.cpp \
     NoInternetConnectionPage.cpp \
     NotDetectedPage.cpp \
     NotFoundPage.cpp \
+    NoticeListCtrl.cpp \
     ProjectInfoPage.cpp \
     ProjectListCtrl.cpp \
     ProjectProcessingPage.cpp \
@@ -86,7 +92,6 @@ boincmgr_SOURCES = \
     sg_ImageLoader.cpp \
     sg_ProgressBar.cpp \
     sg_ProjectsComponent.cpp \
-    sg_SGUIListControl.cpp \
     sg_StatImageLoader.cpp \
     sg_ViewTabPage.cpp \
     SkinManager.cpp \
@@ -96,15 +101,14 @@ boincmgr_SOURCES = \
     ValidateAccountKey.cpp \
     ValidateEmailAddress.cpp \
     ValidateURL.cpp \
-    ViewMessages.cpp \
-    ViewNews.cpp \
+    ViewNotices.cpp \
     ViewProjects.cpp \
     ViewResources.cpp \
     ViewStatistics.cpp \
     ViewTransfers.cpp \
     ViewWork.cpp \
     WelcomePage.cpp \
-    WizardAttachProject.cpp \
+    WizardAttach.cpp \
     wizardex.cpp \
     $(mac_sources)
 
@@ -114,9 +118,9 @@ EXTRA_DIST = *.h \
     ../lib/error_numbers.h \
     locale $(mac_headers)
 
-boincmgr_CPPFLAGS = $(AM_CPPFLAGS) $(WX_CPPFLAGS) $(CLIENTGUIFLAGS)
-boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(CLIENTGUIFLAGS)
-boincmgr_LDADD = $(LIBBOINC) $(CLIENTGUILIBS) $(BOINC_EXTRA_LIBS) $(CLIENTLIBS)
+boincmgr_CPPFLAGS = $(AM_CPPFLAGS) $(WX_CPPFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS)
+boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS)
+boincmgr_LDADD = $(LIBBOINC) $(SQLITE3_LIBS) $(LIBNOTIFY_LIBS) $(CLIENTGUILIBS) $(BOINC_EXTRA_LIBS) $(CLIENTLIBS)
 
 win_config.h: $(top_srcdir)/config.h
 	grep '#define.*BOINC.*VERSION' $^ > $@

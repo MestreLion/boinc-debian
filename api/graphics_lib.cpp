@@ -22,6 +22,8 @@
 //
 // This file is the code that's part of the main program
 
+// DEPRECATED
+
 #ifdef _WIN32
 #include "boinc_win.h"
 #endif
@@ -176,4 +178,4 @@ bool boinc_graphics_possible() {
     return true;
 }
 
-const char *BOINC_RCSID_93054c7e32 = "$Id: graphics_lib.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_93054c7e32 = "$Id: graphics_lib.cpp 20054 2010-01-01 02:50:56Z davea $";

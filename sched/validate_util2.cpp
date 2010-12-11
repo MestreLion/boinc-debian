@@ -49,7 +49,7 @@ using std::vector;
 //
 int check_set(
     vector<RESULT>& results, WORKUNIT& wu,
-    int& canonicalid, double& credit, bool& retry
+    int& canonicalid, double&, bool& retry
 ) {
     vector<void*> data;
     vector<bool> had_error;
@@ -126,7 +126,6 @@ int check_set(
                 }
             }
             canonicalid = results[i].id;
-            credit = compute_granted_credit(wu, results);
             break;
         }
     }

@@ -25,10 +25,6 @@
 #include <string>
 #include <vector>
 
-#define KILO (1024.0)
-#define MEGA (1048576.0)
-#define GIGA (1024.*1048576.0)
-
 extern int ndays_to_string(double x, int smallest_timescale, char *buf);
 extern void nbytes_to_string(double nbytes, double total_bytes, char* str, int len);
 extern int parse_command_line(char*, char**);
@@ -53,13 +49,13 @@ inline bool starts_with(std::string const& s, std::string const& prefix) {
 
 inline void downcase_string(std::string& w) {
     for (std::string::iterator p = w.begin(); p != w.end(); ++p) {
-        *p = tolower(*p);
+        *p = (char)tolower((int)*p);
     }
 }
 
 inline void downcase_string(char* p) {
     while (*p) {
-        *p = tolower(*p);
+        *p = (char)tolower((int)*p);
         p++;
     }
 }
@@ -79,5 +75,8 @@ extern void mysql_timestamp(double, char*);
 extern const char* boincerror(int which_error);
 extern const char* network_status_string(int);
 extern const char* rpc_reason_string(int);
+extern const char* suspend_reason_string(int reason);
+extern const char* run_mode_string(int mode);
+
 
 #endif

@@ -21,7 +21,7 @@
   ghost@aladdin.com
 
  */
-/*$Id: md5.c 20874 2010-03-12 17:03:53Z romw $ */
+/*$Id: md5.c 20873 2010-03-12 16:51:57Z romw $ */
 /*
   Independent implementation of MD5 (RFC 1321).
 

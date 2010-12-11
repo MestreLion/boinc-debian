@@ -43,8 +43,4 @@ int cleanup_result(RESULT const&, void*) {
     return 0;
 }
 
-double compute_granted_credit(WORKUNIT& wu, vector<RESULT>& results) {
-    return median_mean_credit(wu, results);
-}
-
-const char *BOINC_RCSID_f3a7a34795 = "$Id: sample_trivial_validator.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_f3a7a34795 = "$Id: sample_trivial_validator.cpp 21735 2010-06-12 22:08:15Z davea $";

@@ -17,8 +17,8 @@
 
 //
 // message_handler - check and validate new messages
-//  [-d debug_level]
-//  [-one_pass]     // make one pass through table, then exit
+//  [--d debug_level]
+//  [--one_pass]     // make one pass through table, then exit
 //
 // int handle_message(MSG_FROM_HOST&)
 //    handle a message from the host
@@ -35,6 +35,7 @@
 #include "util.h"
 #include "error_numbers.h"
 #include "str_util.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
@@ -47,10 +48,7 @@ extern int handle_message(MSG_FROM_HOST&);
 int handle_message(MSG_FROM_HOST& mfh) {
     int retval;
 
-    printf(
-        "got message \n%s\n",
-        mfh.xml
-        );
+    printf("got message \n%s\n", mfh.xml);
     DB_MSG_TO_HOST mth;
     mth.clear();
     mth.create_time = time(0);
@@ -128,6 +126,18 @@ int main_loop(bool one_pass) {
     return 0;
 }
 
+void usage(char *name) {
+    fprintf(stderr,
+        "check and validate new messages\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options:\n"
+        "  [ -d X ]                        Set debug level to X\n"
+        "  [ --one_pass ]                  make one pass through table, then exit\n"
+        "  [ -h --help ]                   show this help text.\n"
+        "  [ -v | --version ]              show version information\n",
+        name
+    );
+}
 
 int main(int argc, char** argv) {
     int i, retval;
@@ -136,14 +146,27 @@ int main(int argc, char** argv) {
     check_stop_daemons();
 
     for (i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-one_pass")) {
+        if (is_arg(argv[i], "one_pass")) {
             one_pass = true;
-        } else if (!strcmp(argv[i], "-d")) {
-            log_messages.set_debug_level(atoi(argv[++i]));
+        } else if (is_arg(argv[i], "d")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int dl = atoi(argv[i]);
+            log_messages.set_debug_level(dl);
+            if (dl == 4) g_print_queries = true;
+        } else if (is_arg(argv[i], "h") || is_arg(argv[i], "help")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
         } else {
-            log_messages.printf(MSG_CRITICAL,
-                "unrecognized arg: %s\n", argv[i]
-            );
+            log_messages.printf(MSG_CRITICAL, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
 
@@ -162,4 +185,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_ff3b9880d4 = "$Id: message_handler.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_ff3b9880d4 = "$Id: message_handler.cpp 21181 2010-04-15 03:13:56Z davea $";

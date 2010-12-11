@@ -26,10 +26,7 @@
 #include "common_defs.h"
 #include "log_flags.h"
 
-class PROJECT;
-
-
-/// stores a message in memory, where it can be retrieved via RPC
+// stores a message in memory, where it can be retrieved via RPC
 
 struct MESSAGE_DESC {
     char project_name[256];
@@ -39,10 +36,20 @@ struct MESSAGE_DESC {
     std::string message;
 };
 
-extern std::deque<MESSAGE_DESC*> message_descs;
-extern void record_message(class PROJECT *p, int priority, int now, char* msg);
-extern void show_message(class PROJECT *p, char* message, int priority);
-extern void cleanup_messages();
+#define MAX_SAVED_MESSAGES 2000
+
+// a cache of MAX_SAVED_MESSAGES most recent messages,
+// stored in newest-first order
+//
+struct MESSAGE_DESCS {
+    std::deque<MESSAGE_DESC*> msgs;
+    void insert(struct PROJECT *p, int priority, int now, char* msg);
+    void write(int seqno, class MIOFILE&, bool translatable);
+    int highest_seqno();
+    void cleanup();
+};
+
+extern MESSAGE_DESCS message_descs;
 
 // the __attribute((format...)) tags are GCC extensions that let the compiler
 // do like-checking on printf-like arguments
@@ -51,8 +58,23 @@ extern void cleanup_messages();
 #define __attribute__(x) /*nothing*/
 #endif
 
-/// Show a message, preceded by timestamp and project name
+// Show a message, preceded by timestamp and project name
 
-extern void msg_printf(PROJECT *p, int priority, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+extern void msg_printf(struct PROJECT *p, int priority, const char *fmt, ...)
+    __attribute__ ((format (printf, 3, 4)))
+;
+
+// Show a MSG_USER_ALERT message (i.e. will be shown as a notice)
+// Additional info:
+// is_html: true if message body contains HTML tags
+// link: URL for "more..." link
+//
+extern void msg_printf_notice(struct PROJECT *p, bool is_html, const char* link, const char *fmt, ...)
+    __attribute__ ((format (printf, 4, 5)))
+;
+
+extern void strip_translation(char*);
+
+#define _(x) "_(\""x"\")"
 
 #endif

@@ -34,8 +34,6 @@ public:
     bool                IsSystemBooting();
     int                 IsBOINCConfiguredAsDaemon();
 
-    void                DisableBOINCStartedByManager() { m_bBOINCStartedByManager = false; };
-    void                EnableBOINCStartedByManager() { m_bBOINCStartedByManager = true; };
     bool                WasBOINCStartedByManager() { return m_bBOINCStartedByManager; };
 
     bool                IsBOINCCoreRunning();
@@ -46,12 +44,25 @@ public:
 protected:
     bool                m_bBOINCStartedByManager;
     int                 m_lBOINCCoreProcessId;
+    double              m_fAutoRestart1Time;
+    double              m_fAutoRestart2Time;
 
 #ifdef __WXMSW__
     HANDLE              m_hBOINCCoreProcess;
 #endif
 
 };
+
+class ClientCrashDlg : public wxDialog
+{
+    DECLARE_DYNAMIC_CLASS( ClientCrashDlg )
+    DECLARE_EVENT_TABLE()
+
+public:
+    ClientCrashDlg(double timeDiff);
+    void                        OnHelp(wxCommandEvent& event);
+};
+
 
 
 #endif

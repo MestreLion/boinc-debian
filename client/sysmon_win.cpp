@@ -32,13 +32,14 @@
 #include "sandbox.h"
 #include "main.h"
 #include "cs_proxy.h"
+#include "net_stats.h"
 
 #include "sysmon_win.h"
 
 
-static HANDLE g_hWindowsMonitorSystemThread = NULL;
-static DWORD g_WindowsMonitorSystemThreadID = NULL;
-static HWND g_hWndWindowsMonitorSystem = NULL;
+static HANDLE g_hWindowsMonitorSystemPowerThread = NULL;
+static HWND g_hWndWindowsMonitorSystemPower = NULL;
+static HANDLE g_hWindowsMonitorSystemProxyThread = NULL;
 
 
 // The following 3 functions are called in a separate thread,
@@ -98,156 +99,11 @@ static BOOL WINAPI console_control_handler( DWORD dwCtrlType ){
     return bReturnStatus;
 }
 
-// Detect any proxy configuration settings automatically.
-static void windows_detect_autoproxy_settings() {
-    if (log_flags.proxy_debug) {
-        msg_printf(NULL, MSG_INFO, "[proxy_debug] automatic proxy check in progress");
-    }
-
-    HMODULE hModWinHttp = LoadLibrary("winhttp.dll");
-    if (!hModWinHttp) {
-        return;
-    }
-    pfnWinHttpOpen pWinHttpOpen =
-        (pfnWinHttpOpen)GetProcAddress(hModWinHttp, "WinHttpOpen");
-    if (!pWinHttpOpen) {
-        return;
-    }
-    pfnWinHttpCloseHandle pWinHttpCloseHandle =
-        (pfnWinHttpCloseHandle)(GetProcAddress(hModWinHttp, "WinHttpCloseHandle"));
-    if (!pWinHttpCloseHandle) {
-        return;
-    }
-    pfnWinHttpGetProxyForUrl pWinHttpGetProxyForUrl =
-        (pfnWinHttpGetProxyForUrl)(GetProcAddress(hModWinHttp, "WinHttpGetProxyForUrl"));
-    if (!pWinHttpGetProxyForUrl) {
-        return;
-    }
-
-    HINTERNET                 hWinHttp = NULL;
-    WINHTTP_AUTOPROXY_OPTIONS autoproxy_options;
-    WINHTTP_PROXY_INFO        proxy_info;
-    PARSED_URL purl;
-    std::wstring              network_test_url;
-    size_t                    pos;
-
-
-    memset(&autoproxy_options, 0, sizeof(autoproxy_options));
-    memset(&proxy_info, 0, sizeof(proxy_info));
-
-    autoproxy_options.dwFlags =
-        WINHTTP_AUTOPROXY_AUTO_DETECT;
-    autoproxy_options.dwAutoDetectFlags =
-        WINHTTP_AUTO_DETECT_TYPE_DHCP | WINHTTP_AUTO_DETECT_TYPE_DNS_A;
-    autoproxy_options.fAutoLogonIfChallenged = TRUE;
-
-    network_test_url = A2W(config.network_test_url).c_str();
-
-    hWinHttp = pWinHttpOpen(
-        L"BOINC client",
-        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-        WINHTTP_NO_PROXY_NAME,
-        WINHTTP_NO_PROXY_BYPASS,
-        NULL
-    );
-
-    if (pWinHttpGetProxyForUrl(hWinHttp, network_test_url.c_str(), &autoproxy_options, &proxy_info)) {
-
-        if (log_flags.proxy_debug) {
-            msg_printf(NULL, MSG_INFO, "[proxy_debug] successfully executed proxy check", hWinHttp);
-        }
-
-        // Apparently there are some conditions where WinHttpGetProxyForUrl can return
-        //   success but where proxy_info.lpszProxy is null.  Maybe related to UPNP?
-        //
-        // For the time being check to see if proxy_info.lpszProxy is non-null.
-        //
-        if (proxy_info.lpszProxy) {
-            std::string proxy(W2A(std::wstring(proxy_info.lpszProxy)));
-            std::string new_proxy;
-
-            if (log_flags.proxy_debug) {
-                msg_printf(NULL, MSG_INFO, "[proxy_debug] proxy list '%s'", proxy.c_str());
-            }
-
-            if (!proxy.empty()) {
-                // Trim string if more than one proxy is defined
-                // proxy list is defined as:
-                //   ([<scheme>=][<scheme>"://"]<server>[":"<port>])
-                
-                // Find and erase first delimeter type.
-                pos = proxy.find(';');
-                if (pos != -1 ) {
-                    new_proxy = proxy.erase(pos);
-                    proxy = new_proxy;
-                }
-
-                // Find and erase second delimeter type.
-                pos = proxy.find(' ');
-                if (pos != -1 ) {
-                    new_proxy = proxy.erase(pos);
-                    proxy = new_proxy;
-                }
-
-                // Parse the remaining url
-                parse_url(proxy.c_str(), purl);
-
-                // Store the results for future use.
-                working_proxy_info.autodetect_protocol = purl.protocol;
-                strcpy(working_proxy_info.autodetect_server_name, purl.host);
-                working_proxy_info.autodetect_port = purl.port;
-
-                if (log_flags.proxy_debug) {
-                    msg_printf(NULL, MSG_INFO,
-                        "[proxy_debug] automatic proxy detected %s:%d",
-                        purl.host, purl.port
-                    );
-                }
-            }
-        }
-
-        // Clean up
-        if (proxy_info.lpszProxy) GlobalFree(proxy_info.lpszProxy);
-        if (proxy_info.lpszProxyBypass) GlobalFree(proxy_info.lpszProxyBypass);
-    } else {
-        // We can get here if the user is switching from a network that
-        // requires a proxy to one that does not require a proxy.
-        working_proxy_info.autodetect_protocol = 0;
-        strcpy(working_proxy_info.autodetect_server_name, "");
-        working_proxy_info.autodetect_port = 0;
-        if (log_flags.proxy_debug) {
-            msg_printf(NULL, MSG_INFO, "[proxy_debug] no automatic proxy detected");
-        }
-    }
-    if (hWinHttp) pWinHttpCloseHandle(hWinHttp);
-    FreeLibrary(hModWinHttp);
-    if (log_flags.proxy_debug) {
-        msg_printf(NULL, MSG_INFO, "[proxy_debug] automatic proxy check finished");
-    }
-}
-
 // Trap events on Windows so we can clean ourselves up.
-static LRESULT CALLBACK WindowsMonitorSystemWndProc(
+static LRESULT CALLBACK WindowsMonitorSystemPowerWndProc(
     HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 ) {
     switch(uMsg) {
-        // Process Timer Events
-        case WM_TIMER:
-            switch(wParam) {
-
-                // System Monitor 1 second timer
-                case 1:
-                    if (working_proxy_info.need_autodetect_proxy_settings) {
-                        working_proxy_info.have_autodetect_proxy_settings = false;
-                        windows_detect_autoproxy_settings();
-                        working_proxy_info.need_autodetect_proxy_settings = false;
-                        working_proxy_info.have_autodetect_proxy_settings = true;
-                    }
-                default:
-                    break;
-            }
-            break;
-
         // On Windows power events are broadcast via the WM_POWERBROADCAST
         //   window message.  It has the following parameters:
         //     PBT_APMQUERYSUSPEND
@@ -305,12 +161,12 @@ static LRESULT CALLBACK WindowsMonitorSystemWndProc(
 }
 
 // Create a thread to monitor system events
-static DWORD WINAPI WindowsMonitorSystemThread( LPVOID  ) {
+static DWORD WINAPI WindowsMonitorSystemPowerThread( LPVOID  ) {
     WNDCLASS wc;
     MSG msg;
 
     wc.style         = CS_GLOBALCLASS;
-    wc.lpfnWndProc   = (WNDPROC)WindowsMonitorSystemWndProc;
+    wc.lpfnWndProc   = (WNDPROC)WindowsMonitorSystemPowerWndProc;
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 0;
     wc.hInstance     = NULL;
@@ -318,17 +174,16 @@ static DWORD WINAPI WindowsMonitorSystemThread( LPVOID  ) {
     wc.hCursor       = NULL;
     wc.hbrBackground = NULL;
     wc.lpszMenuName  = NULL;
-	wc.lpszClassName = "BOINCWindowsMonitorSystem";
+	wc.lpszClassName = "BOINCWindowsMonitorSystemPower";
 
     if (!RegisterClass(&wc)) {
         log_message_error("Failed to register the WindowsMonitorSystem window class.");
         return 1;
     }
 
-    /* Create an invisible window */
-    g_hWndWindowsMonitorSystem = CreateWindow(
+    g_hWndWindowsMonitorSystemPower = CreateWindow(
         wc.lpszClassName,
-		"BOINC Monitor System",
+		"BOINC Monitor System (Power)",
         WS_OVERLAPPEDWINDOW & ~WS_VISIBLE,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -339,19 +194,169 @@ static DWORD WINAPI WindowsMonitorSystemThread( LPVOID  ) {
         NULL,
         NULL);
 
-    if (!g_hWndWindowsMonitorSystem) {
+    if (!g_hWndWindowsMonitorSystemPower) {
         log_message_error("Failed to create the WindowsMonitorSystem window.");
         return 0;
-    }
-
-    if (!SetTimer(g_hWndWindowsMonitorSystem, 1, 1000, NULL)) {
-        log_message_error("Failed to create the WindowsMonitorSystem timer.");
     }
 
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    return 0;
+}
+
+// Detect any proxy configuration settings automatically.
+static void windows_detect_autoproxy_settings() {
+    if (log_flags.proxy_debug) {
+        msg_printf(NULL, MSG_INFO, "[proxy] automatic proxy check in progress");
+    }
+
+    HMODULE hModWinHttp = LoadLibrary("winhttp.dll");
+    if (!hModWinHttp) {
+        return;
+    }
+    pfnWinHttpOpen pWinHttpOpen =
+        (pfnWinHttpOpen)GetProcAddress(hModWinHttp, "WinHttpOpen");
+    if (!pWinHttpOpen) {
+        return;
+    }
+    pfnWinHttpCloseHandle pWinHttpCloseHandle =
+        (pfnWinHttpCloseHandle)(GetProcAddress(hModWinHttp, "WinHttpCloseHandle"));
+    if (!pWinHttpCloseHandle) {
+        return;
+    }
+    pfnWinHttpGetProxyForUrl pWinHttpGetProxyForUrl =
+        (pfnWinHttpGetProxyForUrl)(GetProcAddress(hModWinHttp, "WinHttpGetProxyForUrl"));
+    if (!pWinHttpGetProxyForUrl) {
+        return;
+    }
+
+    HINTERNET                 hWinHttp = NULL;
+    WINHTTP_AUTOPROXY_OPTIONS autoproxy_options;
+    WINHTTP_PROXY_INFO        proxy_info;
+    PARSED_URL purl;
+    std::wstring              network_test_url;
+    size_t                    pos;
+
+
+    memset(&autoproxy_options, 0, sizeof(autoproxy_options));
+    memset(&proxy_info, 0, sizeof(proxy_info));
+
+    autoproxy_options.dwFlags =
+        WINHTTP_AUTOPROXY_AUTO_DETECT;
+    autoproxy_options.dwAutoDetectFlags =
+        WINHTTP_AUTO_DETECT_TYPE_DHCP | WINHTTP_AUTO_DETECT_TYPE_DNS_A;
+    autoproxy_options.fAutoLogonIfChallenged = TRUE;
+
+    network_test_url = A2W(config.network_test_url).c_str();
+
+    hWinHttp = pWinHttpOpen(
+        L"BOINC client",
+        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+        WINHTTP_NO_PROXY_NAME,
+        WINHTTP_NO_PROXY_BYPASS,
+        NULL
+    );
+
+    if (pWinHttpGetProxyForUrl(hWinHttp, network_test_url.c_str(), &autoproxy_options, &proxy_info)) {
+
+        if (log_flags.proxy_debug) {
+            msg_printf(NULL, MSG_INFO, "[proxy] successfully executed proxy check", hWinHttp);
+        }
+
+        // Apparently there are some conditions where WinHttpGetProxyForUrl can return
+        //   success but where proxy_info.lpszProxy is null.  Maybe related to UPNP?
+        //
+        // For the time being check to see if proxy_info.lpszProxy is non-null.
+        //
+        if (proxy_info.lpszProxy) {
+            std::string proxy(W2A(std::wstring(proxy_info.lpszProxy)));
+            std::string new_proxy;
+
+            if (log_flags.proxy_debug) {
+                msg_printf(NULL, MSG_INFO, "[proxy] proxy list '%s'", proxy.c_str());
+            }
+
+            if (!proxy.empty()) {
+                // Trim string if more than one proxy is defined
+                // proxy list is defined as:
+                //   ([<scheme>=][<scheme>"://"]<server>[":"<port>])
+                
+                // Find and erase first delimeter type.
+                pos = proxy.find(';');
+                if (pos != -1 ) {
+                    new_proxy = proxy.erase(pos);
+                    proxy = new_proxy;
+                }
+
+                // Find and erase second delimeter type.
+                pos = proxy.find(' ');
+                if (pos != -1 ) {
+                    new_proxy = proxy.erase(pos);
+                    proxy = new_proxy;
+                }
+
+                // Parse the remaining url
+                parse_url(proxy.c_str(), purl);
+
+                // Store the results for future use.
+                if (0 != strcmp(working_proxy_info.autodetect_server_name, purl.host)) {
+                    // Reset clients connection error detection path
+                    net_status.need_physical_connection = false;
+
+                    working_proxy_info.autodetect_protocol = purl.protocol;
+                    strcpy(working_proxy_info.autodetect_server_name, purl.host);
+                    working_proxy_info.autodetect_port = purl.port;
+                }
+
+                if (log_flags.proxy_debug) {
+                    msg_printf(NULL, MSG_INFO,
+                        "[proxy] automatic proxy detected %s:%d",
+                        purl.host, purl.port
+                    );
+                }
+            }
+        }
+
+        // Clean up
+        if (proxy_info.lpszProxy) GlobalFree(proxy_info.lpszProxy);
+        if (proxy_info.lpszProxyBypass) GlobalFree(proxy_info.lpszProxyBypass);
+    } else {
+        // We can get here if the user is switching from a network that
+        // requires a proxy to one that does not require a proxy.
+        working_proxy_info.autodetect_protocol = 0;
+        strcpy(working_proxy_info.autodetect_server_name, "");
+        working_proxy_info.autodetect_port = 0;
+        if (log_flags.proxy_debug) {
+            msg_printf(NULL, MSG_INFO, "[proxy] no automatic proxy detected");
+        }
+    }
+    if (hWinHttp) pWinHttpCloseHandle(hWinHttp);
+    FreeLibrary(hModWinHttp);
+    if (log_flags.proxy_debug) {
+        msg_printf(NULL, MSG_INFO, "[proxy] automatic proxy check finished");
+    }
+}
+
+static DWORD WINAPI WindowsMonitorSystemProxyThread( LPVOID  ) {
+    
+    // notify the main client thread that detecting proxies is
+    // supported.
+    working_proxy_info.autodetect_proxy_supported = true;
+
+    while (1) {
+
+        if (working_proxy_info.need_autodetect_proxy_settings) {
+            working_proxy_info.have_autodetect_proxy_settings = false;
+            windows_detect_autoproxy_settings();
+            working_proxy_info.need_autodetect_proxy_settings = false;
+            working_proxy_info.have_autodetect_proxy_settings = true;
+        }
+
+        Sleep(1000);
+    }
+
     return 0;
 }
 
@@ -364,21 +369,31 @@ int initialize_system_monitor(int /*argc*/, char** /*argv*/) {
         return ERR_IO;
     }
 
-    // Create a window to receive system events that are
-    //   not taken care of by the console APIs.  The console
-    //   APIs haven't been updated to handle various power states.
-    g_hWindowsMonitorSystemThread = CreateThread(
+    // Create a window to receive system power events.
+    g_hWindowsMonitorSystemPowerThread = CreateThread(
         NULL,
         0,
-        WindowsMonitorSystemThread,
+        WindowsMonitorSystemPowerThread,
         NULL,
         0,
-        &g_WindowsMonitorSystemThreadID);
+        NULL);
 
-    if (!g_hWindowsMonitorSystemThread) {
-        g_hWindowsMonitorSystemThread = NULL;
-        g_WindowsMonitorSystemThreadID = NULL;
-        g_hWndWindowsMonitorSystem = NULL;
+    if (!g_hWindowsMonitorSystemPowerThread) {
+        g_hWindowsMonitorSystemPowerThread = NULL;
+        g_hWndWindowsMonitorSystemPower = NULL;
+    }
+
+    // Create a thread to handle proxy auto-detection.
+    g_hWindowsMonitorSystemProxyThread = CreateThread(
+        NULL,
+        0,
+        WindowsMonitorSystemProxyThread,
+        NULL,
+        0,
+        NULL);
+
+    if (!g_hWindowsMonitorSystemProxyThread) {
+        g_hWindowsMonitorSystemProxyThread = NULL;
     }
 
     return 0;
@@ -387,18 +402,17 @@ int initialize_system_monitor(int /*argc*/, char** /*argv*/) {
 // Cleanup the system event monitor
 int cleanup_system_monitor() {
 
-    KillTimer(g_hWndWindowsMonitorSystem, 1);
-
-    if (g_WindowsMonitorSystemThreadID) {
-	    PostThreadMessage(g_WindowsMonitorSystemThreadID, WM_QUIT, 0, 0);
-        WaitForSingleObject(g_hWindowsMonitorSystemThread, 10000);
+    if (g_hWindowsMonitorSystemPowerThread) {
+        TerminateThread(g_hWindowsMonitorSystemPowerThread, 0);
+        CloseHandle(g_hWindowsMonitorSystemPowerThread);
+        g_hWindowsMonitorSystemPowerThread = NULL;
+        g_hWndWindowsMonitorSystemPower = NULL;
     }
 
-    if (g_hWindowsMonitorSystemThread) {
-        CloseHandle(g_hWindowsMonitorSystemThread);
-        g_hWindowsMonitorSystemThread = NULL;
-        g_WindowsMonitorSystemThreadID = NULL;
-        g_hWndWindowsMonitorSystem = NULL;
+    if (g_hWindowsMonitorSystemProxyThread) {
+        TerminateThread(g_hWindowsMonitorSystemProxyThread, 0);
+        CloseHandle(g_hWindowsMonitorSystemProxyThread);
+        g_hWindowsMonitorSystemProxyThread = NULL;
     }
 
     return 0;

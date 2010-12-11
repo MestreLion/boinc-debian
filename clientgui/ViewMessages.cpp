@@ -118,41 +118,10 @@ CViewMessages::CViewMessages(wxNotebook* pNotebook) :
     m_pListPane->InsertColumn(COLUMN_TIME, _("Time"), wxLIST_FORMAT_LEFT, 145);
     m_pListPane->InsertColumn(COLUMN_MESSAGE, _("Message"), wxLIST_FORMAT_LEFT, 550);
 
-#if BASEVIEW_STRIPES    
-    m_pMessageInfoAttr = new wxListItemAttr(
-        m_pWhiteBackgroundAttr->GetTextColour(), 
-        m_pWhiteBackgroundAttr->GetBackgroundColour(), 
-        wxNullFont
-    );
-    m_pMessageErrorAttr = new wxListItemAttr(
-        *wxRED, 
-        m_pWhiteBackgroundAttr->GetBackgroundColour(), 
-        wxNullFont
-    );
-    m_pMessageInfoGrayAttr = new wxListItemAttr(
-        m_pGrayBackgroundAttr->GetTextColour(), 
-        m_pGrayBackgroundAttr->GetBackgroundColour(), 
-        wxNullFont
-    );
-    m_pMessageErrorGrayAttr = new wxListItemAttr(
-        *wxRED, 
-        m_pGrayBackgroundAttr->GetBackgroundColour(), 
-        wxNullFont
-    );
-#else
-    m_pMessageInfoAttr = new wxListItemAttr(
-        wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT),
-        wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW),
-        wxNullFont
-    );
-    m_pMessageErrorAttr = new wxListItemAttr(
-        *wxRED, 
-        wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW),
-        wxNullFont
-    );
-    m_pMessageInfoGrayAttr = new wxListItemAttr(*m_pMessageInfoAttr);
-    m_pMessageErrorGrayAttr = new wxListItemAttr(*m_pMessageErrorAttr);
-#endif
+    m_pMessageInfoAttr = new wxListItemAttr(*wxBLACK, *wxWHITE, wxNullFont);
+    m_pMessageErrorAttr = new wxListItemAttr(*wxRED, *wxWHITE, wxNullFont);
+    m_pMessageInfoGrayAttr = new wxListItemAttr(*wxBLACK, wxColour(240, 240, 240), wxNullFont);
+    m_pMessageErrorGrayAttr = new wxListItemAttr(*wxRED, wxColour(240, 240, 240), wxNullFont);
 
     UpdateSelection();
 }
@@ -296,8 +265,8 @@ void CViewMessages::OnMessagesFilter( wxCommandEvent& WXUNUSED(event) ) {
     wxLogTrace(wxT("Function Start/End"), wxT("CViewMessages::OnMessagesFilter - Function Begin"));
 
     wxInt32 iIndex = -1;
-    CAdvancedFrame* pFrame      = wxDynamicCast(GetParent()->GetParent()->GetParent(), CAdvancedFrame);
-    MESSAGE*   message;
+    CAdvancedFrame* pFrame = wxDynamicCast(GetParent()->GetParent()->GetParent(), CAdvancedFrame);
+    MESSAGE* message;
     
     wxASSERT(pFrame);
     wxASSERT(wxDynamicCast(pFrame, CAdvancedFrame));
@@ -401,9 +370,9 @@ void CViewMessages::OnListRender (wxTimerEvent& event) {
             if (was_connected != isConnected) {
                 was_connected = isConnected;
                 if (isConnected) {
-                    m_pMessageInfoAttr->SetTextColour(m_pWhiteBackgroundAttr->GetTextColour());
+                    m_pMessageInfoAttr->SetTextColour(*wxBLACK);
                     m_pMessageErrorAttr->SetTextColour(*wxRED);
-                    m_pMessageInfoGrayAttr->SetTextColour(m_pGrayBackgroundAttr->GetTextColour());
+                    m_pMessageInfoGrayAttr->SetTextColour(*wxBLACK);
                     m_pMessageErrorGrayAttr->SetTextColour(*wxRED);
                 } else {
                     wxColourDatabase colorBase;
@@ -476,7 +445,7 @@ wxListItemAttr* CViewMessages::OnListGetItemAttr(long item) const {
 
     if (message) {
         switch(message->priority) {
-        case MSG_USER_ERROR:
+        case MSG_USER_ALERT:
             pAttribute = item % 2 ? m_pMessageErrorGrayAttr : m_pMessageErrorAttr;
             break;
         default:
@@ -575,11 +544,8 @@ wxInt32 CViewMessages::FormatMessage(wxInt32 item, wxString& strBuffer) const {
     MESSAGE*   message = wxGetApp().GetDocument()->message(item);
 
     if (message) {
-        strBuffer = wxString(message->body.c_str(), wxConvUTF8);
+        strBuffer = process_client_message(message->body.c_str());
     }
-
-    strBuffer.Replace(wxT("\n"), wxT(""), true);
-
     return 0;
 }
 
@@ -648,4 +614,4 @@ bool CViewMessages::CloseClipboard() {
 #endif
 
 
-const char *BOINC_RCSID_0be7149475 = "$Id: ViewMessages.cpp 20952 2010-03-18 21:54:20Z charlief $";
+const char *BOINC_RCSID_0be7149475 = "$Id: ViewMessages.cpp 21706 2010-06-08 18:56:53Z davea $";

@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
-#endif
-
-#ifndef _WIN32
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
 #include "config.h"
 #include <cstdio>
 #include <cstdlib>
@@ -31,7 +31,6 @@
 #include <malloc.h>
 #endif
 #include <unistd.h>
-
 #endif
 
 #include "filesys.h"
@@ -51,14 +50,15 @@ MFILE::~MFILE() {
 int MFILE::open(const char* path, const char* mode) {
     f = boinc_fopen(path, mode);
     if (!f) return ERR_FOPEN;
+    if (!buf) buf = (char*)malloc(64*1024);
     return 0;
 }
 
 // seems like Win's realloc is stupid,  Make it smart.
 //
-static inline char* realloc_aux(char* p, int len) {
+static inline char* realloc_aux(char* p, size_t len) {
 #ifdef _WIN32
-    if (_msize(p) >= len) return p;
+    if (_msize(p) >= (unsigned int)len) return p;
     return (char*) realloc(p, len*2);
 #else
     return (char*) realloc(p, len);
@@ -138,11 +138,16 @@ int MFILE::puts(const char* p) {
 }
 
 int MFILE::close() {
-    int retval = flush();
-    fclose(f);
-    free(buf);
-    buf = 0;
-    f = NULL;
+    int retval = 0;
+    if (f) {
+        flush();
+        fclose(f);
+        f = NULL;
+    }
+    if (buf) {
+        free(buf);
+        buf = NULL;
+    }
     return retval;
 }
 

@@ -15,15 +15,17 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
-#include "boinc_win.h"
-#endif
+// Write and parse HOST_INFO structures.
+// Used by client and GUI
 
-#ifndef _WIN32
+#if   defined(_WIN32) && !defined(__STDWX_H__)
+#include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
 #include "config.h"
 #include <cstdio>
 #include <cstring>
-
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -65,6 +67,10 @@ void HOST_INFO::clear_host_info() {
 
     strcpy(os_name, "");
     strcpy(os_version, "");
+
+    strcpy(virtualbox_version, "");
+
+    coprocs.clear();
 }
 
 int HOST_INFO::parse(MIOFILE& in, bool benchmarks_only) {
@@ -105,6 +111,7 @@ int HOST_INFO::parse(MIOFILE& in, bool benchmarks_only) {
         else if (parse_double(buf, "<d_free>", d_free)) continue;
         else if (parse_str(buf, "<os_name>", os_name, sizeof(os_name))) continue;
         else if (parse_str(buf, "<os_version>", os_version, sizeof(os_version))) continue;
+        else if (parse_str(buf, "<virtualbox_version>", virtualbox_version, sizeof(virtualbox_version))) continue;
         else if (match_tag(buf, "<coprocs>")) {
             coprocs.parse(in);
         }
@@ -112,18 +119,25 @@ int HOST_INFO::parse(MIOFILE& in, bool benchmarks_only) {
     return ERR_XML_PARSE;
 }
 
-// Write the host information, to the client state XML file
-// or in a scheduler request message
+// Write the host information to either:
+// - client state XML file (net info, coprocs)
+// - a GUI RPC reply (net info, coprocs)
+// - a scheduler request message
+//   (net info unless config says otherwise, no coprocs)
+// - account manager request
+//   (net info unless config says otherwise, coprocs)
+// - app init file (net info, coprocs)
 //
 int HOST_INFO::write(
-    MIOFILE& out, bool suppress_net_info, bool include_coprocs
+    MIOFILE& out, bool include_net_info, bool include_coprocs
 ) {
+    char pv[265], pm[256], pf[256], osn[256], osv[256];
     out.printf(
         "<host_info>\n"
         "    <timezone>%d</timezone>\n",
         timezone
     );
-    if (!suppress_net_info) {
+    if (include_net_info) {
         out.printf(
             "    <domain_name>%s</domain_name>\n"
             "    <ip_addr>%s</ip_addr>\n",
@@ -131,6 +145,11 @@ int HOST_INFO::write(
             ip_addr
         );
     }
+    xml_escape(p_vendor, pv, sizeof(pv));
+    xml_escape(p_model, pm, sizeof(pm));
+    xml_escape(p_features, pf, sizeof(pf));
+    xml_escape(os_name, osn, sizeof(osn));
+    xml_escape(os_version, osv, sizeof(osv));
     out.printf(
         "    <host_cpid>%s</host_cpid>\n"
         "    <p_ncpus>%d</p_ncpus>\n"
@@ -150,9 +169,9 @@ int HOST_INFO::write(
         "    <os_version>%s</os_version>\n",
         host_cpid,
         p_ncpus,
-        p_vendor,
-        p_model,
-        p_features,
+        pv,
+        pm,
+        pf,
         p_fpops,
         p_iops,
         p_membw,
@@ -162,11 +181,19 @@ int HOST_INFO::write(
         m_swap,
         d_total,
         d_free,
-        os_name,
-        os_version
+        osn,
+        osv
     );
+    if (strlen(virtualbox_version)) {
+        char buf[256];
+        xml_escape(virtualbox_version, buf, sizeof(buf));
+        out.printf(
+            "    <virtualbox_version>%s</virtualbox_version>\n",
+            buf
+        );
+    }
     if (include_coprocs) {
-        coprocs.write_xml(out);
+        coprocs.write_xml(out, false);
     }
     out.printf(
         "</host_info>\n"

@@ -22,6 +22,10 @@
 #include <Carbon/Carbon.h>
 #endif
 
+#ifdef _WIN32
+#include "boinc_win.h"
+#endif
+
 // ANSI C API BEGINS HERE
 // Do not put implementation stuff here
 
@@ -72,6 +76,7 @@ struct APP_INIT_DATA;
 
 extern int boinc_init(void);
 extern int boinc_finish(int status);
+extern int boinc_temporary_exit(int delay);
 extern int boinc_resolve_filename(const char*, char*, int len);
 extern int boinc_get_init_data_p(struct APP_INIT_DATA*);
 extern int boinc_parse_init_data_file(void);
@@ -98,7 +103,7 @@ extern int boinc_get_status(BOINC_STATUS*);
 extern double boinc_get_fraction_done();
 extern void boinc_register_timer_callback(FUNC_PTR);
 extern double boinc_worker_thread_cpu_time();
-extern void boinc_exit(int);    // deprecated
+extern int boinc_init_parallel();
 
 #ifdef __APPLE__
 extern int setMacPList(void);
@@ -120,11 +125,7 @@ extern int boinc_wu_cpu_time(double&);
 extern double boinc_elapsed_time();
 extern int boinc_upload_file(std::string& name);
 extern int boinc_upload_status(std::string& name);
-extern int boinc_write_init_data_file(APP_INIT_DATA&);
-extern char* boinc_msg_prefix();
-extern int suspend_activities();   // deprecated
-extern int resume_activities();    // deprecated
-extern int restore_activities();    //deprecated
+extern char* boinc_msg_prefix(char*, int);
 
 /////////// API ENDS HERE
 

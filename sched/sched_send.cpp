@@ -36,6 +36,7 @@
 #include "str_util.h"
 #include "synch.h"
 
+#include "credit.h"
 #include "sched_types.h"
 #include "sched_shmem.h"
 #include "sched_config.h"
@@ -49,6 +50,7 @@
 #include "sched_timezone.h"
 #include "sched_assign.h"
 #include "sched_customize.h"
+#include "sched_version.h"
 
 #include "sched_send.h"
 
@@ -81,10 +83,13 @@ const char* infeasible_string(int code) {
 const double MIN_REQ_SECS = 0;
 const double MAX_REQ_SECS = (28*SECONDS_IN_DAY);
 
-const int MAX_CUDA_DEVS = 8;
-    // don't believe clients who claim they have more CUDA devices than this
+const int MAX_GPUS = 8;
+    // don't believe clients who claim they have more GPUs than this
 
-// get limits on #jobs per day and per RPC, on in progress
+// get limits on:
+// # jobs per day
+// # jobs per RPC
+// # jobs in progress
 //
 void WORK_REQ::get_job_limits() {
     int n;
@@ -96,15 +101,16 @@ void WORK_REQ::get_job_limits() {
     if (n < 1) n = 1;
     effective_ncpus = n;
 
-    n = 0;
-    COPROC* cp = g_request->coprocs.lookup("CUDA");
-    if (cp) {
-        n = cp->count;
-        if (n > MAX_CUDA_DEVS) n = MAX_CUDA_DEVS;
-    }
+    n = g_request->coprocs.cuda.count + g_request->coprocs.ati.count;
+    if (n > MAX_GPUS) n = MAX_GPUS;
     effective_ngpus = n;
 
     int mult = effective_ncpus + config.gpu_multiplier * effective_ngpus;
+    if (config.non_cpu_intensive) {
+        mult = 1;
+        effective_ncpus = 1;
+        if (effective_ngpus) effective_ngpus = 1;
+    }
 
     if (config.max_wus_to_send) {
         g_wreq->max_jobs_per_rpc = mult * config.max_wus_to_send;
@@ -112,43 +118,14 @@ void WORK_REQ::get_job_limits() {
         g_wreq->max_jobs_per_rpc = 999999;
     }
 
-    if (config.daily_result_quota) {
-        if (g_reply->host.max_results_day == 0 || g_reply->host.max_results_day>config.daily_result_quota) {
-            g_reply->host.max_results_day = config.daily_result_quota;
-        }
-        g_wreq->max_jobs_per_day = mult * g_reply->host.max_results_day;
-    } else {
-        g_wreq->max_jobs_per_day = 999999;
-    }
+    config.max_jobs_in_progress.reset(g_reply->host, g_request->coprocs);
 
-    if (config.max_wus_in_progress) {
-        g_wreq->max_jobs_on_host_cpu = config.max_wus_in_progress * effective_ncpus;
-        if (config.max_wus_in_progress_gpu) {
-            g_wreq->max_jobs_on_host_gpu = config.max_wus_in_progress_gpu * effective_ngpus;
-            g_wreq->max_jobs_on_host = g_wreq->max_jobs_on_host_cpu + g_wreq->max_jobs_on_host_gpu;
-        } else {
-            g_wreq->max_jobs_on_host_gpu = 999999;
-            g_wreq->max_jobs_on_host = g_wreq->max_jobs_on_host_cpu;
-        }
-    } else {
-        g_wreq->max_jobs_on_host_cpu = 999999;
-        g_wreq->max_jobs_on_host = 999999;
-        if (config.max_wus_in_progress_gpu) {
-            g_wreq->max_jobs_on_host_gpu = config.max_wus_in_progress_gpu * effective_ngpus;
-        } else {
-            g_wreq->max_jobs_on_host_gpu = 999999;
-        }
-    }
-
-    if (config.debug_send) {
+    if (config.debug_quota) {
         log_messages.printf(MSG_NORMAL,
-            "[send] effective_ncpus %d max_jobs_on_host_cpu %d max_jobs_on_host %d\n",
-            effective_ncpus, g_wreq->max_jobs_on_host_cpu, g_wreq->max_jobs_on_host
+            "[quota] max jobs per RPC: %d\n",
+            g_wreq->max_jobs_per_rpc
         );
-        log_messages.printf(MSG_NORMAL,
-            "[send] effective_ngpus %d max_jobs_on_host_gpu %d\n",
-            effective_ngpus, g_wreq->max_jobs_on_host_gpu
-        );
+        config.max_jobs_in_progress.print_log();
     }
 }
 
@@ -248,65 +225,41 @@ double max_allowable_disk() {
 static double estimate_duration_unscaled(WORKUNIT& wu, BEST_APP_VERSION& bav) {
     double rsc_fpops_est = wu.rsc_fpops_est;
     if (rsc_fpops_est <= 0) rsc_fpops_est = 1e12;
-    return rsc_fpops_est/bav.host_usage.flops;
+    return rsc_fpops_est/bav.host_usage.projected_flops;
 }
 
 static inline void get_running_frac() {
     double rf;
-    if (g_request->core_client_version<=419) {
+    if (g_request->core_client_version<=41900) {
         rf = g_reply->host.on_frac;
     } else {
         rf = g_reply->host.active_frac * g_reply->host.on_frac;
     }
 
-    // clamp running_frac and DCF to a reasonable range
+    // clamp running_frac to a reasonable range
     //
     if (rf > 1) {
         if (config.debug_send) {
-            log_messages.printf(MSG_NORMAL, "running_frac=%f; setting to 1\n", rf);
+            log_messages.printf(MSG_NORMAL, "[send] running_frac=%f; setting to 1\n", rf);
         }
         rf = 1;
     } else if (rf < .1) {
         if (config.debug_send) {
-            log_messages.printf(MSG_NORMAL, "running_frac=%f; setting to 0.1\n", rf);
+            log_messages.printf(MSG_NORMAL, "[send] running_frac=%f; setting to 0.1\n", rf);
         }
         rf = .1;
     }
     g_wreq->running_frac = rf;
 }
 
-static inline void get_dcf() {
-    double dcf = g_reply->host.duration_correction_factor;
-    if (dcf > 10) {
-        if (config.debug_send) {
-            log_messages.printf(MSG_NORMAL,
-                "[send] DCF=%f; setting to 10\n", dcf
-            );
-        }
-        dcf = 10;
-    } else if (dcf < 0.1) {
-        if (config.debug_send) {
-            log_messages.printf(MSG_NORMAL,
-                "[send] DCF=%f; setting to 0.1\n", dcf
-            );
-        }
-        dcf = 0.1;
-    }
-    g_wreq->dcf = dcf;
-}
-
 // estimate the amount of real time to complete this WU,
 // taking into account active_frac etc.
 // Note: don't factor in resource_share_fraction.
-// The core client no longer necessarily does round-robin
-// across all projects.
+// The core client doesn't necessarily round-robin across all projects.
 //
 double estimate_duration(WORKUNIT& wu, BEST_APP_VERSION& bav) {
     double edu = estimate_duration_unscaled(wu, bav);
     double ed = edu/g_wreq->running_frac;
-    if (!config.ignore_dcf) {
-        ed *= g_wreq->dcf;
-    }
     if (config.debug_send) {
         log_messages.printf(MSG_NORMAL,
             "[send] est. duration for WU %d: unscaled %.2f scaled %.2f\n",
@@ -320,7 +273,7 @@ static void get_prefs_info() {
     char buf[8096];
     std::string str;
     unsigned int pos = 0;
-    int temp_int;
+    int temp_int=0;
     bool flag;
 
     extract_venue(g_reply->user.project_prefs, g_reply->host.venue, buf);
@@ -345,29 +298,137 @@ static void get_prefs_info() {
         g_wreq->allow_beta_work = flag;
     }
     if (parse_bool(buf,"no_gpus", flag)) {
-        g_wreq->no_gpus = flag;
+        // deprecated, but need to handle
+        if (flag) {
+            g_wreq->no_cuda = true;
+            g_wreq->no_ati = true;
+        }
     }
     if (parse_bool(buf,"no_cpu", flag)) {
         g_wreq->no_cpu = flag;
     }
+    if (parse_bool(buf,"no_cuda", flag)) {
+        g_wreq->no_cuda = flag;
+    }
+    if (parse_bool(buf,"no_ati", flag)) {
+        g_wreq->no_ati = flag;
+    }
 }
 
-// Find or compute various info about the host;
-// this info affects which jobs are sent to the host.
+// Decide whether or not this app version is 'reliable'
+// An app version is reliable if the following conditions are true
+// (for those that are set in the config file)
+// 1) The host average turnaround is less than a threshold
+// 2) consecutive_valid is above a threshold
+// 3) The host results per day is equal to the max value
 //
-static void get_host_info() {
-    double expavg_credit = g_reply->host.expavg_credit;
-    double expavg_time = g_reply->host.expavg_time;
-    update_average(0, 0, CREDIT_HALF_LIFE, expavg_credit, expavg_time);
+void get_reliability_version(HOST_APP_VERSION& hav, double multiplier) {
+    if (hav.turnaround.n > MIN_HOST_SAMPLES && config.reliable_max_avg_turnaround) {
 
-    // Decide whether or not this computer is 'reliable'
-    // A computer is reliable if the following conditions are true
-    // (for those that are set in the config file)
-    // 1) The host average turnaround is less than the config
-    // max average turnaround
-    // 2) The host error rate is less then the config max error rate
-    // 3) The host results per day is equal to the config file value
+        if (hav.turnaround.get_avg() > config.reliable_max_avg_turnaround*multiplier) {
+            if (config.debug_send) {
+                log_messages.printf(MSG_NORMAL,
+                    "[send] [AV#%d] not reliable; avg turnaround: %.3f > %.3f hrs\n",
+                    hav.app_version_id,
+                    hav.turnaround.get_avg()/3600,
+                    config.reliable_max_avg_turnaround*multiplier/3600
+                );
+            }
+            hav.reliable = false;
+            return;
+        }
+    }
+    if (hav.consecutive_valid < CONS_VALID_RELIABLE) {
+        if (config.debug_send) {
+            log_messages.printf(MSG_NORMAL,
+                "[send] [AV#%d] not reliable; cons valid %d < %d\n",
+                hav.app_version_id,
+                hav.consecutive_valid, CONS_VALID_RELIABLE
+            );
+        }
+        hav.reliable = false;
+        return;
+    }
+    if (config.daily_result_quota) {
+        if (hav.max_jobs_per_day < config.daily_result_quota) {
+            if (config.debug_send) {
+                log_messages.printf(MSG_NORMAL,
+                    "[send] [AV#%d] not reliable; max_jobs_per_day %d>%d\n",
+                    hav.app_version_id,
+                    hav.max_jobs_per_day,
+                    config.daily_result_quota
+                );
+            }
+            hav.reliable = false;
+            return;
+        }
+    }
+    hav.reliable = true;
+    if (config.debug_send) {
+        log_messages.printf(MSG_NORMAL,
+            "[send] [HOST#%d] app version %d is reliable\n",
+            g_reply->host.id, hav.app_version_id
+        );
+    }
+    g_wreq->has_reliable_version = true;
+}
 
+// decide whether do unreplicated jobs with this app version
+//
+static void set_trust(DB_HOST_APP_VERSION& hav) {
+    hav.trusted = false;
+    if (hav.consecutive_valid < CONS_VALID_UNREPLICATED) {
+        if (config.debug_send) {
+            log_messages.printf(MSG_NORMAL,
+                "[send] set_trust: cons valid %d < %d, don't use single replication\n",
+                hav.consecutive_valid, CONS_VALID_UNREPLICATED
+            );
+        }
+        return;
+    }
+    double x = 1./hav.consecutive_valid;
+    if (drand() > x) hav.trusted = true;
+    if (config.debug_send) {
+        log_messages.printf(MSG_NORMAL,
+            "[send] set_trust: random choice for cons valid %d: %s\n",
+            hav.consecutive_valid, hav.trusted?"yes":"no"
+        );
+    }
+}
+
+static void update_quota(DB_HOST_APP_VERSION& hav) {
+    if (config.daily_result_quota) {
+        if (hav.max_jobs_per_day == 0) {
+            hav.max_jobs_per_day = config.daily_result_quota;
+            if (config.debug_quota) {
+                log_messages.printf(MSG_NORMAL,
+                    "[quota] [HAV#%d] Initializing max_results_day to %d\n",
+                    hav.app_version_id,
+                    config.daily_result_quota
+                );
+            }
+        }
+    }
+
+    if (g_request->last_rpc_dayofyear != g_request->current_rpc_dayofyear) {
+        if (config.debug_quota) {
+            log_messages.printf(MSG_NORMAL,
+                "[quota] [HOST#%d] [HAV#%d] Resetting n_jobs_today\n",
+                g_reply->host.id, hav.app_version_id
+            );
+        }
+        hav.n_jobs_today = 0;
+    }
+}
+
+void update_n_jobs_today() {
+    for (unsigned int i=0; i<g_wreq->host_app_versions.size(); i++) {
+        DB_HOST_APP_VERSION& hav = g_wreq->host_app_versions[i];
+        update_quota(hav);
+    }
+}
+
+static void get_reliability_and_trust() {
     // Platforms other than Windows, Linux and Intel Macs need a
     // larger set of computers to be marked reliable
     //
@@ -382,46 +443,10 @@ static void get_host_info() {
         multiplier = 1.8;
     }
 
-    if (g_reply->host.avg_turnaround > 0 && config.reliable_max_avg_turnaround) {
-
-        if (g_reply->host.avg_turnaround > config.reliable_max_avg_turnaround*multiplier) {
-            if (config.debug_send) {
-                log_messages.printf(MSG_NORMAL,
-                    "[send] [HOST#%d] not reliable; avg_turn_hrs: %.3f\n",
-                    g_reply->host.id, g_reply->host.avg_turnaround/3600
-                );
-            }
-            g_wreq->reliable = false;
-            return;
-        }
-    }
-    if (config.reliable_max_error_rate) {
-        if (g_reply->host.error_rate > config.reliable_max_error_rate*multiplier) {
-            if (config.debug_send) {
-                log_messages.printf(MSG_NORMAL,
-                    "[send] [HOST#%d] not reliable; error rate: %.6f\n",
-                    g_reply->host.id, g_reply->host.error_rate
-                );
-            }
-            g_wreq->reliable = false;
-            return;
-        }
-    }
-    if (config.daily_result_quota) {
-        if (g_reply->host.max_results_day < config.daily_result_quota) {
-            if (config.debug_send) {
-                log_messages.printf(MSG_NORMAL,
-                    "[send] [HOST#%d] not reliable; max_result_day %d\n",
-                    g_reply->host.id, g_reply->host.max_results_day
-                );
-            }
-            g_wreq->reliable = false;
-            return;
-        }
-    }
-    g_wreq->reliable = true;
-    if (config.debug_send) {
-        log_messages.printf(MSG_NORMAL, "[send] [HOST#%d] is reliable\n");
+    for (unsigned int i=0; i<g_wreq->host_app_versions.size(); i++) {
+        DB_HOST_APP_VERSION& hav = g_wreq->host_app_versions[i];
+        get_reliability_version(hav, multiplier);
+        set_trust(hav);
     }
 }
 
@@ -466,7 +491,7 @@ static inline int check_memory(WORKUNIT& wu) {
             find_user_friendly_name(wu.appid),
             wu.rsc_memory_bound/MEGA, g_wreq->usable_ram/MEGA
         );
-        g_wreq->insert_no_work_message(USER_MESSAGE(message,"high"));
+        add_no_work_message(message);
 
         if (config.debug_send) {
             log_messages.printf(MSG_NORMAL,
@@ -491,7 +516,7 @@ static inline int check_disk(WORKUNIT& wu) {
             find_user_friendly_name(wu.appid),
             diff/MEGA, g_wreq->disk_available/MEGA, wu.rsc_disk_bound/MEGA
         );
-        g_wreq->insert_no_work_message(USER_MESSAGE(message,"high"));
+        add_no_work_message(message);
 
         g_wreq->disk.set_insufficient(diff);
         return INFEASIBLE_DISK;
@@ -515,7 +540,7 @@ static inline int check_bandwidth(WORKUNIT& wu) {
             find_user_friendly_name(wu.appid),
             wu.rsc_bandwidth_bound/KILO, g_reply->host.n_bwdown/KILO
         );
-        g_wreq->insert_no_work_message(USER_MESSAGE(message,"high"));
+        add_no_work_message(message);
 
         g_wreq->bandwidth.set_insufficient(diff);
         return INFEASIBLE_BANDWIDTH;
@@ -534,9 +559,9 @@ static inline bool hard_app(APP& app) {
 
 static inline double get_estimated_delay(BEST_APP_VERSION& bav) {
     if (bav.host_usage.ncudas) {
-        return g_request->coproc_cuda->estimated_delay;
+        return g_request->coprocs.cuda.estimated_delay;
     } else if (bav.host_usage.natis) {
-        return g_request->coproc_ati->estimated_delay;
+        return g_request->coprocs.ati.estimated_delay;
     } else {
         return g_request->cpu_estimated_delay;
     }
@@ -544,14 +569,64 @@ static inline double get_estimated_delay(BEST_APP_VERSION& bav) {
 
 static inline void update_estimated_delay(BEST_APP_VERSION& bav, double dt) {
     if (bav.host_usage.ncudas) {
-        g_request->coproc_cuda->estimated_delay += dt;
+        g_request->coprocs.cuda.estimated_delay += dt;
     } else if (bav.host_usage.natis) {
-        g_request->coproc_ati->estimated_delay += dt;
+        g_request->coprocs.ati.estimated_delay += dt;
     } else {
         g_request->cpu_estimated_delay += dt;
     }
 }
 
+// return the delay bound to use for this job/host.
+// Actually, return two: optimistic (lower) and pessimistic (higher).
+// If the deadline check with the optimistic bound fails,
+// try the pessimistic bound.
+//
+static void get_delay_bound_range(
+    WORKUNIT& wu,
+    int res_server_state, int res_priority, double res_report_deadline,
+    BEST_APP_VERSION& bav,
+    double& opt, double& pess
+) {
+    if (res_server_state == RESULT_SERVER_STATE_IN_PROGRESS) {
+        double now = dtime();
+        if (res_report_deadline < now) {
+            // if original deadline has passed, return zeros
+            // This will skip deadline check.
+            opt = pess = 0;
+        }
+        opt = res_report_deadline - now;
+        pess = wu.delay_bound;
+    } else {
+        opt = pess = wu.delay_bound;
+
+        // If the workunit needs reliable and is being sent to a reliable host,
+        // then shorten the delay bound by the percent specified
+        //
+        if (config.reliable_on_priority && res_priority >= config.reliable_on_priority && config.reliable_reduced_delay_bound > 0.01
+        ) {
+            opt = wu.delay_bound*config.reliable_reduced_delay_bound;
+            double est_wallclock_duration = estimate_duration(wu, bav);
+            // Check to see how reasonable this reduced time is.
+            // Increase it to twice the estimated delay bound
+            // if all the following apply:
+            //
+            // 1) Twice the estimate is longer then the reduced delay bound
+            // 2) Twice the estimate is less then the original delay bound
+            // 3) Twice the estimate is less then the twice the reduced delay bound
+            if (est_wallclock_duration*2 > opt
+                && est_wallclock_duration*2 < wu.delay_bound
+                && est_wallclock_duration*2 < wu.delay_bound*config.reliable_reduced_delay_bound*2
+            ) {
+                opt = est_wallclock_duration*2;
+            }
+        }
+    }
+}
+
+// return 0 if the job, with the given delay bound,
+// will complete by its deadline, and won't cause other jobs to miss deadlines.
+//
 static inline int check_deadline(
     WORKUNIT& wu, APP& app, BEST_APP_VERSION& bav
 ) {
@@ -561,7 +636,14 @@ static inline int check_deadline(
     // and it's not a hard app.
     // (i.e. everyone gets one result, no matter how slow they are)
     //
-    if (get_estimated_delay(bav) == 0 && !hard_app(app)) return 0;
+    if (get_estimated_delay(bav) == 0 && !hard_app(app)) {
+        if (config.debug_send) {
+            log_messages.printf(MSG_NORMAL,
+                "[send] est delay 0, skipping deadline check\n"
+            );
+        }
+        return 0;
+    }
 
     // if it's a hard app, don't send it to a host with no credit
     //
@@ -569,6 +651,8 @@ static inline int check_deadline(
         return INFEASIBLE_CPU;
     }
 
+    // do EDF simulation if possible; else use cruder approximation
+    //
     if (config.workload_sim && g_request->have_other_results_list) {
         double est_dur = estimate_duration(wu, bav);
         if (g_reply->wreq.edf_reject_test(est_dur, wu.delay_bound)) {
@@ -589,7 +673,10 @@ static inline int check_deadline(
         double ewd = estimate_duration(wu, bav);
         if (hard_app(app)) ewd *= 1.3;
         double est_completion_delay = get_estimated_delay(bav) + ewd;
-        double est_report_delay = std::max(est_completion_delay, g_request->global_prefs.work_buf_min());
+        double est_report_delay = std::max(
+            est_completion_delay,
+            g_request->global_prefs.work_buf_min()
+        );
         double diff = est_report_delay - wu.delay_bound;
         if (diff > 0) {
             if (config.debug_send) {
@@ -620,7 +707,14 @@ static inline int check_deadline(
 //    the host probably won't get the result done within the delay bound
 // 4) app isn't in user's "approved apps" list
 //
-int wu_is_infeasible_fast(WORKUNIT& wu, APP& app, BEST_APP_VERSION& bav) {
+// If the job is feasible, return 0 and fill in wu.delay_bound
+// with the delay bound we've decided to use.
+//
+int wu_is_infeasible_fast(
+    WORKUNIT& wu,
+    int res_server_state, int res_priority, double res_report_deadline,
+    APP& app, BEST_APP_VERSION& bav
+) {
     int retval;
 
     // project-specific check
@@ -629,10 +723,11 @@ int wu_is_infeasible_fast(WORKUNIT& wu, APP& app, BEST_APP_VERSION& bav) {
         return INFEASIBLE_CUSTOM;
     }
 
-    // homogeneous redundancy, quick check
+    // homogeneous redundancy: can't send if app uses HR and
+    // 1) host is of unknown HR class
     //
     if (app_hr_type(app)) {
-        if (hr_unknown_platform_type(g_reply->host, app_hr_type(app))) {
+        if (hr_unknown_class(g_reply->host, app_hr_type(app))) {
             if (config.debug_send) {
                 log_messages.printf(MSG_NORMAL,
                     "[send] [HOST#%d] [WU#%d %s] host is of unknown class in HR type %d\n",
@@ -665,22 +760,40 @@ int wu_is_infeasible_fast(WORKUNIT& wu, APP& app, BEST_APP_VERSION& bav) {
     retval = check_bandwidth(wu);
     if (retval) return retval;
 
-    // do this last because EDF sim uses some CPU
-    retval = check_deadline(wu, app, bav);
-    if (retval) return INFEASIBLE_WORKLOAD;
+    if (config.non_cpu_intensive) {
+        return 0;
+    }
 
-    return 0;
+    // do deadline check last because EDF sim uses some CPU
+    //
+    double opt, pess;
+    get_delay_bound_range(
+        wu, res_server_state, res_priority, res_report_deadline, bav, opt, pess
+    );
+    wu.delay_bound = (int)opt;
+    if (opt == 0) {
+        // this is a resend; skip deadline check
+        return 0;
+    }
+    retval = check_deadline(wu, app, bav);
+    if (retval && (opt != pess)) {
+        wu.delay_bound = (int)pess;
+        retval = check_deadline(wu, app, bav);
+    }
+    return retval;
 }
 
 // insert "text" right after "after" in the given buffer
 //
-int insert_after(char* buffer, const char* after, const char* text) {
+static int insert_after(char* buffer, const char* after, const char* text) {
     char* p;
     char temp[BLOB_SIZE];
 
-    if (strlen(buffer) + strlen(text) > BLOB_SIZE-1) {
+    if (strlen(buffer) + strlen(text) >= BLOB_SIZE-1) {
         log_messages.printf(MSG_CRITICAL,
-            "insert_after: overflow: %d %d\n", strlen(buffer), strlen(text)
+            "insert_after: overflow: %d %d\n",
+            (int)strlen(buffer),
+            (int)strlen(text)
         );
         return ERR_BUFFER_OVERFLOW;
     }
@@ -701,7 +814,7 @@ int insert_after(char* buffer, const char* after, const char* text) {
 // add elements to WU's xml_doc,
 // in preparation for sending it to a client
 //
-int insert_wu_tags(WORKUNIT& wu, APP& app) {
+static int insert_wu_tags(WORKUNIT& wu, APP& app) {
     char buf[BLOB_SIZE];
 
     sprintf(buf,
@@ -721,10 +834,9 @@ int insert_wu_tags(WORKUNIT& wu, APP& app) {
     return insert_after(wu.xml_doc, "<workunit>\n", buf);
 }
 
-// add the given workunit to a reply.
-// Add the app and app_version to the reply also.
+// Add the given workunit, app, and app version to a reply.
 //
-int add_wu_to_reply(
+static int add_wu_to_reply(
     WORKUNIT& wu, SCHEDULER_REPLY& reply, APP* app, BEST_APP_VERSION* bavp
 ) {
     int retval;
@@ -747,17 +859,24 @@ int add_wu_to_reply(
         g_reply->insert_app_version_unique(*avp2);
         if (config.debug_send) {
             log_messages.printf(MSG_NORMAL,
-                "[send] [HOST#%d] Sending app_version %s %d %d %s; %.2f GFLOPS\n",
-                g_reply->host.id, app->name,
+                "[send] Sending app_version %s %d %d %s; projected %.2f GFLOPS\n",
+                app->name,
                 avp2->platformid, avp2->version_num, avp2->plan_class,
-                bavp->host_usage.flops/1e9
+                bavp->host_usage.projected_flops/1e9
             );
         }
     }
 
-    // add time estimate to reply
+    // modify the WU's xml_doc; add <name>, <rsc_*> etc.
     //
     wu2 = wu;       // make copy since we're going to modify its XML field
+
+    // adjust FPOPS figures for anonymous platform
+    //
+    if (bavp->cavp) {
+        wu2.rsc_fpops_est *= bavp->cavp->rsc_fpops_scale;
+        wu2.rsc_fpops_bound *= bavp->cavp->rsc_fpops_scale;
+    }
     retval = insert_wu_tags(wu2, *app);
     if (retval) {
         log_messages.printf(MSG_CRITICAL, "insert_wu_tags failed %d\n", retval);
@@ -775,7 +894,9 @@ int add_wu_to_reply(
     return 0;
 }
 
-int insert_name_tags(RESULT& result, WORKUNIT const& wu) {
+// add <name> tags to result's xml_doc_in
+//
+static int insert_name_tags(RESULT& result, WORKUNIT const& wu) {
     char buf[256];
     int retval;
 
@@ -788,7 +909,7 @@ int insert_name_tags(RESULT& result, WORKUNIT const& wu) {
     return 0;
 }
 
-int insert_deadline_tag(RESULT& result) {
+static int insert_deadline_tag(RESULT& result) {
     char buf[256];
     sprintf(buf, "<report_deadline>%d</report_deadline>\n", result.report_deadline);
     int retval = insert_after(result.xml_doc_in, "<result>\n", buf);
@@ -851,43 +972,49 @@ bool work_needed(bool locality_sched) {
         }
     }
 
-    if (g_reply->host.nresults_today >= g_wreq->max_jobs_per_day) {
-        g_wreq->daily_result_quota_exceeded = true;
-        if (config.debug_send) {
+    // see if we've reached limits on in-progress jobs
+    //
+    bool some_type_allowed = false;
+    if (config.max_jobs_in_progress.exceeded(NULL, true)) {
+        if (config.debug_quota) {
             log_messages.printf(MSG_NORMAL,
-                "[send] stopping work search - daily quota exceeded (%d>=%d)\n",
-                g_reply->host.nresults_today, g_wreq->max_jobs_per_day
+                "[quota] reached limit on GPU jobs in progress\n"
             );
         }
-        return false;
+        g_wreq->clear_gpu_req();
+        if (g_wreq->effective_ngpus) {
+            g_wreq->max_jobs_on_host_gpu_exceeded = true;
+        }
+    } else {
+        some_type_allowed = true;
     }
-
-    if (g_wreq->njobs_on_host >= g_wreq->max_jobs_on_host) {
+    if (config.max_jobs_in_progress.exceeded(NULL, false)) {
+        if (config.debug_quota) {
+            log_messages.printf(MSG_NORMAL,
+                "[quota] reached limit on CPU jobs in progress\n"
+            );
+        }
+        g_wreq->clear_cpu_req();
+        g_wreq->max_jobs_on_host_cpu_exceeded = true;
+    } else {
+        some_type_allowed = true;
+    }
+    if (!some_type_allowed) {
         if (config.debug_send) {
             log_messages.printf(MSG_NORMAL,
-                "[send] in-progress job limit exceeded; %d >= %d\n",
-                g_wreq->njobs_on_host, g_wreq->max_jobs_on_host
+                "[send] in-progress job limit exceeded\n"
             );
         }
         g_wreq->max_jobs_on_host_exceeded = true;
         return false;
     }
 
-    if (g_wreq->njobs_on_host_cpu >= g_wreq->max_jobs_on_host_cpu) {
-        g_wreq->clear_cpu_req();
-        g_wreq->max_jobs_on_host_cpu_exceeded = true;
-    }
-    if (g_wreq->njobs_on_host_gpu >= g_wreq->max_jobs_on_host_gpu) {
-        g_wreq->clear_gpu_req();
-        if (g_wreq->effective_ngpus) {
-            g_wreq->max_jobs_on_host_gpu_exceeded = true;
-        }
-    }
-
+    // see if we've reached max jobs per RPC
+    //
     if (g_wreq->njobs_sent >= g_wreq->max_jobs_per_rpc) {
-        if (config.debug_send) {
+        if (config.debug_quota) {
             log_messages.printf(MSG_NORMAL,
-                "[send] stopping work search - njobs %d >= max_jobs_per_rpc %d\n",
+                "[quota] stopping work search - njobs %d >= max_jobs_per_rpc %d\n",
                 g_wreq->njobs_sent, g_wreq->max_jobs_per_rpc
             );
         }
@@ -925,6 +1052,16 @@ bool work_needed(bool locality_sched) {
     return false;
 }
 
+// return the app version ID, or -2/-3/-4 if anonymous platform
+//
+inline static int get_app_version_id(BEST_APP_VERSION* bavp) {
+    if (bavp->avp) {
+        return bavp->avp->id;
+    } else {
+        return bavp->cavp->host_usage.resource_type();
+    }
+}
+
 int add_result_to_reply(
     DB_RESULT& result, WORKUNIT& wu, BEST_APP_VERSION* bavp,
     bool locality_scheduling
@@ -936,9 +1073,10 @@ int add_result_to_reply(
     retval = add_wu_to_reply(wu, *g_reply, app, bavp);
     if (retval) return retval;
 
-    // in the scheduling locality case,
-    // reduce the available space by LESS than the workunit rsc_disk_bound,
-    // IF the host already has the file OR the file was not already sent.
+    // Adjust available disk space.
+    // In the scheduling locality case,
+    // reduce the available space by less than the workunit rsc_disk_bound,
+    // if the host already has the file or the file was not already sent.
     //
     if (!locality_scheduling || decrement_disk_space_locality(wu)) {
         g_wreq->disk_available -= wu.rsc_disk_bound;
@@ -949,51 +1087,20 @@ int add_result_to_reply(
     result.hostid = g_reply->host.id;
     result.userid = g_reply->user.id;
     result.sent_time = time(0);
+    result.report_deadline = result.sent_time + wu.delay_bound;
+    result.flops_estimate = bavp->host_usage.peak_flops;
+    result.app_version_id = get_app_version_id(bavp);
     int old_server_state = result.server_state;
 
-    int delay_bound = wu.delay_bound;
     if (result.server_state != RESULT_SERVER_STATE_IN_PROGRESS) {
-        // We are sending this result for the first time
+        // We're sending this result for the first time
         //
-        // If the workunit needs reliable and is being sent to a reliable host,
-        // then shorten the delay bound by the percent specified
-        //
-        if (config.reliable_on_priority && result.priority >= config.reliable_on_priority && config.reliable_reduced_delay_bound > 0.01
-        ) {
-            double reduced_delay_bound = delay_bound*config.reliable_reduced_delay_bound;
-            double est_wallclock_duration = estimate_duration(wu, *bavp);
-            // Check to see how reasonable this reduced time is.
-            // Increase it to twice the estimated delay bound
-            // if all the following apply:
-            //
-            // 1) Twice the estimate is longer then the reduced delay bound
-            // 2) Twice the estimate is less then the original delay bound
-            // 3) Twice the estimate is less then the twice the reduced delay bound
-            if (est_wallclock_duration*2 > reduced_delay_bound
-                && est_wallclock_duration*2 < delay_bound
-                && est_wallclock_duration*2 < delay_bound*config.reliable_reduced_delay_bound*2
-            ) {
-                reduced_delay_bound = est_wallclock_duration*2;
-            }
-            delay_bound = (int) reduced_delay_bound;
-        }
-
-        result.report_deadline = result.sent_time + delay_bound;
         result.server_state = RESULT_SERVER_STATE_IN_PROGRESS;
     } else {
         // Result was already sent to this host but was lost,
-        // so we are resending it.
+        // so we're resending it.
         //
         resent_result = true;
-
-        // TODO: explain the following
-        //
-        if (result.report_deadline < result.sent_time) {
-            result.report_deadline = result.sent_time + 10;
-        }
-        if (result.report_deadline > result.sent_time + delay_bound) {
-            result.report_deadline = result.sent_time + delay_bound;
-        }
 
         if (config.debug_send) {
             log_messages.printf(MSG_NORMAL,
@@ -1068,15 +1175,13 @@ int add_result_to_reply(
     }
     update_estimated_delay(*bavp, est_dur);
     g_wreq->njobs_sent++;
-    g_wreq->njobs_on_host++;
-    if (bavp->host_usage.ncudas > 0) {
-        g_wreq->njobs_on_host_gpu++;
-    } else if (bavp->host_usage.natis > 0) {
-        g_wreq->njobs_on_host_gpu++;
-    } else {
-        g_wreq->njobs_on_host_cpu++;
+    config.max_jobs_in_progress.register_job(app, bavp->host_usage.uses_gpu());
+    if (!resent_result) {
+        DB_HOST_APP_VERSION* havp = bavp->host_app_version();
+        if (havp) {
+            havp->n_jobs_today++;
+        }
     }
-    if (!resent_result) g_reply->host.nresults_today++;
 
     // add this result to workload for simulation
     //
@@ -1107,10 +1212,10 @@ int add_result_to_reply(
     // mark it as replicated
     //
     if (wu.target_nresults == 1 && app->target_nresults > 1) {
-        if (g_wreq->trust) {
+        if (bavp->trusted) {
             if (config.debug_send) {
                 log_messages.printf(MSG_NORMAL,
-                    "[send] [WU#%d] sending to trusted host, not replicating\n", wu.id
+                    "[send] [WU#%d] using trusted app version, not replicating\n", wu.id
                 );
             }
         } else {
@@ -1138,23 +1243,114 @@ int add_result_to_reply(
     return 0;
 }
 
-// send messages to user about why jobs were or weren't sent
+// Send high-priority messages about things the user can change easily
+// (namely the driver version)
+// and low-priority messages about things that can't easily be changed,
+// but which may be interfering with getting tasks or latest apps
 //
-static void explain_to_user() {
-    char helpful[512];
+static void send_gpu_messages(
+    GPU_REQUIREMENTS& req, double ram, int version, const char* rsc_name
+) {
+    char buf[256];
+    if (ram < req.min_ram) {
+        sprintf(buf,
+            "A minimum of %d MB (preferably %d MB) of video RAM is needed to process tasks using your computer's %s",
+            (int) (req.min_ram/MEGA),
+            (int) (req.opt_ram/MEGA),
+            rsc_name
+        );
+        g_reply->insert_message(buf, "low");
+    } else {
+        if (version) {
+            if (version < req.min_driver_version) {
+                sprintf(buf,
+                    "%s: %s",
+                    rsc_name,
+                    _("Upgrade to the latest driver to process tasks using your computer's GPU")
+                );
+                g_reply->insert_message(buf, "notice");
+            } else if (version < req.opt_driver_version) {
+                sprintf(buf,
+                    "%s: %s",
+                    rsc_name,
+                    _("Upgrade to the latest driver to use all of this project's GPU applications")
+                );
+                g_reply->insert_message(buf, "low");
+            }
+        }
+    }
+}
+
+// send messages to user about why jobs were or weren't sent,
+// recommendations for GPU driver upgrades, etc.
+//
+static void send_user_messages() {
+    char buf[512];
     unsigned int i;
     int j;
+
+    // Mac client with GPU but too-old client
+    //
+    if (g_request->coprocs.cuda.count
+        && ssp->have_cuda_apps
+        && strstr(g_request->host.os_name, "Darwin")
+        && g_request->core_client_version < 61028
+    ) {
+        g_reply->insert_message(
+            _("A newer version of BOINC is needed to use your NVIDIA GPU; please upgrade to the current version"),
+            "notice"
+        );
+    }
+
+    // GPU-only project, client lacks GPU
+    //
+    bool usable_gpu = (ssp->have_cuda_apps && g_request->coprocs.cuda.count)
+        || (ssp->have_ati_apps && g_request->coprocs.ati.count);
+    if (!ssp->have_cpu_apps && !usable_gpu) {
+        if (ssp->have_cuda_apps) {
+            if (ssp->have_ati_apps) {
+                g_reply->insert_message(
+                    _("An NVIDIA or ATI GPU is required to run tasks for this project"),
+                    "notice"
+                );
+            } else {
+                g_reply->insert_message(
+                    _("An NVIDIA GPU is required to run tasks for this project"),
+                    "notice"
+                );
+            }
+        } else if (ssp->have_ati_apps) {
+            g_reply->insert_message(
+                _("An ATI GPU is required to run tasks for this project"),
+                "notice"
+            );
+        }
+    }
+
+    if (g_request->coprocs.cuda.count && ssp->have_cuda_apps) {
+        send_gpu_messages(cuda_requirements,
+            g_request->coprocs.cuda.prop.dtotalGlobalMem,
+            g_request->coprocs.cuda.display_driver_version,
+            "NVIDIA GPU"
+        );
+    }
+    if (g_request->coprocs.ati.count && ssp->have_ati_apps) {
+        send_gpu_messages(ati_requirements,
+            g_request->coprocs.ati.attribs.localRAM*MEGA,
+            g_request->coprocs.ati.version_num,
+            "ATI GPU"
+        );
+    }
+
 
     // If work was sent from apps the user did not select, explain.
     // NOTE: this will have to be done differently with matchmaker scheduling
     //
-    if (!config.locality_scheduling && !config.matchmaker) {
+    if (!config.locality_scheduling && !config.locality_scheduler_fraction && !config.matchmaker) {
         if (g_wreq->njobs_sent && !g_wreq->user_apps_only) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "No work can be sent for the applications you have selected",
-                    "high"
-                )
+                "No work can be sent for the applications you have selected",
+                "low"
             );
 
             // Inform the user about applications with no work
@@ -1170,9 +1366,7 @@ static void explain_to_user() {
                             "No work is available for %s",
                             find_user_friendly_name(g_wreq->preferred_apps[i].appid)
                         );
-                        g_reply->insert_message(
-                            USER_MESSAGE(explanation, "high")
-                        );
+                        g_reply->insert_message( explanation, "low");
                     }
                 }
             }
@@ -1183,13 +1377,11 @@ static void explain_to_user() {
                 g_reply->insert_message(g_wreq->no_work_messages.at(j));
             }
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "You have selected to receive work from other applications if no work is available for the applications you selected",
-                    "high"
-                )
+                "Your preferences allow work from applications other than those selected",
+                "low"
             );
             g_reply->insert_message(
-                USER_MESSAGE("Sending work from other applications", "high")
+                "Sending work from other applications", "low"
             );
         }
     }
@@ -1198,22 +1390,23 @@ static void explain_to_user() {
     //
     if (g_wreq->njobs_sent == 0) {
         g_reply->set_delay(DELAY_NO_WORK_TEMP);
-        g_reply->insert_message(USER_MESSAGE("No work sent", "high"));
+        g_reply->insert_message("No work sent", "low");
 
         // Tell the user about applications with no work
         //
         for (i=0; i<g_wreq->preferred_apps.size(); i++) {
-             if (!g_wreq->preferred_apps[i].work_available) {
-                 APP* app = ssp->lookup_app(g_wreq->preferred_apps[i].appid);
-                 // don't write message if the app is deprecated
-                 if (app != NULL) {
-                       char explanation[256];
-                       sprintf(explanation, "No work is available for %s",
-                        find_user_friendly_name(g_wreq->preferred_apps[i].appid)
+            if (!g_wreq->preferred_apps[i].work_available) {
+                APP* app = ssp->lookup_app(g_wreq->preferred_apps[i].appid);
+                // don't write message if the app is deprecated
+                if (app != NULL) {
+                    sprintf(buf, "No work is available for %s",
+                        find_user_friendly_name(
+                            g_wreq->preferred_apps[i].appid
+                        )
                     );
-                       g_reply->insert_message(USER_MESSAGE(explanation, "high"));
-                 }
-               }
+                    g_reply->insert_message(buf, "low");
+                }
+            }
         }
 
         // Tell the user about applications they didn't qualify for
@@ -1223,163 +1416,86 @@ static void explain_to_user() {
         }
         if (g_wreq->no_allowed_apps_available) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "No work available for the applications you have selected.  Please check your settings on the web site.",
-                    "high"
-                )
+                _("No work available for the applications you have selected.  Please check your project preferences on the web site."),
+                "notice"
             );
         }
         if (g_wreq->speed.insufficient) {
-            if (g_request->core_client_version>419) {
-                sprintf(helpful,
-                    "(won't finish in time) "
-                    "BOINC runs %.1f%% of time, computation enabled %.1f%% of that",
-                    100.0*g_reply->host.on_frac, 100.0*g_reply->host.active_frac
+            if (g_request->core_client_version>41900) {
+                sprintf(buf,
+                    "Tasks won't finish in time: BOINC runs %.1f%% of the time; computation is enabled %.1f%% of that",
+                    100*g_reply->host.on_frac, 100*g_reply->host.active_frac
                 );
             } else {
-                sprintf(helpful,
-                    "(won't finish in time) "
-                    "Computer available %.1f%% of time",
-                    100.0*g_reply->host.on_frac
+                sprintf(buf,
+                    "Tasks won't finish in time: Computer available %.1f%% of the time",
+                    100*g_reply->host.on_frac
                 );
             }
-            g_reply->insert_message(USER_MESSAGE(helpful, "high"));
+            g_reply->insert_message(buf, "low");
         }
         if (g_wreq->hr_reject_temp) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "(there was work but it was committed to other platforms)",
-                    "high"
-                )
+                "Tasks are committed to other platforms",
+                "low"
             );
         }
         if (g_wreq->hr_reject_perm) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "(your platform is not supported by this project)",
-                    "high"
-                )
+                _("Your computer type is not supported by this project"),
+                "notice"
             );
         }
         if (g_wreq->outdated_client) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    " (your BOINC client is old - please install current version)",
-                    "high"
-                )
+                _("Newer BOINC version required; please install current version"),
+                "notice"
             );
             g_reply->set_delay(DELAY_NO_WORK_PERM);
             log_messages.printf(MSG_NORMAL,
-                "Not sending work because client is outdated\n"
+                "Not sending work because newer client version required\n"
             );
         }
-        if (g_wreq->excessive_work_buf) {
+        if (g_wreq->no_cuda_prefs) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "(Your network connection interval is longer than WU deadline)",
-                    "high"
-                )
+                _("Tasks for NVIDIA GPU are available, but your preferences are set to not accept them"),
+                "notice"
             );
         }
-        if (g_wreq->no_gpus_prefs) {
+        if (g_wreq->no_ati_prefs) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "GPU jobs are available, but your preferences are set to not accept them",
-                    "low"
-                )
+                _("Tasks for ATI GPU are available, but your preferences are set to not accept them"),
+                "notice"
             );
         }
         if (g_wreq->no_cpu_prefs) {
             g_reply->insert_message(
-                USER_MESSAGE(
-                    "CPU jobs are available, but your preferences are set to not accept them",
-                    "low"
-                )
+                _("Tasks for CPU are available, but your preferences are set to not accept them"),
+                "notice"
             );
         }
-        if (g_wreq->daily_result_quota_exceeded) {
-            struct tm *rpc_time_tm;
-            int delay_time;
-
-            sprintf(helpful, "(reached daily quota of %d tasks)",
-                g_wreq->max_jobs_per_day
+        DB_HOST_APP_VERSION* havp = quota_exceeded_version();
+        if (havp) {
+            sprintf(buf, "This computer has finished a daily quota of %d tasks)",
+                havp->max_jobs_per_day
             );
-            g_reply->insert_message(USER_MESSAGE(helpful, "high"));
-            log_messages.printf(MSG_NORMAL,
-                "Daily result quota %d exceeded for host %d\n",
-                g_wreq->max_jobs_per_day, g_reply->host.id
-            );
-
-            // set delay so host won't return until a random time in
-            // the first hour of the next day.
-            // This is to prevent a lot of hosts from flooding the scheduler
-            // with requests at the same time of day.
-            //
-            time_t t = g_reply->host.rpc_time;
-            rpc_time_tm = localtime(&t);
-            delay_time  = (23 - rpc_time_tm->tm_hour) * 3600
-                + (59 - rpc_time_tm->tm_min) * 60
-                + (60 - rpc_time_tm->tm_sec)
-                + (int)(3600*(double)rand()/(double)RAND_MAX);
-            g_reply->set_delay(delay_time);
-        }
-        if (g_wreq->max_jobs_on_host_exceeded) {
-            sprintf(helpful, "(reached limit of %d tasks in progress)",
-                g_wreq->max_jobs_on_host
-            );
-            g_reply->insert_message(USER_MESSAGE(helpful, "high"));
+            g_reply->insert_message(buf, "low");
+            if (config.debug_quota) {
+                log_messages.printf(MSG_NORMAL,
+                    "[quota] Daily quota %d exceeded for app version %d\n",
+                    havp->max_jobs_per_day, havp->app_version_id
+                );
+            }
             g_reply->set_delay(DELAY_NO_WORK_CACHE);
-            log_messages.printf(MSG_NORMAL,
-                "host %d already has %d job(s) in progress\n",
-                g_reply->host.id, g_wreq->njobs_on_host
-            );
         }
-        if (g_wreq->max_jobs_on_host_cpu_exceeded) {
-            sprintf(helpful, "(reached limit of %d CPU tasks in progress)",
-                g_wreq->max_jobs_on_host_cpu
-            );
-            g_reply->insert_message(USER_MESSAGE(helpful, "high"));
+        if (g_wreq->max_jobs_on_host_exceeded
+            || g_wreq->max_jobs_on_host_cpu_exceeded
+            || g_wreq->max_jobs_on_host_gpu_exceeded
+        ) {
+            sprintf(buf, "This computer has reached a limit on tasks in progress");
+            g_reply->insert_message(buf, "low");
             g_reply->set_delay(DELAY_NO_WORK_CACHE);
-            log_messages.printf(MSG_NORMAL,
-                "host %d already has %d CPU job(s) in progress\n",
-                g_reply->host.id, g_wreq->njobs_on_host_cpu
-            );
         }
-        if (g_wreq->max_jobs_on_host_gpu_exceeded) {
-            sprintf(helpful, "(reached limit of %d GPU tasks in progress)",
-                g_wreq->max_jobs_on_host_gpu
-            );
-            g_reply->insert_message(USER_MESSAGE(helpful, "high"));
-            g_reply->set_delay(DELAY_NO_WORK_CACHE);
-            log_messages.printf(MSG_NORMAL,
-                "host %d already has %d GPU job(s) in progress\n",
-                g_reply->host.id, g_wreq->njobs_on_host_gpu
-            );
-        }
-    }
-}
-
-#define ER_MAX  0.05
-// decide whether to unreplicated jobs to this host
-//
-void set_trust() {
-    g_wreq->trust = false;
-    if (g_reply->host.error_rate > ER_MAX) {
-        if (config.debug_send) {
-            log_messages.printf(MSG_NORMAL,
-                "[send] set_trust: error rate %f > %f, don't trust\n",
-                g_reply->host.error_rate, ER_MAX
-            );
-        }
-        return;
-    }
-    double x = sqrt(g_reply->host.error_rate/ER_MAX);
-    if (drand() > x) g_wreq->trust = true;
-    if (config.debug_send) {
-        log_messages.printf(MSG_NORMAL,
-            "[send] set_trust: random choice for error rate %f: %s\n",
-            g_reply->host.error_rate, g_wreq->trust?"yes":"no"
-        );
     }
 }
 
@@ -1389,32 +1505,40 @@ static double clamp_req_sec(double x) {
     return x;
 }
 
+// prepare to send jobs, both resent and new;
 // decipher request type, fill in WORK_REQ
 //
 void send_work_setup() {
-    g_wreq->disk_available = max_allowable_disk();
-    get_mem_sizes();
-    get_running_frac();
-    get_dcf();
-    g_wreq->get_job_limits();
+    unsigned int i;
 
     g_wreq->seconds_to_fill = clamp_req_sec(g_request->work_req_seconds);
     g_wreq->cpu_req_secs = clamp_req_sec(g_request->cpu_req_secs);
     g_wreq->cpu_req_instances = g_request->cpu_req_instances;
-    g_wreq->anonymous_platform = anonymous(g_request->platforms.list[0]);
+    g_wreq->anonymous_platform = is_anonymous(g_request->platforms.list[0]);
 
-    if (g_request->coproc_cuda) {
-        g_wreq->cuda_req_secs = clamp_req_sec(g_request->coproc_cuda->req_secs);
-        g_wreq->cuda_req_instances = g_request->coproc_cuda->req_instances;
-        if (g_request->coproc_cuda->estimated_delay < 0) {
-            g_request->coproc_cuda->estimated_delay = g_request->cpu_estimated_delay;
+    if (g_wreq->anonymous_platform) {
+        estimate_flops_anon_platform();
+    }
+    cuda_requirements.clear();
+    ati_requirements.clear();
+
+    g_wreq->disk_available = max_allowable_disk();
+    get_mem_sizes();
+    get_running_frac();
+    g_wreq->get_job_limits();
+
+    if (g_request->coprocs.cuda.count) {
+        g_wreq->cuda_req_secs = clamp_req_sec(g_request->coprocs.cuda.req_secs);
+        g_wreq->cuda_req_instances = g_request->coprocs.cuda.req_instances;
+        if (g_request->coprocs.cuda.estimated_delay < 0) {
+            g_request->coprocs.cuda.estimated_delay = g_request->cpu_estimated_delay;
         }
     }
-    if (g_request->coproc_ati) {
-        g_wreq->ati_req_secs = clamp_req_sec(g_request->coproc_ati->req_secs);
-        g_wreq->ati_req_instances = g_request->coproc_ati->req_instances;
-        if (g_request->coproc_ati->estimated_delay < 0) {
-            g_request->coproc_ati->estimated_delay = g_request->cpu_estimated_delay;
+    if (g_request->coprocs.ati.count) {
+        g_wreq->ati_req_secs = clamp_req_sec(g_request->coprocs.ati.req_secs);
+        g_wreq->ati_req_instances = g_request->coprocs.ati.req_instances;
+        if (g_request->coprocs.ati.estimated_delay < 0) {
+            g_request->coprocs.ati.estimated_delay = g_request->cpu_estimated_delay;
         }
     }
     if (g_wreq->cpu_req_secs || g_wreq->cuda_req_secs || g_wreq->ati_req_secs) {
@@ -1422,24 +1546,55 @@ void send_work_setup() {
     } else {
         g_wreq->rsc_spec_request = false;
     }
+
+    for (i=0; i<g_request->other_results.size(); i++) {
+        OTHER_RESULT& r = g_request->other_results[i];
+        APP* app = NULL;
+        bool uses_gpu = false;
+        bool have_cav = false;
+        if (r.app_version >= 0
+            && r.app_version < (int)g_request->client_app_versions.size()
+        ) {
+            CLIENT_APP_VERSION& cav = g_request->client_app_versions[r.app_version];
+            app = cav.app;
+            if (app) {
+                have_cav = true;
+                uses_gpu = cav.host_usage.uses_gpu();
+            }
+        }
+        if (!have_cav) {
+            if (r.have_plan_class && app_plan_uses_gpu(r.plan_class)) {
+                uses_gpu = true;
+            }
+        }
+        config.max_jobs_in_progress.register_job(app, uses_gpu);
+    }
+
+    // print details of request to log
+    //
     if (config.debug_send) {
+        log_messages.printf(MSG_NORMAL,
+            "[send] %s matchmaker scheduling; %s EDF sim\n",
+            config.matchmaker?"Using":"Not using",
+            config.workload_sim?"Using":"Not using"
+        );
         log_messages.printf(MSG_NORMAL,
             "[send] CPU: req %.2f sec, %.2f instances; est delay %.2f\n",
             g_wreq->cpu_req_secs, g_wreq->cpu_req_instances,
             g_request->cpu_estimated_delay
         );
-        if (g_request->coproc_cuda) {
+        if (g_request->coprocs.cuda.count) {
             log_messages.printf(MSG_NORMAL,
                 "[send] CUDA: req %.2f sec, %.2f instances; est delay %.2f\n",
                 g_wreq->cuda_req_secs, g_wreq->cuda_req_instances,
-                g_request->coproc_cuda->estimated_delay
+                g_request->coprocs.cuda.estimated_delay
             );
         }
-        if (g_request->coproc_ati) {
+        if (g_request->coprocs.ati.count) {
             log_messages.printf(MSG_NORMAL,
                 "[send] ATI: req %.2f sec, %.2f instances; est delay %.2f\n",
                 g_wreq->ati_req_secs, g_wreq->ati_req_instances,
-                g_request->coproc_ati->estimated_delay
+                g_request->coprocs.ati.estimated_delay
             );
         }
         log_messages.printf(MSG_NORMAL,
@@ -1447,25 +1602,95 @@ void send_work_setup() {
             g_wreq->seconds_to_fill
         );
         log_messages.printf(MSG_NORMAL,
-            "[send] %s matchmaker scheduling; %s EDF sim\n",
-            config.matchmaker?"Using":"Not using",
-            config.workload_sim?"Using":"Not using"
-        );
-        log_messages.printf(MSG_NORMAL,
             "[send] available disk %.2f GB, work_buf_min %d\n",
             g_wreq->disk_available/GIGA,
             (int)g_request->global_prefs.work_buf_min()
         );
         log_messages.printf(MSG_NORMAL,
-            "[send] active_frac %f on_frac %f DCF %f\n",
+            "[send] active_frac %f on_frac %f\n",
             g_reply->host.active_frac,
-            g_reply->host.on_frac,
-            g_reply->host.duration_correction_factor
+            g_reply->host.on_frac
         );
+        if (g_wreq->anonymous_platform) {
+            log_messages.printf(MSG_NORMAL,
+                "Anonymous platform app versions:\n"
+            );
+            for (i=0; i<g_request->client_app_versions.size(); i++) {
+                CLIENT_APP_VERSION& cav = g_request->client_app_versions[i];
+                log_messages.printf(MSG_NORMAL,
+                    "   app: %s version %d cpus %.2f cudas %.2f atis %.2f flops %fG\n",
+                    cav.app_name,
+                    cav.version_num,
+                    cav.host_usage.avg_ncpus,
+                    cav.host_usage.ncudas,
+                    cav.host_usage.natis,
+                    cav.host_usage.projected_flops/1e9
+                );
+            }
+        }
     }
 }
 
+// If a record is not in DB, create it.
+//
+int update_host_app_versions(vector<RESULT>& results, int hostid) {
+    vector<DB_HOST_APP_VERSION> new_havs;
+    unsigned int i, j;
+    int retval;
+
+    for (i=0; i<results.size(); i++) {
+        RESULT& r = results[i];
+        int gavid = generalized_app_version_id(r.app_version_id, r.appid);
+        DB_HOST_APP_VERSION* havp = gavid_to_havp(gavid);
+        if (!havp) {
+            bool found = false;
+            for (j=0; j<new_havs.size(); j++) {
+                DB_HOST_APP_VERSION& hav = new_havs[j];
+                if (hav.app_version_id == gavid) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                DB_HOST_APP_VERSION hav;
+                hav.clear();
+                hav.host_id = hostid;
+                hav.app_version_id = gavid;
+                new_havs.push_back(hav);
+            }
+        }
+    }
+
+    // create new records
+    //
+    for (i=0; i<new_havs.size(); i++) {
+        DB_HOST_APP_VERSION& hav = new_havs[i];
+
+        retval = hav.insert();
+        if (retval) {
+            log_messages.printf(MSG_CRITICAL,
+                "hav.insert(): %d\n", retval
+            );
+        } else {
+            if (config.debug_credit) {
+                log_messages.printf(MSG_NORMAL,
+                    "[credit] created host_app_version record (%d, %d)\n",
+                    hav.host_id, hav.app_version_id
+                );
+            }
+        }
+    }
+    return 0;
+}
+
 void send_work() {
+    int retval;
+
+    if (!work_needed(false)) {
+        send_user_messages();
+        return;
+    }
+    g_wreq->no_jobs_available = true;
+
     if (!g_wreq->rsc_spec_request && g_wreq->seconds_to_fill == 0) {
         return;
     }
@@ -1478,10 +1703,11 @@ void send_work() {
         return;
     }
 
-    get_host_info();
-    get_prefs_info();
+    // decide on attributes of HOST_APP_VERSIONS
+    //
+    get_reliability_and_trust();
 
-    set_trust();
+    get_prefs_info();
 
     if (config.enable_assignment) {
         if (send_assigned_jobs()) {
@@ -1490,7 +1716,7 @@ void send_work() {
                     "[assign] [HOST#%d] sent assigned jobs\n", g_reply->host.id
                 );
             }
-            return;
+            goto done;
         }
     }
 
@@ -1503,19 +1729,31 @@ void send_work() {
 
     if (config.locality_scheduler_fraction > 0) {
         if (drand() < config.locality_scheduler_fraction) {
-           if (config.debug_locality)
-             log_messages.printf(MSG_NORMAL, "[mixed] sending locality work first\n");
-           send_work_locality();
-           if (config.debug_locality)
-             log_messages.printf(MSG_NORMAL, "[mixed] sending non-locality work second\n");
-           send_work_old();
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[mixed] sending locality work first\n"
+                );
+            }
+            send_work_locality();
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[mixed] sending non-locality work second\n"
+                );
+            }
+            send_work_old();
         } else {
-           if (config.debug_locality)
-             log_messages.printf(MSG_NORMAL, "[mixed] sending non-locality work first\n");
-           send_work_old();
-           if (config.debug_locality)
-             log_messages.printf(MSG_NORMAL, "[mixed] sending locality work second\n");
-           send_work_locality();
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[mixed] sending non-locality work first\n"
+                );
+            }
+            send_work_old();
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[mixed] sending locality work second\n"
+                );
+            }
+            send_work_locality();
         }
     } else if (config.locality_scheduling) {
         send_work_locality();
@@ -1525,7 +1763,14 @@ void send_work() {
         send_work_old();
     }
 
-    explain_to_user();
+done:
+    retval = update_host_app_versions(g_reply->results, g_reply->host.id);
+    if (retval) {
+        log_messages.printf(MSG_CRITICAL,
+            "update_host_app_versions() failed: %d\n", retval
+        );
+    }
+    send_user_messages();
 }
 
-const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 19136 2009-09-23 15:05:39Z romw $";
+const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 22651 2010-11-08 17:57:13Z romw $";

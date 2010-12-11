@@ -53,12 +53,15 @@
 // a workunit/result pair
 struct WU_RESULT {
     int state;
+        // EMPTY, PRESENT, or PID of locking process
     int infeasible_count;
     bool need_reliable;		// try to send to a reliable host
     WORKUNIT workunit;
     int resultid;
     int time_added_to_shared_memory;
-    int result_priority;
+    int res_priority;
+    int res_server_state;
+    double res_report_deadline;
     double fpops_size;      // measured in stdevs
 };
 
@@ -76,7 +79,7 @@ struct SCHED_SHMEM {
     int wu_result_size;     // sizeof(WU_RESULT)
     int nplatforms;
     int napps;
-    double app_weights;
+    double app_weight_sum;
     int napp_versions;
     int nassignments;
     int max_platforms;
@@ -84,6 +87,9 @@ struct SCHED_SHMEM {
     int max_app_versions;
     int max_assignments;
     int max_wu_results;
+    bool have_cpu_apps;
+    bool have_cuda_apps;
+    bool have_ati_apps;
     PERF_INFO perf_info;
     PLATFORM platforms[MAX_PLATFORMS];
     APP apps[MAX_APPS];
@@ -103,7 +109,8 @@ struct SCHED_SHMEM {
 #endif
 
     APP* lookup_app(int);
-    APP_VERSION* lookup_app_version(int appid, int platform);
+    APP* lookup_app_name(char*);
+    APP_VERSION* lookup_app_version(int);
     PLATFORM* lookup_platform_id(int);
     PLATFORM* lookup_platform(char*);
 };

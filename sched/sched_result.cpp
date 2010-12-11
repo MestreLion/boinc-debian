@@ -24,22 +24,68 @@
 #include "sched_types.h"
 #include "sched_msgs.h"
 #include "sched_util.h"
+#include "sched_main.h"
 #include "sched_config.h"
 
 #include "sched_result.h"
 
-static inline void got_good_result() {
-    g_reply->host.max_results_day *= 2;
-    if (g_reply->host.max_results_day > config.daily_result_quota) {
-        g_reply->host.max_results_day = config.daily_result_quota;
+// got a SUCCESS result.  Doesn't mean it's valid!
+//
+static inline void got_good_result(SCHED_RESULT_ITEM& sri) {
+    int gavid = generalized_app_version_id(sri.app_version_id, sri.appid);
+    DB_HOST_APP_VERSION* havp = gavid_to_havp(gavid);
+    if (!havp) {
+        if (config.debug_handle_results) {
+            log_messages.printf(MSG_NORMAL,
+                "[handle] No app version for %d\n", gavid
+            );
+        }
+        return;
+    }
+    if (havp->max_jobs_per_day < config.daily_result_quota) {
+        int n = havp->max_jobs_per_day*2;
+        if (n > config.daily_result_quota) {
+            n = config.daily_result_quota;
+        }
+        if (config.debug_quota) {
+            log_messages.printf(MSG_NORMAL,
+                "[quota] increasing max_jobs_per_day for %d: %d->%d\n",
+                gavid, havp->max_jobs_per_day, n
+            );
+        }
+        havp->max_jobs_per_day = n;
     }
 }
 
-static inline void got_bad_result() {
-    g_reply->host.max_results_day -= 1;
-    if (g_reply->host.max_results_day < 1) {
-        g_reply->host.max_results_day = 1;
+static inline void got_bad_result(SCHED_RESULT_ITEM& sri) {
+    int gavid = generalized_app_version_id(sri.app_version_id, sri.appid);
+    DB_HOST_APP_VERSION* havp = gavid_to_havp(gavid);
+    if (!havp) {
+        if (config.debug_handle_results) {
+            log_messages.printf(MSG_NORMAL,
+                "[handle] No app version for %d\n", gavid
+            );
+        }
+        return;
     }
+
+    int n = havp->max_jobs_per_day;
+    if (n > config.daily_result_quota) {
+        n = config.daily_result_quota;
+    }
+    n -= 1;
+    if (n < 1) {
+        n = 1;
+    }
+    if (config.debug_quota) {
+        log_messages.printf(MSG_NORMAL,
+            "[quota] decreasing max_jobs_per_day for %d: %d->%d\n",
+            gavid, havp->max_jobs_per_day, n
+        );
+    }
+    havp->max_jobs_per_day = n;
+
+    havp->consecutive_valid = 0;
 }
 
 // handle completed results
@@ -57,7 +103,9 @@ int handle_results() {
     // allow projects to limit the # of results handled
     // (in case of server memory limits)
     //
-    if (config.report_max && g_request->results.size() > config.report_max) {
+    if (config.report_max
+        && (int)g_request->results.size() > config.report_max
+    ) {
         g_request->results.resize(config.report_max);
     }
 
@@ -69,14 +117,16 @@ int handle_results() {
     }
 
     // read results from database into "result_handler".
+    //
     // Quantities that must be read from the DB are those
     // where srip (see below) appears as an rval.
     // These are: id, name, server_state, received_time, hostid, validate_state.
+    //
     // Quantities that must be written to the DB are those for
     // which srip appears as an lval. These are:
     // hostid, teamid, received_time, client_state, cpu_time, exit_status,
     // app_version_num, claimed_credit, server_state, stderr_out,
-    // xml_doc_out, outcome, validate_state
+    // xml_doc_out, outcome, validate_state, elapsed_time
     //
     retval = result_handler.enumerate();
     if (retval) {
@@ -100,7 +150,7 @@ int handle_results() {
         retval = result_handler.lookup_result(rp->name, &srip);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "[HOST#%d] [RESULT#? %s] can't find result\n",
+                "[HOST#%d] [RESULT#? %s] reported result not in DB\n",
                 g_reply->host.id, rp->name
             );
 
@@ -127,23 +177,30 @@ int handle_results() {
         //   else ignore it
         //
         if (srip->server_state == RESULT_SERVER_STATE_OVER) {
-            const char *dont_replace_result = NULL;
+            const char *msg = NULL;
             switch (srip->outcome) {
                 case RESULT_OUTCOME_INIT:
                     // should never happen!
-                    dont_replace_result = "this result was never sent";
+                    msg = "this result was never sent";
                     break;
                 case RESULT_OUTCOME_SUCCESS:
                     // don't replace a successful result!
-                    dont_replace_result = "result already reported as success";
+                    msg = "result already reported as success";
+
+                    // Client is reporting a result twice.
+                    // That could mean it didn't get the first reply.
+                    // That reply may have contained new jobs.
+                    // So make sure we resend lost jobs
+                    //
+                    g_wreq->resend_lost_results = true;
                     break;
                 case RESULT_OUTCOME_COULDNT_SEND:
                     // should never happen!
-                    dont_replace_result = "this result couldn't be sent";
+                    msg = "this result couldn't be sent";
                     break;
                 case RESULT_OUTCOME_CLIENT_ERROR:
                     // should never happen!
-                    dont_replace_result = "result already reported as error";
+                    msg = "result already reported as error";
                     break;
                 case RESULT_OUTCOME_CLIENT_DETACHED:
                 case RESULT_OUTCOME_NO_REPLY:
@@ -151,26 +208,25 @@ int handle_results() {
                     break;
                 case RESULT_OUTCOME_DIDNT_NEED:
                     // should never happen
-                    dont_replace_result = "this result wasn't sent (not needed)";
+                    msg = "this result wasn't sent (not needed)";
                     break;
                 case RESULT_OUTCOME_VALIDATE_ERROR:
                     // we already passed through the validator, so
                     // don't keep the new result
-                    dont_replace_result = "result already reported, validate error";
+                    msg = "result already reported, validate error";
                     break;
                 default:
-                    dont_replace_result = "server logic bug; please alert BOINC developers";
+                    msg = "server logic bug; please alert BOINC developers";
                     break;
             }
-            if (dont_replace_result) {
-                char buf[256];
-                log_messages.printf(MSG_CRITICAL,
-                    "[HOST#%d] [RESULT#%d] [WU#%d] result already over [outcome=%d validate_state=%d]: %s\n",
-                    g_reply->host.id, srip->id, srip->workunitid, srip->outcome,
-                    srip->validate_state, dont_replace_result
-                );
-                sprintf(buf, "Completed result %s refused: %s", srip->name, dont_replace_result);
-                g_reply->insert_message(USER_MESSAGE(buf, "high"));
+            if (msg) {
+                if (config.debug_handle_results) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[handle][HOST#%d][RESULT#%d][WU#%d] result already over [outcome=%d validate_state=%d]: %s\n",
+                        g_reply->host.id, srip->id, srip->workunitid,
+                        srip->outcome, srip->validate_state, msg
+                    );
+                }
                 srip->id = 0;
                 g_reply->result_acks.push_back(std::string(rp->name));
                 continue;
@@ -240,50 +296,70 @@ int handle_results() {
         srip->received_time = time(0);
         srip->client_state = rp->client_state;
         srip->cpu_time = rp->cpu_time;
+        srip->elapsed_time = rp->elapsed_time;
 
-        // check for impossible CPU time
+        // check for impossible elapsed time
         //
-        double elapsed_time = srip->received_time - srip->sent_time;
-        if (elapsed_time < 0) {
-            log_messages.printf(MSG_NORMAL,
-                "[HOST#%d] [RESULT#%d] [WU#%d] inconsistent sent/received times\n", srip->hostid, srip->id, srip->workunitid
+        double turnaround_time = srip->received_time - srip->sent_time;
+        if (turnaround_time < 0) {
+            log_messages.printf(MSG_CRITICAL,
+                "[HOST#%d] [RESULT#%d] [WU#%d] inconsistent sent/received times\n",
+                srip->hostid, srip->id, srip->workunitid
             );
         } else {
-            if (srip->cpu_time > elapsed_time) {
+            if (srip->elapsed_time > turnaround_time) {
                 log_messages.printf(MSG_NORMAL,
-                    "[HOST#%d] [RESULT#%d] [WU#%d] excessive CPU time: reported %f > elapsed %f%s\n",
-                    srip->hostid, srip->id, srip->workunitid, srip->cpu_time, elapsed_time, changed_host?" [OK: HOST changed]":""
+                    "[HOST#%d] [RESULT#%d] [WU#%d] impossible elapsed time: reported %f > turnaround %f\n",
+                    srip->hostid, srip->id, srip->workunitid,
+                    srip->elapsed_time, turnaround_time
                 );
-                if (!changed_host) srip->cpu_time = elapsed_time;
+                srip->elapsed_time = turnaround_time;
             }
         }
 
+        // Some buggy clients sporadically report very low elapsed time
+        // but actual CPU time.
+        // Try to fix the elapsed time, since it's critical to credit
+        //
+        if (srip->elapsed_time < srip->cpu_time) {
+            int avid = srip->app_version_id;
+            if (avid > 0) {
+                APP_VERSION* avp = ssp->lookup_app_version(avid);
+                if (avp && !avp->is_multithread()) {
+                    srip->elapsed_time = srip->cpu_time;
+                }
+            }
+        }
+
+
         srip->exit_status = rp->exit_status;
         srip->app_version_num = rp->app_version_num;
+
+        // TODO: this is outdated, and doesn't belong here
+
         if (rp->fpops_cumulative || rp->intops_cumulative) {
             srip->claimed_credit = fpops_to_credit(rp->fpops_cumulative, rp->intops_cumulative);
+            if (config.debug_credit) {
+                log_messages.printf(MSG_NORMAL,
+                    "[credit] [RESULT#%d] claimed credit %.2f based on fpops_cumulative\n",
+                    srip->id, srip->claimed_credit
+                );
+            }
         } else if (rp->fpops_per_cpu_sec || rp->intops_per_cpu_sec) {
             srip->claimed_credit = fpops_to_credit(
                 rp->fpops_per_cpu_sec*srip->cpu_time,
                 rp->intops_per_cpu_sec*srip->cpu_time
             );
+            if (config.debug_credit) {
+                log_messages.printf(MSG_NORMAL,
+                    "[credit] [RESULT#%d] claimed credit %.2f based on fpops_per_cpu_sec\n",
+                    srip->id, srip->claimed_credit
+                );
+            }
         } else {
-            srip->claimed_credit = srip->cpu_time * g_reply->host.claimed_credit_per_cpu_sec;
+            srip->claimed_credit = 0;
         }
 
-        if (config.use_credit_multiplier) {
-            // Regardless of the method of claiming credit,
-            // multiply by the application's credit multiplier
-            // at the time of result creation.
-            //
-            srip->claimed_credit *= credit_multiplier(srip->appid,srip->sent_time);
-        }
-
-        if (config.debug_handle_results) {
-            log_messages.printf(MSG_NORMAL,
-                "[handle] cpu time %f credit/sec %f, claimed credit %f\n", srip->cpu_time, g_reply->host.claimed_credit_per_cpu_sec, srip->claimed_credit
-            );
-        }
         srip->server_state = RESULT_SERVER_STATE_OVER;
 
         strlcpy(srip->stderr_out, rp->stderr_out, sizeof(srip->stderr_out));
@@ -303,7 +379,7 @@ int handle_results() {
                     srip->id, srip->workunitid
                 );
             }
-            got_good_result();
+            got_good_result(*srip);
             
             if (config.dont_store_success_stderr) {
                 strcpy(srip->stderr_out, "");
@@ -318,12 +394,9 @@ int handle_results() {
             srip->outcome = RESULT_OUTCOME_CLIENT_ERROR;
             srip->validate_state = VALIDATE_STATE_INVALID;
 
-            // if the job was aborted (possibly by the scheduler)
-            // don't penalize result quota
+            // adjust quota and reset error rate
             //
-            if (srip->client_state != RESULT_ABORTED) {
-                got_bad_result();
-            }
+            got_bad_result(*srip);
         }
     } // loop over all incoming results
 

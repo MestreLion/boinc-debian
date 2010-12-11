@@ -31,6 +31,8 @@
 #include "miofile.h"
 #include "coproc.h"
 
+// if you add fields, update clear_host_info()
+
 class HOST_INFO {
 public:
     int timezone;                 // local STANDARD time - UTC time (in seconds)
@@ -58,11 +60,16 @@ public:
     char os_name[256];
     char os_version[256];
 
+    // the following are non-empty if that VM system is installed
+    //
+    char virtualbox_version[256];
+    // ... add entries for VMWare, others
+
     COPROCS coprocs;
 
     HOST_INFO();
     int parse(MIOFILE&, bool benchmarks_only = false);
-    int write(MIOFILE&, bool suppress_net_info, bool include_coprocs);
+    int write(MIOFILE&, bool include_net_info, bool include_coprocs);
     int parse_cpu_benchmarks(FILE*);
     int write_cpu_benchmarks(FILE*);
     void print();
@@ -75,9 +82,16 @@ public:
 #endif
     int get_host_info();
     int get_local_network_info();
+    int get_virtualbox_version();
     void clear_host_info();
     void make_random_string(const char* salt, char* out);
     void generate_host_cpid();
+    inline bool have_cuda() {
+        return (coprocs.cuda.count > 0);
+    }
+    inline bool have_ati() {
+        return (coprocs.ati.count > 0);
+    }
 };
 
 #ifdef __APPLE__

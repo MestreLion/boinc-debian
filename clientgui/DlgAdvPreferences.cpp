@@ -24,7 +24,6 @@
 #include "MainDocument.h"
 #include "BOINCBaseFrame.h"
 #include "SkinManager.h"
-#include "hyperlink.h"
 #include "Events.h"
 #include "error_numbers.h"
 #include "version.h"
@@ -136,7 +135,7 @@ void CDlgAdvPreferences::SetSpecialTooltips() {
 	m_txtNetSunday->SetToolTip(TXT_NET_TIME_TOOLTIP);
 }
 
-/* saves dialog siz e*/
+/* saves selected tab page */
 bool CDlgAdvPreferences::SaveState() {
     wxString        strBaseConfigLocation = wxString(wxT("/DlgAdvPreferences/"));
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
@@ -149,7 +148,7 @@ bool CDlgAdvPreferences::SaveState() {
 	return true;
 }
 
-/* restores former dialog size */
+/* restores former selected tab page */
 bool CDlgAdvPreferences::RestoreState() {
     wxString        strBaseConfigLocation = wxString(wxT("/DlgAdvPreferences/"));
     wxConfigBase*   pConfig = wxConfigBase::Get(FALSE);
@@ -738,7 +737,7 @@ void CDlgAdvPreferences::OnHelp(wxCommandEvent& ev) {
             wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             ev.GetId()
         );
-        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+        wxLaunchDefaultBrowser(wxurl);
     }
 }
 

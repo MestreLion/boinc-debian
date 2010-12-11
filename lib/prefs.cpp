@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
-#endif
-
-#ifndef _WIN32
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
 #include "config.h"
 #include <cstdio>
 #include <cstring>
@@ -449,6 +449,10 @@ int GLOBAL_PREFS::parse_override(
             continue;
         }
         if (xp.parse_double(tag, "work_buf_min_days", work_buf_min_days)) {
+            // the following is for compatibility with old schedulers,
+            // whose work req is just #secs, rather than #sec and #devices
+            // If this were zero we'd never get work from them
+            //
             if (work_buf_min_days < 0.00001) work_buf_min_days = 0.00001;
             mask.work_buf_min_days = true;
             continue;

@@ -20,11 +20,9 @@
 // code for one-time database updates goes here.
 // Don't run this unless you know what you're doing!
 
-require_once("../inc/db.inc");
-require_once("../inc/util.inc");
-require_once("../inc/ops.inc");
+$cli_only = true;
+require_once("../inc/util_ops.inc");
 
-cli_only();
 $db = BoincDb::get_aux(false);
 if (!$db) {
     echo "Can't open database\n";
@@ -643,18 +641,97 @@ function update_6_16_2009() {
             primary key (appid) 
             ) engine=MyISAM
     ");
-
 }
 
+function update_9_3_2009() {
+    do_query("alter table result add (
+        elapsed_time double not null,
+        flops_estimate double not null,
+        app_version_id integer not null
+        )
+    ");
+}
+
+function update_3_5_2010() {
+    do_query("alter table workunit add fileset_id integer not null");
+}
+
+function update_3_17_2010() {
+    do_query("create table host_app_version (
+            host_id             integer     not null,
+            app_version_id      integer     not null,
+            pfc_n               double      not null,
+            pfc_avg             double      not null,
+            et_n                double      not null,
+            et_avg              double      not null,
+            et_var              double      not null,
+            et_q                double      not null,
+            host_scale_time     double      not null,
+            scale_probation     tinyint     not null default 1,
+            error_rate          double      not null,
+            max_jobs_per_day    integer     not null,
+            n_jobs_today        integer     not null,
+            turnaround_n        double      not null,
+            turnaround_avg      double      not null,
+            turnaround_var      double      not null,
+            turnaround_q        double      not null
+        ) engine = InnoDB
+    ");
+    do_query("alter table host_app_version
+        add unique hap(host_id, app_version_id)
+    ");
+    do_query("alter table app_version
+        add pfc_n       double not null default 0,
+        add pfc_avg     double not null default 0,
+        add pfc_scale   double not null default 0,
+        add expavg_credit double not null default 0,
+        add expavg_time double not null default 0
+    ");
+    do_query("alter table app
+        add min_avg_pfc double not null default 1,
+        add host_scale_check tinyint not null,
+        add max_jobs_in_progress integer not null,
+        add max_gpu_jobs_in_progress integer not null,
+        add max_jobs_per_rpc integer not null,
+        add max_jobs_per_day_init integer not null
+    ");
+}
+
+function update_4_21_2010() {
+    do_query("alter table host_app_version
+        drop column host_scale_time,
+        drop column scale_probation,
+        drop column error_rate,
+        add column consecutive_valid integer not null
+    ");
+}
+
+function update_6_10_2010() {
+    do_query("alter table app
+        drop column max_jobs_in_progress,
+        drop column max_gpu_jobs_in_progress,
+        drop column max_jobs_per_rpc,
+        drop column max_jobs_per_day_init
+    ");
+}
+
+// Updates are done automatically if you use "upgrade".
+//
+// If you need to do updates manually,
 // modify the following to call the function you want.
 // Make sure you do all needed functions, in order.
 // (Look at your DB structure using "explain" queries to see
 // which ones you need).
 
-//update_6_16_2009()
+//update_3_17_2010();
 
 $db_updates = array (
     array(18490, "update_6_16_2009"),
+    array(19001, "update_9_3_2009"),
+    array(20807, "update_3_5_2010"),
+    array(20932, "update_3_17_2010"),
+    array(21226, "update_4_21_2010"),
+    array(21728, "update_6_10_2010"),
 );
 
 ?>

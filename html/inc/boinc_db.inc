@@ -223,6 +223,10 @@ class BoincResult {
         $db = BoincDb::get();
         return $db->lookup_id($id, 'result', 'BoincResult');
     }
+    function delete() {
+        $db = BoincDb::get();
+        return $db->delete($this, 'result');
+    }
 }
 
 class BoincWorkunit {
@@ -275,6 +279,10 @@ class BoincAppVersion {
     static function lookup($clause) {
         $db = BoincDb::get();
         return $db->lookup('app_version', 'BoincAppVersion', $clause);
+    }
+    static function lookup_id($id) {
+        $db = BoincDb::get();
+        return $db->lookup_id($id, 'app_version', 'BoincAppVersion');
     }
 }
 
@@ -365,6 +373,20 @@ class BoincPlatform {
     static function lookup_id($id) {
         $db = BoincDb::get();
         return $db->lookup_id($id, 'platform', 'BoincPlatform');
+    }
+}
+
+class BoincHostAppVersion {
+    static function enum($clause) {
+        $db = BoincDb::get();
+        return $db->enum('host_app_version', 'BoincHostAppVersion', $clause);
+    }
+    static function lookup($host_id, $app_version_id) {
+        $db = BoincDb::get();
+        return $db->lookup(
+            'host_app_version', 'BoincHostAppVersion',
+            "host_id=$host_id and app_version_id=$app_version_id"
+        );
     }
 }
 

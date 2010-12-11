@@ -24,7 +24,8 @@
 // Evaluates the variation for weights 0, .1, ... 1.
 //
 
-require_once("../inc/db.inc");
+$cli_only = true;
+require_once("../inc/util_ops.inc");
 
 db_init();
 

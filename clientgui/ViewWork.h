@@ -61,6 +61,8 @@ public:
     virtual wxString&       GetViewName();
     virtual wxString&       GetViewDisplayName();
     virtual const char**    GetViewIcon();
+    virtual const int       GetViewCurrentViewPage();
+
     virtual wxString        GetKeyValue1(int iRowIndex);
     virtual wxString        GetKeyValue2(int iRowIndex);
     virtual int             FindRowIndexByKeyValues(wxString& key1, wxString& key2);
@@ -105,7 +107,6 @@ protected:
     wxInt32                 FormatTimeToCompletion( float fBuffer, wxString& strBuffer ) const;
     void                    GetDocReportDeadline(wxInt32 item, time_t& time) const;
     wxInt32                 FormatReportDeadline( time_t deadline, wxString& strBuffer ) const;
-    void                    GetDocStatus(wxInt32 item, wxString& strBuffer) const;
     wxInt32                 FormatStatus( wxInt32 item, wxString& strBuffer ) const;
     void                    GetDocProjectURL(wxInt32 item, wxString& strBuffer) const;
     virtual double          GetProgressValue(long item);

@@ -33,11 +33,9 @@
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
 #include "MainDocument.h"
-#include "hyperlink.h"
 #include "ValidateURL.h"
-#include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
-#include "WizardAttachProject.h"
+#include "WizardAttach.h"
 #include "ProjectInfoPage.h"
 #include "ProjectListCtrl.h"
 
@@ -166,7 +164,7 @@ void CProjectInfoPage::CreateControls()
     HIObjectRef   theObject = (HIObjectRef)HIViewGetSuperview(listView);
     HIObjectSetAccessibilityIgnored(theObject, true);
 #endif
-////@end CProjectInfoPage content construction
+    ////@end CProjectInfoPage content construction
 }
 
 
@@ -390,7 +388,7 @@ void CProjectInfoPage::OnPageChanging( wxWizardExEvent& event ) {
     if ( !GetProjectSupported() ) {
 
         iAnswer = wxGetApp().SafeMessageBox(
-            _("This project may not have work for your type of computer. Are you sure you wish to continue?"),
+            _("This project may not have work for your type of computer.  Do you want to add it anyway?"),
             strTitle,
             wxCENTER | wxYES_NO | wxICON_INFORMATION
         );
@@ -414,7 +412,7 @@ void CProjectInfoPage::OnPageChanging( wxWizardExEvent& event ) {
                 
                 if (project_url == new_project_url) {
                     wxGetApp().SafeMessageBox(
-                        _("You are already attached to this project. Please choose a different project."),
+                        _("You already added this project. Please choose a different project."),
                         strTitle,
                         wxCENTER | wxICON_INFORMATION
                     );
@@ -447,7 +445,7 @@ void CProjectInfoPage::OnProjectItemChange( ProjectListCtrlEvent& event ) {
  */
 
 void CProjectInfoPage::OnProjectItemDisplay( ProjectListCtrlEvent& event ) {
-    wxHyperLink::ExecuteLink( event.GetURL() );
+    wxLaunchDefaultBrowser( event.GetURL() );
 }
 
 

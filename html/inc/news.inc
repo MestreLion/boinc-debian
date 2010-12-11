@@ -16,34 +16,94 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-function news_item($date, $text, $title="") {
+require_once("../project/project.inc");
+
+function news_item($date, $title, $post) {
+    echo "<p>";
+    if ($title) {
+        echo "<span class=news_title>$title</span><br>\n";
+    }
+    $d = time_str($date);
+    if (is_string($post)) {
+        $forum_link = false;
+        $text = output_transform($post);
+    } else {
+        $forum_link = true;
+        $text = output_transform($post->content);
+    }
     echo "
-        <span class=news_title>$title</span>
-        <br><span class=news_date>$date</span>
-        <br><span class=news_content>$text</span>
-        <br>
+        <span class=news_content>$text</span>
+        <span class=news_date>$d
+    ";
+    if ($forum_link) {
+        echo "
+            &middot; <a href=".URL_BASE."forum_thread.php?id=$post->thread> ".tra("Comment")."</a>
+        ";
+    }
+    echo "</span>
+        <br clear=all>
+        <hr size=0 class=news_line>
     ";
 }
 
-function show_news($items, $n) {
-    if ($n > count($items)) {
-        $n = count($items);
+function news_forum() {
+    if (defined("NEWS_FORUM_NAME")) {
+        $forum_name = NEWS_FORUM_NAME;
+    } else {
+        $forum_name = "News";
     }
-    for ($i=0; $i<$n; $i++) {
-        $title = null;
-        if (isset($items[$i][2])) $title = $items[$i][2];
-        news_item($items[$i][0], $items[$i][1], $title);
-    }
+    return BoincForum::lookup("parent_type=0 and title = '$forum_name'");
 }
 
-function show_old_news($items, $n) {
-    $tot = count($items);
-    for ($i=$n; $i<count($items); $i++) {
-        $j = $tot-$i;
-        echo "<a name=$j></a>\n";
-        news_item($items[$i][0], $items[$i][1]);
+function show_news($start, $count) {
+    $forum = news_forum();
+    if (!$forum) {
+        echo "
+            No news forum.  Run html/ops/create_forums.php.
+        ";
+        return;
     }
+    
+    if (is_array($start)) {
+        echo "You have not changed show_news() to use 0 instead of
+            deprecated \$project_news as the first param.";
+        return;
+    }
+    
+    $lim = "";
+    if ($start) {
+        if ($count) {
+            $lim = "limit $start, $count";
+        } else {
+            $lim = "limit $start, 99999999";
+        }
+    } else if ($count) {
+        $lim = "limit $count";
+    }
+    $threads = BoincThread::enum("forum = $forum->id and hidden=0 order by id desc $lim");
+
+    foreach ($threads as $thread) {
+        $posts = BoincPost::enum("thread=$thread->id order by id limit 1");
+        $post = $posts[0];
+        if (strstr($post->content, $thread->title) == $post->content) {
+            $title = null;
+        } else {
+            $title = $thread->title;
+        }
+        news_item($thread->create_time, $title, $post);
+    }
+
+    if ($count) {
+        echo "<a href=".URL_BASE."old_news.php>... more</a>";
+    }
+    echo "
+        <br><br><p class=\"smalltext\">
+    ";
+    printf(tra("News is available as an %sRSS feed%s"),
+        "<a href=rss_main.php>",
+        " &nbsp; <img src=\"img/rss_icon.gif\" alt=\"RSS\"></a>"
+    );
 }
 
-$cvs_version_tracker[]="\$Id: news.inc 16028 2008-09-19 18:08:17Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: news.inc 21459 2010-05-11 19:25:13Z Rytis $";  //Generated automatically - do not edit
 ?>

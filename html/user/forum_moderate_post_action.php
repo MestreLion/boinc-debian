@@ -97,9 +97,16 @@ New thread: $new_thread->title
     $explanation .= mod_comment();
     $action_name = "moved to another thread";
 } elseif ($action=="banish_user"){
-    if (!$user->prefs->privilege(S_ADMIN)) {
-      // Can't banish without being administrator
-        error_page("Not admin");
+    $auth = false;
+    if (defined("MODERATORS_CAN_BANISH") && $user->prefs->privilege(S_MODERATOR)) {
+        $auth = true;
+    } else {
+        if ($user->prefs->privilege(S_ADMIN)) {
+            $auth = true;
+        }
+    }
+    if (!$auth) {
+        error_page("Not authorized to banish users");
     }
     $userid = post_int('userid');
     $user = BoincUser::lookup_id($userid);
@@ -136,5 +143,5 @@ send_moderation_email($forum, $post, $thread, $explanation, $action_name);
 
 header('Location: forum_thread.php?id='.$thread->id);
 
-$cvs_version_tracker[]="\$Id: forum_moderate_post_action.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_moderate_post_action.php 22275 2010-08-20 19:04:09Z davea $";  //Generated automatically - do not edit
 ?>

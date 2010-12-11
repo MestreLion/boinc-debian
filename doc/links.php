@@ -19,6 +19,11 @@ function site($url, $name) {
 
 $info_sites = array(
     array(
+        "http://projekty.czechnationalteam.cz/",
+        "BOINC projects",
+        "(in Czech)"
+    ),
+    array(
         "http://www.boincteams.com/",
         "BOINC Team Leaders Forum",
         "(a meeting place to chat and discuss team building on BOINC projects)"
@@ -146,10 +151,11 @@ echo "
 <h3>Miscellaneous</h3>
 ";
 $misc_sites = array(
-    array("http://www.myboinc.com/", "BOINC Users of the Day"),
+    //array("http://www.myboinc.com/", "BOINC Users of the Day"),
     //array("http://groups.myspace.com/BOINConMYSPACE", "BOINC on MySpace"),
-    array("http://www.boincuk.com/repository.php", "bunc", "(excellent newsletter produced by BOINC UK)"),
-    array("http://www.linkedin.com/groups?gid=678497", "BOINC Users group on LinkedIn"),
+    //array("http://www.boincuk.com/repository.php", "bunc", "(excellent newsletter produced by BOINC UK)"),
+    array("http://www.linkedin.com/groups?gid=678497", "BOINC group on LinkedIn"),
+    array("http://www.facebook.com/#!/pages/BOINC/109465765746025?ref=ts", "BOINC on Facebook"),
 );
 echo "<ul>";
 foreach ($misc_sites as $m) {
@@ -165,8 +171,11 @@ echo "
 <h3>Skins for the BOINC Manager</h3>
 <ul>
 <li> <a href=http://www.crunching-family.at/download-center/>Crunching Family Skin Download</a>
+<li> <a href=http://www.czechnationalteam.cz/view.php?cisloclanku=2007040003>Czech National Team skin</a> (in Czech)
 <li> <a href=http://www.grid-france.fr/tutoriaux/comment-personnaliser-boinc-au-couleur-de-l-equipe-france/>Skin for Equipe France (WCG)</a>
-<li> <a href=http://wcg.userfriendly.org/resources.jspx>Skin for team UserFriendly.org</a>
+";
+//<li> <a href=http://wcg.userfriendly.org/resources.jspx>Skin for team UserFriendly.org</a>
+echo "
 </ul>
 <a name=sites></a>
 <h3>Other BOINC-related web sites</h3>
@@ -250,6 +259,7 @@ language("French", array(
     site("http://www.boinc-af.org", "L'Alliance Francophone"),
 ));
 language("German", array(
+    site("http://www.crunchers-freiburg.de/", "crunchers@freiburg"),
     //site("http://www.boinc-gemeinschaft.de/", "BOINC Gemeinschaft"),
     site("http://www.gridcommunity.de/index.php", "International Grid Community"),
     site("http://www.swissteam.net/", "SwissTeam.net"),
@@ -264,7 +274,7 @@ language("German", array(
     site("http://www.boinc-halle-saale.de", "BOINC@Halle/Saale"),
     site("http://www.bc-team.org/", "BOINC Confederation"),
     site("http://www.boincfun.tk/", "BOINCfun"),
-    site("http://www.setigermany.de", "SETI.Germany"),
+    site("http://www.seti-germany.de", "SETI.Germany"),
     site("http://www.sar-hessen.org", "Team Science and Research Hessen"),
     site("http://www.boinc.de/", "www.boinc.de"),
     //site( "http://www.boinc-lubeca.de/", "BOINC - LUBECA (L&uuml;beck, Germany)"),
@@ -275,6 +285,7 @@ language("Hungarian", array(
     site("http://seti.hwsw.hu/", "HWSW SETI@home Team")
 ));
 language("Italian", array(
+    site("http://www.calcolodistribuito.it/", "Calcolo Distribuito"),
     site("http://www.boincitaly.org/", "BOINC.Italy"),
     site("http://gaming.ngi.it/forum/forumdisplay.php?f=73", "NGI forum"),
     site("http://it.groups.yahoo.com/group/BOINC-ITALIA/", "BOINC-ITALIA")
@@ -285,7 +296,7 @@ language("Japanese", array(
         "translation by Komori Hitoshi")
 ));
 language("Korean", array(
-    site("http://setikah.mi.am/", "SETIKAH@home"),
+    site("http://cafe.naver.com/setikah", "SETIKAH@home"),
     site("http://boincatkorea.xo.st/", "BOINC@KOREA"),
 ));
 
@@ -295,6 +306,8 @@ language("Polish", array(
     site("http://www.boinc.prv.pl", "BOINC@Kolobrzeg"),
     site("http://www.boincatpoland.org", "BOINC@Poland"),
     //site("http://www.boinc.pl", "www.boinc.pl"),
+    site("http://www.tomaszpawel.republika.pl/", "TomaszPawelTeam"),
+    site("http://www.gpuforce.oxyone.pl/", "GPU Force"),
 ));
 language("Portuguese", array(
     site( "http://portugalathome.pt.vu/", "Portugal@home"),
@@ -304,6 +317,7 @@ language("Romanian", array(
     site( "http://www.boinc.ro/", "SETI@home Romania")
 ));
 language("Russian", array(
+    site("http://vkontakte.ru/club11963359", "BOINC group on vkontakte.ru"),
     site("http://www.boinc.ru", "BOINC.ru"),
     site("http://distributed.ru", "distributed.ru")
 ));

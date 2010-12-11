@@ -86,6 +86,10 @@ page_head(tra("Post to thread"),'','','', $bbcode_js);
 
 show_forum_header($logged_in_user);
 
+if ($warning) {
+    echo "<span class=error>$warning</span><p>";
+}
+
 switch ($forum->parent_type) {
 case 0:
     $category = BoincCategory::lookup_id($forum->category);
@@ -159,5 +163,5 @@ function quote_text($text, $cols = 0) {
     $text = "[quote]" . $text . "[/quote]";
     return $text;
 }
-$cvs_version_tracker[]="\$Id: forum_reply.php 18488 2009-06-23 17:18:29Z davea $";
+$cvs_version_tracker[]="\$Id: forum_reply.php 20318 2010-01-29 17:00:14Z davea $";
 ?>

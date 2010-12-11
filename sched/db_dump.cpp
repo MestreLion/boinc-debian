@@ -40,6 +40,7 @@
 #include "error_numbers.h"
 #include "md5_file.h"
 #include "parse.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
@@ -736,20 +737,20 @@ int ENUMERATION::make_it_happen(char* output_dir) {
     return 0;
 }
 
-void usage(char** argv) {
+void usage(char* name) {
     fprintf(stderr,
         "This program generates XML files containing project statistics.\n"
         "It should be run once a day as a periodic task in config.xml.\n"
         "For more info, see http://boinc.berkeley.edu/trac/wiki/DbDump\n\n"
         "Usage: %s [options]\n"
         "Options:\n"
-        "    -dump_spec filename  Use the given config file (use ../db_dump_spec.xml)\n"
-        "    [-d N]               Set verbosity level (1, 2, 3=most verbose)\n"
-        "    [-db_host H]         Use the DB server on host H\n"
-        "    [-h | --help]        Show this\n",
-        argv[0]
+        "    --dump_spec filename          Use the given config file (use ../db_dump_spec.xml)\n"
+        "    [-d N | --debug_level]        Set verbosity level (1 to 4)\n"
+        "    [--db_host H]                 Use the DB server on host H\n"
+        "    [-h | --help]                 Show this\n"
+        "    [-v | --version]              Show version information\n",
+        name
     );
-    exit(0);
 }
 
 int main(int argc, char** argv) {
@@ -765,23 +766,48 @@ int main(int argc, char** argv) {
     log_messages.printf(MSG_NORMAL, "db_dump starting\n");
     strcpy(spec_filename, "");
     for (i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-dump_spec")) {
-            safe_strcpy(spec_filename, argv[++i]);
-        } else if (!strcmp(argv[i], "-d")) {
-            log_messages.set_debug_level(atoi(argv[++i]));
-        } else if (!strcmp(argv[i], "-db_host")) {
-            db_host = argv[++i];
-        } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
-            usage(argv);
+        if (is_arg(argv[i], "dump_spec")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            safe_strcpy(spec_filename, argv[i]);
+        } else if (is_arg(argv[i], "d") || is_arg(argv[i], "debug_level")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int dl = atoi(argv[i]);
+            log_messages.set_debug_level(dl);
+            if (dl == 4) g_print_queries = true;
+        } else if (is_arg(argv[i], "db_host")) {
+            if(!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            db_host = argv[i];
+        } else if (is_arg(argv[i], "h") || is_arg(argv[i], "help")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
         } else {
-            log_messages.printf(MSG_CRITICAL, "Bad arg: %s\n", argv[i]);
-            usage(argv);
+            log_messages.printf(MSG_CRITICAL,
+                "unknown command line argument: %s\n\n", argv[i]
+            );
+            usage(argv[0]);
+            exit(1);
         }
     }
 
     if (!strlen(spec_filename)) {
         log_messages.printf(MSG_CRITICAL, "no spec file given\n");
-        usage(argv);
+        usage(argv[0]);
+        exit(1);
     }
 
     FILE* f = fopen(spec_filename, "r");
@@ -849,30 +875,32 @@ int main(int argc, char** argv) {
 
     // rename the old stats dir to a name that includes the date
 
-    struct tm* tmp;
-    time_t now = time(0);
-    tmp = localtime(&now);
-    char base[256];
-    if (strlen(spec.archive_dir)) {
-        strcpy(base, spec.archive_dir);
-        strcat(base, "/stats");
-    } else {
-        strcpy(base, spec.final_output_dir);
-    }
-    sprintf(buf, "mv %s %s_%d_%d_%d_%d_%d_%d",
-        spec.final_output_dir,
-        base,
-        1900+tmp->tm_year,
-        tmp->tm_mon+1,
-        tmp->tm_mday,
-        tmp->tm_hour,
-        tmp->tm_min,
-        tmp->tm_sec
-    );
-    retval = system(buf);
-    if (retval) {
-        log_messages.printf(MSG_CRITICAL, "Can't rename old stats\n");
-        exit(1);
+    if (boinc_file_exists(spec.final_output_dir)) {
+        struct tm* tmp;
+        time_t now = time(0);
+        tmp = localtime(&now);
+        char base[256];
+        if (strlen(spec.archive_dir)) {
+            strcpy(base, spec.archive_dir);
+            strcat(base, "/stats");
+        } else {
+            strcpy(base, spec.final_output_dir);
+        }
+        sprintf(buf, "mv %s %s_%d_%d_%d_%d_%d_%d",
+            spec.final_output_dir,
+            base,
+            1900+tmp->tm_year,
+            tmp->tm_mon+1,
+            tmp->tm_mday,
+            tmp->tm_hour,
+            tmp->tm_min,
+            tmp->tm_sec
+        );
+        retval = system(buf);
+        if (retval) {
+            log_messages.printf(MSG_CRITICAL, "Can't rename old stats\n");
+            exit(1);
+        }
     }
     sprintf(buf, "mv %s %s", spec.output_dir, spec.final_output_dir);
     retval = system(buf);
@@ -883,4 +911,4 @@ int main(int argc, char** argv) {
     log_messages.printf(MSG_NORMAL, "db_dump finished\n");
 }
 
-const char *BOINC_RCSID_500089bde6 = "$Id: db_dump.cpp 18437 2009-06-16 20:54:44Z davea $";
+const char *BOINC_RCSID_500089bde6 = "$Id: db_dump.cpp 21181 2010-04-15 03:13:56Z davea $";

@@ -21,6 +21,8 @@
 // - set CANCELLED bit in WU error mask
 //
 
+require_once("../inc/util_ops.inc");
+
 function test_mysql_query($msg) {
     echo "mysql_query($msg)<br/>";
     return 1;
@@ -53,16 +55,6 @@ function cancel_wu($wuid1, $wuid2) {
 require_once("../inc/db.inc");
 require_once("../inc/util_ops.inc");
 
-// REMOVE THE FOLLOWING ONLY AFTER PASSWORD-PROTECTING html/ops
-//
-if (1) {
-    echo "
-        WARNING! Make sure the html/ops directory is password-protected,
-        then edit html/ops/cancel_wu_action.php by hand to remove this message.
-    ";
-    exit();
-}
-
 admin_page_head("Cancel WU");
 
 db_init();
@@ -89,5 +81,5 @@ if (cancel_wu($wuid1, $wuid2)) {
 echo " cancelling workunits $wuid1 <= WUID <= $wuid2</h2>";
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: cancel_wu_action.php 17456 2009-03-03 21:58:03Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: cancel_wu_action.php 20594 2010-02-16 18:38:39Z davea $";  //Generated automatically - do not edit
 ?>

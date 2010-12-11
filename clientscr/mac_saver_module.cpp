@@ -341,8 +341,13 @@ OSStatus CScreensaver::initBOINCApp() {
     if (++retryCount > 3)   // Limit to 3 relaunches to prevent thrashing
         return -1;
 
+#ifdef _DEBUG
+    err = -1;
+#else
     err = GetpathToBOINCManagerApp(boincPath, sizeof(boincPath));
-    if (err) {   // If we couldn't find BOINCManager.app, try default path
+#endif
+   if (err) 
+    {   // If we couldn't find BOINCManager.app, try default path
         strcpy(boincPath, "/Applications/");
         if (brandId)
             strcat(boincPath, m_BrandText);
@@ -620,7 +625,7 @@ bool CScreensaver::CreateDataManagementThread() {
         m_dwBlankTime = time(0) + (gBlankingTime * 60);
     else
         m_dwBlankTime = 0;
-    
+
     if (m_hDataManagementThread == NULL) {
         retval = pthread_create(&m_hDataManagementThread, NULL, DataManagementProcStub, 0);
         if (retval) {
@@ -707,20 +712,22 @@ int CScreensaver::GetBrandID()
 
     iBrandId = 0;   // Default value
     
-    err = GetpathToBOINCManagerApp(buf, sizeof(buf));
-    if (err) {     
-        // If we couldn't find our application bundle, look in BOINC Data Directory 
-        // (the installer put a copy there for us)
-        strcpy(buf, "/Library/Application Support/BOINC Data/Branding");
-    } else
-        strcat(buf, "/Contents/Resources/Branding");
-
-    FILE *f = fopen(buf, "r");
+    // The installer put a copy of Branding file in the BOINC Data Directory
+    FILE *f = fopen("/Library/Application Support/BOINC Data/Branding", "r");
+    if (f == NULL) {
+       // If we couldn't find our Branding file in the BOINC Data Directory,  
+       // look in our application bundle
+        err = GetpathToBOINCManagerApp(buf, sizeof(buf));
+        if (err == noErr) {
+            strcat(buf, "/Contents/Resources/Branding");
+            f = fopen(buf, "r");
+        }
+    }
     if (f) {
         fscanf(f, "BrandId=%ld\n", &iBrandId);
         fclose(f);
     }
-    
+        
     return iBrandId;
 }
 
@@ -863,4 +870,4 @@ void PrintBacktrace(void) {
 // Dummy routine to satisfy linker
 }
 
-const char *BOINC_RCSID_7ce0778d35="$Id: mac_saver_module.cpp 19891 2009-12-14 13:45:08Z charlief $";
+const char *BOINC_RCSID_7ce0778d35="$Id: mac_saver_module.cpp 22679 2010-11-11 11:58:41Z charlief $";

@@ -26,13 +26,18 @@
 
 #if SHOW_TIMING
 #include <Carbon/Carbon.h>
+#include "client_msgs.h"
 #endif
 
 #include "procinfo.h"
-#include "client_msgs.h"
 #include "client_state.h"
 
 using std::vector;
+
+// Possible values of iBrandId:
+#define BOINC_BRAND_ID 0
+#define GRIDREPUBLIC_BRAND_ID 1
+#define PROGRESSTHRUPROCESSORS_BRAND_ID 2
 
 
 // build table of all processes in system
@@ -43,6 +48,20 @@ int procinfo_setup(vector<PROCINFO>& pi) {
     PROCINFO p;
     int c, real_mem, virtual_mem, hours;
     char* lf;
+    static long iBrandID = -1;
+    int priority;
+    
+    if (iBrandID < 0) {
+        iBrandID = BOINC_BRAND_ID;
+
+        // For GridRepublic or ProgressThruProcessors, the Mac 
+        // installer put a branding file in our data directory
+        FILE *f = fopen("/Library/Application Support/BOINC Data/Branding", "r");
+        if (f) {
+            fscanf(f, "BrandId=%ld\n", &iBrandID);
+            fclose(f);
+        }
+    }
 
 #if SHOW_TIMING
     UnsignedWide start, end, elapsed;
@@ -61,15 +80,13 @@ int procinfo_setup(vector<PROCINFO>& pi) {
 // pid        process ID
 // ppid       parent process ID
 // poip       pageouts in progress
+// pri        scheduling priority
 // rss        resident set size in Kbytes
 // time       accumulated cpu time, user + system
 // vsz        virtual size in Kbytes
 //
 // Unfortunately, the selectors majflt, minflt, pagein do not work on OS X, 
 // and ps does not return kernel time separately from user time.  
-//
-// This code doesn't use PROCINFO.is_boinc_app, but we set it to be 
-// consistent with the code for other platforms.
 //
 // Earlier versions of procinf_mac.C launched a small helper application 
 // AppStats using a bi-directional pipe.  AppStats used mach ports to get 
@@ -83,22 +100,22 @@ int procinfo_setup(vector<PROCINFO>& pi) {
 // root; this was perceived by some users as a security risk.
 
 
-    fd = popen("ps -axcopid,ppid,rss,vsz,pagein,time,command", "r");
-    if (!fd) return 0;
+    fd = popen("ps -axcopid,ppid,rss,vsz,pagein,pri,time,command", "r");
+    if (!fd) return ERR_FOPEN;
 
     // Skip over the header line
     do {
         c = fgetc(fd);
         if (c == EOF) {
             pclose(fd);
-            return 0;
+            return ERR_GETS;
         }
     } while (c != '\n');
 
     while (1) {
         memset(&p, 0, sizeof(p));
-        c = fscanf(fd, "%d%d%d%d%ld%d:%lf ", &p.id, &p.parentid, &real_mem, 
-                    &virtual_mem, &p.page_fault_count, &hours, &p.user_time);
+        c = fscanf(fd, "%d%d%d%d%ld%d%d:%lf ", &p.id, &p.parentid, &real_mem, 
+                    &virtual_mem, &p.page_fault_count, &priority, &hours, &p.user_time);
         if (c < 7) break;
         if (fgets(p.command, sizeof(p.command) , fd) == NULL) break;
         lf = strchr(p.command, '\n');
@@ -107,6 +124,20 @@ int procinfo_setup(vector<PROCINFO>& pi) {
         p.swap_size = (double)virtual_mem * 1024.;
         p.user_time += 60. * (float)hours;
         p.is_boinc_app = (p.id == pid || strcasestr(p.command, "boinc"));
+        p.is_low_priority = (priority <= 12);
+
+        switch (iBrandID) {
+        case GRIDREPUBLIC_BRAND_ID:
+            if (!strcmp(p.command, "GridRepublic Desktop")) {
+                p.is_boinc_app = true;
+            }
+            break;
+        case PROGRESSTHRUPROCESSORS_BRAND_ID:
+            if (!strcmp(p.command, "Progress Thru Processors Desktop")) {
+                p.is_boinc_app = true;
+            }
+            break;
+        }
         pi.push_back(p);
     }
     
@@ -134,7 +165,6 @@ void add_proc_totals(PROCINFO& pi, vector<PROCINFO>& piv, int pid, char* graphic
     for (i=0; i<piv.size(); i++) {
         PROCINFO& p = piv[i];
 		if (p.id == pid || p.parentid == pid) {
-//            pi.kernel_time += p.kernel_time;
             pi.user_time += p.user_time;
             pi.swap_size += p.swap_size;
             pi.working_set_size += p.working_set_size;
@@ -143,10 +173,10 @@ void add_proc_totals(PROCINFO& pi, vector<PROCINFO>& piv, int pid, char* graphic
         if (!strcmp(p.command, graphics_exec_file)) {
             p.is_boinc_app = true;
         }
-            // look for child process of this one
+        // look for child process of this one
 		if (p.parentid == pid) {
 			add_proc_totals(pi, piv, p.id, graphics_exec_file, i+1, rlvl+1);    // recursion - woo hoo!
-        }
+		}
     }
 }
 
@@ -163,12 +193,11 @@ void procinfo_other(PROCINFO& pi, vector<PROCINFO>& piv) {
     memset(&pi, 0, sizeof(pi));
     for (i=0; i<piv.size(); i++) {
         PROCINFO& p = piv[i];
-        if (!p.is_boinc_app) {
-//            pi.kernel_time += p.kernel_time;
-            pi.user_time += p.user_time;
-            pi.swap_size += p.swap_size;
-            pi.working_set_size += p.working_set_size;
-            p.is_boinc_app = true;
-        }
+        if (p.is_boinc_app) continue;
+        if (p.is_low_priority) continue;
+
+        pi.user_time += p.user_time;
+        pi.swap_size += p.swap_size;
+        pi.working_set_size += p.working_set_size;
     }
 }

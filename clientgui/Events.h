@@ -23,13 +23,14 @@
 #define ID_CLOSEWINDOW                          6100
 #define ID_CHANGEGUI                            6101
 #define ID_OPENWEBSITE                          6102
-#define ID_PERIODICRPCTIMER                     6103
-#define ID_DOCUMENTPOLLTIMER                    6104
-#define ID_ALERTPOLLTIMER                       6105
-#define ID_REFRESHSTATETIMER                    6106
-#define ID_WIZARDATTACH                         6107
-#define ID_WIZARDUPDATE                         6108
-#define ID_WIZARDDETACH                         6109
+#define ID_OPENBOINCMANAGER                     6103
+#define ID_PERIODICRPCTIMER                     6104
+#define ID_DOCUMENTPOLLTIMER                    6105
+#define ID_ALERTPOLLTIMER                       6106
+#define ID_REFRESHSTATETIMER                    6107
+#define ID_WIZARDATTACH                         6108
+#define ID_WIZARDUPDATE                         6109
+#define ID_WIZARDDETACH                         6110
 
 
 //
@@ -49,13 +50,12 @@
 
 // View Menu
 #define ID_ADVVIEWBASE                          6125
-#define ID_ADVPROJECTSVIEW                      6125
-#define ID_ADVTASKSVIEW                         6126
-#define ID_ADVTRANSFERSVIEW                     6127
-#define ID_ADVMESSAGESVIEW                      6128
+#define ID_ADVNOTICESVIEW                       6125
+#define ID_ADVPROJECTSVIEW                      6126
+#define ID_ADVTASKSVIEW                         6127
+#define ID_ADVTRANSFERSVIEW                     6128
 #define ID_ADVSTATISTICSVIEW                    6129
 #define ID_ADVRESOURCEUSAGEVIEW                 6130
-#define ID_ADVNEWSVIEW                          6131
 
 // Tools Menu
 //#define ID_ATTACHWIZARD
@@ -76,14 +76,16 @@
 #define ID_ADVNETWORKSUSPEND                    6020
 
 // Advanced Menu
-#define ID_OPTIONS                              6021
-#define ID_PREFERENCES                          6022
-#define ID_SELECTCOMPUTER                       6023
-#define ID_SHUTDOWNCORECLIENT                   6026
-#define ID_RUNBENCHMARKS                        6027
-#define ID_RETRYCOMMUNICATIONS                  6028
-#define ID_READCONFIG                           6029
-#define ID_READPREFERENCES                      6030
+#define ID_OPTIONS                              6050
+#define ID_PREFERENCES                          6051
+#define ID_SELECTCOMPUTER                       6052
+#define ID_SHUTDOWNCORECLIENT                   6053
+#define ID_RUNBENCHMARKS                        6054
+#define ID_RETRYCOMMUNICATIONS                  6055
+#define ID_READCONFIG                           6056
+#define ID_READPREFERENCES                      6057
+#define ID_EVENTLOG                             6058
+#define ID_LAUNCHNEWINSTANCE                    6059
 
 // Help Menu
 #define ID_HELPBOINC                            6035  // Locked: Used by manager_links.php
@@ -100,15 +102,14 @@
 #define ID_PIECTRL_RESOURCEUTILIZATIONVIEW      7004
 #define ID_PIECTRL_RESOURCEUTILIZATIONVIEWTOTAL	7005
 #define ID_LIST_STATISTICSVIEW                  7006
-#define ID_HTML_NEWSVIEW                        7007
+#define ID_LIST_NOTIFICATIONSVIEW               7007
 #define ID_TASK_BASE                            8000
-#define ID_TASK_PROJECTSVIEW                    8000
-#define ID_TASK_WORKVIEW                        8001
-#define ID_TASK_TRANSFERSVIEW                   8002
-#define ID_TASK_MESSAGESVIEW                    8003
+#define ID_TASK_NOTIFICATIONSVIEW               8000
+#define ID_TASK_PROJECTSVIEW                    8001
+#define ID_TASK_WORKVIEW                        8002
+#define ID_TASK_TRANSFERSVIEW                   8003
 #define ID_TASK_STATISTICSVIEW                  8004
 #define ID_TASK_RESOURCEUTILIZATIONVIEW         8005
-#define ID_TASK_NEWSVIEW                        8006
 #define ID_TASK_PROJECT_UPDATE                  9000
 #define ID_TASK_PROJECT_SUSPEND                 9002
 #define ID_TASK_PROJECT_RESUME                  9003
@@ -135,9 +136,11 @@
 #define ID_TASK_STATISTICS_HOSTAVERAGE          9503
 #define ID_TASK_STATISTICS_NEXTPROJECT          9601
 #define ID_TASK_STATISTICS_PREVPROJECT          9602
-#define ID_TASK_STATISTICS_MODEVIEW0            9610
-#define ID_TASK_STATISTICS_MODEVIEW1            9611
-#define ID_TASK_STATISTICS_MODEVIEW2            9612
+#define ID_TASK_STATISTICS_HIDEPROJLIST         9603
+#define ID_TASK_STATISTICS_MODEVIEWALLSEPARATE  9610
+#define ID_TASK_STATISTICS_MODEVIEWONEPROJECT   9611
+#define ID_TASK_STATISTICS_MODEVIEWALLTOGETHER  9612
+#define ID_TASK_STATISTICS_MODEVIEWSUM          9613
 #define ID_TASK_NEWS_BOINC                      9700
 #define ID_TASK_NEWS_BOINCWEBSITE               9701
 

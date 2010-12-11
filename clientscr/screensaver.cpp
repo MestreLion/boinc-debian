@@ -38,7 +38,7 @@
 #include "common_defs.h"
 #include "filesys.h"
 #include "error_numbers.h"
-#include "gui_rpc_client.h" // The order of included headers is critical here.  Do not move this!
+#include "gui_rpc_client.h"
 #include "str_util.h"
 #include "str_replace.h"
 #include "screensaver.h"
@@ -73,8 +73,8 @@
 
 bool CScreensaver::is_same_task(RESULT* taska, RESULT* taskb) {
     if ((taska == NULL) || (taskb == NULL)) return false;
-    if (taska->name != taskb->name) return false;
-    if (taska->project_url != taskb->project_url) return false;
+    if (strcmp(taska->name, taskb->name)) return false;
+    if (strcmp(taska->project_url, taskb->project_url)) return false;
     return true;
 }
 
@@ -89,11 +89,14 @@ int CScreensaver::count_active_graphic_apps(RESULTS& results, RESULT* exclude) {
         BOINCTRACE(_T("get_random_graphics_app -- active task detected\n"));
         BOINCTRACE(
             _T("get_random_graphics_app -- name = '%s', path = '%s'\n"),
-            results.results[i]->name.c_str(), results.results[i]->graphics_exec_path.c_str()
+            results.results[i]->name, results.results[i]->graphics_exec_path
         );
         if (results.results[i]->supports_graphics) m_bV5_GFX_app_is_running = true;
-        if ((results.results[i]->graphics_exec_path.size() == 0) 
-                && (state.executing_as_daemon || !(results.results[i]->supports_graphics))) continue;
+        if (!strlen(results.results[i]->graphics_exec_path) 
+            && (state.executing_as_daemon || !(results.results[i]->supports_graphics))
+        ) {
+            continue;
+        }
         BOINCTRACE(_T("get_random_graphics_app -- active task detected w/graphics\n"));
 
         if (is_same_task(results.results[i], exclude)) continue;
@@ -137,8 +140,11 @@ RESULT* CScreensaver::get_random_graphics_app(RESULTS& results, RESULT* exclude)
 
     // Lets find the chosen graphics application.
     for (i = 0; i < results.results.size(); i++) {
-        if ((results.results[i]->graphics_exec_path.size() == 0) 
-                && (state.executing_as_daemon || !(results.results[i]->supports_graphics))) continue;
+        if (!strlen(results.results[i]->graphics_exec_path) 
+            && (state.executing_as_daemon || !(results.results[i]->supports_graphics))
+        ){
+            continue;
+        }
         if (is_same_task(results.results[i], avoid)) continue;
 
         current_counter++;
@@ -164,7 +170,7 @@ int CScreensaver::launch_screensaver(RESULT* rp, int& graphics_application)
 #endif
 {
     int retval = 0;
-    if (!rp->graphics_exec_path.empty()) {
+    if (strlen(rp->graphics_exec_path)) {
         // V6 Graphics
 #ifdef __APPLE__
         // For sandbox security, use gfx_switcher to launch gfx app 
@@ -176,14 +182,14 @@ int CScreensaver::launch_screensaver(RESULT* rp, int& graphics_application)
         char* argv[5];
         argv[0] = "gfx_Switcher";
         argv[1] = "-launch_gfx";
-        argv[2] = strrchr(rp->slot_path.c_str(), '/');
+        argv[2] = strrchr(rp->slot_path, '/');
         if (*argv[2]) argv[2]++;    // Point to the slot number in ascii
         
         argv[3] = "--fullscreen";
         argv[4] = 0;
 
        retval = run_program(
-            rp->slot_path.c_str(),
+            rp->slot_path,
             m_gfx_Switcher_Path,
             4,
             argv,
@@ -196,8 +202,8 @@ int CScreensaver::launch_screensaver(RESULT* rp, int& graphics_application)
         argv[1] = "--fullscreen";
         argv[2] = 0;
         retval = run_program(
-            rp->slot_path.c_str(),
-            rp->graphics_exec_path.c_str(),
+            rp->slot_path,
+            rp->graphics_exec_path,
             2,
             argv,
             0,
@@ -236,8 +242,8 @@ int CScreensaver::launch_screensaver(RESULT* rp, int& graphics_application)
         graphics_application = 0;
 #endif
         retval = rpc->show_graphics(
-            rp->project_url.c_str(),
-            rp->name.c_str(),
+            rp->project_url,
+            rp->name,
             MODE_FULLSCREEN,
             di
         );
@@ -263,7 +269,7 @@ int CScreensaver::terminate_v6_screensaver(int& graphics_application)
     // match that of the target process, though in practice that seems 
     // not to be true on the Mac.
     
-    char current_dir[MAXPATHLEN];
+    char current_dir[PATH_MAX];
     char gfx_pid[16];
     pid_t thePID;
     int i;
@@ -321,15 +327,15 @@ int CScreensaver::terminate_screensaver(int& graphics_application, RESULT *worke
         DISPLAY_INFO di;
 
         if (worker_app == NULL) return 0;
-        if (worker_app->name.empty()) return 0;
+        if (!strlen(worker_app->name)) return 0;
 
         memset(di.window_station, 0, sizeof(di.window_station));
         memset(di.desktop, 0, sizeof(di.desktop));
         memset(di.display, 0, sizeof(di.display));
 
         rpc->show_graphics(
-            worker_app->project_url.c_str(),
-            worker_app->name.c_str(),
+            worker_app->project_url,
+            worker_app->name,
             MODE_HIDE_GRAPHICS,
             di
         );
@@ -500,7 +506,7 @@ void *CScreensaver::DataManagementProc()
     strlcpy(full_path, default_ss_dir_path, sizeof(full_path));
     strlcat(full_path, PATH_SEPARATOR, sizeof(full_path));
     strlcat(full_path, THE_DEFAULT_SS_EXECUTABLE, sizeof(full_path));
-    
+        
     if (boinc_file_exists(full_path)) {
         m_bDefault_ss_exists = true;
     } else {
@@ -704,7 +710,8 @@ void *CScreensaver::DataManagementProc()
                     if ((graphics_app_result_ptr == NULL) && (m_hGraphicsApplication != 0)) {
                         if (previous_result_ptr) {
                             BOINCTRACE(_T("CScreensaver::DataManagementProc - %s finished\n"), 
-                                    previous_result.graphics_exec_path.c_str());
+                                previous_result.graphics_exec_path
+                            );
                         }
                         terminate_screensaver(m_hGraphicsApplication, previous_result_ptr);
                         previous_result_ptr = NULL;
@@ -721,7 +728,8 @@ void *CScreensaver::DataManagementProc()
                         if (count_active_graphic_apps(results, previous_result_ptr) > 0) {
                             if (previous_result_ptr) {
                                 BOINCTRACE(_T("CScreensaver::DataManagementProc - time to change: %s / %s\n"), 
-                                        previous_result.name.c_str(), previous_result.graphics_exec_path.c_str());
+                                    previous_result.name, previous_result.graphics_exec_path
+                                );
                             }
                             terminate_screensaver(m_hGraphicsApplication, graphics_app_result_ptr);
                             if (m_hGraphicsApplication == 0) {
@@ -771,7 +779,8 @@ void *CScreensaver::DataManagementProc()
                             previous_result_ptr = &previous_result;
                             if (previous_result_ptr) {
                                 BOINCTRACE(_T("CScreensaver::DataManagementProc - launching %s\n"), 
-                                        previous_result.graphics_exec_path.c_str());
+                                    previous_result.graphics_exec_path
+                                );
                             }
                         }
                     }

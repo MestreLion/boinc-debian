@@ -21,9 +21,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstring>
 #endif
 
@@ -33,40 +30,51 @@
 
 #include "gui_http.h"
 
-int GUI_HTTP::do_rpc(GUI_HTTP_OP* op, string url, string output_file) {
+int GUI_HTTP::do_rpc(
+    GUI_HTTP_OP* op, char* url, const char* output_file, bool is_bkgd
+) {
     int retval;
 
-    if (state != GUI_HTTP_STATE_IDLE) {
+    // this check should be done at a higher level.
+    // Do it here too just in case
+    //
+    if (gui_http_state != GUI_HTTP_STATE_IDLE) {
         return ERR_RETRY;
     }
 
-    boinc_delete_file(output_file.c_str());
-    retval = http_op.init_get(url.c_str(), output_file.c_str(), true);
+    boinc_delete_file(output_file);
+    retval = http_op.init_get(url, output_file, true);
     if (retval) return retval;
     gstate.http_ops->insert(&http_op);
     gui_http_op = op;
-    state = GUI_HTTP_STATE_BUSY;
+    gui_http_state = GUI_HTTP_STATE_BUSY;
+    http_op.is_background = is_bkgd;
     return 0;
 }
 
-int GUI_HTTP::do_rpc_post(GUI_HTTP_OP* op, string url, string input_file, string output_file) {
+int GUI_HTTP::do_rpc_post(
+    GUI_HTTP_OP* op, char* url,
+    const char* input_file, const char* output_file,
+    bool is_bkgd
+) {
     int retval;
 
-    if (state != GUI_HTTP_STATE_IDLE) {
+    if (gui_http_state != GUI_HTTP_STATE_IDLE) {
         return ERR_RETRY;
     }
 
-    boinc_delete_file(output_file.c_str());
-    retval = http_op.init_post(url.c_str(), input_file.c_str(), output_file.c_str());
+    boinc_delete_file(output_file);
+    retval = http_op.init_post(url, input_file, output_file);
     if (retval) return retval;
     gstate.http_ops->insert(&http_op);
     gui_http_op = op;
-    state = GUI_HTTP_STATE_BUSY;
+    gui_http_state = GUI_HTTP_STATE_BUSY;
+    http_op.is_background = is_bkgd;
     return 0;
 }
 
 bool GUI_HTTP::poll() {
-    if (state == GUI_HTTP_STATE_IDLE) return false;
+    if (gui_http_state == GUI_HTTP_STATE_IDLE) return false;
     static double last_time=0;
     if (gstate.now-last_time < GUI_HTTP_POLL_PERIOD) return false;
     last_time = gstate.now;
@@ -75,7 +83,7 @@ bool GUI_HTTP::poll() {
         gstate.http_ops->remove(&http_op);
         gui_http_op->handle_reply(http_op.http_op_retval);
         gui_http_op = NULL;
-        state = GUI_HTTP_STATE_IDLE;
+        gui_http_state = GUI_HTTP_STATE_IDLE;
     }
     return true;
 }

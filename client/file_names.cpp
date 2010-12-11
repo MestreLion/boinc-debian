@@ -19,11 +19,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstdio>
 #include <sys/stat.h>
 #include <cctype>

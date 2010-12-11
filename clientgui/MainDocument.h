@@ -39,6 +39,21 @@ typedef struct {
 } RUNNING_GFX_APP;
 
 
+///
+/// Bitmask values for GetCurrentViewPage() 
+/// Used by CMainDocument::RunPeriodicRPCs() and Mac Accessibility
+///
+#define VW_PROJ   1
+#define VW_TASK   2
+#define VW_XFER   4
+#define VW_STAT   8
+#define VW_DISK   16
+#define VW_NOTIF  128
+#define VW_SGUI   256
+#define VW_SMSG   2048
+#define VW_SNOTIF 4096
+
+
 extern bool g_use_sandbox;
 
 class CMainDocument;
@@ -146,8 +161,8 @@ public:
     int                         SetGPURunMode(int iMode, int iTimeout);
     int                         SetNetworkRunMode(int iMode, int iTimeout);
 
-    void                        RefreshRPCs();
-    void                        RunPeriodicRPCs();
+    void                        RefreshRPCs(bool fullReset = false);
+    void                        RunPeriodicRPCs(int frameRefreshRate);
     int                         ForceCacheUpdate(bool immediate = true);
     int                         RunBenchmarks();
 
@@ -201,38 +216,31 @@ private:
     BOINC_Mutex*                m_pRPC_Request_Mutex;
     BOINC_Condition*            m_pRPC_Request_Condition;
     wxDateTime                  m_dtLasAsyncRPCDlgTime;
+    wxDateTime                  m_dtLastFrameViewRefreshRPCTime;
 
     //
-    // Project Tab
+    // Projects Tab
     //
 private:
     int                         m_iGet_project_status1_rpc_result;
-    wxDateTime                  m_dtProjecStatusTimestamp;
+    wxDateTime                  m_dtProjectsStatusTimestamp;
 
 public:
     int                         CachedProjectStatusUpdate(bool bForce = false);
     PROJECT*                    project(unsigned int);
-	PROJECT*                    project(const wxString& projectname);
+	PROJECT* project(char* url);
     float                       m_fProjectTotalResourceShare;
 
     int                         GetProjectCount();
 
     int                         ProjectNoMoreWork(int iIndex);
-	int                         ProjectNoMoreWork(const wxString& projectname);
     int                         ProjectAllowMoreWork(int iIndex);
-	int                         ProjectAllowMoreWork(const wxString& projectname);
     int                         ProjectAttach(const wxString& strURL, const wxString& strAccountKey);
     int                         ProjectDetach(int iIndex);
-	int                         ProjectDetach(const wxString& projectname);
     int                         ProjectUpdate(int iIndex);
-	int                         ProjectUpdate(const wxString& projectname);
     int                         ProjectReset(int iIndex);
-	int                         ProjectReset(const wxString& projectname);
     int                         ProjectSuspend(int iIndex);
-	int                         ProjectSuspend(const wxString& projectname);
     int                         ProjectResume(int iIndex);
-	int                         ProjectResume(const wxString& projectname);
-
 
     //
     // Work Tab
@@ -240,6 +248,7 @@ public:
 private:
     int                         CachedResultsStatusUpdate();
     wxDateTime                  m_dtResultsTimestamp;
+    double                      m_fResultsRPCExecutionTime;
     wxDateTime                  m_dtKillInactiveGfxTimestamp;
     std::vector<RUNNING_GFX_APP> m_running_gfx_apps;
     RUNNING_GFX_APP*            GetRunningGraphicsApp(RESULT* result, int slot);
@@ -262,20 +271,39 @@ public:
 
     int                         GetWorkCount();
 
-    int                         WorkSuspend(
-                                    std::string& strProjectURL,
-                                    std::string& strName
-                                );
-    int                         WorkResume(
-                                    std::string& strProjectURL,
-                                    std::string& strName
-                                );
+    int                         WorkSuspend(char* url, char* name);
+    int                         WorkResume(char* url, char* name);
     int                         WorkShowGraphics(RESULT* result);
-    int                         WorkAbort(
-                                    std::string& strProjectURL,
-                                    std::string& strName
-                                );
+    int                         WorkAbort(char* url, char* name);
     CC_STATE*                   GetState() { return &state; };
+
+
+    //
+    // Notices Tab
+    //
+private:
+    wxDateTime                  m_dtNoticesTimeStamp;
+
+    int                         m_iNoticeSequenceNumber;
+    int                         m_iLastReadNoticeSequenceNumber;
+    double                      m_dLastReadNoticeArrivalTime;
+
+public:
+    NOTICES                     notices;
+    int                         m_iGet_notices_rpc_result;
+    
+    NOTICE*                     notice(unsigned int);
+    int                         CachedNoticeUpdate();
+
+    int                         GetNoticeCount();
+    int                         GetUnreadNoticeCount();
+
+    void                        SaveUnreadNoticeInfo();
+    void                        RestoreUnreadNoticeInfo();
+
+    void                        UpdateUnreadNoticeState();
+    int                         ResetNoticeState();
+    bool                        LocalizeNoticeText(wxString& strMessage, bool bSanitize = false, bool bClean = false);
 
 
     //
@@ -286,7 +314,6 @@ private:
 
 public:
     MESSAGES                    messages;
-    MESSAGES                    async_messages_buf;
     int                         m_iGet_messages_rpc_result;
     
     MESSAGE*                    message(unsigned int);
@@ -367,8 +394,8 @@ public:
     // Simple GUI Updates
     //
     int                         m_iGet_simple_gui2_rpc_result;
-    int                         CachedSimpleGUIUpdate(bool bForce = false);
     int                         m_iAcct_mgr_info_rpc_result;
+    int                         CachedSimpleGUIUpdate(bool bForce = false);
 private:
     wxDateTime                  m_dtCachedSimpleGUITimestamp;
     wxDateTime                  m_dtCachedAcctMgrInfoTimestamp;
@@ -381,8 +408,13 @@ public:
 
 };
 
-#endif
+extern wxString suspend_reason_wxstring(int reason);
+extern wxString result_description(RESULT*, bool show_resources=true);
+extern wxString process_client_message(const char*);
 
 #ifdef SANDBOX
 #define BOINC_MASTER_GROUP_NAME "boinc_master"
 #endif
+
+#endif
+

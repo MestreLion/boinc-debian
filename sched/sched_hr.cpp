@@ -43,7 +43,7 @@
 bool hr_unknown_platform(HOST& host) {
     for (int i=0; i<ssp->napps; i++) {
         APP& app = ssp->apps[i];
-        if (!hr_unknown_platform_type(host, app_hr_type(app))) return false;
+        if (!hr_unknown_class(host, app_hr_type(app))) return false;
     }
     return true;
 }
@@ -101,4 +101,4 @@ bool already_sent_to_different_platform_careful(WORKUNIT& workunit, APP& app) {
     return g_wreq->hr_reject_temp;
 }
 
-const char *BOINC_RCSID_4196d9a5b4="$Id: sched_hr.cpp 18825 2009-08-10 04:49:02Z davea $";
+const char *BOINC_RCSID_4196d9a5b4="$Id: sched_hr.cpp 21093 2010-04-05 18:59:16Z davea $";

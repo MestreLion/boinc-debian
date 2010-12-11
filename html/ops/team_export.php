@@ -21,14 +21,14 @@
 // This script for use ONLY by the BOINC-teams project.
 // It generates an XML file with team and user info
 
-require_once("../inc/boinc_db.inc");
-require_once("../inc/util.inc");
+$cli_only = true;
+require_once("../inc/util_ops.inc");
 
 function handle_team($team, $f) {
     $user = BoincUser::lookup_id($team->userid);
     if (!$user) {
         echo "no user for team $team->id\n";
-        exit(1);
+        return;
     }
     if ($user->teamid != $team->id) {
         echo "Founder is not member of $team->name\n";
@@ -69,7 +69,9 @@ function main() {
     }
     fwrite($f, "</teams>\n");
     fclose($f);
-    rename("temp.xml", "/home/boincadm/boinc/doc/boinc_teams.xml");
+    if (!rename("temp.xml", "/home/boincadm/boinc/doc/boinc_teams.xml")) {
+        echo "Rename failed\n";
+    }
 }
 
 main();

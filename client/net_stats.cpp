@@ -71,6 +71,7 @@ void NET_INFO::update(double nbytes, double dt) {
     }
     double start_time = gstate.now - dt;
     update_average(
+        gstate.now,
         start_time,
         nbytes,
         NET_RATE_HALF_LIFE,
@@ -153,7 +154,7 @@ int NET_STATUS::network_status() {
 		retval = NETWORK_STATUS_WANT_DISCONNECT;
 	}
 	if (log_flags.network_status_debug) {
-		msg_printf(NULL, MSG_INFO, "[network_status_debug] status: %s", network_status_string(retval));
+		msg_printf(NULL, MSG_INFO, "[network_status] status: %s", network_status_string(retval));
 	}
 	return retval;
 }
@@ -184,13 +185,22 @@ void NET_STATUS::network_available() {
 // Find out for sure by trying to contact a reference site
 //
 void NET_STATUS::got_http_error() {
+    // Cause a round of proxy detections to occur
+    if (working_proxy_info.autodetect_proxy_supported) {
+        working_proxy_info.need_autodetect_proxy_settings = true;
+        working_proxy_info.have_autodetect_proxy_settings = false;
+    }
+
     if (gstate.lookup_website_op.error_num == ERR_IN_PROGRESS) return;
+
+    // Don't spam the reference site when a project is down
     if (need_physical_connection) return;
+
     if (config.dont_contact_ref_site) return;
 
     if (log_flags.network_status_debug) {
         msg_printf(0, MSG_INFO,
-            "[network_status_debug] got HTTP error - checking ref site"
+            "[network_status] got HTTP error - checking ref site"
         );
     }
     need_to_contact_reference_site = true;
@@ -200,12 +210,16 @@ void NET_STATUS::got_http_error() {
 void NET_STATUS::contact_reference_site() {
 	if (log_flags.network_status_debug) {
 		msg_printf(0, MSG_INFO,
-			"[network_status_debug] need_phys_conn %d; trying %s",
+			"[network_status] need_phys_conn %d; trying %s",
             need_physical_connection, config.network_test_url.c_str()
 		);
 	}
     gstate.lookup_website_op.do_rpc(config.network_test_url);
 	need_to_contact_reference_site = false;
+}
+
+static void show_fail_msg() {
+    msg_printf(0, MSG_USER_ALERT, NEED_NETWORK_MSG);
 }
 
 int LOOKUP_WEBSITE_OP::do_rpc(string& url) {
@@ -216,17 +230,15 @@ int LOOKUP_WEBSITE_OP::do_rpc(string& url) {
             "Project communication failed: attempting access to reference site"
         );
     }
-    retval = gui_http->do_rpc(this, url, LOOKUP_WEBSITE_FILENAME);
+    retval = gui_http->do_rpc(
+        this, (char*)url.c_str(), LOOKUP_WEBSITE_FILENAME, true
+    );
     if (retval) {
         error_num = retval;
         net_status.need_physical_connection = true;
 		net_status.last_comm_time = 0;
 
-        working_proxy_info.need_autodetect_proxy_settings = true;
-        working_proxy_info.have_autodetect_proxy_settings = false;
-        msg_printf(0, MSG_USER_ERROR,
-            "BOINC can't access Internet - check network connection or proxy configuration."
-        );
+        show_fail_msg();
     } else {
         error_num = ERR_IN_PROGRESS;
     }
@@ -244,9 +256,7 @@ void LOOKUP_WEBSITE_OP::handle_reply(int http_op_retval) {
     if (http_op_retval) {
         net_status.need_physical_connection = true;
 		net_status.last_comm_time = 0;
-        msg_printf(0, MSG_USER_ERROR,
-            "BOINC can't access Internet - check network connection or proxy configuration."
-        );
+        show_fail_msg();
     } else {
         if (net_status.show_ref_message) {
             msg_printf(0, MSG_INFO,
@@ -262,7 +272,14 @@ void NET_STATUS::poll() {
     // otherwise might show spurious "need connection" message
     //
     if (gstate.now < gstate.last_wakeup_time + 30) return;
-	if (net_status.need_to_contact_reference_site && gstate.gui_http.state==GUI_HTTP_STATE_IDLE) {
+    // wait until after a round of automatic proxy detection 
+    // before attempting to contact the reference site
+    //
+    if (working_proxy_info.autodetect_proxy_supported && 
+        working_proxy_info.need_autodetect_proxy_settings &&
+        !working_proxy_info.have_autodetect_proxy_settings) return;
+
+	if (net_status.need_to_contact_reference_site && !gstate.gui_http.is_busy()) {
 		net_status.contact_reference_site();
 	}
 }
