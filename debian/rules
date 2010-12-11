@@ -98,6 +98,7 @@ CFGFLAGS = \
   --disable-client \
   --disable-server \
   --disable-fcgi \
+  --disable-libraries \
   --enable-manager \
   --enable-unicode \
   --with-ssl \
@@ -113,6 +114,7 @@ CFGFLAGS_boinc-client = \
   --enable-server \
   --enable-fcgi \
   --disable-manager \
+  --enable-libraries \
   --enable-unicode \
   --with-ssl \
   --without-wx-config \
@@ -144,9 +146,11 @@ build-stamp: build-boinc-client-and-server-stamp build-boinc-manager-stamp
 
 build-boinc-manager-stamp: autoreconf-stamp
 	dh_testdir
-	echo
-	echo "Configuring for build-boinc-manager"
-	echo
+	@echo
+	@echo "****                                     *****"
+	@echo "**** Configuring for build-boinc-manager *****"
+	@echo "****                                     *****"
+	@echo
 	./configure $(CFGFLAGS)
 	echo
 	echo "Making build-boinc-manager"
@@ -167,7 +171,9 @@ build-boinc-manager-stamp: autoreconf-stamp
 build-boinc-client-and-server-stamp: autoreconf-stamp
 	dh_testdir
 	@echo
-	@echo "Configuring build-boinc-client-and-server"
+	@echo "****                                           *****"
+	@echo "**** Configuring build-boinc-client-and-server *****"
+	@echo "****                                           *****"
 	@echo
 	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
@@ -234,9 +240,11 @@ clean-patched:
 	  packages/solaris/CSW/boincmanager/Makefile
 	debconf-updatepo
 
-install: build-stamp install-stamp
-install-stamp:
-	dh install --after dh_auto_test --until dh_install
+install: install-stamp
+
+install-boinc-client-stamp: build-boinc-client-and-server-stamp
+	#dh install --after dh_auto_test --until dh_install
+	$(MAKE) prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
 	
 	# Install files for the boinc-client package.
 	install -D client/boinc \
@@ -245,6 +253,11 @@ install-stamp:
 	install -D client/boinccmd \
 	  debian/boinc-client/usr/bin/boinccmd
 	
+	touch $@
+
+install-boinc-manager-stamp: build-boinc-manager-stamp
+	#dh install --after dh_auto_test --until dh_install
+	$(MAKE) prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
 	# Install files for the boinc-manager package.
 	install -D clientgui/boincmgr \
 	  debian/boinc-manager/usr/bin/boincmgr
@@ -258,13 +271,16 @@ install-stamp:
 	  debian/boinc-client/usr/share/boinc-client/udev-cpu_share \
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
+	touch $@
+
+install-stamp: install-boinc-manager-stamp install-boinc-client-stamp
 	# Correct catalog file perms
-	find ./ -name "*.mo" -exec chmod 644   {} \;
+	find debian -name "*.mo" -exec chmod 644   {} \;
 	# delete empty dirs
 	find debian/boinc-manager/usr/share/locale -type d -empty -delete
 	dh install
 	dh_buildinfo
-	touch $@
+	#touch $@
 
 binary-arch: install
 	dh binary-arch --before dh_strip
@@ -289,5 +305,5 @@ get-orig-source:
 	$$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: build clean clean-patched autoreconf install binary-arch binary get-orig-source
+.PHONY: build clean clean-patched autoreconf install install-stamp binary-arch binary get-orig-source
 
