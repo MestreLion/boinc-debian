@@ -1,12 +1,33 @@
 <?php
 
+// 0: name
+// 1: web site URL
+// 2: home
+// 3: area
+// 4: goals
+// 5: logo
+// 6: master URL (if different from web site)
+
+$cogsci = array(
+    "Cognitive science and artifical intelligence",
+    array(
+        array(
+            "FreeHAL",
+            "http://freehal.net/freehal_at_home/",
+            "private",
+            "Artificial intelligence",
+            "Parse and convert semantic nets for use in FreeHAL, an artificial intelligence that uses semantic networks, stemmers, part of speech databases, and part of speech taggers in order to imitate human behavior in conversations."
+        ),
+    ),
+);
+
 $biomed = array(
     "Biology and Medicine",
     array(
         array(
             "POEM@HOME",
             "http://boinc.fzk.de/poem/",
-            "University of Karlsruhe",
+            "University of Karlsruhe (Germany)",
             "Protein structure prediction",
             "POEM@HOME uses a computational approach to predict the biologically active structure of proteins, to understand the signal-processing mechanisms when the proteins interact with one another, to understand diseases related to protein malfunction or aggregation, and to develop new drugs on the basis of the three-dimensions structure of biologically important proteins.",
             "poem.jpg"
@@ -24,8 +45,8 @@ $biomed = array(
             "http://www.gpugrid.net/",
             "Barcelona Biomedical Research Park (PRBB)",
             "Molecular simulations of proteins",
-            "GPUGrid.net opens novel computational scenarios by the first full-atom molecular dynamics code (CellMD) specially optimized to run on NVIDIA GPUs and the Sony PlayStation 3. New biomedical applications suddenly become possible giving a new role to computational biology for biomedical research.",
-            "ps3grid.png"
+            "GPUGrid.net opens novel computational scenarios by the first full-atom molecular dynamics code (CellMD) specially optimized to run on NVIDIA GPUs. New biomedical applications suddenly become possible giving a new role to computational biology for biomedical research.",
+            "gpugrid.png"
         ),
         array(
             "Superlink@Technion",
@@ -97,11 +118,25 @@ $earth = array(
     "Earth Sciences",
     array(
         array(
+            "Quake Catcher Network",
+            "http://qcn.stanford.edu/",
+            "Stanford University",
+            "Seismology",
+            "The Quake-Catcher Network is a collaborative initiative for developing the world's largest, low-cost strong-motion seismic network by utilizing sensors in and attached to internet-connected computers."
+        ),
+        array(
+            "Virtual Prairie",
+            "http://vcsc.cs.uh.edu/virtual-prairie/",
+            "University of Houston",
+            "Study of botanical ecosystems",
+            "Provide ecological guidelines on the design of prairies with the best potential for water purification."
+        ),
+        array(
             "Climateprediction.net",
             "http://climateprediction.net/",
             "Oxford University",
-            "Earth sciences",
-            "To investigate the approximations that have to be made in state-of-the-art climate models. By running the model thousands of times we hope to find out how the model responds to slight tweaks to these approximations - slight enough to not make the approximations any less realistic. This will allow us to improve our understanding of how sensitive our models are to small changes and also to things like changes in carbon dioxide and the sulphur cycle. This will allow us to explore how climate may change in the next century under a wide range of different scenarios.",
+            "Climate study",
+            "Investigate the approximations that have to be made in state-of-the-art climate models. By running the model thousands of times we hope to find out how the model responds to slight tweaks to these approximations - slight enough to not make the approximations any less realistic. This will allow us to improve our understanding of how sensitive our models are to small changes and also to things like changes in carbon dioxide and the sulphur cycle. This will allow us to explore how climate may change in the next century under a wide range of different scenarios.",
             "cpn_logo_world_1.jpg",
             "http://climateapps2.oucs.ox.ac.uk/cpdnboinc/"
         ),
@@ -110,6 +145,21 @@ $earth = array(
 $astro_phys_chem = array(
     "Astronomy/Physics/Chemistry",
     array(
+        array(
+            "eOn",
+            "http://eon.ices.utexas.edu/eon2/",
+            "University of Texas at Austin",
+            "Chemistry",
+            "A common problem in theoretical chemistry, condensed matter physics and materials science is the calculation of the time evolution of an atomic scale system where, for example, chemical reactions and/or diffusion occur. Generally the events of interest are quite rare (many orders of magnitude slower than the vibrational movements of the atoms), and therefore direct simulations, tracking every movement of the atoms, would take thousands of years of computer calculations on the fastest present day computer before a single event of interest can be expected to occur.  Our research group is interested in calculating the long time dynamics of systems."
+        ),
+        array(
+            "Orbit@home",
+            "http://orbit.psi.edu/oah/",
+            "Planetary Science Institute",
+            "Astronomy",
+            "Monitor and study the hazard posed by near-Earth asteroids",
+            "http://orbit.psi.edu/"
+        ),
         array(
             "Cosmology@Home",
             "http://www.cosmologyathome.org/",
@@ -131,7 +181,7 @@ $astro_phys_chem = array(
             "http://boinc.gorlaeus.net/",
             "Leiden University, The Netherlands",
             "Chemistry",
-            "Surface science calculations using Classical Dynamics.  In contrast to other projects, Leiden Classical allows volunteers, students and other scientist to submit their personal calculations to the grid. Each user has his own personal queue for Classical Dynamics jobs. In this way students have used the grid to simulate liquid argon, or to test the validity of the ideal gas law by actually doing the simulations through the grid.",
+            "Surface science calculations using Classical Dynamics.  Leiden Classical allows volunteers, students and other scientist to submit their personal calculations to the grid. Each user has his own personal queue for Classical Dynamics jobs. In this way students have used the grid to simulate liquid argon, or to test the validity of the ideal gas law by actually doing the simulations through the grid.",
             "leiden_classical.png"
         ),
         array(
@@ -145,9 +195,9 @@ $astro_phys_chem = array(
         array(
             "Einstein@home",
             "http://einstein.phys.uwm.edu/",
-            "Univ. of Wisconsin - Milwaukee, Albert Einstein Institute",
+            "Univ. of Wisconsin - Milwaukee, Max Planck Institute",
             "Astrophysics",
-            "Search for spinning neutron stars (also called pulsars) using data from the LIGO and GEO gravitational wave detectors. Einstein@Home is a World Year of Physics 2005 project supported by the American Physical Society (APS) and by a number of international organizations.",
+            "Search for spinning neutron stars (also called pulsars) using data from the LIGO and GEO gravitational wave detectors, and from the Arecibo radio observatory.  Einstein@Home is a World Year of Physics 2005 project supported by the American Physical Society (APS) and by a number of international organizations.",
             "einstein.jpg"
         ),
         array(
@@ -161,7 +211,7 @@ $astro_phys_chem = array(
         array(
             "SETI@home",
             "http://setiathome.berkeley.edu/",
-            "U.C. Berkeley Space Sciences Laboratory",
+            "University of California, Berkeley",
             "Astrophysics, astrobiology",
             "SETI (Search for Extraterrestrial Intelligence) is a scientific area whose goal is to detect intelligent life outside Earth. One approach, known as radio SETI, uses radio telescopes to listen for narrow-bandwidth radio signals from space. Such signals are not known to occur naturally, so a detection would provide evidence of extraterrestrial technology.",
             "seti_logo.png"
@@ -169,7 +219,7 @@ $astro_phys_chem = array(
         array(
             "Quantum Monte Carlo at Home",
             "http://qah.uni-muenster.de/",
-            "University of Muenster",
+            "University of Muenster (Germany)",
             "Chemistry",
             "Study the structure and reactivity of molecules using Quantum Chemistry.",
             "logo_oben.jpg"
@@ -188,10 +238,33 @@ $mixed = array(
     "Multiple applications",
     array(
         array(
+            "CAS@home",
+            "http://casathome.ihep.ac.cn/",
+            "Chinese Academy of Sciences",
+            "Physics, biochemistry, and others",
+            "The objective of CAS@home is to encourage and assist scientists in China to adopt the technologies of volunteer computing and volunteer thinking for their research.",
+            "cas_at_home.jpg"
+        ),
+        array(
+            "Yoyo@home",
+            "http://www.rechenkraft.net/yoyo/",
+            "private",
+            "Mathematics, physics, evolution",
+            "Yoyo@home is an adapter between BOINC and several existing volunteer computing projects: ECM, Muon, Evolution@home, and distributed.net"
+        ),
+        array(
+            "EDGeS@Home",
+            "http://home.edges-grid.eu/home/",
+            "MTA-SZTAKI Laboratory of Parallel and Distributed Systems (Hungary)",
+            "European research projects",
+            "The EDGeS@Home Beta project integrates volunteer computing into the service grid network of Europe by allowing service grids to send workunits to be processed by the volunteers of this project. The scientific projects covered by the project include math, physics, biology, etc.",
+            "logo_edges.png"
+        ),
+        array(
             "Ibercivis",
             "http://registro.ibercivis.es/",
             "Spanish universities and research centers",
-            "Support Spanish research",
+            "Various Spanish research projects",
             "Research in physics, material science, and biomedicine",
             "cabecera2.jpg"
         ),
@@ -209,6 +282,28 @@ $math = array(
     "Mathematics, computing, and games",
     array(
         array(
+            "Enigma@Home",
+            "http://www.enigmaathome.net/",
+            "private",
+            "Cryptography",
+            "Attempt to decode 3 original Enigma messages. The signals were intercepted in the North Atlantic in 1942 and are believed to be unbroken."
+        ),
+        array(
+            "Collatz Conjecture",
+            "http://boinc.thesonntags.com/collatz/",
+            "private",
+            "Mathematics",
+            "Study the Collatz Conjecture, an unsolved conjecture in mathematics",
+        ),
+        array(
+            "NFS@home",
+            "http://escatter11.fullerton.edu/nfs/",
+            "California State University Fullerton",
+            "Factorization of large integers",
+            "NFS@Home is a research project that uses Internet-connected computers to do the lattice sieving step in the Number Field Sieve factorization of large integers. As a young school student, you gained your first experience at breaking an integer into prime factors, such as 15 = 3 * 5 or 35 = 5 * 7. NFS@Home is a continuation of that experience, only with integers that are hundreds of digits long.",
+            "NFS_Logo.jpg"
+        ),
+        array(
             "VTU@home",
             "http://boinc.vgtu.lt/vtuathome/",
             "Vilnius Gediminas Technical University and Kaunas University of Technology (Lithuania)",
@@ -224,14 +319,14 @@ $math = array(
             "D-Wave's AQUA (Adiabatic QUantum Algorithms) is a research project whose goal is to predict the performance of superconducting adiabatic quantum computers on a variety of hard problems arising in fields ranging from materials science to machine learning. AQUA@home uses Internet-connected computers to help design and analyze quantum computing algorithms, using Quantum Monte Carlo techniques.",
             "logo_dwave2.png"
         ),
-        array(
-            "SHA-1 Collision Search Graz",
-            "http://boinc.iaik.tugraz.at/sha1_coll_search/",
-            "Graz University of Technology",
-            "Cryptography",
-            "Search for collisions (weaknesses) of the widely-used SHA-1 hash function.",
-            "LogoKryptoGroup_klein.jpg"
-        ),
+//        array(
+//            "SHA-1 Collision Search Graz",
+//            "http://boinc.iaik.tugraz.at/sha1_coll_search/",
+//            "Graz University of Technology (Austria)",
+//            "Cryptography",
+//            "Search for collisions (weaknesses) of the widely-used SHA-1 hash function.",
+//            "LogoKryptoGroup_klein.jpg"
+//        ),
         array(
             "ABC@home",
             "http://abcathome.com/",
@@ -249,9 +344,17 @@ $math = array(
             "primegrid_logo.png"
         ),
         array(
+            "primaboinca",
+            "http://www.primaboinca.com/",
+            "Hochschule RheinMain University of Applied Sciences",
+            "Mathematics",
+            "Search for counterexamples to two conjectures related to the identification of prime numbers",
+            "logo_primaboinca.gif"
+        ),
+        array(
             "SZTAKI Desktop Grid",
             "http://szdg.lpds.sztaki.hu/szdg/",
-            "MTA-SZTAKI Laboratory of Parallel and Distributed Systems (Budapest)",
+            "MTA-SZTAKI Laboratory of Parallel and Distributed Systems (Hungary)",
             "Mathematics",
             "Find all the generalized binary number systems (in which bases are matrices and digits are vectors) up to dimension 11.",
             "szdg1_small.jpg"
@@ -280,17 +383,17 @@ $math = array(
             "This project studies Chess 960, a variant of orthodox chess. In classical chess the starting position of the game never changes.  In Chess 960, just before the start of every game, the initial configuration of the chess pieces is determined randomly.",
             "chess960athome.jpg"
         ),
-        array(
-            "NQueens@home",
-            "http://nqueens.ing.udec.cl/",
-            "Universidad de Concepción, Chile",
-            "Game-playing",
-            "The eight queens problem consists of trying to place eight queens on a chessboard so that no queen attacks any other queen.  I has long been known that there are 92 solutions, of which 12 are distinct. NQueens@home studies the generalization to N queens on an NxN board, for N=19 and greater.",
-            "NQueens-Logo1b.png"
-        ),
+//        array(
+//            "NQueens@home",
+//            "http://nqueens.ing.udec.cl/",
+//            "Universidad de ConcepciÃ³n, Chile",
+//            "Mathematics",
+//            "The eight queens problem consists of trying to place eight queens on a chessboard so that no queen attacks any other queen.  I has long been known that there are 92 solutions, of which 12 are distinct. NQueens@home studies the generalization to N queens on an NxN board, for N=19 and greater.",
+//            "NQueens-Logo1b.png"
+//        ),
     ),
 );
 
-$areas = array($biomed, $astro_phys_chem, $math, $earth, $mixed);
+$areas = array($biomed, $astro_phys_chem, $math, $earth, $mixed, $cogsci);
 
 ?>

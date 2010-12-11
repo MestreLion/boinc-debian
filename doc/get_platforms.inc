@@ -1,72 +1,132 @@
 <?php
 
+ini_set('display_errors', 'stdout');
+error_reporting(E_ALL);
+
 // Mediawiki extension to show a project's platforms.
 // The platforms for a given project are stored in a file platforms/URL
 //
-function parse_next_element($xml, $tag, &$cursor) {
-    $element = null;
-    $closetag = "</" . substr($tag,1);
-    $pos = substr($xml,$cursor);
-    $x = strstr($pos, $tag);
-    if ($x) {
-        if (strstr($tag, "/>")) return $tag;
-        $y = substr($x, strlen($tag));
-        $n = strpos($y, $closetag);
-        if ($n) {
-            $element = substr($y, 0, $n);
-        }
-        $cursor = (strlen($xml) - strlen($x)) + strlen($tag) + strlen($closetag) + strlen($element);
-    }
-    return trim($element);
-}
 
 function friendly_name($p) {
-    switch ($p) {
-    case 'i686-pc-linux-gnu': return 'Linux/x86';
-    case 'windows_intelx86': return 'Windows';
-    case 'x86_64-pc-linux-gnu': return 'Linux/x64';
-    case 'i686-apple-darwin': return 'Mac OS X';
-    case 'x86_64-apple-darwin': return 'Mac OS X 64-bit';
-    case 'powerpc-apple-darwin': return 'Mac OS X (PowerPC)';
-    case 'sparc-sun-solaris2.7': return 'SPARC Solaris 2.7';
-    case 'sparc-sun-solaris': return 'SPARC Solaris';
-    case 'powerpc64-unknown-linux-gnu': return 'Linux/PowerPC64';
-    case 'windows_x86_64': return 'Windows/x64';
-    case 'powerpc64-ps3-linux-gnu': return 'Playstation3/Linux';
-    case 'x86_64-unknown-linux-gnu': return null;
+    $x = explode('[', $p);
+    $pc = "";
+    if (sizeof($x) > 1) {
+        $p = $x[0];
+        $pc = substr($x[1], 0, -1);
     }
+
     if (strstr($p, "fubar")) return null;
-    return $p;
+    if ($p == 'x86_64-unknown-linux-gnu') return null;
+    $q = $p;
+    switch ($p) {
+    case 'i686-pc-linux-gnu': $q = 'Linux/x86'; break;
+    case 'windows_intelx86': $q = 'Windows'; break;
+    case 'x86_64-pc-linux-gnu': $q = 'Linux/x64'; break;
+    case 'i686-apple-darwin': $q = 'Mac OS X'; break;
+    case 'x86_64-apple-darwin': $q = 'Mac OS X 64-bit'; break;
+    case 'powerpc-apple-darwin': $q = 'Mac OS X (PowerPC)'; break;
+    case 'sparc-sun-solaris2.7': $q = 'SPARC Solaris 2.7'; break;
+    case 'sparc-sun-solaris': $q = 'SPARC Solaris'; break;
+    case 'powerpc64-unknown-linux-gnu': $q = 'Linux/PowerPC64'; break;
+    case 'windows_x86_64': $q = 'Windows/x64'; break;
+    case 'powerpc64-ps3-linux-gnu': $q = 'Playstation3/Linux'; break;
+    case 'i386-portbld-freebsd': $q = 'FreeBSD/x86'; break;
+    case 'windows_amd64': $q = 'Windows/Opteron'; break;
+    case 'x86_64-pc-solaris': $q = 'Solaris/x64'; break;
+    case 'windows_intelx86_64': $q = 'Windows/x64'; break;
+    }
+    if (strlen($pc)) {
+        if (strstr($pc, 'cuda')) $q .= " (NVIDIA GPU)";
+        else if (strstr($pc, 'ati')) $q .= " (ATI GPU)";
+        else if (strstr($pc, 'mt')) $q .= " (multicore)";
+    }
+    return $q;
 }
 
-// 
-function get_platforms($url) {
+// get platforms from get_project_config.php (preferred method)
+//
+// format is either
+//
+// <project_config>
+// <platforms>
+//  <platform>windows_intelx86</platform>
+//  ...
+//
+// or
+//
+// <project_config>
+// <platforms>
+//   <platform>
+//    <platform_name>windows_intelx86</platform_name>
+//    <user_friendly_name>Windows</user_friendly_name>
+//    [<plan_class>xxx</plan_class>]
+//   </platform>
+//   ...
+//
+function get_platforms(&$url) {
     $url .= 'get_project_config.php';
-    $x = file_get_contents($url);
+    $x = @file_get_contents($url);
     if (!$x) return null;
-    $cursor = 0;
-    $list = null;
-    $tag = '<platform_name>';
-    if (!strstr($x, "<platform_name>")) $tag = '<platform>';
-    while (1) {
-        $p = parse_next_element($x, $tag, $cursor);
-        if (!$p) break;
-        $list[] = $p;
+    libxml_use_internal_errors(true);
+    $s = simplexml_load_string($x);
+    if (!$s) return null;
+    if (array_key_exists('rpc_prefix', $s)) {
+        $url = $s->rpc_prefix;
+    }
+    if (!array_key_exists('platforms', $s)) {
+        return null;
+    }
+    $p = $s->platforms;
+    //print_r($p);
+    //echo "---\n";
+    //foreach ($p->children() as $x) {
+    //    echo $x;
+    //}
+    if (!array_key_exists('platform', $p)) {
+        return null;
+    }
+    if (sizeof($p->platform) == 0) {
+        return null;
+    }
+    $list = array();
+    if (array_key_exists(0, $p->platform[0])) {
+        foreach ($p->children() as $r) {
+            $list[] = (string)$r;
+        }
+    } else {
+        foreach ($p->platform as $r) {
+            if (array_key_exists('plan_class', $r)) {
+                $list[] = (string)$r->platform_name.'['.(string)$r->plan_class.']';
+            } else {
+                $list[] = (string)$r->platform_name;
+            }
+        }
     }
     return array_unique($list);
 }
 
+// get platforms from app.php?xml=1 (deprecated)
+//
 function get_platforms2($url) {
     $url .= 'apps.php?xml=1';
-    $x = file_get_contents($url);
+    $x = @file_get_contents($url);
     if (!$x) return null;
-    $cursor = 0;
+    libxml_use_internal_errors(true);
+    $s = simplexml_load_string($x);
     $list = null;
-    $tag = '<platform_short>';
-    while (1) {
-        $p = parse_next_element($x, $tag, $cursor);
-        if (!$p) break;
-        $list[] = $p;
+    foreach($s->application as $a) {
+        foreach ($a->version as $v) {
+            if (!array_key_exists('platform_short', $v)) continue;
+            $p = $v->platform_short[0];
+            $pc = "";
+            if (array_key_exists('plan_class', $v)) {
+                $pc = $v->plan_class[0];
+            }
+            if (strlen($pc)) {
+                $p = $p.'['.$pc.']';
+            }
+            $list[] = (string)$p;
+        }
     }
     return array_unique($list);
 }
@@ -125,7 +185,13 @@ function get_platforms_string($url) {
     return make_friendly_string($l);
 }
 
-//echo get_platforms_string("http://www.worldcommunitygrid.org/");
+//$u = "http://www.worldcommunitygrid.org/";
+//$u = "http://setiathome.berkeley.edu/";
+//$x = get_platforms($u);
+//print_r($x);
+//echo get_platforms_string("http://setiathome.berkeley.edu/");
+//echo get_platforms_string("http://dist.ist.tugraz.at/cape5/");
+//print_r(get_platforms2("http://www.primegrid.com/"));
 
 function wfPlatforms() {
     global $wgParser;

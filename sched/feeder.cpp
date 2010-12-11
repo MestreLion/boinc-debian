@@ -110,7 +110,9 @@ using std::vector;
 #include "synch.h"
 #include "util.h"
 #include "str_util.h"
+#include "svn_version.h"
 
+#include "credit.h"
 #include "sched_config.h"
 #include "sched_shmem.h"
 #include "sched_util.h"
@@ -121,6 +123,7 @@ using std::vector;
 #endif
 
 #define DEFAULT_SLEEP_INTERVAL  5
+#define AV_UPDATE_PERIOD      600
 
 #define REREAD_DB_FILENAME      "reread_db"
 
@@ -137,17 +140,20 @@ bool all_apps = false;
 int purge_stale_time = 0;
 int num_work_items = MAX_WU_RESULTS;
 int enum_limit = MAX_WU_RESULTS*2;
+
+// The following defined if -allapps:
 int *enum_sizes;
-    // if -allapps, the enum size per app; else not used
+    // the enum size per app; else not used
 int *app_indices;
-    // if -allapps, this maps slot number to app index.
-    // otherwise it's all zero
+    // maps slot number to app index, else all zero
 int napps;
-    // if -allapps, the number of apps
-    // otherwise one
+    // number of apps, else one
+
 HR_INFO hr_info;
 bool using_hr;
     // true iff any app is using HR
+bool is_main_feeder = true;
+    // false if using --mod or --wmod and this one isn't 0
 
 void signal_handler(int) {
     log_messages.printf(MSG_NORMAL, "Signaled by simulator\n");
@@ -162,6 +168,7 @@ int PERF_INFO::read_file() {
     if (!f) return ERR_FOPEN;
     int n = fscanf(f, "%lf %lf", &host_fpops_mean, &host_fpops_stdev);
     fclose(f);
+    if (n != 2) return -1;
     return 0;
 }
 
@@ -234,7 +241,7 @@ void hr_count_slots() {
 // If reach end of enum for second time on this array scan, return false
 // 
 static bool get_job_from_db(
-    DB_WORK_ITEM& wi,    // if -allapps, array of enumerators; else just one
+    DB_WORK_ITEM& wi,    // enumerator to get job from
     int app_index,       // if using -allapps, the app index
     int& enum_phase,
     int& ncollisions
@@ -357,7 +364,13 @@ static bool get_job_from_db(
 void weighted_interleave(double* weights, int n, int k, int* v, int* count) {
     double *x = (double*) calloc(n, sizeof(double));
     int i;
-    for (i=0; i<n; i++) count[i] = 0;
+    for (i=0; i<n; i++) {
+        // make sure apps with no weight get no slots
+        if (weights[i] == 0) {
+            x[i] = 1e-100;
+        }
+        count[i] = 0;
+    }
     for (i=0; i<k; i++) {
         int best = 0;
         for (int j=1; j<n; j++) {
@@ -374,7 +387,7 @@ void weighted_interleave(double* weights, int n, int k, int* v, int* count) {
 
 // update the job size statistics fields of array entries
 //
-static void update_stats() {
+static void update_job_stats() {
     int i, n=0;
     double sum=0, sum_sqr=0;
 
@@ -447,7 +460,9 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
                     wi.res_id, i
                 );
                 wu_result.resultid = wi.res_id;
-                wu_result.result_priority = wi.res_priority;
+                wu_result.res_priority = wi.res_priority;
+                wu_result.res_server_state = wi.res_server_state;
+                wu_result.res_report_deadline = wi.res_report_deadline;
                 wu_result.workunit = wi.wu;
                 wu_result.state = WR_STATE_PRESENT;
                 // If the workunit has already been allocated to a certain
@@ -459,12 +474,10 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
                 } else {
                     wu_result.infeasible_count = 0;
                 }
-                // If using the reliable mechanism, then set the results for
-                // workunits older then the specificed time
-                // as needing a reliable host
+                // set the need_reliable flag if needed
                 //
-                wu_result.need_reliable = 0;
-                if (config.reliable_on_priority && wu_result.result_priority >= config.reliable_on_priority) {
+                wu_result.need_reliable = false;
+                if (config.reliable_on_priority && wu_result.res_priority >= config.reliable_on_priority) {
                     wu_result.need_reliable = true;
                 }
                 wu_result.time_added_to_shared_memory = time(0);
@@ -478,7 +491,7 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
             struct stat s;
             char buf[256];
             sprintf(buf, "/proc/%d", pid);
-            log_messages.printf(MSG_NORMAL, "checking pid %d", pid);
+            log_messages.printf(MSG_NORMAL, "checking pid %d\n", pid);
             if (stat(buf, &s)) {
                 wu_result.state = WR_STATE_PRESENT;
                 log_messages.printf(MSG_NORMAL,
@@ -503,7 +516,10 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
 
 void feeder_loop() {
     vector<DB_WORK_ITEM> work_items;
+    double next_av_update_time=0;
     
+    // may need one enumeration per app; create vector
+    //
     for (int i=0; i<napps; i++) {
         DB_WORK_ITEM* wi = new DB_WORK_ITEM();
         work_items.push_back(*wi);
@@ -526,10 +542,21 @@ void feeder_loop() {
 #endif
         } else {
             if (config.job_size_matching) {
-                update_stats();
+                update_job_stats();
             }
         }
 
+        double now = dtime();
+        if (is_main_feeder && now > next_av_update_time) {
+            int retval = update_av_scales(ssp);
+            if (retval) {
+                log_messages.printf(MSG_CRITICAL,
+                    "update_av_scales failed: %d\n", retval
+                );
+                exit(1);
+            }
+            next_av_update_time = now + AV_UPDATE_PERIOD;
+        }
         fflush(stdout);
         check_stop_daemons();
         check_reread_trigger();
@@ -623,10 +650,30 @@ void show_state(int) {
 }
 
 void show_version() {
-    log_messages.printf(MSG_NORMAL,"Version %d.%d.%d\n",
-        BOINC_MAJOR_VERSION,
-        BOINC_MINOR_VERSION,
-        BOINC_RELEASE
+    log_messages.printf(MSG_NORMAL, "%s\n", SVN_VERSION);
+}
+
+void usage(char *name) {
+    fprintf(stderr,
+        "%s creates a shared memory segment containing DB info,\n"
+        "including an array of work items (results/workunits to send).\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options:\n"
+        "  [ -d X | --debug_level X]         Set Debug level to X\n"
+        "  [ --allapps ]                     Interleave results from all applications uniformly.\n"
+        "  [ --random_order ]                order by \"random\" field of result\n"
+        "  [ --priority_order ]              order by decreasing \"priority\" field of result\n"
+        "  [ --priority_order_create_time ]  order by priority, then by increasing WU create time\n"
+        "  [ --purge_stale ]                 remove work items from the shared memory segment\n"
+        "                                    that have been there for longer then x minutes\n"
+        "                                    but haven't been assigned\n"
+        "  [ --appids a1{,a2} ]              get work only for appids a1,... (comma-separated list)\n"
+        "  [ --mod n i ]                     handle only results with (id mod n) == i\n"
+        "  [ --wmod n i ]                    handle only workunits with (id mod n) == i\n"
+        "  [ --sleep_interval x ]            sleep x seconds if nothing to do\n"
+        "  [ -h | --help ]                   Shows this help text.\n"
+        "  [ -v | --version ]                Shows version information.\n",
+        name, name
     );
 }
 
@@ -634,7 +681,75 @@ int main(int argc, char** argv) {
     int i, retval;
     void* p;
     char path[256];
-    char* appids=NULL;
+
+    for (i=1; i<argc; i++) {
+        if (is_arg(argv[i], "d") || is_arg(argv[i], "debug_level")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int dl = atoi(argv[i]);
+            log_messages.set_debug_level(dl);
+            if (dl == 4) g_print_queries = true;
+        } else if (is_arg(argv[i], "random_order")) {
+            order_clause = "order by r1.random ";
+        } else if (is_arg(argv[i], "allapps")) {
+            all_apps = true;
+        } else if (is_arg(argv[i], "priority_order")) {
+            order_clause = "order by r1.priority desc ";
+        } else if (is_arg(argv[i], "priority_order_create_time")) {
+            order_clause = "order by r1.priority desc, r1.workunitid";
+        } else if (is_arg(argv[i], "purge_stale")) {
+            purge_stale_time = atoi(argv[++i])*60;
+        } else if (is_arg(argv[i], "appids")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            strcat(mod_select_clause, " and workunit.appid in (");
+            strcat(mod_select_clause, argv[i]);
+            strcat(mod_select_clause, ")");
+        } else if (is_arg(argv[i], "mod")) {
+            if (!argv[i+1] || !argv[i+2]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires two arguments\n\n", argv[i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int n = atoi(argv[++i]);
+            int j = atoi(argv[++i]);
+            sprintf(mod_select_clause, "and r1.id %% %d = %d ", n, j);
+            is_main_feeder = (j==0);
+        } else if (is_arg(argv[i], "wmod")) {
+            if (!argv[i+1] || !argv[i+2]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires two arguments\n\n", argv[i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int n = atoi(argv[++i]);
+            int j = atoi(argv[++i]);
+            sprintf(mod_select_clause, "and workunit.id %% %d = %d ", n, j);
+            is_main_feeder = (j==0);
+        } else if (is_arg(argv[i], "sleep_interval")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            sleep_interval = atof(argv[i]);
+        } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
+            show_version();
+            exit(0);
+        } else if (is_arg(argv[i], "h") || is_arg(argv[i], "help")) {
+            usage(argv[0]);
+            exit(0);
+        } else {
+            log_messages.printf(MSG_CRITICAL, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
+        }
+    }
 
     retval = config.parse_file();
     if (retval) {
@@ -645,45 +760,6 @@ int main(int argc, char** argv) {
     }
 
     unlink(config.project_path(REREAD_DB_FILENAME));
-
-    if (argc == 2 && !strcmp(argv[1], "--version")) {
-        show_version();
-        exit(0);
-    }
-    for (i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-d")) {
-            log_messages.set_debug_level(atoi(argv[++i]));
-        } else if (!strcmp(argv[i], "-random_order")) {
-            order_clause = "order by r1.random ";
-        } else if (!strcmp(argv[i], "-allapps")) {
-            all_apps = true;
-        } else if (!strcmp(argv[i], "-priority_order")) {
-            order_clause = "order by r1.priority desc ";
-        } else if (!strcmp(argv[i], "-priority_order_create_time")) {
-            order_clause = "order by r1.priority desc, r1.workunitid";
-        } else if (!strcmp(argv[i], "-purge_stale")) {
-            purge_stale_time = atoi(argv[++i])*60;
-        } else if (!strcmp(argv[i], "-appids")) {
-           strcat(mod_select_clause, " and workunit.appid in (");
-           strcat(mod_select_clause, argv[++i]);
-           strcat(mod_select_clause, ")");
-        } else if (!strcmp(argv[i], "-mod")) {
-            int n = atoi(argv[++i]);
-            int j = atoi(argv[++i]);
-            sprintf(mod_select_clause, "and r1.id %% %d = %d ", n, j);
-        } else if (!strcmp(argv[i], "-wmod")) {
-            int n = atoi(argv[++i]);
-            int j = atoi(argv[++i]);
-            sprintf(mod_select_clause, "and workunit.id %% %d = %d ", n, j);
-        } else if (!strcmp(argv[i], "-sleep_interval")) {
-            sleep_interval = atof(argv[++i]);
-        } else {
-            log_messages.printf(MSG_CRITICAL,
-                "bad cmdline arg: %s\n", argv[i]
-            );
-            exit(1);
-        }
-    }
 
     log_messages.printf(MSG_NORMAL, "Starting\n");
     show_version();
@@ -759,17 +835,17 @@ int main(int argc, char** argv) {
         enum_sizes = (int*) calloc(ssp->napps, sizeof(int));
         double* weights = (double*) calloc(ssp->napps, sizeof(double));
         int* counts = (int*) calloc(ssp->napps, sizeof(int));
-        if (ssp->app_weights == 0) {
+        if (ssp->app_weight_sum == 0) {
             for (i=0; i<ssp->napps; i++) {
                 ssp->apps[i].weight = 1;
             }
-            ssp->app_weights = ssp->napps;
+            ssp->app_weight_sum = ssp->napps;
         }
         for (i=0; i<ssp->napps; i++) {
             weights[i] = ssp->apps[i].weight;
         }
         for (i=0; i<ssp->napps; i++) {
-            enum_sizes[i] = (int) floor(0.5 + enum_limit*(weights[i])/(ssp->app_weights));
+            enum_sizes[i] = (int) floor(0.5 + enum_limit*(weights[i])/(ssp->app_weight_sum));
         }
         weighted_interleave(
             weights, ssp->napps, ssp->max_wu_results, app_indices, counts
@@ -779,6 +855,13 @@ int main(int argc, char** argv) {
     }
 
     hr_init();
+
+    if (using_hr && strlen(order_clause)) {
+        log_messages.printf(MSG_CRITICAL,
+            "Note: ordering options will not apply to apps for which homogeneous redundancy is used\n"
+        );
+    }
+
     if (config.job_size_matching) {
         retval = ssp->perf_info.read_file();
         if (retval) {
@@ -794,4 +877,4 @@ int main(int argc, char** argv) {
     feeder_loop();
 }
 
-const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 18256 2009-06-02 00:22:45Z davea $";
+const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 22511 2010-10-14 20:50:22Z romw $";

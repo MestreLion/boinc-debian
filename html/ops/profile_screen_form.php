@@ -24,8 +24,6 @@ require_once("../project/project.inc");
 
 db_init();
 
-$logged_in_user = get_logged_in_user();
-
 function buttons($i) {
     echo "
         <input type=\"radio\" name=\"user$i\" value=\"0\"> skip <br>
@@ -73,7 +71,7 @@ while ($profile = mysql_fetch_object($result)) {
         <br>
     ";
     echo "</td><td><table border=2> ";
-    show_profile($profile, $logged_in_user, true);
+    show_profile($profile, $g_logged_in_user, true);
     echo "</table></td></tr>\n";
     echo "<input type=\"hidden\" name=\"userid$n\" value=\"$profile->userid\">\n";
     $n++;
@@ -95,5 +93,5 @@ echo "
 ";
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: profile_screen_form.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: profile_screen_form.php 22197 2010-08-11 18:52:11Z boincadm $";  //Generated automatically - do not edit
 ?>

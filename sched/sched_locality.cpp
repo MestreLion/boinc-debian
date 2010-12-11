@@ -47,6 +47,17 @@
 
 #define VERBOSE_DEBUG
 
+// get filename from result name
+//
+
+static int extract_filename(char* in, char* out) {
+    strcpy(out, in);
+    char* p = strstr(out, "__");
+    if (!p) return -1;
+    *p = 0;
+    return 0;
+}
+
 // returns zero if there is a file we can delete.
 //
 int delete_file_from_host() {
@@ -91,11 +102,11 @@ int delete_file_from_host() {
         } else if (g_reply->disk_limits.min_free != 0.0) {
             strcat(buf, "Review preferences for minimum disk free space allowed.");
         }
-        g_reply->insert_message(USER_MESSAGE(buf, "high"));
+        g_reply->insert_message(buf, "notice");
         g_reply->set_delay(DELAY_DISK_SPACE);
         return 1;
     }
-    
+
     // pick a data file to delete.
     // Do this deterministically so that we always tell host
     // to delete the same file.
@@ -120,10 +131,10 @@ int delete_file_from_host() {
     // that depends upon this file, before it will be removed by core client.
     //
     sprintf(buf, "BOINC will delete file %s when no longer needed", fi.name);
-    g_reply->insert_message(USER_MESSAGE(buf, "low"));
+    g_reply->insert_message(buf, "low");
     g_reply->set_delay(DELAY_DELETE_FILE);
     return 0;
-}   
+}
 
 // returns true if the host already has the file, or if the file is
 // included with a previous result being sent to this host.
@@ -183,7 +194,7 @@ bool host_has_file(char *filename, bool skip_last_wu) {
         }
         return true;
     }
- 
+
     return false;
 }
 
@@ -239,7 +250,7 @@ int decrement_disk_space_locality( WORKUNIT& wu) {
     }
 
     filesize=buf.st_size;
-    
+
     if (filesize<wu.rsc_disk_bound) {
         g_wreq->disk_available -= (wu.rsc_disk_bound-filesize);
         if (config.debug_locality) {
@@ -250,7 +261,7 @@ int decrement_disk_space_locality( WORKUNIT& wu) {
         }
         return 0;
     }
-                  
+
     log_messages.printf(MSG_CRITICAL,
         "File %s size %d bytes > wu.rsc_disk_bound for WU#%d (%s)\n",
         path, filesize, wu.id, wu.name
@@ -271,27 +282,31 @@ static int possibly_send_result(DB_RESULT& result) {
     char buf[256];
     BEST_APP_VERSION* bavp;
 
+    g_wreq->no_jobs_available = false;
+
     retval = wu.lookup_id(result.workunitid);
     if (retval) return ERR_DB_NOT_FOUND;
 
-    bavp = get_app_version(wu, true);
+    bavp = get_app_version(wu, true, false);
 
-    if (!bavp && anonymous(g_request->platforms.list[0])) {
+    if (!bavp && is_anonymous(g_request->platforms.list[0])) {
         char help_msg_buf[512];
         sprintf(help_msg_buf,
             "To get more %s work, finish current work, stop BOINC, remove app_info.xml file, and restart.",
             config.long_name
         );
-        g_reply->insert_message(USER_MESSAGE(help_msg_buf, "high"));
+        g_reply->insert_message(help_msg_buf, "notice");
         g_reply->set_delay(DELAY_ANONYMOUS);
     }
 
     if (!bavp) return ERR_NO_APP_VERSION;
 
     APP* app = ssp->lookup_app(wu.appid);
-    if (wu_is_infeasible_fast(wu, *app, *bavp)) {
-        return ERR_INSUFFICIENT_RESOURCE;
-    }
+    retval = wu_is_infeasible_fast(
+        wu, result.server_state, result.report_deadline, result.priority,
+        *app, *bavp
+    );
+    if (retval) return retval;
 
     if (config.one_result_per_user_per_wu) {
         sprintf(buf, "where userid=%d and workunitid=%d", g_reply->user.id, wu.id);
@@ -303,101 +318,138 @@ static int possibly_send_result(DB_RESULT& result) {
     return add_result_to_reply(result, wu, bavp, true);
 }
 
-// returns true if the work generator can not make more work for this
-// file, false if it can.
+// Retrieves and returns a trigger instance identified by the given
+// fileset name.
 //
-static bool work_generation_over(char *filename) {
-    return boinc_file_exists(config.project_path("locality_scheduling/no_work_available/%s", filename));
+static bool retrieve_single_trigger_by_fileset_name(char *fileset_name, DB_SCHED_TRIGGER& trigger) {
+    int retval = 0;
+
+    // retrieve trigger
+    retval = trigger.select_unique_by_fileset_name(fileset_name);
+    if(!retval) {
+        if (config.debug_locality) {
+            log_messages.printf(MSG_DEBUG,
+                    "[locality] trigger %s state after retrieval: nw=%i wa=%i nwa=%i wsr=%i\n",
+                    fileset_name,
+                    trigger.need_work,
+                    trigger.work_available,
+                    trigger.no_work_available,
+                    trigger.working_set_removal
+            );
+        }
+
+        // successful retrieval
+        return true;
+    }
+    else if(retval == ERR_DB_NOT_FOUND) {
+        log_messages.printf(MSG_NORMAL,
+                "[locality] trigger retrieval for filename %s returned empty set\n", fileset_name
+        );
+        return false;
+    }
+    else {
+        log_messages.printf(MSG_CRITICAL,
+                "[locality] trigger retrieval for filename %s failed with error %i\n", fileset_name, retval
+        );
+        return false;
+    }
 }
 
 // Ask the WU generator to make more WUs for this file.
 // Returns nonzero if can't make more work.
 // Returns zero if it *might* have made more work
-// (no way to be sure if it suceeded).
+// (no way to be sure if it succeeded).
 //
 int make_more_work_for_file(char* filename) {
-    const char *fullpath;
+	int retval = 0;
+    DB_SCHED_TRIGGER trigger;
 
-    if (work_generation_over(filename)) {
-        // since we found this file, it means that no work remains for this WU.
-        // So give up trying to interact with the WU generator.
+
+    if (!retrieve_single_trigger_by_fileset_name(filename, trigger)) {
+    	// trigger retrieval failed (message logged by previous method)
+        return -1;
+    }
+
+    // Check if there's remaining work for this WU
+    if (trigger.no_work_available) {
+        // Give up trying to interact with the WU generator.
         if (config.debug_locality) {
             log_messages.printf(MSG_NORMAL,
-                "[locality] work generator says no work remaining for file %s\n", filename
+                "[locality] work generator says no work remaining for trigger %s\n", filename
             );
         }
         return -1;
     }
-        
-    // open and touch a file in the need_work/
-    // directory as a way of indicating that we need work for this file.
-    // If this operation fails, don't worry or tarry!
-    //
-    fullpath = config.project_path("locality_scheduling/need_work/%s", filename);
-    if (boinc_touch_file(fullpath)) {
-        log_messages.printf(MSG_CRITICAL, "unable to touch %s\n", fullpath);
+
+//    // FIXME: should we reset these? The old code didn't do any consistency checks...
+//    trigger.work_available = false;
+//    trigger.no_work_available = false;
+//    trigger.working_set_removal = false;
+
+    // set trigger state to need_work as a way of indicating that we need work
+    // for this fileset. If this operation fails, don't worry or tarry!
+    retval = trigger.update_single_state(DB_SCHED_TRIGGER::state_need_work, true);
+    if (retval) {
+        log_messages.printf(MSG_CRITICAL, "unable to set need_work state for trigger %s (error: %d)\n", filename, retval);
         return -1;
     }
 
-    if (config.debug_locality) {
-        log_messages.printf(MSG_NORMAL,
-            "[locality] touched %s: need work for file %s\n", fullpath, filename
-        );
-    }
     return 0;
 }
 
 // Get a randomly-chosen filename in the working set.
 //
 // We store a static list to prevent duplicate filename returns
-// and to cut down on invocations of glob
+// and to cut down on DB queries
 //
 //
-
 std::vector<std::string> filenamelist;
 int list_type = 0; // 0: none, 1: slowhost, 2: fasthost
 
 static void build_working_set_namelist(bool slowhost) {
-    glob_t globbuf;
-    int retglob;
+    int retval = 0;
     unsigned int i;
-    const char *pattern = config.project_path("locality_scheduling/work_available/*");
+    const char *pattern = ".*";
+    bool use_pattern = false;
     const char *errtype = "unrecognized error";
     const char *hosttype = "fasthost";
+    DB_FILESET_SCHED_TRIGGER_ITEM_SET filesets;
 
 #ifdef EINSTEIN_AT_HOME
     if (slowhost) {
         hosttype = "slowhost";
-        pattern = config.project_path("locality_scheduling/work_available/*_0[0-3]*");
+        pattern = ".*_0[0-3].*";
+        use_pattern = true;
     }
 #endif
 
-    retglob=glob(pattern, GLOB_ERR|GLOB_NOSORT|GLOB_NOCHECK, NULL, &globbuf);
-    
-    if (retglob || !globbuf.gl_pathc) {
-        errtype = "no directory or not readable";
-    } else {
-        if (globbuf.gl_pathc==1 && !strcmp(pattern, globbuf.gl_pathv[0])) {
-            errtype = "empty directory";
-        } else {
-            for (i=0; i<globbuf.gl_pathc; i++) {
-                filenamelist.push_back(globbuf.gl_pathv[i]);
-            }
-            if (config.debug_locality) {
-                log_messages.printf(MSG_NORMAL,
-                    "[locality] build_working_set_namelist(%s): pattern %s has %d matches\n",
-                    hosttype, pattern, globbuf.gl_pathc
-                );
-            }
-            globfree(&globbuf);
-            return;
+    if(use_pattern) {
+        retval = filesets.select_by_name_state(pattern, true, DB_SCHED_TRIGGER::state_work_available, true);
+    }
+    else {
+        retval = filesets.select_by_name_state(NULL, false, DB_SCHED_TRIGGER::state_work_available, true);
+    }
+
+    if (retval == ERR_DB_NOT_FOUND) {
+        errtype = "empty directory";
+    }
+    else if(!retval) {
+        for (i=0; i<filesets.items.size(); i++) {
+            filenamelist.push_back(filesets.items[i].fileset.name);
         }
+        if (config.debug_locality) {
+            log_messages.printf(MSG_NORMAL,
+                "[locality] build_working_set_namelist(%s): pattern %s has %d matches\n",
+                hosttype, pattern, (int)filesets.items.size()
+            );
+        }
+        return;
     }
 
     log_messages.printf(MSG_CRITICAL,
         "build_working_set_namelist(%s): pattern %s not found (%s)\n", hosttype, pattern, errtype
     );
-    globfree(&globbuf);        
+
     return;
 }
 
@@ -435,28 +487,18 @@ static int get_working_set_filename(char *filename, bool slowhost) {
         filenamelist[random_file_num] = filenamelist.back();
         filenamelist.pop_back();
 
-        // locate trailing file name
-        //
-        std::string slash = "/";
-        std::string::size_type last_slash_pos = thisname.rfind(slash);
-        if (last_slash_pos == std::string::npos) {
-            errtype = "no trailing slash";
-        } else {
-            // extract file name
-            thisname = thisname.substr(last_slash_pos);
-            if (thisname.length() < 2) {
+        // final check
+        if (thisname.length() < 1) {
                 errtype = "zero length filename";
-            } else {
-                thisname = thisname.substr(1);
-                strcpy(filename, thisname.c_str());
-                if (config.debug_locality) {
-                    log_messages.printf(MSG_NORMAL,
-                        "[locality] get_working_set_filename(%s): returning %s\n",
-                        hosttype, filename
-                    );
-                }
-                return 0;
+        } else {
+            strcpy(filename, thisname.c_str());
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] get_working_set_filename(%s): returning %s\n",
+                    hosttype, filename
+                );
             }
+            return 0;
         }
     }
 
@@ -467,9 +509,25 @@ static int get_working_set_filename(char *filename, bool slowhost) {
 }
 
 
-static void flag_for_possible_removal(char* filename) {
-    boinc_touch_file(config.project_path("locality_scheduling/working_set_removal/%s", filename));
-    return;
+static void flag_for_possible_removal(char* fileset_name) {
+	int retval = 0;
+    DB_SCHED_TRIGGER trigger;
+
+    if (!retrieve_single_trigger_by_fileset_name(fileset_name, trigger)) {
+    	// trigger retrieval failed (message logged by previous method)
+        return;
+    }
+
+//    // FIXME: should we reset these? The old code didn't do any consistency checks...
+//    trigger.need_work = false;
+//    trigger.work_available = false;
+//    trigger.no_work_available = false;
+
+    // set trigger state to working_set_removal
+    retval = trigger.update_single_state(DB_SCHED_TRIGGER::state_working_set_removal, true);
+    if (retval) {
+        log_messages.printf(MSG_CRITICAL, "unable to set working_set_removal state for trigger %s (error: %d)\n", fileset_name, retval);
+    }
 }
 
 // The client has (or will soon have) the given file.
@@ -536,24 +594,24 @@ static int send_results_for_file(
             //
 #ifdef USE_REGEXP
             sprintf(query,
-                "where name like binary '%s%%' and id>%d and workunitid<>%d and server_state=%d order by id limit 1 ",
+                "INNER JOIN (SELECT id FROM result WHERE name like binary '%s%%' and id>%d and workunitid<>%d and server_state=%d order by id limit 1) AS single USING (id) ",
                 escaped_pattern, prev_result.id, prev_result.workunitid, RESULT_SERVER_STATE_UNSENT
             );
 #else
             sprintf(query,
-                "where name>binary '%s__' and name<binary '%s__~' and id>%d and workunitid<>%d and server_state=%d order by id limit 1 ",
+                "INNER JOIN (SELECT id FROM result WHERE name>binary '%s__' and name<binary '%s__~' and id>%d and workunitid<>%d and server_state=%d order by id limit 1) AS single USING (id) ",
                 filename, filename, prev_result.id, prev_result.workunitid, RESULT_SERVER_STATE_UNSENT
             );
 #endif
         } else {
 #ifdef USE_REGEXP
             sprintf(query,
-                "where name like binary '%s%%' and id>%d and server_state=%d order by id limit 1 ",
+                "INNER JOIN (SELECT id FROM result WHERE name like binary '%s%%' and id>%d and server_state=%d order by id limit 1) AS single USING (id) ",
                 escaped_pattern, prev_result.id, RESULT_SERVER_STATE_UNSENT
             );
 #else
             sprintf(query,
-                "where name>binary '%s__' and name<binary '%s__~' and id>%d and server_state=%d order by id limit 1 ",
+                "INNER JOIN (SELECT id FROM result WHERE name>binary '%s__' and name<binary '%s__~' and id>%d and server_state=%d order by id limit 1) AS single USING (id) ",
                 filename, filename, prev_result.id, RESULT_SERVER_STATE_UNSENT
             );
 #endif
@@ -568,7 +626,7 @@ static int send_results_for_file(
 
         if (query_retval) {
             int make_work_retval;
-          
+
             // no unsent results are available for this file
             //
             boinc_db.commit_transaction();
@@ -582,21 +640,21 @@ static int send_results_for_file(
                     "[locality] make_more_work_for_file(%s, %d)=%d\n", filename, i, make_work_retval
                 );
             }
-          
+
             if (make_work_retval) {
                 // can't make any more work for this file
 
                 if (config.one_result_per_user_per_wu) {
 
-                    // do an EXPENSIVE db query 
+                    // do an EXPENSIVE db query
 #ifdef USE_REGEXP
                     sprintf(query,
-                        "where server_state=%d and name like binary '%s%%' limit 1",
+                        "INNER JOIN (SELECT id FROM result WHERE server_state=%d and name like binary '%s%%' limit 1) AS single USING (id)",
                         RESULT_SERVER_STATE_UNSENT, escaped_pattern
                     );
 #else
                     sprintf(query,
-                        "where server_state=%d and name>binary '%s__' and name<binary '%s__~' limit 1",
+                        "INNER JOIN (SELECT id FROM result WHERE server_state=%d and name>binary '%s__' and name<binary '%s__~' limit 1) AS single USING (id)",
                         RESULT_SERVER_STATE_UNSENT, filename, filename
                     );
 #endif
@@ -632,7 +690,7 @@ static int send_results_for_file(
             // wait a bit and try again to find a suitable unsent result
             sleep(config.locality_scheduling_wait_period);
             sleep_made_no_work=1;
-          
+
         } // query_retval
         else {
             int retval_send;
@@ -686,7 +744,7 @@ static int send_results_for_file(
         } // query_retval
 
     } // loop over 0<i<100
-    return 0;   
+    return 0;
 }
 
 
@@ -729,14 +787,14 @@ static int send_new_file_work_deterministic_seeded(
         // an alternative here is to add ANOTHER index on name, server_state
         // to the result table.
         sprintf(query,
-            "where server_state=%d and name>'%s' order by name limit 1",
+            "INNER JOIN (SELECT id FROM result WHERE server_state=%d and name>'%s' order by name limit 1) AS single USING (id)",
             RESULT_SERVER_STATE_UNSENT, min_resultname
         );
 #endif
 
         sprintf(query,
-            "where name>'%s' order by name limit 1",
-             min_resultname
+            "INNER JOIN (SELECT id FROM result WHERE name>'%s' order by name limit 1) AS single USING (id)",
+            min_resultname
         );
 
         retval = result.lookup(query);
@@ -754,7 +812,7 @@ static int send_new_file_work_deterministic_seeded(
 
         if (retval==ERR_NO_APP_VERSION || retval==ERR_INSUFFICIENT_RESOURCE) return retval;
 
-        if (nsent>0 || !work_needed(true)) break; 
+        if (nsent>0 || !work_needed(true)) break;
         // construct a name which is lexically greater than the name of any result
         // which uses this file.
         sprintf(min_resultname, "%s__~", filename);
@@ -764,6 +822,7 @@ static int send_new_file_work_deterministic_seeded(
 
 
 static bool is_host_slow() {
+#if 0
     // 0.0013 defines about the slowest 20% of E@H hosts.
     // should make this a config parameter in the future,
     // if this idea works.
@@ -781,6 +840,7 @@ static bool is_host_slow() {
         }
     }
     if (hostspeed < 0.0013) return true;
+#endif
     return false;
 }
 
@@ -797,7 +857,7 @@ static int send_new_file_work_deterministic() {
     if ((getfile_retval = get_working_set_filename(start_filename, /* is_host_slow() */ false))) {
         strcpy(start_filename, "");
     }
-  
+
     // start deterministic search with randomly chosen filename, go to
     // lexical maximum
     send_new_file_work_deterministic_seeded(nsent, start_filename, NULL);
@@ -868,7 +928,7 @@ static int send_new_file_work() {
 
         if (retval_sow==ERR_NO_APP_VERSION || retval_sow==ERR_INSUFFICIENT_RESOURCE) return retval_sow;
 
-    
+
         while (work_needed(true) && retry<5) {
             if (config.debug_locality) {
                 log_messages.printf(MSG_NORMAL,
@@ -879,7 +939,7 @@ static int send_new_file_work() {
             retval_snfwws=send_new_file_work_working_set();
             if (retval_snfwws==ERR_NO_APP_VERSION || retval_snfwws==ERR_INSUFFICIENT_RESOURCE) return retval_snfwws;
 
-        }    
+        }
 
         if (work_needed(true)) {
             if (config.debug_locality) {
@@ -916,16 +976,26 @@ static int send_old_work(int t_min, int t_max) {
         return 0;
     }
 
+    // restrict values to full hours;
+    // this allows the DB to cache query results in some cases
+    //
+    t_max = (t_max/3600)*3600;
 
     boinc_db.start_transaction();
 
+    // Note: the following queries look convoluted.
+    // But apparently the simpler versions (without the inner join)
+    // are a lot slower.
+    //
     if (t_min != INT_MIN) {
-        sprintf(buf, "where server_state=%d and %d<create_time and create_time<%d limit 1",
+        sprintf(buf,
+            "INNER JOIN (SELECT id FROM result WHERE server_state=%d and %d<create_time and create_time<%d limit 1) AS single USING (id)",
             RESULT_SERVER_STATE_UNSENT, t_min, t_max
         );
     }
     else {
-        sprintf(buf, "where server_state=%d and create_time<%d limit 1",
+        sprintf(buf,
+            "INNER JOIN (SELECT id FROM result WHERE server_state=%d and create_time<%d limit 1) AS single USING (id)",
             RESULT_SERVER_STATE_UNSENT, t_max
         );
     }
@@ -1005,7 +1075,6 @@ bool is_sticky_file(char*fname) {
     return false;
 }
 
-
 bool is_workunit_file(char*fname) {
     for (unsigned int i=0; i<config.locality_scheduling_workunit_file->size(); i++) {
         if (!regexec(&((*config.locality_scheduling_workunit_file)[i]), fname, 0, NULL, 0)) {
@@ -1014,13 +1083,13 @@ bool is_workunit_file(char*fname) {
     }
     return false;
 }
-        
+
 void send_work_locality() {
     int i, nsent, nfiles, j;
 
     // seed the random number generator
     unsigned int seed=time(0)+getpid();
-    srand(seed); 
+    srand(seed);
 
 #ifdef EINSTEIN_AT_HOME
     std::vector<FILE_INFO> eah_copy = g_request->file_infos;
@@ -1030,44 +1099,12 @@ void send_work_locality() {
     for (i=0; i<nfiles; i++) {
         char *fname = eah_copy[i].name;
 
-        // here, put a list of patterns of ALL files that should be kept
-        // for locality scheduling
-        //
-        bool useful = strlen(fname) > 10 ||
-                      (
-                        strncmp("H1_", fname, 3) &&
-                        strncmp("h1_", fname, 3) && 
-                        strncmp("w1_", fname, 3) &&
-                        strncmp("W1_", fname, 3) &&
-                        strncmp("l1_", fname, 3) &&
-                        strncmp("L1_", fname, 3)
-                       );
-#if 0
-        // here, put a list of patterns of ALL files that are still needed to be
-        // sticky, but are not 'data' files for locality scheduling purposes, eg they
-        // do not have associated WU with names FILENAME__*
-        //
-        bool data_files =
-            strncmp("grid_", fname, 5)
-            && strncmp("skygrid_", fname, 8)
-            && strncmp("Config_", fname, 7);
-        if (strlen(fname)==15 && !strncmp("l1_", fname, 3)) {
-            data_files = false;
-        }
-#endif
-
-
         if (is_workunit_file(fname)) {
-            // these files WILL be deleted from the host
+            // these are files that we will use for locality scheduling and
+            // to search for work
             //
-            g_request->files_not_needed.push_back(eah_copy[i]);
-            if (config.debug_locality) {
-                log_messages.printf(MSG_NORMAL,
-                    "[locality] [HOST#%d] adding file %s to files_not_needed list\n",
-                    g_reply->host.id, fname
-                );
-            }
-        } else if (is_sticky_file(fname)) {
+            g_request->file_infos.push_back(eah_copy[i]);
+        } else if (is_sticky_file(fname)) {  // was if(!data_files)
             // these files MIGHT be deleted from host if we need to make
             // disk space there
             //
@@ -1079,10 +1116,15 @@ void send_work_locality() {
                 );
             }
         } else {
-            // these are files that we will use for locality scheduling and
-            // to search for work
+            // these files WILL be deleted from the host
             //
-            g_request->file_infos.push_back(eah_copy[i]);
+            g_request->files_not_needed.push_back(eah_copy[i]);
+            if (config.debug_locality) {
+                log_messages.printf(MSG_NORMAL,
+                    "[locality] [HOST#%d] adding file %s to files_not_needed list\n",
+                    g_reply->host.id, fname
+                );
+            }
         }
     }
 #endif // EINSTEIN_AT_HOME
@@ -1145,17 +1187,24 @@ void send_work_locality() {
                 );
             }
 #ifdef EINSTEIN_AT_HOME
-            // For name matching pattern h1_XXXX.XX_S5R2
-            // generate corresponding l1_XXXX.XX_S5R2 pattern and delete it also
+            // For name matching pattern h1_XXXX.XX_S5R4
+            // generate corresponding l1_XXXX.XX_S5R4 and *_S5R7 patterns and delete it also
             //
             if (strlen(fi.name)==15 && !strncmp("h1_", fi.name, 3)) {
-                FILE_INFO fi_l = fi;
-                fi_l.name[0]='l';
-                g_reply->file_deletes.push_back(fi_l);
+	        FILE_INFO fil4,fil7,fih7;
+		fil4=fi;
+		fil4.name[0]='l';
+		fil7=fil4;
+		fil7.name[14]='7';
+		fih7=fi;
+		fih7.name[14]='7';
+                g_reply->file_deletes.push_back(fil4);
+                g_reply->file_deletes.push_back(fil7);
+                g_reply->file_deletes.push_back(fih7);
                 if (config.debug_locality) {
                     log_messages.printf(MSG_NORMAL,
-                        "[locality] [HOST#%d]: delete file %s (not needed)\n",
-                        g_reply->host.id, fi_l.name
+                        "[locality] [HOST#%d]: delete files %s,%s,%s (not needed)\n",
+                        g_reply->host.id, fil4.name,fil7.name,fih7.name
                     );
                 }
             }
@@ -1186,7 +1235,7 @@ void send_file_deletes() {
             );
         }
         sprintf(buf, "BOINC will delete file %s (no longer needed)", fi.name);
-        g_reply->insert_message(USER_MESSAGE(buf, "low"));
+        g_reply->insert_message(buf, "low");
      }
 
     // if we got no work, and we have no file space, delete some files
@@ -1227,7 +1276,7 @@ void send_file_deletes() {
 // (4) If additional results are needed, send the oldest result
 // (4) created between times A and B, where
 // (4) A=random time between locality_scheduling_send timeout and
-// (4) locality_timeout/2 in the past, and B=locality_timeout/2 in 
+// (4) locality_timeout/2 in the past, and B=locality_timeout/2 in
 // (4) the past.
 
 // (5) If we did send a result in the previous step, then send any
@@ -1251,4 +1300,4 @@ void send_file_deletes() {
 
 // (8) If addtional results are needed, return to step 4 above.
 
-const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 18825 2009-08-10 04:49:02Z davea $";
+const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 22052 2010-07-23 17:43:20Z davea $";

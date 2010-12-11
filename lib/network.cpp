@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
-#endif
+#include <fcntl.h>
 
-#ifndef _WIN32
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
 #include "config.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -90,8 +92,8 @@ const char* socket_error_str() {
         return "host not found or server failure";
 #ifdef NETDB_INTERNAL
     case NETDB_INTERNAL:
-		sprintf(buf,"network internal error %d",errno);
-		return buf;
+        sprintf(buf,"network internal error %d",errno);
+        return buf;
 #endif
     }
     sprintf(buf, "error %d", h_errno);
@@ -99,25 +101,114 @@ const char* socket_error_str() {
 #endif
 }
 
-int resolve_hostname(char* hostname, int &ip_addr) {
+bool is_localhost(sockaddr_storage& s) {
+#ifdef _WIN32
+    if (ntohl(s.sin_addr.s_addr) == 0x7f000001) return true;
+#else
+    switch (s.ss_family) {
+    case AF_INET:
+        {
+            sockaddr_in* sin = (sockaddr_in*)&s;
+            return (ntohl(sin->sin_addr.s_addr) == 0x7f000001);
+        }
 
-    // if the hostname is in Internet Standard dotted notation, 
-    // return that address.
-    //
-    ip_addr = inet_addr(hostname);
-    if (ip_addr != -1) {
-        return 0;
+    case AF_INET6:
+        {
+            sockaddr_in6* sin = (sockaddr_in6*)&s;
+            char buf[256];
+            inet_ntop(AF_INET6, (void*)(&sin->sin6_addr), buf, 256);
+            return (strcmp(buf, "::1") == 0);
+        }
+
     }
+#endif
+    return false;
+}
 
-    // else resolve the name
-    //
+bool same_ip_addr(sockaddr_storage& s1, sockaddr_storage& s2) {
+#ifdef _WIN32
+    return (s1.sin_addr.s_addr == s2.sin_addr.s_addr);
+#else
+    if (s1.ss_family != s2.ss_family) return false;
+    switch (s1.ss_family) {
+    case AF_INET:
+        {
+            sockaddr_in* sin1 = (sockaddr_in*)&s1;
+            sockaddr_in* sin2 = (sockaddr_in*)&s2;
+            return (memcmp((void*)(&sin1->sin_addr), (void*)(&sin2->sin_addr), sizeof(in_addr)) == 0);
+            break;
+        }
+    case AF_INET6:
+        {
+            sockaddr_in6* sin1 = (sockaddr_in6*)&s1;
+            sockaddr_in6* sin2 = (sockaddr_in6*)&s2;
+            return (memcmp((void*)(&sin1->sin6_addr), (void*)(&sin2->sin6_addr), sizeof(in6_addr)) == 0);
+            break;
+        }
+    }
+    return false;
+#endif
+}
+
+int resolve_hostname(const char* hostname, sockaddr_storage &ip_addr) {
+#ifdef _WIN32
     hostent* hep;
     hep = gethostbyname(hostname);
     if (!hep) {
         return ERR_GETHOSTBYNAME;
     }
-    ip_addr = *(int*)hep->h_addr_list[0];
+    ip_addr.sin_family = AF_INET;
+    ip_addr.sin_addr.s_addr = *(int*)hep->h_addr_list[0];
     return 0;
+
+#else
+    struct addrinfo *res, hints;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    int retval = getaddrinfo(hostname, NULL, &hints, &res);
+    if (retval) {
+        perror("getaddrinfo");
+        return retval;
+    }
+    memcpy(&ip_addr, res->ai_addr, res->ai_addrlen);
+    freeaddrinfo(res);
+    return 0;
+#endif
+}
+
+int resolve_hostname_or_ip_addr(const char* hostname, sockaddr_storage &ip_addr) {
+#ifdef _WIN32   // inet_pton() only on Vista or later!!
+    int x = inet_addr(hostname);
+    if (x != -1) {
+        sockaddr_in* sin = (sockaddr_in*)&ip_addr;
+        sin->sin_family = AF_INET;
+        sin->sin_addr.s_addr = x;
+        return 0;
+    }
+#else
+    int retval;
+    // check for IPV4 and IPV6 notation
+    //
+    sockaddr_in* sin = (sockaddr_in*)&ip_addr;
+    retval = inet_pton(AF_INET, hostname, &sin->sin_addr);
+    if (retval > 0) {
+        ip_addr.ss_family = AF_INET;
+        return 0;
+    }
+    sockaddr_in6* sin6 = (sockaddr_in6*)&ip_addr;
+    retval = inet_pton(AF_INET6, hostname, &sin6->sin6_addr);
+    if (retval > 0) {
+        ip_addr.ss_family = AF_INET6;
+        return 0;
+    }
+#endif
+
+    // else resolve the name
+    //
+    return resolve_hostname(hostname, ip_addr);
 }
 
 int boinc_socket(int& fd) {
@@ -194,7 +285,7 @@ int get_socket_error(int fd) {
 
 int WinsockInitialize() {
     WSADATA wsdata;
-    return WSAStartup( MAKEWORD( 1, 1 ), &wsdata);
+    return WSAStartup(MAKEWORD(2, 0), &wsdata);
 }
 
 int WinsockCleanup() {

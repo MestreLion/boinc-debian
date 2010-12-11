@@ -15,15 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cpp.h"
-
 #ifdef _WIN32
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <unistd.h>
 #include <csignal>
 #include <cstdio>
@@ -41,12 +36,17 @@
 #include <os2.h>
 #endif
 
+#include "cpp.h"
 #include "parse.h"
 #include "str_util.h"
 #include "str_replace.h"
 #include "util.h"
 #include "error_numbers.h"
 #include "filesys.h"
+#ifdef _WIN32
+#include "proc_control.h"
+#endif
+
 #include "file_names.h"
 #include "hostinfo.h"
 #include "hostinfo_network.h"
@@ -55,36 +55,32 @@
 #include "client_msgs.h"
 #include "shmem.h"
 #include "sandbox.h"
+#include "cs_notice.h"
+
 #include "client_state.h"
-#ifdef _WIN32
-#include "proc_control.h"
-#endif
 
 using std::max;
 
 CLIENT_STATE gstate;
-COPROC_CUDA* coproc_cuda;
-COPROC_ATI* coproc_ati;
 
-CLIENT_STATE::CLIENT_STATE():
-    lookup_website_op(&gui_http),
+CLIENT_STATE::CLIENT_STATE()
+    : lookup_website_op(&gui_http),
     get_current_version_op(&gui_http),
     get_project_list_op(&gui_http)
 {
     http_ops = new HTTP_OP_SET();
     file_xfers = new FILE_XFER_SET(http_ops);
     pers_file_xfers = new PERS_FILE_XFER_SET(file_xfers);
+#ifndef SIM
     scheduler_op = new SCHEDULER_OP(http_ops);
+#endif
     client_state_dirty = false;
-    exit_when_idle = false;
     exit_before_start = false;
-    exit_after_finish = false;
     check_all_logins = false;
     cmdline_gui_rpc_port = 0;
     run_cpu_benchmarks = false;
-    skip_cpu_benchmarks = false;
     file_xfer_giveup_period = PERS_GIVEUP;
-    contacted_sched_server = false;
+    had_or_requested_work = false;
     tasks_suspended = false;
     network_suspended = false;
     suspend_reason = 0;
@@ -126,14 +122,11 @@ CLIENT_STATE::CLIENT_STATE():
     executing_as_daemon = false;
     redirect_io = false;
     disable_graphics = false;
-    work_fetch_no_new_work = false;
     cant_write_state_file = false;
-    unsigned_apps_ok = false;
 
     debt_interval_start = 0;
     retry_shmem_time = 0;
     must_schedule_cpus = true;
-    must_enforce_cpu_schedule = true;
     no_gui_rpc = false;
     new_version_check_time = 0;
     all_projects_list_check_time = 0;
@@ -158,10 +151,10 @@ void CLIENT_STATE::show_host_info() {
         msg_printf(NULL, MSG_INFO, "Using %d CPUs", ncpus);
     }
     if (host_info.m_cache > 0) {
-    msg_printf(NULL, MSG_INFO,
-        "Processor: %s cache",
-        buf
-    );
+        msg_printf(NULL, MSG_INFO,
+            "Processor: %s cache",
+            buf
+        );
     }
     msg_printf(NULL, MSG_INFO,
         "Processor features: %s", host_info.p_features
@@ -193,7 +186,66 @@ void CLIENT_STATE::show_host_info() {
     msg_printf(0, MSG_INFO, "Local time is UTC %s%d hours",
         tz<0?"":"+", tz
     );
+
+    if (strlen(host_info.virtualbox_version)) {
+        msg_printf(NULL, MSG_INFO,
+            "VirtualBox version: %s",
+            host_info.virtualbox_version
+        );
+    }
 }
+
+// set no_X_apps for anonymous platform project
+//
+static void check_no_apps(PROJECT* p) {
+    p->no_cpu_apps = true;
+    p->no_cuda_apps = true;
+    p->no_ati_apps = true;
+
+    for (unsigned int i=0; i<gstate.app_versions.size(); i++) {
+        APP_VERSION* avp = gstate.app_versions[i];
+        if (avp->project != p) continue;
+        if (avp->ncudas > 0) {
+            p->no_cuda_apps = false;
+        } else if (avp->natis > 0) {
+            p->no_ati_apps = false;
+        } else {
+            p->no_cpu_apps = false;
+        }
+    }
+}
+
+// alert user if any jobs need more RAM than available
+//
+static void check_too_large_jobs() {
+    double m = gstate.max_available_ram();
+    bool found = false;
+    for (unsigned int i=0; i<gstate.results.size(); i++) {
+        RESULT* rp = gstate.results[i];
+        if (rp->wup->rsc_memory_bound > m) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        msg_printf(0, MSG_USER_ALERT,
+            _("Some tasks need more memory than allowed by your preferences.  Please check the preferences.")
+        );
+    }
+}
+
+// Sometime has failed N times.
+// Calculate an exponential backoff between MIN and MAX
+//
+double calculate_exponential_backoff(int n, double MIN, double MAX) {
+    double x = pow(2, (double)n);
+    x *= MIN;
+    if (x > MAX) x = MAX;
+    x *= (.5 + .5*drand());
+    return x;
+}
+
+#ifndef SIM
 
 int CLIENT_STATE::init() {
     int retval;
@@ -206,6 +258,7 @@ int CLIENT_STATE::init() {
     client_start_time = now;
     scheduler_op->url_random = drand();
 
+    notices.init();
     daily_xfer_history.init();
     
     detect_platforms();
@@ -225,7 +278,7 @@ int CLIENT_STATE::init() {
     );
 
     if (core_client_version.prerelease) {
-        msg_printf(NULL, MSG_USER_ERROR,
+        msg_printf(NULL, MSG_INFO,
             "This a development version of BOINC and may not function properly"
         );
     }
@@ -275,23 +328,21 @@ int CLIENT_STATE::init() {
                 msg_printf(NULL, MSG_INFO, warnings[i].c_str());
             }
         }
-        if (host_info.coprocs.coprocs.size() == 0) {
+        if (host_info.coprocs.none() ) {
             msg_printf(NULL, MSG_INFO, "No usable GPUs found");
         }
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an NVIDIA GPU");
-        coproc_cuda = fake_cuda(host_info.coprocs, 256*MEGA, 2);
-        coproc_cuda->available_ram_fake[0] = 256*MEGA;
-        coproc_cuda->available_ram_fake[1] = 192*MEGA;
+        host_info.coprocs.cuda.fake(18000, 256*MEGA, 2);
+        host_info.coprocs.cuda.available_ram_fake[0] = 256*MEGA;
+        host_info.coprocs.cuda.available_ram_fake[1] = 192*MEGA;
 #endif
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
-        coproc_ati = fake_ati(host_info.coprocs, 512*MEGA, 2);
-        coproc_ati->available_ram_fake[0] = 256*MEGA;
-        coproc_ati->available_ram_fake[1] = 192*MEGA;
+        host_info.coprocs.ati.fake(512*MEGA, 2);
+        host_info.coprocs.ati.available_ram_fake[0] = 256*MEGA;
+        host_info.coprocs.ati.available_ram_fake[1] = 192*MEGA;
 #endif
-        coproc_cuda = (COPROC_CUDA*)host_info.coprocs.lookup("CUDA");
-        coproc_ati = (COPROC_ATI*)host_info.coprocs.lookup("ATI");
     }
 
     // check for app_info.xml file in project dirs.
@@ -312,11 +363,23 @@ int CLIENT_STATE::init() {
     //
     parse_state_file();
 
+    // inform the user if there's a newer version of client
+    //
+    newer_version_startup_check();
+
     // parse account files again,
     // now that we know the host's venue on each project
     //
     parse_account_files_venue();
 
+    // fill in p->no_X_apps for anon platform projects
+    //
+    for (i=0; i<projects.size(); i++) {
+        p = projects[i];
+        if (p->anonymous_platform) {
+            check_no_apps(p);
+        }
+    }
 
     // fill in avp->flops for anonymous platform projects
     //
@@ -346,9 +409,9 @@ int CLIENT_STATE::init() {
     //
     retval = write_state_file();
     if (retval) {
-        msg_printf(NULL, MSG_USER_ERROR, "Couldn't write state file");
-        msg_printf(NULL, MSG_USER_ERROR,
-            "Make sure directory permissions are set correctly"
+        msg_printf_notice(NULL, false,
+            "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=statefile",
+            _("Couldn't write state file; check directory permissions")
         );
         cant_write_state_file = true;
     }
@@ -439,6 +502,7 @@ int CLIENT_STATE::init() {
     active_tasks.init();
     active_tasks.report_overdue();
     active_tasks.handle_upload_files();
+    had_or_requested_work = (active_tasks.active_tasks.size() > 0);
 
     // Just to be on the safe side; something may have been modified
     //
@@ -476,12 +540,23 @@ int CLIENT_STATE::init() {
     if (!boinc_file_exists(ALL_PROJECTS_LIST_FILENAME)) {
         all_projects_list_check_time = 0;
     }
-    all_projects_list_check();
 
     auto_update.init();
 
     http_ops->cleanup_temp_files();
-    
+
+    // get list of BOINC projects occasionally,
+    // and initialize notice RSS feeds
+    //
+    if (!config.no_info_fetch) {
+        all_projects_list_check();
+        notices.init_rss();
+    }
+
+    // warn user if some jobs need more memory than available
+    //
+    check_too_large_jobs();
+
     initialized = true;
     return 0;
 }
@@ -550,7 +625,7 @@ void CLIENT_STATE::do_io_or_sleep(double x) {
     do { if (func()) { \
             ++actions; \
             if (log_flags.poll_debug) { \
-                msg_printf(0, MSG_INFO, "[poll_debug] CLIENT_STATE::poll_slow_events(): " #name "\n"); \
+                msg_printf(0, MSG_INFO, "[poll] CLIENT_STATE::poll_slow_events(): " #name "\n"); \
             } \
         } } while(0)
 
@@ -578,7 +653,7 @@ bool CLIENT_STATE::poll_slow_events() {
     if (now - old_now > POLL_INTERVAL*10) {
         if (log_flags.network_status_debug) {
             msg_printf(0, MSG_INFO,
-                "[network_status_debug] woke up after %f seconds",
+                "[network_status] woke up after %f seconds",
                 now - old_now
             );
         }
@@ -606,8 +681,8 @@ bool CLIENT_STATE::poll_slow_events() {
     // NVIDIA provides an interface for finding if a GPU is
     // running a graphics app.  ATI doesn't as far as I know
     //
-    if (coproc_cuda && user_active && !global_prefs.run_gpu_if_user_active) {
-        if (coproc_cuda->check_running_graphics_app()) {
+    if (host_info.have_cuda() && user_active && !global_prefs.run_gpu_if_user_active) {
+        if (host_info.coprocs.cuda.check_running_graphics_app()) {
             request_schedule_cpus("GPU state change");
         }
     }
@@ -634,6 +709,9 @@ bool CLIENT_STATE::poll_slow_events() {
     }
 #endif
 
+    // active_tasks.get_memory_usage() sets variables needed by 
+    // check_suspend_processing(), so it must be called first.
+    active_tasks.get_memory_usage();
     suspend_reason = check_suspend_processing();
 
     // suspend or resume activities (but only if already did startup)
@@ -710,7 +788,6 @@ bool CLIENT_STATE::poll_slow_events() {
     //  active_tasks_poll
     //  handle_finished_apps
     //  possibly_schedule_cpus
-    //  enforce_schedule
     // in that order (active_tasks_poll() sets must_schedule_cpus,
     // and handle_finished_apps() must be done before possibly_schedule_cpus()
 
@@ -720,19 +797,22 @@ bool CLIENT_STATE::poll_slow_events() {
     POLL_ACTION(garbage_collect        , garbage_collect        );
     POLL_ACTION(gui_http               , gui_http.poll          );
     POLL_ACTION(gui_rpc_http           , gui_rpcs.poll          );
-    if (!network_suspended) {
+    if (!network_suspended && suspend_reason != SUSPEND_REASON_BENCHMARKS) {
+        // don't initiate network activity if we're doing CPU benchmarks
         net_status.poll();
         daily_xfer_history.poll();
         POLL_ACTION(acct_mgr               , acct_mgr_info.poll     );
         POLL_ACTION(file_xfers             , file_xfers->poll       );
         POLL_ACTION(pers_file_xfers        , pers_file_xfers->poll  );
         POLL_ACTION(handle_pers_file_xfers , handle_pers_file_xfers );
+        if (!config.no_info_fetch) {
+            POLL_ACTION(rss_feed_op            , rss_feed_op.poll );
+        }
     }
     POLL_ACTION(handle_finished_apps   , handle_finished_apps   );
     POLL_ACTION(update_results         , update_results         );
     if (!tasks_suspended) {
         POLL_ACTION(possibly_schedule_cpus, possibly_schedule_cpus          );
-        POLL_ACTION(enforce_schedule    , enforce_schedule  );
         tasks_restarted = true;
     }
     if (!network_suspended) {
@@ -747,15 +827,15 @@ bool CLIENT_STATE::poll_slow_events() {
     }
     if (log_flags.poll_debug) {
         msg_printf(0, MSG_INFO,
-            "[poll_debug] CLIENT_STATE::do_something(): End poll: %d tasks active\n", actions
+            "[poll] CLIENT_STATE::do_something(): End poll: %d tasks active\n", actions
         );
     }
     if (actions > 0) {
         return true;
     } else {
-        time_stats.update(suspend_reason);
+        time_stats.update(suspend_reason, gpu_suspend_reason);
 
-        // on some systems, gethostbyname() only starts working
+        // on some systems, DNS resolution only starts working
         // a few minutes after system boot.
         // If it didn't work before, try it again.
         //
@@ -765,6 +845,8 @@ bool CLIENT_STATE::poll_slow_events() {
         return false;
     }
 }
+
+#endif // ifndef SIM
 
 // See if the project specified by master_url already exists
 // in the client state record.  Ignore any trailing "/" characters
@@ -899,7 +981,7 @@ int CLIENT_STATE::link_app_version(PROJECT* p, APP_VERSION* avp) {
 
         // any file associated with an app version must be signed
         //
-        if (!unsigned_apps_ok) {
+        if (!config.unsigned_apps_ok) {
             fip->signature_required = true;
         }
 
@@ -980,7 +1062,7 @@ void CLIENT_STATE::print_summary() {
     unsigned int i;
     double t;
 
-    msg_printf(0, MSG_INFO, "[state_debug] Client state summary:");
+    msg_printf(0, MSG_INFO, "[state] Client state summary:");
     msg_printf(0, MSG_INFO, "%d projects:", (int)projects.size());
     for (i=0; i<projects.size(); i++) {
         t = projects[i]->min_rpc_time;
@@ -1052,6 +1134,7 @@ bool CLIENT_STATE::garbage_collect() {
     action = garbage_collect_always();
     if (action) return true;
 
+#ifndef SIM
     // Detach projects that are marked for detach when done
     // and are in fact done (have no results).
     // This is done here (not in garbage_collect_always())
@@ -1065,6 +1148,7 @@ bool CLIENT_STATE::garbage_collect() {
             action = true;
         }
     }
+#endif
     return action;
 }
 
@@ -1130,6 +1214,7 @@ bool CLIENT_STATE::garbage_collect_always() {
     result_iter = results.begin();
     while (result_iter != results.end()) {
         rp = *result_iter;
+#ifndef SIM
         if (rp->got_server_ack) {
             // see if - for some reason - there's an active task
             // for this result.  don't want to create dangling ptr.
@@ -1147,7 +1232,7 @@ bool CLIENT_STATE::garbage_collect_always() {
             } else {
                 if (log_flags.state_debug) {
                     msg_printf(0, MSG_INFO,
-                        "[state_debug] garbage_collect: deleting result %s\n",
+                        "[state] garbage_collect: deleting result %s\n",
                         rp->name
                     );
                 }
@@ -1157,6 +1242,7 @@ bool CLIENT_STATE::garbage_collect_always() {
                 continue;
             }
         }
+#endif
         // See if the files for this result's workunit had
         // any errors (download failure, MD5, RSA, etc)
         // and we don't already have an error for this result
@@ -1192,6 +1278,7 @@ bool CLIENT_STATE::garbage_collect_always() {
             }
             rp->output_files[i].file_info->ref_cnt++;
         }
+#ifndef SIM
         if (found_error) {
             // check for process still running; this can happen
             // e.g. if an intermediate upload fails
@@ -1209,6 +1296,7 @@ bool CLIENT_STATE::garbage_collect_always() {
             }
             report_result_error(*rp, "%s", error_str.c_str());
         }
+#endif
         rp->avp->ref_cnt++;
         rp->wup->ref_cnt++;
         result_iter++;
@@ -1223,7 +1311,7 @@ bool CLIENT_STATE::garbage_collect_always() {
         if (wup->ref_cnt == 0) {
             if (log_flags.state_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[state_debug] CLIENT_STATE::garbage_collect(): deleting workunit %s\n",
+                    "[state] CLIENT_STATE::garbage_collect(): deleting workunit %s\n",
                     wup->name
                 );
             }
@@ -1315,7 +1403,7 @@ bool CLIENT_STATE::garbage_collect_always() {
             fip->delete_file();
             if (log_flags.state_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[state_debug] CLIENT_STATE::garbage_collect(): deleting file %s\n",
+                    "[state] CLIENT_STATE::garbage_collect(): deleting file %s\n",
                     fip->name
                 );
             }
@@ -1380,6 +1468,13 @@ bool CLIENT_STATE::update_results() {
                 rp->ready_to_report = true;
                 rp->completed_time = gstate.now;
                 rp->set_state(RESULT_FILES_UPLOADED, "CS::update_results");
+
+                // clear backoffs for app's resources;
+                // this addresses the situation where the project has a
+                // "max # jobs in progress" limit,
+                // and we're backed off because of that
+                //
+                work_fetch.clear_backoffs(*rp->avp);
                 action = true;
             }
             break;
@@ -1398,8 +1493,7 @@ bool CLIENT_STATE::update_results() {
     return action;
 }
 
-// Returns true if client should exit because of debugging criteria
-// (timeout or idle)
+// Returns true if client should exit for various reasons
 //
 bool CLIENT_STATE::time_to_exit() {
     if (exit_after_app_start_secs
@@ -1407,11 +1501,15 @@ bool CLIENT_STATE::time_to_exit() {
         && ((now - app_started) >= exit_after_app_start_secs)
     ) {
         msg_printf(NULL, MSG_INFO,
-            "Exiting because time is up: %d", exit_after_app_start_secs
+            "Exiting because %d elapsed since started task",
+            exit_after_app_start_secs
         );
         return true;
     }
-    if (exit_when_idle && (results.size() == 0) && contacted_sched_server) {
+    if (config.exit_when_idle
+        && (results.size() == 0)
+        && had_or_requested_work
+    ) {
         msg_printf(NULL, MSG_INFO, "exiting because no more results");
         return true;
     }
@@ -1462,8 +1560,10 @@ int CLIENT_STATE::report_result_error(RESULT& res, const char* format, ...) {
     vsnprintf(err_msg, sizeof(err_msg), format, va);
     va_end(va);
 
-    sprintf(buf, "Unrecoverable error for result %s (%s)", res.name, err_msg);
+    sprintf(buf, "Unrecoverable error for task %s (%s)", res.name, err_msg);
+#ifndef SIM
     scheduler_op->backoff(res.project, buf);
+#endif
 
     sprintf( buf, "<message>\n%s\n</message>\n", err_msg);
     res.stderr_out.append(buf);
@@ -1525,6 +1625,8 @@ int CLIENT_STATE::report_result_error(RESULT& res, const char* format, ...) {
     res.stderr_out = res.stderr_out.substr(0, MAX_STDERR_LEN);
     return 0;
 }
+
+#ifndef SIM
 
 // "Reset" a project: (clear error conditions)
 // - stop all active tasks
@@ -1613,10 +1715,6 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
             }
         }
         garbage_collect_always();
-
-        char buf[1024];
-        get_project_dir(project, buf, sizeof(buf));
-        client_clean_out_dir(buf, "reset or detach project");
     }
 
     project->duration_correction_factor = 1;
@@ -1749,21 +1847,7 @@ int CLIENT_STATE::quit_activities() {
     return 0;
 }
 
-// return a random double in the range [rmin,rmax)
-static inline double rand_range(double rmin, double rmax) {
-    if (rmin < rmax) {
-        return drand() * (rmax-rmin) + rmin;
-    } else {
-        return rmin;
-    }
-}
-
-// return a random double in the range [MIN,min(e^n,MAX))
-//
-double calculate_exponential_backoff( int n, double MIN, double MAX) {
-    double rmax = std::min(MAX, exp((double)n));
-    return rand_range(MIN, rmax);
-}
+#endif
 
 // See if a timestamp in the client state file
 // is later than the current time.
@@ -1799,6 +1883,8 @@ void CLIENT_STATE::check_clock_reset() {
     // RESULT: could change report_deadline, but not clear how
 }
 
+#ifndef SIM
+
 // the following is done on client exit if the
 // "abort_jobs_on_exit" flag is present.
 // Abort jobs, and arrange to tell projects about it.
@@ -1822,6 +1908,7 @@ void CLIENT_STATE::start_abort_sequence() {
     for (i=0; i<projects.size(); i++) {
         PROJECT* p = projects[i];
         p->min_rpc_time = 0;
+        p->dont_request_more_work = true;
     }
 }
 
@@ -1836,63 +1923,4 @@ bool CLIENT_STATE::abort_sequence_done() {
     return true;
 }
 
-void CLIENT_STATE::free_mem() {
-    vector<PROJECT*>::iterator proj_iter;
-    vector<APP*>::iterator app_iter;
-    vector<FILE_INFO*>::iterator fi_iter;
-    vector<APP_VERSION*>::iterator av_iter;
-    vector<WORKUNIT*>::iterator wu_iter;
-    vector<RESULT*>::iterator res_iter;
-    PROJECT *proj;
-    APP *app;
-    FILE_INFO *fi;
-    APP_VERSION *av;
-    WORKUNIT *wu;
-    RESULT *res;
-
-    proj_iter = projects.begin();
-    while (proj_iter != projects.end()) {
-        proj = projects[0];
-        proj_iter = projects.erase(proj_iter);
-        delete proj;
-    }
-
-    app_iter = apps.begin();
-    while (app_iter != apps.end()) {
-        app = apps[0];
-        app_iter = apps.erase(app_iter);
-        delete app;
-    }
-
-    fi_iter = file_infos.begin();
-    while (fi_iter != file_infos.end()) {
-        fi = file_infos[0];
-        fi_iter = file_infos.erase(fi_iter);
-        delete fi;
-    }
-
-    av_iter = app_versions.begin();
-    while (av_iter != app_versions.end()) {
-        av = app_versions[0];
-        av_iter = app_versions.erase(av_iter);
-        delete av;
-    }
-
-    wu_iter = workunits.begin();
-    while (wu_iter != workunits.end()) {
-        wu = workunits[0];
-        wu_iter = workunits.erase(wu_iter);
-        delete wu;
-    }
-
-    res_iter = results.begin();
-    while (res_iter != results.end()) {
-        res = results[0];
-        res_iter = results.erase(res_iter);
-        delete res;
-    }
-
-    active_tasks.free_mem();
-
-    cleanup_messages();
-}
+#endif

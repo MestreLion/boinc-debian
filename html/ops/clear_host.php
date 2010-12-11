@@ -16,32 +16,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-require_once("../inc/db.inc");
 require_once("../inc/util_ops.inc");
-
-// activate/deactivate script
-if (1) {
-  echo "
-This script needs to be activated before it can be run.
-Once you understand what the script does you can change the 
-if (1) to if (0) at the top of the file to activate it.
-Be sure to deactivate the script after using it to make sure
-it is not accidentally run. 
-";
-  exit;
-}
 
 db_init();
 $hostid = $_GET["hostid"];
 
 if (!$hostid) {
-    echo "no host ID\n";
-    exit();
+    error_page("no host ID\n");
 }
 
 mysql_query("update host set rpc_time=0 where id='$hostid'");
-echo "Host RPC time cleared for hostid: $hostid\n";
+echo "Host RPC time cleared for host ID: $hostid\n";
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: clear_host.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: clear_host.php 20745 2010-02-26 21:34:20Z davea $";  //Generated automatically - do not edit
 ?>

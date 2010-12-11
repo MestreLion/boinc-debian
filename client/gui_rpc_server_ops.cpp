@@ -27,9 +27,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstdio>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -66,6 +63,7 @@
 #include "client_msgs.h"
 #include "client_state.h"
 #include "cs_proxy.h"
+#include "cs_notice.h"
 
 using std::string;
 using std::vector;
@@ -255,17 +253,13 @@ static void handle_project_op(char* buf, MIOFILE& fout, const char* op) {
         gstate.reset_project(p, false);
     } else if (!strcmp(op, "suspend")) {
         msg_printf(p, MSG_INFO, "suspended by user");
-        p->suspended_via_gui = true;
-        gstate.request_schedule_cpus("project suspended by user");
-        gstate.request_work_fetch("project suspended by user");
+        p->suspend();
     } else if (!strcmp(op, "resume")) {
         msg_printf(p, MSG_INFO, "resumed by user");
-        p->suspended_via_gui = false;
-        gstate.request_schedule_cpus("project resumed by user");
-        gstate.request_work_fetch("project resumed by user");
+        p->resume();
     } else if (!strcmp(op, "detach")) {
         if (p->attached_via_acct_mgr) {
-            msg_printf(p, MSG_USER_ERROR,
+            msg_printf(p, MSG_INFO,
                 "This project must be detached using the account manager web site."
             );
             fout.printf("<error>must detach using account manager</error>");
@@ -278,6 +272,9 @@ static void handle_project_op(char* buf, MIOFILE& fout, const char* op) {
         msg_printf(p, MSG_INFO, "update requested by user");
         p->sched_rpc_pending = RPC_REASON_USER_REQ;
         p->min_rpc_time = 0;
+#if 1
+        rss_feeds.trigger_fetch(p);
+#endif
         gstate.request_work_fetch("project updated by user");
     } else if (!strcmp(op, "nomorework")) {
         msg_printf(p, MSG_INFO, "work fetch suspended by user");
@@ -391,52 +388,16 @@ static void handle_get_proxy_settings(char* , MIOFILE& fout) {
 //    return only msgs with seqno > n; if absent or zero, return all
 //
 static void handle_get_messages(char* buf, MIOFILE& fout) {
-    int seqno=0, i, j;
-    unsigned int k;
-    MESSAGE_DESC* mdp;
+    int seqno=0;
+    bool translatable = false;
 
     parse_int(buf, "<seqno>", seqno);
-
-    // messages are stored in descreasing seqno,
-    // i.e. newer ones are at the head of the vector.
-    // compute j = index of first message to return
-    //
-    j = (int)message_descs.size()-1;
-    for (k=0; k<message_descs.size(); k++) {
-        mdp = message_descs[k];
-        if (mdp->seqno <= seqno) {
-            j = k-1;
-            break;
-        }
-    }
-
-    fout.printf("<msgs>\n");
-    for (i=j; i>=0; i--) {
-        mdp = message_descs[i];
-        fout.printf(
-            "<msg>\n"
-            " <project>%s</project>\n"
-            " <pri>%d</pri>\n"
-            " <seqno>%d</seqno>\n"
-            " <body>\n%s\n</body>\n"
-            " <time>%d</time>\n",
-            mdp->project_name,
-            mdp->priority,
-            mdp->seqno,
-            mdp->message.c_str(),
-            mdp->timestamp
-        );
-        fout.printf("</msg>\n");
-    }
-    fout.printf("</msgs>\n");
+    parse_bool(buf, "translatable", translatable);
+    message_descs.write(seqno, fout, translatable);
 }
 
 static void handle_get_message_count(char*, MIOFILE& fout) {
-    if (message_descs.size() == 0) {
-        fout.printf("<seqno>0</seqno>\n");
-    } else {
-        fout.printf("<seqno>%d</seqno>\n", message_descs[0]->seqno);
-    }
+    fout.printf("<seqno>%d</seqno>\n", message_descs.highest_seqno());
 }
 
 // <retry_file_transfer>
@@ -530,7 +491,7 @@ static void handle_result_op(char* buf, MIOFILE& fout, const char* op) {
 }
 
 static void handle_get_host_info(char*, MIOFILE& fout) {
-    gstate.host_info.write(fout, false, true);
+    gstate.host_info.write(fout, true, true);
 }
 
 static void handle_get_screensaver_tasks(MIOFILE& fout) {
@@ -561,8 +522,8 @@ static void handle_acct_mgr_info(char*, MIOFILE& fout) {
         "<acct_mgr_info>\n"
         "   <acct_mgr_url>%s</acct_mgr_url>\n"
         "   <acct_mgr_name>%s</acct_mgr_name>\n",
-        gstate.acct_mgr_info.acct_mgr_url,
-        gstate.acct_mgr_info.acct_mgr_name
+        gstate.acct_mgr_info.master_url,
+        gstate.acct_mgr_info.project_name
     );
 
     if (strlen(gstate.acct_mgr_info.login_name)) {
@@ -596,13 +557,14 @@ static void handle_get_cc_status(GUI_RPC_CONN* gr, MIOFILE& fout) {
         "   <network_status>%d</network_status>\n"
         "   <ams_password_error>%d</ams_password_error>\n"
         "   <task_suspend_reason>%d</task_suspend_reason>\n"
-        "   <network_suspend_reason>%d</network_suspend_reason>\n"
         "   <task_mode>%d</task_mode>\n"
         "   <task_mode_perm>%d</task_mode_perm>\n"
         "   <task_mode_delay>%f</task_mode_delay>\n"
+        "   <gpu_suspend_reason>%d</gpu_suspend_reason>\n"
         "   <gpu_mode>%d</gpu_mode>\n"
         "   <gpu_mode_perm>%d</gpu_mode_perm>\n"
         "   <gpu_mode_delay>%f</gpu_mode_delay>\n"
+        "   <network_suspend_reason>%d</network_suspend_reason>\n"
         "   <network_mode>%d</network_mode>\n"
         "   <network_mode_perm>%d</network_mode_perm>\n"
         "   <network_mode_delay>%f</network_mode_delay>\n"
@@ -611,13 +573,14 @@ static void handle_get_cc_status(GUI_RPC_CONN* gr, MIOFILE& fout) {
         net_status.network_status(),
         gstate.acct_mgr_info.password_error?1:0,
         gstate.suspend_reason,
-        gstate.network_suspend_reason,
         gstate.run_mode.get_current(),
         gstate.run_mode.get_perm(),
         gstate.run_mode.delay(),
+        gpu_suspend_reason,
         gstate.gpu_mode.get_current(),
         gstate.gpu_mode.get_perm(),
         gstate.gpu_mode.delay(),
+        gstate.network_suspend_reason,
         gstate.network_mode.get_current(),
         gstate.network_mode.get_perm(),
         gstate.network_mode.delay(),
@@ -849,13 +812,13 @@ static void handle_acct_mgr_rpc(char* buf, MIOFILE& fout) {
             }
         }
     } else {
-        if (!strlen(gstate.acct_mgr_info.acct_mgr_url)) {
+        if (!strlen(gstate.acct_mgr_info.master_url)) {
             bad_arg = true;
             msg_printf(NULL, MSG_INTERNAL_ERROR,
                 "Account manager info missing from config file"
             );
         } else {
-            url = gstate.acct_mgr_info.acct_mgr_url;
+            url = gstate.acct_mgr_info.master_url;
             name = gstate.acct_mgr_info.login_name;
             password_hash = gstate.acct_mgr_info.password_hash;
         }
@@ -888,8 +851,11 @@ static void handle_acct_mgr_rpc_poll(char*, MIOFILE& fout) {
 }
 
 static void handle_get_newer_version(MIOFILE& fout) {
-    fout.printf("<newer_version>%s</newer_version>\n",
-        gstate.newer_version.c_str()
+    fout.printf(
+        "<newer_version>%s</newer_version>\n"
+        "<download_url>%s</download_url>\n",
+        gstate.newer_version.c_str(),
+        config.client_download_url.c_str()
     );
 }
 
@@ -974,6 +940,7 @@ static void read_all_projects_list_file(MIOFILE& fout) {
     }
 }
 
+#ifndef USE_REC
 static int set_debt(XML_PARSER& xp) {
     bool is_tag;
     char tag[256], url[256];
@@ -1057,6 +1024,7 @@ static void handle_set_debts(char* buf, MIOFILE& fout) {
     }
     fout.printf("<error>No end tag</error>\n");
 }
+#endif
 
 static void handle_set_cc_config(char* buf, MIOFILE& fout) {
     char *p, *q=0;
@@ -1093,34 +1061,103 @@ static void handle_set_cc_config(char* buf, MIOFILE& fout) {
     );
 }
 
+static void handle_get_notices(char* buf, MIOFILE& fout, bool notice_refresh) {
+    int seqno = 0;
+    parse_int(buf, "<seqno>", seqno);
+    notices.write(seqno, fout, false, notice_refresh);
+}
+
+static void handle_get_notices_public(char* buf, MIOFILE& fout, bool notice_refresh) {
+    int seqno = 0;
+    parse_int(buf, "<seqno>", seqno);
+    notices.write(seqno, fout, true, notice_refresh);
+}
+
+static bool complete_post_request(char* buf) {
+    if (strncmp(buf, "POST", 4)) return false;
+    char* p = strstr(buf, "Content-Length: ");
+    if (!p) return false;
+    p += strlen("Content-Length: ");
+    int n = atoi(p);
+    p = strstr(p, "\r\n\r\n");
+    if (!p) return false;
+    p += 4;
+    if ((int)strlen(p) < n) return false;
+    return true;
+}
+
 // Some of the RPCs have empty-element request messages.
 // We accept both <foo/> and <foo></foo>
 //
 #define match_req(buf, tag) (match_tag(buf, "<" tag ">") || match_tag(buf, "<" tag "/>"))
 
 int GUI_RPC_CONN::handle_rpc() {
-    char request_msg[4096];
     int n, retval=0;
     MIOFILE mf;
     MFILE m;
     char* p;
     mf.init_mfile(&m);
 
-    // read the request message in one read()
-    // so that the core client won't hang because
-    // of malformed request msgs
-    //
+    int left = GUI_RPC_REQ_MSG_SIZE - request_nbytes;
 #ifdef _WIN32
-        n = recv(sock, request_msg, 4095, 0);
+        n = recv(sock, request_msg+request_nbytes, left, 0);
 #else
-        n = read(sock, request_msg, 4095);
+        n = read(sock, request_msg+request_nbytes, left);
 #endif
-    if (n <= 0) return ERR_READ;
-    request_msg[n-1] = 0;   // replace 003 with NULL
+    if (n <= 0) {
+        request_nbytes = 0;
+        return ERR_READ;
+    }
+    request_nbytes += n;
 
-    if (log_flags.guirpc_debug) {
+    // buffer full?
+    if (request_nbytes >= GUI_RPC_REQ_MSG_SIZE) {
+        request_nbytes = 0;
+        return ERR_READ;
+    }
+    request_msg[request_nbytes] = 0;
+    if (!strncmp(request_msg, "OPTIONS", 7)) {
+        char buf[1024];
+        sprintf(buf, "HTTP/1.1 200 OK\n"
+            "Server: BOINC client\n"
+            "Access-Control-Allow-Origin: *\n"
+            "Access-Control-Allow-Methods: POST, GET, OPTIONS\n"
+            "Content-Length: 0\n"
+            "Keep-Alive: timeout=2, max=100\n"
+            "Connection: Keep-Alive\n"
+            "Content-Type: text/plain\n\n"
+        );
+        send(sock, buf, strlen(buf), 0);
+        request_nbytes = 0;
+        if (log_flags.gui_rpc_debug) {
+            msg_printf(0, MSG_INFO,
+                "[gui_rpc] processed OPTIONS"
+            );
+        }
+        return 0;
+    }
+    bool http_request;
+    if (complete_post_request(request_msg)) {
+        http_request = true;
+    } else {
+        p = strchr(request_msg, 3);
+        if (p) {
+            *p = 0;
+            http_request = false;
+        } else {
+            if (log_flags.gui_rpc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[gui_rpc] partial GUI RPC Command = '%s'\n", request_msg
+                );
+            }
+            return 0;
+        }
+    }
+    request_nbytes = 0;
+
+    if (log_flags.gui_rpc_debug) {
         msg_printf(0, MSG_INFO,
-            "[guirpc_debug] GUI RPC Command = '%s'\n", request_msg
+            "[gui_rpc] GUI RPC Command = '%s'\n", request_msg
         );
     }
 
@@ -1191,6 +1228,9 @@ int GUI_RPC_CONN::handle_rpc() {
         handle_get_cc_status(this, mf);
     } else if (match_req(request_msg, "get_all_projects_list")) {
         read_all_projects_list_file(mf);
+    } else if (match_req(request_msg, "get_notices_public")) {
+        handle_get_notices_public(request_msg, mf, notice_refresh);
+        notice_refresh = false;
 
     // Operations that require authentication start here
 
@@ -1262,18 +1302,23 @@ int GUI_RPC_CONN::handle_rpc() {
     } else if (match_req(request_msg, "read_cc_config")) {
         mf.printf("<success/>\n");
         read_config_file(false);
-        msg_printf(0, MSG_INFO, "Re-read config file");
         config.show();
         log_flags.show();
         gstate.set_ncpus();
         gstate.request_schedule_cpus("Core client configuration");
         gstate.request_work_fetch("Core client configuration");
+#ifndef USE_REC
     } else if (match_req(request_msg, "set_debts")) {
         handle_set_debts(request_msg, mf);
+#endif
+    } else if (match_req(request_msg, "get_notices")) {
+        handle_get_notices(request_msg, mf, notice_refresh);
+        notice_refresh = false;
     } else {
 
         // RPCs after this point require authentication,
-        // and enable network communication for 5 minutes, overriding other factors.
+        // and enable network communication for 5 minutes,
+        // overriding other factors.
         // Things like attaching projects, etc.
         //
 
@@ -1318,13 +1363,26 @@ int GUI_RPC_CONN::handle_rpc() {
 
     mf.printf("</boinc_gui_rpc_reply>\n\003");
     m.get_buf(p, n);
+    if (http_request) {
+        char buf[1024];
+        sprintf(buf,
+            "HTTP/1.1 200 OK\n"
+            "Date: Fri, 31 Dec 1999 23:59:59 GMT\n"
+            "Server: BOINC client\n"
+            "Connection: close\n"
+            "Content-Type: text/xml; charset=utf-8\n"
+            "Content-Length: %d\n\n",
+            n
+        );
+        send(sock, buf, strlen(buf), 0);
+    }
     if (p) {
         send(sock, p, n, 0);
         p[n-1]=0;   // replace 003 with NULL
-        if (log_flags.guirpc_debug) {
+        if (log_flags.gui_rpc_debug) {
             if (n > 50) p[50] = 0;
             msg_printf(0, MSG_INFO,
-                "[guirpc_debug] GUI RPC reply: '%s'\n", p
+                "[gui_rpc] GUI RPC reply: '%s'\n", p
             );
         }
         free(p);

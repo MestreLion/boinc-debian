@@ -15,11 +15,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
 #endif
 #ifdef _WIN32
 #include "win_util.h"
+#ifdef _MSC_VER
+#define finite _finite
+#endif
 #endif
 
 #ifndef M_LN2
@@ -229,6 +234,7 @@ int boinc_calling_thread_cpu_time(double &cpu_t) {
 // html/inc/credit.inc
 //
 void update_average(
+    double now,
     double work_start_time,       // when new work was started
                                     // (or zero if no new work)
     double work,                    // amount of new work
@@ -236,8 +242,6 @@ void update_average(
     double& avg,                    // average work per day (in and out)
     double& avg_time                // when average was last computed
 ) {
-    double now = dtime();
-
     if (avg_time) {
         // If an average R already exists, imagine that the new work was done
         // entirely between avg_time and now.
@@ -338,6 +342,10 @@ int read_file_malloc(const char* path, char*& buf, size_t max_len, bool tail) {
 #endif
     size_t isize = (size_t)size;
     buf = (char*)malloc(isize+1);
+    if (!buf) {
+        fclose(f);
+        return ERR_MALLOC;
+    }
     size_t n = fread(buf, 1, isize, f);
     buf[n] = 0;
     fclose(f);

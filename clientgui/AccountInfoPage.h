@@ -80,6 +80,9 @@ public:
     wxString GetAccountConfirmPassword() const { return m_strAccountConfirmPassword ; }
     void SetAccountConfirmPassword(wxString value) { m_strAccountConfirmPassword = value ; }
 
+    wxString GetAccountUsername() const { return m_strAccountUsername ; }
+    void SetAccountUsername(wxString value) { m_strAccountUsername = value ; }
+
     /// Retrieves bitmap resources
     wxBitmap GetBitmapResource( const wxString& name );
 
@@ -93,23 +96,26 @@ public:
 ////@begin CAccountInfoPage member variables
     wxStaticText* m_pTitleStaticCtrl;
     wxStaticText* m_pCookieDetectionFailedStaticCtrl;
-    wxHyperLink* m_pCookieDetectionFailedCtrl;
+    wxHyperlinkCtrl* m_pCookieDetectionFailedCtrl;
     wxStaticText* m_pAccountQuestionStaticCtrl;
     wxRadioButton* m_pAccountCreateCtrl;
     wxRadioButton* m_pAccountUseExistingCtrl;
     wxStaticText* m_pAccountInformationStaticCtrl;
     wxStaticText* m_pAccountEmailAddressStaticCtrl;
     wxTextCtrl* m_pAccountEmailAddressCtrl;
+    wxStaticText* m_pAccountUsernameStaticCtrl;
+    wxTextCtrl* m_pAccountUsernameCtrl;
     wxStaticText* m_pAccountPasswordStaticCtrl;
     wxTextCtrl* m_pAccountPasswordCtrl;
     wxStaticText* m_pAccountConfirmPasswordStaticCtrl;
     wxTextCtrl* m_pAccountConfirmPasswordCtrl;
     wxStaticText* m_pAccountPasswordRequirmentsStaticCtrl;
     wxStaticText* m_pAccountManagerLinkLabelStaticCtrl;
+    wxHyperlinkCtrl* m_pAccountForgotPasswordCtrl;
     wxString m_strAccountEmailAddress;
+    wxString m_strAccountUsername;
     wxString m_strAccountPassword;
     wxString m_strAccountConfirmPassword;
-    wxHyperLink* m_pAccountForgotPasswordCtrl;
 ////@end CAccountInfoPage member variables
 };
 

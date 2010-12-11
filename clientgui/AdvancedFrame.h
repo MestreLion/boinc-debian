@@ -25,17 +25,7 @@
 
 
 class CBOINCBaseView;
-
-///
-/// Bitmask values for CMainDocument::RunPeriodicRPCs()
-///
-#define VW_PROJ 1
-#define VW_TASK 2
-#define VW_XFER 4
-#define VW_MSGS 8
-#define VW_STAT 16
-#define VW_DISK 32
-
+class CDlgEventLog;
 
 class CStatusBar : public wxStatusBar
 {
@@ -87,6 +77,8 @@ public:
     void OnRetryCommunications( wxCommandEvent& event );
     void OnReadPreferences( wxCommandEvent& event );
     void OnReadConfig( wxCommandEvent& event );
+    void OnEventLog( wxCommandEvent& event );
+    void OnLaunchNewInstance( wxCommandEvent& event );
 
     void OnHelp( wxHelpEvent& event );
     void OnHelpBOINC( wxCommandEvent& event );
@@ -99,11 +91,13 @@ public:
 
     void OnRefreshView( CFrameEvent& event );
     void OnConnect( CFrameEvent& event );
+    void OnNotification( CFrameEvent& event );
 
     void OnUpdateStatus( CFrameEvent& event );
 
     void ResetReminderTimers();
 
+    bool RestoreState();
     bool SaveState();
 
     wxTimer*        m_pRefreshStateTimer;
@@ -131,11 +125,8 @@ private:
     bool            RepopulateNotebook();
     bool            CreateNotebookPage( CBOINCBaseView* pwndNewNotebookPage );
     bool            DeleteNotebook();
-
     bool            CreateStatusbar();
     bool            DeleteStatusbar();
-
-    bool            RestoreState();
 
     void            SaveWindowDimensions();
 
@@ -143,6 +134,7 @@ private:
     void            UpdateGPUModeControls( CC_STATUS& status );
     void            UpdateNetworkModeControls( CC_STATUS& status );
     void            UpdateRefreshTimerInterval( wxInt32 iCurrentNotebookPage );
+    void            UpdateRefreshTimerInterval();
 
     void            StartTimers();
     void            StopTimers();

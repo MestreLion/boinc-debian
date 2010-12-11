@@ -22,6 +22,9 @@
 #ifdef _WIN32
 #include "boinc_win.h"
 #include "win_util.h"
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
 #ifndef STATUS_SUCCESS
 #define STATUS_SUCCESS 0x0                 // may be in ntstatus.h
 #endif
@@ -71,6 +74,50 @@ using std::vector;
 
 #include "app.h"
 
+// Do periodic checks on running apps:
+// - get latest CPU time and % done info
+// - check if any has exited, and clean up
+// - see if any has exceeded its CPU or disk space limits, and abort it
+//
+bool ACTIVE_TASK_SET::poll() {
+    bool action;
+    unsigned int i;
+    static double last_time = 0;
+    if (gstate.now - last_time < TASK_POLL_PERIOD) return false;
+    last_time = gstate.now;
+
+    action = check_app_exited();
+    send_heartbeats();
+    send_trickle_downs();
+    graphics_poll();
+    process_control_poll();
+    action |= check_rsc_limits_exceeded();
+    get_msgs();
+    for (i=0; i<active_tasks.size(); i++) {
+        ACTIVE_TASK* atp = active_tasks[i];
+        if (atp->task_state() == PROCESS_ABORT_PENDING) {
+            if (gstate.now > atp->abort_time + ABORT_TIMEOUT) {
+                atp->kill_task(false);
+            }
+        }
+        if (atp->task_state() == PROCESS_QUIT_PENDING) {
+            if (gstate.now > atp->quit_time + QUIT_TIMEOUT) {
+                atp->kill_task(true);
+            }
+        }
+    }
+
+    if (action) {
+        gstate.set_client_state_dirty("ACTIVE_TASK_SET::poll");
+    }
+
+    return action;
+}
+
+#if 0
+// deprecated; TerminateProcessById() doesn't work if
+// the process is running as a different user
+//
 #ifdef _WIN32
 bool ACTIVE_TASK::kill_all_children() {
 	unsigned int i,j;
@@ -96,6 +143,7 @@ bool ACTIVE_TASK::kill_all_children() {
 	}
     return true;
 }
+#endif
 #endif
 
 // Send a quit message.
@@ -139,7 +187,7 @@ int ACTIVE_TASK::kill_task(bool restart) {
 		set_task_state(PROCESS_UNINITIALIZED, "kill_task");
         char buf[256];
         sprintf(buf, "restarting %s", result->name);
-		gstate.request_enforce_schedule(result->project, buf);
+		gstate.request_schedule_cpus(buf);
 	} else {
 		set_task_state(PROCESS_ABORTED, "kill_task");
 	}
@@ -251,7 +299,7 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
 
     if (log_flags.task_debug) {
         msg_printf(result->project, MSG_INFO,
-            "[task_debug] Process for %s exited",
+            "[task] Process for %s exited",
             result->name
         );
     }
@@ -276,6 +324,11 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
             }
             double x;
             if (temporary_exit_file_present(x)) {
+                if (log_flags.task_debug) {
+                    msg_printf(result->project, MSG_INFO,
+                        "[task] task called temporary_exit(%f)", x
+                    );
+                }
                 set_task_state(PROCESS_UNINITIALIZED, "temporary exit");
                 will_restart = true;
                 result->schedule_backoff = gstate.now + x;
@@ -305,11 +358,11 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
             );
             if (log_flags.task_debug) {
                 msg_printf(result->project, MSG_INFO,
-                    "[task_debug] Process for %s exited",
+                    "[task] Process for %s exited",
                     result->name
                 );
                 msg_printf(result->project, MSG_INFO,
-                    "[task_debug] exit code %d (0x%x): %s",
+                    "[task] exit code %d (0x%x): %s",
                     exit_code, exit_code,
                     windows_format_error_string(exit_code, szError, sizeof(szError))
                 );
@@ -335,18 +388,30 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
                     handle_premature_exit(will_restart);
                 }
             }
-            if (log_flags.task_debug) {
-                msg_printf(result->project, MSG_INFO,
-                    "[task_debug] exit status %d\n",
-                    result->exit_status
-                );
+            double x;
+            if (temporary_exit_file_present(x)) {
+                if (log_flags.task_debug) {
+                    msg_printf(result->project, MSG_INFO,
+                        "[task] task called temporary_exit(%f)", x
+                    );
+                }
+                set_task_state(PROCESS_UNINITIALIZED, "temporary exit");
+                will_restart = true;
+                result->schedule_backoff = gstate.now + x;
+            } else {
+                if (log_flags.task_debug) {
+                    msg_printf(result->project, MSG_INFO,
+                        "[task] process exited with status %d\n",
+                        result->exit_status
+                    );
+                }
             }
         } else if (WIFSIGNALED(stat)) {
             int got_signal = WTERMSIG(stat);
 
             if (log_flags.task_debug) {
                 msg_printf(result->project, MSG_INFO,
-                    "[task_debug] process got signal %d", signal
+                    "[task] process got signal %d", signal
                 );
             }
 
@@ -384,7 +449,7 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
 
     cleanup_task();
 
-    if (gstate.exit_after_finish) {
+    if (config.exit_after_finish) {
         exit(0);
     }
 
@@ -521,7 +586,7 @@ bool ACTIVE_TASK_SET::check_app_exited() {
             if (log_flags.task_debug) {
                 char errmsg[1024];
                 msg_printf(atp->result->project, MSG_INFO,
-                    "[task_debug] task %s GetExitCodeProcess() failed - %s GLE %d (0x%x)",
+                    "[task] task %s GetExitCodeProcess() failed - %s GLE %d (0x%x)",
                     atp->result->name,
                     windows_format_error_string(
                         GetLastError(), errmsg, sizeof(errmsg)
@@ -611,8 +676,10 @@ bool ACTIVE_TASK_SET::check_rsc_limits_exceeded() {
         if (atp->task_state() != PROCESS_EXECUTING) continue;
 		if (!atp->result->project->non_cpu_intensive && (atp->elapsed_time > atp->max_elapsed_time)) {
 			msg_printf(atp->result->project, MSG_INFO,
-				"Aborting task %s: exceeded elapsed time limit %f\n",
-				atp->result->name, atp->max_elapsed_time
+				"Aborting task %s: exceeded elapsed time limit %.2f (%.2fG/%.2fG)",
+				atp->result->name, atp->max_elapsed_time,
+                atp->result->wup->rsc_fpops_bound/1e9,
+                atp->result->avp->flops/1e9
 			);
 			atp->abort_task(ERR_RSC_LIMIT_EXCEEDED, "Maximum elapsed time exceeded");
 			did_anything = true;
@@ -831,8 +898,15 @@ void ACTIVE_TASK_SET::suspend_all(int reason) {
             atp->preempt(REMOVE_NEVER);
             break;
         case SUSPEND_REASON_CPU_USAGE:
+            // If we're suspending because of non-BOINC CPU load,
+            // don't remove from memory.
+            // Some systems do a security check when apps are launched,
+            // which uses a lot of CPU.
+            // Avoid going into a preemption loop.
+            //
             if (atp->result->project->non_cpu_intensive) break;
-            // fall through
+            atp->preempt(REMOVE_NEVER);
+            break;
         default:
             atp->preempt(REMOVE_MAYBE_USER);
         }
@@ -1068,18 +1142,18 @@ void ACTIVE_TASK_SET::get_msgs() {
             if (old_time != atp->checkpoint_cpu_time) {
                 char buf[256];
                 sprintf(buf, "%s checkpointed", atp->result->name);
-                gstate.request_enforce_schedule(atp->result->project, buf);
+                gstate.request_schedule_cpus(buf);
                 atp->checkpoint_wall_time = gstate.now;
                 atp->premature_exit_count = 0;
                 atp->checkpoint_elapsed_time = atp->elapsed_time;
                 if (log_flags.task_debug) {
                     msg_printf(atp->wup->project, MSG_INFO,
-                        "[task_debug] result %s checkpointed",
+                        "[task] result %s checkpointed",
                         atp->result->name
                     );
                 } else if (log_flags.checkpoint_debug) {
                     msg_printf(atp->wup->project, MSG_INFO,
-                        "[checkpoint_debug] result %s checkpointed",
+                        "[checkpoint] result %s checkpointed",
                         atp->result->name
                     );
                 }
@@ -1131,15 +1205,27 @@ void ACTIVE_TASK::read_task_state_file() {
     // sanity checks - project and result name must match
     //
     if (!parse_str(buf, "<project_master_url>", s, sizeof(s))) {
+        msg_printf(wup->project, MSG_INTERNAL_ERROR,
+            "no project URL in task state file"
+        );
         return;
     }
     if (strcmp(s, result->project->master_url)) {
+        msg_printf(wup->project, MSG_INTERNAL_ERROR,
+            "wrong project URL in task state file"
+        );
         return;
     }
     if (!parse_str(buf, "<result_name>", s, sizeof(s))) {
+        msg_printf(wup->project, MSG_INTERNAL_ERROR,
+            "no task name in task state file"
+        );
         return;
     }
     if (strcmp(s, result->name)) {
+        msg_printf(wup->project, MSG_INTERNAL_ERROR,
+            "wrong task name in task state file"
+        );
         return;
     }
     if (parse_double(buf, "<checkpoint_cpu_time>", x)) {

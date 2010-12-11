@@ -91,7 +91,6 @@ function show_download($pname) {
         .tra("You may run this software on a computer only if you own the computer or have the permission of its owner.").
         "<p>"
     ;
-    if ($_GET['foo']) $pname = null;
     if ($pname) {
         download_link($pname, true);
     } else {
@@ -113,8 +112,8 @@ function show_download($pname) {
         <p>
         <b>"
         .sprintf(
-            tra("Note: if your computer is equipped with an NVIDIA Graphics Processing Unit (GPU), you may be able to %suse it to compute faster%s"),
-                "<a href=cuda.php>", ".</a>"
+            tra("Note: if your computer is equipped with an Graphics Processing Unit (GPU), you may be able to %suse it to compute faster%s"),
+                "<a href=http://boinc.berkeley.edu/wiki/GPU_computing>", ".</a>"
         )
         ."</b>
         <br><br>
@@ -123,7 +122,7 @@ function show_download($pname) {
         | <a href=\"wiki/Release_Notes\"><span class=nobr>".tra("Release notes")."</span></a>
         | <a href=\"wiki/BOINC_Help\"><span class=nobr>".tra("Help")."</span></a>
         | <a href=download_all.php><span class=nobr>".tra("All versions")."</span></a>
-        | <a href=\"trac/wiki/VersionHistory\">Version history</a>
+        | <a href=\"trac/wiki/VersionHistory\">".tra("Version history")."</a>
         </center>
         </td><td valign=top>
     ";
@@ -134,7 +133,7 @@ function show_download($pname) {
     ";
 }
 
-if ($_GET['xml']) {
+if (get_str2('xml')) {
     $args = strstr($_SERVER['REQUEST_URI'], '?');
     Header("Location: download_all.php$args");
     exit();
@@ -142,7 +141,7 @@ if ($_GET['xml']) {
 
 page_head(tra("BOINC: compute for science"));
 
-if ($_GET['all_platforms']) {
+if (get_str2('all_platforms')) {
     show_download(null);
 } else if (strstr($client_info, 'Windows')) {
     if (strstr($client_info, 'Win64')||strstr($client_info, 'WOW64')) {

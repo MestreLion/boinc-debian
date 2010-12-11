@@ -18,8 +18,16 @@
 // Stuff related to catching SEH exceptions, monitoring threads, and trapping
 // debugger messages; used by both core client and by apps.
 
-#if !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#endif
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#define snprintf    _snprintf
+#define strdate     _strdate
+#define strtime     _strtime
 #endif
 
 #ifndef __CYGWIN32__
@@ -2086,7 +2094,7 @@ LONG CALLBACK boinc_catch_signal(PEXCEPTION_POINTERS pExPtrs) {
 //   then throw a breakpoint exception to dump all the rest of the useful
 //   information.
 void boinc_catch_signal_invalid_parameter(
-    const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line,	uintptr_t /* pReserved */
+    const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t /* pReserved */
 ) {
 	fprintf(
 		stderr,

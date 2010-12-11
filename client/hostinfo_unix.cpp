@@ -100,14 +100,16 @@
 #include "win/opt_x86.h"
 #endif
 
-#include "client_types.h"
-#include "filesys.h"
 #include "error_numbers.h"
+#include "filesys.h"
 #include "str_util.h"
 #include "str_replace.h"
+#include "util.h"
+
 #include "client_state.h"
-#include "hostinfo_network.h"
+#include "client_types.h"
 #include "client_msgs.h"
+#include "hostinfo_network.h"
 
 using std::string;
 
@@ -371,8 +373,8 @@ static void parse_meminfo_linux(HOST_INFO& host) {
     double x;
     FILE* f = fopen("/proc/meminfo", "r");
     if (!f) {
-        msg_printf(NULL, MSG_USER_ERROR,
-            "Can't open /proc/meminfo - defaulting to 1 GB."
+        msg_printf(NULL, MSG_INFO,
+            "Can't open /proc/meminfo to get memory size - defaulting to 1 GB."
         );
         host.m_nbytes = GIGA;
         host.m_swap = GIGA;
@@ -401,7 +403,6 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
     char buf[256], features[1024], model_buf[1024];
     bool vendor_found=false, model_found=false;
     bool cache_found=false, features_found=false;
-    bool icache_found=false,dcache_found=false;
     bool model_hack=false, vendor_hack=false;
     int n;
     int family=-1, model=-1, stepping=-1;
@@ -409,7 +410,9 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
 
     FILE* f = fopen("/proc/cpuinfo", "r");
     if (!f) {
-        msg_printf(NULL, MSG_USER_ERROR, "Can't open /proc/cpuinfo.");
+        msg_printf(NULL, MSG_INFO,
+            "Can't open /proc/cpuinfo to get CPU info"
+        );
         strcpy(host.p_model, "unknown");
         strcpy(host.p_vendor, "unknown");
         return;
@@ -514,6 +517,7 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
             stepping = atoi(buf+strlen("stepping\t: "));
         }
 #ifdef __hppa__
+        bool icache_found=false,dcache_found=false;
         if (!icache_found && strstr(buf, "I-cache\t\t: ")) {
             icache_found = true;
             sscanf(buf, "I-cache\t\t: %d", &n);
@@ -654,20 +658,20 @@ static void get_cpu_info_maxosx(HOST_INFO& host) {
         brand_string, family, model, stepping
     );
 #else       // PowerPC
-    char capabilities[256], model[256];
+    char model[256];
     int response = 0;
     int retval;
     len = sizeof(response);
-    safe_strcpy(host.p_vendor, "Power Macintosh");
     retval = sysctlbyname("hw.optional.altivec", &response, &len, NULL, 0);
     if (response && (!retval)) {
-        safe_strcpy(capabilities, "AltiVec");
+        safe_strcpy(host.p_features, "AltiVec");
     }
         
     len = sizeof(model);
     sysctlbyname("hw.model", model, &len, NULL, 0);
 
-    snprintf(host.p_model, p_model_size, "%s [%s Model %s] [%s]", host.p_vendor, host.p_vendor, model, capabilities);
+    safe_strcpy(host.p_vendor, "Power Macintosh");
+    snprintf(host.p_model, p_model_size, "%s [%s Model %s] [%s]", host.p_vendor, host.p_vendor, model, host.p_features);
 
 #endif
 
@@ -827,12 +831,327 @@ static void get_cpu_info_haiku(HOST_INFO& host) {
 }
 #endif
 
+
+// Note: this may also work on other UNIX-like systems in addition to Macintosh
+#ifdef __APPLE__
+
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <net/route.h>
+
+// detect the network usage totals for the host.
+//
+int get_network_usage_totals(unsigned int& total_received, unsigned int& total_sent) {
+	static size_t  sysctlBufferSize = 0;
+	static uint8_t *sysctlBuffer = NULL;
+
+	int	mib[] = { CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST, 0 };
+    struct if_msghdr *ifmsg;
+	size_t currentSize = 0;
+
+    total_received = 0;
+    total_sent = 0;
+    
+    if (sysctl(mib, 6, NULL, &currentSize, NULL, 0) != 0) return errno;
+    if (!sysctlBuffer || (currentSize > sysctlBufferSize)) {
+        if (sysctlBuffer) free(sysctlBuffer);
+        sysctlBufferSize = 0;
+        sysctlBuffer = (uint8_t*)malloc(currentSize);
+        if (!sysctlBuffer) return ERR_MALLOC;
+        sysctlBufferSize = currentSize;
+    }
+    
+    // Read in new data
+    if (sysctl(mib, 6, sysctlBuffer, &currentSize, NULL, 0) != 0) return errno;
+    
+    // Walk through the reply 
+    uint8_t *currentData = sysctlBuffer;
+    uint8_t *currentDataEnd = sysctlBuffer + currentSize;
+
+    while (currentData < currentDataEnd) {
+        // Expecting interface data
+        ifmsg = (struct if_msghdr *)currentData;
+        if (ifmsg->ifm_type != RTM_IFINFO) {
+            currentData += ifmsg->ifm_msglen;
+            continue;
+        }
+        // Must not be loopback
+        if (ifmsg->ifm_flags & IFF_LOOPBACK) {
+            currentData += ifmsg->ifm_msglen;
+            continue;
+        }
+        // Only look at link layer items
+        struct sockaddr_dl *sdl = (struct sockaddr_dl *)(ifmsg + 1);
+        if (sdl->sdl_family != AF_LINK) {
+            currentData += ifmsg->ifm_msglen;
+            continue;
+        }
+        
+#if 0   // Use this code if we want only Ethernet interface 0
+        if (!strcmp(sdl->sdl_data, "en0")) {
+            total_received = ifmsg->ifm_data.ifi_ibytes;
+            total_sent = ifmsg->ifm_data.ifi_obytes;
+            return 0;
+        }
+#else   // Use this code if we want total of all non-loopback interfaces
+        total_received += ifmsg->ifm_data.ifi_ibytes;
+        total_sent += ifmsg->ifm_data.ifi_obytes;
+#endif
+    }
+        
+    return 0;
+}
+
+
+#if defined(__i386__) || defined(__x86_64__)
+
+// Code to get maximum CPU temperature (Apple Intel only)
+// Adapted from Apple System Management Control (SMC) Tool under the GPL
+
+#define KERNEL_INDEX_SMC      2
+
+#define SMC_CMD_READ_BYTES    5
+#define SMC_CMD_READ_KEYINFO  9
+
+typedef struct {
+    char                  major;
+    char                  minor;
+    char                  build;
+    char                  reserved[1]; 
+    UInt16                release;
+} SMCKeyData_vers_t;
+
+typedef struct {
+    UInt16                version;
+    UInt16                length;
+    UInt32                cpuPLimit;
+    UInt32                gpuPLimit;
+    UInt32                memPLimit;
+} SMCKeyData_pLimitData_t;
+
+typedef struct {
+    UInt32                dataSize;
+    UInt32                dataType;
+    char                  dataAttributes;
+} SMCKeyData_keyInfo_t;
+
+typedef char              SMCBytes_t[32]; 
+
+typedef struct {
+  UInt32                  key; 
+  SMCKeyData_vers_t       vers; 
+  SMCKeyData_pLimitData_t pLimitData;
+  SMCKeyData_keyInfo_t    keyInfo;
+  char                    result;
+  char                    status;
+  char                    data8;
+  UInt32                  data32;
+  SMCBytes_t              bytes;
+} SMCKeyData_t;
+
+static io_connect_t conn;
+
+kern_return_t SMCOpen()
+{
+    kern_return_t       result;
+    mach_port_t         masterPort;
+    io_iterator_t       iterator;
+    io_object_t         device;
+
+    result = IOMasterPort(MACH_PORT_NULL, &masterPort);
+
+    CFMutableDictionaryRef matchingDictionary = IOServiceMatching("AppleSMC");
+    result = IOServiceGetMatchingServices(masterPort, matchingDictionary, &iterator);
+    if (result != kIOReturnSuccess)
+    {
+        return result;
+    }
+
+    device = IOIteratorNext(iterator);
+    IOObjectRelease(iterator);
+    if (device == 0)
+    {
+        return result;
+    }
+
+    result = IOServiceOpen(device, mach_task_self(), 0, &conn);
+    IOObjectRelease(device);
+    if (result != kIOReturnSuccess)
+    {
+        return result;
+    }
+
+    return kIOReturnSuccess;
+}
+
+kern_return_t SMCClose()
+{
+    if (conn) {
+        return IOServiceClose(conn);
+    }
+    return kIOReturnSuccess;
+}
+
+
+kern_return_t SMCReadKey(UInt32 key, SMCBytes_t val)
+{
+    kern_return_t       result;
+    SMCKeyData_t        inputStructure;
+    SMCKeyData_t        outputStructure;
+ 	size_t              structureInputSize;
+    size_t              structureOutputSize;
+
+    memset(&inputStructure, 0, sizeof(SMCKeyData_t));
+    memset(&outputStructure, 0, sizeof(SMCKeyData_t));
+    memset(val, 0, sizeof(val));
+
+    inputStructure.key = key;
+    inputStructure.data8 = SMC_CMD_READ_KEYINFO;    
+
+    structureInputSize = sizeof(inputStructure);
+    structureOutputSize = sizeof(outputStructure);
+	result = IOConnectMethodStructureIStructureO(
+                    conn, KERNEL_INDEX_SMC, structureInputSize, &structureOutputSize, 
+                    &inputStructure, &outputStructure
+            );
+    if (result != kIOReturnSuccess)
+        return result;
+
+    inputStructure.keyInfo.dataSize = outputStructure.keyInfo.dataSize;
+    inputStructure.data8 = SMC_CMD_READ_BYTES;
+
+	result = IOConnectMethodStructureIStructureO(
+                    conn, KERNEL_INDEX_SMC, structureInputSize, &structureOutputSize, 
+                    &inputStructure, &outputStructure
+            );
+    if (result != kIOReturnSuccess)
+        return result;
+
+    memcpy(val, outputStructure.bytes, sizeof(outputStructure.bytes));
+
+    return kIOReturnSuccess;
+}
+
+
+// Check up to 10 die temperatures (TC0D, TC1D, etc.) and 
+// 10 heatsink temperatures (TCAH, TCBH, etc.)
+// Returns the highest current CPU temperature as degrees Celsius.
+// Returns zero if it fails (or on a PowerPC Mac).
+int get_max_cpu_temperature() {
+    kern_return_t       result;
+    int                 maxTemp = 0, thisTemp, i;
+    union tempKey {
+        UInt32          word;
+        char            bytes[4];
+    };
+    tempKey             key;
+    SMCBytes_t          val;
+    static bool         skip[20];
+
+    // open connection to SMC kext if this is the first time
+    if (!conn) {
+        result = SMCOpen();
+        if (result != kIOReturnSuccess) {
+            return 0;
+        }
+    }
+
+    for (i=0; i<20; ++i) {
+        if (skip[i]) continue;
+        if (i < 10) {
+            key.word = 'TC0D';
+            key.bytes[1] += i;          // TC0D, TC1D, TC2D, etc.
+        } else {
+            key.word = 'TCAH';
+            key.bytes[1] += (i - 10);   // TCAH, TCBH, TCCH, etc.
+        }
+        result = SMCReadKey(key.word, val);
+        if (result != kIOReturnSuccess) {
+            skip[i] = true;
+            continue;
+        }
+        
+        if (val[0] < 1) {
+            skip[i] = true;
+            continue;
+        }
+        
+        thisTemp = val[0];
+        if (val[1] & 0x80) ++thisTemp;
+        if (thisTemp > maxTemp) {
+            maxTemp = thisTemp;
+        }
+    }
+    
+    return maxTemp;
+}
+
+#else       // PowerPC
+
+int GetMaxCPUTemperature() {
+    return 0;
+}
+
+#endif
+#endif  // __APPLE__
+
+// see if Virtualbox is installed
+//
+int HOST_INFO::get_virtualbox_version() {
+    char path[MAXPATHLEN];
+    char cmd [MAXPATHLEN+35];
+    char *newlinePtr;
+    FILE* fd;
+
+#if LINUX_LIKE_SYSTEM
+    strcpy(path, "/usr/lib/virtualbox/VBoxManage");
+#elif defined( __APPLE__)
+    FSRef theFSRef;
+    OSStatus status = noErr;
+
+    // First try to locate the VirtualBox application by Bundle ID and Creator Code
+    status = LSFindApplicationForInfo('VBOX', CFSTR("org.virtualbox.app.VirtualBox"),   
+                                        NULL, &theFSRef, NULL
+                                    );
+    if (status == noErr) {
+        status = FSRefMakePath(&theFSRef, (unsigned char *)path, sizeof(path));
+    }
+    // If that failed, try its default location
+    if (status != noErr) {
+        strcpy(path, "/Applications/VirtualBox.app");
+    }
+#endif
+
+    if (boinc_file_exists(path)) {
+#if LINUX_LIKE_SYSTEM
+        safe_strcpy(cmd, path);
+        safe_strcat(cmd, " --version");
+#elif defined( __APPLE__)
+        safe_strcpy(cmd, "defaults read ");
+        safe_strcat(cmd, path);
+        safe_strcat(cmd, "/Contents/Info CFBundleShortVersionString");
+#endif
+        fd = popen(cmd, "r");
+        if (fd) {
+            fgets(virtualbox_version, sizeof(virtualbox_version), fd);
+            newlinePtr = strchr(virtualbox_version, '\n');
+            if (newlinePtr) *newlinePtr = '\0';
+            newlinePtr = strchr(virtualbox_version, '\r');
+            if (newlinePtr) *newlinePtr = '\0';
+            pclose(fd);
+        }
+    }
+
+    return 0;
+}
+
 // Rules:
 // - Keep code in the right place
 // - only one level of #if
 //
 int HOST_INFO::get_host_info() {
     get_filesystem_info(d_total, d_free);
+    get_virtualbox_version();
 
 ///////////// p_vendor, p_model, p_features /////////////////
 #if LINUX_LIKE_SYSTEM
@@ -1281,7 +1600,7 @@ bool HOST_INFO::users_idle(
             gEventHandle = NXOpenEventStatus();
             if (!gEventHandle) {
                 if (TickCount() > (120*60)) {        // If system has been up for more than 2 minutes 
-                     msg_printf(NULL, MSG_USER_ERROR,
+                     msg_printf(NULL, MSG_INFO,
                         "User idle detection is disabled: initialization failed."
                     );
                     error_posted = true;
@@ -1293,7 +1612,7 @@ bool HOST_INFO::users_idle(
         if (gEventHandle) {
             kernResult = IOHIDGetParameter( gEventHandle, CFSTR(EVSIOIDLE), sizeof(UInt64), &params, &rcnt );
             if ( kernResult != kIOReturnSuccess ) {
-                msg_printf(NULL, MSG_USER_ERROR,
+                msg_printf(NULL, MSG_INFO,
                     "User idle time measurement failed because IOHIDGetParameter failed."
                 );
                 error_posted = true;
@@ -1308,7 +1627,7 @@ bool HOST_INFO::users_idle(
             if ( (!service) || (kernResult != KERN_SUCCESS) ) {
                 // When the system first starts up, allow time for HIDSystem to be available if needed
                 if (TickCount() > (120*60)) {        // If system has been up for more than 2 minutes 
-                     msg_printf(NULL, MSG_USER_ERROR,
+                     msg_printf(NULL, MSG_INFO,
                         "Could not connect to HIDSystem: user idle detection is disabled."
                     );
                     error_posted = true;

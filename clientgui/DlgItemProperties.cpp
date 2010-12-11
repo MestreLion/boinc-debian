@@ -24,13 +24,13 @@
 #include "DlgItemProperties.h"
 #include "BOINCGUIApp.h"
 #include "BOINCBaseFrame.h"
-#include "AdvancedFrame.h"
 #include "Events.h"
 #include "error_numbers.h"
 
 IMPLEMENT_DYNAMIC_CLASS(CDlgItemProperties, wxDialog)
 
 BEGIN_EVENT_TABLE(CDlgItemProperties, wxDialog)
+
 END_EVENT_TABLE()
 
 /* Constructor */
@@ -42,7 +42,7 @@ CDlgItemProperties::CDlgItemProperties(wxWindow* parent) :
     if (!pFrame) return;
 
 	SetSizeHints( wxDefaultSize, wxDefaultSize );
-	SetExtraStyle( wxWS_EX_VALIDATE_RECURSIVELY );
+	SetExtraStyle( GetExtraStyle() | wxWS_EX_VALIDATE_RECURSIVELY );
 	
 	m_bSizer1 = new wxBoxSizer( wxVERTICAL );
 	
@@ -118,7 +118,6 @@ bool CDlgItemProperties::RestoreState() {
 	int				iWidth, iHeight;
 
 	wxASSERT(pConfig);
-
     if (!pConfig) return false;
 
 	pConfig->SetPath(m_strBaseConfigLocation);
@@ -178,7 +177,7 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
     
 	// CachedDiskUsageUpdate() may have invalidated our project 
 	// pointer, so get an updated pointer to this project
-	PROJECT* project = pDoc->project(wxString(projectname.c_str(),wxConvUTF8));
+	PROJECT* project = pDoc->project(project_in->master_url);
 	if(!project) return;     // TODO: display some sort of error alert?
 
 	std::vector<PROJECT*> dp = pDoc->disk_usage.projects;
@@ -188,7 +187,7 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
 		std::string tname;		
 		tp->get_name(tname);
 		wxString t1(wxString(tname.c_str(),wxConvUTF8));
-		if(t1.IsSameAs(wxString(projectname.c_str(),wxConvUTF8)) || t1.IsSameAs(wxString(project->master_url.c_str(),wxConvUTF8))) {
+		if(t1.IsSameAs(wxString(projectname.c_str(),wxConvUTF8)) || t1.IsSameAs(wxString(project->master_url, wxConvUTF8))) {
 			diskusage =tp->disk_usage;
 			break;
 		}
@@ -199,7 +198,7 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
 	SetTitle(wxTitle);
 	//layout controls
 	addSection(_("General"));
-	addProperty(_("Master URL"),wxString(project->master_url.c_str(),wxConvUTF8));
+	addProperty(_("Master URL"),wxString(project->master_url, wxConvUTF8));
 	addProperty(_("User name"),wxString(project->user_name.c_str(),wxConvUTF8));
 	addProperty(_("Team name"),wxString(project->team_name.c_str(),wxConvUTF8));
 	addProperty(_("Resource share"),wxString::Format(wxT("%0.0f"),project->resource_share));
@@ -218,8 +217,8 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
 	addProperty(_("Suspended via GUI"),project->suspended_via_gui ? _("yes") : _("no"));
 	addProperty(_("Don't request more work"),project->dont_request_more_work ? _("yes") : _("no"));
 	addProperty(_("Scheduler call in progress"),project->scheduler_rpc_in_progress ? _("yes") : _("no"));
-	addProperty(_("Attached via account manager"),project->attached_via_acct_mgr ? _("yes") : _("no"));
-	addProperty(_("Detach when done"),project->detach_when_done ? _("yes") : _("no"));
+	addProperty(_("Added via account manager"),project->attached_via_acct_mgr ? _("yes") : _("no"));
+	addProperty(_("Remove when tasks done"),project->detach_when_done ? _("yes") : _("no"));
 	addProperty(_("Ended"),project->ended ? _("yes") : _("no"));
 	addSection(_("Credit"));
 	addProperty(_("User"),
@@ -279,23 +278,39 @@ void CDlgItemProperties::renderInfos(PROJECT* project_in) {
 // show task properties
 //
 void CDlgItemProperties::renderInfos(RESULT* result) {
+    CMainDocument* pDoc = wxGetApp().GetDocument();
     wxDateTime dt;
 	wxString wxTitle = _("Properties of task ");
-	wxTitle.append(wxString(result->name.c_str(),wxConvUTF8));
+	wxTitle.append(wxString(result->name, wxConvUTF8));
 	SetTitle(wxTitle);
 
-	addProperty(_("Application"), FormatApplicationName(result));
-	addProperty(_("Workunit name"),wxString(result->wu_name.c_str(),wxConvUTF8));
-	addProperty(_("State"), FormatStatus(result));
+    APP_VERSION* avp = NULL;
+    WORKUNIT* wup = NULL;
+    RESULT* r = pDoc->state.lookup_result(result->project_url, result->name);
+    if (r) {
+        avp = r->avp;
+        wup = r->wup;
+    }
+    
+    addProperty(_("Application"), FormatApplicationName(result));
+	addProperty(_("Workunit name"),wxString(result->wu_name, wxConvUTF8));
+	addProperty(_("State"), result_description(result, false));
     if (result->received_time) {
         dt.Set((time_t)result->received_time);
 	    addProperty(_("Received"), dt.Format());
     }
     dt.Set((time_t)result->report_deadline);
 	addProperty(_("Report deadline"), dt.Format());
-	if (result->resources.size()) {
-		addProperty(_("Resources"), wxString(result->resources.c_str(), wxConvUTF8));
+	if (strlen(result->resources)) {
+		addProperty(_("Resources"), wxString(result->resources, wxConvUTF8));
 	}
+    if (avp) {
+        addProperty(_("Estimated app speed"), wxString::Format(wxT("%.2f GFLOPs/sec"), avp->flops/1e9));
+    }
+    if (wup) {
+        addProperty(_("Estimated task size"), wxString::Format(wxT("%.0f GFLOPs"), wup->rsc_fpops_est/1e9));
+        addProperty(_("Max RAM usage"), wxString::Format(wxT("%.0f MB"), wup->rsc_memory_bound/MEGA));
+    }
     if (result->active_task) {
 		addProperty(_("CPU time at last checkpoint"), FormatTime(result->checkpoint_cpu_time));
 		addProperty(_("CPU time"), FormatTime(result->current_cpu_time));
@@ -369,130 +384,27 @@ wxString CDlgItemProperties::FormatApplicationName(RESULT* result ) {
         APP_VERSION* avp = state_result->avp;
         if (!avp) return strBuffer;
 
-        if (app->user_friendly_name.size()) {
-            strAppBuffer = wxString(state_result->app->user_friendly_name.c_str(), wxConvUTF8);
+        if (strlen(app->user_friendly_name)) {
+            strAppBuffer = wxString(state_result->app->user_friendly_name, wxConvUTF8);
         } else {
-            strAppBuffer = wxString(state_result->avp->app_name.c_str(), wxConvUTF8);
+            strAppBuffer = wxString(state_result->avp->app_name, wxConvUTF8);
         }
 
-        if (avp->plan_class.size()) {
+        if (strlen(avp->plan_class)) {
             strClassBuffer.Printf(
                 wxT(" (%s)"),
-                wxString(avp->plan_class.c_str(), wxConvUTF8).c_str()
+                wxString(avp->plan_class, wxConvUTF8).c_str()
             );
         }
 
         strBuffer.Printf(
-            wxT("%s %d.%02d %s"), 
+            wxT("%s%s %d.%02d %s"),
+            state_result->project->anonymous_platform?_("Local: "):wxT(""),
             strAppBuffer.c_str(),
             state_result->avp->version_num / 100,
             state_result->avp->version_num % 100,
             strClassBuffer.c_str()
         );
-    }
-    return strBuffer;
-}
-
-
-//
-wxString CDlgItemProperties::FormatStatus(RESULT* result) {
-	wxString strBuffer= wxEmptyString;
-    CMainDocument* doc = wxGetApp().GetDocument();    
-    CC_STATUS      status;
-
-    wxASSERT(doc);
-    wxASSERT(wxDynamicCast(doc, CMainDocument));
-
-    doc->GetCoreClientStatus(status);
-    
-	int throttled = status.task_suspend_reason & SUSPEND_REASON_CPU_THROTTLE;
-    switch(result->state) {
-    case RESULT_NEW:
-        strBuffer = _("New"); 
-        break;
-    case RESULT_FILES_DOWNLOADING:
-        if (result->ready_to_report) {
-            strBuffer = _("Download failed");
-        } else {
-            strBuffer = _("Downloading");
-        }
-        break;
-    case RESULT_FILES_DOWNLOADED:
-        if (result->project_suspended_via_gui) {
-            strBuffer = _("Project suspended by user");
-        } else if (result->suspended_via_gui) {
-            strBuffer = _("Task suspended by user");
-        } else if (status.task_suspend_reason && !throttled) {
-            strBuffer = _("Suspended");
-            if (status.task_suspend_reason & SUSPEND_REASON_BATTERIES) {
-                strBuffer += _(" - on batteries");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_USER_ACTIVE) {
-                strBuffer += _(" - user active");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_USER_REQ) {
-                strBuffer += _(" - computation suspended");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_TIME_OF_DAY) {
-                strBuffer += _(" - time of day");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_BENCHMARKS) {
-                strBuffer += _(" - CPU benchmarks");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_DISK_SIZE) {
-                strBuffer += _(" - need disk space");
-            }
-        } else if (result->active_task) {
-            if (result->too_large) {
-                strBuffer = _("Waiting for memory");
-            } else if (result->needs_shmem) {
-                strBuffer = _("Waiting for shared memory");
-            } else if (result->scheduler_state == CPU_SCHED_SCHEDULED) {
-                if (result->edf_scheduled) {
-                    strBuffer = _("Running, high priority");
-                } else {
-                    strBuffer = _("Running");
-                }
-            } else if (result->scheduler_state == CPU_SCHED_PREEMPTED) {
-                strBuffer = _("Waiting to run");
-            } else if (result->scheduler_state == CPU_SCHED_UNINITIALIZED) {
-                strBuffer = _("Ready to start");
-            }
-        } else {
-            strBuffer = _("Ready to start");
-        }
-        break;
-    case RESULT_COMPUTE_ERROR:
-        strBuffer = _("Computation error");
-        break;
-    case RESULT_FILES_UPLOADING:
-        if (result->ready_to_report) {
-            strBuffer = _("Upload failed");
-        } else {
-            strBuffer = _("Uploading");
-        }
-        break;
-    case RESULT_ABORTED:
-        switch(result->exit_status) {
-        case ERR_ABORTED_VIA_GUI:
-            strBuffer = _("Aborted by user");
-            break;
-        case ERR_ABORTED_BY_PROJECT:
-            strBuffer = _("Aborted by project");
-            break;
-        default:
-            strBuffer = _("Aborted");
-        }
-        break;
-    default:
-        if (result->got_server_ack) {
-            strBuffer = _("Acknowledged");
-        } else if (result->ready_to_report) {
-            strBuffer = _("Ready to report");
-        } else {
-            strBuffer.Format(_("Error: invalid state '%d'"), result->state);
-        }
-        break;
     }
     return strBuffer;
 }

@@ -21,11 +21,11 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#ifdef _MSC_VER
+#define chdir _chdir
+#endif
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstdio>
 #include <unistd.h>
 #endif
@@ -62,6 +62,7 @@ static void print_options(char* prog) {
         "    --exit_before_start            exit right before starting a job\n"
         "    --exit_before_upload           exit right before starting an upload \n"
         "    --exit_when_idle               exit when there are no results\n"
+        "    --fetch_minimal_work           fetch only 1 job per device\n"
         "    --file_xfer_giveup_period N    give up on file xfers after N sec\n"
         "    --gui_rpc_port <port>          port for GUI RPCs\n"
         "    --help                         show options\n"
@@ -72,7 +73,9 @@ static void print_options(char* prog) {
         "    --master_fetch_interval N      limiting period of master retry\n"
         "    --master_fetch_period N        reload master URL after N RPC failures\n"
         "    --master_fetch_retry_cap N     exponential backoff limit\n"
+        "    --no_gpus                      don't check for GPUs\n"
         "    --no_gui_rpc                   don't allow GUI RPC, don't make socket\n"
+        "    --no_info_fetch                don't fetch project list or client version info\n"
         "    --no_priority_change           run apps at same priority as client\n"
         "    --pers_giveup N                giveup time for persistent file xfer\n"
         "    --pers_retry_delay_max N       max for file xfer exponential backoff\n"
@@ -151,14 +154,16 @@ void CLIENT_STATE::parse_cmdline(int argc, char** argv) {
             if (i == argc-1) show_options = true;
             else exit_after_app_start_secs = atoi(argv[++i]);
         } else if (ARG(exit_after_finish)) {
-            exit_after_finish = true;
+            config.exit_after_finish = true;
         } else if (ARG(exit_before_start)) {
             exit_before_start = true;
         } else if (ARG(exit_before_upload)) {
             exit_before_upload = true;
         } else if (ARG(exit_when_idle)) {
-            exit_when_idle = true;
+            config.exit_when_idle = true;
             config.report_results_immediately = true;
+        } else if (ARG(fetch_minimal_work)) {
+            config.fetch_minimal_work = true;
         } else if (ARG(file_xfer_giveup_period)) {
             if (i == argc-1) show_options = true;
             else file_xfer_giveup_period = atoi(argv[++i]);
@@ -186,8 +191,9 @@ void CLIENT_STATE::parse_cmdline(int argc, char** argv) {
             config.no_gpus = true;
         } else if (ARG(no_gui_rpc)) {
             no_gui_rpc = true;
+        } else if (ARG(no_info_fetch)) {
+            config.no_info_fetch = true;
         } else if (ARG(no_priority_change)) {
-            fprintf(stderr, "NO PRIO CHANGE\n");
             config.no_priority_change = true;
         } else if (ARG(pers_giveup)) {
             if (i == argc-1) show_options = true;
@@ -223,12 +229,12 @@ void CLIENT_STATE::parse_cmdline(int argc, char** argv) {
         } else if (ARG(show_projects)) {
             show_projects = true;
         } else if (ARG(skip_cpu_benchmarks)) {
-            skip_cpu_benchmarks = true;
+            config.skip_cpu_benchmarks = true;
         } else if (ARG(start_delay)) {
             if (i == argc-1) show_options = true;
             else config.start_delay = atof(argv[++i]);
         } else if (ARG(unsigned_apps_ok)) {
-            unsigned_apps_ok = true;
+            config.unsigned_apps_ok = true;
         } else if (ARG(update_prefs)) {
             if (i == argc-1) show_options = true;
             else safe_strcpy(update_prefs_url, argv[++i]);
@@ -273,8 +279,9 @@ void CLIENT_STATE::parse_env_vars() {
             env_var_proxy_info.http_server_port = purl.port;
             break;
         default:
-            msg_printf(0, MSG_USER_ERROR,
-                "The HTTP_PROXY environment variable must specify an HTTP proxy"
+            msg_printf_notice(0, false,
+                "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=proxy_env",
+                _("The HTTP_PROXY environment variable must specify an HTTP proxy")
             );
         }
     }
@@ -334,7 +341,7 @@ void CLIENT_STATE::do_cmdline_actions() {
             msg_printf(project, MSG_INFO, "detaching from %s\n", detach_project_url);
             detach_project(project);
         } else {
-            msg_printf(NULL, MSG_USER_ERROR, "project %s not found\n", detach_project_url);
+            msg_printf(NULL, MSG_INFO, "project %s not found\n", detach_project_url);
         }
         exit(0);
     }
@@ -346,7 +353,7 @@ void CLIENT_STATE::do_cmdline_actions() {
             reset_project(project, false);
             msg_printf(project, MSG_INFO, "Project %s has been reset", reset_project_url);
         } else {
-            msg_printf(NULL, MSG_USER_ERROR, "project %s not found\n", reset_project_url);
+            msg_printf(NULL, MSG_INFO, "project %s not found\n", reset_project_url);
         }
         exit(0);
     }
@@ -357,7 +364,7 @@ void CLIENT_STATE::do_cmdline_actions() {
         if (project) {
             project->sched_rpc_pending = RPC_REASON_USER_REQ;
         } else {
-            msg_printf(NULL, MSG_USER_ERROR, "project %s not found\n", update_prefs_url);
+            msg_printf(NULL, MSG_INFO, "project %s not found\n", update_prefs_url);
         }
     }
 

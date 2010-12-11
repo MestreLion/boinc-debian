@@ -187,9 +187,9 @@ static int process_wu_template(
 ) {
     char* p;
     char buf[BLOB_SIZE], md5[33], path[256], url[256], top_download_path[256];
-    string out, cmdline;
+    string out, cmdline, md5str, urlstr;
     int retval, file_number;
-    double nbytes;
+    double nbytes, nbytesdef;
     char open_name[256];
     bool found=false;
     int nfiles_parsed = 0;
@@ -198,7 +198,8 @@ static int process_wu_template(
     for (p=strtok(tmplate, "\n"); p; p=strtok(0, "\n")) {
         if (match_tag(p, "<file_info>")) {
             bool generated_locally = false;
-            file_number = -1;
+            file_number = nbytesdef = -1;
+            md5str = urlstr = "";
             out += "<file_info>\n";
             while (1) {
                 p = strtok(0, "\n");
@@ -207,7 +208,20 @@ static int process_wu_template(
                     continue;
                 } else if (parse_bool(p, "generated_locally", generated_locally)) {
                     continue;
+                } else if (parse_str(p, "<url>", urlstr)) {
+                    continue;
+                } else if (parse_str(p, "<md5_cksum>", md5str)) {
+                    continue;
+                } else if (parse_double(p, "<nbytes>", nbytesdef)) {
+                    continue;
                 } else if (match_tag(p, "</file_info>")) {
+                    if (nbytesdef != -1 || md5str != "" || urlstr != "") {
+                        if (nbytesdef == -1 || md5str == "" || urlstr == "") {
+                            fprintf(stderr, "All file properties must be defined "
+                                "if at least one defined (url, md5_cksum, nbytes)!\n");
+                            return ERR_XML_PARSE;
+                        }
+                    }
                     if (file_number < 0) {
                         fprintf(stderr, "No file number found\n");
                         return ERR_XML_PARSE;
@@ -227,7 +241,7 @@ static int process_wu_template(
                             "</file_info>\n",
                             infiles[file_number]
                         );
-                    } else {
+                    } else if (nbytesdef == -1) {
                         dir_hier_path(
                             infiles[file_number], config_loc.download_dir,
                             config_loc.uldl_dir_fanout, path, true
@@ -269,6 +283,18 @@ static int process_wu_template(
                             url,
                             md5,
                             nbytes
+                        );
+                    } else {
+                        sprintf(buf,
+                            "    <name>%s</name>\n"
+                            "    <url>%s</url>\n"
+                            "    <md5_cksum>%s</md5_cksum>\n"
+                            "    <nbytes>%.0f</nbytes>\n"
+                            "</file_info>\n",
+                            infiles[file_number],
+                            urlstr.c_str(),
+                            md5str.c_str(),
+                            nbytesdef
                         );
                     }
                     out += buf;
@@ -377,7 +403,7 @@ static int process_wu_template(
     if (out.size() > sizeof(wu.xml_doc)-1) {
         fprintf(stderr,
             "create_work: WU XML field is too long (%d bytes; max is %d)\n",
-            out.size(), sizeof(wu.xml_doc)-1
+            (int)out.size(), (int)sizeof(wu.xml_doc)-1
         );
         return ERR_BUFFER_OVERFLOW;
     }
@@ -441,7 +467,9 @@ int create_result_ti(
 }
 
 // Create a new result for the given WU.
-// This is called ONLY from the transitioner
+// This is called from:
+// - the transitioner
+// - the scheduler (for assigned jobs)
 //
 int create_result(
     WORKUNIT& wu,
@@ -460,7 +488,7 @@ int create_result(
 
     result.clear();
     initialize_result(result, wu);
-    result.priority = result.priority + priority_increase;
+    result.priority += priority_increase;
     sprintf(result.name, "%s_%s", wu.name, result_name_suffix);
     sprintf(base_outfile_name, "%s_", result.name);
     retval = read_filename(
@@ -483,7 +511,7 @@ int create_result(
     if (strlen(result_template) > sizeof(result.xml_doc_in)-1) {
         fprintf(stderr,
             "result XML doc is too long: %d bytes, max is %d\n",
-            strlen(result_template), sizeof(result.xml_doc_in)-1
+            (int)strlen(result_template), (int)sizeof(result.xml_doc_in)-1
         );
         return ERR_BUFFER_OVERFLOW;
     }
@@ -501,19 +529,6 @@ int create_result(
         }
     }
 
-    // if using locality scheduling, advertise data file
-    // associated with this newly-created result
-    //
-    if (config_loc.locality_scheduling) {
-        const char *datafilename;
-        char *last=strstr(result.name, "__");
-        if (result.name<last && last<(result.name+255)) {
-            datafilename = config.project_path("locality_scheduling/working_set_removal/%s", result.name);
-            unlink(datafilename);
-            datafilename = config.project_path("locality_scheduling/work_available/%s", result.name);
-            boinc_touch_file(datafilename);
-        } 
-    }
     return 0;
 }
 
@@ -527,9 +542,9 @@ int check_files(char** infiles, int ninfiles, SCHED_CONFIG& config_loc) {
         dir_hier_path(
             infiles[i], config_loc.download_dir, config_loc.uldl_dir_fanout, path
         );
-		if (!boinc_file_exists(path)) {
-			return 1;
-		}
+        if (!boinc_file_exists(path)) {
+            return 1;
+        }
 
     }
     return 0;
@@ -577,8 +592,10 @@ int create_work(
     }
 
     if (strlen(result_template_filename) > sizeof(wu.result_template_file)-1) {
-        fprintf(stderr, "result template filename is too big: %d bytes, max is %d\n",
-            strlen(result_template_filename), sizeof(wu.result_template_file)-1
+        fprintf(stderr,
+            "result template filename is too big: %d bytes, max is %d\n",
+            (int)strlen(result_template_filename),
+            (int)sizeof(wu.result_template_file)-1
         );
         return ERR_BUFFER_OVERFLOW;
     }
@@ -612,6 +629,18 @@ int create_work(
         fprintf(stderr, "no max_success_results given; can't create job\n");
         return ERR_NO_OPTION;
     }
+    if (wu.max_success_results > wu.max_total_results) {
+        fprintf(stderr, "max_success_results > max_total_results; can't create job\n");
+        return ERR_INVALID_PARAM;
+    }
+    if (wu.max_error_results > wu.max_total_results) {
+        fprintf(stderr, "max_error_results > max_total_results; can't create job\n");
+        return ERR_INVALID_PARAM;
+    }
+    if (wu.target_nresults > wu.max_success_results) {
+        fprintf(stderr, "target_nresults > max_success_results; can't create job\n");
+        return ERR_INVALID_PARAM;
+    }
     if (strstr(wu.name, ASSIGNED_WU_STR)) {
         wu.transition_time = INT_MAX;
     } else {
@@ -635,4 +664,4 @@ int create_work(
     return 0;
 }
 
-const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 18437 2009-06-16 20:54:44Z davea $";
+const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 22320 2010-09-07 20:18:58Z davea $";

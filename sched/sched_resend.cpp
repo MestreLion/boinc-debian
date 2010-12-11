@@ -115,6 +115,11 @@ bool resend_lost_work() {
         g_reply->host.id, RESULT_SERVER_STATE_IN_PROGRESS
     );
     while (!result.enumerate(buf)) {
+        if (!work_needed(false)) {
+            result.end_enumerate();
+            break;
+        }
+
         bool found = false;
         for (i=0; i<g_request->other_results.size(); i++) {
             OTHER_RESULT& orp = g_request->other_results[i];
@@ -143,7 +148,7 @@ bool resend_lost_work() {
             continue;
         }
 
-        bavp = get_app_version(wu);
+        bavp = get_app_version(wu, false, false);
         if (!bavp) {
             APP* app = ssp->lookup_app(wu.appid);
             log_messages.printf(MSG_CRITICAL,
@@ -188,9 +193,9 @@ bool resend_lost_work() {
                 continue;
             }
             sprintf(warning_msg,
-                "Didn't resend lost result %s (expired)", result.name
+                "Didn't resend lost task %s (expired)", result.name
             );
-            g_reply->insert_message(USER_MESSAGE(warning_msg, "high"));
+            g_reply->insert_message(warning_msg, "low");
         } else {
             retval = add_result_to_reply(result, wu, bavp, false);
             if (retval) {
@@ -200,8 +205,8 @@ bool resend_lost_work() {
                 );
                 continue;
             }
-            sprintf(warning_msg, "Resent lost result %s", result.name);
-            g_reply->insert_message(USER_MESSAGE(warning_msg, "high"));
+            sprintf(warning_msg, "Resent lost task %s", result.name);
+            g_reply->insert_message(warning_msg, "low");
             num_resent++;
             did_any = true;
 
@@ -222,4 +227,4 @@ bool resend_lost_work() {
     return did_any;
 }
 
-const char *BOINC_RCSID_3be23838b4="$Id: sched_resend.cpp 18825 2009-08-10 04:49:02Z davea $";
+const char *BOINC_RCSID_3be23838b4="$Id: sched_resend.cpp 21749 2010-06-15 17:56:30Z davea $";

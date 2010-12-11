@@ -18,8 +18,16 @@
 // Stuff related to stderr/stdout direction and exception handling;
 // used by both core client and by apps
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#endif
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#define snprintf    _snprintf
+#define strdate     _strdate
+#define strtime     _strtime
 #endif
 
 #ifdef __EMX__
@@ -122,8 +130,10 @@ int __cdecl boinc_message_reporting(int reportType, char *szMsg, int *retVal){
 // initialize the app diagnostic environment.
 //
 int boinc_init_diagnostics(int _flags) {
-    int modified_flags = BOINC_DIAG_BOINCAPPLICATION | _flags;
-    return diagnostics_init(modified_flags, BOINC_DIAG_STDOUT, BOINC_DIAG_STDERR);
+    return diagnostics_init(
+        BOINC_DIAG_BOINCAPPLICATION | _flags,
+        BOINC_DIAG_STDOUT, BOINC_DIAG_STDERR
+    );
 }
 
 
@@ -146,7 +156,7 @@ int boinc_finish_diag() {
 int boinc_install_signal_handlers() {
 #ifdef _WIN32
     SetUnhandledExceptionFilter(boinc_catch_signal);
-#if _MSC_VER >= 1400
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
 	_set_invalid_parameter_handler(boinc_catch_signal_invalid_parameter);
 #endif
 #else  //_WIN32
@@ -610,7 +620,21 @@ void boinc_catch_signal(int signal) {
     void *array[64];
     size_t size;
     size = backtrace (array, 64);
-    fprintf(stderr, "Stack trace (%d frames):\n", size);
+//  Anything that calls malloc here (i.e *printf()) will probably fail
+//  so we'll do it the hard way.
+    write(fileno(stderr),"Stack trace (",strlen("Stack trace ("));
+    char mbuf[10];
+    char *p=mbuf+9;
+    int i=size;
+    *(p--)=0;
+    while (i) {
+      *(p--)=i%10+'0';
+      i/=10;
+    }
+    write(fileno(stderr),p+1,strlen(p+1));
+    write(fileno(stderr)," frames):",strlen(" frames):"));
+    mbuf[0]=10;
+    write(fileno(stderr),mbuf,1);
     backtrace_symbols_fd(array, size, fileno(stderr));
 #endif
 

@@ -17,9 +17,9 @@
 
 //------------------------------------
 //
-// send_file [-host_id host_id] [-file_name file_name] [-num_copies]
-// -host_id            name of host to upload from
-// -file_name          name of specific file, dominates workunit
+// send_file [options]
+// --host_id N           ID of host to upload from
+// --file_name name      name of file
 //
 // Create a result entries, initialized to sent, and corresponding
 // messages to the get the files.
@@ -36,6 +36,7 @@
 #include "util.h"
 #include "str_util.h"
 #include "md5_file.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
@@ -152,39 +153,57 @@ int send_file(int host_id, const char* file_name) {
 }
 
 
+void usage(char *name) {
+    fprintf(stderr,
+        "Create a result entries, initialized to sent, and corresponding\n"
+        "messages to the get the files.\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options:\n"
+        "  -host_id id                    id of host to upload from\n"
+        "  -file_name name                name of specific file, dominates workunit\n"
+        "  [ -h | -help | --help ]        Show this help text.\n"
+        "  [ -v | -version | --version ]  Show version information.\n",
+        name
+    );
+}
+
 int main(int argc, char** argv) {
     int i, retval;
     char file_name[256];
     int host_id;
-    int num_copies;
 
     // initialize argument strings to empty
     strcpy(file_name, "");
     host_id = 0;
-    num_copies = 0;
 
     check_stop_daemons();
 
     // get arguments
-    for(i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-host_id")) {
-            host_id = atoi(argv[++i]);
-        } else if (!strcmp(argv[i], "-file_name")) {
-            strcpy(file_name, argv[++i]);
-        } else if (!strcmp(argv[i], "-help")) {
-            fprintf(stdout,
-                    "send_file: sends a file to a specific host\n\n"
-                    "It takes the following arguments and types:\n"
-                    "-hostid (int); the number of the host\n"
-                    "-file_name (string); the name of the file to send\n"
-            );
-            exit(0);
-        } else {
-            if (!strncmp("-",argv[i],1)) {
-                fprintf(stderr, "send_file: bad argument '%s'\n", argv[i]);
-                fprintf(stderr, "type send_file -help for more information\n");
+    for (i=1; i<argc; i++) {
+        if (is_arg(argv[i], "host_id")) {
+            if (!argv[++i]) {
+                fprintf(stderr, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
                 exit(1);
             }
+            host_id = atoi(argv[i]);
+        } else if (is_arg(argv[i], "file_name")) {
+            if (!argv[++i]) {
+                fprintf(stderr, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            strcpy(file_name, argv[i]);
+        } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
+        } else {
+            fprintf(stderr, "unknowen command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
 
@@ -212,4 +231,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_f3c3c4b892 = "$Id: send_file.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_f3c3c4b892 = "$Id: send_file.cpp 21181 2010-04-15 03:13:56Z davea $";

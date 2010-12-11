@@ -15,13 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// Example graphics application, paired with uc2.C
-// This demonstrates:
-// - using shared memory to communicate with the worker app
-// - reading XML preferences by which users can customize graphics
-//   (in this case, select colors)
-// - handle mouse input (in this case, to zoom and rotate)
-// - draw text and 3D objects using OpenGL
+// Default screensaver.
+// Shows the BOINC logo and a rotating display of
+// attached projects and jobs in progress
 
 #ifdef _WIN32
 #include "boinc_win.h"
@@ -73,6 +69,17 @@ double next_connect_time = 0.0;
 
 CC_STATE cc_state;
 CC_STATUS cc_status;
+
+// Possible values of iBrandId:
+#define BOINC_BRAND_ID 0
+#define GRIDREPUBLIC_BRAND_ID 1
+#define PROGRESSTHRUPROCESSORS_BRAND_ID 2
+
+#ifdef _GRIDREPUBLIC
+static long iBrandId = GRIDREPUBLIC_BRAND_ID;
+#else
+static long iBrandId = BOINC_BRAND_ID;   // Default value for BOINC
+#endif
 
 #if 0
 struct APP_SLIDES {
@@ -175,9 +182,7 @@ void show_result(RESULT* r, float x, float& y, float alpha) {
     sprintf(buf, "Elapsed: %.0f sec  Remaining: %.0f sec", r->elapsed_time, r->estimated_cpu_time_remaining);
     txf_render_string(.1, x, y, 0, TASK_INFO_SIZE, white, 0, buf);
     y -= .03;
-    sprintf(buf, "App: %s  Task: %s", (char*)r->app->user_friendly_name.c_str(),
-        r->wup->name.c_str()
-    );
+    sprintf(buf, "App: %s  Task: %s", r->app->user_friendly_name, r->wup->name);
     txf_render_string(.1, x, y, 0, TASK_INFO_SIZE, white, 0, buf);
     y -= .03;
 }
@@ -207,7 +212,7 @@ void show_project(unsigned int index, float alpha) {
     PROJECT *p = cc_state.projects[index];
     txf_render_string(.1, x, y, 0, PROJ_NAME_SIZE, white, 0, (char*)p->project_name.c_str());
     y -= .07;
-    txf_render_string(.1, x, y, 0, PROJ_INFO_SIZE, white, 0, (char*)p->master_url.c_str());
+    txf_render_string(.1, x, y, 0, PROJ_INFO_SIZE, white, 0, p->master_url);
     y -= .05;
     sprintf(buf, "User: %s", p->user_name.c_str());
     txf_render_string(.1, x, y, 0, PROJ_INFO_SIZE, white, 0, buf);
@@ -227,14 +232,26 @@ void show_project(unsigned int index, float alpha) {
 
 void show_disconnected() {
     float x=.3, y=.3;
-    txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "BOINC is not running.");
+    if (iBrandId == GRIDREPUBLIC_BRAND_ID) {
+        txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "GridRepublic is not running.");
+    } else {    
+        txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "BOINC is not running.");
+    }
 }
 
 void show_no_projects() {
     float x=.2, y=.3;
-    txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "BOINC is not attached to any projects.");
+    if (iBrandId == GRIDREPUBLIC_BRAND_ID) {
+        txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "GridRepublic is not attached to any projects.");
+    } else {    
+        txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "BOINC is not attached to any projects.");
+    }
     y = .25;
-    txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "Attach to projects using the BOINC Manager.");
+    if (iBrandId == GRIDREPUBLIC_BRAND_ID) {
+        txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "Attach to projects using the GridRepublic Desktop.");
+    } else {    
+        txf_render_string(.1, x, y, 0, ALERT_SIZE, white, 0, "Attach to projects using the BOINC Manager.");
+    }
 }
 
 #define MAX_JOBS_DISPLAY   4
@@ -283,7 +300,11 @@ void show_jobs(unsigned int index, double alpha) {
         case SUSPEND_REASON_NO_RECENT_INPUT:
             p = "Computing suspended while computer not in use"; break;
         case SUSPEND_REASON_INITIAL_DELAY:
-            p = "Computing suspended while BOINC is starting up"; break;
+            if (iBrandId == GRIDREPUBLIC_BRAND_ID) {
+                p = "Computing suspended while GridRepublic is starting up"; break;
+            } else {    
+                p = "Computing suspended while BOINC is starting up"; break;
+            }
         case SUSPEND_REASON_EXCLUSIVE_APP_RUNNING:
             p = "Computing suspended while exclusive application running"; break;
         case SUSPEND_REASON_CPU_USAGE:
@@ -353,7 +374,7 @@ void app_graphics_render(int xs, int ys, double t) {
 
     if (!connected) {
         if (t > next_connect_time) {
-            retval = rpc.init("localhost");
+            retval = rpc.init(NULL);
             if (!retval) {
                 retval = update_data();
             }
@@ -434,7 +455,11 @@ void app_graphics_init() {
 #ifdef _WCG
     logo.load_image_file("wcg.bmp");
 #else
-    logo.load_image_file("boinc_logo_black.jpg");
+    if (iBrandId == GRIDREPUBLIC_BRAND_ID) {
+        logo.load_image_file("gridrepublic_ss_logo.jpg");
+    } else {    
+        logo.load_image_file("boinc_logo_black.jpg");
+    }
 #endif
     init_lights();
 }
@@ -456,12 +481,22 @@ int main(int argc, char** argv) {
 #endif
 
     if (test) {
-        retval = rpc.init("localhost");
+        retval = rpc.init(NULL);
         if (!retval) {
             retval = update_data();
         }
         exit(ERR_CONNECT);
     }
+    
+#ifdef __APPLE__
+    // For GridRepublic, the installer put a branding file in our data directory
+    FILE *f = fopen("/Library/Application Support/BOINC Data/Branding", "r");
+    if (f) {
+        fscanf(f, "BrandId=%ld\n", &iBrandId);
+        fclose(f);
+    }
+#else
+#endif
 
     boinc_graphics_loop(argc, argv, "BOINC screensaver");
     boinc_finish_diag();

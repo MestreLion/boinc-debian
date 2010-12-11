@@ -26,10 +26,11 @@ db_init();
 
 $user = get_logged_in_user();
 
-$action = get_str("action", true);
-$subset = get_str("subset");
-$venue = get_str("venue", true);
+$action = sanitize_tags(get_str("action", true));
+$subset = sanitize_tags(get_str("subset"));
+$venue = sanitize_tags(get_str("venue", true));
 $columns = get_str("cols", true);
+$x = "";
 $c = $columns?"&cols=$columns":"";
 check_subset($subset);
 
@@ -41,7 +42,7 @@ if ($action) {
         else $prefs = $main_prefs;
         $error = prefs_global_parse_form($prefs);
         if ($error != false) {
-            $title = "Edit ".subset_name($subset)." preferences";
+            $title = tra("Edit %1 preferences", subset_name($subset));
             if ($venue) $title = "$title for $venue";
             page_head($title);
             $x = $venue?"&venue=$venue":"";
@@ -65,10 +66,10 @@ if ($action) {
 
         $project_error = prefs_project_parse_form($prefs);
         $error = prefs_resource_parse_form($prefs);
-        if ($project_has_beta) prefs_beta_parse_form($prefs);
+        if (isset($project_has_beta) && $project_has_beta) prefs_beta_parse_form($prefs);
         if ($error != false || $project_error != false) {
-            $title = "Edit ".subset_name($subset)." preferences";
-            if ($venue) $title = "$title for $venue";
+            $title = tra("Edit %1 preferences", subset_name($subset));
+            if ($venue) $title = tra("%1 for %2", $title, $venue);
             page_head($title);
             $x = $venue?"&venue=$venue":"";
 
@@ -96,8 +97,8 @@ if ($action) {
         }
     }
 } else {
-    $title = "Edit ".subset_name($subset)." preferences";
-    if ($venue) $title = "$title for $venue";
+    $title = tra("Edit %1 preferences", subset_name($subset));
+    if ($venue) $title = tra("%1 for %2", $title, $venue);
     page_head($title);
     $x = $venue?"&venue=$venue":"";
 
@@ -115,8 +116,8 @@ if ($action) {
     }
     print_prefs_form("edit", $subset, $venue, $user, $prefs, $columns);
 }
-echo "<a href=prefs.php?subset=$subset$x$c>Back to preferences</a>\n";
+echo "<a href=prefs.php?subset=$subset$x$c>".tra("Back to preferences")."</a>\n";
 page_tail();
 
-$cvs_version_tracker[]="\$Id: prefs_edit.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: prefs_edit.php 22315 2010-09-04 22:13:27Z davea $";  //Generated automatically - do not edit
 ?>

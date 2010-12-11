@@ -52,6 +52,9 @@ function show_host_xml($host) {
         <p_iops>$host->p_iops</p_iops>
         <os_name>$host->os_name</os_name>
         <os_version>$host->os_version</os_version>
+        <m_nbytes>$host->m_nbytes</m_nbytes>
+        <d_free>$host->d_free</d_free>
+        <d_total>$host->d_total</d_total>
         <venue>$host->venue</venue>
     </host>
 ";
@@ -83,25 +86,29 @@ echo"</user>
 ";
 }
 
-function show_team_member($user, $show_email) {
+function show_team_member($user, $show_email, $creditonly = false) {
+    if ($creditonly && !$user->total_credit) { return; }
     $cpid = md5($user->cross_project_id.$user->email_addr);
     echo "<user>
     <id>$user->id</id>
+    <cpid>$cpid</cpid>
 ";
     if ($show_email && $user->send_email) {
-        echo "<email_addr>$user->email_addr</email_addr>
+        echo "    <email_addr>$user->email_addr</email_addr>
 ";
     }
-    echo "<cpid>$cpid</cpid>
-    <create_time>$user->create_time</create_time>
+    echo "    <total_credit>$user->total_credit</total_credit>";
+    if (!$creditonly) {
+        echo "    <create_time>$user->create_time</create_time>
     <name>".htmlspecialchars($user->name)."</name>
     <country>$user->country</country>
-    <total_credit>$user->total_credit</total_credit>
     <expavg_credit>$user->expavg_credit</expavg_credit>
     <expavg_time>$user->expavg_time</expavg_time>
     <url>".htmlspecialchars($user->url)."</url>
     <has_profile>$user->has_profile</has_profile>
-</user>
+";
+    }
+    echo "</user>
 ";
 }
 

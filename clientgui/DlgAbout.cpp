@@ -78,7 +78,11 @@ bool CDlgAbout::Create(wxWindow* parent, wxWindowID id, const wxString& caption,
     m_AboutBOINCLogoCtrl = NULL;
     m_AboutBOINCSloganCtrl = NULL;
     m_AboutBOINCURLCtrl = NULL;
-    m_strVersion = wxT(BOINC_VERSION_STRING);
+#if defined(_WIN64) && defined(_M_X64)
+    m_strVersion.Printf(wxT("%s (x64)"), wxT(BOINC_VERSION_STRING));
+#else
+    m_strVersion.Printf(wxT("%s (x86)"), wxT(BOINC_VERSION_STRING));
+#endif
     m_strWidgetsVersion.Printf(wxT("%d.%d.%d"), wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER);
 ////@end CDlgAbout member initialisation
     
@@ -183,8 +187,8 @@ void CDlgAbout::CreateControls() {
     itemStaticText14->Create( itemDialog1, wxID_STATIC, _("Berkeley Open Infrastructure for Network Computing"), wxDefaultPosition, wxDefaultSize, 0 );
     itemBoxSizer2->Add(itemStaticText14, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
-    m_AboutBOINCURLCtrl = new wxHyperLink;
-    m_AboutBOINCURLCtrl->Create( itemDialog1, ID_ABOUTBOINCLINK, wxT("http://boinc.berkeley.edu/"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER );
+    m_AboutBOINCURLCtrl = new wxHyperlinkCtrl;
+    m_AboutBOINCURLCtrl->Create( itemDialog1, ID_ABOUTBOINCLINK, wxT("http://boinc.berkeley.edu/"), wxT("http://boinc.berkeley.edu/"), wxDefaultPosition, wxDefaultSize, wxNO_BORDER | wxHL_ALIGN_CENTRE | wxHL_CONTEXTMENU );
     itemBoxSizer2->Add(m_AboutBOINCURLCtrl, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
     wxStaticLine* itemStaticLine15 = new wxStaticLine;

@@ -32,10 +32,9 @@
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
 #include "MainDocument.h"
-#include "hyperlink.h"
 #include "ValidateURL.h"
-#include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
+#include "WizardAttach.h"
 #include "AccountManagerInfoPage.h"
 #include "ProjectListCtrl.h"
 
@@ -161,7 +160,7 @@ void CAccountManagerInfoPage::CreateControls()
     HIObjectRef   theObject = (HIObjectRef)HIViewGetSuperview(listView);
     HIObjectSetAccessibilityIgnored(theObject, true);
 #endif
-////@end CAccountManagerInfoPage content construction
+    ////@end CAccountManagerInfoPage content construction
 }
 
 
@@ -312,7 +311,7 @@ void CAccountManagerInfoPage::OnProjectItemChange( ProjectListCtrlEvent& event )
  */
 
 void CAccountManagerInfoPage::OnProjectItemDisplay( ProjectListCtrlEvent& event ) {
-    wxHyperLink::ExecuteLink( event.GetURL() );
+    wxLaunchDefaultBrowser( event.GetURL() );
 }
 
 /*!

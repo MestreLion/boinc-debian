@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
 #endif
 #ifdef _WIN32
 #include "win_util.h"
@@ -533,6 +535,8 @@ const char* boincerror(int which_error) {
         case ERR_CRYPTO: return "encryption error";
         case ERR_ABORTED_ON_EXIT: return "job was aborted on client exit";
         case ERR_UNSTARTED_LATE: return "job is unstarted and past deadline";
+        case ERR_MISSING_COPROC: return "an expected GPU was not found";
+        case ERR_PROC_PARSE: return "a /proc entry was not parsed correctly";
         case 404: return "HTTP file not found";
         case 407: return "HTTP proxy authentication failure";
         case 416: return "HTTP range request error";
@@ -568,6 +572,32 @@ const char* rpc_reason_string(int reason) {
     case RPC_REASON_PROJECT_REQ: return "Requested by project";
     default: return "Unknown reason";
     }
+}
+
+const char* suspend_reason_string(int reason) {
+    switch (reason) {
+    case SUSPEND_REASON_BATTERIES: return "on batteries";
+    case SUSPEND_REASON_USER_ACTIVE: return "computer is in use";
+    case SUSPEND_REASON_USER_REQ: return "user request";
+    case SUSPEND_REASON_TIME_OF_DAY: return "time of day";
+    case SUSPEND_REASON_BENCHMARKS: return "CPU benchmarks in progress";
+    case SUSPEND_REASON_DISK_SIZE: return "need disk space - check preferences";
+    case SUSPEND_REASON_NO_RECENT_INPUT: return "no recent user activity";
+    case SUSPEND_REASON_INITIAL_DELAY: return "initial delay";
+    case SUSPEND_REASON_EXCLUSIVE_APP_RUNNING: return "an exclusive app is running";
+    case SUSPEND_REASON_CPU_USAGE: return "CPU is busy";
+    case SUSPEND_REASON_NETWORK_QUOTA_EXCEEDED: return "network bandwidth limit exceeded";
+    }
+    return "unknown reason";
+}
+
+const char* run_mode_string(int mode) {
+    switch (mode) {
+    case RUN_MODE_ALWAYS: return "always";
+    case RUN_MODE_AUTO: return "according to prefs";
+    case RUN_MODE_NEVER: return "never";
+    }
+    return "unknown";
 }
 
 #ifdef WIN32

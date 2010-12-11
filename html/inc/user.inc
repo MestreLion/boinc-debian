@@ -75,8 +75,12 @@ function parse_user($f, $user) {
 
 function get_other_projects($user) {
     $cpid = md5($user->cross_project_id . $user->email_addr);
+    
+    $timeout = 3;
+    $old_timeout = ini_set('default_socket_timeout', $timeout);
     $url = "http://boinc.netsoft-online.com/get_user.php?cpid=$cpid";
-    $f = fopen($url, "r");
+    $f = @fopen($url, "r");
+    ini_set('default_socket_timeout', $old_timeout);
     if (!$f) {
         return $user;
     }
@@ -157,11 +161,11 @@ function show_user_stats_private($user) {
     }
     $x .= "<br/><span class=\"smalltext\">".tra("Cross-project ID").": $cpid</span>\n";
     row2(tra("Cross-project statistics"), $x);
-    $x = "<a href=cert1.php>Account</a>";
+    $x = '<a href="cert1.php">'.tra("Account").'</a>';
     if ($user->teamid) {
-        $x .= " | <a href=cert_team.php>Team</a>";
+        $x .= ' | <a href="cert_team.php">'.tra("Team").'</a>';
     }
-    $x .= " | <a href=cert_all.php>Cross-project</a>";
+    $x .= ' | <a href="cert_all.php">'.tra("Cross-project").'</a>';
     row2(tra("Certificate"), $x);
     row2(tra("Stats on your cell phone"), URL_BASE."userw.php?id=$user->id");
 }
@@ -177,7 +181,7 @@ function notify_description($notify) {
     case NOTIFY_SUBSCRIBED_POST:
         return subscribed_post_web_line($notify);
     }
-    return "Unknown notification type: $notify->type";
+    return tra("Unknown notification type: %1", $notify->type);
 }
 
 function weak_auth($user) {
@@ -191,7 +195,7 @@ function show_user_info_private($user) {
     if (is_valid_email_addr($user->email_addr)) {
         $email_text = $user->email_addr;
     } else {
-        $email_text = "Verification pending";
+        $email_text = tra("Email address verification pending");
     }
 
     row1(tra("Account information"));
@@ -205,7 +209,7 @@ function show_user_info_private($user) {
     row2(tra("Postal code"), $user->postal_code);
     row2(tra("%1 member since", PROJECT), date_str($user->create_time));
     $url_tokens = url_tokens($user->authenticator);
-    row2(tra("Change"), "<a href=\"edit_email_form.php\">".tra("email address")."</a> | <a href=\"edit_passwd_form.php\">".tra("password")."</a> | <a href=\"edit_user_info_form.php?$url_tokens\">".tra("other account info")."</a>");
+    row2(tra("Change"), "<a href=\"edit_email_form.php\">".tra("email address")."</a> | <a href=\"".SECURE_URL_BASE."/edit_passwd_form.php\">".tra("password")."</a> | <a href=\"edit_user_info_form.php?$url_tokens\">".tra("other account info")."</a>");
     row2("", "<a href=\"logout.php?$url_tokens\">".tra("Log out")."</a>");
     row2(tra("User ID")."<br/><span class=\"note\">".tra("Used in community functions")."</span>", $user->id);
     if (!no_computing()) {
@@ -224,7 +228,7 @@ function show_user_info_private($user) {
         "<a href=\"edit_forum_preferences_form.php\">".tra("Community preferences")."</a>"
     );
     if (!no_computing()) {
-        row2(tra("Resource share and graphics"),
+        row2(tra("Preferences for this project"),
             "<a href=\"prefs.php?subset=project\">".tra("%1 preferences", PROJECT)."</a>"
         );
     }
@@ -329,10 +333,9 @@ function show_user_summary_public($user) {
     }
 }
 
-/**
- * Returns a cacheable community links data object
- * @param user The users to produce a community links object for
- */
+// Returns a cacheable community links data object
+// @param user The user to produce a community links object for
+
 function get_community_links_object($user){
     $cache_object->post_count = total_posts($user);
     $cache_object->user = $user;
@@ -395,6 +398,32 @@ function show_profile_link($user) {
     }
 }
 
+function show_account_private($user) {
+    start_table_noborder();
+    echo "<tr><td valign=top>";
+    start_table();
+    show_user_info_private($user);
+    if (!no_computing()) {
+        show_user_stats_private($user);
+    }
+
+    if (file_exists("../project/donations.inc")) {
+        require_once("../project/donations.inc");
+        if (function_exists('show_user_donations_private')) {
+            show_user_donations_private($user);
+        }
+    }
+    end_table();
+    show_other_projects($user, true);
+    project_user_page_private($user);
+    echo "</td><td valign=top>";
+    start_table();
+    show_community_private($user);
+    end_table();
+
+    echo "</td></tr></table>";
+}
+
 function is_banned_email_addr($email_addr) {
     global $banned_email_domains;
     if (isset($banned_email_domains)) {
@@ -421,6 +450,7 @@ function make_user(
     if (!is_valid_country($country)) return null;
 
     $email_addr = BoincDb::escape_string($email_addr);
+    $name = strip_tags($name);
     $name = BoincDb::escape_string($name);
     $passwd_hash = BoincDb::escape_string($passwd_hash);
 
@@ -436,6 +466,6 @@ function make_user(
     }
 }
 
-$cvs_version_tracker[]="\$Id: user.inc 18658 2009-07-22 18:41:02Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: user.inc 22366 2010-09-15 23:47:49Z davea $";  //Generated automatically - do not edit
 
 ?>

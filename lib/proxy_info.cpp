@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
-#endif
-
-#ifndef _WIN32
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
 #include "config.h"
 #endif
 
@@ -116,6 +116,7 @@ void PROXY_INFO::clear() {
     use_http_proxy = false;
     use_socks_proxy = false;
     use_http_auth = false;
+    autodetect_proxy_supported = false;
     strcpy(socks_server_name, "");
     strcpy(http_server_name, "");
     socks_server_port = 80;
@@ -126,6 +127,9 @@ void PROXY_INFO::clear() {
     strcpy(http_user_passwd, "");
 	strcpy(noproxy_hosts, "");
 	strcpy(autodetect_server_name, "");
+    autodetect_proxy_supported = false;
+    need_autodetect_proxy_settings = false;
+    have_autodetect_proxy_settings = false;
     autodetect_port = 80;
     autodetect_protocol = 0;
 }

@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// get_file [-host_id host_id] [-file_name file_name]
-// -host_id            name of host to upload from
-// -file_name          name of specific file, dominates workunit
+// get_file [options]
+// --host_id N              ID of host to upload from
+// --file_name name         name of specific file, dominates workunit
 //
 // Create a result entries, initialized to sent, and corresponding
 // messages to the host that is assumed to have the file.
@@ -40,6 +40,7 @@
 #include "sched_config.h"
 #include "sched_util.h"
 #include "md5_file.h"
+#include "svn_version.h"
 
 void init_xfer_result(DB_RESULT& result) {
     result.id = 0;
@@ -62,7 +63,9 @@ void init_xfer_result(DB_RESULT& result) {
     result.appid = 0;
 }
 
-int create_upload_result(DB_RESULT& result, int host_id, const char * file_name) {
+int create_upload_result(
+    DB_RESULT& result, int host_id, const char * file_name
+) {
     int retval;
     char result_xml[BLOB_SIZE];
     sprintf(result_xml,
@@ -87,7 +90,9 @@ int create_upload_result(DB_RESULT& result, int host_id, const char * file_name)
     return 0;
 }
 
-int create_upload_message(DB_RESULT& result, int host_id, const char* file_name) {;
+int create_upload_message(
+    DB_RESULT& result, int host_id, const char* file_name
+) {;
     DB_MSG_TO_HOST mth;
     int retval;
     mth.clear();
@@ -139,6 +144,22 @@ int get_file(int host_id, const char* file_name) {
     return retval;
 }
 
+void usage(char *name) {
+    fprintf(stderr, "Gets a file from a specific host.\n"
+        "Creates a result entry, initialized to sent, and corresponding\n"
+        "messages to the host that is assumed to have the file.\n"
+        "Run from the project root dir.\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options:\n"
+        "  --host_id id                    "
+        "Specify numerical id of host to upload from.\n"
+        "  --file_name name                "
+        "Specify name of file, dominates workunit.\n"
+        "  [ -v | --version ]     Show version information.\n"
+        "  [ -h | --help ]        Show this help text.\n",
+        name
+    );
+}
 
 int main(int argc, char** argv) {
     int i, retval;
@@ -150,25 +171,31 @@ int main(int argc, char** argv) {
 
     check_stop_daemons();
 
-    for(i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-host_id")) {
-            host_id = atoi(argv[++i]);
-        } else if (!strcmp(argv[i], "-file_name")) {
-            strcpy(file_name, argv[++i]);
-        } else if (!strcmp(argv[i], "-help")) {
-            fprintf(stdout,
-                "get_file: gets a file to a specific host\n\n"
-                "It takes the following arguments and types:\n"
-                "-hostid (int); the number of the host\n"
-                "-file_name (string); the name of the file to get\n"
-            );
-            exit(0);
-        } else {
-            if (!strncmp("-",argv[i],1)) {
-                fprintf(stderr, "get_file: bad argument '%s'\n", argv[i]);
-                fprintf(stderr, "type get_file -help for more information\n");
+    for (i=1; i<argc; i++) {
+        if (is_arg(argv[i], "host_id")) {
+            if (!argv[++i]) {
+                fprintf(stderr, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
                 exit(1);
             }
+            host_id = atoi(argv[i]);
+        } else if (is_arg(argv[i], "file_name")) {
+            if (!argv[++i]) {
+                fprintf(stderr, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            strcpy(file_name, argv[i]);
+        } else if (is_arg(argv[i], "h") || is_arg(argv[i], "help")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
+        } else {
+            fprintf(stderr, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
 
@@ -198,4 +225,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 21181 2010-04-15 03:13:56Z davea $";

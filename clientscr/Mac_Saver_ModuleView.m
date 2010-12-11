@@ -484,11 +484,11 @@ int signof(float x) {
 
 	// if we haven't loaded our configure sheet, load the nib named MyScreenSaver.nib
 	if (!mConfigureSheet)
-            [ NSBundle loadNibNamed:@"BOINCSaver" owner:self ];
+        [ NSBundle loadNibNamed:@"BOINCSaver" owner:self ];
 	// set the UI state
 	[ mGoToBlankCheckbox setState:gGoToBlank ];
 
-        mBlankingTimeString = [[ NSString alloc ] initWithFormat:@"%d", gBlankingTime ];
+    mBlankingTimeString = [[ NSString alloc ] initWithFormat:@"%d", gBlankingTime ];
 	[ mBlankingTimeTextField setStringValue:mBlankingTimeString ];
     
     period = getGFXDefaultPeriod() / 60;
@@ -517,7 +517,7 @@ int signof(float x) {
 	// save the UI state
 	gGoToBlank = [ mGoToBlankCheckbox state ];
 	mBlankingTimeString = [ mBlankingTimeTextField stringValue ];
-        gBlankingTime = [ mBlankingTimeString intValue ];
+    gBlankingTime = [ mBlankingTimeString intValue ];
     if ((gBlankingTime < 0) || (gBlankingTime > 999)) goto Bad;
 
 	mDefaultPeriodString = [ mDefaultPeriodTextField stringValue ];

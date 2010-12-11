@@ -25,26 +25,22 @@ $user = get_logged_in_user(true);
 
 $team = lookup_team($user->teamid);
 if (!$team) {
-    error_page("No such team");
+    error_page(tra("No such team"));
 }
 
-page_head("Quit $team->name");
-echo "
-    <b>Please note before quitting a team:</b>
-    <ul>
-    <li>If you quit a team, you may rejoin later,
-    or join any other team you desire
-    <li>Quitting a team does not affect your personal credit
-    statistics in any way.
-    </ul>
-    </p>
-    <form method=\"post\" action=\"team_quit_action.php\">";
+page_head(tra("Quit %1", $team->name));
+echo tra("<strong>Please note before quitting a team:</strong>
+         <ul>
+         <li>If you quit a team, you may rejoin later, or join any other team you desire
+         <li>Quitting a team does not affect your personal credit statistics in any way.
+         </ul>")
+    ."<form method=\"post\" action=\"team_quit_action.php\">";
 echo form_tokens($user->authenticator);
 echo "<input type=\"hidden\" name=\"id\" value=\"$team->id\">
-    <input type=\"submit\" value=\"Quit Team\">
+    <input type=\"submit\" value=\"".tra("Quit Team")."\">
     </form>
 ";
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_quit_form.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_quit_form.php 20582 2010-02-16 01:06:03Z davea $";  //Generated automatically - do not edit
 ?>

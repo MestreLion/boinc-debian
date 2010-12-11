@@ -1,14 +1,13 @@
 #!/usr/bin/php
 <?php
 
-// generate translation template "en.po" for BOINC web pages.
+// generate translation template for BOINC project web pages.
 //
 // Projects: don't use this.  Use build_po.php instead.
 //
-// Run this in boinc/html;
-// move the result to boinc/locale/templates/BOINC-Web.pot
+// Run this in boinc/html/ops.
 
-$FILE_LIST = "inc/*.inc user/*.php project.sample/*.inc";
+$FILE_LIST = "../inc/*.inc ../user/*.php ../project.sample/*.inc";
 
 $date = strftime('%Y-%m-%d %H:%M %Z');
 $header = <<<HDR
@@ -31,10 +30,11 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8\\n"
 
 msgid "LANG_NAME_NATIVE"
-msgstr "English"
+msgstr ""
 
 msgid "LANG_NAME_INTERNATIONAL"
-msgstr "English"
+msgstr ""
+
 
 HDR;
 
@@ -50,5 +50,9 @@ stream_copy_to_stream($pipe, $out);
 
 fclose($pipe);
 fclose($out);
+
+system("mv en.po ../../locale/templates/BOINC-Project-Generic.pot\n");
+
+echo "Done\n";
 
 ?>

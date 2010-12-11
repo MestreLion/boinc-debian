@@ -3,20 +3,27 @@
 // Purpose:     Defines wxTaskBarIcon class for manipulating icons on the
 //              Windows task bar.
 // Author:      Julian Smart
-// Modified by:
+// Modified by: Rom Walton
 // Created:     24/3/98
-// RCS-ID:      $Id: taskbarex.h 15452 2008-06-23 18:47:51Z romw $
+// RCS-ID:      $Id: taskbarex.h 22576 2010-10-21 16:02:49Z romw $
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////
-
-#ifndef _TASKBAREX_H_
-#define _TASKBAREX_H_
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma interface "taskbarex.cpp"
 #endif
 
+#ifndef _TASKBAREX_H_
+#define _TASKBAREX_H_
+
+// ----------------------------------------------------------------------------
+// wxTaskBarIconEx Balloon Types 
+// ----------------------------------------------------------------------------
+
+#define BALLOONTYPE_INFO        NIIF_INFO
+#define BALLOONTYPE_WARNING     NIIF_WARNING
+#define BALLOONTYPE_ERROR       NIIF_ERROR
 
 // ----------------------------------------------------------------------------
 // wxTaskBarIconEx 
@@ -24,14 +31,17 @@
 
 class wxTaskBarIconExEvent;
 
-class wxTaskBarIconEx: public wxEvtHandler {
+class wxTaskBarIconEx: public wxEvtHandler
+{
+    DECLARE_EVENT_TABLE()
     DECLARE_DYNAMIC_CLASS(wxTaskBarIconEx)
+    DECLARE_NO_COPY_CLASS(wxTaskBarIconEx)
 public:
 
-    wxTaskBarIconEx(void);
-    wxTaskBarIconEx( wxChar* szWindowTitle );
+    wxTaskBarIconEx();
+    wxTaskBarIconEx( wxChar* szWindowTitle, wxInt32 iTaskbarID );
 
-    virtual ~wxTaskBarIconEx(void);
+    virtual ~wxTaskBarIconEx();
 
 // Events
     virtual void OnClose( wxCloseEvent& event );
@@ -43,41 +53,43 @@ public:
     inline bool IsIconInstalled() const { return m_iconAdded; }
 
 // Operations
+    virtual bool SetIcon(
+        const wxIcon& icon,
+        const wxString& message = wxEmptyString
+    );
 
-    bool SetIcon( const wxIcon& icon );
-
-    bool SetTooltip( const wxString& message );
-
-    bool SetBalloon(
+    virtual bool SetBalloon(
         const wxIcon& icon, 
         const wxString title = wxEmptyString,
         const wxString message = wxEmptyString,
-        unsigned int timeout = 5000,
-        unsigned int iconballoon = NIIF_INFO
+        unsigned int iconballoon = BALLOONTYPE_INFO
     );
 
-    bool RemoveIcon();
-    void UpdateIcon();
+    virtual bool QueueBalloon(
+        const wxIcon& icon, 
+        const wxString title = wxEmptyString,
+        const wxString message = wxEmptyString,
+        unsigned int iconballoon = BALLOONTYPE_INFO
+    );
 
-    bool PopupMenu(wxMenu *menu); //, int x, int y);
+    virtual bool RemoveIcon();
+    virtual void UpdateIcon();
+
+    bool PopupMenu(wxMenu *menu);
+    static bool FireAppRestore();
 
 // Implementation
-    static bool RegisterWindowClass();
-    static WXHWND CreateTaskBarWindow( wxChar* szWindowTitle );
-    static bool IsBalloonsSupported();
+    WXHWND CreateTaskBarWindow( wxChar* szWindowTitle );
+    bool IsBalloonsSupported();
     long WindowProc( WXHWND hWnd, unsigned int msg, unsigned int wParam, long lParam );
 
 // Data members
 protected:
+    wxMutex*        m_pTaskbarMutex;
     WXHWND          m_hWnd;
     bool            m_iconAdded;
+    wxInt32         m_iTaskbarID;
     NOTIFYICONDATA  notifyData;
-    static bool     sm_registeredClass;
-    static unsigned int sm_taskbarMsg;
-
-private:
-    DECLARE_EVENT_TABLE()
-
 };
 
 
@@ -107,6 +119,7 @@ BEGIN_DECLARE_EVENT_TYPES()
     DECLARE_EVENT_TYPE( wxEVT_TASKBAR_BALLOON_TIMEOUT, 1563 )
     DECLARE_EVENT_TYPE( wxEVT_TASKBAR_BALLOON_USERCLICK, 1564 )
     DECLARE_EVENT_TYPE( wxEVT_TASKBAR_SHUTDOWN, 1565 )
+    DECLARE_EVENT_TYPE( wxEVT_TASKBAR_APPRESTORE, 1566 )
 END_DECLARE_EVENT_TYPES()
 
 typedef void (wxEvtHandler::*wxTaskBarIconExEventFunction)(wxTaskBarIconExEvent&);
@@ -126,12 +139,8 @@ typedef void (wxEvtHandler::*wxTaskBarIconExEventFunction)(wxTaskBarIconExEvent&
 #define EVT_TASKBAR_BALLOON_TIMEOUT(fn)      wx__DECLARE_TASKBAREXEVT(BALLOON_TIMEOUT, fn)
 #define EVT_TASKBAR_CONTEXT_USERCLICK(fn)    wx__DECLARE_TASKBAREXEVT(BALLOON_USERCLICK, fn)
 #define EVT_TASKBAR_SHUTDOWN(fn)             wx__DECLARE_TASKBAREXEVT(SHUTDOWN, fn)
+#define EVT_TASKBAR_APPRESTORE(fn)           wx__DECLARE_TASKBAREXEVT(APPRESTORE, fn)
 
 
 #endif
-    // _TASKBAR_H_
-
-
-
-
-
+    // _TASKBAREX_H_

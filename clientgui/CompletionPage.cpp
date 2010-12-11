@@ -31,9 +31,8 @@
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
 #include "MainDocument.h"
-#include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
-#include "WizardAttachProject.h"
+#include "WizardAttach.h"
 #include "CompletionPage.h"
 #include "AccountInfoPage.h"
 
@@ -130,7 +129,7 @@ void CCompletionPage::CreateControls()
     HIObjectRef   theObject = (HIObjectRef)HIViewGetSuperview(textView);
     HIObjectSetAccessibilityIgnored(theObject, true);
 #endif
-////@end CCompletionPage content construction
+    ////@end CCompletionPage content construction
 }
   
 /*!
@@ -191,8 +190,8 @@ wxIcon CCompletionPage::GetIconResource( const wxString& WXUNUSED(name) )
 void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
     if (event.GetDirection() == false) return;
 
-    CWizardAttachProject* pWAP = ((CWizardAttachProject*)GetParent());
-    CSkinAdvanced*        pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
+    CWizardAttach* pWAP = ((CWizardAttach*)GetParent());
+    CSkinAdvanced* pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
 
 
     wxASSERT(pSkinAdvanced);
@@ -205,13 +204,13 @@ void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
 
     if (IS_ATTACHTOPROJECTWIZARD()) {
         m_pCompletionTitle->SetLabel(
-            _("Attached to project")
+            _("Project added")
         );
 
         m_pCompletionWelcome->Hide();
 
         m_pCompletionBrandedMessage->SetLabel(
-            _("You are now successfully attached to this project.")
+            _("This project has been successfully added.")
         );
 
         if (pWAP->m_AccountInfoPage->m_pAccountCreateCtrl->GetValue()) {
@@ -227,14 +226,11 @@ void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
 
         if (IS_ACCOUNTMANAGERUPDATEWIZARD()) {
             // Update completed
-
             wxString strTitle;
             if (pSkinAdvanced->IsBranded()) {
-                // %s is the project name
-                //    i.e. 'GridRepublic'
                 strTitle.Printf(
                     _("Update from %s completed."),
-                    pSkinAdvanced->GetApplicationShortName().c_str()
+                    pWAP->project_config.name.c_str() 
                 );
             } else {
                 strTitle = _("Update completed.");
@@ -248,28 +244,13 @@ void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
 
         } else {
             // Attach Completed
-
-            wxString strTitle;
-            if (pSkinAdvanced->IsBranded()) {
-                // %s is the project name
-                //    i.e. 'GridRepublic'
-                strTitle.Printf(
-                    _("Attached to %s"),
-                    pSkinAdvanced->GetApplicationShortName().c_str()
-                );
-            } else {
-                strTitle = _("Attached to account manager");
-            }
-
-            m_pCompletionTitle->SetLabel( strTitle );
+            m_pCompletionTitle->SetLabel(_("Now using account manager"));
 
             if (pSkinAdvanced->IsBranded()) {
-                // %s is the project name
-                //    i.e. 'GridRepublic'
                 wxString strWelcome;
                 strWelcome.Printf(
                     _("Welcome to %s!"),
-                    pSkinAdvanced->GetApplicationShortName().c_str()
+                    pWAP->project_config.name.c_str() 
                 );
 
                 m_pCompletionWelcome->Show();
@@ -278,15 +259,12 @@ void CCompletionPage::OnPageChanged( wxWizardExEvent& event ) {
 
             wxString strBrandedMessage;
             if (pSkinAdvanced->IsBranded()) {
-                // 1st %s is the project name
-                //    i.e. 'GridRepublic'
-                // 2nd %s is the account manager success message
                 strBrandedMessage.Printf(
-                    _("You are now successfully attached to the %s system."),
-                    pSkinAdvanced->GetApplicationShortName().c_str()
+                    _("You are now using %s to manage accounts."),
+                    pWAP->project_config.name.c_str() 
                 );
             } else {
-                strBrandedMessage = _("You are now successfully attached to this account manager.");
+                strBrandedMessage = _("You are now using this account manager.");
             }
 
             m_pCompletionBrandedMessage->SetLabel( strBrandedMessage );

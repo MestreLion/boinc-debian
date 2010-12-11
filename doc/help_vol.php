@@ -1,18 +1,13 @@
 <?php
 
 require_once("docutil.php");
+require_once("../html/inc/util.inc");
 require_once("help_funcs.php");
 require_once("help_db.php");
 
-$volid = $_GET['volid'];
+$volid = get_int('volid');
 
 $vol = vol_lookup($volid);
-
-function is_valid_email_addr($addr) {
-    $pattern = '/^([^@]+)@([^@\.]+)\.([^@]{2,})$/';
-    $match = preg_match($pattern, $addr);
-    return (bool) $match;
-}
 
 function show_info($vol) {
     $x = "<span class=note> Country: $vol->country\n";
@@ -56,13 +51,9 @@ function live_contact($vol) {
         ";
     }
 
-    echo "
-    <p>
-    <span class=note>Note: BOINC helpers are unpaid volunteers.
-    Their advise is not endorsed by BOINC
-    or the University of California.</span>
-    <hr>
-    ";
+    echo " <p>";
+    help_warning();
+    echo " <hr> ";
 }
 
 function show_rating($vol, $rating) {
@@ -97,8 +88,12 @@ function email_contact($vol) {
         input("email_addr", "")
     );
     list_item("Subject<br><span class=note>Include 'BOINC' in the subject so $vol->name will know it's not spam</span>", input("subject", ""));
-    list_item("Message<br><span class=note>Please including
-        a detailed description of the problem you're experiencing.</span>",
+    list_item("Message<br><span class=note>
+            
+        Please include a detailed description of the problem
+        you're experiencing.
+        If possible, include the contents of BOINC's message log.
+        </span>",
         textarea("message", "")
     );
     list_item("", "<input type=submit name=send_email value=OK>");
@@ -118,16 +113,16 @@ if ($send_email) {
     $subject = stripslashes($_GET['subject']);
     $vol = vol_lookup($volid);
     if (!$vol || $vol->hide) {
-        error_page("No such volunteer $volid");
+        boinc_error_page("No such volunteer $volid");
     }
     $msg = stripslashes($_GET['message']);
     if (!$msg) {
-        error_page("You must supply a message");
+        boinc_error_page("You must supply a message");
     }
     $body = "The following message was sent by a BOINC Help user.\n";
     $email_addr = $_GET['email_addr'];
     if (!is_valid_email_addr($email_addr)) {
-        error_page("You must specify a valid email address");
+        boinc_error_page("You must specify a valid email address");
     }
     $reply = "\r\nreply-to: $email_addr";
     $body .= "\n\n";
@@ -141,15 +136,15 @@ if ($send_email) {
     $volid = $_GET['volid'];
     $vol = vol_lookup($volid);
     if (!$vol) {
-        error_page("No such volunteer $volid");
+        boinc_error_page("No such volunteer $volid");
     }
     $x = $_GET['rating'];
     if ($x==null) {
-        error_page("no rating given");
+        boinc_error_page("no rating given");
     }
     $rating = (int) $x;
     if ($rating < 0 || $rating > 5) {
-        error_page("bad rating");
+        boinc_error_page("bad rating");
     }
     $comment = stripslashes($_GET['comment']);
     $r = null;
@@ -173,7 +168,7 @@ if ($send_email) {
     }
     if (!$retval) {
         echo mysql_error();
-        error_page("database error");
+        boinc_error_page("database error");
     }
     page_head("Feedback recorded");
     echo "Your feedback has been recorded.  Thanks.
@@ -198,7 +193,7 @@ if ($send_email) {
         <script type=\"text/javascript\" src=\"http://download.skype.com/share/skypebuttons/js/skypeCheck.js\"></script>
         <img src=images/help/$image><p>
     ";
-    echo "<table class=box cellpadding=8 width=100%><tr><td>";
+    echo "<table class=box cellpadding=8 width=100%><tr><td width=40%>";
     if (online($status)) {
         live_contact($vol);
     }

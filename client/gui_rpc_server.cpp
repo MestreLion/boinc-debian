@@ -24,9 +24,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstdio>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -84,6 +81,8 @@ GUI_RPC_CONN::GUI_RPC_CONN(int s):
     got_auth1 = false;
     got_auth2 = false;
     sent_unauthorized = false;
+    notice_refresh = false;
+    request_nbytes = 0;
 }
 
 GUI_RPC_CONN::~GUI_RPC_CONN() {
@@ -159,7 +158,8 @@ int GUI_RPC_CONN_SET::get_password() {
 }
 
 int GUI_RPC_CONN_SET::get_allowed_hosts() {
-    int ipaddr, retval;
+    int retval;
+    sockaddr_storage ip_addr;
     char buf[256];
 
     allowed_remote_ip_addresses.clear();
@@ -170,9 +170,9 @@ int GUI_RPC_CONN_SET::get_allowed_hosts() {
     FILE* f = fopen(REMOTEHOST_FILE_NAME, "r");
     if (f) {
         remote_hosts_file_exists = true;
-        if (log_flags.guirpc_debug) {
+        if (log_flags.gui_rpc_debug) {
             msg_printf(0, MSG_INFO,
-                "[guirpc_debug] found allowed hosts list"
+                "[gui_rpc] found allowed hosts list"
             );
         }
  
@@ -183,14 +183,16 @@ int GUI_RPC_CONN_SET::get_allowed_hosts() {
         while (fgets(buf, 256, f)) {
             strip_whitespace(buf);
             if (!(buf[0] =='#' || buf[0] == ';') && strlen(buf) > 0 ) {
-                retval = resolve_hostname(buf, ipaddr);
+                retval = resolve_hostname_or_ip_addr(buf, ip_addr);
                 if (retval) {
-                    msg_printf(0, MSG_USER_ERROR,
-                        "Can't resolve hostname %s in %s",
-                        buf, REMOTEHOST_FILE_NAME
+                    msg_printf_notice(0, false,
+                        "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=remote_hosts",
+                        "%s: %s",
+                        _("Can't resolve hostname in remote_hosts.cfg"),
+                        buf
                     );
                 } else {
-                    allowed_remote_ip_addresses.push_back((int)ntohl(ipaddr));
+                    allowed_remote_ip_addresses.push_back(ip_addr);
                 }
             }
         }
@@ -241,13 +243,13 @@ int GUI_RPC_CONN_SET::init(bool last_time) {
 #else
     if (config.allow_remote_gui_rpc || remote_hosts_file_exists) {
         addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        if (log_flags.guirpc_debug) {
-            msg_printf(NULL, MSG_INFO, "[guirpc_debug] Remote control allowed");
+        if (log_flags.gui_rpc_debug) {
+            msg_printf(NULL, MSG_INFO, "[gui_rpc] Remote control allowed");
         }
     } else {
         addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-        if (log_flags.guirpc_debug) {
-            msg_printf(NULL, MSG_INFO, "[guirpc_debug] Local control only allowed");
+        if (log_flags.gui_rpc_debug) {
+            msg_printf(NULL, MSG_INFO, "[gui_rpc] Local control only allowed");
         }
     }
 #endif
@@ -269,8 +271,8 @@ int GUI_RPC_CONN_SET::init(bool last_time) {
         lsock = -1;
         return ERR_BIND;
     }
-    if (log_flags.guirpc_debug) {
-        msg_printf(NULL, MSG_INFO, "[guirpc_debug] Listening on port %d", htons(addr.sin_port));
+    if (log_flags.gui_rpc_debug) {
+        msg_printf(NULL, MSG_INFO, "[gui_rpc] Listening on port %d", htons(addr.sin_port));
     }
 
     retval = listen(lsock, 999);
@@ -287,7 +289,7 @@ int GUI_RPC_CONN_SET::init(bool last_time) {
     return 0;
 }
 
-static void show_connect_error(in_addr ia) {
+static void show_connect_error(sockaddr_storage& s) {
     static double last_time=0;
     static int count=0;
 
@@ -301,14 +303,20 @@ static void show_connect_error(in_addr ia) {
         }
         last_time = gstate.now;
     }
-    msg_printf(
-        NULL, MSG_USER_ERROR,
+    char buf[256];
+#ifdef _WIN32
+    sockaddr_in* sin = (sockaddr_in*)&s;
+    strcpy(buf, inet_ntoa(sin->sin_addr));
+#else
+    inet_ntop(s.ss_family, &s, buf, 256);
+#endif
+    msg_printf(NULL, MSG_INFO,
         "GUI RPC request from non-allowed address %s",
-        inet_ntoa(ia)
+        buf
     );
     if (count > 1) {
         msg_printf(
-            NULL, MSG_USER_ERROR,
+            NULL, MSG_INFO,
             "%d connections rejected in last 10 minutes",
             count
         );
@@ -338,11 +346,10 @@ void GUI_RPC_CONN_SET::get_fdset(FDSET_GROUP& fg, FDSET_GROUP& all) {
     if (lsock > all.max_fd) all.max_fd = lsock;
 }
 
-bool GUI_RPC_CONN_SET::check_allowed_list(int peer_ip) {
-    vector<int>::iterator remote_iter = allowed_remote_ip_addresses.begin();
+bool GUI_RPC_CONN_SET::check_allowed_list(sockaddr_storage& peer_ip) {
+    vector<sockaddr_storage>::iterator remote_iter = allowed_remote_ip_addresses.begin();
     while (remote_iter != allowed_remote_ip_addresses.end() ) {
-        int remote_host = *remote_iter;
-        if (peer_ip == remote_host) {
+        if (same_ip_addr(peer_ip, *remote_iter)) {
             return true;
         }
         remote_iter++;
@@ -359,7 +366,7 @@ void GUI_RPC_CONN_SET::got_select(FDSET_GROUP& fg) {
     if (lsock < 0) return;
 
     if (FD_ISSET(lsock, &fg.read_fds)) {
-        struct sockaddr_in addr;
+        struct sockaddr_storage addr;
 
         // For unknown reasons, the FD_ISSET() above succeeds
         // after a SIGTERM, SIGHUP, SIGINT or SIGQUIT is received,
@@ -384,7 +391,6 @@ void GUI_RPC_CONN_SET::got_select(FDSET_GROUP& fg) {
         fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
-        int peer_ip = (int) ntohl(addr.sin_addr.s_addr);
         bool allowed;
          
         // accept the connection if:
@@ -392,20 +398,18 @@ void GUI_RPC_CONN_SET::got_select(FDSET_GROUP& fg) {
         // 2) client host is included in "remote_hosts" file or
         // 3) client is on localhost
         //
-        if (peer_ip == 0x7f000001) {
+        if (is_localhost(addr)) {
             allowed = true;
             is_local = true;
         } else {
             // reread host file because IP addresses might have changed
             //
             get_allowed_hosts();
-            allowed = check_allowed_list(peer_ip);
+            allowed = check_allowed_list(addr);
         }
 
         if (!(config.allow_remote_gui_rpc) && !(allowed)) {
-            in_addr ia;
-            ia.s_addr = htonl(peer_ip);
-            show_connect_error(ia);
+            show_connect_error(addr);
             boinc_close_socket(sock);
         } else {
             gr = new GUI_RPC_CONN(sock);
@@ -413,14 +417,17 @@ void GUI_RPC_CONN_SET::got_select(FDSET_GROUP& fg) {
                 gr->auth_needed = true;
             }
             gr->is_local = is_local;
-            if (log_flags.guirpc_debug) {
+            if (log_flags.gui_rpc_debug) {
                 msg_printf(0, MSG_INFO,
-                    "[guirpc_debug] got new GUI RPC connection"
+                    "[gui_rpc] got new GUI RPC connection"
                 );
             }
             insert(gr);
         }
     }
+
+    // delete connections with failed sockets
+    //
     iter = gui_rpcs.begin();
     while (iter != gui_rpcs.end()) {
         gr = *iter;
@@ -431,15 +438,18 @@ void GUI_RPC_CONN_SET::got_select(FDSET_GROUP& fg) {
         }
         iter++;
     }
+
+    // handle RPCs on connections with pending requests
+    //
     iter = gui_rpcs.begin();
     while (iter != gui_rpcs.end()) {
         gr = *iter;
         if (FD_ISSET(gr->sock, &fg.read_fds)) {
             retval = gr->handle_rpc();
             if (retval) {
-                if (log_flags.guirpc_debug) {
+                if (log_flags.gui_rpc_debug) {
                     msg_printf(NULL, MSG_INFO,
-                        "[guirpc_debug] error %d from handler, closing socket\n",
+                        "[gui_rpc] handler returned %d, closing socket\n",
                         retval
                     );
                 }
@@ -452,16 +462,22 @@ void GUI_RPC_CONN_SET::got_select(FDSET_GROUP& fg) {
     }
 }
 
+// called when client is shutting down
+//
 void GUI_RPC_CONN_SET::close() {
-    if (log_flags.guirpc_debug) {
+    if (log_flags.gui_rpc_debug) {
         msg_printf(NULL, MSG_INFO,
-            "[guirpc_debug] closing GUI RPC listening socket %d\n", lsock
+            "[gui_rpc] closing GUI RPC listening socket %d\n", lsock
         );
     }
     if (lsock >= 0) {
         boinc_close_socket(lsock);
         lsock = -1;
     }
+    for (unsigned int i=0; i<gui_rpcs.size(); i++) {
+        delete gui_rpcs[i];
+    }
+    gui_rpcs.clear();
 }
 
 // this is called when we're ready to auto-update;

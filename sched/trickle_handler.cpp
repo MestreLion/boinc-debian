@@ -17,9 +17,9 @@
 //
 // trickle_handler - framework for trickle-up message handler
 //
-//  -variety variety
-//  [-d debug_level]
-//  [-one_pass]     // make one pass through table, then exit
+//  --variety variety
+//  [--d debug_level]
+//  [--one_pass]     // make one pass through table, then exit
 //
 // This program must be linked with an app-specific function:
 //
@@ -35,6 +35,7 @@
 #include "util.h"
 #include "error_numbers.h"
 #include "str_util.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
@@ -137,6 +138,23 @@ int main_loop(bool one_pass) {
     return 0;
 }
 
+void usage(char *name) {
+    fprintf(stderr,
+        "Framework for trickle-up message handler\n"
+        "This program must be linked with an app-specific function:\n\n"
+        "int handle_trickle(MSG_FROM_HOST&)\n"
+        "  - handle a trickle message\n\n"
+        "return nonzero on error\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options:\n"
+        "  --variety X                     Set Variety to X\n"
+        "  [ -d X ]                        Set debug level to X\n"
+        "  [ --one_pass ]                  Make one pass through table, then exit\n"
+        "  [ -h | --help ]                 Show this help text\n"
+        "  [ -v | --version ]              Shows version information\n",
+        name
+    );
+}
 
 int main(int argc, char** argv) {
     int i, retval;
@@ -145,16 +163,34 @@ int main(int argc, char** argv) {
     check_stop_daemons();
 
     for (i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-one_pass")) {
+        if (is_arg(argv[i], "one_pass")) {
             one_pass = true;
-        } else if (!strcmp(argv[i], "-variety")) {
-            strcpy(variety, argv[++i]);
+        } else if (is_arg(argv[i], "variety")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            strcpy(variety, argv[i]);
         } else if (!strcmp(argv[i], "-d")) {
-            log_messages.set_debug_level(atoi(argv[++i]));
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int dl = atoi(argv[i]);
+            log_messages.set_debug_level(dl);
+            if (dl == 4) g_print_queries = true;
+        } else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
+        } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
+            usage(argv[0]);
+            exit(0);
         } else {
-            log_messages.printf(MSG_CRITICAL,
-                "unrecognized arg: %s\n", argv[i]
-            );
+            log_messages.printf(MSG_CRITICAL, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
 
@@ -175,4 +211,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_560388f67e = "$Id: trickle_handler.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_560388f67e = "$Id: trickle_handler.cpp 21181 2010-04-15 03:13:56Z davea $";

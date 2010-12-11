@@ -25,9 +25,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -67,6 +64,8 @@ double CLIENT_STATE::allowed_disk_usage(double boinc_total) {
     if (size < 0) size = 0;
     return size;
 }
+
+#ifndef SIM
 
 int CLIENT_STATE::project_disk_usage(PROJECT* p, double& size) {
     char buf[256];
@@ -150,58 +149,45 @@ int CLIENT_STATE::check_suspend_processing() {
         }
     }
 
-    bool old_gpu_suspended = gpu_suspended;
-    gpu_suspended = false;
-    switch (gpu_mode.get_current()) {
-    case RUN_MODE_ALWAYS:
-        break;
-    case RUN_MODE_NEVER:
-        gpu_suspended = true;
-        break;
-    default:
-        if (exclusive_gpu_app_running) {
-            gpu_suspended = true;
+    if (!host_info.coprocs.none()) {
+        int old_gpu_suspend_reason = gpu_suspend_reason;
+        gpu_suspend_reason = 0;
+        switch (gpu_mode.get_current()) {
+        case RUN_MODE_ALWAYS:
             break;
-        }
-        if (user_active && !global_prefs.run_gpu_if_user_active) {
-            gpu_suspended = true;
+        case RUN_MODE_NEVER:
+            gpu_suspend_reason = SUSPEND_REASON_USER_REQ;
             break;
+        default:
+            if (exclusive_gpu_app_running) {
+                gpu_suspend_reason = SUSPEND_REASON_EXCLUSIVE_APP_RUNNING;
+                break;
+            }
+            if (user_active && !global_prefs.run_gpu_if_user_active) {
+                gpu_suspend_reason = SUSPEND_REASON_USER_ACTIVE;
+                break;
+            }
         }
-    }
 
-    if (log_flags.cpu_sched) {
-        if (old_gpu_suspended && !gpu_suspended) {
-            msg_printf(NULL, MSG_INFO, "[cpu_sched] resuming GPU activity");
-        } else if (!old_gpu_suspended && gpu_suspended) {
-            msg_printf(NULL, MSG_INFO, "[cpu_sched] suspending GPU activity");
+        if (log_flags.cpu_sched) {
+            if (old_gpu_suspend_reason && !gpu_suspend_reason) {
+                msg_printf(NULL, MSG_INFO, "[cpu_sched] resuming GPU activity");
+                request_schedule_cpus("GPU resumption");
+            } else if (!old_gpu_suspend_reason && gpu_suspend_reason) {
+                msg_printf(NULL, MSG_INFO, "[cpu_sched] suspending GPU activity");
+                request_schedule_cpus("GPU suspension");
+            }
         }
     }
 
     return 0;
 }
 
-const char* CLIENT_STATE::suspend_reason_string(int reason) {
-    switch (reason) {
-    case SUSPEND_REASON_BATTERIES: return "on batteries";
-    case SUSPEND_REASON_USER_ACTIVE: return "user is active";
-    case SUSPEND_REASON_USER_REQ: return "user request";
-    case SUSPEND_REASON_TIME_OF_DAY: return "time of day";
-    case SUSPEND_REASON_BENCHMARKS: return "running CPU benchmarks";
-    case SUSPEND_REASON_DISK_SIZE: return "out of disk space - change global prefs";
-    case SUSPEND_REASON_NO_RECENT_INPUT: return "no recent user activity";
-    case SUSPEND_REASON_INITIAL_DELAY: return "initial delay";
-    case SUSPEND_REASON_EXCLUSIVE_APP_RUNNING: return "an exclusive app is running";
-    case SUSPEND_REASON_CPU_USAGE: return "CPU usage is too high";
-    case SUSPEND_REASON_NETWORK_QUOTA_EXCEEDED: return "network bandwidth limit exceeded";
-    }
-    return "unknown reason";
-}
-
 void print_suspend_tasks_message(int reason) {
     char buf[256];
     sprintf(buf,
         "Suspending computation - %s",
-        gstate.suspend_reason_string(reason)
+        suspend_reason_string(reason)
     );
     msg_printf(NULL, MSG_INFO, buf);
 }
@@ -241,7 +227,7 @@ void CLIENT_STATE::check_suspend_network() {
 
     // no network traffic if we're allowing unsigned apps
     //
-    if (unsigned_apps_ok) {
+    if (config.unsigned_apps_ok) {
         network_suspended = true;
         file_xfers_suspended = true;
         network_suspend_reason = SUSPEND_REASON_USER_REQ;
@@ -291,6 +277,8 @@ void CLIENT_STATE::check_suspend_network() {
         network_suspend_reason = SUSPEND_REASON_EXCLUSIVE_APP_RUNNING;
     }
 }
+
+#endif // ifndef SIM
 
 // call this only after parsing global prefs
 //
@@ -451,11 +439,13 @@ void CLIENT_STATE::read_global_prefs() {
         (host_info.m_nbytes*global_prefs.ram_max_used_idle_frac)/MEGA
     );
     double x;
+#ifndef SIM
     total_disk_usage(x);
     msg_printf(NULL, MSG_INFO,
         "   max disk usage: %.2fGB",
         allowed_disk_usage(x)/GIGA
     );
+#endif
     // max_cpus, bandwidth limits may have changed
     //
     set_ncpus();
@@ -488,8 +478,10 @@ void CLIENT_STATE::read_global_prefs() {
             global_prefs.max_bytes_sec_up
         );
     }
+#ifndef SIM
     file_xfers->set_bandwidth_limits(true);
     file_xfers->set_bandwidth_limits(false);
+#endif
     msg_printf(NULL, MSG_INFO,
         "   (to change preferences, visit the web site of an attached project, or select Preferences in the Manager)"
     );

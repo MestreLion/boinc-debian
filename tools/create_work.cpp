@@ -46,6 +46,8 @@
 //  [ --assign_user_all ID ]
 //  [ --assign_team_one ID ]
 //  [ --assign_team_all ID ]
+//  [ --wu_id N ]   Pass this if you've already created the workunit record
+//           (used by boinc_submit)
 //  infile1 infile2 ...
 
 #include "config.h"
@@ -86,7 +88,7 @@ int main(int argc, const char** argv) {
     bool assign_flag = false;
     bool assign_multi = false;
     int assign_id = 0;
-    int assign_type;
+    int assign_type = ASSIGN_NONE;
 
     strcpy(result_template_file, "");
     strcpy(app.name, "");
@@ -195,15 +197,22 @@ int main(int argc, const char** argv) {
         i++;
     }
 
-#define CHKARG(x,m) do { if (!(x)) { fprintf(stderr, "create_work: bad command line: "m"\n"); exit(1); } } while (0)
-#define CHKARG_STR(v,m) CHKARG(strlen(v),m)
-
-    CHKARG_STR(app.name             , "need --appname");
-    CHKARG_STR(wu.name              , "need --wu_name");
-    CHKARG_STR(wu_template_file     , "need --wu_template");
-    CHKARG_STR(result_template_file , "need --result_template");
-#undef CHKARG
-#undef CHKARG_STR
+    if (!strlen(app.name)) {
+        fprintf(stderr, "create_work: missing --appname\n");
+        exit(1);
+    }
+    if (!strlen(wu.name)) {
+        fprintf(stderr, "create_work: missing --wu_name\n");
+        exit(1);
+    }
+    if (!strlen(wu_template_file)) {
+        fprintf(stderr, "create_work: missing --wu_template\n");
+        exit(1);
+    }
+    if (!strlen(result_template_file)) {
+        fprintf(stderr, "create_work: missing --result_template\n");
+        exit(1);
+    }
 
     if (assign_flag) {
         if (!strstr(wu.name, ASSIGNED_WU_STR)) {
@@ -279,4 +288,4 @@ int main(int argc, const char** argv) {
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 22384 2010-09-17 22:01:42Z davea $";

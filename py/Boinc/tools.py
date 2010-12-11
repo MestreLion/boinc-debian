@@ -1,7 +1,23 @@
-## $Id: tools.py 15957 2008-09-04 12:17:58Z davea $
+## $Id: tools.py 20785 2010-03-03 23:52:20Z davea $
 
 import configxml
-import os, md5, shutil, binascii
+try:
+    # use new hashlib if available
+    from hashlib import md5
+except:
+    import md5
+import os, shutil, binascii, filecmp
+
+def check_immutable(src, dst):
+    """If dst exists and is the same as src, return false
+       If dst exists and differs from src, throw an exception
+       If dst doesn't exist, return true
+    """
+    if not os.path.exists(dst):
+        return True
+    if filecmp.cmp(src, dst) == 0:
+        raise SystemExit("\nERROR: file "+src+" is different from existing file "+dst+".\nBOINC files are immutable; you must use different names for different files")
+    return False
 
 # from http://www.plope.com/software/uuidgen/view
 _urandomfd = None
@@ -91,8 +107,7 @@ def sign_executable(executable_path, quiet=False):
     return signature_text
 
 def process_app_file(file, signature_text=None, quiet=False, executable=True):
-    '''Handle a new executable (or non-executable) file to be added to the
-    database.
+    '''Handle a new file to be added to the app version.
 
     0. target filename is url_filename as described in process_app_version
     1. Copy file to download_dir if necessary.
@@ -107,9 +122,9 @@ def process_app_file(file, signature_text=None, quiet=False, executable=True):
     target_file_base = get_kludge_url_filename(source_file_base)
     target_path = os.path.join(config.config.download_dir, target_file_base)
     target_url = os.path.join(config.config.download_url, target_file_base)
-    if file != target_path:
-        if not quiet:
-            print "Copying %s to %s"%(source_file_base, target_path)
+    if not quiet:
+        print "Copying %s to %s"%(source_file_base, target_path)
+    if check_immutable(file, target_path):
         shutil.copy(file, target_path)
 
     xml = '''<file_info>

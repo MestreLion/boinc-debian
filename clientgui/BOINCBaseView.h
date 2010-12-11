@@ -23,7 +23,7 @@
 #endif
 
 #define BASEVIEW_STRIPES 1
-#define BASEVIEW_RULES 0
+#define BASEVIEW_RULES 1
 
 #define DEFAULT_TASK_FLAGS             wxTAB_TRAVERSAL | wxADJUST_MINSIZE | wxFULL_REPAINT_ON_RESIZE
 
@@ -83,7 +83,7 @@ public:
     wxStaticBox*            m_pStaticBox;
     wxStaticBoxSizer*       m_pStaticBoxSizer;
 
-	std::vector<CTaskItem*> m_Tasks;
+    std::vector<CTaskItem*> m_Tasks;
 
 #ifdef __WXMAC__
     void                    SetupMacAccessibilitySupport();
@@ -120,6 +120,8 @@ public:
     virtual wxString&       GetViewDisplayName();
     virtual const char**    GetViewIcon();
     virtual const int       GetViewRefreshRate();
+    virtual const int       GetViewCurrentViewPage();
+
     virtual wxString        GetKeyValue1(int iRowIndex);
     virtual wxString        GetKeyValue2(int iRowIndex);
     virtual int             FindRowIndexByKeyValues(wxString& key1, wxString& key2);
@@ -136,7 +138,7 @@ public:
 #if BASEVIEW_STRIPES
     wxListItemAttr*         FireOnListGetItemAttr( long item ) const;
 #endif
-    
+
     int                     GetProgressColumn() { return m_iProgressColumn; }
     virtual double          GetProgressValue(long item);
     virtual wxString        GetProgressText( long item);

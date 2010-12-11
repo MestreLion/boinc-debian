@@ -26,6 +26,9 @@
 ini_set ("memory_limit", "1G");
 set_time_limit(0);
 
+$cli_only = true;
+require_once("../inc/util_ops.inc");
+
 $users = array();
 $hosts = array();
 $teams = array();

@@ -189,17 +189,17 @@ for ($i=0; $i<sizeof($filtered_userlist); $i++){
         $forum_filtered_userlist .= "<input type =\"submit\" name=\"remove".$filtered_user->id."\" value=\"Remove\"> ".$filtered_user->id." - ".user_links($filtered_user)."<br>";
     }
 }
+
 row2("Filtered users".
     "<br><span class=note>Ignore message board posts and private messages from these  users.</span>",
     "$forum_filtered_userlist
-    <br>
         <input type=\"text\" name=\"forum_filter_user\" size=12> User ID (For instance: 123456789)
         <br><input type=\"submit\" name=\"add_user_to_filter\" value=\"Add user to filter\">
     "
 );
 
 row1("Update");
-row2("Click here to update message board preferences", "<input type=submit value=\"Update\">");
+row2("Click here to update preferences", "<input type=submit value=\"Update\">");
 echo "</form>\n";
 row1("Reset");
 row2("Or click here to reset preferences to the defaults",
@@ -208,5 +208,5 @@ row2("Or click here to reset preferences to the defaults",
 end_table();
 page_tail();
 
-$cvs_version_tracker[]="\$Id: edit_forum_preferences_form.php 17418 2009-03-01 23:32:15Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: edit_forum_preferences_form.php 22394 2010-09-20 23:59:25Z davea $";  //Generated automatically - do not edit
 ?>

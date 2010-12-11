@@ -30,7 +30,7 @@
  * used by clients).
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_app_versions.php 15758 2008-08-05 22:43:14Z davea $
+ * @(#) $Id: manage_app_versions.php 20745 2010-02-26 21:34:20Z davea $
 \***********************************************************************/
 
 // TODO: rewrite this using the new DB interface
@@ -135,14 +135,13 @@ echo "<form action='$self' method='POST'>\n";
 
 // Application Version table:
 
-echo"<P>\n";
 start_table("align='center'");
-row1("<b>".PROJECT." Application Versions</b>", 8);
 
 echo "<TR><TH>ID #</TH>
-      <TH>Appllication</TH>
+      <TH>Application</TH>
       <TH>Version</TH>
       <TH>Platform</TH>
+      <TH>Plan Class</TH>
       <TH>minimum<br>core version</TH>
       <TH>maximum<br>core version</TH>
       <TH>deprecated?</TH>
@@ -175,6 +174,7 @@ for($j=1;$j<=$Nrow;$j++){
     $i=$item->platformid;
     echo "  <TD align='center'>$f1 $platform[$i] $f2</TD>\n";
 
+    echo "  <td align=center>$f1 $item->plan_class $f2</td>\n";
 
     $field="min_core_version_".$id;
     $v=$item->min_core_version;
@@ -200,7 +200,7 @@ for($j=1;$j<=$Nrow;$j++){
 mysql_free_result($result);
 
 
-echo "<tr><td colspan=6><font color='RED'><sup>*</sup>
+echo "<tr><td colspan=7><font color='RED'><sup>*</sup>
     To delete an entry you must enter 'DELETE' in this field.
     </font></td>
     <td align='center' colspan=2 bgcolor='#FFFF88'>
@@ -215,5 +215,5 @@ echo "</form><P>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_app_versions.php 15758 2008-08-05 22:43:14Z davea $"; 
+$cvs_version_tracker[]="\$Id: manage_app_versions.php 20745 2010-02-26 21:34:20Z davea $"; 
 ?>

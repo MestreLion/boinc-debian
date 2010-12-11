@@ -28,12 +28,10 @@
 
 #ifdef _USING_FCGI_
 #include "fcgi_stdio.h"
+#include "sched_msgs.h"
 #endif
 
-// uncomment the following to print all queries.
-// Useful for low-level debugging
-
-//#define SHOW_QUERIES
+bool g_print_queries = false;
 
 DB_CONN::DB_CONN() {
     mysql = 0;
@@ -42,20 +40,46 @@ DB_CONN::DB_CONN() {
 int DB_CONN::open(char* db_name, char* db_host, char* db_user, char* dbpassword) {
     mysql = mysql_init(0);
     if (!mysql) return ERR_DB_CANT_INIT;
-#if MYSQL_VERSION_ID >= 50106
-    my_bool mbReconnect = 1;
-    mysql_options(mysql, MYSQL_OPT_RECONNECT, &mbReconnect);
-#endif
-    mysql = mysql_real_connect(mysql, db_host, db_user, dbpassword, db_name, 0, 0, 0);
+
+    // MySQL's support for the reconnect option has changed over time:
+    // see http://dev.mysql.com/doc/refman/5.0/en/mysql-options.html
+    // and http://dev.mysql.com/doc/refman/5.1/en/mysql-options.html
+    //
+    // v < 5.0.13: not supported
+    // 5.0.13 <= v < 5.0.19: set option after real_connect()
+    // 5.0.19 < v < 5.1: set option before real_connect();
+    // 5.1.0 <= v < 5.1.6: set option after real_connect()
+    // 5.1.6 <= v: set option before real_connect
+
+    int v = MYSQL_VERSION_ID;
+    bool set_opt_before = false, set_opt_after = false;
+    if (v < 50013 ) {
+    } else if (v < 50019) {
+        set_opt_after = true;
+    } else if (v < 50100) {
+        set_opt_before = true;
+    } else if (v < 50106) {
+        set_opt_after = true;
+    } else {
+        set_opt_before = true;
+    }
+
+    if (set_opt_before) {
+        my_bool mbReconnect = 1;
+        mysql_options(mysql, MYSQL_OPT_RECONNECT, &mbReconnect);
+    }
+    // CLIENT_FOUND_ROWS means that the # of affected rows for an update
+    // is the # matched by the where, rather than the # actually changed
+    //
+    mysql = mysql_real_connect(
+        mysql, db_host, db_user, dbpassword, db_name, 0, 0, CLIENT_FOUND_ROWS
+    );
     if (mysql == 0) return ERR_DB_CANT_CONNECT;
 
-    // older versions of MySQL lib need to set the option AFTER connecting;
-    // see http://dev.mysql.com/doc/refman/5.1/en/mysql-options.html
-    //
-#if MYSQL_VERSION_ID >= 50013 && MYSQL_VERSION_ID < 50106
-    my_bool mbReconnect = 1;
-    mysql_options(mysql, MYSQL_OPT_RECONNECT, &mbReconnect);
-#endif
+    if (set_opt_after) {
+        my_bool mbReconnect = 1;
+        mysql_options(mysql, MYSQL_OPT_RECONNECT, &mbReconnect);
+    }
     return 0;
 }
 
@@ -89,9 +113,13 @@ int DB_CONN::set_isolation_level(ISOLATION_LEVEL level) {
 
 int DB_CONN::do_query(const char* p) {
     int retval;
-#ifdef SHOW_QUERIES
-    fprintf(stderr, "query: %s\n", p);
+    if (g_print_queries) {
+#ifdef _USING_FCGI_
+        log_messages.printf(MSG_NORMAL, "query: %s\n", p);
+#else
+        fprintf(stderr, "query: %s\n", p);
 #endif
+    }
     retval = mysql_query(mysql, p);
     if (retval) {
         fprintf(stderr, "Database error: %s\nquery=%s\n", error_string(), p);
@@ -99,6 +127,8 @@ int DB_CONN::do_query(const char* p) {
     return retval;
 }
 
+// returns the number of rows matched by an update query
+//
 int DB_CONN::affected_rows() {
     unsigned long x = (unsigned long)mysql_affected_rows(mysql);
     //fprintf(stderr, "x: %lu i: %d\n", x, (int)x);
@@ -150,7 +180,6 @@ DB_BASE::DB_BASE(const char *tn, DB_CONN* p) : db(p), table_name(tn) {
 
 int DB_BASE::get_id() { return 0;}
 void DB_BASE::db_print(char*) {}
-
 void DB_BASE::db_parse(MYSQL_ROW&) {}
 
 int DB_BASE::insert() {
@@ -168,6 +197,29 @@ int DB_BASE::insert_batch(std::string& values) {
 
 int DB_BASE::affected_rows() {
     return db->affected_rows();
+}
+
+//////////// FUNCTIONS FOR TABLES THAT HAVE AN ID FIELD ///////
+
+int DB_BASE::lookup_id(int id) {
+    char query[MAX_QUERY_LEN];
+    int retval;
+    MYSQL_ROW row;
+    MYSQL_RES* rp;
+
+    sprintf(query, "select * from %s where id=%d", table_name, id);
+
+    retval = db->do_query(query);
+    if (retval) return retval;
+    rp = mysql_store_result(db->mysql);
+    if (!rp) return -1;
+    row = mysql_fetch_row(rp);
+    if (row) db_parse(row);
+    mysql_free_result(rp);
+    if (row == 0) return ERR_DB_NOT_FOUND;
+
+    // don't bother checking for uniqueness here
+    return 0;
 }
 
 // update an entire record
@@ -242,6 +294,14 @@ int DB_BASE::get_field_str(const char* field, char* buf, int buflen) {
     return 0;
 }
 
+int DB_BASE::max_id(int& n, const char* clause) {
+    char query[MAX_QUERY_LEN];
+    sprintf(query, "select max(id) from %s %s", table_name, clause);
+    return get_integer(query, n);
+}
+
+/////////////// FUNCTIONS THAT DON'T REQUIRE AN ID FIELD ///////////////
+
 int DB_BASE::lookup(const char* clause) {
     char query[MAX_QUERY_LEN];
     int retval;
@@ -261,24 +321,15 @@ int DB_BASE::lookup(const char* clause) {
     return 0;
 }
 
-int DB_BASE::lookup_id(int id) {
+int DB_BASE::update_fields_noid(char* set_clause, char* where_clause) {
     char query[MAX_QUERY_LEN];
-    int retval;
-    MYSQL_ROW row;
-    MYSQL_RES* rp;
-
-    sprintf(query, "select * from %s where id=%d", table_name, id);
-
-    retval = db->do_query(query);
+    sprintf(query,
+        "update %s set %s where %s",
+        table_name, set_clause, where_clause
+    );
+    int retval = db->do_query(query);
     if (retval) return retval;
-    rp = mysql_store_result(db->mysql);
-    if (!rp) return -1;
-    row = mysql_fetch_row(rp);
-    if (row) db_parse(row);
-    mysql_free_result(rp);
-    if (row == 0) return ERR_DB_NOT_FOUND;
-
-    // don't bother checking for uniqueness here
+    if (db->affected_rows() != 1) return ERR_DB_NOT_FOUND;
     return 0;
 }
 
@@ -374,12 +425,6 @@ int DB_BASE::count(int& n, const char* clause) {
     return get_integer(query, n);
 }
 
-int DB_BASE::max_id(int& n, const char* clause) {
-    char query[MAX_QUERY_LEN];
-    sprintf(query, "select max(id) from %s %s", table_name, clause);
-    return get_integer(query, n);
-}
-
 int DB_BASE::sum(double& x, const char* field, const char* clause) {
     char query[MAX_QUERY_LEN];
 
@@ -452,4 +497,4 @@ void escape_mysql_like_pattern(const char* in, char* out) {
     }
 }
 
-const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 18437 2009-06-16 20:54:44Z davea $";
+const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 21109 2010-04-05 23:12:02Z boincadm $";

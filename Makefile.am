@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 18620 2009-07-17 16:45:08Z romw $
+## $Id: Makefile.am 22268 2010-08-18 17:49:13Z romw $
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -21,7 +21,10 @@ if ENABLE_CLIENT
 endif
 
 if ENABLE_MANAGER
-   CLIENTGUI_SUBDIRS = clientgui clientgui/res locale
+	CLIENTGUI_SUBDIRS = clientgui clientgui/res locale
+	if BUILD_X11_SCREENSAVER
+		CLIENTGUI_SUBDIRS += clientscr
+	endif 
 endif
 
 # ORDER MATTERS below.  One must build dependencies FIRST, then things
@@ -39,8 +42,16 @@ EXTRA_DIST =                                    \
 
 if INSTALL_HEADERS
 pkginclude_HEADERS = \
-    version.h
+    version.h \
+    svn_version.h
 endif
+
+# svn_version.h should always be rebuilt.
+
+BUILT_SOURCES = svn_version.h
+svn_version.h: generate_svn_version.sh
+	cd $(srcdir) && sh generate_svn_version.sh
+.PHONY: svn_version.h
 
 # Add a stage target for staging a distribution
 

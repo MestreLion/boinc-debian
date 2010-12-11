@@ -15,8 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#endif
+
+#if defined(__MINGW32__)
+#include <fcntl.h>
+#endif
+
+#ifdef _MSC_VER
+#define getcwd  _getcwd
 #endif
 
 #if !defined(_WIN32) || defined(__CYGWIN32__)
@@ -178,6 +188,20 @@ void dir_close(DIRREF dirp) {
         closedir(dirp);
     }
 #endif
+}
+
+bool is_dir_empty(const char *p) {
+    char file[256];
+
+    DIRREF dir = dir_open(p);
+    if (!dir) return true;
+
+    if (!dir_scan(file, dir, sizeof(file))) {
+        dir_close(dir);
+        return false;
+    }
+
+    return true;
 }
 
 DirScanner::DirScanner(string const& path) {
@@ -544,8 +568,7 @@ int boinc_copy(const char* orig, const char* newf) {
 
 static int boinc_rename_aux(const char* old, const char* newf) {
 #ifdef _WIN32
-    boinc_delete_file(newf);
-    if (MoveFileA(old, newf)) return 0;
+    if (MoveFileExA(old, newf, MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)) return 0;
     return GetLastError();
 #else
     int retval = rename(old, newf);

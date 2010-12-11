@@ -33,28 +33,34 @@
 #define AU_MGR_GOT          1
 #define AU_MGR_QUIT_REQ     2
 #define AU_MGR_QUIT_SENT    3
-    
+
+#define GUI_RPC_REQ_MSG_SIZE    4096
 class GUI_RPC_CONN {
 public:
     int sock;
+    char request_msg[GUI_RPC_REQ_MSG_SIZE+1];
+    int request_nbytes;
     char nonce[256];
-        /// if true, don't allow operations other than authentication
     bool auth_needed;
+        // if true, don't allow operations other than authentication
     bool got_auth1;
-        /// keep track of whether we've got the 2 authentication msgs;
-        /// don't accept more than one of each (to prevent DoS)
     bool got_auth2;
-        /// we've send one <unauthorized>.
-        /// On next auth failure, disconnect
+        // keep track of whether we've got the 2 authentication msgs;
+        // don't accept more than one of each (to prevent DoS)
     bool sent_unauthorized;
-        /// connection is from local host
+        // we've send one <unauthorized>.
+        // On next auth failure, disconnect
     bool is_local;
+        // connection is from local host
     int au_ss_state;
     int au_mgr_state;
     GUI_HTTP gui_http;
     GET_PROJECT_CONFIG_OP get_project_config_op;
     LOOKUP_ACCOUNT_OP lookup_account_op;
     CREATE_ACCOUNT_OP create_account_op;
+    bool notice_refresh;
+        // next time we get a get_notices RPC,
+        // send a -1 seqno, then the whole list
 
     GUI_RPC_CONN(int);
     ~GUI_RPC_CONN();
@@ -75,16 +81,16 @@ public:
 
 class GUI_RPC_CONN_SET {
     std::vector<GUI_RPC_CONN*> gui_rpcs;
-    std::vector<int> allowed_remote_ip_addresses;
+    std::vector<sockaddr_storage> allowed_remote_ip_addresses;
     int get_allowed_hosts();
     int get_password();
     int insert(GUI_RPC_CONN*);
-    bool check_allowed_list(int ip_addr);
+    bool check_allowed_list(sockaddr_storage& ip_addr);
     bool remote_hosts_file_exists;
 public:
     int lsock;
-        /// time of the last RPC that needs network access to handle
     double time_of_last_rpc_needing_network;
+        // time of the last RPC that needs network access to handle
 
     GUI_RPC_CONN_SET();
     char password[256];
@@ -96,4 +102,9 @@ public:
     void send_quits();
     bool quits_sent();
     bool poll();
+    void set_notice_refresh() {
+        for (unsigned int i=0; i<gui_rpcs.size(); i++) {
+            gui_rpcs[i]->notice_refresh = true;
+        }
+    }
 };

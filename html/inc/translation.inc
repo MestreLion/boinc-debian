@@ -22,11 +22,10 @@ $lang_prj_translations_dir = "project_specific_translations/";
 $lang_compiled_dir = "compiled/";
 $lang_log_level = 1;
 
-/**
- * Fetches a list of compiled languages from the directory
- * set to contain such files.
- * @returns A list of languages that have been compiled
- */
+// Fetches a list of compiled languages from the directory
+// set to contain such files.
+// @returns A list of languages that have been compiled
+//
 function getSupportedLanguages(){
     global $lang_language_dir, $lang_compiled_dir;
     $list = array();
@@ -45,14 +44,13 @@ function getSupportedLanguages(){
     return $list;
 }
 
-/**
- * Builds the lookup arrays from the 
- * language files found in the given directory tree.
- * @param langdir The language base directory
- * @param transdir The location of the .po files to compile relative to langdir
- * @param compdir The output location relative to langdir
- * @param append If true the function will only append to rather than replace the compiled files
- */
+// Builds the lookup arrays from the 
+// language files found in the given directory tree.
+// @param langdir The language base directory
+// @param transdir The location of the .po files to compile relative to langdir
+// @param compdir The output location relative to langdir
+// @param append If true the function will only append to rather than replace the compiled files
+//
 function buildLanguages($langdir,$transdir,$compdir){
     global $lang_project_default;
 
@@ -109,11 +107,10 @@ function buildLanguages($langdir,$transdir,$compdir){
     }
 }
 
-/**
- * Parses a gettext .po-file into an associative PHP array.
- * @param file The file to parse
- * checking for inconsistencies if needed.
- *************************/
+// Parses a gettext .po-file into an associative PHP array.
+// @param file The file to parse
+// checking for inconsistencies if needed.
+//
 function parseLanguage($file){
     $translation_file = file($file);
     $first_entry = true;
@@ -132,19 +129,19 @@ function parseLanguage($file){
                 //If this is not the first, save the previous entry
                 $output[$current_token]=$current_token_text;
             }
-            $current_token = getPOLineContent($entry);
+            $current_token = getPOLineContent($entry, $file);
             $current_token_text="";
             $parsing_token = true;
             $parsing_text = false;
             $first_entry=false;
         } elseif (strpos($entry, "msgstr") !== false) {
-            $current_token_text = getPOLineContent($entry);
+            $current_token_text = getPOLineContent($entry, $file);
             $parsing_token = false;
             $parsing_text = true;
         } elseif ($parsing_token) {
-            $current_token .= getPOLineContent($entry);
+            $current_token .= getPOLineContent($entry, $file);
         } elseif ($parsing_text) {
-            $current_token_text.=getPOLineContent($entry);
+            $current_token_text.=getPOLineContent($entry, $file);
         }
     }
     
@@ -156,24 +153,22 @@ function parseLanguage($file){
 }
 
 
-/**
- * Returns the contents of a line (ie removes "" from start and end)
- */
-function getPOLineContent($line){
+// Returns the contents of a line (ie removes "" from start and end)
+//
+function getPOLineContent($line, $file){
     $start = strpos($line, '"')+1;
     $stop = strrpos($line, '"');
     $x =  substr($line, $start, $stop-$start);
-    $n = ereg("[^\\]\"", $x);
+    $n = preg_match("/[^\\\\]\"/", $x);
     if ($n) {
-        echo "ERROR - MISMATCHED QUOTES IN $line\n";
+        echo "ERROR - MISMATCHED QUOTES IN $file: $line\n";
         return "";
     }
     return $x;
 }
 
-/**
- * Translate string
- */
+// Translate string
+//
 function tra($text /* ...arglist... */){
     global $language_lookup_array, $languages_in_use;
     
@@ -189,11 +184,14 @@ function tra($text /* ...arglist... */){
         }
     }
 
-    // Replace relevant substrings with given arguments    
+    // Replace relevant substrings with given arguments.
+    // Use strtr to avoid problems if an argument contains %n.
+    $replacements = array();
     for ($i = 1; $i<func_num_args(); $i++){
-        $arg = func_get_arg($i);
-        $text = str_replace("%".$i, $arg, $text);
+        $replacements["%".$i] = func_get_arg($i);
     }
+    $text = strtr($text, $replacements);
+
     return $text;
 }
 
@@ -296,5 +294,7 @@ for ($i=0; $i<sizeof($client_languages); $i++) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: translation.inc 18166 2009-05-19 21:00:03Z boincadm $";  //Generated automatically - do not edit
+$GLOBALS['languages_in_use'] = $languages_in_use;   // for Drupal
+
+$cvs_version_tracker[]="\$Id: translation.inc 21878 2010-07-06 23:31:26Z davea $";  //Generated automatically - do not edit
 ?>

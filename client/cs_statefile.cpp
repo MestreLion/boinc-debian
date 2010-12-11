@@ -15,15 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "cpp.h"
-
 #ifdef _WIN32
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cstring>
 #include <errno.h>
 #endif
@@ -43,7 +38,7 @@
 
 void CLIENT_STATE::set_client_state_dirty(const char* source) {
     if (log_flags.statefile_debug) {
-        msg_printf(0, MSG_INFO, "[statefile_debug] set dirty: %s\n", source);
+        msg_printf(0, MSG_INFO, "[statefile] set dirty: %s\n", source);
     }
     client_state_dirty = true;
 }
@@ -105,7 +100,7 @@ int CLIENT_STATE::parse_state_file() {
     } else {
         if (log_flags.statefile_debug) {
             msg_printf(0, MSG_INFO,
-                "[statefile_debug] CLIENT_STATE::parse_state_file(): No state file; will create one"
+                "[statefile] CLIENT_STATE::parse_state_file(): No state file; will create one"
             );
         }
 
@@ -133,6 +128,11 @@ int CLIENT_STATE::parse_state_file() {
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR, "Can't parse project in state file");
             } else {
+#ifdef SIM
+                project = new PROJECT;
+                *project = temp_project;
+                projects.push_back(project);
+#else
                 project = lookup_project(temp_project.master_url);
                 if (project) {
                     project->copy_state_fields(temp_project);
@@ -142,6 +142,7 @@ int CLIENT_STATE::parse_state_file() {
                         temp_project.get_project_name()
                     );
                 }
+#endif
             }
             continue;
         }
@@ -210,6 +211,7 @@ int CLIENT_STATE::parse_state_file() {
                 continue;
             }
             file_infos.push_back(fip);
+#ifndef SIM
             // If the file had a failure before,
             // don't start another file transfer
             //
@@ -235,6 +237,7 @@ int CLIENT_STATE::parse_state_file() {
                     );
                 }
             }
+#endif
             continue;
         }
         if (match_tag(buf, "<app_version>")) {
@@ -267,10 +270,12 @@ int CLIENT_STATE::parse_state_file() {
                     // and then reverted to a 32-bit client.
                     // Let's not throw away the app version and its WUs
                     //
+#ifndef SIM
                     msg_printf(project, MSG_INTERNAL_ERROR,
                         "App version has unsupported platform %s; changing to %s",
                         avp->platform, get_primary_platform()
                     );
+#endif
                     strcpy(avp->platform, get_primary_platform());
                 }
             }
@@ -343,9 +348,13 @@ int CLIENT_STATE::parse_state_file() {
                 delete rp;
                 continue;
             }
-            if (!strlen(rp->platform) || !is_supported_platform(rp->platform)) {
-                strcpy(rp->platform, get_primary_platform());
-                rp->version_num = latest_version(rp->wup->app, rp->platform);
+            // handle transition from old clients which didn't store result.platform;
+            // skip for anon platform
+            if (!project->anonymous_platform) {
+                if (!strlen(rp->platform) || !is_supported_platform(rp->platform)) {
+                    strcpy(rp->platform, get_primary_platform());
+                    rp->version_num = latest_version(rp->wup->app, rp->platform);
+                }
             }
             rp->avp = lookup_app_version(
                 rp->wup->app, rp->platform, rp->version_num, rp->plan_class
@@ -381,7 +390,11 @@ int CLIENT_STATE::parse_state_file() {
             continue;
         }
         if (match_tag(buf, "<host_info>")) {
+#ifdef SIM
+            retval = host_info.parse(mf, false);
+#else
             retval = host_info.parse(mf, true);
+#endif
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Can't parse host info in state file"
@@ -447,10 +460,6 @@ int CLIENT_STATE::parse_state_file() {
             run_cpu_benchmarks = true;
             continue;
         }
-        if (match_tag(buf, "<work_fetch_no_new_work/>")) {
-            work_fetch_no_new_work = true;
-            continue;
-        }
         if (match_tag(buf, "<proxy_info>")) {
             retval = gui_proxy_info.parse(mf);
             if (retval) {
@@ -472,6 +481,7 @@ int CLIENT_STATE::parse_state_file() {
         if (parse_str(buf, "<newer_version>", newer_version)) {
             continue;
         }
+#ifndef SIM
         if (match_tag(buf, "<auto_update>")) {
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
@@ -485,6 +495,24 @@ int CLIENT_STATE::parse_state_file() {
             }
             continue;
         }
+#endif
+#ifdef SIM
+        if (parse_double(buf, "<connection_interval>", connection_interval)) {
+            continue;
+        }
+        if (match_tag(buf, "<available>")) {
+            XML_PARSER xp(&mf);
+            available.parse(xp, "/available");
+            available.init(START_TIME);
+            continue;
+        }
+        if (match_tag(buf, "<idle>")) {
+            XML_PARSER xp(&mf);
+            idle.parse(xp, "/idle");
+            idle.init(START_TIME);
+            continue;
+        }
+#endif
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
                 "[unparsed_xml] state_file: unrecognized: %s", buf
@@ -504,7 +532,7 @@ int CLIENT_STATE::parse_state_file() {
             x += projects[i]->resource_share;
         }
         if (!x) {
-            msg_printf(NULL, MSG_USER_ERROR,
+            msg_printf(NULL, MSG_INFO,
                 "All projects have zero resource share; setting to 100"
             );
             for (i=0; i<projects.size(); i++) {
@@ -523,6 +551,8 @@ void CLIENT_STATE::sort_results() {
     );
 }
 
+#ifndef SIM
+
 // Write the client_state.xml file
 //
 int CLIENT_STATE::write_state_file() {
@@ -537,7 +567,7 @@ int CLIENT_STATE::write_state_file() {
             
         if (log_flags.statefile_debug) {
             msg_printf(0, MSG_INFO,
-                "[statefile_debug] Writing state file"
+                "[statefile] Writing state file"
             );
         }
 #ifdef _WIN32
@@ -581,14 +611,14 @@ int CLIENT_STATE::write_state_file() {
                 if (retval) {
                     if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
 #ifdef _WIN32
-                        msg_printf(0, MSG_USER_ERROR,
+                        msg_printf(0, MSG_INFO,
                             "Can't delete previous state file; %s",
                             windows_error_string(win_error_msg, sizeof(win_error_msg))
                         );
 #else
-                        msg_printf(0, MSG_USER_ERROR,
-                            "Can't delete previous state file; error %d: %s",
-                            errno, strerror(errno)
+                        msg_printf(0, MSG_INFO,
+                            "Can't delete previous state file: %s",
+                            strerror(errno)
                         );
 #endif
                     }
@@ -600,14 +630,14 @@ int CLIENT_STATE::write_state_file() {
             if (retval) {
                 if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
 #ifdef _WIN32
-                    msg_printf(0, MSG_USER_ERROR,
+                    msg_printf(0, MSG_INFO,
                         "Can't rename current state file to previous state file; %s",
                         windows_error_string(win_error_msg, sizeof(win_error_msg))
                     );
 #else
-                    msg_printf(0, MSG_USER_ERROR, 
-                        "rename current state file to previous state file returned error %d: %s", 
-                        errno, strerror(errno)
+                    msg_printf(0, MSG_INFO, 
+                        "Can't rename current state file to previous state file: %s", 
+                        strerror(errno)
                     );
 #endif
                 }
@@ -618,37 +648,21 @@ int CLIENT_STATE::write_state_file() {
         retval = boinc_rename(STATE_FILE_NEXT, STATE_FILE_NAME);
         if (log_flags.statefile_debug) {
             msg_printf(0, MSG_INFO,
-                "[statefile_debug] Done writing state file"
+                "[statefile] Done writing state file"
             );
         }
         if (!retval) break;     // Success!
         
-         if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
+        if ((attempt == MAX_STATE_FILE_WRITE_ATTEMPTS) || log_flags.statefile_debug) {
 #ifdef _WIN32
-            if (retval == ERROR_ACCESS_DENIED) {
-                msg_printf(0, MSG_USER_ERROR,
-                    "Can't rename state file; access denied; check file and directory permissions"
-                );
-            } else {
-                msg_printf(0, MSG_USER_ERROR,
-                    "Can't rename state file; %s",
-                    windows_error_string(win_error_msg, sizeof(win_error_msg))
-                );
-            }
-#elif defined (__APPLE__)
-            msg_printf(0, MSG_USER_ERROR, 
-                "Can't rename %s to %s; check file and directory permissions\n"
-                "rename returned error %d: %s", 
-                STATE_FILE_NEXT, STATE_FILE_NAME, errno, strerror(errno)
+            msg_printf(0, MSG_INFO,
+                "rename error: %s",
+                windows_error_string(win_error_msg, sizeof(win_error_msg))
             );
+#elif defined (__APPLE__)
             if (log_flags.statefile_debug) {
                 system("ls -al /Library/Application\\ Support/BOINC\\ Data/client*.*");
             }
-#else
-        msg_printf(0, MSG_USER_ERROR,
-            "Can't rename %s to %s; check file and directory permissions",
-            STATE_FILE_NEXT, STATE_FILE_NAME
-        );
 #endif
         }
         if (attempt < MAX_STATE_FILE_WRITE_ATTEMPTS) continue;
@@ -661,8 +675,12 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
     unsigned int i, j;
     int retval;
 
+#ifdef SIM
+    fprintf(stderr, "simulator shouldn't write state file\n");
+    exit(1);
+#endif
     f.printf("<client_state>\n");
-    retval = host_info.write(f, false, false);
+    retval = host_info.write(f, true, true);
     if (retval) return retval;
     retval = time_stats.write(f, false);
     if (retval) return retval;
@@ -757,6 +775,8 @@ int CLIENT_STATE::write_state_file_if_needed() {
     return 0;
 }
 
+#endif // ifndef SIM
+
 // look for app_versions.xml file in project dir.
 // If find, get app versions from there,
 // and use "anonymous platform" mechanism for this project
@@ -781,8 +801,10 @@ void CLIENT_STATE::check_anonymous() {
             // flag as anonymous even if can't parse file
         retval = parse_app_info(p, f);
         if (retval) {
-            msg_printf(p, MSG_USER_ERROR,
-                "parse error in app_info.xml; check XML syntax"
+            msg_printf_notice(p, false,
+                "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=app_info",
+                "%s",
+                _("Syntax error in app_info.xml")
             );
         }
         fclose(f);
@@ -792,7 +814,7 @@ void CLIENT_STATE::check_anonymous() {
 // parse a project's app_info.xml (anonymous platform) file
 //
 int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
-    char buf[256];
+    char buf[256], path[1024];
     MIOFILE mf;
     mf.init_file(in);
 
@@ -806,13 +828,25 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
                 continue;
             }
             if (fip->urls.size()) {
-                msg_printf(p, MSG_USER_ERROR,
+                msg_printf(p, MSG_INFO,
                     "Can't specify URLs in app_info.xml"
                 );
                 delete fip;
                 continue;
             }
             if (link_file_info(p, fip)) {
+                delete fip;
+                continue;
+            }
+            // check that the file is actually there
+            //
+            get_pathname(fip, path, sizeof(path));
+            if (!boinc_file_exists(path)) {
+                strcpy(buf,
+                    _("File referenced in app_info.xml does not exist: ")
+                );
+                strcat(buf, fip->name);
+                msg_printf(p, MSG_USER_ALERT, buf);
                 delete fip;
                 continue;
             }
@@ -851,13 +885,16 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
             continue;
         }
         if (log_flags.unparsed_xml) {
-            msg_printf(p, MSG_USER_ERROR,
-                "Unparsed line in app_info.xml: %s", buf
+            msg_printf(p, MSG_INFO,
+                "Unparsed line in app_info.xml: %s",
+                buf
             );
         }
     }
     return ERR_XML_PARSE;
 }
+
+#ifndef SIM
 
 int CLIENT_STATE::write_state_gui(MIOFILE& f) {
     unsigned int i, j;
@@ -870,7 +907,7 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
     // However, BoincView (which does its own parsing) expects it
     // to be in the get_state() reply, so leave it in for now
     //
-    retval = host_info.write(f, false, false);
+    retval = host_info.write(f, true, false);
     if (retval) return retval;
     retval = time_stats.write(f, false);
     if (retval) return retval;
@@ -911,8 +948,8 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
         core_client_version.minor,
         core_client_version.release,
         executing_as_daemon?1:0,
-        coproc_cuda?1:0,
-        coproc_ati?1:0
+        host_info.have_cuda()?1:0,
+        host_info.have_ati()?1:0
     );
     for (i=0; i<platforms.size(); i++) {
         f.printf(
@@ -966,3 +1003,4 @@ int CLIENT_STATE::write_file_transfers_gui(MIOFILE& f) {
     return 0;
 }
 
+#endif

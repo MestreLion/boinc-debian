@@ -32,25 +32,36 @@
 #include "BOINCBaseFrame.h"
 #include "BOINCClientManager.h"
 #include "DlgAbout.h"
+#include "DlgEventLog.h"
 #include "Events.h"
 
 #ifdef __WXMAC__
 #include "res/macsnoozebadge.xpm"
 #include "res/macdisconnectbadge.xpm"
 #include "res/macbadgemask.xpm"
-#endif
 
+#define MIN_IDLE_TIME_FOR_NOTIFICATION 45
+// How long to bounce Dock icon on Mac
+#define MAX_NOTIFICATION_DURATION 15
+#endif
 
 DEFINE_EVENT_TYPE(wxEVT_TASKBAR_RELOADSKIN)
 DEFINE_EVENT_TYPE(wxEVT_TASKBAR_REFRESH)
 
 BEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIconEx)
+
     EVT_IDLE(CTaskBarIcon::OnIdle)
     EVT_CLOSE(CTaskBarIcon::OnClose)
     EVT_TASKBAR_REFRESH(CTaskBarIcon::OnRefresh)
     EVT_TASKBAR_RELOADSKIN(CTaskBarIcon::OnReloadSkin)
     EVT_TASKBAR_LEFT_DCLICK(CTaskBarIcon::OnLButtonDClick)
-    EVT_MENU(wxID_OPEN, CTaskBarIcon::OnOpen)
+#ifndef __WXMAC__
+    EVT_TASKBAR_RIGHT_DOWN(CTaskBarIcon::OnRButtonDown)
+    EVT_TASKBAR_RIGHT_UP(CTaskBarIcon::OnRButtonUp)
+    EVT_TASKBAR_CONTEXT_USERCLICK(CTaskBarIcon::OnNotificationClick)
+    EVT_TASKBAR_BALLOON_TIMEOUT(CTaskBarIcon::OnNotificationTimeout)
+#endif
+    EVT_MENU(ID_OPENBOINCMANAGER, CTaskBarIcon::OnOpen)
     EVT_MENU(ID_OPENWEBSITE, CTaskBarIcon::OnOpenWebsite)
     EVT_MENU(ID_TB_SUSPEND, CTaskBarIcon::OnSuspendResume)
     EVT_MENU(ID_TB_SUSPEND_GPU, CTaskBarIcon::OnSuspendResumeGPU)
@@ -59,37 +70,37 @@ BEGIN_EVENT_TABLE(CTaskBarIcon, wxTaskBarIconEx)
 
 #ifdef __WXMSW__
     EVT_TASKBAR_SHUTDOWN(CTaskBarIcon::OnShutdown)
-    EVT_TASKBAR_MOVE(CTaskBarIcon::OnMouseMove)
-    EVT_TASKBAR_CONTEXT_MENU(CTaskBarIcon::OnContextMenu)
-    EVT_TASKBAR_RIGHT_DOWN(CTaskBarIcon::OnRButtonDown)
-    EVT_TASKBAR_RIGHT_UP(CTaskBarIcon::OnRButtonUp)
+    EVT_TASKBAR_APPRESTORE(CTaskBarIcon::OnAppRestore)
 #endif
+
 #ifdef __WXMAC__
     // wxMac-2.6.3 "helpfully" converts wxID_ABOUT to kHICommandAbout, wxID_EXIT to kHICommandQuit, 
     //  wxID_PREFERENCES to kHICommandPreferences
     EVT_MENU(kHICommandAbout, CTaskBarIcon::OnAbout)
 #endif
+
 END_EVENT_TABLE()
 
 
 CTaskBarIcon::CTaskBarIcon(wxString title, wxIcon* icon, wxIcon* iconDisconnected, wxIcon* iconSnooze) : 
-#if   defined(__WXMAC__)
+#ifdef __WXMAC__
     wxTaskBarIcon(DOCK)
-#elif defined(__WXMSW__)
-    wxTaskBarIconEx(wxT("BOINCManagerSystray"))
-#else
-    wxTaskBarIcon()
+#else 
+    wxTaskBarIconEx(wxT("BOINCManagerSystray"), 1)
 #endif
 {
     m_iconTaskBarNormal = *icon;
     m_iconTaskBarDisconnected = *iconDisconnected;
     m_iconTaskBarSnooze = *iconSnooze;
-    m_strDefaultTitle = title;
+
     m_bTaskbarInitiatedShutdown = false;
 
-    m_dtLastHoverDetected = wxDateTime((time_t)0);
-
     m_bMouseButtonPressed = false;
+
+    m_dtLastNotificationAlertExecuted = wxDateTime((time_t)0);
+#ifdef __WXMAC__
+    m_pNotificationRequest = NULL;
+#endif
 }
 
 
@@ -104,20 +115,24 @@ void CTaskBarIcon::OnIdle(wxIdleEvent& event) {
 }
 
 
-void CTaskBarIcon::OnClose(wxCloseEvent& event) {
+void CTaskBarIcon::OnClose(wxCloseEvent& ) {
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnClose - Function Begin"));
 
     RemoveIcon();
     m_bTaskbarInitiatedShutdown = true;
 
+    CDlgEventLog* pEventLog = wxGetApp().GetEventLog();
+    if (pEventLog) {
+        wxLogTrace(wxT("Function Status"), wxT("CTaskBarIcon::OnClose - Closing Event Log"));
+        pEventLog->Destroy();
+    }
+
     CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
     if (pFrame) {
-        wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
+        wxLogTrace(wxT("Function Status"), wxT("CTaskBarIcon::OnClose - Closing Current Frame"));
         pFrame->Close(true);
     }
 
-    event.Skip();
-    
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnClose - Function End"));
 }
 
@@ -125,25 +140,8 @@ void CTaskBarIcon::OnClose(wxCloseEvent& event) {
 void CTaskBarIcon::OnRefresh(CTaskbarEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnRefresh - Function Begin"));
 
-    CMainDocument* pDoc = wxGetApp().GetDocument();
-    CC_STATUS      status;
-
-    wxASSERT(pDoc);
-    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-
-    // What is the current status of the client?
-    pDoc->GetCoreClientStatus(status);
-
-    // Which icon should be displayed?
-    if (!pDoc->IsConnected()) {
-        SetIcon(m_iconTaskBarDisconnected);
-    } else {
-        if (RUN_MODE_NEVER == status.task_mode) {
-            SetIcon(m_iconTaskBarSnooze);
-        } else {
-            SetIcon(m_iconTaskBarNormal);
-        }
-    }
+    UpdateTaskbarStatus();
+    UpdateNoticeStatus();
 
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnRefresh - Function End"));
 }
@@ -160,39 +158,32 @@ void CTaskBarIcon::OnLButtonDClick(wxTaskBarIconEvent& event) {
 }
 
 
-void CTaskBarIcon::OnOpen(wxCommandEvent& WXUNUSED(event)) {
+void CTaskBarIcon::OnNotificationClick(wxTaskBarIconExEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnNotificationClick - Function Begin"));
+
+    ResetTaskBar();
+    wxGetApp().ShowNotifications();
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnNotificationClick - Function End"));
+}
+
+
+void CTaskBarIcon::OnNotificationTimeout(wxTaskBarIconExEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnNotificationTimeout - Function Begin"));
+
     ResetTaskBar();
 
-    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
-    wxASSERT(pFrame);
-    wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnNotificationTimeout - Function End"));
+}
 
-    if (pFrame) {
-        pFrame->Show();
 
-#ifdef __WXMAC__
-        if (pFrame->IsIconized()) {
-            pFrame->Iconize(false);
-        }
-#else
-        if (pFrame->IsMaximized()) {
-            pFrame->Maximize(true);
-        } else {
-            pFrame->Maximize(false);
-        }
-#endif
-        pFrame->SendSizeEvent();
-        pFrame->Update();
+void CTaskBarIcon::OnOpen(wxCommandEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnOpen - Function Begin"));
 
-#ifdef __WXMSW__
-        ::SetForegroundWindow((HWND)pFrame->GetHandle());
-#endif
-    }
-#ifdef __WXMAC__
-    else {
-        wxGetApp().ShowCurrentGUI();
-    }
-#endif
+    ResetTaskBar();
+    wxGetApp().ShowInterface();
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnOpen - Function End"));
 }
 
 
@@ -200,20 +191,17 @@ void CTaskBarIcon::OnOpenWebsite(wxCommandEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnOpenWebsite - Function Begin"));
 
     CMainDocument*     pDoc = wxGetApp().GetDocument();
-    CBOINCBaseFrame*   pFrame = wxGetApp().GetFrame();
     ACCT_MGR_INFO      ami;
     wxString           url;
 
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-    wxASSERT(pFrame);
-    wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
 
     ResetTaskBar();
 
     pDoc->rpc.acct_mgr_info(ami);
     url = wxString(ami.acct_mgr_url.c_str(), wxConvUTF8);
-    pFrame->ExecuteBrowserLink(url);
+    wxLaunchDefaultBrowser(url);
 
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnOpenWebsite - Function End"));
 }
@@ -252,6 +240,7 @@ void CTaskBarIcon::OnSuspendResumeGPU(wxCommandEvent& WXUNUSED(event)) {
     }
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnSuspendResumeGPU - Function End"));
 }
+
 void CTaskBarIcon::OnAbout(wxCommandEvent& WXUNUSED(event)) {
     bool bWasVisible;
 
@@ -276,19 +265,6 @@ void CTaskBarIcon::OnExit(wxCommandEvent& event) {
     if (wxGetApp().ConfirmExit()) 
 #endif
     {
-#ifdef __WXMSW__
-        CMainDocument* pDoc = wxGetApp().GetDocument();
-
-        wxASSERT(pDoc);
-        wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-
-        if (wxGetApp().ShouldShutdownCoreClient()) {
-            pDoc->m_pClientManager->EnableBOINCStartedByManager();
-        } else {
-            pDoc->m_pClientManager->DisableBOINCStartedByManager();
-        }
-#endif
-
         wxCloseEvent eventClose;
         OnClose(eventClose);
         if (eventClose.GetSkipped()) event.Skip();
@@ -296,6 +272,21 @@ void CTaskBarIcon::OnExit(wxCommandEvent& event) {
 
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnExit - Function End"));
 }
+
+
+#ifndef __WXMAC__
+void CTaskBarIcon::OnRButtonDown(wxTaskBarIconEvent& WXUNUSED(event)) {
+    m_bMouseButtonPressed = true;
+}
+
+
+void CTaskBarIcon::OnRButtonUp(wxTaskBarIconEvent& WXUNUSED(event)) {
+    if (m_bMouseButtonPressed) {
+        DisplayContextMenu();
+        m_bMouseButtonPressed = false;
+    }
+}
+#endif  // #ifndef __WXMAC__
 
 
 #ifdef __WXMSW__
@@ -308,143 +299,13 @@ void CTaskBarIcon::OnShutdown(wxTaskBarIconExEvent& event) {
 
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnShutdown - Function End"));
 }
+void CTaskBarIcon::OnAppRestore(wxTaskBarIconExEvent& event) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnAppRestore - Function Begin"));
 
+    ResetTaskBar();
+    wxGetApp().ShowInterface();
 
-// Note: tooltip must not have a trailing linebreak. 
-void CTaskBarIcon::OnMouseMove(wxTaskBarIconEvent& WXUNUSED(event)) {
-
-    wxTimeSpan tsLastHover(wxDateTime::Now() - m_dtLastHoverDetected);
-    if (tsLastHover.GetSeconds() >= 2) {
-        m_dtLastHoverDetected = wxDateTime::Now();
-
-        CMainDocument* pDoc                 = wxGetApp().GetDocument();
-       wxString       strMachineName       = wxEmptyString;
-        wxString       strMessage           = wxEmptyString;
-        wxString       strProjectName       = wxEmptyString;
-        wxString       strBuffer            = wxEmptyString;
-        wxString       strActiveTaskBuffer  = wxEmptyString;
-        float          fProgress            = 0;
-        bool           bIsActive            = false;
-        bool           bIsExecuting         = false;
-        bool           bIsDownloaded        = false;
-        wxInt32        iResultCount         = 0;
-        wxInt32        iActiveTaskCount     = 0;
-        wxInt32        iIndex               = 0;
-        CC_STATUS      status;
-
-        if (!pDoc) return;
-
-        if (pDoc->IsConnected()) {
-            pDoc->GetConnectedComputerName(strMachineName);
-
-            // Only show machine name if connected to remote machine.
-            if (!pDoc->IsComputerNameLocal(strMachineName)) {
-                strMessage += strMachineName;
-            }
-
-            pDoc->GetCoreClientStatus(status);
-            if (status.task_suspend_reason && !(status.task_suspend_reason & SUSPEND_REASON_CPU_THROTTLE)) {
-                strBuffer.Printf(
-                    _("Computation is suspended.")
-                );
-                if (strMessage.Length() > 0) strMessage += wxT("\n");
-                strMessage += strBuffer;
-            }
-
-            if (status.network_suspend_reason && !(status.network_suspend_reason & SUSPEND_REASON_CPU_THROTTLE)) {
-                strBuffer.Printf(
-                    _("Network activity is suspended.")
-                );
-                if (strMessage.Length() > 0) strMessage += wxT("\n");
-                strMessage += strBuffer;
-            }
-
-            iResultCount = pDoc->GetWorkCount();
-            for (iIndex = 0; iIndex < iResultCount; iIndex++) {
-                RESULT* result = pDoc->result(iIndex);
-                RESULT* state_result = NULL;
-                std::string project_name;
-
-                bIsDownloaded = (result->state == RESULT_FILES_DOWNLOADED);
-                bIsActive     = result->active_task;
-                bIsExecuting  = (result->scheduler_state == CPU_SCHED_SCHEDULED);
-                if (!(bIsActive) || !(bIsDownloaded) || !(bIsExecuting)) continue;
-
-                // Increment the active task counter
-                iActiveTaskCount++;
-
-                // If we have more then two active tasks then we'll just be displaying
-                //   the total number of active tasks anyway, so just look at the rest
-                //   of the result records.
-                if (iActiveTaskCount > 2) continue;
-
-                if (result) {
-                    state_result = pDoc->state.lookup_result(result->project_url, result->name);
-                    if (state_result) {
-                        state_result->project->get_name(project_name);
-                        strProjectName = wxString(project_name.c_str(), wxConvUTF8);
-                    }
-                    fProgress = floor(result->fraction_done*10000)/100;
-                }
-
-                strBuffer.Printf(_("%s: %.2f%% completed."), strProjectName.c_str(), fProgress );
-                if (strActiveTaskBuffer.Length() > 0) strActiveTaskBuffer += wxT("\n");
-                strActiveTaskBuffer += strBuffer;
-            }
-
-            if (iActiveTaskCount <= 2) {
-                if (strMessage.Length() > 0) strMessage += wxT("\n");
-                strMessage += strActiveTaskBuffer;
-            } else {
-                // More than two active tasks are running on the system, we don't have
-                //   enough room to display them all, so just tell the user how many are
-                //   currently running.
-                strBuffer.Printf(
-                    _("%d tasks running."),
-                    iActiveTaskCount
-                );
-                if (strMessage.Length() > 0) strMessage += wxT("\n");
-                strMessage += strBuffer;
-            }
-
-        } else if (pDoc->IsReconnecting()) {
-            strBuffer.Printf(
-                _("Reconnecting to client.")
-            );
-            if (strMessage.Length() > 0) strMessage += wxT("\n");
-            strMessage += strBuffer;
-        } else {
-            strBuffer.Printf(
-                _("Not connected to a client.")
-            );
-            if (strMessage.Length() > 0) strMessage += wxT("\n");
-            strMessage += strBuffer;
-        }
-
-        SetTooltip(strMessage);
-    }
-}
-
-
-void CTaskBarIcon::OnContextMenu(wxTaskBarIconExEvent& WXUNUSED(event)) {
-    DisplayContextMenu();
-}
-
-
-void CTaskBarIcon::OnRButtonDown(wxTaskBarIconEvent& WXUNUSED(event)) {
-    if (!IsBalloonsSupported()) {
-        m_bMouseButtonPressed = true;
-    }
-}
-
-
-void CTaskBarIcon::OnRButtonUp(wxTaskBarIconEvent& WXUNUSED(event)) {
-    if (!IsBalloonsSupported()) {
-        if (m_bMouseButtonPressed) {
-            DisplayContextMenu();
-            m_bMouseButtonPressed = false;
-        }
-    }
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnAppRestore - Function End"));
 }
 #endif
 
@@ -494,17 +355,16 @@ wxMenu *CTaskBarIcon::CreatePopupMenu() {
 // 16x16 icon for the menubar, while the Dock needs a 128x128 icon.
 // Rather than using an entire separate icon, overlay the Dock icon with a badge 
 // so we don't need additional Snooze and Disconnected icons for branding.
-bool CTaskBarIcon::SetIcon(const wxIcon& icon) {
+bool CTaskBarIcon::SetIcon(const wxIcon& icon, const wxString& ) {
     wxIcon macIcon;
     bool result;
     OSStatus err = noErr ;
-    static const wxIcon* currentIcon = NULL;
     int w, h, x, y;
 
-    if (&icon == currentIcon)
+    if (icon.IsSameAs(m_iconCurrentIcon))
         return true;
     
-    currentIcon = &icon;
+    m_iconCurrentIcon = icon;
     
     CMacSystemMenu* sysMenu = wxGetApp().GetMacSystemMenu();
     if (sysMenu == NULL) return 0;
@@ -513,22 +373,12 @@ bool CTaskBarIcon::SetIcon(const wxIcon& icon) {
 
     RestoreApplicationDockTileImage();      // Remove any previous badge
 
-#if wxCHECK_VERSION(2,8,0)
     if (m_iconTaskBarDisconnected.IsSameAs(icon))
         macIcon = macdisconnectbadge;
     else if (m_iconTaskBarSnooze.IsSameAs(icon))
         macIcon = macsnoozebadge;
     else
         return result;
-#else
-    if (icon == m_iconTaskBarDisconnected)
-        macIcon = macdisconnectbadge;
-    else if (icon == m_iconTaskBarSnooze)
-        macIcon = macsnoozebadge;
-    else
-        return result;
-
-#endif
     
     // Convert the wxIcon into a wxBitmap so we can perform some
     // wxBitmap operations with it
@@ -569,6 +419,27 @@ bool CTaskBarIcon::SetIcon(const wxIcon& icon) {
         CGImageRelease(pImage);
 
     return result;
+}
+
+
+// wxTopLevel::RequestUserAttention() doesn't have an API to cancel 
+// after a timeout, so we must call Notification Manager directly on Mac
+void CTaskBarIcon::MacRequestUserAttention()
+{
+    m_pNotificationRequest = (NMRecPtr) NewPtrClear( sizeof( NMRec) ) ;
+    m_pNotificationRequest->qType = nmType ;
+    m_pNotificationRequest->nmMark = 1;
+
+    NMInstall(m_pNotificationRequest);
+}
+
+void CTaskBarIcon::MacCancelUserAttentionRequest()
+{
+    if (m_pNotificationRequest) {
+        NMRemove(m_pNotificationRequest);
+        DisposePtr((Ptr)m_pNotificationRequest);
+        m_pNotificationRequest = NULL;
+    }
 }
 
 #endif  // ! __WXMAC__
@@ -616,7 +487,7 @@ wxMenu *CTaskBarIcon::BuildContextMenu() {
         _("Open %s..."),
         pSkinAdvanced->GetApplicationName().c_str()
     );
-    pMenu->Append(wxID_OPEN, menuName, wxEmptyString);
+    pMenu->Append(ID_OPENBOINCMANAGER, menuName, wxEmptyString);
 
     pMenu->AppendSeparator();
 
@@ -689,7 +560,7 @@ void CTaskBarIcon::AdjustMenuItems(wxMenu* pMenu) {
             pMenu->Remove(pMenuItem);
 
             font = pMenuItem->GetFont();
-            if (pMenuItem->GetId() != wxID_OPEN) {
+            if (pMenuItem->GetId() != ID_OPENBOINCMANAGER) {
                 font.SetWeight(wxFONTWEIGHT_NORMAL);
             } else {
                 font.SetWeight(wxFONTWEIGHT_BOLD);
@@ -754,3 +625,174 @@ void CTaskBarIcon::AdjustMenuItems(wxMenu* pMenu) {
     }
 }
 
+
+void CTaskBarIcon::UpdateTaskbarStatus() {
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::UpdateTaskbarStatus - Function Begin"));
+
+    CMainDocument* pDoc                 = wxGetApp().GetDocument();
+    CC_STATUS      status;
+
+    wxASSERT(pDoc);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+
+    pDoc->GetCoreClientStatus(status);
+
+#ifdef __WXMAC__    // Mac Taskbar Icon does not support tooltips
+    // Which icon should be displayed?
+    if (!pDoc->IsConnected()) {
+        SetIcon(m_iconTaskBarDisconnected);
+    } else {
+        if (RUN_MODE_NEVER == status.task_mode) {
+            SetIcon(m_iconTaskBarSnooze);
+        } else {
+            SetIcon(m_iconTaskBarNormal);
+        }
+    }
+#else
+    wxString       strMachineName       = wxEmptyString;
+    wxString       strMessage           = wxEmptyString;
+    wxString       strBuffer            = wxEmptyString;
+    wxIcon         icnIcon;
+
+    pDoc->GetConnectedComputerName(strMachineName);
+
+    if (!pDoc->IsComputerNameLocal(strMachineName)) {
+        strMessage += strMachineName;
+        strMessage += wxT("\n");
+    }
+
+    if (pDoc->IsConnected()) {
+        icnIcon = m_iconTaskBarNormal;
+        if (RUN_MODE_NEVER == status.task_mode) {
+            icnIcon = m_iconTaskBarSnooze;
+        }
+        bool comp_suspended = false;
+        switch(status.task_suspend_reason) {
+        case SUSPEND_REASON_CPU_THROTTLE:
+        case 0:
+            strMessage += _("Computing is enabled");
+            break;
+        default:
+            strMessage += _("Computing is suspended - ");
+            strMessage += suspend_reason_wxstring(status.task_suspend_reason);
+            comp_suspended = true;
+            break;
+        }
+        strMessage += wxT(".\n");
+
+        if (!comp_suspended && (pDoc->state.have_cuda || pDoc->state.have_ati)) {
+            switch(status.gpu_suspend_reason) {
+            case 0:
+                strMessage += _("GPU computing is enabled");
+                break;
+            default:
+                strMessage += _("GPU computing is suspended - ");
+                strMessage += suspend_reason_wxstring(status.gpu_suspend_reason);
+                break;
+            }
+            strMessage += wxT(".\n");
+        }
+
+        switch(status.network_suspend_reason) {
+        case 0:
+            strMessage += _("Network is enabled");
+            break;
+        default:
+            strMessage += _("Network is suspended - ");
+            strMessage += suspend_reason_wxstring(status.network_suspend_reason);
+            break;
+        }
+        strMessage += wxT(".\n");
+    } else {
+        icnIcon = m_iconTaskBarDisconnected;
+        if (pDoc->IsReconnecting()) {
+            strMessage += _("Reconnecting to client.");
+        } else {
+            strMessage += _("Not connected to a client.");
+        }
+    }
+
+    strMessage.Trim();
+    SetIcon(icnIcon, strMessage);
+#endif
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::UpdateTaskbarStatus - Function End"));
+}
+
+
+void CTaskBarIcon::UpdateNoticeStatus() {
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::UpdateNoticeStatus - Function Begin"));
+
+    CMainDocument*   pDoc = wxGetApp().GetDocument();
+    CBOINCBaseFrame* pFrame = wxGetApp().GetFrame();
+    CSkinAdvanced*   pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
+    wxString         strTitle;
+
+    wxASSERT(pDoc);
+    wxASSERT(pFrame);
+    wxASSERT(pSkinAdvanced);
+    wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+    wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
+    wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
+
+    if (!pFrame) return;
+    
+    // Repeat notification for unread notices at user-selected reminder frequency
+    wxTimeSpan tsLastNotificationDisplayed = wxDateTime::Now() - m_dtLastNotificationAlertExecuted;
+    if (
+        (tsLastNotificationDisplayed.GetMinutes() >= pFrame->GetReminderFrequency()) 
+        && (pFrame->GetReminderFrequency() != 0)
+    ) {
+
+        if (pDoc->GetUnreadNoticeCount()) {
+#ifdef __WXMAC__
+            // Delay notification while user is inactive
+            // NOTE: This API requires OS 10.4 or later
+            double idleTime = CGEventSourceSecondsSinceLastEventType (
+                                kCGEventSourceStateCombinedSessionState, 
+                                kCGAnyInputEventType
+                                );
+            if (idleTime > MIN_IDLE_TIME_FOR_NOTIFICATION) return;
+#endif
+            // Update cached info
+            m_dtLastNotificationAlertExecuted = wxDateTime::Now();
+
+            if (IsBalloonsSupported()) {
+                // Display balloon
+                strTitle.Printf(
+                    _("%s Notices"),
+                    pSkinAdvanced->GetApplicationName().c_str()
+                );
+                QueueBalloon(
+                    m_iconTaskBarNormal,
+                    strTitle,
+                    _("There are new notices - click to view."),
+                    BALLOONTYPE_INFO
+                );
+#ifdef __WXMAC__
+            } else {
+                // For platforms that do not support balloons
+                // If Manager is hidden or in background, request user attention.
+                if (! (wxGetApp().IsActive())) {
+                    MacRequestUserAttention();  // Bounce BOINC Dock icon
+                }
+#else
+                pFrame->RequestUserAttention();
+#endif
+            }
+        }
+#ifdef __WXMAC__
+    } else {
+        // Stop bouncing BOINC Dock icon after MAX_NOTIFICATION_DURATION seconds
+        if (m_pNotificationRequest) {
+            if (wxGetApp().IsActive() || 
+                (tsLastNotificationDisplayed.GetSeconds() >= MAX_NOTIFICATION_DURATION) 
+            ) {
+                MacCancelUserAttentionRequest();
+            }
+        }
+#endif
+    }
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::UpdateNoticeStatus - Function End"));
+}

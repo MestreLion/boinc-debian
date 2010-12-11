@@ -97,7 +97,7 @@ define('S_VOLUNTEER', 4);
 define('S_VOLUNTEER_TESTER', 5);
 define('S_SCIENTIST', 6);
 
-$special_user_bitfield[S_MODERATOR]="Forum moderator";
+$special_user_bitfield[S_MODERATOR]="Volunteer moderator";
 $special_user_bitfield[S_ADMIN]="Project administrator";
 $special_user_bitfield[S_DEV]="Project developer";
 $special_user_bitfield[S_TESTER]="Project tester";
@@ -284,7 +284,8 @@ function thread_is_unread($user, $thread) {
 //  Process a user-supplied title to remove HTML stuff
 //
 function cleanup_title($title) {
-    $x = trim(htmlspecialchars($title));
+    $x = strip_tags(bb2html($title));
+    $x = trim($x);
     if (strlen($x)==0) return "(no title)";
     else return $x;
 }
@@ -304,27 +305,27 @@ function should_show_post(
     // If no user logged in, display everything (useful for Google bots etc)
     //
     if (!$logged_in_user) return true;
-	    
+   
     // If the user hasn't enabled the feature to display only
     // a certain amount of posts, simply display all of them.
     //
     if (!$logged_in_user->prefs->minimum_wrap_postcount) return true;
-		    
+    
     // If the user has asked to display all the posts just display them
     //
     if ($no_wraparound) return true;
-	    
+    
     // If it is enabled and we havent yet hit the limit, simply display all
     if ($postcount < $logged_in_user->prefs->minimum_wrap_postcount) return true;
-				    
+    
     // display the post if it is the first post
     //
     if ($postnumber==1 || $postnumber==($postcount+1)) return true;
-    				    
+
     // if this post is unread, show it
     //
     if ($post->timestamp > $last_visit) return true;
-						    
+   
     // The user can choose to display the last X posts in a thread only,
     // "last" here depends on sorting criteria:
     //
@@ -461,29 +462,22 @@ function show_post(
     }
     // If the user no longer exists, skip the post
     if (!$user){
-	return;
+        return;
     }
 
     $config = get_config();
     $no_forum_rating = parse_bool($config, "no_forum_rating");
 
     $tokens = "";
-    $rated_below_threshold = false;
-    $rated_above_threshold = false;
     $options = get_output_options($logged_in_user);
 
-    //If the user that made this post is on the list of people to ignore,
-    // change thresholds to be much more strict
+    // check whether the poster is on the list of people to ignore
     //
+    $ignore_poster = false;
     if ($logged_in_user){
         $tokens = url_tokens($logged_in_user->authenticator);
         if (is_ignoring($logged_in_user, $user)){
-            $user_is_on_ignorelist=true;
-            $rated_below_threshold = ($logged_in_user->prefs->high_rating_threshold>$post->rating());
-            $rated_above_threshold = ($logged_in_user->prefs->high_rating_threshold+abs($logged_in_user->prefs->low_rating_threshold)<($post->rating));
-        } else {                //Use normal threshold values
-            $rated_below_threshold = ($logged_in_user->prefs->low_rating_threshold>($post->rating()));
-            $rated_above_threshold = ($logged_in_user->prefs->high_rating_threshold<($post->rating()));
+            $ignore_poster = true;
         }
     }
 
@@ -513,19 +507,19 @@ function show_post(
     for ($i=0; $i<sizeof($special_user_bitfield);$i++) {
         if ($user->prefs && $user->prefs->privilege($keys[$i])) {
             $fstatus.=$special_user_bitfield[$keys[$i]]."<br>";
-	    $is_posted_by_special = true;
+            $is_posted_by_special = true;
         }
     }
     
     // Highlight special users if set in prefs;
     if ($logged_in_user && $logged_in_user->prefs){
-	$highlight = $logged_in_user->prefs->highlight_special && $is_posted_by_special;
+        $highlight = $logged_in_user->prefs->highlight_special && $is_posted_by_special;
     } else {
-	$highlight = $is_posted_by_special;
+        $highlight = $is_posted_by_special;
     }
     echo "
         <tr>
-	    <td class=\"".($highlight?"highlighted_":"")."row$n\" rowspan=\"3\">
+        <td class=\"".($highlight?"highlighted_":"")."row$n\" rowspan=\"3\">
         <a name=\"$post->id\"></a>
         <div class=\"authorcol\">
     ";
@@ -536,7 +530,7 @@ function show_post(
     if ($fstatus) echo "<font size=\"-2\">$fstatus</font>";
 
     echo "<span class=\"authorinfo\">";
-    if (!$filter || !$rated_below_threshold){
+    if (!$filter || !$ignore_poster){
         if ($user->prefs && $user->prefs->avatar!="" && (!$logged_in_user || ($logged_in_user->prefs->hide_avatars==false))) {
             echo "<img class=authorinfo width=\"".AVATAR_WIDTH."\" height=\"".AVATAR_HEIGHT."\" src=\"".$user->prefs->avatar."\" alt=\"Avatar\"><br>";
         }
@@ -585,9 +579,6 @@ function show_post(
     if ($logged_in_user && $post->timestamp>$last_visit){
         show_image(NEW_IMAGE, "You haven't read this message yet", "Unread", NEW_IMAGE_HEIGHT);
     }
-    if ($rated_above_threshold){
-        show_image(EMPHASIZE_IMAGE, "This message has a high average rating", "Highly rated", EMPHASIZE_IMAGE_HEIGHT);
-    }
 
     echo " <a href=\"forum_thread.php?id=".$thread->id."&nowrap=true#$post->id\">Message ".$post->id."</a> - ";
     if ($post->hidden) echo "<font color=red>[hidden] </font>";
@@ -609,11 +600,8 @@ function show_post(
     if ($post->modified) {
         echo "<br>Last modified: ", pretty_time_Str($post->modified);
     }
-    if ($rated_below_threshold && $filter){
-        if ($user_is_on_ignorelist) {
-            $andtext=" and the user is on your ignore list";
-        }
-        echo "<br>This post has been filtered (rating: ".($post->rating()).")$andtext, press <a href=\"?id=".$thread->id."&amp;filter=false#".$post->id."\">here</a> to view this thread without filtering";
+    if ($ignore_poster && $filter){
+        echo "<br>This post is not shown because the sender is on your 'ignore' list.  Click <a href=\"?id=".$thread->id."&amp;filter=false#".$post->id."\">here</a> to view this post";
     }
     echo "</td>
         </tr>
@@ -622,7 +610,7 @@ function show_post(
         <td class=\"postbody\">
     ";
 
-    if (!$filter || !$rated_below_threshold){
+    if (!$filter || !$ignore_poster){
         $posttext = $post->content;
 
         // If the creator of this post has a signature and
@@ -654,12 +642,12 @@ function show_post(
             echo "</a>";
         }
         if (($controls == FORUM_CONTROLS) && (can_reply($thread, $forum, $logged_in_user))) {
-	    echo "&nbsp;&nbsp;&nbsp;&nbsp;<ul class=\"actionlist\">";
+            echo "&nbsp;&nbsp;&nbsp;&nbsp;<ul class=\"actionlist\">";
             $url = "forum_reply.php?thread=" . $thread->id . "&post=" . $post->id . "&no_quote=1#input";
             show_actionlist_button($url, "Reply", "Post a reply to this message");
             $url = "forum_reply.php?thread=" . $thread->id . "&post=" . $post->id . "#input";
-	    show_actionlist_button($url, "Quote", "Post a reply by quoting this message");
-	    echo "</ul>";
+            show_actionlist_button($url, "Quote", "Post a reply by quoting this message");
+            echo "</ul>";
         }
         echo "</td></tr>";
     } else {
@@ -743,7 +731,7 @@ function post_rules() {
         <li> No messages that are deliberately hostile or insulting.
         <li> No abusive comments involving race, religion,
             nationality, gender, class or sexuality.
-	".$project_rules."
+        ".$project_rules."
         </ul>
     ";
 }
@@ -792,7 +780,7 @@ function create_post($content, $parent_id, $user, $forum, $thread, $signature) {
             notify_subscriber($thread, $user2);
         }
     }
-    $user->update("posts=posts+1");
+    $user->prefs->update("posts=posts+1");
     $thread->update("replies=replies+1, timestamp=$now");
     $forum->update("posts=posts+1, timestamp=$now");
 }
@@ -1029,17 +1017,18 @@ function show_post_moderation_links(
     }
 }
 
-function check_create_thread_access($user, $forum) {
+function user_can_create_thread($user, $forum) {
+    if (!$user) return false;
     if ($forum->is_dev_blog){
         if (
            (!$user->prefs->privilege(S_SCIENTIST)) &&
            (!$user->prefs->privilege(S_DEV)) &&
            (!$user->prefs->privilege(S_ADMIN))
         ) {
-            error_page("This forum is marked as a development blog, only people directly working with the project may start a new thread here. <br/>However, you may post a reply to an existing thread.");
+            return false;
         }
     }
-    check_post_access($user, $forum);
+    return true;
 }
 
 function check_post_access($user, $forum) {
@@ -1092,11 +1081,13 @@ function check_reply_access($user, $forum, $thread) {
 
 function is_moderator($user, $forum) {
     if (!$user) return false;
-    switch ($forum->parent_type) {
+    $type = $forum?$forum->parent_type:0;
+    switch ($type) {
     case 0:
         if ($user->prefs->privilege(S_MODERATOR)) return true;
         if ($user->prefs->privilege(S_ADMIN)) return true;
         if ($user->prefs->privilege(S_DEV)) return true;
+        if ($user->prefs->privilege(S_SCIENTIST)) return true;
         break;
     case 1:
         if ($user->prefs->privilege(S_ADMIN)) return true;
@@ -1182,6 +1173,28 @@ function show_mark_as_read_button($user) {
         $url = "forum_index.php?read=1$tokens&return=$return";
         show_button($url, tra("Mark all threads as read"), tra("Mark all threads in all message boards as 'read'."));
     }
+}
+
+function remove_subscriptions_forum($userid, $forumid) {
+    $subs = BoincSubscription::enum("userid=$userid");
+    foreach ($subs as $sub) {
+        $thread = BoincThread::lookup_id($sub->threadid);
+        if ($thread && $thread->forum == $forumid) {
+            BoincSubscription::delete($userid, $thread->id);
+        }
+    }
+    $notices = BoincNotify::enum("userid=$userid and type=".NOTIFY_SUBSCRIBED_POST);
+    foreach ($notices as $n) {
+        $thread = BoincThread::lookup_id($n->opaque);
+        if ($thread && $thread->forum == $forumid) {
+            $n->delete();
+        }
+    }
+}
+
+function remove_subscriptions_thread($userid, $threadid) {
+    BoincSubscription::delete($userid, $threadid);
+    BoincNotify::delete_aux("userid=$userid and type=".NOTIFY_SUBSCRIBED_POST." and opaque=$threadid");
 }
 
 ?>

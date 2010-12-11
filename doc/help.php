@@ -4,7 +4,7 @@ require_once("spoken_languages.php");
 require_once("help_db.php");
 require_once("../html/inc/translation.inc");
 
-page_head("Live help via Internet phone or email");
+page_head("Live help via Skype or email");
 
 echo "
 <p>
@@ -38,7 +38,7 @@ $n = 0;
 foreach ($langs as $lang) {
     $lang_enc = urlencode($lang);
     if ($n) {
-        echo "<br>";
+        echo " &middot; ";
     }
     $n++;
     echo "<a href=\"help_lang.php?lang=$lang_enc\"><b>$lang</b></a>";

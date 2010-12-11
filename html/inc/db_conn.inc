@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-/* Should not be enabled for public code */
+// Should not be enabled for public code
 //ini_set('display_errors', 'stdout');
 //error_reporting(E_ALL);
 
@@ -83,6 +83,7 @@ class DbConn {
     function enum_general($classname, $query) {
         $result = $this->do_query($query);
         if (!$result) return null;
+        $x = array();
         while ($obj = mysql_fetch_object($result, $classname)) {
             $x[] = $obj;
         }
@@ -100,6 +101,7 @@ class DbConn {
         $query = "select $fields from DBNAME.$table $where_clause $order_clause";
         $result = $this->do_query($query);
         if (!$result) return null;
+        $x = array();
         while ($obj = mysql_fetch_object($result, $classname)) {
             $x[] = $obj;
         }

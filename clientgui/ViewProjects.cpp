@@ -198,8 +198,8 @@ CViewProjects::CViewProjects(wxNotebook* pNotebook) :
     pGroup->m_Tasks.push_back( pItem );
 
     pItem = new CTaskItem(
-        _("Detach"),
-        _("Detach computer from this project.  Tasks in progress will be lost (use 'Update' first to report any completed tasks)."),
+        _("Remove"),
+        _("Remove this project.  Tasks in progress will be lost (use 'Update' first to report any completed tasks)."),
         ID_TASK_PROJECT_DETACH 
     );
     pGroup->m_Tasks.push_back( pItem );
@@ -253,6 +253,11 @@ wxString& CViewProjects::GetViewDisplayName() {
 
 const char** CViewProjects::GetViewIcon() {
     return proj_xpm;
+}
+
+
+const int CViewProjects::GetViewCurrentViewPage() {
+    return VW_PROJ;
 }
 
 
@@ -474,7 +479,7 @@ void CViewProjects::OnProjectDetach( wxCommandEvent& WXUNUSED(event) ) {
     if (!pDoc->IsUserAuthorized())
         return;
 
-    pFrame->UpdateStatusText(_("Detaching from project..."));
+    pFrame->UpdateStatusText(_("Removing project..."));
 
     row = -1;
     while (1) {
@@ -487,13 +492,13 @@ void CViewProjects::OnProjectDetach( wxCommandEvent& WXUNUSED(event) ) {
         }
 
         strMessage.Printf(
-            _("Are you sure you want to detach from project '%s'?"), 
+            _("Are you sure you want to remove project '%s'?"), 
             pProject->m_strProjectName.c_str()
         );
 
         iAnswer = wxGetApp().SafeMessageBox(
             strMessage,
-            _("Detach from Project"),
+            _("Remove Project"),
             wxYES_NO | wxICON_QUESTION,
             this
         );
@@ -537,7 +542,7 @@ void CViewProjects::OnProjectWebsiteClicked( wxEvent& event ) {
     pFrame->UpdateStatusText(_("Launching browser..."));
 
     int website_task_index = event.GetId() - ID_TASK_PROJECT_WEB_PROJDEF_MIN;
-    pFrame->ExecuteBrowserLink(
+    wxLaunchDefaultBrowser(
         m_TaskGroups[1]->m_Tasks[website_task_index]->m_strWebSiteLink
     );
 
@@ -1055,10 +1060,10 @@ void CViewProjects::GetDocStatus(wxInt32 item, wxString& strBuffer) const {
             append_to_status(strBuffer, _("Won't get new tasks"));
         }
         if (project->ended) {
-            append_to_status(strBuffer, _("Project ended - OK to detach"));
+            append_to_status(strBuffer, _("Project ended - OK to remove"));
         }
         if (project->detach_when_done) {
-            append_to_status(strBuffer, _("Will detach when tasks done"));
+            append_to_status(strBuffer, _("Will remove when tasks done"));
         }
         if (project->sched_rpc_pending) {
             append_to_status(strBuffer, _("Scheduler request pending"));
@@ -1108,7 +1113,7 @@ void CViewProjects::GetDocProjectURL(wxInt32 item, wxString& strBuffer) const {
     }
 
     if (project) {
-        strBuffer = wxString(project->master_url.c_str(), wxConvUTF8);
+        strBuffer = wxString(project->master_url, wxConvUTF8);
     } else {
         strBuffer = wxEmptyString;
     }

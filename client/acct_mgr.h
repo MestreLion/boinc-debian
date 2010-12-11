@@ -26,37 +26,43 @@
 #include "gui_http.h"
 #include "client_types.h"
 
-/// represents info stored in acct_mgr_url.xml and acct_mgr_login.xml
+// represents info stored in acct_mgr_url.xml and acct_mgr_login.xml
 
-struct ACCT_MGR_INFO {
+struct ACCT_MGR_INFO : PROJ_AM {
 	// the following used to be std::string but there
 	// were mysterious bugs where setting it to "" didn't work
 	//
-    char acct_mgr_name[256];
-    char acct_mgr_url[256];
     char login_name[256];
-        /// md5 of password.lowercase(login_name)
     char password_hash[256];
-		/// whatever the AMS sends us
+        // md5 of password.lowercase(login_name)
 	char opaque[256];
+		// whatever the AMS sends us
     char signing_key[MAX_KEY_LEN];
-        /// the host CPID sent in last RPC
     char previous_host_cpid[64];
+        // the host CPID sent in last RPC
     double next_rpc_time;
-        /// whether to include GUI RPC port and password hash
-        /// in AM RPCs (used for "farm management")
+    int nfailures;
     bool send_gui_rpc_info;
-        /// use of cookies are required during initial signup
-        /// NOTE: This bool gets dropped after the client has
-        ///   successfully attached to an account manager
+        // whether to include GUI RPC port and password hash
+        // in AM RPCs (used for "farm management")
     bool cookie_required;
-        /// if the cookies could not be detected, provide a
-        /// link to a website to go to so the user can find
-        /// what login name and password they have been assigned
-        /// NOTE: This bool gets dropped after the client has
-        ///   successfully attached to an account manager
+        // use of cookies are required during initial signup
+        // NOTE: This bool gets dropped after the client has
+        //   successfully attached to an account manager
     char cookie_failure_url[256];
+        // if the cookies could not be detected, provide a
+        // link to a website to go to so the user can find
+        // what login name and password they have been assigned
+        // NOTE: This bool gets dropped after the client has
+        //   successfully attached to an account manager
     bool password_error;
+
+    inline bool using_am() {
+        if (!strlen(master_url)) return false;
+        if (!strlen(login_name)) return false;
+        if (!strlen(password_hash)) return false;
+        return true;
+    }
 
     ACCT_MGR_INFO();
     int parse_login_file(FILE*);
@@ -65,6 +71,8 @@ struct ACCT_MGR_INFO {
     void clear();
     bool poll();
 };
+
+// stuff after here related to RPCs to account managers
 
 struct OPTIONAL_BOOL {
     bool present;
@@ -80,17 +88,22 @@ struct OPTIONAL_DOUBLE {
     inline void set(double v) {value=v; present=true;}
 };
 
-// stuff after here related to RPCs to account managers
-
+// an account entry in reply message
+//
 struct AM_ACCOUNT {
     std::string url;
     std::string authenticator;
     char url_signature[MAX_SIGNATURE_LEN];
     bool detach;
     bool update;
+    bool no_cpu;
+    bool no_cuda;
+    bool no_ati;
     OPTIONAL_BOOL dont_request_more_work;
     OPTIONAL_BOOL detach_when_done;
     OPTIONAL_DOUBLE resource_share;
+    OPTIONAL_BOOL suspend;
+    OPTIONAL_BOOL abort_not_started;
 
     int parse(XML_PARSER&);
     AM_ACCOUNT() {}
@@ -108,6 +121,8 @@ struct ACCT_MGR_OP: public GUI_HTTP_OP {
     double repeat_sec;
     char* global_prefs_xml;
     char host_venue[256];
+    bool got_rss_feeds;
+    std::vector<RSS_FEED>rss_feeds;
 
     int do_rpc(
         std::string url, std::string name, std::string password,

@@ -15,11 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#ifdef _BOINC_DLL
-#include "stdafx.h"
-#else
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
 #endif
 
 #include "diagnostics.h"
@@ -742,24 +741,35 @@ GetAccountSid(
     return bSuccess;
 }
 
-// Suspend or resume the threads in a given process.
+// signature of OpenThread()
+//
+typedef HANDLE (WINAPI *tOT)(
+    DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId
+);
+
+// Suspend or resume the threads in a given process,
+// but don't suspend 'calling_thread'.
+//
 // The only way to do this on Windows is to enumerate
 // all the threads in the entire system,
 // and find those belonging to the process (ugh!!)
 //
 
-// OpenThread
-typedef HANDLE (WINAPI *tOT)(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId);
-
-int suspend_or_resume_threads(DWORD pid, bool resume) { 
+int suspend_or_resume_threads(
+    DWORD pid, DWORD calling_thread_id, bool resume
+) { 
     HANDLE threads, thread;
-    HMODULE hKernel32Lib = NULL;
+    static HMODULE hKernel32Lib = NULL;
     THREADENTRY32 te = {0}; 
-    tOT pOT = NULL;
+    static tOT pOT = NULL;
  
     // Dynamically link to the proper function pointers.
-    hKernel32Lib = GetModuleHandleA("kernel32.dll");
-    pOT = (tOT) GetProcAddress( hKernel32Lib, "OpenThread" );
+    if (!hKernel32Lib) {
+        hKernel32Lib = GetModuleHandleA("kernel32.dll");
+    }
+    if (!pOT) {
+        pOT = (tOT) GetProcAddress( hKernel32Lib, "OpenThread" );
+    }
 
     if (!pOT) {
         return -1;
@@ -776,6 +786,7 @@ int suspend_or_resume_threads(DWORD pid, bool resume) {
 
     do { 
         if (!diagnostics_is_thread_exempt_suspend(te.th32ThreadID)) continue;
+        if (te.th32ThreadID == calling_thread_id) continue;
         if (te.th32OwnerProcessID == pid) {
             thread = pOT(THREAD_SUSPEND_RESUME, FALSE, te.th32ThreadID);
             resume ?  ResumeThread(thread) : SuspendThread(thread);

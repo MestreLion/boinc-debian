@@ -21,9 +21,6 @@
 #include "boinc_win.h"
 #else
 #include "config.h"
-#endif
-
-#ifndef _WIN32
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
@@ -77,6 +74,8 @@ bool SCHEDULER_OP::check_master_fetch_start() {
     return true;
 }
 
+#ifndef SIM
+
 // try to initiate an RPC to the given project.
 // If there are multiple schedulers, start with a random one.
 // User messages and backoff() is done at this level.
@@ -88,7 +87,7 @@ int SCHEDULER_OP::init_op_project(PROJECT* p, int r) {
     reason = r;
     if (log_flags.sched_op_debug) {
         msg_printf(p, MSG_INFO,
-            "[sched_op_debug] Starting scheduler request"
+            "[sched_op] Starting scheduler request"
         );
     }
 
@@ -129,11 +128,15 @@ int SCHEDULER_OP::init_op_project(PROJECT* p, int r) {
         // Now's a good time to check for new BOINC versions
         // and project list
         //
-        gstate.new_version_check();
-        gstate.all_projects_list_check();
+        if (!config.no_info_fetch) {
+            gstate.new_version_check();
+            gstate.all_projects_list_check();
+        }
     }
     return retval;
 }
+
+#endif
 
 // One of the following errors occurred:
 // - connection failure in fetching master file
@@ -207,6 +210,25 @@ void SCHEDULER_OP::rpc_failed(const char* msg) {
     cur_proj = 0;
 }
 
+static void request_string(char* buf) {
+    bool first = true;
+    strcpy(buf, "");
+    if (cpu_work_fetch.req_secs) {
+        strcpy(buf, "CPU");
+        first = false;
+    }
+    if (cuda_work_fetch.req_secs) {
+        if (!first) strcat(buf, " and ");
+        strcat(buf, "NVIDIA GPU");
+        first = false;
+    }
+    if (ati_work_fetch.req_secs) {
+        if (!first) strcat(buf, " and ");
+        strcat(buf, "ATI GPU");
+        first = false;
+    }
+}
+
 // low-level routine to initiate an RPC
 // If successful, creates an HTTP_OP that must be polled
 // PRECONDITION: the request file has been created
@@ -220,26 +242,15 @@ int SCHEDULER_OP::start_rpc(PROJECT* p) {
         msg_printf(p, MSG_INFO,
             "Sending scheduler request: %s.", rpc_reason_string(reason)
         );
-        double gpu_req = cuda_work_fetch.req_secs + ati_work_fetch.req_secs;
-        if (cpu_work_fetch.req_secs || gpu_req) {
-            if (coproc_cuda||coproc_ati) {
-                if (cpu_work_fetch.req_secs && gpu_req) {
-                    sprintf(buf, " for CPU and GPU");
-                } else if (cpu_work_fetch.req_secs) {
-                    sprintf(buf, " for CPU");
-                } else {
-                    sprintf(buf, " for GPU");
-                }
-            } else {
-                strcpy(buf, "");
-            }
+        request_string(buf);
+        if (strlen(buf)) {
             if (p->nresults_returned) {
                 msg_printf(p, MSG_INFO,
-                    "Reporting %d completed tasks, requesting new tasks%s",
+                    "Reporting %d completed tasks, requesting new tasks for %s",
                     p->nresults_returned, buf
                 );
             } else {
-                msg_printf(p, MSG_INFO, "Requesting new tasks%s", buf);
+                msg_printf(p, MSG_INFO, "Requesting new tasks for %s", buf);
             }
         } else {
             if (p->nresults_returned) {
@@ -254,18 +265,18 @@ int SCHEDULER_OP::start_rpc(PROJECT* p) {
     }
     if (log_flags.sched_op_debug) {
         msg_printf(p, MSG_INFO,
-            "[sched_op_debug] CPU work request: %.2f seconds; %.2f CPUs",
+            "[sched_op] CPU work request: %.2f seconds; %.2f CPUs",
             cpu_work_fetch.req_secs, cpu_work_fetch.req_instances
         );
-        if (coproc_cuda) {
+        if (gstate.host_info.have_cuda()) {
             msg_printf(p, MSG_INFO,
-                "[sched_op_debug] NVIDIA GPU work request: %.2f seconds; %.2f GPUs",
+                "[sched_op] NVIDIA GPU work request: %.2f seconds; %.2f GPUs",
                 cuda_work_fetch.req_secs, cuda_work_fetch.req_instances
             );
         }
-        if (coproc_ati) {
+        if (gstate.host_info.have_ati()) {
             msg_printf(p, MSG_INFO,
-                "[sched_op_debug] ATI GPU work request: %.2f seconds; %.2f GPUs",
+                "[sched_op] ATI GPU work request: %.2f seconds; %.2f GPUs",
                 ati_work_fetch.req_secs, ati_work_fetch.req_instances
             );
         }
@@ -300,7 +311,7 @@ int SCHEDULER_OP::init_master_fetch(PROJECT* p) {
     get_master_filename(*p, master_filename, sizeof(master_filename));
 
     if (log_flags.sched_op_debug) {
-        msg_printf(p, MSG_INFO, "[sched_op_debug] Fetching master file");
+        msg_printf(p, MSG_INFO, "[sched_op] Fetching master file");
     }
     cur_proj = p;
     retval = http_op.init_get(p->master_url, master_filename, true);
@@ -365,7 +376,7 @@ int SCHEDULER_OP::parse_master_file(PROJECT* p, vector<std::string> &urls) {
     fclose(f);
     if (log_flags.sched_op_debug) {
         msg_printf(p, MSG_INFO,
-            "[sched_op_debug] Found %d scheduler URLs in master file\n",
+            "[sched_op] Found %d scheduler URLs in master file\n",
             (int)urls.size()
         );
     }
@@ -408,6 +419,8 @@ bool SCHEDULER_OP::update_urls(PROJECT* p, vector<std::string> &urls) {
     return any_new;
 }
 
+#ifndef SIM
+
 // poll routine.  If an operation is in progress, check for completion
 //
 bool SCHEDULER_OP::poll() {
@@ -426,7 +439,7 @@ bool SCHEDULER_OP::poll() {
             if (http_op.http_op_retval == 0) {
                 if (log_flags.sched_op_debug) {
                     msg_printf(cur_proj, MSG_INFO,
-                        "[sched_op_debug] Got master file; parsing"
+                        "[sched_op] Got master file; parsing"
                     );
                 }
                 retval = parse_master_file(cur_proj, urls);
@@ -516,6 +529,8 @@ bool SCHEDULER_OP::poll() {
     return false;
 }
 
+#endif
+
 void SCHEDULER_OP::abort(PROJECT* p) {
     if (state != SCHEDULER_OP_STATE_IDLE && cur_proj == p) {
         gstate.http_ops->remove(&http_op);
@@ -524,11 +539,33 @@ void SCHEDULER_OP::abort(PROJECT* p) {
     }
 }
 
-SCHEDULER_REPLY::SCHEDULER_REPLY() {
+void SCHEDULER_REPLY::clear() {
+    hostid = 0;
+    request_delay = 0;
+    next_rpc_delay = 0;
     global_prefs_xml = 0;
     project_prefs_xml = 0;
     code_sign_key = 0;
     code_sign_key_signature = 0;
+    strcpy(master_url, "");
+    code_sign_key = 0;
+    code_sign_key_signature = 0;
+    message_ack = false;
+    project_is_down = false;
+    send_file_list = false;
+    send_full_workload = false;
+    send_time_stats_log = 0;
+    send_job_log = 0;
+    messages.clear();
+    scheduler_version = 0;
+    cpu_backoff = 0;
+    cuda_backoff = 0;
+    ati_backoff = 0;
+    got_rss_feeds = false;
+}
+
+SCHEDULER_REPLY::SCHEDULER_REPLY() {
+    clear();
 }
 
 SCHEDULER_REPLY::~SCHEDULER_REPLY() {
@@ -537,6 +574,8 @@ SCHEDULER_REPLY::~SCHEDULER_REPLY() {
     if (code_sign_key) free(code_sign_key);
     if (code_sign_key_signature) free(code_sign_key_signature);
 }
+
+#ifndef SIM
 
 // parse a scheduler reply.
 // Some of the items go into the SCHEDULER_REPLY object.
@@ -548,31 +587,15 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
     MIOFILE mf;
     std::string delete_file_name;
     mf.init_file(in);
-    bool found_start_tag = false;
+    bool found_start_tag = false, btemp;
     double cpid_time = 0;
 
-    hostid = 0;
-    request_delay = 0;
-    next_rpc_delay = 0;
-    global_prefs_xml = 0;
-    project_prefs_xml = 0;
+    clear();
     strcpy(host_venue, project->host_venue);
         // the project won't send us a venue if it's doing maintenance
         // or doesn't check the DB because no work.
         // Don't overwrite the host venue in that case.
-    strcpy(master_url, "");
-    code_sign_key = 0;
-    code_sign_key_signature = 0;
-    message_ack = false;
-    project_is_down = false;
-    send_file_list = false;
-    send_time_stats_log = 0;
-    send_job_log = 0;
-    messages.clear();
-    scheduler_version = 0;
-    cpu_backoff = 0;
-    cuda_backoff = 0;
-    ati_backoff = 0;
+    sr_feeds.clear();
 
     // First line should either be tag (HTTP 1.0) or
     // hex length of response (HTTP 1.1)
@@ -590,13 +613,24 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
             // add new record if vector is empty or we have a new day
             //
             if (project->statistics.empty() || project->statistics.back().day!=dday()) {
-
-                // delete old stats
+                double cutoff = dday() - config.save_stats_days*86400;
+                // delete old stats; fill in the gaps if some days missing
+                //
                 while (!project->statistics.empty()) {
                     DAILY_STATS& ds = project->statistics[0];
-                    if (dday() - ds.day > config.save_stats_days*86400) {
-                        project->statistics.erase(project->statistics.begin());
+                    if (ds.day >= cutoff) {
+                        break;
+                    }
+                    if (project->statistics.size() > 1) {
+                        DAILY_STATS& ds2 = project->statistics[1];
+                        if (ds2.day <= cutoff) {
+                            project->statistics.erase(project->statistics.begin());
+                        } else {
+                            ds.day = cutoff;
+                            break;
+                        }
                     } else {
+                        ds.day = cutoff;
                         break;
                     }
                 }
@@ -800,10 +834,10 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
             USER_MESSAGE um(msg_buf, pri_buf);
             messages.push_back(um);
             continue;
-        } else if (match_tag(buf, "<message_ack/>")) {
-            message_ack = true;
-        } else if (match_tag(buf, "<project_is_down/>")) {
-            project_is_down = true;
+        } else if (parse_bool(buf, "message_ack", message_ack)) {
+            continue;
+        } else if (parse_bool(buf, "project_is_down", project_is_down)) {
+            continue;
         } else if (parse_str(buf, "<email_hash>", project->email_hash, sizeof(project->email_hash))) {
             continue;
         } else if (parse_str(buf, "<cross_project_id>", project->cross_project_id, sizeof(project->cross_project_id))) {
@@ -820,10 +854,27 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
             continue;
         } else if (parse_bool(buf, "ended", project->ended)) {
             continue;
+        } else if (parse_bool(buf, "no_cpu_apps", btemp)) {
+            if (!project->anonymous_platform) {
+                project->no_cpu_apps = btemp;
+            }
+            continue;
+        } else if (parse_bool(buf, "no_cuda_apps", btemp)) {
+            if (!project->anonymous_platform) {
+                project->no_cuda_apps = btemp;
+            }
+            continue;
+        } else if (parse_bool(buf, "no_ati_apps", btemp)) {
+            if (!project->anonymous_platform) {
+                project->no_ati_apps = btemp;
+            }
+            continue;
         } else if (parse_bool(buf, "verify_files_on_app_start", project->verify_files_on_app_start)) {
             continue;
-        } else if (match_tag(buf, "<request_file_list/>")) {
-            send_file_list = true;
+        } else if (parse_bool(buf, "request_file_list", send_file_list)) {
+            continue;
+        } else if (parse_bool(buf, "send_full_workload", send_full_workload)) {
+            continue;
         } else if (parse_int(buf, "<send_time_stats_log>", send_time_stats_log)){
             continue;
         } else if (parse_int(buf, "<send_job_log>", send_job_log)) {
@@ -849,6 +900,10 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
             if (ati_backoff > 28*SECONDS_PER_DAY) ati_backoff = 28*SECONDS_PER_DAY;
             if (ati_backoff < 0) ati_backoff = 0;
             continue;
+        } else if (match_tag(buf, "<rss_feeds>")) {
+            got_rss_feeds = true;
+            parse_rss_feed_descs(mf, sr_feeds);
+            continue;
         } else if (match_tag(buf, "<!--")) {
             continue;
         } else if (strlen(buf)>1){
@@ -867,6 +922,7 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
 
     return ERR_XML_PARSE;
 }
+#endif
 
 USER_MESSAGE::USER_MESSAGE(char* m, char* p) {
     message = m;

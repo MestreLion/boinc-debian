@@ -24,6 +24,9 @@
 
 #ifdef _WIN32
 #include "../version.h"
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
 #else
 #include "config.h"
 #ifdef __EMX__
@@ -60,6 +63,19 @@ RPC_CLIENT::~RPC_CLIENT() {
     close();
 }
 
+#ifdef _WIN32
+static int addr_len(sockaddr_storage&) {
+    return (int) sizeof(sockaddr_in);
+}
+#else
+static int addr_len(sockaddr_storage& s) {
+    if (s.ss_family == AF_INET6) {
+        return (int) sizeof(sockaddr_in6);
+    }
+    return (int) sizeof(sockaddr_in);
+}
+#endif
+
 // if any RPC returns ERR_READ or ERR_WRITE,
 // call this and then call init() again.
 //
@@ -71,29 +87,53 @@ void RPC_CLIENT::close() {
 	}
 }
 
-int RPC_CLIENT::init(const char* host, int port) {
-    int retval;
+int RPC_CLIENT::get_ip_addr(const char* host, int port) {
     memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    if (port) {
-        addr.sin_port = htons(port);
-    } else {
-        addr.sin_port = htons(GUI_RPC_PORT);
-    }
     //printf("trying port %d\n", htons(addr.sin_port));
-
+    int retval;
     if (host) {
-        hostent* hep = gethostbyname(host);
-        if (!hep) {
-            //perror("gethostbyname");
+        retval = resolve_hostname(host, addr);
+        if (retval) {
             return ERR_GETHOSTBYNAME;
         }
-        addr.sin_addr.s_addr = *(int*)hep->h_addr_list[0];
     } else {
-        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        sockaddr_in* sin = (sockaddr_in*)&addr;
+        sin->sin_family = AF_INET;
+        sin->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     }
+    if (port) {
+        port = htons(port);
+    } else {
+        port = htons(GUI_RPC_PORT);
+    }
+#ifdef _WIN32
+    addr.sin_port = port;
+#else
+    if (addr.ss_family == AF_INET) {
+        sockaddr_in* sin = (sockaddr_in*)&addr;
+        sin->sin_port = port;
+    } else {
+        sockaddr_in6* sin = (sockaddr_in6*)&addr;
+        sin->sin6_port = port;
+    }
+#endif
+    return 0;
+}
+
+int RPC_CLIENT::init(const char* host, int port) {
+    int retval = get_ip_addr(host, port);
+    if (retval) return retval;
     boinc_socket(sock);
-    retval = connect(sock, (const sockaddr*)(&addr), sizeof(addr));
+
+    // set up receive timeout; avoid hang if client doesn't respond
+    //
+    struct timeval tv;
+    tv.tv_sec = 30;
+    tv.tv_usec = 0;
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,  sizeof tv)) {
+        // not fatal
+    } 
+    retval = connect(sock, (const sockaddr*)(&addr), addr_len(addr));
     if (retval) {
 #ifdef _WIN32
         BOINCTRACE("RPC_CLIENT::init connect 2: Winsock error '%d'\n", WSAGetLastError());
@@ -111,22 +151,11 @@ int RPC_CLIENT::init_asynch(
     const char* host, double _timeout, bool _retry, int port
 ) {
     int retval;
-	memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
     retry = _retry;
     timeout = _timeout;
 
-    if (host) {
-        hostent* hep = gethostbyname(host);
-        if (!hep) {
-            //perror("gethostbyname");
-            return ERR_GETHOSTBYNAME;
-        }
-        addr.sin_addr.s_addr = *(int*)hep->h_addr_list[0];
-    } else {
-        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    }
+    retval = get_ip_addr(host, port);
+    if (retval) return retval;
 
     retval = boinc_socket(sock);
     BOINCTRACE("init_asynch() boinc_socket: %d\n", sock);
@@ -137,7 +166,7 @@ int RPC_CLIENT::init_asynch(
         BOINCTRACE("init_asynch() boinc_socket_asynch: %d\n", retval);
     }
     start_time = dtime();
-    retval = connect(sock, (const sockaddr*)(&addr), sizeof(addr));
+    retval = connect(sock, (const sockaddr*)(&addr), addr_len(addr));
     if (retval) {
         //perror("init_asynch(): connect");
         BOINCTRACE("init_asynch() connect: %d\n", retval);
@@ -168,7 +197,7 @@ int RPC_CLIENT::init_poll() {
     } else if (FD_ISSET(sock, &write_fds)) {
         retval = get_socket_error(sock);
         if (!retval) {
-            BOINCTRACE("init_poll(): connected to port %d\n", ntohs(addr.sin_port));
+            BOINCTRACE("init_poll(): connected\n");
             retval = boinc_socket_asynch(sock, false);
             if (retval) {
                 BOINCTRACE("init_poll(): boinc_socket_asynch: %d\n", retval);
@@ -188,7 +217,7 @@ int RPC_CLIENT::init_poll() {
             boinc_close_socket(sock);
             retval = boinc_socket(sock);
             retval = boinc_socket_asynch(sock, true);
-            retval = connect(sock, (const sockaddr*)(&addr), sizeof(addr));
+            retval = connect(sock, (const sockaddr*)(&addr), addr_len(addr));
             BOINCTRACE("init_poll(): retrying connect: %d\n", retval);
             return ERR_RETRY;
         } else {

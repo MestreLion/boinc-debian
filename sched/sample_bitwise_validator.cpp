@@ -99,8 +99,4 @@ int cleanup_result(RESULT const& /*result*/, void* data) {
     return 0;
 }
 
-double compute_granted_credit(WORKUNIT& wu, vector<RESULT>& results) {
-    return median_mean_credit(wu, results);
-}
-
-const char *BOINC_RCSID_7ab2b7189c = "$Id: sample_bitwise_validator.cpp 17966 2009-05-01 18:25:17Z davea $";
+const char *BOINC_RCSID_7ab2b7189c = "$Id: sample_bitwise_validator.cpp 21735 2010-06-12 22:08:15Z davea $";

@@ -23,6 +23,7 @@
 #include "BOINCGUIApp.h"
 #include "BOINCBaseFrame.h"
 #include "MainDocument.h"
+#include "AdvancedFrame.h"
 #include "BOINCTaskCtrl.h"
 #include "BOINCListCtrl.h"
 #include "ViewResources.h"
@@ -123,16 +124,20 @@ const char** CViewResources::GetViewIcon() {
     return usage_xpm;
 }
 
-void CViewResources::UpdateSelection() {
-    CBOINCBaseView::PreUpdateSelection();
-}
 
-
-#ifdef __WXMAC__
 const int CViewResources::GetViewRefreshRate() {
     return 10;
 }
-#endif
+
+
+const int CViewResources::GetViewCurrentViewPage() {
+    return VW_DISK;
+}
+
+
+void CViewResources::UpdateSelection() {
+    CBOINCBaseView::PreUpdateSelection();
+}
 
 
 wxInt32 CViewResources::FormatProjectName(PROJECT* project, wxString& strBuffer) const {
@@ -220,7 +225,7 @@ void CViewResources::OnListRender( wxTimerEvent& WXUNUSED(event) ) {
             //paint an empty black pie
 			m_pieCtrlBOINC->m_Series.Clear();
 			wxPiePart part;
-            part.SetLabel(_("not attached to any BOINC project: 0 bytes"));
+            part.SetLabel(_("no projects: 0 bytes used"));
 			part.SetValue(1);
 			part.SetColour(wxColour(0,0,0));
 			m_pieCtrlBOINC->m_Series.Add(part);
@@ -317,10 +322,8 @@ wxInt32 CViewResources::FormatDiskSpace(double bytes, wxString& strBuffer) const
         strBuffer.Printf(wxT("%0.2f GB"), bytes/xGiga);
     } else if (bytes >= xMega) {
         strBuffer.Printf(wxT("%0.2f MB"), bytes/xMega);
-    } else if (bytes >= xKilo) {
-        strBuffer.Printf(wxT("%0.2f KB"), bytes/xKilo);
     } else {
-        strBuffer.Printf(wxT("%0.0f bytes"), bytes);
+        strBuffer.Printf(wxT("%0.2f KB"), bytes/xKilo);
     }
 
     return 0;

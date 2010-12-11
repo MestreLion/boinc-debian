@@ -45,13 +45,19 @@ $forum = BoincForum::lookup_id($thread->forum);
 if (!$thread) error_page(tra("No thread with id %1. Please check the link and try again.", $threadid));
 
 if (!is_forum_visible_to_user($forum, $logged_in_user)) {
+    if ($logged_in_user) {
+        remove_subscriptions_forum($logged_in_user->id, $forum->id);
+    }
     error_page(tra("This forum is not visible to you."));
 }
 
 if ($thread->hidden) {
     if (!is_moderator($logged_in_user, $forum)) {
+        if ($logged_in_user) {
+            remove_subscriptions_forum($logged_in_user->id, $thread->id);
+        }
         error_page(
-            tra("This thread has been hidden for administrative purposes")
+            tra("This thread has been hidden by moderators")
         );
     }
 }
@@ -61,17 +67,21 @@ if (!$sort_style) {
     // get the sorting style from the user or a cookie
     if ($logged_in_user){
         $sort_style = $logged_in_user->prefs->thread_sorting;
-    } else {
-        list($forum_style, $sort_style)=explode("|",$_COOKIE['sorting']);
+    } else if (array_key_exists('sorting', $_COOKIE)) {
+        list($forum_style, $sort_style) = explode("|",$_COOKIE['sorting']);
     }
 } else {
     if ($logged_in_user){
         $logged_in_user->prefs->thread_sorting = $sort_style;
         $logged_in_user->prefs->update("thread_sorting=$sort_style");
-    } else {
-        list($forum_style,$old_style)=explode("|",$_COOKIE['sorting']);
-        send_cookie('sorting', implode("|",array($forum_style,$sort_style)), true);
+        $forum_style = 0;   // I guess this is deprecated
+    } else if (array_key_exists('sorting', $_COOKIE)) {
+        list($forum_style, $old_style) = explode("|", $_COOKIE['sorting']);
     }
+    send_cookie('sorting',
+        implode("|", array($forum_style, $sort_style)),
+        true
+    );
 }
 
 if ($logged_in_user && $logged_in_user->prefs->jump_to_unread){
@@ -203,5 +213,5 @@ case 1:
 $thread->update("views=views+1");
 
 page_tail();
-$cvs_version_tracker[]="\$Id: forum_thread.php 16682 2008-12-13 20:04:01Z jbk $";
+$cvs_version_tracker[]="\$Id: forum_thread.php 21003 2010-03-26 05:34:14Z boincadm $";
 ?>

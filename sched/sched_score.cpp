@@ -19,7 +19,7 @@
 
 #include "boinc_db.h"
 #include "error_numbers.h"
-#include "str_util.h"
+#include "util.h"
 
 #include "sched_main.h"
 #include "sched_config.h"
@@ -171,7 +171,7 @@ void JOB_SET::add_job(JOB& job) {
         }
     }
 
-    if (jobs.size() == max_jobs) {
+    if ((int)jobs.size() == max_jobs) {
         JOB& worst_job = jobs.back();
         jobs.pop_back();
         ssp->wu_results[worst_job.index].state = WR_STATE_PRESENT;
@@ -294,11 +294,12 @@ void send_work_matchmaker() {
         if (jobs.request_satisfied() && slots_scanned>=min_slots) break;
     }
 
-    if (!slots_nonempty) {
+    if (slots_nonempty) {
+        g_wreq->no_jobs_available = false;
+    } else {
         log_messages.printf(MSG_CRITICAL,
             "Job cache is empty - check feeder\n"
         );
-        g_wreq->no_jobs_available = true;
     }
 
     // TODO: trim jobs from tail of list until we pass the EDF check

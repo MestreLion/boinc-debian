@@ -15,9 +15,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// wu_check [-repair]
+// wu_check
 // look for results with missing input files
-// -repair      change them to server_state OVER, outcome COULDNT_SEND
+// --repair      change them to server_state OVER, outcome COULDNT_SEND
+//
+// NOTE 1: this assumes that jobs have a single input file.
+// NOTE 2: should rewrite to enumerate WUs, not results
 
 #include "config.h"
 #include <cstdio>
@@ -26,6 +29,7 @@
 #include <string>
 
 #include "boinc_db.h"
+#include "svn_version.h"
 
 #include "parse.h"
 #include "util.h"
@@ -36,7 +40,7 @@
 
 bool repair = false;
 
-// wu_checker
+// wu_check
 // See whether input files that should be present, are
 
 // get the path a WU's input file
@@ -96,10 +100,40 @@ int handle_result(DB_RESULT& result) {
     return 0;
 }
 
+void usage(char *name) {
+    fprintf(stderr,
+        "Looks for results with missing input files\n\n"
+        "Usage: %s [OPTION]\n\n"
+        "Options:\n"
+        "  [ --repair ]                    change them to server_state OVER,\n"
+        "                                 outcome COULDNT_SEND\n"
+        "  [ -h | --help ]                Shows this help text\n"
+        "  [ -v | --version ]             Shows version information\n",
+        name
+    );
+}
+
 int main(int argc, char** argv) {
     DB_RESULT result;
     char clause[256];
     int retval, n, nerr;
+
+    for(int c = 1; c < argc; c++) {
+        std::string option(argv[c]);
+        if(option == "-h" || option == "--help") {
+            usage(argv[0]);
+            exit(0);
+        } else if(option == "-v" || option == "--version") {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
+        } else if (option == "--repair") {
+            repair = true;
+        } else {
+            fprintf(stderr, "unknown command line argument: %s\n\n", argv[c]);
+            usage(argv[0]);
+            exit(1);
+        }
+    }
 
     retval = config.parse_file();
     if (retval) exit(1);
@@ -109,7 +143,6 @@ int main(int argc, char** argv) {
         printf("boinc_db.open: %d\n", retval);
         exit(1);
     }
-    if (argc > 1 && !strcmp(argv[1], "-repair")) repair = true;
 
     n = nerr = 0;
     printf("Unsent results:\n");
@@ -131,4 +164,4 @@ int main(int argc, char** argv) {
     printf("%d out of %d errors\n", nerr, n);
 }
 
-const char *BOINC_RCSID_8f4e399992 = "$Id: wu_check.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_8f4e399992 = "$Id: wu_check.cpp 21181 2010-04-15 03:13:56Z davea $";

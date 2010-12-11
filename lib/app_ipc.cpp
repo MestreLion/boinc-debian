@@ -15,14 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
+#if   defined(_WIN32) && !defined(__STDWX_H__)
 #include "boinc_win.h"
-#endif
-
-#ifndef _WIN32
+#elif defined(_WIN32) && defined(__STDWX_H__)
+#include "stdwx.h"
+#else
 #include "config.h"
 #include <cstring>
 #include <string>
+#endif
+
+#ifdef _MSC_VER
+#define strdup _strdup
 #endif
 
 #include "error_numbers.h"
@@ -82,6 +86,7 @@ void APP_INIT_DATA::copy(const APP_INIT_DATA& a) {
     memcpy(project_dir, a.project_dir, 256); 
     memcpy(boinc_dir, a.boinc_dir, 256); 
     memcpy(wu_name, a.wu_name, 256); 
+    memcpy(result_name, a.result_name, 256); 
     memcpy(authenticator, a.authenticator, 256); 
     memcpy(&shmem_seg_name, &a.shmem_seg_name, sizeof(SHMEM_SEG_NAME)); 
                 
@@ -165,6 +170,9 @@ int write_init_data_file(FILE* f, APP_INIT_DATA& ai) {
     if (strlen(ai.wu_name)) {
         fprintf(f, "<wu_name>%s</wu_name>\n", ai.wu_name);
     }
+    if (strlen(ai.result_name)) {
+        fprintf(f, "<result_name>%s</result_name>\n", ai.result_name);
+    }
 #ifdef _WIN32
     if (strlen(ai.shmem_seg_name)) {
         fprintf(f, "<comm_obj_name>%s</comm_obj_name>\n", ai.shmem_seg_name);
@@ -208,7 +216,7 @@ int write_init_data_file(FILE* f, APP_INIT_DATA& ai) {
     );
     MIOFILE mf;
     mf.init_file(f);
-    ai.host_info.write(mf, false, true);
+    ai.host_info.write(mf, true, true);
     ai.proxy_info.write(mf);
     ai.global_prefs.write(mf);
     fprintf(f, "</app_init_data>\n");
@@ -230,6 +238,7 @@ void APP_INIT_DATA::clear() {
     strcpy(project_dir, "");
     strcpy(boinc_dir, "");
     strcpy(wu_name, "");
+    strcpy(result_name, "");
     strcpy(authenticator, "");
     slot = 0;
     user_total_credit = 0;
@@ -254,7 +263,7 @@ void APP_INIT_DATA::clear() {
 }
 
 int parse_init_data_file(FILE* f, APP_INIT_DATA& ai) {
-    char tag[1024];
+    char tag[1024], buf[256];
     int retval;
     bool flag, is_tag;
 
@@ -307,12 +316,20 @@ int parse_init_data_file(FILE* f, APP_INIT_DATA& ai) {
         if (xp.parse_str(tag, "app_name", ai.app_name, sizeof(ai.app_name))) continue;
         if (xp.parse_str(tag, "symstore", ai.symstore, sizeof(ai.symstore))) continue;
         if (xp.parse_str(tag, "acct_mgr_url", ai.acct_mgr_url, sizeof(ai.acct_mgr_url))) continue;
-        if (xp.parse_str(tag, "user_name", ai.user_name, sizeof(ai.user_name))) continue;
-        if (xp.parse_str(tag, "team_name", ai.team_name, sizeof(ai.team_name))) continue;
+        if (xp.parse_int(tag, "hostid", ai.hostid)) continue;
+        if (xp.parse_str(tag, "user_name", buf, sizeof(buf))) {
+            xml_unescape(buf, ai.user_name, sizeof(ai.user_name));
+            continue;
+        }
+        if (xp.parse_str(tag, "team_name", buf, sizeof(buf))) {
+            xml_unescape(buf, ai.team_name, sizeof(ai.team_name));
+            continue;
+        }
         if (xp.parse_str(tag, "project_dir", ai.project_dir, sizeof(ai.project_dir))) continue;
         if (xp.parse_str(tag, "boinc_dir", ai.boinc_dir, sizeof(ai.boinc_dir))) continue;
         if (xp.parse_str(tag, "authenticator", ai.authenticator, sizeof(ai.authenticator))) continue;
         if (xp.parse_str(tag, "wu_name", ai.wu_name, sizeof(ai.wu_name))) continue;
+        if (xp.parse_str(tag, "result_name", ai.result_name, sizeof(ai.result_name))) continue;
 #ifdef _WIN32
         if (xp.parse_str(tag, "comm_obj_name", ai.shmem_seg_name, sizeof(ai.shmem_seg_name))) continue;
 #else

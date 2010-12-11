@@ -74,13 +74,15 @@ bool isRunning(RESULT* result) {
 
 CViewTabPage::CViewTabPage() {}
 
-CViewTabPage::CViewTabPage(WorkunitNotebook* parent,RESULT* result,std::string name,std::string url) :
+CViewTabPage::CViewTabPage(
+    WorkunitNotebook* parent,RESULT* result, std::string name, char* url
+) :
     wxPanel(parent, -1, wxDefaultPosition, wxSize(370,330), wxNO_BORDER)
 {
     wxASSERT(parent);
 	m_name = name;
 	isAlive = true;
-	m_prjUrl = url;
+    strcpy(project_url, url);
     m_hasGraphic = false;
 	resultWU = result;
     //create page
@@ -112,10 +114,10 @@ void CViewTabPage::CreatePage()
 	resState = pDoc->state.lookup_result(resultWU->project_url, resultWU->name);
 	if(resState){
 		projName = wxString(resState->project->project_name.c_str(), wxConvUTF8 );
-        if (resState->app->user_friendly_name.size()) {
-            projectFrName = wxString(resState->app->user_friendly_name.c_str(), wxConvUTF8);
+        if (strlen(resState->app->user_friendly_name)) {
+            projectFrName = wxString(resState->app->user_friendly_name, wxConvUTF8);
         } else {
-            projectFrName = wxString(resState->avp->app_name.c_str(), wxConvUTF8);
+            projectFrName = wxString(resState->avp->app_name, wxConvUTF8);
         }
 	} else {
 		projName = wxString("Not Available", wxConvUTF8 );
@@ -129,7 +131,7 @@ void CViewTabPage::CreatePage()
 	spacerLine->Create(this,-1,wxPoint(20,36),wxSize(305,1));
 
 	//My Progress
-	wrkUnitName = wxString(resultWU->name.c_str(),wxConvUTF8);
+	wrkUnitName = wxString(resultWU->name, wxConvUTF8);
 	//Main Gauge
     gaugeWUMain=new CProgressBar(this,wxPoint(20,282));
 	gaugeWUMain->SetValue(floor(resultWU->fraction_done * 100000)/1000);
@@ -141,7 +143,7 @@ void CViewTabPage::CreatePage()
 	FormatCPUTime(resultWU, elapsedTimeValue);
 	FormatTimeToCompletion(resultWU, timeRemainingValue);
 	// show graphic button 
-	if (resultWU->supports_graphics || !resultWU->graphics_exec_path.empty()) {
+	if (resultWU->supports_graphics || strlen(resultWU->graphics_exec_path)) {
 		m_hasGraphic = true;
 	}
 	int status = ComputeState();
@@ -191,12 +193,12 @@ void CViewTabPage::LoadSlideShow(std::vector<wxBitmap> *vSlideShow) {
 	RESULT* result = pDoc->state.lookup_result(resultWU->project_url, resultWU->name);
 	// If result not found then return
 	if ( result <= 0 ) return;
-	url_to_project_dir((char *) result->project->master_url.c_str() ,urlDirectory);
+	url_to_project_dir(result->project->master_url, urlDirectory);
 	char file[512];
 	char resolvedFile[512];
 	wxBitmap* btmpSlideShow;
 	for(int i=0; i<99; i++) {
-		sprintf(file, "%s/slideshow_%s_%02d", urlDirectory, result->app->name.c_str(), i);
+		sprintf(file, "%s/slideshow_%s_%02d", urlDirectory, result->app->name, i);
 		if(boinc_resolve_filename(file, resolvedFile, sizeof(resolvedFile)) == 0){
 			btmpSlideShow = new wxBitmap();
 			if ( btmpSlideShow->LoadFile(wxString(resolvedFile,wxConvUTF8), wxBITMAP_TYPE_ANY) ) {
@@ -289,7 +291,7 @@ void CViewTabPage::UpdateInterface()
 
 	// check to see if we can display graphics
 	bool changed = false;
-	if ((resultWU->supports_graphics || !resultWU->graphics_exec_path.empty()) && isRunning(resultWU) ) {
+	if ((resultWU->supports_graphics || strlen(resultWU->graphics_exec_path)) && isRunning(resultWU) ) {
 		if ( !m_hasGraphic ) {
 			changed = true;
 		}
@@ -356,12 +358,12 @@ wxInt32 CViewTabPage::FormatCPUTime(RESULT* rslt, wxString& strBuffer) const {
 
     if (result) {
         if (result->active_task) {
-            fBuffer = result->current_cpu_time;
+            fBuffer = result->elapsed_time;
         } else {
             if(result->state < RESULT_COMPUTE_ERROR) {
                 fBuffer = 0;
             } else {
-                fBuffer = result->final_cpu_time;
+                fBuffer = result->final_elapsed_time;
             }
         }
     }
@@ -513,13 +515,9 @@ CSkinSimple* pSkinSimple = wxGetApp().GetSkinManager()->GetSimple();
 
     wxLogTrace(wxT("Function Start/End"), wxT("CViewTabPage::DrawText - Begin"));
     
-#if (defined(__WXMAC__) && (! wxCHECK_VERSION(2,8,0)))
-    // wxBufferedDC.GetTextExtent() fails with wxMac-2.6.3, causing Manager to hang
-    wxClientDC dc(this);
-#else
     wxClientDC dcc(this);
 	wxBufferedDC dc(&dcc); 
-#endif
+
     //Project Name
     dc.DrawBitmap(*(pSkinSimple->GetWorkunitAreaBackgroundImage()->GetBitmap()), 0, 0);
 	WriteText(&dc);
@@ -720,17 +718,17 @@ void WorkunitNotebook::AddTab(RESULT* result) {
 	RESULT* resState = NULL;
 	std::string projUrl = result->project_url;
 	std::string nme = result->name;
-    resState = pDoc->state.lookup_result(projUrl, nme);
+    resState = pDoc->state.lookup_result(result->project_url, result->name);
 	if(!resState){
 		pDoc->ForceCacheUpdate();
  		return;
 	}
- 	wxString appShortName = wxString(resState->app->name.c_str(), wxConvUTF8 );
+ 	wxString appShortName = wxString(resState->app->name, wxConvUTF8 );
 	// Do not update screen at this point
     Freeze();
 	std::string index = " ";
 	appShortName += wxString(index.c_str(), wxConvUTF8 );
-	CViewTabPage *wTab = new CViewTabPage(this,result,nme,projUrl);
+	CViewTabPage *wTab = new CViewTabPage(this, result, nme, result->project_url);
 
 	AddPage(wTab, appShortName, true);	
 	if(isRunning(resState) ){

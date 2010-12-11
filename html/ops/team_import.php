@@ -20,7 +20,8 @@
 
 // fetch a list of "BOINC-wide teams" and create or update them
 
-require_once("../inc/util.inc");
+$cli_only = true;
+require_once("../inc/util_ops.inc");
 require_once("../inc/user.inc");
 require_once("../inc/team.inc");
 require_once("../inc/email.inc");
@@ -257,6 +258,7 @@ function handle_team($f) {
 }
 
 function main() {
+    echo "------------ Starting at ".time_str(time())."-------\n";
     $f = fopen("http://boinc.berkeley.edu/boinc_teams.xml", "r");
     if (!$f) {
         echo "Can't get times file\n";
@@ -267,6 +269,7 @@ function main() {
             handle_team($f);
         }
     }
+    echo "------------ Finished at ".time_str(time())."-------\n";
 }
 
 db_init();

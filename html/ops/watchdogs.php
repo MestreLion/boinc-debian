@@ -29,6 +29,9 @@
 // TODO: to detect file system full errors,
 // have this program attempt to create/read a file.
 
+$cli_only = true;
+require_once("../inc/util_ops.inc");
+
 function sound_alarm($x) {
     //echo "alarm: $x\n";
     mail(SYS_ADMIN_EMAIL, "BOINC problem", $x);

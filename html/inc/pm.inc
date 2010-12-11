@@ -27,7 +27,7 @@ function pm_header() {
     echo "</div>\n";
 }
 
-function pm_create_new($error = null) {
+function pm_form($error = null) {
     global $bbcode_html, $bbcode_js;
     global $g_logged_in_user;
     page_head(tra("Send private message"),'','','', $bbcode_js);
@@ -115,19 +115,19 @@ To change email preferences, visit:
 ".URL_BASE."edit_forum_preferences_form.php
 Do not reply to this message.
 " ;
-    send_email($to_user, "[".PROJECT."] private message", $message);
+    send_email($to_user, "[".PROJECT."] ".tra("- private message"), $message);
 }
 
 function pm_email_line($notify) {
     $pm = BoincPrivateMessage::lookup_id($notify->opaque);
     $from_user = BoincUser::lookup_id($pm->senderid);
-    return "$from_user->name sent you a private message; subject: '$pm->subject'";
+    return "$from_user->name ".tra("sent you a private message; subject:")." '$pm->subject'";
 }
 
 function pm_web_line($notify) {
     $pm = BoincPrivateMessage::lookup_id($notify->opaque);
     $from_user = BoincUser::lookup_id($pm->senderid);
-    return "<a href=pm.php>Private message</a> from $from_user->name, subject: $pm->subject";
+    return "<a href=pm.php>".tra("Private message%1 from %2, subject:" , "</a>", $from_user->name )." $pm->subject";
 }
 
 function pm_send($to_user, $subject, $content, $send_email) {
@@ -136,7 +136,7 @@ function pm_send($to_user, $subject, $content, $send_email) {
     $sql_content = boinc_real_escape_string($content);
     $mid = BoincPrivateMessage::insert("(userid, senderid, date, subject, content) VALUES ($to_user->id, $g_logged_in_user->id, UNIX_TIMESTAMP(), '$sql_subject', '$sql_content')");
     if (!$mid) {
-        error_page("Couldn't create message");
+        error_page(tra("Couldn't create message"));
     }
     // send email notification if needed
     //
@@ -152,11 +152,11 @@ function pm_send($to_user, $subject, $content, $send_email) {
             );
             break;
         }
-
-        // create notification in any case
-        //
-        BoincNotify::insert("(userid, create_time, type, opaque) values ($to_user->id, ".time().", ".NOTIFY_PM.", $mid)");
     }
+
+    // create notification in any case
+    //
+    BoincNotify::insert("(userid, create_time, type, opaque) values ($to_user->id, ".time().", ".NOTIFY_PM.", $mid)");
 }
 
 function pm_count($userid, $duration) {
@@ -185,10 +185,13 @@ function pm_notification($user) {
 
 function pm_email_remind($user) {
     if (!$user->prefs->pm_notification) {
-        return "
-            <br><span class=note>For email notification,
-            <a href=edit_forum_preferences_form.php>edit community prefs</a></span>
-        ";
+        return '<br><span class="note">' .
+            tra(
+                "For email notification, %1edit community prefs%2",
+                '<a href="edit_forum_preferences_form.php">', '</a>'
+            ) .
+            '</span>'
+        ;
     }
     return "";
 }
@@ -196,8 +199,8 @@ function pm_email_remind($user) {
 function pm_rss($notify, &$title, &$msg, &$url) {
     $pm = BoincPrivateMessage::lookup_id($notify->opaque);
     $from_user = BoincUser::lookup_id($pm->senderid);
-    $title = "New private message";
-    $msg = "$from_user->name sent you a private message; subject: $pm->subject";
+    $title = tra("Private message from")." $from_user->name: $pm->subject";
+    $msg = "$pm->content";
     $url = URL_BASE."pm.php";
 }
 

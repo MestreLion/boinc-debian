@@ -16,36 +16,72 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-function result_claimed_credit_string($result, $string_to_show) {
-    if ($result->server_state <> 5) return "---";
-    switch($result->outcome) {
-    case 3:
-        if ($result->exit_status <> -221) {
-                return $string_to_show; //Client error
-        } 
-    default:
-        if ($result->claimed_credit > 0) {
-            return $string_to_show;
-	    }
-        return "---"; // no claimed credit 
+$apps = array();
+$app_versions = array();
+
+function anon_platform_string($result, $rsc_name=null) {
+    global $apps;
+    if (!array_key_exists($result->appid, $apps)) {
+        $app = BoincApp::lookup_id($result->appid);
+        $apps[$result->appid] = $app;
     }
+    $app = $apps[$result->appid];
+    $n = $app->user_friendly_name."<br>".  tra("Anonymous platform");
+    if ($rsc_name) {
+        $n .= " ($rsc_name)";
+    }
+    return $n;
+}
+
+function app_version_string($result) {
+    global $apps, $app_versions;
+
+    $id = $result->app_version_id;
+    if ($id == 0) return "";
+    if ($id == -1) return anon_platform_string($result);
+    if ($id == -2) return anon_platform_string($result, tra("CPU"));
+    if ($id == -3) return anon_platform_string($result, tra("NVIDIA GPU"));
+    if ($id == -4) return anon_platform_string($result, tra("ATI GPU"));
+    if (array_key_exists($id, $app_versions)) {
+        $av = $app_versions[$id];
+        $app = $apps[$av->appid];
+    } else {
+        $av = BoincAppVersion::lookup_id($id);
+        if (!$av) {
+            return tra("Not in DB");
+        }
+        $app_versions[$id] = $av;
+        $app = BoincApp::lookup_id($av->appid);
+        $apps[$av->appid] = $app;
+    }
+    $n = $app->user_friendly_name;
+    $v = sprintf("%d.%02d", $av->version_num/100, $av->version_num%100);
+    if ($av->plan_class) {
+        $c = "($av->plan_class)";
+    } else {
+        $c = "";
+    }
+    return "$n v$v $c";
 }
 
 function result_granted_credit_string($result, $string_to_show) {
+    if ($result->server_state == 4 && $result->granted_credit > 0) {
+        return $string_to_show; 
+    }
     if ($result->server_state <> 5) return "---";
     switch($result->outcome) {
     case 1:              //Success
         switch ($result->validate_state) {
         case 0:
         case 4:
-            return "pending";
+            return tra("pending");
         }
         return $string_to_show;
     default:
         if ($result->granted_credit > 0) {
             return $string_to_show;
 	    }
-        return "---"; // no claimed credit 
+        return "---";
     }
 } 
 
@@ -60,12 +96,12 @@ define("STATE_ERROR", 5);
 define("NSTATES", 6);
 
 $state_name = array(
-    "All",
-    "In progress",
-    "Pending",
-    "Valid",
-    "Invalid",
-    "Error",
+    tra("All"),
+    tra("In progress"),
+    tra("Pending"),
+    tra("Valid"),
+    tra("Invalid"),
+    tra("Error"),
 );
 
 $state_clause = array(
@@ -79,134 +115,132 @@ $state_clause = array(
 
 function state_string($result) {
     switch ($result->server_state) {
-    case 1: return "Inactive";
-    case 2: return "Unsent";
-    case 4: return "In progress";
+    case 1: return tra("Inactive");
+    case 2: return tra("Unsent");
+    case 4: return tra("In progress");
     case 5:
         switch ($result->outcome) {
         case 1:
             switch ($result->validate_state) {
-            case 0: return "Completed, waiting for validation";
-            case 1: return "Completed and validated";
-            case 2: return "Completed, marked as invalid";
-            case 3: return "Completed, can't validate";
-            case 4: return "Completed, validation inconclusive";
-            case 5: return "Completed, too late to validate";
+            case 0: return tra("Completed, waiting for validation");
+            case 1: return tra("Completed and validated");
+            case 2: return tra("Completed, marked as invalid");
+            case 3: return tra("Completed, can't validate");
+            case 4: return tra("Completed, validation inconclusive");
+            case 5: return tra("Completed, too late to validate");
             }
-            return "Completed";
-        case 2: return "Couldn't send";
+            return tra("Completed");
+        case 2: return tra("Couldn't send");
         case 3:
             if ($result->exit_status == -221) {
-                return "Redundant result";
+                return tra("Cancelled by server");
             }
             switch($result->client_state) {
-            case 1: return "Error while downloading";
-            case 2: return "Error while computing";
-            case 3: return "Error while computing";
-            case 4: return "Error while uploading";
-            case 6:
-                if ($result->exit_status == -221) {
-                    return "Cancelled by server";
-                }
-                return "Aborted by user";
+            case 1: return tra("Error while downloading");
+            case 2:
+            case 3: return tra("Error while computing");
+            case 4: return tra("Error while uploading");
+            case 6: return tra("Aborted by user");
             }
-            return "Error";
-        case 4: return "Timed out - no response";
-        case 5: return "Didn't need";
-        case 6: return "Validate error";
-        case 7: return "Client detached";
+            return tra("Error");
+        case 4: return tra("Timed out - no response");
+        case 5: return tra("Didn't need");
+        case 6: return tra("Validate error");
+        case 7: return tra("Abandoned");
         }
     }
-    return "Unknown";
+    return tra("Unknown");
 }
 
 function result_server_state_string($result) {
     switch($result->server_state) {
-    case 1: return "Inactive";
-    case 2: return "Unsent";
-    case 4: return "In progress";
-    case 5: return "Over";
+    case 1: return tra("Inactive");
+    case 2: return tra("Unsent");
+    case 4: return tra("In progress");
+    case 5: return tra("Over");
     }
-    return "Unknown";
+    return tra("Unknown");
 }
 
 function result_outcome_string($result) {
     switch($result->outcome) {
     case 0: return "---";
-    case 1: return "Success";
-    case 2: return "Couldn't send";
+    case 1: return tra("Success");
+    case 2: return tra("Couldn't send");
     case 3:
         if ($result->exit_status <> -221) {
-            return "Client error";
+            return tra("Computation error");
         }
-        return "Redundant result";
-    case 4: return "No reply";
-    case 5: return "Didn't need";
-    case 6: return "Validate error";
-    case 7: return "Client detached";
+        return tra("Redundant result");
+    case 4: return tra("No reply");
+    case 5: return tra("Didn't need");
+    case 6: return tra("Validate error");
+    case 7: return tra("Abandoned");
     }
-    return "Unknown";
+    return tra("Unknown");
 }
 
 function result_client_state_string($result) {
     switch($result->client_state) {
-    case 0: return "New";
-    case 1: return "Downloading";
-    case 2: return "Computing";
-    case 3: return "Compute error";
-    case 4: return "Uploading";
-    case 5: return "Done";
+    case 0: return tra("New");
+    case 1: return tra("Downloading");
+    case 2: return tra("Processing");
+    case 3: return tra("Compute error");
+    case 4: return tra("Uploading");
+    case 5: return tra("Done");
     case 6:
         if ($result->exit_status == -221) {
-            return "Cancelled by server";
+            return tra("Cancelled by server");
         }
-        return "Aborted by user";
+        return tra("Aborted by user");
     }
 }
 
 function validate_state_str($result) {
     switch($result->validate_state) {
-    case 0: return "Initial";
-    case 1: return "Valid";
+    case 0: return tra("Initial");
+    case 1: return tra("Valid");
     case 2:
         if ($result->exit_status <> -221) {
-            return "Invalid";
+            return tra("Invalid");
         }
-        return "Not necessary";
-    case 3: return "Workunit error - check skipped";
-    case 4: return "Checked, but no consensus yet";
-    case 5: return "Task was reported too late to validate";
+        return tra("Not necessary");
+    case 3: return tra("Workunit error - check skipped");
+    case 4: return tra("Checked, but no consensus yet");
+    case 5: return tra("Task was reported too late to validate");
     }
-    return "Unknown";
+    return tra("Unknown");
 }
 
 function wu_error_mask_str($s) {
     $x = "";
     if ($s & 1) {
-        $x = $x."Couldn't send result ";
+        $x = $x." ".tra("Couldn't send result");
         $s -= 1;
     }
     if ($s & 2) {
-        $x = $x."Too many error results ";
+        $x = $x." ".tra("Too many errors (may have bug)");
         $s -= 2;
     }
     if ($s & 4) {
-        $x = $x."Too many success results ";
+        $x = $x." ".tra("Too many results (may be nondeterministic)");
         $s -= 4;
     }
     if ($s & 8) {
-        $x = $x."Too many total results ";
+        $x = $x." ".tra("Too many total results");
         $s -= 8;
     }
     if ($s & 16) {
-        $x = $x."Cancelled ";
+        $x = $x." ".tra("WU cancelled");
         $s -= 16;
     }
     if ($s) {
-        $x = $x."Unrecognized Error: $s ";
+        $x = $x." ".tra("Unrecognized Error: %1", $s);
     }
-    if (!strlen($x)) {
-        $x="<br>";
+    if (strlen($x)) {
+        $x="<font color=\"#ff3333\">".$x."</font>";
+    } else {
+        $x="";
     }
     return $x;
 }
@@ -216,7 +250,8 @@ function result_page_url($info) {
     $o = $info->offset;
     $sn = $info->show_names;
     $st = $info->state;
-    return "results.php?$c&amp;offset=$o&amp;show_names=$sn&amp;state=$st";
+    $appid = $info->appid;
+    return "results.php?$c&amp;offset=$o&amp;show_names=$sn&amp;state=$st&amp;appid=$appid";
 }
 
 function result_table_start($show_wu_link, $show_host_link, $info) {
@@ -227,32 +262,32 @@ function result_table_start($show_wu_link, $show_host_link, $info) {
             $i2 = clone $info;
             $i2->show_names = 0;
             $url = result_page_url($i2);
-            echo "<th>Task name<br><span class=\"smalltext\">click for details<br><a href=$url>Show IDs</a></span></th>\n";
+            echo "<th>".tra("Task name")."<br><span class=\"smalltext\">".tra("click for details")."<br><a href=$url>".tra("Show IDs")."</a></span></th>\n";
         } else {
             $i2 = clone $info;
             $i2->show_names = 1;
             $url = result_page_url($i2);
-            echo "<th>Task ID<br><span class=\"smalltext\">click for details<br><a href=$url>Show names</a></span></th>\n";
+            echo "<th>Task<br><span class=\"smalltext\">".tra("click for details")."<br><a href=$url>".tra("Show names")."</a></span></th>\n";
         }
     } else {
-        echo "<th>Task ID<br><span class=\"smalltext\">click for details</span></th>\n";
+        echo "<th>".tra("Task")."<br><span class=\"smalltext\">".tra("click for details")."</span></th>\n";
     }
     if ($show_wu_link) {
-        echo "<th>Work unit ID<br><span class=\"smalltext\">click for details</span></th>\n";
+        echo "<th>".tra("Work unit")."<br><span class=\"smalltext\">".tra("click for details")."</span></th>\n";
     }
     if ($show_host_link) {
-        echo "<th>Computer</th>\n";
+        echo "<th>".tra("Computer")."</th>\n";
     }
     echo "
-        <th>Sent</th>
-        <th>Time reported
-            <br>or deadline
-            <br><span class=\"smalltext\"><a href=\"explain_state.php?field=result_time\">explain</a></span>
+        <th>".tra("Sent")."</th>
+        <th>".tra("Time reported<br />or deadline")."
+            <br><span class=\"smalltext\"><a href=\"explain_state.php?field=result_time\">".tra("explain")."</a></span>
         </th>
-        <th>Status</th>
-        <th>Run time (sec)</th>
-        <th>claimed credit</th>
-        <th>granted credit</th>
+        <th>".tra("Status")."</th>
+        <th>".tra("Run time<br />(sec)")."</th>
+        <th>".tra("CPU time<br />(sec)")."</th>
+        <th>".tra("Credit")."</th>
+        <th>".tra("Application")."</th>
         </tr>
     ";
 }
@@ -285,9 +320,7 @@ function show_result_row(
         $r = "---";
     }
     $ss = state_string($result);
-    $result_claimed_credit = format_credit($result->claimed_credit);
     $result_granted_credit = format_credit($result->granted_credit);
-    $result_claimed_credit = result_claimed_credit_string($result, $result_claimed_credit);
     $result_granted_credit = result_granted_credit_string($result, $result_granted_credit); 
     $j = $i % 2;
     echo "<tr class=row$j>";
@@ -305,16 +338,20 @@ function show_result_row(
     }
     if ($result->server_state <> 5) {
         $cpu_time = "---";
+        $elapsed_time = "---";
     } else {
         $cpu_time = number_format($result->cpu_time, 2);
+        $elapsed_time = number_format($result->elapsed_time, 2);
     }
+    $v = app_version_string($result);
     echo "
         <td>$s</td>
         <td>$r</td>
         <td>$ss</td>
+        <td align=right>$elapsed_time</td>
         <td align=right>$cpu_time</td>
-        <td align=right>$result_claimed_credit</td>
         <td align=right>$result_granted_credit</td>
+        <td>$v</td>
         </tr>
     ";
 }
@@ -339,24 +376,24 @@ function exit_status_string($result) {
 
 function show_result($result) {
     start_table();
-    row2("Name", $result->name);
-    row2("Workunit", "<a href=\"workunit.php?wuid=$result->workunitid\">$result->workunitid</a>");
-    row2("Created", time_str($result->create_time));
-    row2("Sent", time_str($result->sent_time));
-    row2("Received", time_str($result->received_time));
-    row2("Server state", result_server_state_string($result));
-    row2("Outcome", result_outcome_string($result));
-    row2("Client state", result_client_state_string($result));
-    row2("Exit status", exit_status_string($result));
-    row2("Computer ID", host_link($result->hostid));
-    row2("Report deadline", time_str($result->report_deadline));
-    row2("Run time", $result->cpu_time);
-    row2("stderr out", "<pre>".htmlspecialchars($result->stderr_out)."</pre>");
-    row2("Validate state", validate_state_str($result));
-    row2("Claimed credit", $result->claimed_credit);
-    row2("Granted credit", $result->granted_credit);
-    row2("application version", version_string($result->app_version_num));
+    row2(tra("Name"), $result->name);
+    row2(tra("Workunit"), "<a href=\"workunit.php?wuid=$result->workunitid\">$result->workunitid</a>");
+    row2(tra("Created"), time_str($result->create_time));
+    row2(tra("Sent"), time_str($result->sent_time));
+    row2(tra("Received"), time_str($result->received_time));
+    row2(tra("Server state"), result_server_state_string($result));
+    row2(tra("Outcome"), result_outcome_string($result));
+    row2(tra("Client state"), result_client_state_string($result));
+    row2(tra("Exit status"), exit_status_string($result));
+    row2(tra("Computer ID"), host_link($result->hostid));
+    row2(tra("Report deadline"), time_str($result->report_deadline));
+    row2(tra("Run time"), number_format($result->elapsed_time, 2));
+    row2(tra("CPU time"), number_format($result->cpu_time, 2));
+    row2(tra("Validate state"), validate_state_str($result));
+    row2(tra("Credit"), number_format($result->granted_credit, 2));
+    row2(tra("Application version"), app_version_string($result));
     end_table();
+    echo "<h3>".tra("Stderr output")."</h3> <pre>".htmlspecialchars($result->stderr_out)."</pre>";
 }
 
 function show_result_navigation($info) {
@@ -369,7 +406,7 @@ function show_result_navigation($info) {
         $i2 = clone $info;
         $i2->offset = $info->offset - $info->results_per_page;
         $url = result_page_url($i2);
-        echo "<a href=$url>Previous ".$info->results_per_page."</a>";
+        echo "<a href=$url>".tra("Previous")." ".$info->results_per_page."</a>";
     }
     if ($show_prev && $show_next) {
         echo "&nbsp;|&nbsp;";
@@ -378,9 +415,9 @@ function show_result_navigation($info) {
         $i2 = clone $info;
         $i2->offset = $info->offset + $info->results_per_page;
         $url = result_page_url($i2);
-        echo "<a href=$url>Next ".$info->results_per_page."</a>";
+        echo "<a href=$url>".tra("Next")." ".$info->results_per_page."</a>";
     }
-    echo "<br>Show: ";
+    echo "<br>".tra("Show").": ";
     for ($i=0; $i<NSTATES; $i++) {
         if ($i) echo " | ";
         if ($info->state == $i) {
@@ -393,9 +430,35 @@ function show_result_navigation($info) {
             echo "<a href=$url>".$state_name[$i]."</a>";
         }
     }
+    
+    $apps = BoincApp::enum('deprecated=0 ORDER BY user_friendly_name');
+    if (count($apps) > 1) {
+        $i2 = clone $info;
+        $i2->offset = 0;
+        echo '<br />';
+        if ($info->appid) {
+            $i2->appid = 0;
+            $url = result_page_url($i2);
+            echo '<a href="'.$url.'">All</a>';
+        } else {
+            echo 'All';
+        }
+        
+        foreach ($apps as $app) {
+            $i2->appid = $app->id;
+            $url = result_page_url($i2);
+            echo ' | ';
+            if ($info->appid == $app->id) {
+                echo $app->user_friendly_name;
+            } else {
+                echo '<a href="'.$url.'">'.$app->user_friendly_name.'</a>';
+            }
+        }
+    }
+
     echo "</center><br>";
 }
 
-$cvs_version_tracker[]="\$Id: result.inc 18426 2009-06-16 17:15:55Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: result.inc 22340 2010-09-13 16:12:00Z Rytis $";  //Generated automatically - do not edit
 
 ?>

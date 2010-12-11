@@ -219,6 +219,11 @@ const char** CViewTransfers::GetViewIcon() {
 }
 
 
+const int CViewTransfers::GetViewCurrentViewPage() {
+    return VW_XFER;
+}
+
+
 wxString CViewTransfers::GetKeyValue1(int iRowIndex) {
     CTransfer*  transfer;
     
@@ -271,8 +276,11 @@ void CViewTransfers::OnTransfersRetryNow( wxCommandEvent& WXUNUSED(event) ) {
     CC_STATUS status;
     pDoc->GetCoreClientStatus(status);
     if (status.network_suspend_reason) {
+        wxString msg = _("Network activity is suspended - ");
+        msg += suspend_reason_wxstring(status.network_suspend_reason);
+        msg += _(".\nYou can enable it using the Activity menu.");
         wxGetApp().SafeMessageBox(
-            _("Network activity is suspended.\nYou can enable it using the Activity menu."),
+            msg,
             _("BOINC"),
             wxOK | wxICON_INFORMATION,
             this
@@ -768,9 +776,10 @@ void CViewTransfers::GetDocStatus(wxInt32 item, wxString& strBuffer) const {
         } else {
             if (status.network_suspend_reason) {
                 strBuffer = transfer->generated_locally
-                    ?_("Suspended upload")
-                    :_("Suspended download")
+                    ?_("Upload suspended - ")
+                    :_("Download suspended - ")
                 ;
+                strBuffer += suspend_reason_wxstring(status.network_suspend_reason);
             } else {
                 if (transfer->xfer_active) {
                     strBuffer = transfer->generated_locally? _("Uploading") : _("Downloading");

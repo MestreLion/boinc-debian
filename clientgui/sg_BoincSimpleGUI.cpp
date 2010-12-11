@@ -37,9 +37,8 @@
 #include "Events.h"
 #include "BOINCBaseFrame.h"
 #include "wizardex.h"
-#include "BOINCWizards.h"
 #include "BOINCBaseWizard.h"
-#include "WizardAttachProject.h"
+#include "WizardAttach.h"
 #include "error_numbers.h"
 #include "version.h"
 
@@ -50,6 +49,7 @@
 #include "sg_StatImageLoader.h"
 #include "sg_ViewTabPage.h"
 #include "sg_DlgMessages.h"
+#include "DlgEventLog.h"
 
 
 IMPLEMENT_DYNAMIC_CLASS(CSimpleFrame, CBOINCBaseFrame)
@@ -60,6 +60,7 @@ BEGIN_EVENT_TABLE(CSimpleFrame, CBOINCBaseFrame)
     EVT_HELP(wxID_ANY, CSimpleFrame::OnHelp)
     EVT_FRAME_CONNECT(CSimpleFrame::OnConnect)
     EVT_FRAME_RELOADSKIN(CSimpleFrame::OnReloadSkin)
+    EVT_FRAME_NOTIFICATION(CSimpleFrame::OnNotification)
     // We can't eliminate the Mac Help menu, so we might as well make it useful.
     EVT_MENU(ID_HELPBOINC, CSimpleFrame::OnHelpBOINC)
     EVT_MENU(ID_HELPBOINCMANAGER, CSimpleFrame::OnHelpBOINC)
@@ -107,7 +108,7 @@ CSimpleFrame::CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32, wxPoint
     menuFile->Append(
         ID_CLOSEWINDOW,
         strMenuName,
-		strMenuDescription
+        strMenuDescription
     );
 
     // View menu
@@ -209,6 +210,8 @@ CSimpleFrame::CSimpleFrame(wxString title, wxIcon* icon, wxIcon* icon32, wxPoint
     
     dlgMsgsPtr = NULL;
     m_pBackgroundPanel = new CSimplePanel(this);
+
+    RestoreState();
 }
 
 
@@ -249,6 +252,12 @@ bool CSimpleFrame::SaveState() {
 }
 
 
+bool CSimpleFrame::RestoreState() {
+	CBOINCBaseFrame::RestoreState();
+    return true;
+}
+
+
 int CSimpleFrame::_GetCurrentViewPage() {
     if (isMessagesDlgOpen()) {
         return VW_SGUI | VW_SMSG;
@@ -281,7 +290,7 @@ void CSimpleFrame::OnHelpBOINC(wxCommandEvent& event) {
             wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
-		ExecuteBrowserLink(wxurl);
+		wxLaunchDefaultBrowser(wxurl);
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnHelpBOINC - Function End"));
@@ -301,7 +310,7 @@ void CSimpleFrame::OnHelp(wxHelpEvent& event) {
             wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
-        ExecuteBrowserLink(wxurl);
+        wxLaunchDefaultBrowser(wxurl);
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnHelp - Function End"));
@@ -314,6 +323,24 @@ void CSimpleFrame::OnReloadSkin(CFrameEvent& WXUNUSED(event)) {
     m_pBackgroundPanel->ReskinInterface();
 
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnReloadSkin - Function End"));
+}
+
+
+void CSimpleFrame::OnNotification(CFrameEvent& WXUNUSED(event)) {
+    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnNotification - Function Begin"));
+
+	CDlgMessages dlg(GetParent());
+
+    m_pBackgroundPanel->SetDlgOpen(true);
+    SetMsgsDlgOpen(&dlg);
+    
+    m_pBackgroundPanel->projComponent->MessagesViewed();
+    dlg.ShowModal();
+
+    m_pBackgroundPanel->SetDlgOpen(false);
+    SetMsgsDlgOpen(NULL);
+
+    wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnNotification - Function End"));
 }
 
 
@@ -350,12 +377,12 @@ void CSimpleFrame::OnProjectsAttachToProject() {
 
     if (pDoc->IsConnected()) {
 
-        CWizardAttachProject* pWizard = new CWizardAttachProject(this);
+        CWizardAttach* pWizard = new CWizardAttach(this);
 
         wxString strName = wxEmptyString;
         wxString strURL = wxEmptyString;
-        std::string foo;
-        pWizard->Run( strName, strURL, foo, false );
+        wxString strTeamName = wxEmptyString;
+        pWizard->Run( strName, strURL, strTeamName, false );
 
         if (pWizard)
             pWizard->Destroy();
@@ -372,10 +399,11 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnConnect - Function Begin"));
     
     CMainDocument*     pDoc = wxGetApp().GetDocument();
-    CWizardAttachProject* pAPWizard = NULL;
+    CWizardAttach*     pWizard = NULL;
     wxString strComputer = wxEmptyString;
     wxString strName = wxEmptyString;
     wxString strURL = wxEmptyString;
+    wxString strTeamName = wxEmptyString;
     bool bCachedCredentials = false;
     ACCT_MGR_INFO ami;
     PROJECT_INIT_STATUS pis;
@@ -399,7 +427,6 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
         wxGetApp().StartBOINCDefaultScreensaverTest();
     }
 
-    pAPWizard = new CWizardAttachProject(this);
 
     pDoc->rpc.get_project_init_status(pis);
     pDoc->rpc.acct_mgr_info(ami);
@@ -408,7 +435,8 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
             Show();
         }
 
-       if (pAPWizard->SyncToAccountManager()) {
+        pWizard = new CWizardAttach(this);
+        if (pWizard->SyncToAccountManager()) {
             // If successful, hide the main window
             Hide();
         }
@@ -419,15 +447,16 @@ void CSimpleFrame::OnConnect(CFrameEvent& WXUNUSED(event)) {
 
         strName = wxString(pis.name.c_str(), wxConvUTF8);
         strURL = wxString(pis.url.c_str(), wxConvUTF8);
+        strTeamName = wxString(pis.team_name.c_str(), wxConvUTF8);
         bCachedCredentials = pis.url.length() && pis.has_account_key;
 
-        pAPWizard->Run(strName, strURL, pis.team_name, bCachedCredentials);
+        pWizard = new CWizardAttach(this);
+        pWizard->Run(strName, strURL, strTeamName, bCachedCredentials);
     }
 
- 	if (pAPWizard){
-            pAPWizard->Destroy();
-            //update Project Component
-            m_pBackgroundPanel->UpdateProjectView();
+ 	if (pWizard) {
+        pWizard->Destroy();
+        m_pBackgroundPanel->UpdateProjectView();
 	}
 
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnConnect - Function End"));

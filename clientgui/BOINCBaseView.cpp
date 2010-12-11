@@ -124,7 +124,7 @@ CBOINCBaseView::CBOINCBaseView(
     m_SortArrows->Add( wxIcon( sortascending_xpm ) );
     m_SortArrows->Add( wxIcon( sortdescending_xpm ) );
     m_pListPane->SetImageList(m_SortArrows, wxIMAGE_LIST_SMALL);
-    
+
 #if BASEVIEW_STRIPES    
     m_pWhiteBackgroundAttr = new wxListItemAttr(
         wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT),
@@ -135,7 +135,7 @@ CBOINCBaseView::CBOINCBaseView(
         wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT),
         wxColour(240, 240, 240),
         wxNullFont
-    );
+        );
 #endif
 }
 
@@ -166,7 +166,7 @@ CBOINCBaseView::~CBOINCBaseView() {
         m_pGrayBackgroundAttr = NULL;
     }
 #endif
-    }
+}
 
 
 // The name of the view.
@@ -201,6 +201,13 @@ const char** CBOINCBaseView::GetViewIcon() {
 //
 const int CBOINCBaseView::GetViewRefreshRate() {
     return 1;
+}
+
+
+// Get bit mask of current view(s).
+//
+const int CBOINCBaseView::GetViewCurrentViewPage() {
+    return 0;
 }
 
 
@@ -770,7 +777,7 @@ void CBOINCBaseView::UpdateWebsiteSelection(long lControlGroup, PROJECT* project
                 pItem = new CTaskItem(
                     wxString(project->project_name.c_str(), wxConvUTF8), 
                     wxT(""), 
-                    wxString(project->master_url.c_str(), wxConvUTF8),
+                    wxString(project->master_url, wxConvUTF8),
                     ID_TASK_PROJECT_WEB_PROJDEF_MIN
                 );
                 pGroup->m_Tasks.push_back(pItem);

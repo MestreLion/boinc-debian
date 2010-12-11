@@ -61,25 +61,6 @@ INT WINAPI WinMain(
     WSADATA      wsdata;
 
 
-#ifdef _DEBUG
-    // Initialize Diagnostics
-    retval = diagnostics_init (
-        BOINC_DIAG_DUMPCALLSTACKENABLED | 
-        BOINC_DIAG_HEAPCHECKENABLED |
-        BOINC_DIAG_MEMORYLEAKCHECKENABLED |
-        BOINC_DIAG_ARCHIVESTDOUT |
-        BOINC_DIAG_REDIRECTSTDOUTOVERWRITE |
-        BOINC_DIAG_REDIRECTSTDERROVERWRITE |
-        BOINC_DIAG_TRACETOSTDOUT,
-        "stdoutscr",
-        "stderrscr"
-    );
-    if (retval) {
-        BOINCTRACE("WinMain - BOINC Screensaver Diagnostic Error '%d'\n", retval);
-        MessageBox(NULL, NULL, "BOINC Screensaver Diagnostic Error", MB_OK);
-    }
-#endif
-
     // Initialize the CRT random number generator.
     srand((unsigned int)time(0));
 
@@ -161,9 +142,38 @@ CScreensaver::CScreensaver() {
 //
 HRESULT CScreensaver::Create(HINSTANCE hInstance) {
     HRESULT hr;
-    BOOL    bReturnValue;
-    struct ss_periods periods;
+    int     retval;
+    struct  ss_periods periods;
+
     m_hInstance = hInstance;
+
+
+    // Retrieve the locations of the install directory and data directory
+	UtilGetRegDirectoryStr(_T("DATADIR"), m_strBOINCDataDirectory);
+	UtilGetRegDirectoryStr(_T("INSTALLDIR"), m_strBOINCInstallDirectory);
+
+    if (!m_strBOINCDataDirectory.empty()) {
+        SetCurrentDirectory(m_strBOINCDataDirectory.c_str());
+    }
+
+    // Initialize Diagnostics
+    retval = diagnostics_init (
+#ifdef _DEBUG
+        BOINC_DIAG_HEAPCHECKENABLED |
+        BOINC_DIAG_MEMORYLEAKCHECKENABLED |
+#endif
+        BOINC_DIAG_DUMPCALLSTACKENABLED | 
+        BOINC_DIAG_ARCHIVESTDOUT |
+        BOINC_DIAG_REDIRECTSTDOUTOVERWRITE |
+        BOINC_DIAG_REDIRECTSTDERROVERWRITE |
+        BOINC_DIAG_TRACETOSTDOUT,
+        "stdoutscr",
+        "stderrscr"
+    );
+    if (retval) {
+        BOINCTRACE("WinMain - BOINC Screensaver Diagnostic Error '%d'\n", retval);
+        MessageBox(NULL, NULL, "BOINC Screensaver Diagnostic Error", MB_OK);
+    }
 
     // Parse the command line and do the appropriate thing
     m_SaverMode = ParseCommandLine(GetCommandLine());
@@ -183,12 +193,7 @@ HRESULT CScreensaver::Create(HINSTANCE hInstance) {
     // Get project-defined default values for GFXDefaultPeriod, GFXSciencePeriod, GFXChangePeriod
     GetDefaultDisplayPeriods(periods);
     m_bShow_default_ss_first = periods.Show_default_ss_first;
-
-    // Retrieve the locations of the install directory and data directory
-	bReturnValue = UtilGetRegDirectoryStr(_T("DATADIR"), m_strBOINCDataDirectory);
-	bReturnValue = UtilGetRegDirectoryStr(_T("INSTALLDIR"), m_strBOINCInstallDirectory);
-
-
+        
     // Get the last set of saved values, if not set
     // use the configuration file, if not set, use defaults.
     // Normalize on Seconds...
@@ -246,7 +251,7 @@ HRESULT CScreensaver::Create(HINSTANCE hInstance) {
     if (m_dwBlankTime > 0) {
         m_dwBlankTime = (DWORD)time(0) + m_dwBlankTime;
     }
-
+    
     // Create the infrastructure mutexes so we can properly aquire them to report
     //   errors
     if (!CreateInfrastructureMutexes()) {
@@ -343,9 +348,6 @@ HRESULT CScreensaver::Run() {
             DestroyDataManagementThread();
             DestroyGraphicsWindowPromotionThread();
             DestroyInputActivityThread();
-            break;
-        case sm_passwordchange:
-            ChangePassword();
             break;
     }
     return S_OK;
@@ -879,15 +881,31 @@ DWORD WINAPI CScreensaver::InputActivityProcStub(LPVOID UNUSED(lpParam)) {
 //
 DWORD WINAPI CScreensaver::InputActivityProc() {
     LASTINPUTINFO lii;
+    DWORD         dwCounter = 0;
     lii.cbSize = sizeof(LASTINPUTINFO);
 
+    BOINCTRACE(_T("CScreensaver::InputActivityProc - Last Input Activity '%d'.\n"), m_dwLastInputTimeAtStartup);
+
     while(true) {
-        GetLastInputInfo(&lii);
-        if (m_dwLastInputTimeAtStartup != lii.dwTime) {
-            BOINCTRACE(_T("CScreensaver::InputActivityProc - Activity Detected.\n"));
+        if (GetLastInputInfo(&lii)) {
+            if (dwCounter > 4) {
+                BOINCTRACE(_T("CScreensaver::InputActivityProc - Heartbeat.\n"));
+                dwCounter = 0;
+            }
+            if (m_dwLastInputTimeAtStartup != lii.dwTime) {
+                BOINCTRACE(_T("CScreensaver::InputActivityProc - Activity Detected.\n"));
+                SetError(TRUE, SCRAPPERR_BOINCSHUTDOWNEVENT);
+                FireInterruptSaverEvent();
+            }
+        } else {
+            BOINCTRACE(_T("CScreensaver::InputActivityProc - Failed to detect input activity.\n"));
+            fprintf(stdout, _T("Screen saver shutdown due to not being able to detect input activity.\n"));
+            fprintf(stdout, _T("Try rebooting, if the problem persists contact the BOINC.\n"));
+            fprintf(stdout, _T("development team.\n\n"));
             SetError(TRUE, SCRAPPERR_BOINCSHUTDOWNEVENT);
             FireInterruptSaverEvent();
         }
+        dwCounter++;
         boinc_sleep(0.25);
     }
 }
@@ -1575,7 +1593,7 @@ VOID CScreensaver::FireInterruptSaverEvent() {
 
 
 // A message was received (mouse move, keydown, etc.) that may mean
-//     the screen saver should show the password dialog and/or shut down.
+//     the screen saver should shut down.
 //
 VOID CScreensaver::InterruptSaver() {
     BOINCTRACE(_T("CScreensaver::InterruptSaver Function Begin\n"));
@@ -1746,13 +1764,25 @@ VOID CScreensaver::DoPaint(HWND hwnd, HDC hdc, LPPAINTSTRUCT lpps) {
     BITMAP bm;
     GetObject(hbmp, sizeof(BITMAP), (LPSTR)&bm);
 
+    HDC hdcTemp = CreateCompatibleDC(hdc);
+    SelectObject(hdcTemp, hbmp);
+
 	long left = rc.left + (pMonitorInfo->widthError - 4 - bm.bmWidth)/2;
 	long top = rc.top + 2;
-    DrawTransparentBitmap(hdc, hbmp, left, top, RGB(255, 0, 255));
+
+    POINT pt;
+    pt.x = bm.bmWidth;
+    pt.y = bm.bmHeight;
+    DPtoLP(hdcTemp, &pt, 1);
+
+    TransparentBlt(
+        hdc, left, top, pt.x, pt.y, hdcTemp, 0, 0, pt.x, pt.y, RGB(255, 0, 255)
+    );
+    DeleteDC(hdcTemp);
 
 	// Draw text in the center of the frame
 	SetBkColor(hdc, RGB(0,0,0));           // Black
-	SetTextColor(hdc, RGB(255,255,255));   // Red
+	SetTextColor(hdc, RGB(255,255,255));   // White
    
 	// Set font
 	HFONT hFont;
@@ -1784,131 +1814,5 @@ VOID CScreensaver::DoPaint(HWND hwnd, HDC hdc, LPPAINTSTRUCT lpps) {
     DrawText(hdc, szError, -1, &rc2, DT_CENTER);
 
     if(hFont) DeleteObject(hFont);
-}
-
-
-
-
-// Draws a bitmap on the screen with a transparent background.
-//         Code orginally from Microsoft Knowledge Base Article - 79212
-//
-void CScreensaver::DrawTransparentBitmap(
-    HDC hdc, HBITMAP hBitmap, LONG xStart, LONG yStart,
-    COLORREF cTransparentColor
-){
-    BITMAP     bm;
-    COLORREF   cColor;
-    HBITMAP    bmAndBack, bmAndObject, bmAndMem, bmSave;
-    HBITMAP    bmBackOld, bmObjectOld, bmMemOld, bmSaveOld;
-    HDC        hdcMem, hdcBack, hdcObject, hdcTemp, hdcSave;
-    POINT      ptSize;
-
-    hdcTemp = CreateCompatibleDC(hdc);
-    SelectObject(hdcTemp, hBitmap);   // Select the bitmap
-
-    GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&bm);
-    ptSize.x = bm.bmWidth;            // Get width of bitmap
-    ptSize.y = bm.bmHeight;           // Get height of bitmap
-    DPtoLP(hdcTemp, &ptSize, 1);      // Convert from device
-
-                                     // to logical points
-
-    // Create some DCs to hold temporary data.
-    hdcBack   = CreateCompatibleDC(hdc);
-    hdcObject = CreateCompatibleDC(hdc);
-    hdcMem    = CreateCompatibleDC(hdc);
-    hdcSave   = CreateCompatibleDC(hdc);
-
-    // Create a bitmap for each DC. DCs are required for a number of
-    // GDI functions.
-
-    // Monochrome DC
-    bmAndBack   = CreateBitmap(ptSize.x, ptSize.y, 1, 1, NULL);
-
-    // Monochrome DC
-    bmAndObject = CreateBitmap(ptSize.x, ptSize.y, 1, 1, NULL);
-
-    bmAndMem    = CreateCompatibleBitmap(hdc, ptSize.x, ptSize.y);
-    bmSave      = CreateCompatibleBitmap(hdc, ptSize.x, ptSize.y);
-
-    // Each DC must select a bitmap object to store pixel data.
-    bmBackOld   = (HBITMAP)SelectObject(hdcBack, bmAndBack);
-    bmObjectOld = (HBITMAP)SelectObject(hdcObject, bmAndObject);
-    bmMemOld    = (HBITMAP)SelectObject(hdcMem, bmAndMem);
-    bmSaveOld   = (HBITMAP)SelectObject(hdcSave, bmSave);
-
-    // Set proper mapping mode.
-    SetMapMode(hdcTemp, GetMapMode(hdc));
-
-    // Save the bitmap sent here, because it will be overwritten.
-    BitBlt(hdcSave, 0, 0, ptSize.x, ptSize.y, hdcTemp, 0, 0, SRCCOPY);
-
-    // Set the background color of the source DC to the color.
-    // contained in the parts of the bitmap that should be transparent
-    cColor = SetBkColor(hdcTemp, cTransparentColor);
-
-    // Create the object mask for the bitmap by performing a BitBlt
-    // from the source bitmap to a monochrome bitmap.
-    BitBlt(hdcObject, 0, 0, ptSize.x, ptSize.y, hdcTemp, 0, 0, SRCCOPY);
-
-    // Set the background color of the source DC back to the original
-    // color.
-    SetBkColor(hdcTemp, cColor);
-
-    // Create the inverse of the object mask.
-    BitBlt(hdcBack, 0, 0, ptSize.x, ptSize.y, hdcObject, 0, 0, NOTSRCCOPY);
-
-    // Copy the background of the main DC to the destination.
-    BitBlt(hdcMem, 0, 0, ptSize.x, ptSize.y, hdc, xStart, yStart, SRCCOPY);
-
-    // Mask out the places where the bitmap will be placed.
-    BitBlt(hdcMem, 0, 0, ptSize.x, ptSize.y, hdcObject, 0, 0, SRCAND);
-
-    // Mask out the transparent colored pixels on the bitmap.
-    BitBlt(hdcTemp, 0, 0, ptSize.x, ptSize.y, hdcBack, 0, 0, SRCAND);
-
-    // XOR the bitmap with the background on the destination DC.
-    BitBlt(hdcMem, 0, 0, ptSize.x, ptSize.y, hdcTemp, 0, 0, SRCPAINT);
-
-    // Copy the destination to the screen.
-    BitBlt(hdc, xStart, yStart, ptSize.x, ptSize.y, hdcMem, 0, 0, SRCCOPY);
-
-    // Place the original bitmap back into the bitmap sent here.
-    BitBlt(hdcTemp, 0, 0, ptSize.x, ptSize.y, hdcSave, 0, 0, SRCCOPY);
-
-    // Delete the memory bitmaps.
-    DeleteObject(SelectObject(hdcBack, bmBackOld));
-    DeleteObject(SelectObject(hdcObject, bmObjectOld));
-    DeleteObject(SelectObject(hdcMem, bmMemOld));
-    DeleteObject(SelectObject(hdcSave, bmSaveOld));
-
-    // Delete the memory DCs.
-    DeleteDC(hdcMem);
-    DeleteDC(hdcBack);
-    DeleteDC(hdcObject);
-    DeleteDC(hdcSave);
-    DeleteDC(hdcTemp);
-}
-
-
-
-
-VOID CScreensaver::ChangePassword() {
-    // Load the password change DLL
-    HINSTANCE mpr = LoadLibrary(_T("MPR.DLL"));
-
-    if (mpr != NULL) {
-        // Grab the password change function from it
-        typedef DWORD (PASCAL *PWCHGPROC)(LPCSTR, HWND, DWORD, LPVOID);
-        PWCHGPROC pwd = (PWCHGPROC)GetProcAddress(mpr, "PwdChangePasswordA");
-
-        // Do the password change
-        if (pwd != NULL) {
-            pwd("SCRSAVE", m_hWndParent, 0, NULL);
-        }
-
-        // Free the library
-        FreeLibrary(mpr);
-    }
 }
 

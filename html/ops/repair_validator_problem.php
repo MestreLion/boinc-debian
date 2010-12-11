@@ -20,7 +20,8 @@
 // You should never have to run this script
 
 set_time_limit(0);
-require_once("../inc/db.inc");
+$cli_only = true;
+require_once("../inc/util_ops.inc");
 
 // activate/deactivate script
 if (1) {

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// request_file_list [-host_id host_id]
-// -host_id            number of host to upload from
+// request_file_list [options]
+// --host_id            number of host to upload from
 //                     or 'all' if for all active hosts
 //
 // Create a msg_to_host_that requests the list of permanant files
@@ -33,6 +33,7 @@
 #include "boinc_db.h"
 #include "str_util.h"
 #include "error_numbers.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
 #include "sched_util.h"
@@ -71,6 +72,21 @@ int request_files_from_all() {
     return 0;
 }
 
+void usage(char *name) {
+    fprintf(stderr,
+        "Create a msg_to_host_that requests the list of sticky files\n"
+        "associated with the project\n"
+        "Run this in the project root dir\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options:\n"
+        "  --host_id                       number of host to upload from\n"
+        "                                  or 'all' or '0' if for all active hosts\n"
+        "  [ -v | --version ]              show version information\n"
+        "  [ -h | --help ]                 show this help text\n",
+        name
+    );
+}
+
 int main(int argc, char** argv) {
     int i, retval;
     int host_id;
@@ -79,20 +95,28 @@ int main(int argc, char** argv) {
 
     check_stop_daemons();
 
-    for(i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-host_id")) {
-            if (!strcmp(argv[++i], "all")) {
+    for (i=1; i<argc; i++) {
+        if (is_arg(argv[i], "host_id")) {
+            if (!argv[++i]) {
+                fprintf(stderr, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            if (!strcmp(argv[i], "all")) {
                 host_id = 0;
             } else {
                 host_id = atoi(argv[i]);
             }
+        } else if (is_arg(argv[i], "h") || is_arg(argv[i], "help")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
         } else {
-            if (!strncmp("-",argv[i],1)) {
-                fprintf(stderr,
-                    "request_file_list: bad argument '%s'\n", argv[i]
-                );
-                exit(1);
-            }
+            fprintf(stderr, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
 
@@ -127,4 +151,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_41d8f8c3fa = "$Id: request_file_list.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_41d8f8c3fa = "$Id: request_file_list.cpp 21181 2010-04-15 03:13:56Z davea $";

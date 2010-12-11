@@ -24,7 +24,9 @@
 // --dir dir            where to put them (e.g., ../user/example)
 // --ellipse_frac X     fraction of images with ellipses
 
+$cli_only = true;
 require_once("../inc/util_basic.inc");
+require_once("../inc/util_ops.inc");
 
 function rand_color($im, $range) {
     $mid = 200;

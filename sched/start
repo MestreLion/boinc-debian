@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- mode: python; python-indent: 4; -*-
 
-## $Id: start 18424 2009-06-15 23:24:15Z davea $
+## $Id: start 21057 2010-04-02 19:10:37Z davea $
 
 '''
 A program to start/stop BOINC server daemons and run periodic tasks.
@@ -25,7 +25,8 @@ Invocation methods:
    --disable  (default if invoked as "stop")
               Set project to DISABLED mode and stop daemons.
 
-   --status   Show status.
+   --status   (default if invoked as "status")
+              Show status.
 
 See "start --help" for options.
 
@@ -122,6 +123,11 @@ def assign_task_defaults():
             task.disabled = 1
         else:
             task.disabled = 0
+        always_run = task.__dict__.get('always_run')
+        if always_run and always_run != "0":
+            task.always_run = 1
+        else:
+            task.always_run = 0
     for task in config.daemons:
         host = task.__dict__.get('host')
         if not host:
@@ -428,7 +434,7 @@ def run_tasks():
             continue
         if task.disabled:
             continue
-        if task.__dict__.get('always_run'): 
+        if task.always_run: 
             run_task(task)
             continue
         if run_state.enabled:
@@ -450,7 +456,7 @@ def do_prune_run_states():
         return
     for run_state_task in run_state.tasks:
         if run_state_task.prunable:
-            print 'Deleting obsolete run_state task', run_state_task.cmd, '(last run %s)' %timestamp(float(run_state_task.last_run))
+            # print 'Deleting obsolete run_state task', run_state_task.cmd, '(last run %s)' %timestamp(float(run_state_task.last_run))
             run_state.tasks.remove_node(run_state_task)
 
 def stop_daemon(pid):
@@ -644,6 +650,8 @@ Options:
         print >>sys.stderr, "Based on the invocation name as `start', the default action is --enable."
     elif program_name == 'stop':
         print >>sys.stderr, "Based on the invocation name as `stop', the default action is --disable."
+    elif program_name == 'status':
+        print >>sys.stderr, "Based on the invocation name as `status', the default action is --status."
     sys.exit(1)
 
 config_filename = boinc_project_path.config_xml_filename

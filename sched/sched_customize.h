@@ -18,24 +18,43 @@
 #include "boinc_db.h"
 #include "sched_types.h"
 
-// reasons for the planning function to reject a host
+struct GPU_REQUIREMENTS {
+    double min_ram;
+    double opt_ram;
+    int min_driver_version;
+    int opt_driver_version;
 
-#define PLAN_REJECT_CUDA_NO_DEVICE          2
-#define PLAN_REJECT_CUDA_VERSION            3
-#define PLAN_REJECT_NVIDIA_DRIVER_VERSION   4
-#define PLAN_REJECT_CUDA_MEM                5
-#define PLAN_REJECT_CUDA_SPEED              6
-#define PLAN_REJECT_UNKNOWN                 7
-#define PLAN_REJECT_INSUFFICIENT_CPUS       8
-#define PLAN_REJECT_CPU_FEATURE             9
-#define PLAN_REJECT_NVIDIA_COMPUTE_CAPABILITY             10
+    void clear() {
+        min_ram = opt_ram = 0;
+        min_driver_version = opt_driver_version = 0;
+    }
+    void update(int version, double ram) {
+        if (min_driver_version) {
+            if (version < min_driver_version) {
+                min_driver_version = version;
+            }
+        } else {
+            min_driver_version = version;
+        }
+        if (version > opt_driver_version) {
+            opt_driver_version = version;
+        }
+        if (min_ram) {
+            if (ram < min_ram) {
+                min_ram = ram;
+            }
+        } else {
+            min_ram = ram;
+        }
+        if (ram > opt_ram) {
+            opt_ram = ram;
+        }
+    }
+};
 
-#define PLAN_REJECT_ATI_NO_DEVICE           11
-
-#define PLAN_CUDA_MIN_DRIVER_VERSION        17700
-#define PLAN_CUDA23_MIN_DRIVER_VERSION        19038
-#define PLAN_CUDA_MIN_RAM                   (254*1024*1024)
+extern GPU_REQUIREMENTS cuda_requirements;
+extern GPU_REQUIREMENTS ati_requirements;
 
 extern bool wu_is_infeasible_custom(WORKUNIT&, APP&, BEST_APP_VERSION&);
-extern int app_plan(SCHEDULER_REQUEST&, char* plan_class, HOST_USAGE&);
+extern bool app_plan(SCHEDULER_REQUEST&, char* plan_class, HOST_USAGE&);
 extern bool app_plan_uses_gpu(const char* plan_class);

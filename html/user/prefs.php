@@ -30,14 +30,13 @@ $subset = get_str("subset");
 $columns = get_int("cols", true);
 $updated = get_int("updated", true);
 
-page_head(subset_name($subset)." preferences");
+page_head(tra("%1 preferences", subset_name($subset)));
 if (isset($updated)) {
 	echo "<p style='color: red'>
-        Your preferences have been updated.
-        Client-related preferences
-        will take effect when your computer communicates
-        with ".PROJECT." or
-        you issue the \"Update\" command from the BOINC client.
+        ".tra("Your preferences have been updated, and
+	      will take effect when your computer communicates with %1
+	      or you issue the %2Update%3 command from the BOINC Manager.",
+	      PROJECT, "<strong>", "</strong>")."
         </p>
     ";
 }
@@ -48,5 +47,5 @@ if ($subset == "global") {
 }
 page_tail();
 
-$cvs_version_tracker[]="\$Id: prefs.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: prefs.php 22102 2010-08-03 03:56:13Z davea $";  //Generated automatically - do not edit
 ?>

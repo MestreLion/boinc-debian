@@ -28,6 +28,10 @@ ini_set("memory_limit", "64M");
 
 date_default_timezone_set("UTC");
 
+if (!defined('SECURE_URL_BASE')) {
+    define('SECURE_URL_BASE', URL_BASE);
+}
+
 $generating_xml = false;
 $caching = false;
 
@@ -37,25 +41,23 @@ function send_cookie($name, $value, $permanent, $ops=false) {
     $master_url = parse_config(get_config(), "<master_url>");
     $url = parse_url($master_url);
     $path = $url['path'];
-    if ($ops) $path = "$path_ops";
+    if ($ops) {
+        $path = substr($path, 0, -1);
+        $path .= "_ops/";
+    }
     $expire = $permanent?time()+3600*24*365:0;
     setcookie($name, $value, $expire, $path);
 }
 
-function clear_cookie($name) {
+function clear_cookie($name, $ops=false) {
     $master_url = parse_config(get_config(), "<master_url>");
     $url = parse_url($master_url);
     $path = $url['path'];
-    setcookie($name, '', time()-3600, $path);
-}
-
-// if not logged in, put up login form and exit
-//
-function require_login($user) {
-    if (!$user) {
-        print_login_form();
-        exit();
+    if ($ops) {
+        $path = substr($path, 0, -1);
+        $path .= "_ops/";
     }
+    setcookie($name, '', time()-3600, $path);
 }
 
 function get_user_from_id($id) {
@@ -78,18 +80,23 @@ function get_logged_in_user($must_be_logged_in=true) {
     if ($authenticator) {
         $g_logged_in_user = BoincUser::lookup("authenticator='$authenticator'");
     }
-    if ($must_be_logged_in) {
-        require_login($g_logged_in_user);
+    if ($must_be_logged_in && !$g_logged_in_user) {
+        $next_url = $_SERVER['REQUEST_URI'];
+        $n = strrpos($next_url, "/");
+        if ($n) {
+            $next_url = substr($next_url, $n+1);
+        }
+        Header("Location: login_form.php?next_url=$next_url");
     }
     return $g_logged_in_user;
 }
 
 function show_login($user) {
     if ($user) {
-        echo "Logged in as %s.\n", $user->name;
-        echo "<br><a href=\"login_form.php\">Log in as someone else.</a>\n";
+        echo tra("Logged in as %1.", $user->name)."\n";
+        echo "<br><a href=\"login_form.php\">".tra("Log in as someone else.")."</a>\n";
     } else {
-        echo "Not logged in.";
+        echo tra("Not logged in.");
     }
 }
 
@@ -110,10 +117,7 @@ function page_head(
     $rssname = PROJECT . " RSS 2.0";
     $rsslink = URL_BASE."rss_main.php";
     
-    $charset = tra("CHARSET");
-    if ($charset != "CHARSET") {
-        header("Content-type: text/html; charset=$charset");
-    }
+    header("Content-type: text/html; charset=utf-8");
     if (!$caching) {
         header ("Expires: Mon, 26 Jul 1997 05:00:00 UTC");    // Date in the past
         header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " UTC"); // always modified
@@ -173,9 +177,7 @@ function display_cvs_versions(){
 
 function db_error_page() {
     page_head("Database error");
-    echo "A database error occurred while handling your request.
-        <br>Please try again later.
-    ";
+    echo tra("A database error occurred while handling your request; please try again later.");
     page_tail();
 }
 
@@ -184,7 +186,7 @@ function error_page($msg) {
     if ($generating_xml) {
         xml_error(-1, $msg);
     }
-    page_head("Unable to handle request");
+    page_head(tra("Unable to handle request"));
     echo $msg;
     page_tail();
     exit();
@@ -201,16 +203,16 @@ function time_diff($x) {
 
     $datestring = "";
     if ($days) {
-        $datestring .= "$days days ";
+        $datestring .= "$days ".tra("days")." ";
     }
     if ($hours || strlen($datestring)) {
-        $datestring .= "$hours hours ";
+        $datestring .= "$hours ".tra("hours")." ";
     }
     if ($minutes || strlen($datestring)) {
-        $datestring .= "$minutes min ";
+        $datestring .= "$minutes ".tra("min")." ";
     }
     if ($seconds) {
-        $datestring .= "$seconds sec";
+        $datestring .= "$seconds ".tra("sec")." ";
     }
 
     return $datestring;
@@ -366,52 +368,8 @@ function valid_tokens($auth) {
 function check_tokens($auth) {
     if (valid_tokens($auth)) return;
     error_page(
-        "Link has timed out. Please click Back, refresh the page,
-        and try again."
+        tra("Link has timed out. Please click Back, refresh the page, and try again.")
     );
-}
-
-if (!function_exists("print_login_form_aux")){
-function print_login_form_aux($next_url, $user, $email_addr="") {
-    echo "
-        <form name=\"f\" method=\"post\" action=\"".URL_BASE."login_action.php\">
-        <input type=\"hidden\" name=\"next_url\" value=\"$next_url\">
-    ";
-    start_table();
-    row2("Email address:<br><span class=note><a href=get_passwd.php>forgot email address?</a></span>", "<input name=email_addr size=40 tabindex=1 value=\"$email_addr\">");
-    row2("Password:<br><span class=note><a href=get_passwd.php>forgot password?</a></span>",
-        '<input type="password" name="passwd" size="40" tabindex="2">'
-    );
-    row2("Stay logged in on this computer",
-        '<input type="checkbox" name="stay_logged_in" checked>'
-    );
-    $x = urlencode($next_url);
-    row2("",
-        "<input type=\"submit\" name=\"mode\" value=\"Log in\" tabindex=\"3\"><br><br>or <a href=\"create_account_form.php?next_url=$x\">create an account</a>."
-    );
-    if ($user) {
-        row1("Log out");
-        row2("You are logged in as $user->name",
-            "<a href=\"logout.php?".url_tokens($user->authenticator)."\">Log out</a>"
-        );
-    }
-    end_table();
-    echo "
-        </form>
-        <script type=\"text/javascript\">
-            document.f.email_addr.focus();
-        </script>
-    ";
-}
-}
-
-if (!function_exists("print_login_form")){
-function print_login_form() {
-    page_head("Please log in");
-    $next_url = $_SERVER['REQUEST_URI'];
-    print_login_form_aux($next_url, null);
-    page_tail();
-}
 }
 
 function no_computing() {
@@ -421,8 +379,7 @@ function no_computing() {
 // Generates a legal filename from a parameter string.
 
 function get_legal_filename($name) {
-    $name = ereg_replace(',', '', $name);
-    return ereg_replace(' ', '_', $name);
+    return strtr($name, array(','=>'', ' '=>'_'));
 }
 
 // Returns a string containing as many words
@@ -480,7 +437,9 @@ function friend_links($user) {
         } else {
             $img_url = URL_BASE."img/head_20.png";
         }
-        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="View the profile of '.$user->name.'" align="top" src="'.$img_url.'" alt="Profile"></a><br>';
+        $title = tra("View the profile of %1", $user->name);
+        $alt = tra("Profile");
+        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="'.$title.'" src="'.$img_url.'" alt="'.$alt.'"></a><br>';
     }
     $x .= " <a href=\"".URL_BASE."show_user.php?userid=".$user->id."\">".$user->name."</a>";
     if ($user->donated == 1) { 
@@ -499,7 +458,7 @@ function user_links($user) {
     $x = "";
     if ($user->has_profile) {
         $img_url = URL_BASE."img/head_20.png";
-        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="View the profile of '.$user->name.'" align="top" src="'.$img_url.'" alt="Profile"></a>';
+        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="View the profile of '.$user->name.'" src="'.$img_url.'" alt="Profile"></a>';
     }
     $x .= " <a href=\"".URL_BASE."show_user.php?userid=".$user->id."\">".$user->name."</a>";
     if ($user->donated == 1) { 
@@ -692,25 +651,23 @@ function current_url() {
     return $url;
 }
 
-/**
- * Show a single link formatted to look like a button.
- * @param url The destination URL of the button
- * @param text The text to display on the button
- * @param desc The title of the destination - typically used as a popup
- * @param class The optional CSS class of the button. Defaults to a standard button
- */ 
+// Show a single link formatted to look like a button.
+// @param url The destination URL of the button
+// @param text The text to display on the button
+// @param desc The title of the destination - typically used as a popup
+// @param class The optional CSS class of the button. Defaults to a standard button
+// 
 function show_button($url, $text, $desc, $class="button") {
     echo "<a href=\"".$url."\" title=\"".addslashes($desc)."\" class=\"".$class."\">".$text."</a>";
 }
 
-/**
- * When multiple buttons (or actions) are presented in a list you can
- * use this convenience method to avoid having to wrap each button in <li></li> elements
- * @param url The destination URL of the button
- * @param text The text to display on the button
- * @param desc The title of the destination - typically used as a popup
- * @param class The optional CSS class of the button. Defaults to a standard button
- */
+// When multiple buttons (or actions) are presented in a list you can
+// use this convenience method to avoid having to wrap each button in <li></li> elements
+// @param url The destination URL of the button
+// @param text The text to display on the button
+// @param desc The title of the destination - typically used as a popup
+// @param class The optional CSS class of the button. Defaults to a standard button
+//
 function show_actionlist_button($url, $text, $desc, $class="button"){
     echo "<li>";
     echo show_button($url, $text, $desc, $class);
@@ -731,11 +688,8 @@ function check_web_stopped() {
         if ($generating_xml) {
             xml_error(-183);
         } else {
-            page_head("Project down for maintenance");
-            echo "This page requires database access.
-                Our database server is temporarily shut down for maintenance.
-                Please try again later.
-            ";
+            page_head(tra("Project down for maintenance"));
+            echo tra("This page requires database access.  Our database server is temporarily shut down for maintenance.  Please try again later.");
             page_tail();
             exit();
         }
@@ -751,18 +705,81 @@ function db_init($try_replica=false) {
     check_web_stopped();
     $retval = db_init_aux($try_replica);
     if ($retval == 1) {
-        echo "Unable to connect to database - please try again later\n";
-        echo "Error: ", mysql_errno(), mysql_error();
+        echo tra("Unable to connect to database - please try again later");
+        echo tra("Error:"), " ", mysql_errno(), mysql_error();
         exit();
     }
     if ($retval == 2) {
-        echo "Unable to select database - please try again later";
+        echo tra("Unable to select database - please try again later");
         echo mysql_error();
         exit();
     }
     return 0;
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 18712 2009-07-24 19:09:37Z davea $";  //Generated automatically - do not edit
+// return a structure indicating whether project has non-deprecated apps
+// for various resource types.
+//
+function get_app_types() {
+    $t = null;
+    $t->cpu = false;
+    $t->cuda = false;
+    $t->ati = false;
+    $t->count = 0;
+    $avs = BoincAppVersion::enum("deprecated=0");
+    foreach ($avs as $av) {
+        if (strstr($av->plan_class, "ati")) {
+            $t->ati = true;
+            $t->count++;
+        } else if (strstr($av->plan_class, "cuda")) {
+            $t->cuda = true;
+            $t->count++;
+        } else {
+            $t->cpu = true;
+            $t->count++;
+        }
+    }
+    return $t;
+}
+
+// Functions to sanitize GET and POST args
+
+// "next_url" arguments (must be local, not full URLs)
+//
+function sanitize_local_url($x) {
+    if (strstr($x, "/")) return "";
+    if (strstr($x, "<")) return "";
+    if (strstr($x, "\"")) return "";
+    return $x;
+}
+
+// strip HTML tags
+//
+function sanitize_tags($x) {
+    if (function_exists('filter_var')) {
+        return filter_var($x, FILTER_SANITIZE_STRING);
+    } else {
+        return strip_tags($x);
+    }
+}
+
+function sanitize_numeric($x) {
+    if (is_numeric($x)) {
+        return $x;
+    } else {
+        return "not numeric";
+    }
+}
+
+function sanitize_email($x) {
+    if (function_exists('filter_var')) {
+        return filter_var($x, FILTER_SANITIZE_EMAIL);
+    } else {
+        return strip_tags($x);
+    }
+}
+
+
+$cvs_version_tracker[]="\$Id: util.inc 22445 2010-10-04 23:48:01Z davea $";  //Generated automatically - do not edit
 
 ?>

@@ -31,7 +31,6 @@
 #include "SkinManager.h"
 #include "MainDocument.h"
 #include "BOINCBaseFrame.h"
-#include "hyperlink.h"
 #include "version.h"
 
 #include "sg_CustomControls.h"
@@ -574,7 +573,7 @@ void CPanelPreferences::OnButtonHelp( wxCommandEvent& event ) {
             wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
-        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+        wxLaunchDefaultBrowser(wxurl);
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CPanelPreferences::OnHelp - Function End"));
@@ -1027,26 +1026,36 @@ CDlgPreferences::CDlgPreferences( wxWindow* parent, wxWindowID id, const wxStrin
 
 bool CDlgPreferences::Create( wxWindow* parent, wxWindowID id, const wxString& caption, const wxPoint& pos, const wxSize& size, long style )
 {
-    wxString strCaption = caption;
-    if (strCaption.IsEmpty()) {
-        CSkinAdvanced*         pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
-        wxASSERT(pSkinAdvanced);
-        wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
+    CSkinAdvanced* pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
+    wxASSERT(pSkinAdvanced);
+    wxASSERT(wxDynamicCast(pSkinAdvanced, CSkinAdvanced));
 
-        strCaption.Printf(_("%s - Preferences"), pSkinAdvanced->GetApplicationName().c_str());
-    }
 
     SetExtraStyle(GetExtraStyle()|wxDIALOG_EX_CONTEXTHELP|wxWS_EX_BLOCK_EVENTS);
 
-    wxDialog::Create( parent, id, strCaption, pos, size, style );
+    wxDialog::Create( parent, id, caption, pos, size, style );
+
+    // Initialize Application Title
+    wxString strCaption = caption;
+    if (strCaption.IsEmpty()) {
+        strCaption.Printf(_("%s - Preferences"), pSkinAdvanced->GetApplicationName().c_str());
+    }
+    SetTitle(strCaption);
+
+    // Initialize Application Icon
+    wxIconBundle icons;
+    icons.AddIcon(*pSkinAdvanced->GetApplicationIcon());
+    icons.AddIcon(*pSkinAdvanced->GetApplicationIcon32());
+    SetIcons(icons);
 
     Freeze();
+
+    SetBackgroundStyle(wxBG_STYLE_CUSTOM);
 
     SetForegroundColour(*wxBLACK);
 #ifdef __WXDEBUG__
     SetBackgroundColour(wxColour(255, 0, 255));
 #endif
-    SetBackgroundStyle(wxBG_STYLE_CUSTOM);
 
     m_pBackgroundPanel = new CPanelPreferences(this);
     wxBoxSizer* itemBoxSizer = new wxBoxSizer(wxVERTICAL);
@@ -1080,7 +1089,7 @@ void CDlgPreferences::OnHelp(wxHelpEvent& event) {
             wxString(BOINC_VERSION_STRING, wxConvUTF8).c_str(),
             event.GetId()
         );
-        wxGetApp().GetFrame()->ExecuteBrowserLink(wxurl);
+        wxLaunchDefaultBrowser(wxurl);
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CDlgPreferences::OnHelp - Function End"));
@@ -1091,12 +1100,7 @@ void CDlgPreferences::OnHelp(wxHelpEvent& event) {
  * wxEVT_COMMAND_BUTTON_CLICKED event handler for wxID_OK
  */
 
-void CDlgPreferences::OnOK( wxCommandEvent& event ) {
-#if wxCHECK_VERSION(2,8,0)
-//    event.skip();
-#else
-    wxDialog::OnOK(event);
-#endif
+void CDlgPreferences::OnOK( wxCommandEvent& WXUNUSED(event) ) {
     m_pBackgroundPanel->OnOK();
     EndModal(wxID_OK);
 }

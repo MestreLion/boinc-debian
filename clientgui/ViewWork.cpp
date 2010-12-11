@@ -37,13 +37,13 @@
 
 
 #define COLUMN_PROJECT              0
-#define COLUMN_APPLICATION          1
-#define COLUMN_NAME                 2
+#define COLUMN_PROGRESS             1
+#define COLUMN_STATUS               2
 #define COLUMN_CPUTIME              3
-#define COLUMN_PROGRESS             4
-#define COLUMN_TOCOMPLETION         5
-#define COLUMN_REPORTDEADLINE       6
-#define COLUMN_STATUS               7
+#define COLUMN_TOCOMPLETION         4
+#define COLUMN_REPORTDEADLINE       5
+#define COLUMN_APPLICATION          6
+#define COLUMN_NAME                 7
 
 // groups that contain buttons
 #define GRP_TASKS    0
@@ -114,14 +114,14 @@ static bool CompareViewWorkItems(int iRowIndex1, int iRowIndex2) {
     }
 
     switch (myCViewWork->m_iSortColumn) {
-        case COLUMN_PROJECT:
-	result = work1->m_strProjectName.CmpNoCase(work2->m_strProjectName);
+    case COLUMN_PROJECT:
+        result = work1->m_strProjectName.CmpNoCase(work2->m_strProjectName);
         break;
     case COLUMN_APPLICATION:
-	result = work1->m_strApplicationName.CmpNoCase(work2->m_strApplicationName);
+        result = work1->m_strApplicationName.CmpNoCase(work2->m_strApplicationName);
         break;
     case COLUMN_NAME:
-	result = work1->m_strName.CmpNoCase(work2->m_strName);
+        result = work1->m_strName.CmpNoCase(work2->m_strName);
         break;
     case COLUMN_CPUTIME:
         if (work1->m_fCPUTime < work2->m_fCPUTime) {
@@ -152,7 +152,7 @@ static bool CompareViewWorkItems(int iRowIndex1, int iRowIndex2) {
         }
         break;
     case COLUMN_STATUS:
-	result = work1->m_strStatus.CmpNoCase(work2->m_strStatus);
+        result = work1->m_strStatus.CmpNoCase(work2->m_strStatus);
         break;
     }
 
@@ -168,8 +168,8 @@ CViewWork::CViewWork()
 CViewWork::CViewWork(wxNotebook* pNotebook) :
     CBOINCBaseView(pNotebook, ID_TASK_WORKVIEW, DEFAULT_TASK_FLAGS, ID_LIST_WORKVIEW, DEFAULT_LIST_MULTI_SEL_FLAGS)
 {
-	CTaskItemGroup* pGroup = NULL;
-	CTaskItem*      pItem = NULL;
+    CTaskItemGroup* pGroup = NULL;
+    CTaskItem*      pItem = NULL;
 
     wxASSERT(m_pTaskPane);
     wxASSERT(m_pListPane);
@@ -177,38 +177,38 @@ CViewWork::CViewWork(wxNotebook* pNotebook) :
     //
     // Setup View
     //
-	pGroup = new CTaskItemGroup( _("Commands") );
-	m_TaskGroups.push_back( pGroup );
+    pGroup = new CTaskItemGroup( _("Commands") );
+    m_TaskGroups.push_back( pGroup );
 
-	pItem = new CTaskItem(
+    pItem = new CTaskItem(
         _("Show active tasks"),
         _("Show only active tasks."),
         ID_TASK_ACTIVE_ONLY 
     );
     pGroup->m_Tasks.push_back( pItem );
 
-	pItem = new CTaskItem(
+    pItem = new CTaskItem(
         _("Show graphics"),
         _("Show application graphics in a window."),
         ID_TASK_WORK_SHOWGRAPHICS 
     );
     pGroup->m_Tasks.push_back( pItem );
 
-	pItem = new CTaskItem(
+    pItem = new CTaskItem(
         _("Suspend"),
         _("Suspend work for this result."),
         ID_TASK_WORK_SUSPEND 
     );
     pGroup->m_Tasks.push_back( pItem );
 
-	pItem = new CTaskItem(
+    pItem = new CTaskItem(
         _("Abort"),
         _("Abandon work on the result. You will get no credit for it."),
         ID_TASK_WORK_ABORT 
     );
     pGroup->m_Tasks.push_back( pItem );
 
-	pItem = new CTaskItem(
+    pItem = new CTaskItem(
         _("Properties"),
         _("Show task details."),
         ID_TASK_SHOW_PROPERTIES 
@@ -220,13 +220,13 @@ CViewWork::CViewWork(wxNotebook* pNotebook) :
 
     // Create List Pane Items
     m_pListPane->InsertColumn(COLUMN_PROJECT, _("Project"), wxLIST_FORMAT_LEFT, 125);
+    m_pListPane->InsertColumn(COLUMN_PROGRESS, _("Progress"), wxLIST_FORMAT_RIGHT, 60);
+    m_pListPane->InsertColumn(COLUMN_STATUS, _("Status"), wxLIST_FORMAT_LEFT, 135);
+    m_pListPane->InsertColumn(COLUMN_CPUTIME, _("Elapsed"), wxLIST_FORMAT_RIGHT, 80);
+    m_pListPane->InsertColumn(COLUMN_TOCOMPLETION, _("Remaining"), wxLIST_FORMAT_RIGHT, 100);
+    m_pListPane->InsertColumn(COLUMN_REPORTDEADLINE, _("Deadline"), wxLIST_FORMAT_LEFT, 150);
     m_pListPane->InsertColumn(COLUMN_APPLICATION, _("Application"), wxLIST_FORMAT_LEFT, 95);
     m_pListPane->InsertColumn(COLUMN_NAME, _("Name"), wxLIST_FORMAT_LEFT, 285);
-    m_pListPane->InsertColumn(COLUMN_CPUTIME, _("Elapsed"), wxLIST_FORMAT_RIGHT, 80);
-    m_pListPane->InsertColumn(COLUMN_PROGRESS, _("Progress"), wxLIST_FORMAT_RIGHT, 60);
-    m_pListPane->InsertColumn(COLUMN_TOCOMPLETION, _("To completion"), wxLIST_FORMAT_RIGHT, 100);
-    m_pListPane->InsertColumn(COLUMN_REPORTDEADLINE, _("Report deadline"), wxLIST_FORMAT_LEFT, 150);
-    m_pListPane->InsertColumn(COLUMN_STATUS, _("Status"), wxLIST_FORMAT_LEFT, 135);
 
     m_iProgressColumn = COLUMN_PROGRESS;
 
@@ -261,6 +261,11 @@ const char** CViewWork::GetViewIcon() {
 }
 
 
+const int CViewWork::GetViewCurrentViewPage() {
+    return VW_TASK;
+}
+
+
 wxString CViewWork::GetKeyValue1(int iRowIndex) {
     CWork*          work;
 
@@ -286,14 +291,14 @@ wxString CViewWork::GetKeyValue2(int iRowIndex) {
 int CViewWork::FindRowIndexByKeyValues(wxString& key1, wxString& key2) {
     CWork* work;
     unsigned int iRowIndex, n = GetCacheCount();
-	for(iRowIndex=0; iRowIndex < n; iRowIndex++) {
+    for(iRowIndex=0; iRowIndex < n; iRowIndex++) {
         if (GetWorkCacheAtIndex(work, m_iSortedIndexes[iRowIndex])) {
             continue;
         }
         if(! (work->m_strName).IsSameAs(key1)) continue;
         if((work->m_strProjectURL).IsSameAs(key2)) return iRowIndex;
-	}
-	return -1;
+    }
+    return -1;
 }
 
 
@@ -416,7 +421,7 @@ void CViewWork::OnWorkAbort( wxCommandEvent& WXUNUSED(event) ) {
     n = m_pListPane->GetSelectedItemCount();
     
     if (n == 1) {
-    row = -1;
+        row = -1;
         row = m_pListPane->GetNextItem(row, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
         if (row < 0) return;
         if (GetWorkCacheAtIndex(work, m_iSortedIndexes[row])) {
@@ -432,12 +437,12 @@ void CViewWork::OnWorkAbort( wxCommandEvent& WXUNUSED(event) ) {
         strMessage.Printf(_("Are you sure you want to abort these %d tasks?"), n);
     }
 
-        iAnswer = wxGetApp().SafeMessageBox(
-            strMessage,
-            _("Abort task"),
-            wxYES_NO | wxICON_QUESTION,
-            this
-        );
+    iAnswer = wxGetApp().SafeMessageBox(
+        strMessage,
+        _("Abort task"),
+        wxYES_NO | wxICON_QUESTION,
+        this
+    );
 
     if (wxYES != iAnswer) {
         return;
@@ -451,9 +456,9 @@ void CViewWork::OnWorkAbort( wxCommandEvent& WXUNUSED(event) ) {
         row = m_pListPane->GetNextItem(row, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
         if (row < 0) break;
         
-            RESULT* result = pDoc->result(m_iSortedIndexes[row]);
-            if (result) {
-                pDoc->WorkAbort(result->project_url, result->name);
+        RESULT* result = pDoc->result(m_iSortedIndexes[row]);
+        if (result) {
+            pDoc->WorkAbort(result->project_url, result->name);
         }
     }
 
@@ -499,8 +504,8 @@ bool CViewWork::OnSaveState(wxConfigBase* pConfig) {
 
     wxString    strBaseConfigLocation = wxEmptyString;
     strBaseConfigLocation = wxT("/Tasks");
-	pConfig->SetPath(strBaseConfigLocation);
-	pConfig->Write(wxT("ActiveTasksOnly"), (pDoc->m_ActiveTasksOnly ? 1 : 0));
+    pConfig->SetPath(strBaseConfigLocation);
+    pConfig->Write(wxT("ActiveTasksOnly"), (pDoc->m_ActiveTasksOnly ? 1 : 0));
 
     return bReturnValue;
 }
@@ -511,7 +516,7 @@ bool CViewWork::OnRestoreState(wxConfigBase* pConfig) {
 
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
-	wxASSERT(pConfig);
+    wxASSERT(pConfig);
     wxASSERT(m_pTaskPane);
     wxASSERT(m_pListPane);
 
@@ -525,8 +530,8 @@ bool CViewWork::OnRestoreState(wxConfigBase* pConfig) {
     int     iTempValue = 0;
     wxString    strBaseConfigLocation = wxEmptyString;
     strBaseConfigLocation = wxT("/Tasks");
-	pConfig->SetPath(strBaseConfigLocation);
-	pConfig->Read(wxT("ActiveTasksOnly"), &iTempValue, 0);
+    pConfig->SetPath(strBaseConfigLocation);
+    pConfig->Read(wxT("ActiveTasksOnly"), &iTempValue, 0);
     pDoc->m_ActiveTasksOnly = (iTempValue != 0);
 
     return true;
@@ -546,7 +551,7 @@ void CViewWork::OnProjectWebsiteClicked( wxEvent& event ) {
     pFrame->UpdateStatusText(_("Launching browser..."));
 
     int website_task_index = event.GetId() - ID_TASK_PROJECT_WEB_PROJDEF_MIN;
-    pFrame->ExecuteBrowserLink(
+    wxLaunchDefaultBrowser(
         m_TaskGroups[1]->m_Tasks[website_task_index]->m_strWebSiteLink
     );
 
@@ -744,7 +749,7 @@ void CViewWork::UpdateSelection() {
         
         // Disable Show Graphics button if any selected task can't display graphics
         if (((!result->supports_graphics) || pDoc->GetState()->executing_as_daemon) 
-            && result->graphics_exec_path.empty()
+            && !strlen(result->graphics_exec_path)
         ) {
                 enableShowGraphics = false;
         }
@@ -872,7 +877,9 @@ bool CViewWork::SynchronizeCacheItem(wxInt32 iRowIndex, wxInt32 iColumnIndex) {
             }
             break;
         case COLUMN_STATUS:
-            GetDocStatus(m_iSortedIndexes[iRowIndex], strDocumentText);
+            int i = m_iSortedIndexes[iRowIndex];
+            RESULT* result = wxGetApp().GetDocument()->result(i);
+            strDocumentText = result_description(result);
             if (!strDocumentText.IsSameAs(work->m_strStatus)) {
                 work->m_strStatus = strDocumentText;
                 return true;
@@ -922,7 +929,6 @@ void CViewWork::GetDocApplicationName(wxInt32 item, wxString& strBuffer) const {
             pDoc->ForceCacheUpdate();
             state_result = pDoc->state.lookup_result(result->project_url, result->name);
         }
-        wxASSERT(state_result);
 
         if (!state_result) return;
         WORKUNIT* wup = state_result->wup;
@@ -932,21 +938,22 @@ void CViewWork::GetDocApplicationName(wxInt32 item, wxString& strBuffer) const {
         APP_VERSION* avp = state_result->avp;
         if (!avp) return;
 
-        if (app->user_friendly_name.size()) {
-            strAppBuffer = HtmlEntityDecode(wxString(state_result->app->user_friendly_name.c_str(), wxConvUTF8));
+        if (strlen(app->user_friendly_name)) {
+            strAppBuffer = HtmlEntityDecode(wxString(state_result->app->user_friendly_name, wxConvUTF8));
         } else {
-            strAppBuffer = HtmlEntityDecode(wxString(state_result->avp->app_name.c_str(), wxConvUTF8));
+            strAppBuffer = HtmlEntityDecode(wxString(state_result->avp->app_name, wxConvUTF8));
         }
         
-        if (avp->plan_class.size()) {
+        if (strlen(avp->plan_class)) {
             strClassBuffer.Printf(
                 wxT(" (%s)"),
-                wxString(avp->plan_class.c_str(), wxConvUTF8).c_str()
+                wxString(avp->plan_class, wxConvUTF8).c_str()
             );
         }
 
         strBuffer.Printf(
-            wxT(" %s %d.%02d %s"), 
+            wxT(" %s%s %d.%02d %s"),
+            state_result->project->anonymous_platform?_("Local: "):wxT(""),
             strAppBuffer.c_str(),
             state_result->avp->version_num / 100,
             state_result->avp->version_num % 100,
@@ -960,7 +967,7 @@ void CViewWork::GetDocName(wxInt32 item, wxString& strBuffer) const {
     RESULT* result = wxGetApp().GetDocument()->result(item);
 
     if (result) {
-        strBuffer = wxString(result->name.c_str(), wxConvUTF8);
+        strBuffer = wxString(result->name, wxConvUTF8);
     }
 }
 
@@ -1072,7 +1079,7 @@ void CViewWork::GetDocReportDeadline(wxInt32 item, time_t& time) const {
     RESULT*        result = wxGetApp().GetDocument()->result(item);
 
     if (result) {
-        time = result->report_deadline;
+        time = (time_t)result->report_deadline;
     } else {
         time = (time_t)0;
     }
@@ -1089,142 +1096,6 @@ wxInt32 CViewWork::FormatReportDeadline(time_t deadline, wxString& strBuffer) co
 }
 
 
-void CViewWork::GetDocStatus(wxInt32 item, wxString& strBuffer) const {
-    CMainDocument* doc = wxGetApp().GetDocument();
-    RESULT*         result = wxGetApp().GetDocument()->result(item);
-    CC_STATUS       status;
-    int             retval;
-
-    wxASSERT(doc);
-    wxASSERT(wxDynamicCast(doc, CMainDocument));
-
-    strBuffer.Clear();
-    retval = doc->GetCoreClientStatus(status);
-    if (retval || !result) {
-        return;
-    }
-
-    if (result->coproc_missing) {
-        strBuffer += _("GPU missing, ");
-    }
-
-	int throttled = status.task_suspend_reason & SUSPEND_REASON_CPU_THROTTLE;
-    switch(result->state) {
-    case RESULT_NEW:
-        strBuffer += _("New"); 
-        break;
-    case RESULT_FILES_DOWNLOADING:
-        if (result->ready_to_report) {
-            strBuffer += _("Download failed");
-        } else {
-            strBuffer += _("Downloading");
-            if (status.network_suspend_reason) {
-                strBuffer += _(" (suspended)");
-            }
-        }
-        break;
-    case RESULT_FILES_DOWNLOADED:
-        if (result->project_suspended_via_gui) {
-            strBuffer += _("Project suspended by user");
-        } else if (result->suspended_via_gui) {
-            strBuffer += _("Task suspended by user");
-        } else if (status.task_suspend_reason && !throttled) {
-            strBuffer += _("Suspended");
-            if (status.task_suspend_reason & SUSPEND_REASON_BATTERIES) {
-                strBuffer += _(" - on batteries");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_USER_ACTIVE) {
-                strBuffer += _(" - user active");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_USER_REQ) {
-                strBuffer += _(" - computation suspended");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_TIME_OF_DAY) {
-                strBuffer += _(" - time of day");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_BENCHMARKS) {
-                strBuffer += _(" - CPU benchmarks");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_DISK_SIZE) {
-                strBuffer += _(" - need disk space");
-            }
-            if (status.task_suspend_reason & SUSPEND_REASON_EXCLUSIVE_APP_RUNNING) {
-                strBuffer += _(" - an exclusive app is running");
-            }
-            if (result->resources.size()) {
-                strBuffer += wxString(wxT(" (")) + wxString(result->resources.c_str(), wxConvUTF8) + wxString(wxT(")"));
-            }
-        } else if (result->active_task) {
-            if (result->too_large) {
-                strBuffer += _("Waiting for memory");
-            } else if (result->needs_shmem) {
-                strBuffer += _("Waiting for shared memory");
-            } else if (result->scheduler_state == CPU_SCHED_SCHEDULED) {
-                if (result->edf_scheduled) {
-                    strBuffer += _("Running, high priority");
-                } else {
-                    strBuffer += _("Running");
-                }
-#if 0
-                // doesn't work - project pointer not there
-                if (result->project->non_cpu_intensive) {
-                    strBuffer += _(" (non-CPU-intensive)");
-                }
-#endif
-            } else if (result->scheduler_state == CPU_SCHED_PREEMPTED) {
-                strBuffer += _("Waiting to run");
-            } else if (result->scheduler_state == CPU_SCHED_UNINITIALIZED) {
-                strBuffer += _("Ready to start");
-            }
-            if (result->resources.size()) {
-                strBuffer += wxString(wxT(" (")) + wxString(result->resources.c_str(), wxConvUTF8) + wxString(wxT(")"));
-            }
-        } else {
-            strBuffer += _("Ready to start");
-        }
-        if (result->gpu_mem_wait) {
-            strBuffer += _(" (waiting for GPU memory)");
-        }
-        break;
-    case RESULT_COMPUTE_ERROR:
-        strBuffer += _("Computation error");
-        break;
-    case RESULT_FILES_UPLOADING:
-        if (result->ready_to_report) {
-            strBuffer += _("Upload failed");
-        } else {
-            strBuffer += _("Uploading");
-            if (status.network_suspend_reason) {
-                strBuffer += _(" (suspended)");
-            }
-        }
-        break;
-    case RESULT_ABORTED:
-        switch(result->exit_status) {
-        case ERR_ABORTED_VIA_GUI:
-            strBuffer += _("Aborted by user");
-            break;
-        case ERR_ABORTED_BY_PROJECT:
-            strBuffer += _("Aborted by project");
-            break;
-        case ERR_UNSTARTED_LATE:
-            strBuffer += _("Aborted: not started by deadline");
-            break;
-        default:
-            strBuffer += _("Aborted");
-        }
-        break;
-    default:
-        if (result->got_server_ack) {
-            strBuffer += _("Acknowledged");
-        } else if (result->ready_to_report) {
-            strBuffer += _("Ready to report");
-        } else {
-            strBuffer.Format(_("Error: invalid state '%d'"), result->state);
-        }
-        break;
-    }
-}
 
 
 wxInt32 CViewWork::FormatStatus(wxInt32 item, wxString& strBuffer) const {
@@ -1249,7 +1120,7 @@ void CViewWork::GetDocProjectURL(wxInt32 item, wxString& strBuffer) const {
     RESULT* result = wxGetApp().GetDocument()->result(item);
 
     if (result) {
-        strBuffer = wxString(result->project_url.c_str(), wxConvUTF8);
+        strBuffer = wxString(result->project_url, wxConvUTF8);
     }
 }
 

@@ -64,6 +64,13 @@
 //   The email should gently prod them to start running the project again.
 //
 
+$cli_only = true;
+require_once("../inc/util_ops.inc");
+require_once("../inc/email.inc");
+
+db_init();
+set_time_limit(0);
+
 $globals->start_interval = 14*86400;
 $globals->email_interval = 200*86400;
 $globals->lapsed_interval = 60*86400;
@@ -98,13 +105,6 @@ for ($i=1; $i<$argc; $i++) {
         exit (1);
     }
 }
-
-require_once('../project/project.inc');
-require_once("../inc/db.inc");
-require_once("../inc/email.inc");
-
-db_init();
-set_time_limit(0);
 
 // File names for the various mail types.
 // Change these here if needed.
@@ -187,7 +187,7 @@ function replace($user, $template) {
         $user->email_addr,
         gmdate('d F Y', $user->create_time),
         number_format($user->total_credit, 0),
-        URL_BASE."opt_out.php?code=".salted_key($user->authenticator)."&userid=$user->id",
+        opt_out_url($user),
         $user->id,
         floor ((time() - last_rpc_time($user)) / 86400),
     );

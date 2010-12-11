@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 18832 2009-08-13 03:35:26Z davea $
+## $Id: Makefile.am 21894 2010-07-12 21:35:05Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -9,9 +9,11 @@ AM_LDFLAGS += -static
 if ENABLE_LIBRARIES
 
 libsched_sources = \
+    credit.cpp \
     sched_shmem.cpp \
     sched_util.cpp \
     sched_config.cpp \
+    sched_limit.cpp \
     sched_msgs.cpp \
     ../db/boinc_db.cpp \
     ../db/db_base.cpp \
@@ -28,7 +30,9 @@ libsched_la_LIBADD= $(SSL_LIBS)
 ## install only headers that are meant for exporting the API !!
 if INSTALL_HEADERS
 pkginclude_HEADERS = \
+	credit.h \
 	sched_config.h \
+	sched_limit.h \
 	sched_msgs.h \
 	sched_util.h \
 	../tools/backend_lib.h \
@@ -70,11 +74,11 @@ all-local: $(all_local)
 
 $(LIBSCHED_STATIC): libsched.la
 	rm -f $(LIBSCHED_STATIC)
-	$(LN) .libs/$(LIBSCHED_STATIC)
+	$(LN) .libs/$(LIBSCHED_STATIC) .
 
 $(LIBSCHED_FCGI_STATIC): libsched_fcgi.la
 	rm -f $(LIBSCHED_FCGI_STATIC)
-	$(LN) .libs/$(LIBSCHED_FCGI_STATIC)
+	$(LN) .libs/$(LIBSCHED_FCGI_STATIC) .
 
 
 endif
@@ -97,6 +101,7 @@ bin_PROGRAMS = \
 
 sched_PROGRAMS = \
     census \
+	credit_test \
     db_dump \
     db_purge \
     feeder \
@@ -145,6 +150,7 @@ cgi_sources = \
     sched_customize.cpp \
     sched_hr.cpp \
     sched_resend.cpp \
+    sched_limit.cpp \
     sched_locality.cpp \
     sched_result.cpp \
     sched_score.cpp \
@@ -162,6 +168,10 @@ census_SOURCES = \
     hr.cpp \
     hr_info.cpp
 census_LDADD = $(SERVERLIBS)
+
+credit_test_SOURCES = \
+	credit_test.cpp
+credit_test_LDADD = $(SERVERLIBS)
 
 feeder_SOURCES = \
     feeder.cpp \
@@ -259,7 +269,6 @@ cgi_PROGRAMS += fcgi \
 fcgi_SOURCES = $(cgi_sources)
 fcgi_CPPFLAGS = -D_USING_FCGI_ $(AM_CPPFLAGS)
 fcgi_LDADD = $(SERVERLIBS_FCGI)
-
 
 fcgi_file_upload_handler_SOURCES = \
     file_upload_handler.cpp \

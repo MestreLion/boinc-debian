@@ -46,6 +46,9 @@
 #include "macAccessiblity.h"
 #endif
 
+#include "BOINCBaseView.h"
+
+
 class CBOINCBaseView;
 class CDrawProgressBarEvent;
 
@@ -100,12 +103,8 @@ private:
 #ifdef __WXMAC__
     void                    SetupMacAccessibilitySupport();
     void                    RemoveMacAccessibilitySupport();
-    CBOINCBaseView*         GetParentView() { return m_pParentView; }
-    
-    HIViewRef               m_headerView;
-    HIViewRef               m_bodyView;
 
-    struct ListAccessData   accessibilityHandlerData;
+    ListAccessData          accessibilityHandlerData;
     
     EventHandlerRef         m_pHeaderAccessibilityEventHandlerRef;
     EventHandlerRef         m_pBodyAccessibilityEventHandlerRef;

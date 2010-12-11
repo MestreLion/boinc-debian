@@ -72,6 +72,7 @@ public:
     void CreateComponent();
 	void UpdateInterface();
 	void ReskinInterface();
+   	void MessagesViewed();
     void OnBtnClick(wxCommandEvent& event);
 	void OnPaint(wxPaintEvent& event); 
 	void UpdateProjectArray();
@@ -88,6 +89,7 @@ public:
 
 protected:
 	void OnEraseBackground(wxEraseEvent& event);
+	void OnMessageCheck(wxTimerEvent& WXUNUSED(event));
 
 private:
 	wxTimer* checkForMessagesTimer;
@@ -95,10 +97,7 @@ private:
 	int m_leftIndex;
 	bool receivedErrorMessage;
 	bool alertMessageDisplayed;
-	size_t lastMessageId;
     bool m_bIs_acct_mgr_detected;
-	void OnMessageCheck(wxTimerEvent& WXUNUSED(event));
-   	void MessagesViewed();
 	void UpdateDisplayedProjects();
 };
 

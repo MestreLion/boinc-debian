@@ -22,6 +22,8 @@
 #include <string>
 #include <mysql.h>
 
+extern bool g_print_queries;
+
 // if SQL columns are not 'not null', you must use these safe_atoi, safe_atof
 // instead of atoi, atof, since the strings returned by MySQL may be NULL.
 //
@@ -94,6 +96,7 @@ public:
     int insert_batch(std::string&);
     int update();
     int update_field(const char*, const char* where_clause=NULL);
+    int update_fields_noid(char* set_clause, char* where_clause);
     int delete_from_db();
     int get_field_int(const char*, int&);
     int get_field_str(const char*, char*, int);

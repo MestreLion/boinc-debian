@@ -3,9 +3,9 @@
 // Purpose:     Implements wxTaskBarIconEx class for manipulating icons on
 //              the Windows task bar.
 // Author:      Julian Smart
-// Modified by:
+// Modified by: Rom Walton
 // Created:     24/3/98
-// RCS-ID:      $Id: taskbarex.cpp 20874 2010-03-12 17:03:53Z romw $
+// RCS-ID:      $Id: taskbarex.cpp 22576 2010-10-21 16:02:49Z romw $
 // Copyright:   (c)
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////
@@ -20,16 +20,34 @@
 #include "BOINCTaskBar.h"
 
 
+// Add items new to Windows Vista and Windows 7
+//
+#ifndef NIF_GUID
+#define NIF_GUID                    0x00000020
+#endif
+#ifndef NIF_REALTIME
+#define NIF_REALTIME                0x00000040
+#endif
+#ifndef NIF_SHOWTIP
+#define NIF_SHOWTIP                 0x00000080
+#endif
+#ifndef NIIF_LARGE_ICON
+#define NIIF_LARGE_ICON             0x00000010
+#endif
+#ifndef NIIF_RESPECT_QUIET_TIME
+#define NIIF_RESPECT_QUIET_TIME     0x00000010
+#endif
+
+
 LRESULT APIENTRY wxTaskBarIconExWindowProc( HWND hWnd, unsigned msg, UINT wParam, LONG lParam );
 
 wxChar* wxTaskBarExWindowClass = (wxChar*) wxT("wxTaskBarExWindowClass");
-wxChar* wxTaskBarExWindow = (wxChar*) wxT("wxTaskBarExWindow");
+wxChar* wxTaskBarExWindow      = (wxChar*) wxT("wxTaskBarExWindow");
 
-const UINT WM_TASKBARCREATED   = ::RegisterWindowMessage(wxT("TaskbarCreated"));
-const UINT WM_TASKBARSHUTDOWN  = ::RegisterWindowMessage(wxT("TaskbarShutdown"));
-
-bool   wxTaskBarIconEx::sm_registeredClass = FALSE;
-UINT   wxTaskBarIconEx::sm_taskbarMsg = 0;
+const UINT WM_TASKBARCREATED    = ::RegisterWindowMessage(wxT("TaskbarCreated"));
+const UINT WM_TASKBARMESSAGE    = ::RegisterWindowMessage(wxT("TaskbarMessage"));
+const UINT WM_TASKBARSHUTDOWN   = ::RegisterWindowMessage(wxT("TaskbarShutdown"));
+const UINT WM_TASKBARAPPRESTORE = ::RegisterWindowMessage(wxT("TaskbarAppRestore"));
 
 DEFINE_EVENT_TYPE( wxEVT_TASKBAR_CREATED )
 DEFINE_EVENT_TYPE( wxEVT_TASKBAR_CONTEXT_MENU )
@@ -40,6 +58,7 @@ DEFINE_EVENT_TYPE( wxEVT_TASKBAR_BALLOON_HIDE )
 DEFINE_EVENT_TYPE( wxEVT_TASKBAR_BALLOON_TIMEOUT )
 DEFINE_EVENT_TYPE( wxEVT_TASKBAR_BALLOON_USERCLICK )
 DEFINE_EVENT_TYPE( wxEVT_TASKBAR_SHUTDOWN )
+DEFINE_EVENT_TYPE( wxEVT_TASKBAR_APPRESTORE )
 
 IMPLEMENT_DYNAMIC_CLASS(wxTaskBarIconEx, wxEvtHandler)
 
@@ -49,25 +68,23 @@ BEGIN_EVENT_TABLE (wxTaskBarIconEx, wxEvtHandler)
 END_EVENT_TABLE ()
 
 
-wxTaskBarIconEx::wxTaskBarIconEx(void)
+wxTaskBarIconEx::wxTaskBarIconEx()
 {
-    m_hWnd = 0;
+    m_pTaskbarMutex = new wxMutex();
+    m_iTaskbarID = 0;
     m_iconAdded = FALSE;
-
-    if (RegisterWindowClass())
-        m_hWnd = CreateTaskBarWindow( wxTaskBarExWindow );
+    m_hWnd = CreateTaskBarWindow( wxTaskBarExWindow );
 }
 
-wxTaskBarIconEx::wxTaskBarIconEx( wxChar* szWindowTitle )
+wxTaskBarIconEx::wxTaskBarIconEx( wxChar* szWindowTitle, wxInt32 iTaskbarID )
 {
-    m_hWnd = 0;
+    m_pTaskbarMutex = new wxMutex();
+    m_iTaskbarID = iTaskbarID;
     m_iconAdded = FALSE;
-
-    if (RegisterWindowClass())
-        m_hWnd = CreateTaskBarWindow( szWindowTitle );
+    m_hWnd = CreateTaskBarWindow( szWindowTitle );
 }
 
-wxTaskBarIconEx::~wxTaskBarIconEx(void)
+wxTaskBarIconEx::~wxTaskBarIconEx()
 {
     if (m_iconAdded)
     {
@@ -84,12 +101,8 @@ wxTaskBarIconEx::~wxTaskBarIconEx(void)
 // Events
 void wxTaskBarIconEx::OnClose(wxCloseEvent& WXUNUSED(event))
 {
-    wxLogTrace(wxT("Function Start/End"), wxT("wxTaskBarIconEx::OnClose - Function Begin"));
-
     ::DestroyWindow((HWND) m_hWnd);
     m_hWnd = 0;
-
-    wxLogTrace(wxT("Function Start/End"), wxT("wxTaskBarIconEx::OnClose - Function End"));
 }
 
 void wxTaskBarIconEx::OnTaskBarCreated(wxTaskBarIconExEvent& WXUNUSED(event))
@@ -99,7 +112,7 @@ void wxTaskBarIconEx::OnTaskBarCreated(wxTaskBarIconExEvent& WXUNUSED(event))
 }
 
 // Operations
-bool wxTaskBarIconEx::SetIcon(const wxIcon& icon)
+bool wxTaskBarIconEx::SetIcon(const wxIcon& icon, const wxString& message)
 {
     if (!IsOK())
         return false;
@@ -107,49 +120,25 @@ bool wxTaskBarIconEx::SetIcon(const wxIcon& icon)
     if (!icon.Ok())
         return false;
 
-    memset(&notifyData, 0, sizeof(notifyData));
+    memset(&notifyData, 0, sizeof(NOTIFYICONDATA));
     notifyData.cbSize           = sizeof(notifyData);
     notifyData.hWnd             = (HWND) m_hWnd;
-    notifyData.uID              = 99;
-    notifyData.uCallbackMessage = sm_taskbarMsg;
-    notifyData.uFlags           = NIF_MESSAGE | NIF_ICON;
+    notifyData.uID              = m_iTaskbarID;
+    notifyData.uCallbackMessage = WM_TASKBARMESSAGE;
+    notifyData.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_REALTIME;
     notifyData.uVersion         = NOTIFYICON_VERSION;
-
-    lstrcpyn(notifyData.szInfo, WXSTRINGCAST wxEmptyString, sizeof(notifyData.szInfo));
-    lstrcpyn(notifyData.szInfoTitle, WXSTRINGCAST wxEmptyString, sizeof(notifyData.szInfoTitle));
-    lstrcpyn(notifyData.szTip, WXSTRINGCAST wxEmptyString, sizeof(notifyData.szTip));
     notifyData.hIcon            = (HICON) icon.GetHICON();
 
-    UpdateIcon();
-    return m_iconAdded;
-}
-
-bool wxTaskBarIconEx::SetTooltip(const wxString& message)
-{
-    if (!IsOK())
-        return false;
-
-    if (message.empty())
-        return false;
-
-    memset(&notifyData, 0, sizeof(notifyData));
-    notifyData.cbSize           = sizeof(notifyData);
-    notifyData.hWnd             = (HWND) m_hWnd;
-    notifyData.uID              = 99;
-    notifyData.uCallbackMessage = sm_taskbarMsg;
-    notifyData.uFlags           = NIF_MESSAGE | NIF_TIP;
-    notifyData.uVersion         = NOTIFYICON_VERSION;
-
-    lstrcpyn(notifyData.szInfo, WXSTRINGCAST wxEmptyString, sizeof(notifyData.szInfo));
-    lstrcpyn(notifyData.szInfoTitle, WXSTRINGCAST wxEmptyString, sizeof(notifyData.szInfoTitle));
-    lstrcpyn(notifyData.szTip, WXSTRINGCAST message, sizeof(notifyData.szTip));
-    notifyData.hIcon            = NULL;
+    if (!message.empty()) {
+        notifyData.uFlags       |= NIF_TIP;
+        lstrcpyn(notifyData.szTip, WXSTRINGCAST message, sizeof(notifyData.szTip));
+    }
 
     UpdateIcon();
     return m_iconAdded;
 }
 
-bool wxTaskBarIconEx::SetBalloon(const wxIcon& icon, const wxString title, const wxString message, unsigned int timeout, unsigned int iconballoon)
+bool wxTaskBarIconEx::SetBalloon(const wxIcon& icon, const wxString title, const wxString message, unsigned int iconballoon)
 {
     if (!IsOK())
         return false;
@@ -157,20 +146,43 @@ bool wxTaskBarIconEx::SetBalloon(const wxIcon& icon, const wxString title, const
     if (!icon.Ok())
         return false;
 
-    memset(&notifyData, 0, sizeof(notifyData));
+    memset(&notifyData, 0, sizeof(NOTIFYICONDATA));
     notifyData.cbSize           = sizeof(notifyData);
     notifyData.hWnd             = (HWND) m_hWnd;
-    notifyData.uID              = 99;
-    notifyData.uCallbackMessage = sm_taskbarMsg;
-    notifyData.uFlags           = NIF_MESSAGE | NIF_INFO | NIF_TIP | NIF_ICON;
-    notifyData.dwInfoFlags      = iconballoon | NIIF_NOSOUND;
-    notifyData.uTimeout         = timeout;
+    notifyData.uID              = m_iTaskbarID;
+    notifyData.uCallbackMessage = WM_TASKBARMESSAGE;
+    notifyData.uFlags           = NIF_MESSAGE | NIF_INFO | NIF_ICON | NIF_REALTIME;
+    notifyData.dwInfoFlags      = iconballoon | NIIF_NOSOUND | NIIF_RESPECT_QUIET_TIME;
     notifyData.uVersion         = NOTIFYICON_VERSION;
+    notifyData.hIcon            = (HICON) icon.GetHICON();
 
-    lstrcpyn(notifyData.szInfo, WXSTRINGCAST message, sizeof(notifyData.szInfo));
     lstrcpyn(notifyData.szInfoTitle, WXSTRINGCAST title, sizeof(notifyData.szInfoTitle));
-    lstrcpyn(notifyData.szTip, WXSTRINGCAST wxEmptyString, sizeof(notifyData.szTip));
+    lstrcpyn(notifyData.szInfo, WXSTRINGCAST message, sizeof(notifyData.szInfo));
+
+    UpdateIcon();
+    return m_iconAdded;
+}
+
+bool wxTaskBarIconEx::QueueBalloon(const wxIcon& icon, const wxString title, const wxString message, unsigned int iconballoon)
+{
+    if (!IsOK())
+        return false;
+
+    if (!icon.Ok())
+        return false;
+
+    memset(&notifyData, 0, sizeof(NOTIFYICONDATA));
+    notifyData.cbSize           = sizeof(notifyData);
+    notifyData.hWnd             = (HWND) m_hWnd;
+    notifyData.uID              = m_iTaskbarID;
+    notifyData.uCallbackMessage = WM_TASKBARMESSAGE;
+    notifyData.uFlags           = NIF_MESSAGE | NIF_INFO | NIF_ICON;
+    notifyData.dwInfoFlags      = iconballoon | NIIF_RESPECT_QUIET_TIME;
+    notifyData.uVersion         = NOTIFYICON_VERSION;
     notifyData.hIcon            = (HICON) icon.GetHICON();
+
+    lstrcpyn(notifyData.szInfoTitle, WXSTRINGCAST title, sizeof(notifyData.szInfoTitle));
+    lstrcpyn(notifyData.szInfo, WXSTRINGCAST message, sizeof(notifyData.szInfo));
 
     UpdateIcon();
     return m_iconAdded;
@@ -181,16 +193,14 @@ bool wxTaskBarIconEx::RemoveIcon()
     if (!m_iconAdded)
         return FALSE;
 
-    memset(&notifyData, 0, sizeof(notifyData));
-    notifyData.cbSize = sizeof(notifyData);
-    notifyData.hWnd = (HWND) m_hWnd;
-    notifyData.uCallbackMessage = sm_taskbarMsg;
-    notifyData.uFlags = NIF_MESSAGE;
-    notifyData.hIcon = 0 ; // hIcon;
-    notifyData.uID = 99;
+    memset(&notifyData, 0, sizeof(NOTIFYICONDATA));
+    notifyData.cbSize           = sizeof(notifyData);
+    notifyData.hWnd             = (HWND) m_hWnd;
+    notifyData.uID              = m_iTaskbarID;
+
     m_iconAdded = FALSE;
 
-    return (Shell_NotifyIcon(NIM_DELETE, & notifyData) != 0);
+    return (Shell_NotifyIcon(NIM_DELETE, &notifyData) != 0);
 }
 
 void wxTaskBarIconEx::UpdateIcon()
@@ -209,17 +219,10 @@ void wxTaskBarIconEx::UpdateIcon()
     }
 }
 
-bool wxTaskBarIconEx::PopupMenu(wxMenu *menu) //, int x, int y);
+bool wxTaskBarIconEx::PopupMenu(wxMenu *menu)
 {
-    // OK, so I know this isn't thread-friendly, but
-    // what to do? We need this check.
-
-    static bool s_inPopup = FALSE;
-
-    if (s_inPopup)
-        return FALSE;
-
-    s_inPopup = TRUE;
+    wxMutexLocker lock(*m_pTaskbarMutex);
+    if (!lock.IsOk()) return false;
 
     bool        rval = FALSE;
     wxWindow*   win;
@@ -237,121 +240,108 @@ bool wxTaskBarIconEx::PopupMenu(wxMenu *menu) //, int x, int y);
     menu->UpdateUI();
 
     // Work around a WIN32 bug
-    ::SetForegroundWindow ((HWND) win->GetHWND ());
+    ::SetForegroundWindow ((HWND) win->GetHWND());
 
     rval = win->PopupMenu(menu, 0, 0);
 
     // Work around a WIN32 bug
-    ::PostMessage ((HWND) win->GetHWND(),WM_NULL,0,0L);
+    ::PostMessage ((HWND) win->GetHWND(), WM_NULL, 0, 0L);
 
     win->PopEventHandler(FALSE);
     win->Destroy();
     delete win;
 
-    s_inPopup = FALSE;
-
     return rval;
 }
 
-
-bool wxTaskBarIconEx::RegisterWindowClass()
+bool wxTaskBarIconEx::FireAppRestore()
 {
-    if (sm_registeredClass)
-        return TRUE;
-
-    // Also register the taskbar message here
-    sm_taskbarMsg = ::RegisterWindowMessage(wxT("wxTaskBarIconExMessage"));
-
-    WNDCLASS        wc;
-    bool        rc;
-
-    HINSTANCE hInstance = GetModuleHandle(NULL);
-
-    /*
-     * set up and register window class
-     */
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = (WNDPROC) wxTaskBarIconExWindowProc;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    wc.hInstance = hInstance;
-    wc.hIcon = 0;
-    wc.hCursor = 0;
-    wc.hbrBackground = 0;
-    wc.lpszMenuName = NULL;
-    wc.lpszClassName = wxTaskBarExWindowClass ;
-    rc = (::RegisterClass( &wc ) != 0);
-
-    sm_registeredClass = (rc != 0);
-
-    return( (rc != 0) );
+    HWND hWnd = ::FindWindow(wxTaskBarExWindowClass, NULL);
+    if (hWnd) {
+        ::SendMessage(hWnd, WM_TASKBARAPPRESTORE, NULL, NULL);
+        return true;
+    }
+    return false;
 }
 
 WXHWND wxTaskBarIconEx::CreateTaskBarWindow( wxChar* szWindowTitle )
 {
     HINSTANCE hInstance = GetModuleHandle(NULL);
+    HWND hWnd = NULL;
+    WNDCLASS wc;
 
-    HWND hWnd = CreateWindowEx (0, wxTaskBarExWindowClass,
-            szWindowTitle,
-            WS_OVERLAPPED,
-            0,
-            0,
-            10,
-            10,
-            NULL,
-            (HMENU) 0,
-            hInstance,
-            NULL);
+    if (!::GetClassInfo( hInstance, wxTaskBarExWindowClass, &wc )) {
+        wc.style = CS_HREDRAW | CS_VREDRAW;
+        wc.lpfnWndProc = (WNDPROC) wxTaskBarIconExWindowProc;
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = 0;
+        wc.hInstance = hInstance;
+        wc.hIcon = 0;
+        wc.hCursor = 0;
+        wc.hbrBackground = 0;
+        wc.lpszMenuName = NULL;
+        wc.lpszClassName = wxTaskBarExWindowClass;
+        ::RegisterClass(&wc);
+    }
 
-    return (WXHWND) hWnd;
+    hWnd = ::CreateWindowEx (
+        0,
+        wxTaskBarExWindowClass,
+        szWindowTitle,
+        WS_OVERLAPPED,
+        0,
+        0,
+        10,
+        10,
+        NULL,
+        (HMENU)0,
+        hInstance,
+        NULL
+    );
+
+    return (WXHWND)hWnd;
 }
 
 bool wxTaskBarIconEx::IsBalloonsSupported()
 {
-#ifdef __WXMSW__
     wxInt32 iMajor = 0, iMinor = 0;
     if ( wxWINDOWS_NT == wxGetOsVersion( &iMajor, &iMinor ) )
     {
-        if ( (5 >= iMajor) && (0 <= iMinor) )
+        if ( (6 >= iMajor) || ((5 >= iMajor) && (0 <= iMinor)) )
             return true;
     }
-#endif
     return false;
 }
 
 long wxTaskBarIconEx::WindowProc( WXHWND hWnd, unsigned int msg, unsigned int wParam, long lParam )
 {
-    wxLogTrace(wxT("Function Start/End"), wxT("wxTaskBarIconEx::WindowProc - Function Begin"));
-
     wxEventType eventType = 0;
     long        lReturnValue = 0;     
 
     if      ( WM_CLOSE == msg )
     {
-        wxLogTrace(wxT("Function Status"), wxT("wxTaskBarIconEx::WindowProc - WM_CLOSE Detected"));
- 
         wxCloseEvent eventClose(wxEVT_CLOSE_WINDOW);
         ProcessEvent(eventClose);
 
-        if ( !eventClose.GetSkipped() )
+        if ( !eventClose.GetSkipped() ) {
             lReturnValue = DefWindowProc((HWND) hWnd, msg, wParam, lParam);
-        else
+        } else {
             lReturnValue = 0;
+        }
     }
     else if ( WM_TASKBARCREATED == msg )
     {
-        wxLogTrace(wxT("Function Status"), wxT("wxTaskBarIconEx::WindowProc - WM_TASKBARCREATED Detected"));
         eventType = wxEVT_TASKBAR_CREATED;
     }
     else if ( WM_TASKBARSHUTDOWN == msg )
     {
-        wxLogTrace(wxT("Function Status"), wxT("wxTaskBarIconEx::WindowProc - WM_TASKBARSHUTDOWN Detected"));
         eventType = wxEVT_TASKBAR_SHUTDOWN;
     }
-    if (msg != sm_taskbarMsg)
-        lReturnValue = DefWindowProc((HWND) hWnd, msg, wParam, lParam);
-
-    if ( 0 == eventType )
+    else if ( WM_TASKBARAPPRESTORE == msg )
+    {
+        eventType = wxEVT_TASKBAR_APPRESTORE;
+    }
+    else if ( WM_TASKBARMESSAGE == msg )
     {
         switch (lParam)
         {
@@ -412,16 +402,17 @@ long wxTaskBarIconEx::WindowProc( WXHWND hWnd, unsigned int msg, unsigned int wP
                 break;
         }
     }
+    else
+    {
+        lReturnValue = DefWindowProc((HWND) hWnd, msg, wParam, lParam);
+    }
 
     if (eventType)
     {
         wxTaskBarIconExEvent event(eventType, this);
-        ProcessEvent(event);
-
-        lReturnValue = 0;
+        lReturnValue = ProcessEvent(event);
     }
 
-    wxLogTrace(wxT("Function Start/End"), wxT("wxTaskBarIconEx::WindowProc - Function End"));
     return lReturnValue;
 }
 

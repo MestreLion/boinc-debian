@@ -16,14 +16,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/email.inc");
 require_once("../inc/user.inc");
 
 $next_url = $_POST["next_url"];
+$next_url = sanitize_local_url($next_url);
 if (strlen($next_url) == 0) $next_url = "home.php";
 
 // check for email/password case
@@ -36,9 +35,8 @@ if ($email_addr && $passwd) {
     if (!$user) {
         page_head("No such account");
         echo "No account with email address <b>$email_addr</b> exists.
-            Please try again.
+            Please go back and try again.
         ";
-        print_login_form_aux($next_url, null);
         page_tail();
         exit;
     }
@@ -49,13 +47,12 @@ if ($email_addr && $passwd) {
     $passwd_hash = md5($passwd.$email_addr);
     if ($passwd_hash != $user->passwd_hash) {
         page_head("Password incorrect");
-        echo "The password you entered is incorrect. Please try again.\n";
-        print_login_form_aux($next_url, null, $email_addr);
+        echo "The password you entered is incorrect. Please go back and try again.\n";
         page_tail();
         exit;
     }
     $authenticator = $user->authenticator;
-    Header("Location: $next_url");
+    Header("Location: ".URL_BASE."$next_url");
     $perm = $_POST['stay_logged_in'];
     send_cookie('auth', $authenticator, $perm);
     exit();
@@ -102,7 +99,7 @@ if (!$authenticator) {
     $authenticator = post_str("authenticator", true);
 }
 if (!$authenticator) {
-    error_page("You must supply an account key");
+    error_page("You must supply an email address and password");
 }
 
 if (substr($user->authenticator, 0, 1) == 'x'){

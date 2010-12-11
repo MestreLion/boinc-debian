@@ -162,6 +162,8 @@ public:
 
     virtual wxString OnGetItem(size_t i) const;
 
+    int GetItemHeight(size_t i) { return (int)OnMeasureItem(i); }
+
     /// Methods
     bool Append(
         wxString strURL,
@@ -177,8 +179,6 @@ public:
     CProjectListItem* GetItem( 
         int iIndex
     );
-
-    wxCoord GetTotalClientHeight();
 
 private:
     std::vector<CProjectListItem*> m_Items;

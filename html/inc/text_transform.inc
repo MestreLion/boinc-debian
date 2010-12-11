@@ -102,8 +102,9 @@ function get_output_options($user) {
 }
 
 // Converts bbcode to proper HTML
+// If $export is true, don't use BOINC CSS
 
-function bb2html($text) {
+function bb2html($text, $export=false) {
     $urlregex = "(?:\"?)(?:(http\:\/\/)?)([^\[\"<\ ]+)(?:\"?)";
     $httpsregex = "(?:\"?)https\:\/\/([^\[\"<\ ]+)(?:\"?)";
     // List of allowable tags
@@ -113,12 +114,12 @@ function bb2html($text) {
         "@\[b\](.*?)\[/b\]@is",
         "@\[i\](.*?)\[/i\]@is",
         "@\[u\](.*?)\[/u\]@is",
-        "@\[url=$httpsregex\](.*?)\[/url\]@i",
-        "@\[url\]$httpsregex\[/url\]@i",
-        "@\[link=$urlregex\](.*?)\[/link\]@i",
-        "@\[link\]$urlregex\[/link\]@i",
-        "@\[url=$urlregex\](.*?)\[/url\]@i",
-        "@\[url\]$urlregex\[/url\]@i",
+        "@\[url=$httpsregex\](.*?)\[/url\]@is",
+        "@\[url\]$httpsregex\[/url\]@is",
+        "@\[link=$urlregex\](.*?)\[/link\]@is",
+        "@\[link\]$urlregex\[/link\]@is",
+        "@\[url=$urlregex\](.*?)\[/url\]@is",
+        "@\[url\]$urlregex\[/url\]@is",
         "@\[quote=(.*?)\](.*?)\[/quote\]@is",
         "@\[quote\](.*?)\[/quote\]@is",
         "@\[list\](.*?)\[/list\]@is",
@@ -138,38 +139,67 @@ function bb2html($text) {
     );
     
     // What the above tags are turned in to
-    $htmltags = array (
-        "'<div class=\"pre\">'.stop_recursion(remove_br('\\1')).'</div>'",
-        "'<div class=\"code\">'.stop_recursion('\\1').'</div>'",
-        "<b>\\1</b>",
-        "<i>\\1</i>",
-        "<u>\\1</u>",
-        "<a href=\"https://\\1\" rel=\"nofollow\">\\2</a>",
-        "<a href=\"https://\\1\" rel=\"nofollow\">https://\\1</a>",
-        "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
-        "<a href=\"http://\\2\" rel=\"nofollow\">http://\\2</a>",
-        "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
-        "<a href=\"http://\\2\" rel=\"nofollow\">http://\\2</a>",
-        "<div style='font-style: oblique'>\\1 wrote:</div><blockquote class='postbody'>\\2</blockquote>",
-        "<blockquote class='postbody'>\\1</blockquote>",
-        "<ul>\\1</ul><p>",
-        "<ol>\\1</ol><p>",
-        "<img src=\"http://\\2\">",
-        "<font color=\"\\1\">\\2</font>",
-        "\\1<li>\\2\n\\3",
-        "<span style=\"font-size: \\1px;\">\\2</span>",
-        "<a href=\"mailto:\\1\">\\1</a>",
-        "<a href=\"mailto:\\1\">\\1</a>",
-        "<a href=\"http://boinc.berkeley.edu/trac/ticket/\\1\">#\\1</a>",
-        "<a href=\"http://boinc.berkeley.edu/trac/wiki/\\1\">\\1</a>",
-        "<a href=\"http://boinc.berkeley.edu/trac/changeset/\\1\">[\\1]</a>"
-    );
+    if ($export) {
+        $htmltags = array (
+            "'<pre>'.stop_recursion(remove_br('\\1')).'</pre>'",
+            "'<code>'.stop_recursion('\\1').'</code>'",
+            "<b>\\1</b>",
+            "<i>\\1</i>",
+            "<u>\\1</u>",
+            "<a href=\"https://\\1\" rel=\"nofollow\">\\2</a>",
+            "<a href=\"https://\\1\" rel=\"nofollow\">https://\\1</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">http://\\2</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">http://\\2</a>",
+            "<i>\\1 wrote:</i><blockquote>\\2</blockquote>",
+            "<blockquote>\\1</blockquote>",
+            "<ul>\\1</ul><p>",
+            "<ol>\\1</ol><p>",
+            "<img hspace=\"8\" src=\"http://\\2\">",
+            "<font color=\"\\1\">\\2</font>",
+            "\\1<li>\\2\n\\3",
+            "<span style=\"font-size: \\1px;\">\\2</span>",
+            "<a href=\"mailto:\\1\">\\1</a>",
+            "<a href=\"mailto:\\1\">\\1</a>",
+            "<a href=\"http://boinc.berkeley.edu/trac/ticket/\\1\">#\\1</a>",
+            "<a href=\"http://boinc.berkeley.edu/trac/wiki/\\1\">\\1</a>",
+            "<a href=\"http://boinc.berkeley.edu/trac/changeset/\\1\">[\\1]</a>"
+        );
+    } else {
+        $htmltags = array (
+            "'<div class=\"pre\">'.stop_recursion(remove_br('\\1')).'</div>'",
+            "'<div class=\"code\">'.stop_recursion('\\1').'</div>'",
+            "<b>\\1</b>",
+            "<i>\\1</i>",
+            "<u>\\1</u>",
+            "<a href=\"https://\\1\" rel=\"nofollow\">\\2</a>",
+            "<a href=\"https://\\1\" rel=\"nofollow\">https://\\1</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">http://\\2</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
+            "<a href=\"http://\\2\" rel=\"nofollow\">http://\\2</a>",
+            "<div style='font-style: oblique'>\\1 wrote:</div><blockquote class='postbody'>\\2</blockquote>",
+            "<blockquote class='postbody'>\\1</blockquote>",
+            "<ul>\\1</ul><p>",
+            "<ol>\\1</ol><p>",
+            "<img hspace=\"8\" src=\"http://\\2\">",
+            "<font color=\"\\1\">\\2</font>",
+            "\\1<li>\\2\n\\3",
+            "<span style=\"font-size: \\1px;\">\\2</span>",
+            "<a href=\"mailto:\\1\">\\1</a>",
+            "<a href=\"mailto:\\1\">\\1</a>",
+            "<a href=\"http://boinc.berkeley.edu/trac/ticket/\\1\">#\\1</a>",
+            "<a href=\"http://boinc.berkeley.edu/trac/wiki/\\1\">\\1</a>",
+            "<a href=\"http://boinc.berkeley.edu/trac/changeset/\\1\">[\\1]</a>"
+        );
+    }
     
     // Do the actual replacing - iterations for nested items
     $lasttext = "";
     $i = 0;
-    // $i<20 to prevent DoS
-    while ($text != $lasttext && $i<20) {
+    // $i<1000 to prevent DoS
+    while ($text != $lasttext && $i<1000) {
         $lasttext = $text;
         $text = preg_replace($bbtags,$htmltags,$text);
         $i = $i + 1;
@@ -186,11 +216,10 @@ function remove_br($text){
 }
 
 
-/**
- * Stops recursion of BBCode by escaping any [ in the given text
- * @param $text The text to stop recursion in
- * @return A text that no longer can cause recursion
- **/
+// Stops recursion of BBCode by escaping any [ in the given text
+// @param $text The text to stop recursion in
+// @return A text that no longer can cause recursion
+//
 function stop_recursion($text){
     return str_replace("[", "&#91;", $text);
 }
@@ -236,5 +265,5 @@ function highlight_terms($text, $terms) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: text_transform.inc 18357 2009-06-10 22:54:21Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: text_transform.inc 22228 2010-08-14 01:49:08Z davea $";  //Generated automatically - do not edit
 ?>

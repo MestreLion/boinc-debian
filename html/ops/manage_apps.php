@@ -30,7 +30,7 @@
  * used by clients).
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_apps.php 15758 2008-08-05 22:43:14Z davea $
+ * @(#) $Id: manage_apps.php 20745 2010-02-26 21:34:20Z davea $
 \***********************************************************************/
 
 require_once('../inc/util_ops.inc');
@@ -107,7 +107,7 @@ if( !empty($_POST) ) {
 
         /* Homogendous redundancy restriction (same platform for all WU's) */
         $field="homogeneous_redundancy_".$id;
-        $new_v= ($_POST[$field]=='on') ? 1 : 0;
+        $new_v= $_POST[$field];
         $old_v=$item->homogeneous_redundancy;
         if( $new_v != $old_v ) {
             $cmd =  "UPDATE app SET homogeneous_redundancy=$new_v WHERE id=$id";
@@ -141,7 +141,7 @@ if( !empty($_POST) ) {
  * Display the DB contents in a form
  \***************************************************/
 
-admin_page_head("Manage Project Applications");
+admin_page_head("Manage Applications");
 
 if($commands) echo $commands;
 
@@ -152,7 +152,7 @@ echo "<form action='$self' method='POST'>\n";
 // Application Table:
 
 echo"<P>
-     <h2>". PROJECT . " Applications</h2>\n";
+     <h2>Applications</h2>\n";
 
 start_table("align='center'");
 echo "<TR><TH>ID #</TH>
@@ -160,7 +160,7 @@ echo "<TR><TH>ID #</TH>
       <TH>Creation<br>Time</TH>
       <TH>minimum<br>version</TH>
       <TH>weight</TH>
-      <TH>Homogeneous<br>Redundancy</TH>
+      <TH>homogeneous<br>redundancy<br>class (0=none)</TH>
       <TH>deprecated?</TH>
       <TH>DELETE?<sup>*</sup>
     </TH>
@@ -203,10 +203,10 @@ for($j=1;$j<=$Nrow;$j++){
 
 
     $field="homogeneous_redundancy_".$id;
-    $v='';
-    if( $item->homogeneous_redundancy ) $v=' CHECKED ';
+    $v = $item->homogeneous_redundancy;
     echo "  <TD align='center'>
-    <input name='$field' type='checkbox' $v></TD>\n";
+        <input name='$field' value='$v'></TD>
+    ";
 
     $field="deprecated_".$id;
     $v='';
@@ -265,5 +265,5 @@ echo "</form><p>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_apps.php 15758 2008-08-05 22:43:14Z davea $";
+$cvs_version_tracker[]="\$Id: manage_apps.php 20745 2010-02-26 21:34:20Z davea $";
 ?>

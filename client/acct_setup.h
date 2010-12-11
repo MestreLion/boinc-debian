@@ -21,7 +21,7 @@
 #include "gui_http.h"
 #include "error_numbers.h"
 
-/// represents the contents of project_info.xml
+// represents the contents of project_info.xml
 
 struct PROJECT_INIT {
     char url[256];
@@ -37,10 +37,10 @@ struct PROJECT_INIT {
 
 struct ACCOUNT_IN {
     std::string url;
-        /// the account identifier (user name or email addr)
     std::string email_addr;
-        /// the suggested friendly name for the user during account creation.
+        // the account identifier (user name or email addr)
     std::string user_name;
+        // the suggested friendly name for the user during account creation.
     std::string team_name;
     std::string passwd_hash;
 
@@ -83,18 +83,6 @@ struct CREATE_ACCOUNT_OP: public GUI_HTTP_OP {
     }
     virtual ~CREATE_ACCOUNT_OP(){}
     int do_rpc(ACCOUNT_IN&);
-    virtual void handle_reply(int http_op_retval);
-};
-
-struct GET_CURRENT_VERSION_OP: public GUI_HTTP_OP {
-    int error_num;
-
-    GET_CURRENT_VERSION_OP(GUI_HTTP* p){
-        error_num = BOINC_SUCCESS;
-        gui_http = p;
-    }
-    virtual ~GET_CURRENT_VERSION_OP(){}
-    int do_rpc();
     virtual void handle_reply(int http_op_retval);
 };
 

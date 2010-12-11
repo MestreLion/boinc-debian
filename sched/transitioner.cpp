@@ -21,10 +21,10 @@
 //    - assimilation is finished
 //
 // cmdline:
-//   [ -one_pass ]          do one pass, then exit
-//   [ -d x ]               debug level x
-//   [ -mod n i ]           process only WUs with (id mod n) == i
-//   [ -sleep_interval x ]  sleep x seconds if nothing to do
+//   [ --one_pass ]          do one pass, then exit
+//   [ --d x ]               debug level x
+//   [ --mod n i ]           process only WUs with (id mod n) == i
+//   [ --sleep_interval x ]  sleep x seconds if nothing to do
 
 #include "config.h"
 #include <vector>
@@ -42,8 +42,10 @@
 #include "common_defs.h"
 #include "error_numbers.h"
 #include "str_util.h"
+#include "svn_version.h"
 
 #include "sched_config.h"
+#include "credit.h"
 #include "sched_util.h"
 #include "sched_msgs.h"
 #ifdef GCL_SIMULATOR
@@ -66,7 +68,6 @@ int sleep_interval = DEFAULT_SLEEP_INTERVAL;
 
 void signal_handler(int) {
     log_messages.printf(MSG_NORMAL, "Signaled by simulator\n");
-    return;
 }
 
 int result_suffix(char* name) {
@@ -75,27 +76,69 @@ int result_suffix(char* name) {
     return 0;
 }
 
-// A result just timed out.
-// Update the host's avg_turnaround and max_results_day.
+// A result timed out; penalize the corresponding host_app_version
 //
-int penalize_host(int hostid, double delay_bound) {
-    DB_HOST host;
-    char buf[256];
-    int retval = host.lookup_id(hostid);
-    if (retval) return retval;
-    compute_avg_turnaround(host, delay_bound);
-    if (host.max_results_day == 0 || host.max_results_day > config.daily_result_quota) {
-        host.max_results_day = config.daily_result_quota;
-    }
-    host.max_results_day -= 1;
-    if (host.max_results_day < 1) {
-        host.max_results_day = 1;
-    }
-    sprintf(buf,
-        "avg_turnaround=%f, max_results_day=%d",
-        host.avg_turnaround, host.max_results_day
+static int result_timed_out(
+    TRANSITIONER_ITEM res_item, TRANSITIONER_ITEM& wu_item
+) {
+    DB_HOST_APP_VERSION hav;
+    char query[512], clause[512];
+
+    int gavid = generalized_app_version_id(
+        res_item.res_app_version_id, wu_item.appid
     );
-    return host.update_field(buf);
+    int retval = hav_lookup(hav, res_item.res_hostid, gavid);
+    if (retval) {
+        log_messages.printf(MSG_NORMAL,
+            "result_timed_out(): hav_lookup failed %d\n", retval
+        );
+        return retval;
+    }
+    hav.turnaround.update_var(
+        (double)wu_item.delay_bound,
+        HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
+    );
+    int n = hav.max_jobs_per_day;
+    if (n == 0) {
+        n = config.daily_result_quota;
+    }
+    if (n > config.daily_result_quota) {
+        n = config.daily_result_quota;
+    }
+    n -= 1;
+    if (n < 1) {
+        n = 1;
+    }
+    if (config.debug_quota) {
+        log_messages.printf(MSG_NORMAL,
+            "[quota] max_jobs_per_day for %d; %d->%d\n",
+            gavid, hav.max_jobs_per_day, n
+        );
+    }
+    hav.max_jobs_per_day = n;
+
+    hav.consecutive_valid = 0;
+
+    sprintf(query,
+        "turnaround_n=%.15e, turnaround_avg=%.15e, turnaround_var=%.15e, turnaround_q=%.15e, max_jobs_per_day=%d, consecutive_valid=%d",
+        hav.turnaround.n,
+        hav.turnaround.avg,
+        hav.turnaround.var,
+        hav.turnaround.q,
+        hav.max_jobs_per_day,
+        hav.consecutive_valid
+    );
+    sprintf(clause,
+        "host_id=%d and app_version_id=%d",
+        hav.host_id, hav.app_version_id
+    );
+    retval = hav.update_fields_noid(query, clause);
+    if (retval) {
+        log_messages.printf(MSG_CRITICAL,
+            "CRITICAL result_timed_out(): hav updated failed: %d\n", retval
+        );
+    }
+    return 0;
 }
 
 int handle_wu(
@@ -216,7 +259,13 @@ int handle_wu(
                         res_item.res_name, retval
                     );
                 }
-                penalize_host(res_item.res_hostid, (double)wu_item.delay_bound);
+                retval = result_timed_out(res_item, wu_item);
+                if (retval) {
+                    log_messages.printf(MSG_CRITICAL,
+                        "result_timed_out() error %d\n", retval
+                    );
+                    exit(1);
+                }
                 nover++;
                 nno_reply++;
             } else {
@@ -290,21 +339,42 @@ int handle_wu(
     // if WU has results with errors and no success yet,
     // reset homogeneous redundancy class to give other platforms a try
     //
-    if (nerrors & !(nsuccess || ninprogress)) {
+    if (nerrors && !(nsuccess || ninprogress)) {
         wu_item.hr_class = 0;
     }
 
     if (nerrors > wu_item.max_error_results) {
         log_messages.printf(MSG_NORMAL,
             "[WU#%d %s] WU has too many errors (%d errors for %d results)\n",
-            wu_item.id, wu_item.name, nerrors, (int)items.size()
+            wu_item.id, wu_item.name, nerrors, ntotal
         );
         wu_item.error_mask |= WU_ERROR_TOO_MANY_ERROR_RESULTS;
     }
-    if ((int)items.size() > wu_item.max_total_results) {
+
+    // see how many new results we need to make
+    //
+    int n_new_results_needed = wu_item.target_nresults - nunsent - ninprogress - nsuccess;
+    if (n_new_results_needed < 0) n_new_results_needed = 0;
+    int n_new_results_allowed = wu_item.max_total_results - ntotal;
+
+    // if we're already at the limit and need more, error out the WU
+    //
+    bool too_many = false;
+    if (n_new_results_allowed < 0) {
+        too_many = true;
+    } else if (n_new_results_allowed == 0) {
+        if (n_new_results_needed > 0) {
+            too_many = true;
+        }
+    } else {
+        if (n_new_results_needed > n_new_results_allowed) {
+            n_new_results_needed = n_new_results_allowed;
+        }
+    }
+    if (too_many) {
         log_messages.printf(MSG_NORMAL,
             "[WU#%d %s] WU has too many total results (%d)\n",
-            wu_item.id, wu_item.name, (int)items.size()
+            wu_item.id, wu_item.name, ntotal
         );
         wu_item.error_mask |= WU_ERROR_TOO_MANY_TOTAL_RESULTS;
     }
@@ -315,38 +385,37 @@ int handle_wu(
     if (wu_item.error_mask) {
         for (i=0; i<items.size(); i++) {
             TRANSITIONER_ITEM& res_item = items[i];
-            if (res_item.res_id) {
-                bool update_result = false;
-                switch(res_item.res_server_state) {
-                case RESULT_SERVER_STATE_UNSENT:
-                    log_messages.printf(MSG_NORMAL,
-                        "[WU#%d %s] [RESULT#%d %s] server_state:UNSENT=>OVER; outcome:=>DIDNT_NEED\n",
-                        wu_item.id, wu_item.name, res_item.res_id, res_item.res_name
-                    );
-                    res_item.res_server_state = RESULT_SERVER_STATE_OVER;
-                    res_item.res_outcome = RESULT_OUTCOME_DIDNT_NEED;
-                    update_result = true;
-                    break;
-                case RESULT_SERVER_STATE_OVER:
-                    switch (res_item.res_outcome) {
-                    case RESULT_OUTCOME_SUCCESS:
-                        switch(res_item.res_validate_state) {
-                        case VALIDATE_STATE_INIT:
-                        case VALIDATE_STATE_INCONCLUSIVE:
-                            res_item.res_validate_state = VALIDATE_STATE_NO_CHECK;
-                            update_result = true;
-                            break;
-                        }
+            if (!res_item.res_id) continue;
+            bool update_result = false;
+            switch(res_item.res_server_state) {
+            case RESULT_SERVER_STATE_UNSENT:
+                log_messages.printf(MSG_NORMAL,
+                    "[WU#%d %s] [RESULT#%d %s] server_state:UNSENT=>OVER; outcome:=>DIDNT_NEED\n",
+                    wu_item.id, wu_item.name, res_item.res_id, res_item.res_name
+                );
+                res_item.res_server_state = RESULT_SERVER_STATE_OVER;
+                res_item.res_outcome = RESULT_OUTCOME_DIDNT_NEED;
+                update_result = true;
+                break;
+            case RESULT_SERVER_STATE_OVER:
+                switch (res_item.res_outcome) {
+                case RESULT_OUTCOME_SUCCESS:
+                    switch(res_item.res_validate_state) {
+                    case VALIDATE_STATE_INIT:
+                    case VALIDATE_STATE_INCONCLUSIVE:
+                        res_item.res_validate_state = VALIDATE_STATE_NO_CHECK;
+                        update_result = true;
+                        break;
                     }
                 }
-                if (update_result) {
-                    retval = transitioner.update_result(res_item);
-                    if (retval) {
-                        log_messages.printf(MSG_CRITICAL,
-                            "[WU#%d %s] [RESULT#%d %s] result.update() == %d\n",
-                            wu_item.id, wu_item.name, res_item.res_id, res_item.res_name, retval
-                        );
-                    }
+            }
+            if (update_result) {
+                retval = transitioner.update_result(res_item);
+                if (retval) {
+                    log_messages.printf(MSG_CRITICAL,
+                        "[WU#%d %s] [RESULT#%d %s] result.update() == %d\n",
+                        wu_item.id, wu_item.name, res_item.res_id, res_item.res_name, retval
+                    );
                 }
             }
         }
@@ -360,18 +429,17 @@ int handle_wu(
     } else if (wu_item.canonical_resultid == 0) {
         // Here if no WU-level error.
         // Generate new results if needed.
-        // NOTE: n must be signed
         //
-        int n = wu_item.target_nresults - nunsent - ninprogress - nsuccess;
         std::string values;
         char value_buf[MAX_QUERY_LEN];
-        if (n > 0) {
+        if (n_new_results_needed > 0) {
             log_messages.printf(
                 MSG_NORMAL,
                 "[WU#%d %s] Generating %d more results (%d target - %d unsent - %d in progress - %d success)\n",
-                wu_item.id, wu_item.name, n, wu_item.target_nresults, nunsent, ninprogress, nsuccess
+                wu_item.id, wu_item.name, n_new_results_needed,
+                wu_item.target_nresults, nunsent, ninprogress, nsuccess
             );
-            for (j=0; j<n; j++) {
+            for (j=0; j<n_new_results_needed; j++) {
                 sprintf(suffix, "%d", max_result_suffix+j+1);
                 const char *rtfpath = config.project_path("%s", wu_item.result_template_file);
                 int priority_increase = 0;
@@ -413,40 +481,43 @@ int handle_wu(
     //  - see if all over and validated
     //
     all_over_and_validated = true;
-    bool all_over_and_ready_to_assimilate = true; // used for the defer assmilation
-	int most_recently_returned = 0;
+    bool all_over_and_ready_to_assimilate = true;
+        // used for the defer assimilation
+    double most_recently_returned = 0;
     for (i=0; i<items.size(); i++) {
         TRANSITIONER_ITEM& res_item = items[i];
-        if (res_item.res_id) {
-            if (res_item.res_server_state == RESULT_SERVER_STATE_OVER) {
-            	if ( res_item.res_received_time > most_recently_returned ) {
-            		most_recently_returned = res_item.res_received_time;
-            	}
-                if (res_item.res_outcome == RESULT_OUTCOME_SUCCESS) {
-                    if (res_item.res_validate_state == VALIDATE_STATE_INIT) {
-                        all_over_and_validated = false;
-                        all_over_and_ready_to_assimilate = false;
-                    }
-                } else if ( res_item.res_outcome == RESULT_OUTCOME_NO_REPLY ) {
-                	if ( ( res_item.res_report_deadline + config.grace_period_hours*60*60 ) > now ) {
-                		all_over_and_validated = false;
-                	}
-                }
-            } else {
-                all_over_and_validated = false;
-                all_over_and_ready_to_assimilate = false;
+        if (!res_item.res_id) continue;
+        if (res_item.res_server_state == RESULT_SERVER_STATE_OVER) {
+            if (res_item.res_received_time > most_recently_returned) {
+                most_recently_returned = res_item.res_received_time;
             }
+            if (res_item.res_outcome == RESULT_OUTCOME_SUCCESS) {
+                if (res_item.res_validate_state == VALIDATE_STATE_INIT) {
+                    all_over_and_validated = false;
+                    all_over_and_ready_to_assimilate = false;
+                }
+            } else if (res_item.res_outcome == RESULT_OUTCOME_NO_REPLY) {
+                if ((res_item.res_report_deadline + config.grace_period_hours*3600) > now) {
+                    all_over_and_validated = false;
+                }
+            }
+        } else {
+            all_over_and_validated = false;
+            all_over_and_ready_to_assimilate = false;
         }
     }
 
-    // If we are defering assimilation until all results are over
+    // If we are deferring assimilation until all results are over
     // and validated then when that happens we need to make sure
     // that it gets advanced to assimilate ready
     // the items.size is a kludge
     //
-    if (all_over_and_ready_to_assimilate == true && wu_item.assimilate_state == ASSIMILATE_INIT && items.size() > 0 && wu_item.canonical_resultid > 0
+    if (all_over_and_ready_to_assimilate
+        && wu_item.assimilate_state == ASSIMILATE_INIT
+        && items.size() > 0
+        && wu_item.canonical_resultid > 0
     ) {
-    	wu_item.assimilate_state = ASSIMILATE_READY;
+        wu_item.assimilate_state = ASSIMILATE_READY;
         log_messages.printf(MSG_NORMAL,
             "[WU#%d %s] Deferred assimililation now set to ASSIMILATE_STATE_READY\n",
             wu_item.id, wu_item.name
@@ -454,7 +525,9 @@ int handle_wu(
     }
     // if WU is assimilated, trigger file deletion
     //
-    if (wu_item.assimilate_state == ASSIMILATE_DONE && ((most_recently_returned + config.delete_delay_hours*60*60) < now)) {
+    if (wu_item.assimilate_state == ASSIMILATE_DONE
+        && ((most_recently_returned + config.delete_delay_hours*3600) < now)
+    ) {
         // can delete input files if all results OVER
         //
         if (all_over_and_validated && wu_item.file_delete_state == FILE_DELETE_INIT) {
@@ -478,50 +551,49 @@ int handle_wu(
                 continue;
             }
 
-            if (res_item.res_id) {
-                do_delete = false;
-                switch(res_item.res_outcome) {
-                case RESULT_OUTCOME_CLIENT_ERROR:
-                    do_delete = true;
-                    break;
-                case RESULT_OUTCOME_SUCCESS:
-                    do_delete = (res_item.res_validate_state != VALIDATE_STATE_INIT);
-                    break;
-                }
-                if (do_delete && res_item.res_file_delete_state == FILE_DELETE_INIT) {
-                    log_messages.printf(MSG_NORMAL,
-                        "[WU#%d %s] [RESULT#%d %s] file_delete_state:=>READY\n",
-                        wu_item.id, wu_item.name, res_item.res_id, res_item.res_name
-                    );
-                    res_item.res_file_delete_state = FILE_DELETE_READY;
+            if (!res_item.res_id) continue;
+            do_delete = false;
+            switch(res_item.res_outcome) {
+            case RESULT_OUTCOME_CLIENT_ERROR:
+                do_delete = true;
+                break;
+            case RESULT_OUTCOME_SUCCESS:
+                do_delete = (res_item.res_validate_state != VALIDATE_STATE_INIT);
+                break;
+            }
+            if (do_delete && res_item.res_file_delete_state == FILE_DELETE_INIT) {
+                log_messages.printf(MSG_NORMAL,
+                    "[WU#%d %s] [RESULT#%d %s] file_delete_state:=>READY\n",
+                    wu_item.id, wu_item.name, res_item.res_id, res_item.res_name
+                );
+                res_item.res_file_delete_state = FILE_DELETE_READY;
 
-                    retval = transitioner.update_result(res_item);
-                    if (retval) {
-                        log_messages.printf(MSG_CRITICAL,
-                            "[WU#%d %s] [RESULT#%d %s] result.update() == %d\n",
-                            wu_item.id, wu_item.name, res_item.res_id, res_item.res_name, retval
-                        );
-                    }
+                retval = transitioner.update_result(res_item);
+                if (retval) {
+                    log_messages.printf(MSG_CRITICAL,
+                        "[WU#%d %s] [RESULT#%d %s] result.update() == %d\n",
+                        wu_item.id, wu_item.name, res_item.res_id, res_item.res_name, retval
+                    );
                 }
             }
         }
-    } else if ( wu_item.assimilate_state == ASSIMILATE_DONE ) {
-		log_messages.printf(MSG_DEBUG,
-            "[WU#%d %s] not checking for items to be ready for delete because the deferred delete time has not expired.  That will occur in %d seconds\n",
+    } else if (wu_item.assimilate_state == ASSIMILATE_DONE) {
+        log_messages.printf(MSG_DEBUG,
+            "[WU#%d %s] not checking for results ready for delete because deferred delete time has not expired.  That will occur in %.0f seconds\n",
             wu_item.id,
             wu_item.name,
-            most_recently_returned + config.delete_delay_hours*60*60-(int)now
+            most_recently_returned + config.delete_delay_hours*3600-now
         );
     }
 
     // compute next transition time = minimum timeout of in-progress results
     //
-    if (wu_item.canonical_resultid) {
+    if (wu_item.canonical_resultid || wu_item.error_mask) {
         wu_item.transition_time = INT_MAX;
     } else {
-        // If there is no canonical result,
-        // make sure that the transitioner will 'see' this WU again.
-        // In principle this is NOT needed, but it is one way to make
+        // If there is no canonical result and no WU-level error,
+        // make sure that the transitioner will process this WU again.
+        // In principle this is not needed, but it makes
         // the BOINC back-end more robust.
         //
         const int ten_days = 10*86400;
@@ -532,47 +604,55 @@ int handle_wu(
     int max_grace_or_delay_time = 0;  
     for (i=0; i<items.size(); i++) {
         TRANSITIONER_ITEM& res_item = items[i];
-        if (res_item.res_id) {
-            if (res_item.res_server_state == RESULT_SERVER_STATE_IN_PROGRESS) {
-                // In cases where a result has been RESENT to a host, the
-                // report deadline time may be EARLIER than
-                // sent_time + delay_bound
-                // because the sent_time has been updated with the later
-                // "resend" time.
+        if (!res_item.res_id) continue;
+        if (res_item.res_server_state == RESULT_SERVER_STATE_IN_PROGRESS) {
+            // In cases where a result has been RESENT to a host, the
+            // report deadline time may be EARLIER than
+            // sent_time + delay_bound
+            // because the sent_time has been updated with the later
+            // "resend" time.
+            //
+            // x = res_item.res_sent_time + wu_item.delay_bound;
+            x = res_item.res_report_deadline;
+            if (x < wu_item.transition_time) {
+                wu_item.transition_time = x;
+            }
+        } else if (res_item.res_server_state == RESULT_SERVER_STATE_OVER) {
+            if (res_item.res_outcome == RESULT_OUTCOME_NO_REPLY) {
+                // Transition again after the grace period has expired
                 //
-                // x = res_item.res_sent_time + wu_item.delay_bound;
-                x = res_item.res_report_deadline;
-                if (x < wu_item.transition_time) {
-                    wu_item.transition_time = x;
+                x = res_item.res_report_deadline + config.grace_period_hours*3600;
+                if (x > now) {
+                    if (x > max_grace_or_delay_time) {
+                        max_grace_or_delay_time = x;
+                    }
                 }
-            } else if ( res_item.res_server_state == RESULT_SERVER_STATE_OVER  ) {
-            	if ( res_item.res_outcome == RESULT_OUTCOME_NO_REPLY ) {
-            		// Transition again after the grace period has expired
-                	if ( ( res_item.res_report_deadline + config.grace_period_hours*60*60 ) > now ) {
-                		x = res_item.res_report_deadline + config.grace_period_hours*60*60;
-    					if (x > max_grace_or_delay_time) {
-                    		max_grace_or_delay_time = x;
-            			}
-        			}
-                } else if ( res_item.res_outcome == RESULT_OUTCOME_SUCCESS || res_item.res_outcome == RESULT_OUTCOME_CLIENT_ERROR || res_item.res_outcome == RESULT_OUTCOME_VALIDATE_ERROR) {
-            		// Transition again after deferred delete period has experied
-                	if ( (res_item.res_received_time + config.delete_delay_hours*60*60) > now ) {
-                		x = res_item.res_received_time + config.delete_delay_hours*60*60;
-    					if (x > max_grace_or_delay_time && res_item.res_received_time > 0) {
-                    		max_grace_or_delay_time = x;
-   					    }
-                	}
+            } else if (res_item.res_outcome == RESULT_OUTCOME_SUCCESS
+                || res_item.res_outcome == RESULT_OUTCOME_CLIENT_ERROR
+                || res_item.res_outcome == RESULT_OUTCOME_VALIDATE_ERROR
+            ) {
+                // Transition again after deferred delete period has expired
+                //
+                x = res_item.res_received_time + config.delete_delay_hours*3600;
+                if (x > now) {
+                    if (x > max_grace_or_delay_time && res_item.res_received_time > 0) {
+                        max_grace_or_delay_time = x;
+                    }
                 }
             }
         }
     }
+
     // If either of the grace period or delete delay is less than
     // the next transition time then use that value
     //
-    if ( max_grace_or_delay_time < wu_item.transition_time && max_grace_or_delay_time > now && ninprogress == 0) {
+    if (max_grace_or_delay_time < wu_item.transition_time
+        && max_grace_or_delay_time > now
+        && ninprogress == 0
+    ) {
         wu_item.transition_time = max_grace_or_delay_time;
         log_messages.printf(MSG_NORMAL,
-            "[WU#%d %s] Delaying transition due to grace period or delete day.  New transition time = %d sec\n",
+            "[WU#%d %s] Delaying transition due to grace period or delete delay.  New transition time: %d\n",
             wu_item.id, wu_item.name, wu_item.transition_time
         );
     }
@@ -673,22 +753,67 @@ void main_loop() {
     }
 }
 
+void usage(char *name) {
+    fprintf(stderr,
+        "Handles transitions in the state of a WU\n"
+        " - a result has become DONE (via timeout or client reply)\n"
+        " - the WU error mask is set (e.g. by validater)\n"
+        " - assimilation is finished\n\n"
+        "Usage: %s [OPTION]...\n\n"
+        "Options: \n"
+        "  [ --one_pass ]                  do one pass, then exit\n"
+        "  [ --d x ]                       debug level x\n"
+        "  [ --mod n i ]                   process only WUs with (id mod n) == i\n"
+        "  [ --sleep_interval x ]          sleep x seconds if nothing to do\n"
+        "  [ -h | --help ]                 Show this help text.\n"
+        "  [ -v | --version ]              Shows version information.\n",
+        name
+    );
+}
+
 int main(int argc, char** argv) {
     int i, retval;
     char path[256];
 
     startup_time = time(0);
     for (i=1; i<argc; i++) {
-        if (!strcmp(argv[i], "-one_pass")) {
+        if (is_arg(argv[i], "one_pass")) {
             one_pass = true;
-        } else if (!strcmp(argv[i], "-d")) {
-            log_messages.set_debug_level(atoi(argv[++i]));
-        } else if (!strcmp(argv[i], "-mod")) {
+        } else if (is_arg(argv[i], "d")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            int dl = atoi(argv[i]);
+            log_messages.set_debug_level(dl);
+            if (dl == 4) g_print_queries = true;
+        } else if (is_arg(argv[i], "mod")) {
+            if (!argv[i+1] || !argv[i+2]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires two arguments\n\n", argv[i]);
+                usage(argv[0]);
+                exit(1);
+            }
             mod_n = atoi(argv[++i]);
             mod_i = atoi(argv[++i]);
             do_mod = true;
-        } else if (!strcmp(argv[i], "-sleep_interval")) {
-            sleep_interval = atoi(argv[++i]);
+        } else if (is_arg(argv[i], "sleep_interval")) {
+            if (!argv[++i]) {
+                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                usage(argv[0]);
+                exit(1);
+            }
+            sleep_interval = atoi(argv[i]);
+        } else if (is_arg(argv[i], "h") || is_arg(argv[i], "help")) {
+            usage(argv[0]);
+            exit(0);
+        } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
+            printf("%s\n", SVN_VERSION);
+            exit(0);
+        } else {
+            log_messages.printf(MSG_CRITICAL, "unknown command line argument: %s\n\n", argv[i]);
+            usage(argv[0]);
+            exit(1);
         }
     }
     if (!one_pass) check_stop_daemons();
@@ -713,4 +838,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 18617 2009-07-17 16:13:51Z davea $";
+const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 21835 2010-06-29 03:20:19Z boincadm $";

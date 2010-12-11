@@ -9,6 +9,9 @@
 
 //$FILE_LIST = "user/index.php project/project.inc";
 
+$cli_only = true;
+require_once("../inc/util_ops.inc");
+
 if (!isset($FILE_LIST)) {
     echo "You must edit build_po.php to specify your project's .php files\n";
     exit;
@@ -34,11 +37,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\\n"
 "X-Poedit-SourceCharset: utf-8\\n"
 
-msgid "LANG_NAME_NATIVE"
-msgstr "English"
-
-msgid "LANG_NAME_INTERNATIONAL"
-msgstr "English"
 
 HDR;
 

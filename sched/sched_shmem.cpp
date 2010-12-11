@@ -92,7 +92,7 @@ int SCHED_SHMEM::scan_tables() {
     DB_APP app;
     DB_APP_VERSION app_version;
     DB_ASSIGNMENT assignment;
-    int i, j, n, retval;
+    int i, j, n;
 
     n = 0;
     while (!platform.enumerate()) {
@@ -105,14 +105,14 @@ int SCHED_SHMEM::scan_tables() {
     nplatforms = n;
 
     n = 0;
-    app_weights = 0;
+    app_weight_sum = 0;
     while (!app.enumerate()) {
         if (app.deprecated) continue;
         apps[n++] = app;
         if (n == MAX_APPS) {
             overflow("apps", "MAX_APPS");
         }
-        app_weights += app.weight;
+        app_weight_sum += app.weight;
     }
     napps = n;
 
@@ -147,6 +147,15 @@ int SCHED_SHMEM::scan_tables() {
             for (unsigned int k=0; k<avs.size(); k++) {
                 APP_VERSION& av1 = avs[k];
                 if (av1.deprecated) continue;
+                if (av1.min_core_version && av1.min_core_version < 10000) {
+                    fprintf(stderr, "min core version too small - multiplying by 100\n");
+                    av1.min_core_version *= 100;
+                }
+                if (av1.max_core_version && av1.max_core_version < 10000) {
+                    fprintf(stderr, "max core version too small - multiplying by 100\n");
+                    av1.max_core_version *= 100;
+                }
+
                 app_versions[n++] = av1;
                 if (n == MAX_APP_VERSIONS) {
                     overflow("app_versions", "MAX_APP_VERSIONS");
@@ -155,6 +164,22 @@ int SCHED_SHMEM::scan_tables() {
         }
     }
     napp_versions = n;
+
+    // see which resources we have app versions for
+    //
+    have_cpu_apps = false;
+    have_cuda_apps = false;
+    have_ati_apps = false;
+    for (i=0; i<napp_versions; i++) {
+        APP_VERSION& av = app_versions[i];
+        if (strstr(av.plan_class, "cuda")) {
+            have_cuda_apps = true;
+        } else if (strstr(av.plan_class, "ati")) {
+            have_ati_apps = true;
+        } else {
+            have_cpu_apps = true;
+        }
+    }
 
     n = 0;
     while (!assignment.enumerate()) {
@@ -174,34 +199,38 @@ PLATFORM* SCHED_SHMEM::lookup_platform(char* name) {
             return &platforms[i];
         }
     }
-    return 0;
+    return NULL;
 }
 
 PLATFORM* SCHED_SHMEM::lookup_platform_id(int id) {
     for (int i=0; i<nplatforms; i++) {
         if (platforms[i].id == id) return &platforms[i];
     }
-    return 0;
+    return NULL;
 }
 
 APP* SCHED_SHMEM::lookup_app(int id) {
     for (int i=0; i<napps; i++) {
         if (apps[i].id == id) return &apps[i];
     }
-    return 0;
+    return NULL;
 }
 
-// find an app version for a given platform
-//
-APP_VERSION* SCHED_SHMEM::lookup_app_version(int appid, int platformid) {
+APP* SCHED_SHMEM::lookup_app_name(char* name) {
+    for (int i=0; i<napps; i++) {
+        if (!strcmp(name, apps[i].name)) return &apps[i];
+    }
+    return NULL;
+}
+
+APP_VERSION* SCHED_SHMEM::lookup_app_version(int id) {
     APP_VERSION* avp;
     for (int i=0; i<napp_versions; i++) {
         avp = &app_versions[i];
-        if (avp->appid == appid && avp->platformid == platformid) {
+        if (avp->id == id) {
             return avp;
         }
     }
-
     return NULL;
 }
 
@@ -268,4 +297,4 @@ void SCHED_SHMEM::show(FILE* f) {
     }
 }
 
-const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 16904 2009-01-13 23:06:02Z korpela $";
+const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 21812 2010-06-25 18:54:37Z davea $";

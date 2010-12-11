@@ -48,14 +48,14 @@ BEGIN_EVENT_TABLE(StatImageLoader, wxWindow)
 	EVT_MENU(WEBSITE_URL_MENU_ID_REMOVE_PROJECT,StatImageLoader::OnMenuLinkClicked)
 END_EVENT_TABLE() 
 
-StatImageLoader::StatImageLoader(wxWindow* parent, std::string url) : 
+StatImageLoader::StatImageLoader(wxWindow* parent, char* url) : 
     wxWindow(parent, wxID_ANY, wxDefaultPosition, wxSize(40,40), wxNO_BORDER) 
 {
-    m_prjUrl = url;
+    strcpy(project_url,  url);
 	project_files_downloaded_time = 1;
 	project_last_rpc_time = 1;
 	BuildUserStatToolTip();
-	statPopUpMenu = new wxMenu(wxSIMPLE_BORDER);
+	statPopUpMenu = new wxMenu();
     AddMenuItems();
 }
 
@@ -95,7 +95,7 @@ void StatImageLoader::BuildUserStatToolTip() {
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-    PROJECT* project = pDoc->state.lookup_project(m_prjUrl);
+    PROJECT* project = pDoc->state.lookup_project(project_url);
 
     strBuffer.Printf(
         _("%s. Work done by %s: %0.2f"),
@@ -114,20 +114,11 @@ void StatImageLoader::AddMenuItems()
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-#ifndef __WXMAC__
-    CSkinSimple* pSkinSimple = wxGetApp().GetSkinManager()->GetSimple();
-
-    wxASSERT(pSkinSimple);
-    wxASSERT(wxDynamicCast(pSkinSimple, CSkinSimple));
-#endif
-	PROJECT* project = pDoc->state.lookup_project(m_prjUrl);
+	PROJECT* project = pDoc->state.lookup_project(project_url);
 	urlCount = project->gui_urls.size();
 
 	// Add the home page link
     wxMenuItem *urlItem = new wxMenuItem(statPopUpMenu, WEBSITE_URL_MENU_ID_HOMEPAGE,wxString(project->project_name.c_str(), wxConvUTF8));
-#ifdef __WXMSW__
-    urlItem->SetBackgroundColour(*pSkinSimple->GetBackgroundImage()->GetBackgroundColor());
-#endif
 	Connect( WEBSITE_URL_MENU_ID_HOMEPAGE,  wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(StatImageLoader::OnMenuLinkClicked) );
 	statPopUpMenu->Append(urlItem);
 
@@ -135,9 +126,6 @@ void StatImageLoader::AddMenuItems()
 	// Add any GUI urls
 	for(unsigned int i = 0; i < urlCount; i++){
         urlItem = new wxMenuItem(statPopUpMenu, WEBSITE_URL_MENU_ID + i, wxGetTranslation(wxString(project->gui_urls[i].name.c_str(), wxConvUTF8)));
-#ifdef __WXMSW__
-		urlItem->SetBackgroundColour(*pSkinSimple->GetBackgroundImage()->GetBackgroundColor());
-#endif
 	    Connect( WEBSITE_URL_MENU_ID + i,  wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(StatImageLoader::OnMenuLinkClicked) );
  
 		statPopUpMenu->Append(urlItem);
@@ -147,14 +135,7 @@ void StatImageLoader::AddMenuItems()
     if (!project->attached_via_acct_mgr) {
     	statPopUpMenu->AppendSeparator();
 	    wxMenuItemList menuList = statPopUpMenu->GetMenuItems();
-#ifdef __WXMSW__
-	    menuList[statPopUpMenu->GetMenuItemCount()-1]->SetBackgroundColour(wxColour(_T("RED")));
-#endif
-
 	    urlItem = new wxMenuItem(statPopUpMenu, WEBSITE_URL_MENU_ID_REMOVE_PROJECT, _("Remove Project"));
-#ifdef __WXMSW__
-	    urlItem->SetBackgroundColour(*pSkinSimple->GetBackgroundImage()->GetBackgroundColor());
-#endif
 	    Connect( WEBSITE_URL_MENU_ID_REMOVE_PROJECT,  wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(StatImageLoader::OnMenuLinkClicked) );
 	    statPopUpMenu->Append(urlItem);
     }
@@ -171,19 +152,13 @@ void StatImageLoader::OnMenuLinkClicked(wxCommandEvent& event)
 		 //call detach project function	
          OnProjectDetach();
 	 } else if (menuIDevt == WEBSITE_URL_MENU_ID_HOMEPAGE ) {
-	     CBOINCBaseFrame* pFrame = wxDynamicCast(m_parent->GetParent(),CBOINCBaseFrame);
-         wxASSERT(pFrame);
-         wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
-	     pFrame->ExecuteBrowserLink(wxString(m_prjUrl.c_str(),wxConvUTF8));
+	     wxLaunchDefaultBrowser(wxString(project_url, wxConvUTF8));
 	 } else{
          int menuId = menuIDevt - WEBSITE_URL_MENU_ID;
-	     PROJECT* project = pDoc->state.lookup_project(m_prjUrl);
+	     PROJECT* project = pDoc->state.lookup_project(project_url);
 		 project->gui_urls[menuId].name.c_str();
      
-	     CBOINCBaseFrame* pFrame = wxDynamicCast(m_parent->GetParent(),CBOINCBaseFrame);
-         wxASSERT(pFrame);
-         wxASSERT(wxDynamicCast(pFrame, CBOINCBaseFrame));
-	     pFrame->ExecuteBrowserLink(wxString(project->gui_urls[menuId].url.c_str(),wxConvUTF8));
+	     wxLaunchDefaultBrowser(wxString(project->gui_urls[menuId].url.c_str(),wxConvUTF8));
 	 }
 } 
 
@@ -208,19 +183,19 @@ void StatImageLoader::OnProjectDetach() {
 	for(int m = 0; m < prjCount; m++){
 		PROJECT* project = pDoc->project(m);
 		project->get_name(strProjectName);
-		if(project->master_url == m_prjUrl){
+		if(!strcmp(project->master_url, project_url)){
 			indexOfProj = m;
 			break;
 		}
 	}
     strMessage.Printf(
-        _("Are you sure you want to detach from project '%s'?"), 
+        _("Are you sure you want to remove project '%s'?"), 
         strProjectName.c_str()
     );
 
     iAnswer = wxGetApp().SafeMessageBox(
         strMessage,
-        _("Detach from Project"),
+        _("Remove Project"),
         wxYES_NO | wxICON_QUESTION,
         this
     );
@@ -242,8 +217,8 @@ void StatImageLoader::LoadStatIcon(wxBitmap& image) {
 std::string StatImageLoader::GetProjectIconLoc() {
 	char urlDirectory[256];
 	CMainDocument* pDoc = wxGetApp().GetDocument();
-	PROJECT* project = pDoc->state.lookup_project(m_prjUrl);
-	url_to_project_dir((char*)project->master_url.c_str() ,urlDirectory);
+	PROJECT* project = pDoc->state.lookup_project(project_url);
+	url_to_project_dir(project->master_url, urlDirectory);
 	return (std::string)urlDirectory + "/stat_icon";
 }
 
@@ -286,7 +261,7 @@ void StatImageLoader::ReloadProjectSpecificIcon() {
 
 void StatImageLoader::UpdateInterface() {
 	CMainDocument* pDoc = wxGetApp().GetDocument();
-	PROJECT* project = pDoc->state.lookup_project(m_prjUrl);
+	PROJECT* project = pDoc->state.lookup_project(project_url);
 
 	// Check to see if we need to reload the stat icon
 	if ( project > NULL && project->project_files_downloaded_time > project_files_downloaded_time ) {

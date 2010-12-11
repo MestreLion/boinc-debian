@@ -23,6 +23,7 @@ require_once("../inc/team.inc");
 
 $xml = get_int('xml', true);
 if ($xml) {
+    $creditonly = get_int('creditonly', true);
     require_once("../inc/xml.inc");
     xml_header();
     $retval = db_init_xml();
@@ -39,7 +40,7 @@ if ($xml) {
     $users = BoincUser::enum_fields("id, email_addr, send_email, name, total_credit, expavg_credit, has_profile, donated, country, cross_project_id, create_time, url", "teamid=$team->id");
     //$users = BoincUser::enum("teamid=$team->id");
     foreach($users as $user) {
-        show_team_member($user, $show_email);
+        show_team_member($user, $show_email, $creditonly);
     } 
     echo "</users>\n";
     exit();
@@ -49,16 +50,16 @@ $user = get_logged_in_user();
 $teamid = get_int("teamid");
 $plain = get_int("plain", true);
 $team = BoincTeam::lookup_id($teamid);
-if (!$team) error_page("no such team");
+if (!$team) error_page(tra("no such team"));
 require_founder_login($user, $team);
 
 if ($plain) {
     header("Content-type: text/plain");
 } else {
-    page_head("$team->name Email List");
+    page_head(tra("%1 Email List", $team->name));
     start_table();
-    table_header(array("Member list of ".$team->name, "colspan=\"6\""));
-    table_header("Name", "Email address", "Total credit", "Recent average credit", "Country");
+    table_header(array(tra("Member list of %1", $team->name), "colspan=\"6\""));
+    table_header(tra("Name"), tra("Email address"), tra("Total credit"), tra("Recent average credit"), tra("Country"));
 }
 $users = BoincUser::enum_fields("id, email_addr, send_email, name, total_credit, expavg_credit, has_profile, donated, country, cross_project_id, create_time, url", "teamid=$team->id");
 foreach($users as $user) {
@@ -72,9 +73,9 @@ foreach($users as $user) {
 } 
 if (!$plain) {
     end_table();
-    echo "<p><a href=\"team_email_list.php?teamid=".$teamid."&amp;plain=1\">Show as plain text</a></p>";
+    echo "<p><a href=\"team_email_list.php?teamid=".$teamid."&amp;plain=1\">".tra("Show as plain text")."</a></p>";
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: team_email_list.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_email_list.php 21780 2010-06-20 08:35:36Z Rytis $";  //Generated automatically - do not edit
 ?>
