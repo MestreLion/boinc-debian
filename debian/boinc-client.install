@@ -4,3 +4,5 @@ debian/extra/bash/*                 etc/bash_completion.d
 debian/extra/udev-cpu_share         usr/share/boinc-client
 debian/extra/update-boinc-applinks  usr/bin
 client/switcher                     usr/lib/boinc-client
+client/boinc_client		    usr/bin
+client/boinccmd			    usr/bin
