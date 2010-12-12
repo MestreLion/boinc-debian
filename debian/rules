@@ -254,14 +254,6 @@ install: install-stamp
 install-boinc-client-and-server-stamp: build-boinc-client-and-server-stamp
 	#$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp 
-	
-	# Install files for the boinc-client package.
-	install -D client/boinc \
-	  debian/boinc-client/usr/bin/boinc
-	
-	install -D client/boinccmd \
-	  debian/boinc-client/usr/bin/boinccmd
-	
 	touch $@
 
 install-boinc-manager-stamp: build-boinc-manager-stamp
