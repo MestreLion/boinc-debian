@@ -202,7 +202,7 @@ clean-patched:
 	#fi
 	
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
-	dh clean autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
+	dh clean debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	rm -f $(BINARIES)
 	dh_clean \
@@ -251,9 +251,9 @@ clean-patched:
 
 install: install-stamp
 
-install-boinc-client-stamp: build-boinc-client-and-server-stamp
-	#dh install --after dh_auto_test --until dh_install
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
+install-boinc-client-and-server-stamp: build-boinc-client-and-server-stamp
+	#$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp 
 	
 	# Install files for the boinc-client package.
 	install -D client/boinc \
@@ -265,26 +265,31 @@ install-boinc-client-stamp: build-boinc-client-and-server-stamp
 	touch $@
 
 install-boinc-manager-stamp: build-boinc-manager-stamp
-	dh install --after dh_auto_test --until dh_install
+	#$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
+
 	# Install files for the boinc-manager package.
 	install -D clientgui/boincmgr \
 	  debian/boinc-manager/usr/bin/boincmgr
 	
-	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	
+	touch $@
+
+install-stamp: install-boinc-client-and-server-stamp install-boinc-manager-stamp 
+	dh install --after dh_auto_test --until dh_install
+	rm -rf debian/boinc-manager/usr/share/locale/en_US/
+
 	dh install --before dh_installchangelogs
 	dh_installchangelogs -k checkin_notes
+
 	dh install --until dh_fixperms
+	# Correct catalog file perms
+	find debian -name "*.mo" -exec chmod 644   {} \;
 	chmod 755 \
 	  debian/boinc-client/usr/share/boinc-client/udev-cpu_share \
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
-	touch $@
 
-install-stamp: install-boinc-client-stamp install-boinc-manager-stamp 
-	# Correct catalog file perms
-	find debian -name "*.mo" -exec chmod 644   {} \;
 	# delete empty dirs
 	if [ -d debian/boinc-manager/usr/share/locale ] ; then find debian/boinc-manager/usr/share/locale -type d -empty -delete; fi
 	dh install
