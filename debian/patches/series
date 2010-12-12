@@ -1,5 +1,4 @@
 generate_less.patch
 const_images.patch
 texfont_removal.patch
-const.patch
 Makefile_subdirs.patch
