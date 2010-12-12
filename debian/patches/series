@@ -1,4 +1,5 @@
 generate_less.patch
 const_images.patch
 texfont_removal.patch
-debian-changes-6.12.8+dfsg-1
+const.patch
+Makefile_subdirs.patch
