@@ -95,11 +95,7 @@ CXXFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
 CFGFLAGS = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
-  --disable-client \
-  --disable-server \
-  --disable-fcgi \
-  --disable-libraries \
-  --enable-manager \
+  --enable-pkg-manager \
   --enable-unicode \
   --with-ssl \
   --with-x \
@@ -206,7 +202,7 @@ clean-patched:
 	#fi
 	
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
-	dh clean autoreconf-stamp build-boinc-manager-stamp build-boinc-client-and-server-stamp build-stamp lib/crypt_prog
+	dh clean autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	rm -f $(BINARIES)
 	dh_clean \
@@ -216,6 +212,19 @@ clean-patched:
 	  aclocal.m4 \
 	  config.h.in \
 	  configure \
+	  compile \
+	  depcomp \
+	  doc/manpages/appmgr.8 \
+	  install-sh \
+	  ltmain.sh \
+	  m4/libtool.m4 \
+	  m4/ltoptions.m4 \
+	  m4/ltsugar.m4 \
+	  m4/ltversion.m4 \
+	  m4/lt~obsolete.m4 \
+	  missing \
+	  sched/credit_test \
+	  svn_version.h \
 	  locale/client/ar/BOINC\ Manager.mo \
 	  config.guess \
 	  config.sub \
@@ -244,7 +253,7 @@ install: install-stamp
 
 install-boinc-client-stamp: build-boinc-client-and-server-stamp
 	#dh install --after dh_auto_test --until dh_install
-	$(MAKE) prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
 	
 	# Install files for the boinc-client package.
 	install -D client/boinc \
@@ -256,8 +265,8 @@ install-boinc-client-stamp: build-boinc-client-and-server-stamp
 	touch $@
 
 install-boinc-manager-stamp: build-boinc-manager-stamp
-	#dh install --after dh_auto_test --until dh_install
-	$(MAKE) prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
+	dh install --after dh_auto_test --until dh_install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
 	# Install files for the boinc-manager package.
 	install -D clientgui/boincmgr \
 	  debian/boinc-manager/usr/bin/boincmgr
@@ -273,11 +282,11 @@ install-boinc-manager-stamp: build-boinc-manager-stamp
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 	touch $@
 
-install-stamp: install-boinc-manager-stamp install-boinc-client-stamp
+install-stamp: install-boinc-client-stamp install-boinc-manager-stamp 
 	# Correct catalog file perms
 	find debian -name "*.mo" -exec chmod 644   {} \;
 	# delete empty dirs
-	find debian/boinc-manager/usr/share/locale -type d -empty -delete
+	if [ -d debian/boinc-manager/usr/share/locale ] ; then find debian/boinc-manager/usr/share/locale -type d -empty -delete; fi
 	dh install
 	dh_buildinfo
 	#touch $@
