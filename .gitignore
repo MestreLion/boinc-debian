@@ -36,3 +36,11 @@ version.h
 ./.gitignore
 */*.php
 lib/crypt_prog
+debian/boinc-client/
+debian/boinc-dbg/
+debian/boinc-dev/
+debian/boinc-manager/
+debian/boinc-server/
+debian/boinc/
+debian/files
+debian/tmp/
