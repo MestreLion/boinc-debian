@@ -187,7 +187,8 @@ BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
 	sched/sample_trivial_validator sched/sample_work_generator \
 	sched/sched_driver sched/send_file sched/show_shmem \
 	sched/single_job_assimilator sched/transitioner sched/trickle_handler \
-	sched/update_stats sched/wu_check
+	sched/update_stats sched/wu_check \
+	clientgui/boincmgr 
 
 
 clean: clean-patched 
@@ -196,16 +197,18 @@ clean-patched:
 		quilt pop -a ; \
 		$(RM) -r .pc ; \
 	fi
-
 	#if [ -d debian/patches ]; then \
 	#	cat debian/patches/*| patch -p1 -R --batch --quiet || true ; \
 	#fi
-	
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
 	dh clean debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
+	find . -name "*.pyc" | xargs -r rm
+	rm -f lib/crypt_prog test/run notices/feeds.xml
+	find test -name "run-*" | xargs -r rm -rf
 	rm -f $(BINARIES)
 	dh_clean \
+	  lockfile \
 	  doc/manpages/*.1 \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
