@@ -59,7 +59,7 @@ Package: boinc-manager
 Section: x11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: boinc-client
+Recommends: boinc-client, libc6-i386, lib32gcc1
 Suggests: libgl1-mesa-glx, libxt6
 Description: GUI to control and monitor the BOINC core client
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
