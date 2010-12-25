@@ -124,7 +124,7 @@ autoreconf-stamp:
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 --add-missing && autoconf
 	touch $@
 
-debian/manpages/update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
+update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 
 build: test-stamp autoreconf build-stamp
@@ -231,7 +231,7 @@ clean-patched:
 
 install: install-stamp
 
-install-stamp: debian/manpages/update-boinc-applinks.1
+install-stamp: build-stamp update-boinc-applinks.1
 
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
