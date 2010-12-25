@@ -92,29 +92,17 @@ CXXFLAGS += $(DEB_OPT_FLAGS)
 CFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
 CXXFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
 
-CFGFLAGS = \
-  $(TYPE_FLAGS) \
-  --prefix=/usr \
-  --enable-pkg-manager \
-  --enable-unicode \
-  --with-ssl \
-  --with-x \
-  CFLAGS="$(CFLAGS)" \
-  CXXFLAGS="$(CXXFLAGS)" \
-  LDFLAGS="$(LDFLAGS)"
-
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
   --enable-client \
   --enable-server \
   --enable-fcgi \
-  --disable-manager \
+  --enable-manager \
   --enable-libraries \
   --enable-unicode \
   --with-ssl \
-  --without-wx-config \
-  --without-x \
+  --with-x \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)" \
   LDFLAGS="$(LDFLAGS)"
@@ -136,23 +124,26 @@ autoreconf-stamp:
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 --add-missing && autoconf
 	touch $@
 
-build: test-stamp autoreconf build-stamp
-build-stamp: build-boinc-client-and-server-stamp build-boinc-manager-stamp
-	touch $@
+debian/manpages/update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
+	docbook2x-man debian/manpages/update-boinc-applinks.xml
 
-build-boinc-manager-stamp: autoreconf-stamp
+build: test-stamp autoreconf build-stamp
+build-stamp:
 	dh_testdir
 	@echo
-	@echo "****                                     *****"
-	@echo "**** Configuring for build-boinc-manager *****"
-	@echo "****                                     *****"
+	@echo "****             *****"
+	@echo "**** Configuring *****"
+	@echo "****             *****"
 	@echo
-	./configure $(CFGFLAGS)
-	echo
-	echo "Making build-boinc-manager"
-	echo
+	./configure $(CFGFLAGS_boinc-client)
 	$(MAKE)
-	docbook2x-man debian/manpages/update-boinc-applinks.xml
+	#cp client/boinc.unmodified client/boinc.optimized
+	@echo
+	@echo "****        *****"
+	@echo "**** Making ****"
+	@echo "****        *****"
+	@echo
+
 	# Generate binary message catalogs of the BOINC Manager.
 	if [ -d localte/client ]; then \
 	  for i in `ls locale/client`; do \
@@ -162,21 +153,7 @@ build-boinc-manager-stamp: autoreconf-stamp
 	    fi; \
 	  done; \
 	fi
-	touch $@
 
-build-boinc-client-and-server-stamp: autoreconf-stamp
-	dh_testdir
-	@echo
-	@echo "****                                           *****"
-	@echo "**** Configuring build-boinc-client-and-server *****"
-	@echo "****                                           *****"
-	@echo
-	./configure $(CFGFLAGS_boinc-client)
-	$(MAKE)
-	#cp client/boinc.unmodified client/boinc.optimized
-	@echo
-	@echo "Making build-boinc-client-and-server"
-	@echo
 	touch $@
 
 BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
@@ -254,23 +231,10 @@ clean-patched:
 
 install: install-stamp
 
-install-boinc-client-and-server-stamp: build-boinc-client-and-server-stamp
-	#$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp 
-	touch $@
+install-stamp: debian/manpages/update-boinc-applinks.1
 
-install-boinc-manager-stamp: build-boinc-manager-stamp
-	#$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp sysconfdir=$(CURDIR)/debian/tmp/etc prefix=$(CURDIR)/debian/tmp exec_prefix=$(CURDIR)/debian/tmp install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
-	# Install files for the boinc-manager package.
-	install -D clientgui/boincmgr \
-	  debian/boinc-manager/usr/bin/boincmgr
-	
-	
-	touch $@
-
-install-stamp: install-boinc-client-and-server-stamp install-boinc-manager-stamp 
 	dh install --after dh_auto_test --until dh_install
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 
@@ -297,9 +261,9 @@ binary-arch: install
 	dh binary-arch
 
 binary-indep: 
-	# nothing to do
+	dh binary-indep
 
-binary: binary-arch
+binary: binary-arch binary-indep
 
 origDir ?= .
 
