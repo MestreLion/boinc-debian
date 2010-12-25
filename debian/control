@@ -19,7 +19,7 @@ Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git
 Vcs-Browser: http://git.debian.org/?p=pkg-boinc/boinc.git
 
 Package: boinc
-Architecture: any
+Architecture: all
 Depends: boinc-client, boinc-manager, ${misc:Depends}
 Description: metapackage for the BOINC client and the manager
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
