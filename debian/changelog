@@ -1,6 +1,7 @@
 boinc (6.12.8+dfsg-1) experimental; urgency=low
 
   * New upstream release.
+  * Simplified debian/rules
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 11 Dec 2010 19:38:53 +0100
 
