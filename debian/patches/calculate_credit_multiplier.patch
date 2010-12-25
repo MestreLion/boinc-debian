@@ -1,13 +1,13 @@
 Index: boinc/tools/calculate_credit_multiplier
 ===================================================================
 --- boinc.orig/tools/calculate_credit_multiplier	2010-12-25 16:24:34.000000000 +0100
-+++ boinc/tools/calculate_credit_multiplier	2010-12-25 16:24:48.000000000 +0100
++++ boinc/tools/calculate_credit_multiplier	2010-12-25 16:41:50.000000000 +0100
 @@ -23,7 +23,7 @@
  MYSQL="mysql -D $dbname -h $dbhost -u $dbuser -N -B"
  MYSQL_R="mysql -D $dbname -h $replica_dbhost -u $dbuser -N -B"
  
 -function median_host_query() {
-+function median_host_query {
++median_host_query() {
    $MYSQL --execute="
       create temporary table medians (id int auto_increment primary key)
         select $1 from host 
@@ -16,7 +16,7 @@ Index: boinc/tools/calculate_credit_multiplier
  }
  
 -function get_recent_credited_results() {
-+function get_recent_credited_results {
++get_recent_credited_results() {
    $MYSQL_R --execute="
      set session transaction isolation level read uncommitted;
      create temporary table recent_results 
