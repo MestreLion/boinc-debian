@@ -1,4 +1,4 @@
-usr/include/boinc/*  usr/include/boinc
+usr/include/boinc
 usr/lib/lib*         usr/lib
 
 api/graphics_data.h             usr/include/boinc/api
