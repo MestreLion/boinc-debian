@@ -44,3 +44,4 @@ debian/boinc-server/
 debian/boinc/
 debian/files
 debian/tmp/
+update-boinc-applinks.1
