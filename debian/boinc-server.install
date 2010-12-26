@@ -1,20 +1,29 @@
-db/init_db                           usr/share/boinc-server/db
 db/*.sql                             usr/share/boinc-server/db
 #usr/lib/python2.6/site-packages/boinc_path_config.py    usr/share/python-support/boinc-server/Boinc
 sched/boinc_path_config.py 	     usr/share/python-support/boinc-server/Boinc
 html                                 usr/share/boinc-server
 py/Boinc/*.py                        usr/share/python-support/boinc-server/Boinc
+py/Boinc			     usr/share/boinc-server/py/Boinc/
 
-#sched/db_dump_spec.xml              usr/share/boinc-server/sched
+sched/db_dump_spec.xml               usr/share/boinc-server/sched
+
 #test/uc_result                      usr/share/boinc-server/test
 #test/uc_wu_nodelete                 usr/share/boinc-server/test
-#tools/cleanlogs.sh                  usr/share/boinc-server/tools
-#tools/create_work_example           usr/share/boinc-server/tools
-#tools/db_query                      usr/share/boinc-server/tools
-#tools/makelog.sh                    usr/share/boinc-server/tools
-#tools/project.xml                   usr/share/boinc-server/tools
-#tools/run_in_ops                    usr/share/boinc-server/tools
-#tools/watch_tcp                     usr/share/boinc-server/tools
+
+tools/create_work_example            usr/share/boinc-server/tools
+tools/cleanlogs.sh                   usr/share/boinc-server/tools
+tools/makelog.sh                     usr/share/boinc-server/tools
+tools/run_in_ops		     usr/share/boinc-server/tools
+tools/db_query		             usr/share/boinc-server/tools
+tools/watch_tcp		             usr/share/boinc-server/tools
+tools/sign_executable		     usr/share/boinc-server/tools
+tools/project.xml		     usr/share/boinc-server/tools
+tools/appmgr		             usr/share/boinc-server/tools
+tools/run_in_ops                     usr/share/boinc-server/tools
+
+#unclear
+#html/user/server_status.php          usr/share/boinc-server/html/user
+
 
 #usr/bin/calculate_credit_multiplier  usr/share/boinc-server/tools
 tools/calculate_credit_multiplier  usr/share/boinc-server/tools
