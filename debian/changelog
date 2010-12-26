@@ -1,3 +1,10 @@
+boinc (6.12.8+dfsg-2) UNRELEASED; urgency=low
+
+  * Developing the Server package further, together
+    with instructions on wiki.
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 26 Dec 2010 01:14:18 +0100
+
 boinc (6.12.8+dfsg-1) experimental; urgency=low
 
   * New upstream release.
