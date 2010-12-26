@@ -75,22 +75,17 @@ CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall
 LDFLAGS += -Wl,--as-needed
 
-CFLAGS_boinc-client := $(CFLAGS)
-CXXFLAGS_boinc-client := $(CXXFLAGS)
-
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
   DEB_OPT_FLAGS = -O0
-  DEB_OPT_FLAGS_boinc-client = -O0
 else
   DEB_OPT_FLAGS = -O2
-  DEB_OPT_FLAGS_boinc-client = -O3
 endif
 
 CFLAGS += $(DEB_OPT_FLAGS)
 CXXFLAGS += $(DEB_OPT_FLAGS)
 
-CFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
-CXXFLAGS_boinc-client += $(DEB_OPT_FLAGS_boinc-client)
+CFLAGS_boinc-client := $(CFLAGS)
+CXXFLAGS_boinc-client := $(CXXFLAGS)
 
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
@@ -107,42 +102,44 @@ CFGFLAGS_boinc-client = \
   CXXFLAGS="$(CXXFLAGS_boinc-client)" \
   LDFLAGS="$(LDFLAGS)"
 
-test-stamp:
-	dh_testdir
-	xmllint --nonet --noout \
-	  debian/conffiles/cc_config.xml \
-	  debian/conffiles/global_prefs_override.xml
-	touch $@
 
-autoreconf: autoreconf-stamp
-autoreconf-stamp:
-	dh_testdir
+# Default rule
+%:
+	dh $@ --with-quilt
+
+# Commands not to execute - empty overrides
+override_dh_auto_test:
+
+
+#test-stamp:
+#	dh_testdir
+#	xmllint --nonet --noout \
+#	  debian/conffiles/cc_config.xml \
+#	  debian/conffiles/global_prefs_override.xml
+#	touch $@
+
+override_dh_auto_configure:
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
-	find html -name "*.php" -o -name "*.php.example" | xargs -L 1 -r chmod 644 --
 	if [ ! -r ltmain.sh ]; then libtoolize; fi
 	aclocal-1.9 -I m4 && autoheader && automake-1.9 --add-missing && autoconf
-	touch $@
-
-update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
-	docbook2x-man debian/manpages/update-boinc-applinks.xml
-
-build: test-stamp autoreconf build-stamp
-build-stamp:
-	dh_testdir
 	@echo
 	@echo "****             *****"
 	@echo "**** Configuring *****"
 	@echo "****             *****"
 	@echo
 	./configure $(CFGFLAGS_boinc-client)
-	$(MAKE)
-	#cp client/boinc.unmodified client/boinc.optimized
+
+update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
+	docbook2x-man debian/manpages/update-boinc-applinks.xml
+
+override_dh_auto_build: update-boinc-applinks.1
 	@echo
 	@echo "****        *****"
 	@echo "**** Making ****"
 	@echo "****        *****"
 	@echo
+	$(MAKE)
 
 	# Generate binary message catalogs of the BOINC Manager.
 	if [ -d localte/client ]; then \
@@ -153,8 +150,6 @@ build-stamp:
 	    fi; \
 	  done; \
 	fi
-
-	touch $@
 
 BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
 	sched/delete_file sched/feeder sched/file_deleter \
@@ -168,8 +163,7 @@ BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
 	clientgui/boincmgr 
 
 
-clean: clean-patched 
-clean-patched:
+clean: 
 	if [ -d .pc ]; then  \
 		quilt pop -a ; \
 		$(RM) -r .pc ; \
@@ -178,7 +172,8 @@ clean-patched:
 	#	cat debian/patches/*| patch -p1 -R --batch --quiet || true ; \
 	#fi
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
-	dh clean debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
+	dh clean
+	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	find . -name "*.pyc" | xargs -r rm
 	rm -f lib/crypt_prog test/run notices/feeds.xml
@@ -231,17 +226,21 @@ clean-patched:
 
 install: install-stamp
 
-install-stamp: build-stamp update-boinc-applinks.1
-
+install-stamp: build update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	dh install
+	touch $@
 
-	dh install --after dh_auto_test --until dh_install
-	rm -rf debian/boinc-manager/usr/share/locale/en_US/
+override_dh_strip:
+	dh_strip -a --dbg-package=boinc-dbg
 
-	dh install --before dh_installchangelogs
+override_dh_installchangelogs:
 	dh_installchangelogs -k checkin_notes
 
-	dh install --until dh_fixperms
+override_dh_fixperms:
+	dh_fixperms
+	# some files are not right with 755, some are, this needs furhter investigations
+	find debian -name "*.php" -o -name "*.php.example" | grep -v "update_translations.php" | xargs -L 1 -r chmod 644 --
 	# Correct catalog file perms
 	find debian -name "*.mo" -exec chmod 644   {} \;
 	chmod 755 \
@@ -249,21 +248,22 @@ install-stamp: build-stamp update-boinc-applinks.1
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 
+override_dh_install:
+	dh_install
+	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	# delete empty dirs
 	if [ -d debian/boinc-manager/usr/share/locale ] ; then find debian/boinc-manager/usr/share/locale -type d -empty -delete; fi
-	dh install
-	dh_buildinfo
-	#touch $@
 
-binary-arch: install
-	dh binary-arch --before dh_strip
-	dh_strip -a --dbg-package=boinc-dbg
-	dh binary-arch
 
-binary-indep: 
-	dh binary-indep
+#binary-arch: install
+#	dh binary-arch
 
-binary: binary-arch binary-indep
+#binary-indep: 
+#	# nothing to do
+#	#dh binary-indep --remaining
+#
+
+#binary: binary-arch binary-indep
 
 origDir ?= .
 
@@ -278,5 +278,5 @@ get-orig-source:
 	$$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: build clean clean-patched autoreconf install install-stamp binary-arch binary get-orig-source
+.PHONY: build clean install install-stamp binary-arch binary get-orig-source
 
