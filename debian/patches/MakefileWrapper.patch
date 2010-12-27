@@ -1,7 +1,7 @@
 Index: boinc/samples/wrapper/Makefile
 ===================================================================
 --- boinc.orig/samples/wrapper/Makefile	2010-12-27 21:25:36.000000000 +0100
-+++ boinc/samples/wrapper/Makefile	2010-12-27 21:23:51.000000000 +0100
++++ boinc/samples/wrapper/Makefile	2010-12-27 23:21:11.000000000 +0100
 @@ -1,7 +1,7 @@
  # This should work on Linux.  Modify as needed for other platforms.
  
@@ -28,5 +28,6 @@ Index: boinc/samples/wrapper/Makefile
  	/bin/rm -f $(PROGS) *.o libstdc++.a
  
 -wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
+-	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
 +wrapper: wrapper.o libstdc++.a libboinc.a libboinc_api.a
- 	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
++	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread libboinc_api.a libboinc.a
