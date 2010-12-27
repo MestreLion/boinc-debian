@@ -1,0 +1,32 @@
+Index: boinc/samples/wrapper/Makefile
+===================================================================
+--- boinc.orig/samples/wrapper/Makefile	2010-12-27 21:25:36.000000000 +0100
++++ boinc/samples/wrapper/Makefile	2010-12-27 21:23:51.000000000 +0100
+@@ -1,7 +1,7 @@
+ # This should work on Linux.  Modify as needed for other platforms.
+ 
+ # Change the following to match your installation
+-BOINC_DIR = ../..
++BOINC_DIR = /usr/include/boinc
+ BOINC_API_DIR = $(BOINC_DIR)/api
+ BOINC_LIB_DIR = $(BOINC_DIR)/lib
+ 
+@@ -20,11 +20,17 @@
+ libstdc++.a:
+ 	ln -s `g++ -print-file-name=libstdc++.a`
+ 
++libboinc.a:
++	ln -s `g++ $(CXXFLAGS) -print-file-name=libboinc.a`
++
++libboinc_api.a:
++	ln -s `g++ $(CXXFLAGS) -print-file-name=libboinc_api.a`
++
+ clean:
+ 	rm $(PROGS) *.o
+ 
+ distclean:
+ 	/bin/rm -f $(PROGS) *.o libstdc++.a
+ 
+-wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
++wrapper: wrapper.o libstdc++.a libboinc.a libboinc_api.a
+ 	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
