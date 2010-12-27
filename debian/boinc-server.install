@@ -10,16 +10,16 @@ sched/db_dump_spec.xml               usr/share/boinc-server/sched
 #test/uc_result                      usr/share/boinc-server/test
 #test/uc_wu_nodelete                 usr/share/boinc-server/test
 
-tools/create_work_example            usr/share/boinc-server/tools
-tools/cleanlogs.sh                   usr/share/boinc-server/tools
-tools/makelog.sh                     usr/share/boinc-server/tools
-tools/run_in_ops		     usr/share/boinc-server/tools
-tools/db_query		             usr/share/boinc-server/tools
-tools/watch_tcp		             usr/share/boinc-server/tools
-tools/sign_executable		     usr/share/boinc-server/tools
-tools/project.xml		     usr/share/boinc-server/tools
-tools/appmgr		             usr/share/boinc-server/tools
-tools/run_in_ops                     usr/share/boinc-server/tools
+tools/create_work_example            usr/lib/boinc-server/tools
+tools/cleanlogs.sh                   usr/lib/boinc-server/tools
+tools/makelog.sh                     usr/lib/boinc-server/tools
+tools/run_in_ops		     usr/lib/boinc-server/tools
+tools/db_query		             usr/lib/boinc-server/tools
+tools/watch_tcp		             usr/lib/boinc-server/tools
+tools/sign_executable		     usr/lib/boinc-server/tools
+tools/project.xml		     usr/lib/boinc-server/tools
+tools/appmgr		             usr/lib/boinc-server/tools
+tools/run_in_ops                     usr/lib/boinc-server/tools
 
 #unclear
 #html/user/server_status.php          usr/share/boinc-server/html/user

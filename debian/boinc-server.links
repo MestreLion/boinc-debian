@@ -17,3 +17,14 @@
 #usr/share/boinc-server/bin/start    usr/share/boinc-server/sched/start
 #usr/share/boinc-server/bin/start    usr/share/boinc-server/bin/status
 #usr/share/boinc-server/bin/start    usr/share/boinc-server/bin/stop
+usr/lib/tools/*			            usr/share/boinc-server/tools/
+#usr/lib/tools/create_work_example            usr/share/boinc-server/tools/
+#usr/lib/tools/cleanlogs.sh                   usr/share/boinc-server/tools/
+#usr/lib/tools/makelog.sh                     usr/share/boinc-server/tools/
+#usr/lib/tools/run_in_ops		     usr/share/boinc-server/tools/
+#usr/lib/tools/db_query		             usr/share/boinc-server/tools/
+#usr/lib/tools/watch_tcp		             usr/share/boinc-server/tools/
+#usr/lib/tools/sign_executable		     usr/share/boinc-server/tools/
+#usr/lib/tools/project.xml		     usr/share/boinc-server/tools/
+#usr/lib/tools/appmgr		             usr/share/boinc-server/tools/
+#usr/lib/tools/run_in_ops                     usr/share/boinc-server/tools/
