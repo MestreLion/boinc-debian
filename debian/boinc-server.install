@@ -2,8 +2,11 @@ db/*.sql                             usr/share/boinc-server/db
 #usr/lib/python2.6/site-packages/boinc_path_config.py    usr/share/python-support/boinc-server/Boinc
 sched/boinc_path_config.py 	     usr/share/python-support/boinc-server/Boinc
 html                                 usr/share/boinc-server
-py/Boinc/*.py                        usr/share/python-support/boinc-server/Boinc
-py/Boinc			     usr/share/boinc-server/py/Boinc/
+
+# seems like there is no need for a global presence of the BOINC python code
+#py/Boinc/*.py                        usr/share/python-support/boinc-server/Boinc
+# Project-specific code will be copied by make_project from here
+py/Boinc/*.py			     usr/share/boinc-server/py/Boinc/
 
 sched/db_dump_spec.xml               usr/share/boinc-server/sched
 
