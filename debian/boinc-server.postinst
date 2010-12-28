@@ -7,7 +7,16 @@ case "$1" in
     configure)
         # Create boincadm group if it doesn't already exist.
         if ! getent group boincadm >/dev/null; then
-            addgroup --quiet --system boincadm
+            if ! addgroup --quiet --system boincadm; then
+		echo "could not add group 'boincadm'"
+		exit 1
+	    if
+        fi
+        if ! getent group | grep boincadm | grep -q www-data; then
+            if ! adduser www-data boincadm; then
+		echo "could not assing user 'www-data' to group 'boincadm'"
+		exit 1
+	    fi
         fi
     ;;
 
