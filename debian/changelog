@@ -1,7 +1,6 @@
-boinc (6.12.8+dfsg-2) UNRELEASED; urgency=low
+boinc (6.12.8+dfsg-2) experimental; urgency=low
 
-  * Developing the Server package further, together
-    with instructions on wiki.
+  * Developing the Server package further.
   * Added libtool as build dependency (Closes: #608509).
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 26 Dec 2010 01:14:18 +0100
