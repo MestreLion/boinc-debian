@@ -107,6 +107,9 @@ CFGFLAGS_boinc-client = \
 %:
 	dh $@ --with-quilt
 
+clean:
+	dh clean
+
 # Commands not to execute - empty overrides
 override_dh_auto_test:
 
@@ -165,8 +168,10 @@ BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
 	sched/sched_driver sched/send_file sched/show_shmem \
 	sched/single_job_assimilator sched/transitioner sched/trickle_handler \
 	sched/update_stats sched/wu_check \
-	clientgui/boincmgr 
-
+	clientgui/boincmgr
+BINARIES += samples/worker/worker samples/wrapper/wrapper samples/sleeper/sleeper \
+	samples/nvcuda/cuda samples/example_app/example_app samples/vm_wrapper/vm_wrapper \
+	samples/atiopencl/atiopencl
 
 override_dh_auto_clean: 
 	dh_auto_clean
@@ -284,5 +289,5 @@ get-orig-source:
 	$$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: build clean install install-stamp binary-arch binary get-orig-source
+.PHONY: build clean install binary-arch binary get-orig-source
 
