@@ -265,6 +265,11 @@ override_dh_install:
 	# delete empty dirs
 	if [ -d debian/boinc-manager/usr/share/locale ] ; then find debian/boinc-manager/usr/share/locale -type d -empty -delete; fi
 
+override_dh_compress:
+	dh_compress -Xsamples
+
+override_dh_installexamples:
+	dh_installexamples -Xjpeglib 
 
 #binary-arch: install
 #	dh binary-arch
