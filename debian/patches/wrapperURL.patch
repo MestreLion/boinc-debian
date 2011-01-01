@@ -1,0 +1,13 @@
+Index: boinc/samples/wrapper/wrapper.cpp
+===================================================================
+--- boinc.orig/samples/wrapper/wrapper.cpp	2011-01-01 14:39:08.000000000 +0100
++++ boinc/samples/wrapper/wrapper.cpp	2011-01-01 14:39:24.000000000 +0100
+@@ -25,7 +25,7 @@
+ // - checkpointing
+ //      (at the level of task; or potentially within task)
+ //
+-// See http://boinc.berkeley.edu/wrapper.php for details
++// See http://boinc.berkeley.edu/trac/wiki/WrapperApp for details
+ // Contributor: Andrew J. Younge (ajy4490@umiacs.umd.edu)
+ 
+ #include <stdio.h>
