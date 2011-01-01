@@ -100,7 +100,7 @@ Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python-mysqldb,
  mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php5, php5-cli,
- php5-mysql, tcsh | c-shell, openssl (>= 0.9.8), libcurl
+ php5-mysql, tcsh | c-shell, openssl (>= 0.9.8)
 Recommends: libapache2-mod-php5, php5-gd
 Suggests: coreutils
 Description: BOINC server applications and data files
