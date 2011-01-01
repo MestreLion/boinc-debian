@@ -10,7 +10,7 @@ case "$1" in
             if ! addgroup --quiet --system boincadm; then
 		echo "could not add group 'boincadm'"
 		exit 1
-	    if
+	    fi
         fi
         if ! getent group | grep boincadm | grep -q www-data; then
             if ! adduser www-data boincadm; then
