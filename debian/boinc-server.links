@@ -1,22 +1,7 @@
-# this needs to be cleaned up
-#usr/lib/boinc-server/bin/1sec               usr/share/boinc-server/apps/1sec
-#usr/lib/boinc-server/bin/concat             usr/share/boinc-server/apps/concat
-#usr/lib/boinc-server/bin/create_work        usr/share/boinc-server/bin/create_work
-#usr/lib/boinc-server/bin/create_work        usr/share/boinc-server/tools/create_work
-#usr/lib/boinc-server/bin/crypt_prog         usr/share/boinc-server/bin/crypt_prog
-#usr/lib/boinc-server/bin/crypt_prog         usr/share/boinc-server/lib/crypt_prog
-#usr/lib/boinc-server/bin/dir_hier_move      usr/share/boinc-server/bin/dir_hier_move
-#usr/lib/boinc-server/bin/dir_hier_move      usr/share/boinc-server/tools/dir_hier_move
-#usr/lib/boinc-server/bin/dir_hier_path      usr/share/boinc-server/bin/dir_hier_path
-#usr/lib/boinc-server/bin/dir_hier_path      usr/share/boinc-server/tools/dir_hier_path
-#usr/lib/boinc-server/bin/sign_executable    usr/share/boinc-server/bin/sign_executable
-#usr/lib/boinc-server/bin/sign_executable    usr/share/boinc-server/tools/sign_executable
-#usr/lib/boinc-server/bin/updater            usr/share/boinc-server/tools/updater
-#usr/lib/boinc-server/bin/upper_case         usr/share/boinc-server/apps/upper_case
-
 # does not work since destination is a directory
 #usr/lib/boinc-server/bin/*			usr/share/boinc-server/bin/
 
+# this is where install places the files
 usr/lib/boinc-server/bin/census			usr/share/boinc-server/bin/census
 usr/lib/boinc-server/bin/cgi			usr/share/boinc-server/bin/cgi
 usr/lib/boinc-server/bin/create_work		usr/share/boinc-server/bin/create_work
@@ -40,6 +25,44 @@ usr/lib/boinc-server/bin/status			usr/share/boinc-server/bin/status
 usr/lib/boinc-server/bin/trickle_handler	usr/share/boinc-server/bin/trickle_handler
 usr/lib/boinc-server/bin/update_stats		usr/share/boinc-server/bin/update_stats
 usr/lib/boinc-server/bin/wu_check		usr/share/boinc-server/bin/wu_check
+
+# this is where make_project expects them
+usr/lib/boinc-server/bin/start             usr/share/boinc-server/sched/start
+						# a python script which should not have gone to usr/lib	
+usr/lib/boinc-server/tools/appmgr          usr/share/boinc-server/tools/appmgr
+usr/lib/boinc-server/bin/create_work       usr/share/boinc-server/tools/create_work
+usr/lib/boinc-server/bin/crypt_prog        usr/share/boinc-server/lib/crypt_prog to
+usr/lib/boinc-server/tools/db_query        usr/share/boinc-server/tools/db_query
+usr/lib/boinc-server/bin/dir_hier_move     usr/share/boinc-server/tools/dir_hier_move
+usr/lib/boinc-server/bin/dir_hier_path     usr/share/boinc-server/tools/dir_hier_path
+usr/lib/boinc-server/tools/project.xml     usr/share/boinc-server/tools/project.xml
+usr/lib/boinc-server/tools/run_in_ops      usr/share/boinc-server/tools/run_in_ops
+usr/lib/boinc-server/tools/sign_executable usr/share/boinc-server/tools/sign_executable
+usr/lib/boinc-server/tools/watch_tcp       usr/share/boinc-server/tools/watch_tcp
+# and those are not expected by make_project but most likely better be linked before they are missed
+usr/lib/boinc-server/tools/create_work_example usr/share/boinc-server/tools/create_work_example
+usr/lib/boinc-server/tools/cleanlogs.sh        usr/share/boinc-server/tools/cleanlogs.sh
+usr/lib/boinc-server/tools/makelog.sh          usr/share/boinc-server/tools/makelog.sh
+
+# hunch - needs to be verified
+usr/share/boinc-server/html/user/server_status.php usr/share/boinc-server/html/ops/sample_server_status.php
+
+#usr/lib/boinc-server/bin/1sec               usr/share/boinc-server/apps/1sec
+#usr/lib/boinc-server/bin/concat             usr/share/boinc-server/apps/concat
+#usr/lib/boinc-server/bin/create_work        usr/share/boinc-server/bin/create_work
+#usr/lib/boinc-server/bin/create_work        usr/share/boinc-server/tools/create_work
+#usr/lib/boinc-server/bin/crypt_prog         usr/share/boinc-server/bin/crypt_prog
+#usr/lib/boinc-server/bin/crypt_prog         usr/share/boinc-server/lib/crypt_prog
+#usr/lib/boinc-server/bin/dir_hier_move      usr/share/boinc-server/bin/dir_hier_move
+#usr/lib/boinc-server/bin/dir_hier_move      usr/share/boinc-server/tools/dir_hier_move
+#usr/lib/boinc-server/bin/dir_hier_path      usr/share/boinc-server/bin/dir_hier_path
+#usr/lib/boinc-server/bin/dir_hier_path      usr/share/boinc-server/tools/dir_hier_path
+#usr/lib/boinc-server/bin/sign_executable    usr/share/boinc-server/bin/sign_executable
+#usr/lib/boinc-server/bin/sign_executable    usr/share/boinc-server/tools/sign_executable
+#usr/lib/boinc-server/bin/updater            usr/share/boinc-server/tools/updater
+#usr/lib/boinc-server/bin/upper_case         usr/share/boinc-server/apps/upper_case
+
+
 
 #usr/share/python-support/boinc-server/Boinc      usr/share/boinc-server/py/Boinc
 #usr/share/boinc-server/bin/start    usr/share/boinc-server/sched/start
