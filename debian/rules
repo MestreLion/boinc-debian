@@ -137,7 +137,19 @@ override_dh_auto_configure:
 update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 
-build:	build-stamp
+
+samples/sleeper/sleeper: build-stamp samples/sleeper/sleeper.cpp
+	$(MAKE) -C samples/sleeper
+samples/worker/worker: build-stamp samples/worker/worker.cpp
+	$(MAKE) -C samples/worker
+samples/example_app/uc2: build-stamp samples/example_app/uc2.cpp
+	$(MAKE) -C samples/example_app
+samples/wrapper/wrapper: build-stamp samples/wrapper/wrapper.cpp
+	$(MAKE) -C samples/wrapper
+
+SAMPLES=samples/sleeper/sleeper samples/worker/worker samples/example_app/uc2 samples/wrapper/wrapper
+
+build:	build-stamp $(SAMPLES)
 build-stamp:
 	dh build --parallel
 	touch $@
@@ -251,7 +263,7 @@ override_dh_installchangelogs:
 override_dh_fixperms:
 	dh_fixperms
 	# some files are not right with 755, some are, this needs furhter investigations
-	find debian -name "*.php" -o -name "*.php.example" | grep -v "update_translations.php" | xargs -L 1 -r chmod 644 --
+	find debian -name "*.php" -o -name "*.php.example" -o -name "*.cpp" | grep -v "update_translations.php" | xargs -L 1 -r chmod 644 --
 	# Correct catalog file perms
 	find debian -name "*.mo" -exec chmod 644   {} \;
 	chmod 755 \
@@ -259,7 +271,7 @@ override_dh_fixperms:
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 
-override_dh_install:
+override_dh_install: $(SAMPLES)
 	dh_install
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	# delete empty dirs
