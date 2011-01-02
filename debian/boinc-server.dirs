@@ -1,2 +1,6 @@
-usr/lib/boinc-server
+usr/lib/boinc-server/bin
+usr/lib/boinc-server/tools
 usr/share/boinc-server/bin
+usr/share/boinc-server/lib
+usr/share/boinc-server/tools
+usr/share/boinc-server/samples/example_app
