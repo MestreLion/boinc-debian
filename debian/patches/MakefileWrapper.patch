@@ -1,8 +1,8 @@
 Index: boinc/samples/wrapper/Makefile
 ===================================================================
---- boinc.orig/samples/wrapper/Makefile	2010-12-27 21:25:36.000000000 +0100
-+++ boinc/samples/wrapper/Makefile	2010-12-27 23:21:11.000000000 +0100
-@@ -1,7 +1,7 @@
+--- boinc.orig/samples/wrapper/Makefile	2011-01-02 23:44:30.000000000 +0100
++++ boinc/samples/wrapper/Makefile	2011-01-03 00:26:15.000000000 +0100
+@@ -1,30 +1,43 @@
  # This should work on Linux.  Modify as needed for other platforms.
  
  # Change the following to match your installation
@@ -11,23 +11,104 @@ Index: boinc/samples/wrapper/Makefile
  BOINC_API_DIR = $(BOINC_DIR)/api
  BOINC_LIB_DIR = $(BOINC_DIR)/lib
  
-@@ -20,11 +20,17 @@
- libstdc++.a:
- 	ln -s `g++ -print-file-name=libstdc++.a`
+ CXXFLAGS = -g \
++    -I../.. \
++    -I../../api \
++    -I../../lib \
++    -L../../lib \
+     -I$(BOINC_DIR) \
+     -I$(BOINC_LIB_DIR) \
+     -I$(BOINC_API_DIR) \
+     -L$(BOINC_API_DIR) \
+     -L$(BOINC_LIB_DIR) \
+-    -L.
  
-+libboinc.a:
-+	ln -s `g++ $(CXXFLAGS) -print-file-name=libboinc.a`
+-PROGS = wrapper
++PROGS= wrapper
++EXTRA_SOURCES=
+ 
+ all: $(PROGS)
+ 
+-libstdc++.a:
+-	ln -s `g++ -print-file-name=libstdc++.a`
++LIBS=libstdc++.a libboinc_api.a libboinc.a
 +
-+libboinc_api.a:
-+	ln -s `g++ $(CXXFLAGS) -print-file-name=libboinc_api.a`
-+
++$(LIBS):
++	if [ -r "../../lib/$@" ]; then \
++		ln -sf "../../lib/$@" . ; \
++	elif [ -r "../../api/$@" ]; then \
++		ln -sf "../../api/$@" . ; \
++	else \
++		ln -sf `g++ -print-file-name=$@` ; \
++	fi
+ 
  clean:
- 	rm $(PROGS) *.o
+-	rm $(PROGS) *.o
++	rm -f $(PROGS) *.o *.a
  
  distclean:
- 	/bin/rm -f $(PROGS) *.o libstdc++.a
+-	/bin/rm -f $(PROGS) *.o libstdc++.a
++	/bin/rm -f $(PROGS) *.o $(LIBS)
++
++$(PROGS):  $(LIBS)
++	g++ $(CXXFLAGS) -Wl,--as-needed -o $@ $(@).cpp $(EXTRA_SOURCES) -L . $(LIBS) -pthread
  
 -wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
 -	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
-+wrapper: wrapper.o libstdc++.a libboinc.a libboinc_api.a
-+	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread libboinc_api.a libboinc.a
+Index: boinc/samples/sleeper/Makefile
+===================================================================
+--- boinc.orig/samples/sleeper/Makefile	2011-01-02 23:46:05.000000000 +0100
++++ boinc/samples/sleeper/Makefile	2011-01-03 00:26:20.000000000 +0100
+@@ -1,29 +1,43 @@
+ # This should work on Linux.  Modify as needed for other platforms.
+ 
+-BOINC_DIR = ../..
++# Change the following to match your installation
++BOINC_DIR = /usr/include/boinc
+ BOINC_API_DIR = $(BOINC_DIR)/api
+ BOINC_LIB_DIR = $(BOINC_DIR)/lib
+ 
+ CXXFLAGS = -g \
++    -I../.. \
++    -I../../api \
++    -I../../lib \
++    -L../../lib \
+     -I$(BOINC_DIR) \
+     -I$(BOINC_LIB_DIR) \
+     -I$(BOINC_API_DIR) \
+     -L$(BOINC_API_DIR) \
+     -L$(BOINC_LIB_DIR) \
+-    -L.
+ 
+-PROGS = sleeper
++PROGS= sleeper
++EXTRA_SOURCES=
+ 
+ all: $(PROGS)
+ 
+-libstdc++.a:
+-	ln -s `g++ -print-file-name=libstdc++.a`
++LIBS=libstdc++.a libboinc_api.a libboinc.a
++
++$(LIBS):
++	if [ -r "../../lib/$@" ]; then \
++		ln -sf "../../lib/$@" . ; \
++	elif [ -r "../../api/$@" ]; then \
++		ln -sf "../../api/$@" . ; \
++	else \
++		ln -sf `g++ -print-file-name=$@` ; \
++	fi
+ 
+ clean:
+-	rm $(PROGS)
++	rm -f $(PROGS) *.o *.a
+ 
+ distclean:
+-	/bin/rm -f $(PROGS) *.o libstdc++.a
++	/bin/rm -f $(PROGS) *.o $(LIBS)
++
++$(PROGS):  $(LIBS)
++	g++ $(CXXFLAGS) -Wl,--as-needed -o $@ $(@).cpp $(EXTRA_SOURCES) -L . $(LIBS) -pthread
+ 
+-sleeper: sleeper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
+-	g++ $(CXXFLAGS) -o sleeper sleeper.o libstdc++.a -pthread -lboinc_api -lboinc
