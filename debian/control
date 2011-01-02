@@ -13,7 +13,7 @@ Build-Depends: debhelper (>= 7.0.50~), po-debconf, dh-buildinfo,
  autoconf (>= 2.59), libxml2-utils, gettext, zlib1g-dev, libssl-dev,
  libcurl4-openssl-dev (>= 7.17.1), freeglut3-dev, libsm-dev, libice-dev,
  libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.8-dev,
- libsqlite3-dev, quilt, libgtk2.0-dev, libxcb-atom1-dev, pkg-config (>= 0.15),
+ libsqlite3-dev, libgtk2.0-dev, libxcb-atom1-dev, pkg-config (>= 0.15),
  libtool
 Homepage: http://boinc.berkeley.edu/
 Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git

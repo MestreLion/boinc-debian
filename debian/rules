@@ -105,7 +105,7 @@ CFGFLAGS_boinc-client = \
 
 # Default rule
 %:
-	dh $@ --with-quilt
+	dh $@
 
 clean:
 	dh clean
@@ -188,10 +188,11 @@ BINARIES += samples/worker/worker samples/wrapper/wrapper samples/sleeper/sleepe
 
 override_dh_auto_clean: 
 	dh_auto_clean
-	if [ -d .pc ]; then  \
-		quilt pop -a ; \
-		$(RM) -r .pc ; \
-	fi
+	# don't interfere with dpkg-source
+	#if [ -d .pc ]; then  \
+	#	quilt pop -a ; \
+	#	$(RM) -r .pc ; \
+	#fi
 	#if [ -d debian/patches ]; then \
 	#	cat debian/patches/*| patch -p1 -R --batch --quiet || true ; \
 	#fi
