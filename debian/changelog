@@ -1,7 +1,8 @@
-boinc (6.12.8+dfsg-4) experimental; urgency=low
+boinc (6.12.8+dfsg-4) UNRELEASED; urgency=low
 
   * Completely removing quilt from debian/*
     (Closes: #608639).
+  * Added libnotify-dev as build dependency.
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 02 Jan 2011 15:58:19 +0100
 
