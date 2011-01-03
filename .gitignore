@@ -45,3 +45,4 @@ debian/boinc/
 debian/files
 debian/tmp/
 update-boinc-applinks.1
+compile
