@@ -5,3 +5,4 @@ texfont_removal.patch
 Makefile_subdirs.patch
 MakefileWrapper.patch
 wrapperURL.patch
+FlatBookStaticChar.patch
