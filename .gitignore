@@ -47,3 +47,7 @@ debian/tmp/
 update-boinc-applinks.1
 compile
 depcomp
+install-sh
+ltmain.sh
+m4/*.m4
+missing
