@@ -1,7 +1,8 @@
 boinc (6.12.8+dfsg-5) UNRELEASED; urgency=low
 
   * Added python to build dependencies (Closes: #608895).
-  * Renamed package 'boinc-server' to 'boinc-server-maker'
+  * Renamed package 'boinc-server' to 'boinc-server-maker'.
+  * Added Danish .po contributed by Joe Daldon (Closes: #597774).
 
  -- Steffen Moeller <moeller@debian.org>  Wed, 05 Jan 2011 10:21:29 +0100
 
