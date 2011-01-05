@@ -1,0 +1,14 @@
+BOINC server maker for Debian
+=============================
+
+The preparation of a BOINC server package is still in its infancy.
+A wiki page at http://wiki.debian.org/BOINC/Server is intended to
+serve as a main communicator for the development of the package and
+general principles for the setup of the server system.
+
+This package (or the BOINC sources in general) do not provide 
+the server directly but prepare the source code in a way that
+this can be used to compile the binaries and prepare a local
+web presence in a fairly straight forward manner. The package
+was hence renamed to "BOINC server maker", still with some room
+for improvement in the naming.

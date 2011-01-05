@@ -14,7 +14,7 @@ Build-Depends: debhelper (>= 7.0.50~), po-debconf, dh-buildinfo,
  libcurl4-openssl-dev (>= 7.17.1), freeglut3-dev, libsm-dev, libice-dev,
  libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.8-dev,
  libsqlite3-dev, libgtk2.0-dev, libxcb-atom1-dev, pkg-config (>= 0.15),
- libtool, libnotify-dev, libmysqlclient-dev
+ libtool, libnotify-dev, libmysqlclient-dev, python
 Homepage: http://boinc.berkeley.edu/
 Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git
 Vcs-Browser: http://git.debian.org/?p=pkg-boinc/boinc.git
@@ -94,9 +94,10 @@ Description: development files to build applications for BOINC projects
  needed to develop and compile applications which utilizes the BOINC
  infrastructure.
 
-Package: boinc-server
+Package: boinc-server-maker
 Section: net
 Architecture: any
+Provides: boinc-server
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python-mysqldb,
  mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi, php5, php5-cli,
  php5-mysql, tcsh | c-shell, openssl (>= 0.9.8), adduser
