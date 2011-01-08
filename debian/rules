@@ -263,8 +263,16 @@ override_dh_installchangelogs:
 
 override_dh_fixperms:
 	dh_fixperms
-	# some files are not right with 755, some are, this needs furhter investigations
+	# some files are not right with 755
 	find debian -name "*.php" -o -name "*.php.example" -o -name "*.cpp" | grep -v "update_translations.php" | xargs -L 1 -r chmod 644 --
+	# some other files are indeed to be executed via the command line
+	cd debian/boinc-server-maker/usr/share/boinc-server/html/ops ; \
+	for i in *.php; do \
+		if head -n 1 "$$i" | grep -q "^#!"; then \
+			chmod 775 "$$i" ; \
+		fi ; \
+	done
+
 	# Correct catalog file perms
 	find debian -name "*.mo" -exec chmod 644   {} \;
 	chmod 755 \
