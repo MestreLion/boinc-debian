@@ -1,4 +1,12 @@
-boinc (6.12.8+dfsg-5) UNRELEASED; urgency=low
+boinc (6.12.8+dfsg-6) experimental; urgency=low
+
+  * Explicitly giving binary-arch target (Closes: #609428).
+  * Helping init file to remain compatible with renice
+    that does not understand "-n" (as in sarge) (Closes: #600134).
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 09 Jan 2011 15:00:14 +0100
+
+boinc (6.12.8+dfsg-5) experimental; urgency=low
 
   * Added python to build dependencies (Closes: #608895).
   * Renamed package 'boinc-server' to 'boinc-server-maker'.
@@ -23,7 +31,7 @@ boinc (6.12.8+dfsg-3) experimental; urgency=low
 
 boinc (6.12.8+dfsg-2) experimental; urgency=low
 
-  * Developing the Server package further.
+  * Developing the server package further.
   * Added libtool as build dependency (Closes: #608509).
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 26 Dec 2010 01:14:18 +0100

@@ -139,7 +139,9 @@ chrt_many()
    shift 3
    for i in "$@"; do
      chrt -p $POLICY $PRIO $i || return
-     renice -n $NICE -p $i
+     # increasing compatibility with older versions of renice
+     # in reaction to bug report #600134
+     renice $NICE -p $i > /dev/null || renice -n $NICE -p $i
    done
 }
 
