@@ -292,13 +292,12 @@ override_dh_compress:
 override_dh_installexamples:
 	dh_installexamples -Xjpeglib 
 
-#binary-arch: install
-#	dh binary-arch
+binary-arch: build install
+	dh binary-arch
 
-#binary-indep: 
-#	# nothing to do
-#	#dh binary-indep --remaining
-#
+# only the 'empty' package boinc
+binary-indep: 
+	dh binary-indep
 
 binary:
 	dh binary
