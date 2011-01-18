@@ -269,7 +269,7 @@ override_dh_fixperms:
 	cd debian/boinc-server-maker/usr/share/boinc-server/html/ops ; \
 	for i in *.php; do \
 		if head -n 1 "$$i" | grep -q "^#!"; then \
-			chmod 775 "$$i" ; \
+			chmod 755 "$$i" ; \
 		fi ; \
 	done
 
