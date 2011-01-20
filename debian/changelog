@@ -1,3 +1,9 @@
+boinc (6.12.8+dfsg-7) experimental; urgency=low
+
+  * Fixed cc_config.xml, reported by Nelson (Closes: #610638).
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 23 Jan 2011 00:49:20 +0100
+
 boinc (6.12.8+dfsg-6) experimental; urgency=low
 
   * Explicitly giving binary-arch target (Closes: #609428).
