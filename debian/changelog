@@ -1,3 +1,9 @@
+boinc (6.12.14+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream version.
+
+ -- Steffen Moeller <moeller@debian.org>  Thu, 17 Feb 2011 19:37:10 +0100
+
 boinc (6.12.8+dfsg-7) experimental; urgency=low
 
   * Fixed cc_config.xml, reported by Nelson (Closes: #610638).
