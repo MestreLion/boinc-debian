@@ -1265,6 +1265,16 @@ bool PROJECT::runnable(int rsc_type) {
     return false;
 }
 
+bool PROJECT::uploading() {
+    for (unsigned int i=0; i<gstate.file_xfers->file_xfers.size(); i++) {
+        FILE_XFER& fx = *gstate.file_xfers->file_xfers[i];
+        if (fx.fip->project == this && fx.is_upload) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool PROJECT::downloading() {
     if (suspended_via_gui) return false;
     for (unsigned int i=0; i<gstate.results.size(); i++) {
@@ -1375,7 +1385,7 @@ double RESULT::estimated_time_remaining() {
 // 2) the current elapsed time and fraction done (dynamic estimate)
 //
 double ACTIVE_TASK::est_dur() {
-    if (fraction_done >= 1) return 0;
+    if (fraction_done >= 1) return elapsed_time;
     double wu_est = result->estimated_duration();
     if (fraction_done <= 0) return wu_est;
     if (wu_est < elapsed_time) wu_est = elapsed_time;

@@ -222,7 +222,7 @@ struct PROJECT : PROJ_AM {
     double resource_share_frac;
         // fraction of RS of non-suspended, compute-intensive projects
 
-    // the following are the user's project prefs
+    // the following are from the user's project prefs
     //
     bool no_cpu_pref;
     bool no_cuda_pref;
@@ -271,6 +271,8 @@ struct PROJECT : PROJ_AM {
     double user_total_credit;
     double user_expavg_credit;
     double user_create_time;
+    int userid;
+    int teamid;
     int hostid;
     double host_total_credit;
     double host_expavg_credit;
@@ -386,6 +388,12 @@ struct PROJECT : PROJ_AM {
     bool some_download_stalled();
         // a download is backed off
     bool some_result_suspended();
+    double last_upload_start;
+        // the last time an upload was started.
+        // Used for "work fetch deferral" mechanism:
+        // don't request work from a project if an upload started
+        // in last X minutes and is still active
+    bool uploading();
 
     RR_SIM_PROJECT_STATUS rr_sim_status;
         // temps used in CLIENT_STATE::rr_simulation();
@@ -534,6 +542,10 @@ struct APP_VERSION {
     char graphics_exec_file[256];
     double max_working_set_size;
         // max working set of tasks using this app version.
+        // unstarted jobs using this app version are assumed
+        // to use this much RAM,
+        // so that we don't run a long sequence of jobs,
+        // each of which turns out not to fit in available RAM
 
     int index;  // temp var for make_scheduler_request()
 
@@ -736,12 +748,10 @@ struct RESULT {
 
 // represents an always/auto/never value, possibly temporarily overridden
 
-class MODE {
-private:
+struct MODE {
     int perm_mode;
     int temp_mode;
     double temp_timeout;
-public:
     MODE();
     void set(int mode, double duration);
     int get_perm();

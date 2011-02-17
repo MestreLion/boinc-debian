@@ -289,7 +289,7 @@ void CLIENT_STATE::rr_simulation() {
             }
         } else {
             p->cpu_pwf.has_runnable_jobs = true;
-            if (p->cpu_pwf.sim_nused + rp->avp->avg_ncpus <= ncpus) {
+            if (p->cpu_pwf.sim_nused < ncpus) {
                 sim_status.activate(rp, 0);
                 p->rr_sim_status.activate(rp);
             } else {
@@ -348,6 +348,9 @@ void CLIENT_STATE::rr_simulation() {
         double diff = (sim_now + rpbest->rrsim_finish_delay) - rpbest->computation_deadline();
         if (diff > 0) {
             ACTIVE_TASK* atp = lookup_active_task_by_result(rpbest);
+            if (atp) {
+                atp->last_deadline_miss_time = now;
+            }
             if (atp && atp->procinfo.working_set_size_smoothed > ar) {
                 if (log_flags.rr_simulation) {
                     msg_printf(pbest, MSG_INFO,
@@ -446,9 +449,9 @@ void CLIENT_STATE::rr_simulation() {
             }
         } else {
             while (1) {
+                if (pbest->cpu_pwf.sim_nused >= ncpus) break;
                 RESULT* rp = pbest->rr_sim_status.get_pending();
                 if (!rp) break;
-                if (pbest->cpu_pwf.sim_nused + rp->avp->avg_ncpus > ncpus) break;
                 sim_status.activate(rp, sim_now-now);
                 pbest->rr_sim_status.activate(rp);
             }

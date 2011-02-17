@@ -28,6 +28,7 @@ using std::string;
 using std::vector;
 
 #include "coproc.h"
+#include "util.h"
 
 #include "acct_mgr.h"
 #include "acct_setup.h"
@@ -248,6 +249,14 @@ struct CLIENT_STATE {
     bool update_results();
     int nresults_for_project(PROJECT*);
     void check_clock_reset();
+    void clear_absolute_times();
+    inline void set_now() {
+        double x = dtime();
+        if (x < (now-60)) {
+            clear_absolute_times();
+        }
+        now = x;
+    }
 
 // --------------- cpu_sched.cpp:
     double total_resource_share();
@@ -262,14 +271,13 @@ struct CLIENT_STATE {
     void assign_results_to_projects();
     RESULT* largest_debt_project_best_result();
     void reset_debt_accounting();
-    bool possibly_schedule_cpus();
-    void schedule_cpus();
-    bool enforce_schedule();
+    bool schedule_cpus();
+    void make_run_list(vector<RESULT*>&);
+    bool enforce_run_list(vector<RESULT*>&);
     void append_unfinished_time_slice(vector<RESULT*>&);
 
     double runnable_resource_share(int);
     void adjust_debts();
-    std::vector <RESULT*> ordered_scheduled_results;
     double retry_shmem_time;
         // if we fail to start a task due to no shared-mem segments,
         // wait until at least this time to try running
@@ -453,12 +461,6 @@ struct CLIENT_STATE {
     void compute_nuploading_results();
 
 #ifdef SIM
-    RANDOM_PROCESS available;
-    RANDOM_PROCESS idle;
-    FILE* html_out;
-    double connection_interval;
-        // don't connect more often than this
-
     void html_start(bool);
     void html_rec();
     void html_end(bool);
@@ -528,6 +530,12 @@ extern void print_suspend_tasks_message(int);
     // E.g., if we need GPU work, we'll end up asking once a day,
     // so if the project develops a GPU app,
     // we'll find out about it within a day.
+
+#define WF_DEFER_INTERVAL   300
+    // if a project is uploading, and the last upload started within this interval,
+    // don't fetch work from it.
+    // This allows the work fetch to be merged with the reporting of the
+    // jobs that are currently uploading.
 
 //////// CPU SCHEDULING
 

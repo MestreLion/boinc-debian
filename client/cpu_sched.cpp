@@ -17,23 +17,39 @@
 
 // CPU scheduling logic.
 //
-// Terminology:
+//  - create an ordered "run list" (schedule_cpus).
+//      The ordering is roughly as follows:
+//          - GPU jobs first, then CPU jobs
+//          - for a given resource, jobs in deadline danger first
+//          - jobs from projects with lower recent est. credit first
+//      In principle, the run list could include all runnable jobs.
+//      For efficiency, we stop adding:
+//          - GPU jobs: when all GPU instances used
+//          - CPU jobs: when the # of CPUs allocated to single-thread jobs,
+//              OR the # allocated to multi-thread jobs, exceeds # CPUs
+//              (ensure we have enough single-thread jobs
+//              in case we can't run the multi-thread jobs)
+//      NOTE: RAM usage is not taken into consideration
+//          in the process of building this list.
+//          It's possible that include a bunch of jobs that can't run
+//          because of memory limits,
+//          even though there are other jobs that could run.
+//      - add running jobs to the list
+//          (in case they haven't finished time slice or checkpointed)
+//      - sort the list according to "more_important()"
+//      - shuffle the list to avoid starving multi-thread jobs
 //
-// Episode
-// The execution of a task is divided into "episodes".
-// An episode starts then the application is executed,
-// and ends when it exits or dies
-// (e.g., because it's preempted and not left in memory,
-// or the user quits BOINC, or the host is turned off).
-// A task may checkpoint now and then.
-// Each episode begins with the state of the last checkpoint.
-//
-// Debt interval
-// The interval between consecutive executions of adjust_debts()
-//
-// Run interval
-// If an app is running (not suspended), the interval
-// during which it's been running.
+//  - scan through the resulting list,
+//      running the jobs and preempting other jobs.
+//      Don't run a job if
+//      - its GPUs can't be assigned (possible if need >1 GPU)
+//      - it's a multi-thread job, and CPU usage would be #CPUs+1 or more
+//      - it's a single-thread job, don't oversaturate CPU
+//          (details depend on whether a MT job is running)
+//      - its memory usage would exceed RAM limits
+//          If there's a running job using a given app version,
+//          unstarted jobs using that app version
+//          are assumed to have the same working set size.
 
 #include "cpp.h"
 
@@ -74,6 +90,7 @@ struct PROC_RESOURCES {
     double ncpus_used_st;   // #CPUs of GPU or single-thread jobs
     double ncpus_used_mt;   // #CPUs of multi-thread jobs
     COPROCS coprocs;
+    double ram_left;
 
     // should we stop scanning jobs?
     //
@@ -90,7 +107,14 @@ struct PROC_RESOURCES {
 
     // should we consider scheduling this job?
     //
-    bool can_schedule(RESULT* rp) {
+    bool can_schedule(RESULT* rp, ACTIVE_TASK* atp) {
+        double wss;
+        if (atp) {
+            wss = atp->procinfo.working_set_size_smoothed;
+        } else {
+            wss = rp->avp->max_working_set_size;
+        }
+        if (wss > ram_left) return false;
         if (rp->schedule_backoff > gstate.now) return false;
         if (rp->uses_coprocs()) {
             if (gpu_suspend_reason) return false;
@@ -113,7 +137,7 @@ struct PROC_RESOURCES {
 
     // we've decided to run this - update bookkeeping
     //
-    void schedule(RESULT* rp) {
+    void schedule(RESULT* rp, ACTIVE_TASK* atp) {
         reserve_coprocs(
             *rp->avp, log_flags.cpu_sched_debug, "cpu_sched_debug"
         );
@@ -124,6 +148,13 @@ struct PROC_RESOURCES {
         } else {
             ncpus_used_st += rp->avp->avg_ncpus;
         }
+        double wss;
+        if (atp) {
+            wss = atp->procinfo.working_set_size_smoothed;
+        } else {
+            wss = rp->avp->max_working_set_size;
+        }
+        ram_left -= wss;
     }
 
     bool sufficient_coprocs(APP_VERSION& av, bool log_flag) {
@@ -236,6 +267,9 @@ static inline bool finished_time_slice(ACTIVE_TASK* atp) {
     bool running_beyond_sched_period = time_running >= gstate.global_prefs.cpu_scheduling_period();
     double time_since_checkpoint = gstate.now - atp->checkpoint_wall_time;
     bool checkpointed_recently = time_since_checkpoint < 10;
+    if (running_beyond_sched_period && !checkpointed_recently) {
+        atp->overdue_checkpoint = true;
+    }
     return (running_beyond_sched_period && checkpointed_recently);
 }
 
@@ -691,14 +725,13 @@ void CLIENT_STATE::adjust_debts() {
 }
 
 
-// Decide whether to run the CPU scheduler.
+// Possibly do job scheduling.
 // This is called periodically.
-// Scheduled tasks are placed in order of urgency for scheduling
-// in the ordered_scheduled_results vector
 //
-bool CLIENT_STATE::possibly_schedule_cpus() {
+bool CLIENT_STATE::schedule_cpus() {
     double elapsed_time;
     static double last_reschedule=0;
+    vector<RESULT*> run_list;
 
     if (projects.size() == 0) return false;
     if (results.size() == 0) return false;
@@ -715,7 +748,15 @@ bool CLIENT_STATE::possibly_schedule_cpus() {
     if (!must_schedule_cpus) return false;
     last_reschedule = now;
     must_schedule_cpus = false;
-    schedule_cpus();
+
+    // NOTE: there's an assumption that debt is adjusted at
+    // least as often as the CPU sched period (see client_state.h).
+    // If you remove the following, make changes accordingly
+    //
+    adjust_debts();
+
+    make_run_list(run_list);
+    enforce_run_list(run_list);
     return true;
 }
 
@@ -748,7 +789,7 @@ static bool schedule_if_possible(
             "[cpu_sched] scheduling %s (%s)", rp->name, description
         );
     }
-    proc_rsc.schedule(rp);
+    proc_rsc.schedule(rp, atp);
 
 #ifdef USE_REC
     adjust_rec_temp(rp);
@@ -763,10 +804,12 @@ static bool schedule_if_possible(
     return true;
 }
 
-// If a job J once ran in EDF,
-// and its project has another job of the same resource type
-// marked as deadline miss, mark J as deadline miss.
-// This avoids domino-effect preemption
+// Mark a job J as a deadline miss if either
+// - it once ran in EDF, and its project has another job
+//   of the same resource type marked as deadline miss.
+//   This avoids domino-effect preemption
+// - it was recently marked as a deadline miss by RR sim.
+//   This avoids "thrashing" if a job oscillates between miss and not miss.
 //
 static void promote_once_ran_edf() {
     for (unsigned int i=0; i<gstate.active_tasks.active_tasks.size(); i++) {
@@ -778,10 +821,13 @@ static void promote_once_ran_edf() {
                 rp->rr_sim_misses_deadline = true;
             }
         }
+        if (gstate.now - atp->last_deadline_miss_time < gstate.global_prefs.cpu_scheduling_period()) {
+            atp->result->rr_sim_misses_deadline = true;
+        }
     }
 }
 
-void add_coproc_jobs(int rsc_type, PROC_RESOURCES& proc_rsc) {
+void add_coproc_jobs(vector<RESULT*>& run_list, int rsc_type, PROC_RESOURCES& proc_rsc) {
     ACTIVE_TASK* atp;
     RESULT* rp;
     bool can_run;
@@ -795,8 +841,8 @@ void add_coproc_jobs(int rsc_type, PROC_RESOURCES& proc_rsc) {
         rp = earliest_deadline_result(rsc_type);
         if (!rp) break;
         rp->already_selected = true;
-        if (!proc_rsc.can_schedule(rp)) continue;
         atp = gstate.lookup_active_task_by_result(rp);
+        if (!proc_rsc.can_schedule(rp, atp)) continue;
         can_run = schedule_if_possible(
             rp, atp, proc_rsc, "coprocessor job, EDF"
         );
@@ -807,7 +853,7 @@ void add_coproc_jobs(int rsc_type, PROC_RESOURCES& proc_rsc) {
             rp->project->ati_pwf.deadlines_missed_copy--;
         }
         rp->edf_scheduled = true;
-        gstate.ordered_scheduled_results.push_back(rp);
+        run_list.push_back(rp);
     }
 #ifdef SIM
     }
@@ -819,20 +865,19 @@ void add_coproc_jobs(int rsc_type, PROC_RESOURCES& proc_rsc) {
         rp = first_coproc_result(rsc_type);
         if (!rp) break;
         rp->already_selected = true;
-        if (!proc_rsc.can_schedule(rp)) continue;
         atp = gstate.lookup_active_task_by_result(rp);
+        if (!proc_rsc.can_schedule(rp, atp)) continue;
         can_run = schedule_if_possible(
             rp, atp, proc_rsc, "coprocessor job, FIFO"
         );
         if (!can_run) continue;
-        gstate.ordered_scheduled_results.push_back(rp);
+        run_list.push_back(rp);
     }
 }
 
-// CPU scheduler - decide which results to run.
-// output: sets ordered_scheduled_result.
+// Make an ordered list of jobs to run.
 //
-void CLIENT_STATE::schedule_cpus() {
+void CLIENT_STATE::make_run_list(vector<RESULT*>& run_list) {
     RESULT* rp;
     PROJECT* p;
     unsigned int i;
@@ -844,6 +889,7 @@ void CLIENT_STATE::schedule_cpus() {
     proc_rsc.ncpus_used_st = 0;
     proc_rsc.ncpus_used_mt = 0;
     proc_rsc.coprocs.clone(host_info.coprocs, false);
+    proc_rsc.ram_left = available_ram();
 
     if (log_flags.cpu_sched_debug) {
         msg_printf(0, MSG_INFO, "[cpu_sched] schedule_cpus(): start");
@@ -895,12 +941,10 @@ void CLIENT_STATE::schedule_cpus() {
         }
     }
 
-    ordered_scheduled_results.clear();
-
     // first, add GPU jobs
 
-    add_coproc_jobs(RSC_TYPE_CUDA, proc_rsc);
-    add_coproc_jobs(RSC_TYPE_ATI, proc_rsc);
+    add_coproc_jobs(run_list, RSC_TYPE_CUDA, proc_rsc);
+    add_coproc_jobs(run_list, RSC_TYPE_ATI, proc_rsc);
 
     // then add CPU jobs.
     // Note: the jobs that actually get run are not necessarily
@@ -917,15 +961,15 @@ void CLIENT_STATE::schedule_cpus() {
         rp = earliest_deadline_result(RSC_TYPE_CPU);
         if (!rp) break;
         rp->already_selected = true;
-        if (!proc_rsc.can_schedule(rp)) continue;
         atp = lookup_active_task_by_result(rp);
+        if (!proc_rsc.can_schedule(rp, atp)) continue;
         can_run = schedule_if_possible(
             rp, atp, proc_rsc, "CPU job, EDF"
         );
         if (!can_run) continue;
         rp->project->cpu_pwf.deadlines_missed_copy--;
         rp->edf_scheduled = true;
-        ordered_scheduled_results.push_back(rp);
+        run_list.push_back(rp);
     }
 #ifdef SIM
     }
@@ -938,20 +982,19 @@ void CLIENT_STATE::schedule_cpus() {
         rp = largest_debt_project_best_result();
         if (!rp) break;
         atp = lookup_active_task_by_result(rp);
-        if (!proc_rsc.can_schedule(rp)) continue;
+        if (!proc_rsc.can_schedule(rp, atp)) continue;
         can_run = schedule_if_possible(
             rp, atp, proc_rsc, "CPU job, debt order"
         );
         if (!can_run) continue;
-        ordered_scheduled_results.push_back(rp);
+        run_list.push_back(rp);
     }
 
-    enforce_schedule();
 }
 
-static inline bool in_ordered_scheduled_results(ACTIVE_TASK* atp) {
-    for (unsigned int i=0; i<gstate.ordered_scheduled_results.size(); i++) {
-        if (atp->result == gstate.ordered_scheduled_results[i]) return true;
+static inline bool in_run_list(vector<RESULT*>& run_list, ACTIVE_TASK* atp) {
+    for (unsigned int i=0; i<run_list.size(); i++) {
+        if (atp->result == run_list[i]) return true;
     }
     return false;
 }
@@ -1042,22 +1085,21 @@ static void print_job_list(vector<RESULT*>& jobs) {
 // find running jobs that haven't finished their time slice.
 // Mark them as such, and add to list if not already there
 //
-void CLIENT_STATE::append_unfinished_time_slice(
-    vector<RESULT*> &runnable_jobs
-) {
+void CLIENT_STATE::append_unfinished_time_slice(vector<RESULT*> &run_list) {
     unsigned int i;
-    int seqno = (int)runnable_jobs.size();
+    int seqno = (int)run_list.size();
 
     for (i=0; i<active_tasks.active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks.active_tasks[i];
+        atp->overdue_checkpoint = false;
         if (!atp->result->runnable()) continue;
         if (atp->result->uses_coprocs() && gpu_suspend_reason) continue;
         if (atp->result->project->non_cpu_intensive) continue;
         if (atp->scheduler_state != CPU_SCHED_SCHEDULED) continue;
         if (finished_time_slice(atp)) continue;
         atp->result->unfinished_time_slice = true;
-        if (in_ordered_scheduled_results(atp)) continue;
-        runnable_jobs.push_back(atp->result);
+        if (in_run_list(run_list, atp)) continue;
+        run_list.push_back(atp->result);
         atp->result->seqno = seqno;
     }
 }
@@ -1464,7 +1506,7 @@ static inline void assign_coprocs(vector<RESULT*>& jobs) {
 //     and at the end it starts/resumes and preempts tasks
 //     based on scheduler_state and next_scheduler_state.
 // 
-bool CLIENT_STATE::enforce_schedule() {
+bool CLIENT_STATE::enforce_run_list(vector<RESULT*>& run_list) {
     unsigned int i;
     vector<ACTIVE_TASK*> preemptable_tasks;
     static double last_time = 0;
@@ -1492,7 +1534,7 @@ bool CLIENT_STATE::enforce_schedule() {
     if (log_flags.cpu_sched_debug) {
         msg_printf(0, MSG_INFO, "[cpu_sched] enforce_schedule(): start");
         msg_printf(0, MSG_INFO, "[cpu_sched] preliminary job list:");
-        print_job_list(ordered_scheduled_results);
+        print_job_list(run_list);
     }
 
     // Set next_scheduler_state to PREEMPT for all tasks
@@ -1502,33 +1544,29 @@ bool CLIENT_STATE::enforce_schedule() {
         atp->next_scheduler_state = CPU_SCHED_PREEMPTED;
     }
 
-    // make initial "to-run" list
-    //
-    vector<RESULT*>runnable_jobs;
-    for (i=0; i<ordered_scheduled_results.size(); i++) {
-        RESULT* rp = ordered_scheduled_results[i];
+    for (i=0; i<run_list.size(); i++) {
+        RESULT* rp = run_list[i];
         rp->seqno = i;
         rp->unfinished_time_slice = false;
-        runnable_jobs.push_back(rp);
     }
 
     // append running jobs not done with time slice to the to-run list
     //
-    append_unfinished_time_slice(runnable_jobs);
+    append_unfinished_time_slice(run_list);
 
     // sort to-run list by decreasing importance
     //
     std::sort(
-        runnable_jobs.begin(),
-        runnable_jobs.end(),
+        run_list.begin(),
+        run_list.end(),
         more_important
     );
 
-    promote_multi_thread_jobs(runnable_jobs);
+    promote_multi_thread_jobs(run_list);
 
     if (log_flags.cpu_sched_debug) {
         msg_printf(0, MSG_INFO, "[cpu_sched] final job list:");
-        print_job_list(runnable_jobs);
+        print_job_list(run_list);
     }
 
     double ram_left = available_ram();
@@ -1574,14 +1612,14 @@ bool CLIENT_STATE::enforce_schedule() {
     // assign coprocessors to coproc jobs,
     // and prune those that can't be assigned
     //
-    assign_coprocs(runnable_jobs);
+    assign_coprocs(run_list);
 
     // prune jobs that don't fit in RAM or that exceed CPU usage limits.
     // Mark the rest as SCHEDULED
     //
     bool running_multithread = false;
-    for (i=0; i<runnable_jobs.size(); i++) {
-        RESULT* rp = runnable_jobs[i];
+    for (i=0; i<run_list.size(); i++) {
+        RESULT* rp = run_list[i];
         atp = lookup_active_task_by_result(rp);
 
         if (!rp->uses_coprocs()) {
@@ -1632,22 +1670,32 @@ bool CLIENT_STATE::enforce_schedule() {
                         }
                         continue;
                     }
+                } else {
+                    if (ncpus_used >= ncpus) {
+                        continue;
+                    }
                 }
             }
         }
 
+        double wss = 0;
         if (atp) {
             atp->too_large = false;
-            if (atp->procinfo.working_set_size_smoothed > ram_left) {
+            wss = atp->procinfo.working_set_size_smoothed;
+        } else {
+            wss = rp->avp->max_working_set_size;
+        }
+        if (wss > ram_left) {
+            if (atp) {
                 atp->too_large = true;
-                if (log_flags.mem_usage_debug) {
-                    msg_printf(rp->project, MSG_INFO,
-                        "[mem_usage] enforce: result %s can't run, too big %.2fMB > %.2fMB",
-                        rp->name,  atp->procinfo.working_set_size_smoothed/MEGA, ram_left/MEGA
-                    );
-                }
-                continue;
             }
+            if (log_flags.mem_usage_debug) {
+                msg_printf(rp->project, MSG_INFO,
+                    "[mem_usage] enforce: result %s can't run, too big %.2fMB > %.2fMB",
+                    rp->name,  wss/MEGA, ram_left/MEGA
+                );
+            }
+            continue;
         }
 
         if (log_flags.cpu_sched_debug) {
@@ -1668,7 +1716,7 @@ bool CLIENT_STATE::enforce_schedule() {
         }
         ncpus_used += rp->avp->avg_ncpus;
         atp->next_scheduler_state = CPU_SCHED_SCHEDULED;
-        ram_left -= atp->procinfo.working_set_size_smoothed;
+        ram_left -= wss;
     }
 
     if (log_flags.cpu_sched_debug && ncpus_used < ncpus) {

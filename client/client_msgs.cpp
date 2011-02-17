@@ -63,13 +63,15 @@ void show_message(PROJECT *p, char* msg, int priority, bool is_html, const char*
         message[strlen(message)-1] = 0;
     }
 
+    // add a message
+    //
     switch (priority) {
     case MSG_INTERNAL_ERROR:
         snprintf(event_msg, sizeof(event_msg), "[error] %s", message);
         break;
     case MSG_SCHEDULER_ALERT:
-        snprintf(event_msg, sizeof(event_msg), "%s %s: %s",
-            _("Message from"), p->get_project_name(), message
+        snprintf(event_msg, sizeof(event_msg), "%s: %s",
+            _("Message from server"), message
         );
         break;
     default:
@@ -78,6 +80,8 @@ void show_message(PROJECT *p, char* msg, int priority, bool is_html, const char*
     message_descs.insert(p, priority, (int)gstate.now, event_msg);
 
 #ifndef SIM
+    // add a notice
+    //
     switch (priority) {
     case MSG_USER_ALERT:
     case MSG_SCHEDULER_ALERT:
