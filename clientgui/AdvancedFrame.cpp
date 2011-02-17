@@ -193,6 +193,8 @@ BEGIN_EVENT_TABLE (CAdvancedFrame, CBOINCBaseFrame)
     EVT_TIMER(ID_REFRESHSTATETIMER, CAdvancedFrame::OnRefreshState)
     EVT_TIMER(ID_FRAMERENDERTIMER, CAdvancedFrame::OnFrameRender)
     EVT_NOTEBOOK_PAGE_CHANGED(ID_FRAMENOTEBOOK, CAdvancedFrame::OnNotebookSelectionChanged)
+    EVT_SIZE(CAdvancedFrame::OnSize)
+    EVT_MOVE(CAdvancedFrame::OnMove)
 END_EVENT_TABLE ()
 
 
@@ -708,6 +710,7 @@ bool CAdvancedFrame::CreateMenu() {
     SetMenuBar(m_pMenubar);
 #ifdef __WXMAC__
     m_pMenubar->MacInstallMenuBar();
+    MacLocalizeBOINCMenu();
 #endif
     if (m_pOldMenubar) {
         delete m_pOldMenubar;
@@ -1022,6 +1025,18 @@ void CAdvancedFrame::SaveWindowDimensions() {
     }
     
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::SaveWindowDimensions - Function End"));
+}
+
+
+void CAdvancedFrame::OnSize(wxSizeEvent& event) {
+    SaveWindowDimensions();
+    event.Skip();
+}
+    
+
+void CAdvancedFrame::OnMove(wxMoveEvent& event) {
+    SaveWindowDimensions();
+    event.Skip();
 }
     
 

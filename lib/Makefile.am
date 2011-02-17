@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 22039 2010-07-22 20:08:33Z davea $
+## $Id: Makefile.am 22875 2011-01-04 17:05:52Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -141,7 +141,7 @@ libboinc_la_SOURCES = $(generic_sources) $(mac_sources)
 libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
 libboinc_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
 libboinc_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -version-number $(LIBBOINC_VERSION)
-libboinc_la_LIBADD = -ldl
+libboinc_la_LIBADD =
 
 libboinc_crypt_la_SOURCES = crypt.cpp
 libboinc_crypt_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)

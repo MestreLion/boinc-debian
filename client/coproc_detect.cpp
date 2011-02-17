@@ -584,7 +584,7 @@ bool COPROC_CUDA::check_running_graphics_app() {
 ////////////////// ATI STARTS HERE /////////////////
 //
 // Docs:
-// http://developer.amd.com/gpu_assets/Stream_Computing_User_Guide.pdf
+// http://developer.amd.com/gpu/ATIStreamSDK/assets/ATI_Stream_SDK_CAL_Programming_Guide_v2.0%5B1%5D.pdf
 // ?? why don't they have HTML docs??
 
 // criteria:
@@ -826,17 +826,49 @@ void COPROC_ATI::get(
             gpu_name="ATI Radeon HD 4700/4800 (RV740/RV770)";
             break;
         case 8:
-            gpu_name="ATI Radeon HD5800 series (Cypress)";
+            gpu_name="ATI Radeon HD 5800 series (Cypress)";
             break;
         case 9:
-            gpu_name="ATI Radeon HD5700 series (Juniper)";
+            gpu_name="ATI Radeon HD 5700 series (Juniper)";
             break;
         case 10:
-            gpu_name="ATI Radeon HD5x00 series (Redwood)";
+            gpu_name="ATI Radeon HD 5x00 series (Redwood)";
             break;
         case 11:
-            gpu_name="ATI Radeon HD5x00 series (Cedar)";
+            gpu_name="ATI Radeon HD 5x00 series (Cedar)";
             break;
+//
+// based on AMD's Stream SDK 2.3 shipped with AMD Catalyst 10.12 APP
+//
+// and by comments of Dr. Andreas Przystawik aka Gipsel at http://www.planet3dnow.de/vbulletin/showthread.php?p=4335830#post4335830
+//
+//
+// added new/current/coming AMD RADEON GPUs/IGPs/APUs
+        case 12:
+            gpu_name="AMD SUMO";
+            break;
+        case 13:
+            gpu_name="AMD SUPERSUMO";
+            break;
+        case 14:
+            gpu_name="AMD Radeon HD 6250/6310 (Wrestler)";
+            break;
+        case 15:
+            gpu_name="AMD Radeon HD 6900 series (Cayman)";
+            break;
+        case 16:
+            gpu_name="AMD RESERVED2";
+            break;
+        case 17:
+            gpu_name="AMD Radeon HD 6800 series (Barts)";
+            break;
+        case 18:
+            gpu_name="AMD Radeon HD 6x00 series (Turks)";
+            break;
+        case 19:
+            gpu_name="AMD Radeon HD 6300 series (Caicos)";
+            break;
+		// there arent any other target ids inside the Shadercompiler (YET !!! )
         default:
             gpu_name="ATI unknown";
             break;

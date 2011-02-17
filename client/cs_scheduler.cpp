@@ -445,6 +445,15 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
 
     p = work_fetch.choose_project();
     if (p) {
+        if (p->uploading() && (gstate.now - p->last_upload_start < WF_DEFER_INTERVAL)) {
+            if (log_flags.work_fetch_debug) {
+                msg_printf(p, MSG_INFO,
+                    "[wfd] deferring work fetch; upload active, started %d sec ago",
+                    (int)(gstate.now - p->last_upload_start)
+                );
+                return false;
+            }
+        }
         scheduler_op->init_op_project(p, RPC_REASON_NEED_WORK);
         return true;
     }
@@ -516,7 +525,7 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
                     sr.master_url
                 );
             } else {
-                msg_printf(project, MSG_USER_ALERT,
+                msg_printf(project, MSG_INFO,
                     _("You used the wrong URL for this project.  When convenient, remove this project, then add %s"),
                     sr.master_url
                 );
@@ -549,12 +558,8 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     //
     for (i=0; i<sr.messages.size(); i++) {
         USER_MESSAGE& um = sr.messages[i];
-        sprintf(buf, "%s %s: %s",
-            _("Message from"), project->get_project_name(),
-            um.message.c_str()
-        );
         int prio = (!strcmp(um.priority.c_str(), "notice"))?MSG_SCHEDULER_ALERT:MSG_INFO;
-        msg_printf(project, prio, buf);
+        msg_printf(project, prio, um.message.c_str());
     }
 
     if (log_flags.sched_op_debug && sr.request_delay) {

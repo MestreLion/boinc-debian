@@ -29,11 +29,12 @@
 #include <unistd.h>
 #endif
 
-#include "error_numbers.h"
 #include "common_defs.h"
+#include "diagnostics.h"
+#include "error_numbers.h"
+#include "filesys.h"
 #include "parse.h"
 #include "str_util.h"
-#include "filesys.h"
 
 #include "file_names.h"
 #include "client_state.h"
@@ -46,6 +47,10 @@ LOG_FLAGS log_flags;
 CONFIG config;
 
 LOG_FLAGS::LOG_FLAGS() {
+    init();
+}
+
+void LOG_FLAGS::init() {
     memset(this, 0, sizeof(LOG_FLAGS));
     // on by default (others are off by default)
     //
@@ -467,6 +472,8 @@ int CONFIG::parse(FILE* f) {
             parse_options(xp);
             continue;
         }
+        if (!strcmp(tag, "options/")) continue;
+        if (!strcmp(tag, "log_flags/")) continue;
         msg_printf_notice(NULL, false,
             "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
             "%s: <%s>",
@@ -489,11 +496,18 @@ int read_config_file(bool init) {
     if (!init) {
         msg_printf(NULL, MSG_INFO, "Re-reading cc_config.xml");
         config.clear();
+        log_flags.init();
     }
     f = boinc_fopen(CONFIG_FILE, "r");
     if (!f) return ERR_FOPEN;
-    config.parse(f);
+    int retval = config.parse(f);
     fclose(f);
+    if (retval) return retval;
+#ifndef SIM
+    diagnostics_set_max_file_sizes(
+        config.max_stdout_file_size, config.max_stderr_file_size
+    );
+#endif
     return 0;
 }
 

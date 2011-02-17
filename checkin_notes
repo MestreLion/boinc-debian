@@ -8186,3 +8186,422 @@ Rom    2 Dec 2010
     /
         configure.ac
         version.h
+
+Charlie 6 Dec 2010
+    - Mac Installer: Fix failure to auto-launch on OS 10.4.x.
+    
+    mac_installer/
+        postinstall
+        postupgrade
+
+Charlie 7 Dec 2010
+    - Tag for 6.12.9 release - Mac only.
+      boinc_core_release_6_12_9
+
+    /
+        configure.ac
+        version.h
+
+David  2 Dec 2010
+    - manager: fix compile warnings; from Steffen Moller
+
+    clientgui/
+        */*.xpm
+
+David  7 Dec 2010
+    - client: fix scheduling bug when a job has fraction_done = 1
+        but it's not finished yet.
+        ACTIVE_TASK::est_dur() was returning 0
+        when it should have returned elapsed_time.
+
+    client/
+        work_fetch.cpp
+
+David  9 Dec 2010
+    - client: fix bug where "reread config file" didn't update
+        the max log file sizes
+
+    client/
+        main.cpp
+        log_flags.cpp
+
+David  11 Dec 2010
+    - client: fix scheduling problem:
+        Old: enforce_schedule() won't run an active job if its
+            working set size exceeds remaining available RAM.
+        Problem: there may be a lot of similar jobs.
+            The client starts one, finds that its working set is too large,
+            starts the second, and so on.
+        Solution: if J is an unstarted job,
+            and there are started jobs using the same app version,
+            consider J's working set size to be the largest of
+            the working sets of those jobs.
+    - client: fix an apparent bug that could oversaturate
+        the CPUs with single-thread jobsk
+
+    client/
+        client_types.h
+        cpu_sched.cpp
+
+David  13 Dec 2010
+    - client: work fetch: if the chosen project is currently uploading a file,
+        and an upload started in the last 5 min, don't fetch work from it.
+        The goal is to merge the 2 scheduler RPCs
+        (fetch work, report completed taskS) into a single RPC.
+        Note: this may result in idleness in some cases.
+
+    client/
+        client_types.h
+        work_fetch.cpp
+        client_state.h
+        pers_file_xfer.cpp
+        cs_scheduler.cpp
+
+David  16 Dec 2010
+    - client: if detect that system clock has been set backwards
+        (either at startup or during execution)
+        reset a number of "wait until X" variables;
+        otherwise we might wait years to contact a project, restart a file xfer, etc.
+        Notes:
+        - there is no problem setting clocks forward; things just happen prematurely
+        - some variables (e.g. task deadlines) are not reset,
+            because it's not clear what to set them to
+
+    lib/
+        coproc.h
+    client/
+        client_types.h
+        client_state.cpp,h
+        coproc_detect.cpp
+
+David  17 Dec 2010
+	- client: improve text of "message from server" notices
+	- manager: change "add account manager" to "use account manager".
+		"Add" is confusing, because you can't add multiple account managers
+		like you add projects.
+	- client: recognize a few new ATI GPU models
+		from [P3D] Crashtest
+
+	client/
+		client_msgs.cpp
+		coproc_detect.cpp
+		cs_scheduler.cpp
+	clientgui/
+		AccountInfoPage.cpp
+		WelcomePage.cpp
+
+David  17 Dec 2010
+    - client: tweak to ATI CPU recognition
+		from [P3D] Crashtest
+
+    client/
+        coproc_detect.cpp
+
+David  2 Jan 2011
+    - unix build: remove hardwired -ldl
+
+    lib/
+        Makefile.am
+
+David  3 Jan 2011
+    - client: show a given system notice at most once a week
+
+    client/
+        client_msgs.cpp
+        cs_notice.cpp
+
+Charlie 4 Jan 2011
+    - Mac: Fix symbol table generation.
+    
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Rom    4 Jan 2011
+    - Tag for 6.12.10 release, all platforms
+      boinc_core_release_6_12_10
+
+    /
+        configure.ac
+        version.h
+
+David 11 Jan 2011
+    - client: use std::deque instead of std::vector
+        for RR sim's pending-job lists.
+        Erasing head of vector is slow.
+    - client: in RR sim, make sure we saturate devices if possible.
+        Otherwise we may report a shortfall incorrectly
+
+    client/
+        rr_sim.cpp, .h
+        work_fetch.h
+
+David  11 Jan 2011
+    - client: set PROJECT::last_upload_start when a job completes,
+        NOT when its first upload starts.
+        This prevents a scheduler RPC from happening between the two.
+        This was a bug in [22841]
+
+    client/
+        cs_apps.cpp
+        pers_file_xfer.cpp
+
+David  12 Jan 2011
+    - client: tweak [22842] so that system clock changes
+        of < 60 seconds are ignored
+
+    client/
+        client_state.h
+
+Rom    12 Jan 2011
+    - MGR: Embed the BOINC skin in the executable using XPM files.
+
+    clientgui/res/skins/default/graphic/
+        <Various Files>
+    clientgui/
+        SkinManager.cpp
+    win_build/
+        boincmgr.vcproj
+
+Rom    13 Jan 2011
+    - MGR: Disable the background repaint events for the SGUI Messages and
+        SGUI Preferences dialog.  Changing the font color wasn't as easy as
+        I had hoped and the black background for the skin doesn't do any
+        good when the text itself is black as well.
+        
+    clientgui/
+        sg_DlgMessages.cpp
+        sg_DlgPreferences.cpp
+
+David  13 Jan 2011
+    - scheduler/client/API: pass user ID and team ID from scheduler to client,
+        and from client to app (host ID is already passed).
+        E@h asked for this, not sure why.
+
+    client/
+        client_types.cpp,h
+        app_start.cpp
+    lib/
+        app_ipc.cpp,h
+    sched/
+        sched_types.cpp
+
+Rom    13 Jan 2010
+    - MGR: re-enable background painting and just change the default background
+        color for the new default skin to light gray.
+        
+    clientgui/
+        sg_DlgMessages.cpp
+        sg_DlgPreferences.cpp
+
+David  15 Jan 2011
+    - client: fix job scheduling bug.
+        Scenario: we have 2 CPUs and 1GB RAM
+        Project A has jobs that use 1GB.
+        Project B has small-mem jobs.
+        Currently, we ignore RAM usage in building the runnable job list,
+        so we might pick 2 jobs from project A.
+        enforce_schedule() (which checks RAM usage) will run just one of them,
+        and the other CPU will be idle.
+        Solution: keep track of RAM usage while building the runnable job list.
+    client/
+        cpu_sched.cpp
+
+David  15 Jan 2011
+    - client: code cleanup in CPU scheduling;
+        eliminate global variable
+
+    client/
+        client_state.cpp,h
+        cpu_sched.cpp
+
+Rom    17 Jan 2011
+    - Tag for 6.12.11 release, all platforms
+      boinc_core_release_6_12_11
+
+    /
+        configure.ac
+        version.h
+
+Charlie 18 Jan 2011
+    Mac: update release script to remove install of separate BOINC skin.
+
+    mac_installer/
+        release_boinc.sh
+
+David  19 Jan 2011
+    - client: eliminate unnecessary CPU reschedules.
+        Currently we do a reschedule any time a job checkpoints,
+        in case there's a job that has finished a time slice
+        but hasn't checkpointed yet.
+        Instead: flag such jobs, and trigger a reschedule
+        on checkpoint only for flagged jobs.
+    - client: fix instability in job scheduling that happens
+        if a job's estimated completion time in RR sim is close to its deadline.
+        It can alternate between making and missing deadline,
+        causing the scheduler to alternate rapidly between jobs.
+        Solution: if RR sim has marked a job as deadline miss
+        any time in the last (CPU scheduling period),
+        treat it as a deadline miss.
+
+    client/
+        app.cpp,h
+        rr_sim.cpp
+        app_control.cpp
+        cpu_sched.cpp
+
+David  19 Jan 2011
+    - client: if we're using an acct mgr,
+        and we're attached to a project manually (not via acct mgr)
+        and the acct mgr tells us to detach from it, don't.
+
+    client/
+        acct_mgr.cpp
+
+Rom    25 Jan 2011
+    - MGR: Fix advanced view button is Simple GUI.
+        (Button Text is Verdana 8pt. in MS Paint)
+    
+    clientgui/res/skins/default/graphic/
+        advanced_link_image.xpm
+    clientgui/res/templates/skins/
+        advanced_link_image.gif (Added)
+        btnAdvancedView.png (Removed)
+
+Rom    25 Jan 2011
+    - Tag for 6.12.12 release, all platforms
+      boinc_core_release_6_12_12
+
+    /
+        configure.ac
+        version.h
+
+Charlie  12 Nov 2010
+    - MGR: Save window dimensions and position on SIZE and MOVE events
+        to make sure changes are recorded even if the window is minimized
+        (iconized) when exiting BOINC.
+
+    clientgui/
+        AdvancedFrame.cpp, .h
+        DlgEventLog.cpp, .h
+        sg_DlgMessages.cpp, .h
+
+David  25 Jan 2011
+    - client: accept <options/> and <log_flags/> in cc_config.xml
+    - client: reset log flags (as well as options) when rereading cc_config.xml
+
+    client/
+        log_flags.cpp,h
+
+Charlie 31 Jan 2011
+    - Mac: Add info about dual-GPU Powerbooks to ReadMe files.
+    
+    mac_installer/
+        GR-ReadMe.rtf
+        PTP-ReadMe.rtf
+        ReadMe.rtf
+
+Charlie 1 Feb 2011
+    - Mac: Localize items in Mac's BOINC menu.
+    
+    clientgui/
+        AdvancedFrame.cpp
+        mac/
+            MacGUI.pch
+            Mac_GUI.cpp
+
+Charlie 1 Feb 2011
+    - MGR: Use branded short application name in Help tooltips instead 
+        of always using "BOINC".
+    - Mac: Eliminate unused source files Localization.cpp, .h from Mac 
+        project.
+
+    clientgui/
+        DlgEventLog.cpp
+        sg_DlgMessages.cpp
+        sg_DlgPreferences.cpp
+        sg_ProjectsComponent.cpp
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  1 Feb 2011
+    - client: make "wrong URL" message not be a notice
+
+    client/
+        cs_scheduler.cpp
+
+Rom    1 Feb 2011
+    - WINSETUP: Avoid a 0xc0000135 error by giving the boinc_master and
+        boinc_project membership in the 'Users' group.  Dynamic linking
+        to nvcuda.dll was failing because the project applications were
+        being denied access to DLLs in the system directory.
+        
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+Rom    25 Jan 2011
+    - Tag for 6.12.13 release, all platforms
+      boinc_core_release_6_12_13
+
+    /
+        configure.ac
+        version.h
+
+Rom    3 Feb 2011
+    - MGR: Enable the volunteer configurable 'shutdown core client' feature
+        on exit for Linux.  It was orginally supposed to be enabled when
+        the balloon features were enabled, but got lost in ifdef hell.
+        (From "Lee")
+        
+    clientgui/
+        DlgExitMessage.cpp
+        MainDocument.cpp
+
+David  4 Feb 2011
+    - client/manager: show venue in project properties
+
+    clientgui/
+        DlgItemProperties.cpp
+    client/
+        client_types.cpp
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+
+David  7 Feb 2011
+    - manager: msg tweak
+
+    client/
+        CompletionErrorPage.cpp
+
+David  7 Feb 2011
+    - client: don't crash if omit cmdline port#.  Fixes #1040
+
+    client/
+        cs_cmdline.cpp
+
+Rom    8 Feb 2011
+    - MGR: Fix a bug that is several years old, appears to have been
+        introduced during the Unicode conversion phase for Windows. Passing
+        a wide character string into an narrow character function causes
+        a NULL reference exception.
+        
+        TODO: There is still an issue if the manager attempts to write to
+          stderr when the BOINC Manager log files are redirected to a
+          directory in which the user doesn't have access too.
+          
+    clientgui/
+        SkinManager.cpp
+
+Rom    8 Feb 2011
+    - Tag for 6.12.14 release, all platforms
+      boinc_core_release_6_12_14
+
+    /
+        configure.ac
+        version.h
