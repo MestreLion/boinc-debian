@@ -1,6 +1,7 @@
-boinc (6.12.14+dfsg-1) UNRELEASED; urgency=low
+boinc (6.12.14+dfsg-1) unstable; urgency=low
 
   * New upstream version.
+  * Migration from experimental to unstable.
 
  -- Steffen Moeller <moeller@debian.org>  Thu, 17 Feb 2011 19:37:10 +0100
 
