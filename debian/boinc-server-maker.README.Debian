@@ -10,5 +10,9 @@ This package (or the BOINC sources in general) do not provide
 the server directly but prepare the source code in a way that
 this can be used to compile the binaries and prepare a local
 web presence in a fairly straight forward manner. The package
-was hence renamed to "BOINC server maker", still with some room
-for improvement in the naming.
+was hence renamed to "BOINC server maker", which admittedly
+still leaves some room to improve that package's name.
+
+We are aiming at presenting the boinc-server-maker package as
+a build dependency for subsequent server packages that then
+come with the applications to distribute.
