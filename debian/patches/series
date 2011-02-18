@@ -1,6 +1,5 @@
 calculate_credit_multiplier.patch
 generate_less.patch
-const_images.patch
 texfont_removal.patch
 Makefile_subdirs.patch
 MakefileWrapper.patch
