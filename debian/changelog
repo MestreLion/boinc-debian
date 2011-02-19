@@ -1,3 +1,9 @@
+boinc (6.12.14+dfsg-2) UNRELEASED; urgency=low
+
+  * Corrected XML error (Closes: #610638)
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 19 Feb 2011 21:00:35 +0100
+
 boinc (6.12.14+dfsg-1) unstable; urgency=low
 
   * New upstream version.
