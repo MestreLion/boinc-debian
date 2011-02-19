@@ -27,7 +27,7 @@ meaning see: http://boinc.berkeley.edu/trac/wiki/ClientMessages
     <http_xfer_debug>0</http_xfer_debug>
     <benchmark_debug>0</benchmark_debug>
     <poll_debug>0</poll_debug>
-    <gui_rpc_debug>0</guirpc_debug>
+    <gui_rpc_debug>0</gui_rpc_debug>
     <scrsave_debug>0</scrsave_debug>
     <app_msg_send>0</app_msg_send>
     <app_msg_receive>0</app_msg_receive>
