@@ -1,3 +1,10 @@
+boinc (6.12.15+dfsg-2) UNRELEASED; urgency=low
+
+  * New pt_BR.po file contributed by Adriano Rafael Gomes
+    (Closes: #610407).
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 05 Mar 2011 21:17:23 +0100
+
 boinc (6.12.15+dfsg-1) unstable; urgency=low
 
   * New upstream release.
