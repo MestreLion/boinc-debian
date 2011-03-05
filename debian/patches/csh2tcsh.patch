@@ -1,0 +1,20 @@
+Index: boinc/tools/db_query
+===================================================================
+--- boinc.orig/tools/db_query	2011-03-05 21:39:34.000000000 +0100
++++ boinc/tools/db_query	2011-03-05 21:40:59.000000000 +0100
+@@ -1,4 +1,4 @@
+-#! /bin/csh
++#!/bin/tcsh
+ 
+ set CIVDATE = `date "+%Y:%m:%d:%H:%M"`
+ set UNIXDATE = `perl -e 'print time()'`
+Index: boinc/tools/watch_tcp
+===================================================================
+--- boinc.orig/tools/watch_tcp	2011-03-05 21:38:57.000000000 +0100
++++ boinc/tools/watch_tcp	2011-03-05 21:40:49.000000000 +0100
+@@ -1,4 +1,4 @@
+-#! /bin/csh 
++#!/bin/tcsh
+ # 
+ # by jeffc 
+ # 

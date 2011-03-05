@@ -5,3 +5,4 @@ Makefile_subdirs.patch
 MakefileWrapper.patch
 wrapperURL.patch
 FlatBookStaticChar.patch
+csh2tcsh.patch
