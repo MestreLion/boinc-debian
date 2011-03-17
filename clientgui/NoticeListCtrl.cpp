@@ -412,6 +412,10 @@ bool CNoticeListCtrl::Create( wxWindow* parent )
 #endif
 ////@end CNoticeListCtrl creation
 
+    // Display the empty notice notification until we have some
+    // notices to display.
+    m_bDisplayEmptyNotice = true;
+
     return TRUE;
 }
 
@@ -462,7 +466,7 @@ wxString CNoticeListCtrl::OnGetItem(size_t i) const {
     wxString strDescription = wxEmptyString;
     wxString strProjectName = wxEmptyString;
     wxString strURL = wxEmptyString;
-    wxString strArrivalTime = wxEmptyString;
+    wxString create_time = wxEmptyString;
     wxString strBuffer = wxEmptyString;
     wxString strTemp = wxEmptyString;
     wxDateTime dtBuffer;
@@ -472,7 +476,7 @@ wxString CNoticeListCtrl::OnGetItem(size_t i) const {
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
 
-    if (pDoc->GetNoticeCount() <= 0) {
+    if (m_bDisplayEmptyNotice) {
         strBuffer = wxT("<table border=0 cellpadding=5><tr><td>");
         strBuffer += _("There are no notices at this time.");
         strBuffer += wxT("</font></td></tr></table><hr>");
@@ -502,8 +506,8 @@ wxString CNoticeListCtrl::OnGetItem(size_t i) const {
         strDescription = wxString(np->description.c_str(), wxConvUTF8);
         pDoc->LocalizeNoticeText(strDescription, true);
 
-        dtBuffer.Set((time_t)np->arrival_time);
-        strArrivalTime = dtBuffer.Format();
+        dtBuffer.Set((time_t)np->create_time);
+        create_time = dtBuffer.Format();
 
         strBuffer = wxT("<table border=0 cellpadding=5><tr><td>");
 
@@ -519,7 +523,7 @@ wxString CNoticeListCtrl::OnGetItem(size_t i) const {
 
         strBuffer += wxT("<br><font size=-2 color=#8f8f8f>");
 
-        strBuffer += strArrivalTime;
+        strBuffer += create_time;
 
         if (!strURL.IsEmpty()) {
             strTemp.Printf(
@@ -533,8 +537,6 @@ wxString CNoticeListCtrl::OnGetItem(size_t i) const {
         strBuffer += wxT("</font></td></tr></table><hr>");
     }
 
-
-    
     return strBuffer;
 }
 
@@ -553,6 +555,7 @@ bool CNoticeListCtrl::UpdateUI()
     // Call Freeze() / Thaw() only when actually needed; 
     // otherwise it causes unnecessary redraws
     if (pDoc->GetNoticeCount() <= 0) {
+        m_bDisplayEmptyNotice = true;
         Freeze();
         SetItemCount(1);
         Thaw();
@@ -560,14 +563,17 @@ bool CNoticeListCtrl::UpdateUI()
     }
     
     if (
+        pDoc->notices.complete ||
         ((int)GetItemCount() != pDoc->GetNoticeCount()) ||
-        pDoc->notices.complete
+        ((pDoc->GetNoticeCount() > 0) && (m_bDisplayEmptyNotice == true))
     ) {
+        pDoc->notices.complete = false;
+        m_bDisplayEmptyNotice = false;
         Freeze();
         SetItemCount(pDoc->GetNoticeCount());
-        pDoc->notices.complete = false;
         Thaw();
     }
+
 #ifdef __WXMAC__
     // Enable accessibility only after drawing the page 
     // to avoid a mysterious crash bug

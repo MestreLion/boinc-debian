@@ -321,18 +321,17 @@ void ACTIVE_TASK_SET::get_memory_usage() {
         pi.page_fault_rate = pf/diff;
         if (log_flags.mem_usage_debug) {
             msg_printf(atp->result->project, MSG_INFO,
-                "[mem_usage] %s: RAM %.2fMB, page %.2fMB, %.2f page faults/sec, user CPU %.3f, kernel CPU %.3f",
+                "[mem_usage] %s: WS %.2fMB, smoothed %.2fMB page %.2fMB, %.2f page faults/sec, user CPU %.3f, kernel CPU %.3f",
                 atp->result->name,
-                pi.working_set_size/MEGA, pi.swap_size/MEGA,
+                pi.working_set_size/MEGA,
+                pi.working_set_size_smoothed/MEGA,
+                pi.swap_size/MEGA,
                 pi.page_fault_rate,
                 pi.user_time, pi.kernel_time
             );
         }
     }
 
-    exclusive_app_running = 0;
-    double old_egar = exclusive_gpu_app_running;
-    exclusive_gpu_app_running = 0;
     for (i=0; i<config.exclusive_apps.size(); i++) {
         if (app_running(piv, config.exclusive_apps[i].c_str())) {
             exclusive_app_running = gstate.now;
@@ -344,9 +343,6 @@ void ACTIVE_TASK_SET::get_memory_usage() {
             exclusive_gpu_app_running = gstate.now;
             break;
         }
-    }
-    if ((old_egar==0) != (exclusive_gpu_app_running==0)) {
-        gstate.request_schedule_cpus("Exclusive GPU app status changed");
     }
 
     // get info on non-BOINC processes.

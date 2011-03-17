@@ -8606,6 +8606,197 @@ Rom    8 Feb 2011
         configure.ac
         version.h
 
+David  8 Feb 2011
+    - create_work and possibly other back-end programs:
+        fix bug that corrupted WU command lines.
+        The problem: we were using strcpy(p, p+n) to delete the
+        first n characters of p.
+        This is incorrect - the behavior of strcpy() is undefined
+        if its args overlap.
+        On some systems (e.q. AQUA's server) it does wacky things.
+
+    tools/
+        backend_lib.cpp
+    lib/
+        str_util.cpp,h
+        parse.cpp
+
+David  9 Feb 2011
+    - user web: apparently if you put links of the form
+        http://setiathome.berkeley.edu/help.php?key=Viagra.uk
+        all over the web, Google will list "Viagra.uk" in your site outline (why??).
+        Preliminary checkin for dealing with this.
+
+    html/
+        inc/
+            prefs.inc
+            util.inc
+        user/
+            view_profile.php
+            account_finish.php
+            am_get_info.php
+            add_venue.php
+
+David  9 Feb 2011
+    - user web: make all forum tables full-width
+    html/inc/
+        forum.inc
+
+David  9 Feb 2011
+    - user web: finish dealing with get args spam
+
+    html/
+        user/
+            *.php
+        inc/
+            pm.inc
+            prefs.inc
+            forum.inc
+            util.inc
+
+David  9 Feb 2011
+    - user web: appearance tweaks
+
+    html/
+        inc/
+            forum.inc
+        user/
+            forum_help_desk.php
+            forum_index.php
+            white.css
+
+David  10 Feb 2011
+    - user web: fix "nowrap" post display
+
+    html/inc/
+        forum.inc
+
+David  10 Feb 2011
+    - user web: CSS cleanup.
+        Use classes instead of IDs.
+        white.css and black.css are cleaned up; style2.css needs work
+
+    html/
+        inc/
+            pm.inc
+            forum.inc
+            user.inc
+            util.inc
+        user/
+            pm.php
+            sample_index.php
+            forum_thread.php
+            main.css
+            forum_help_desk.php
+            friend.php
+            forum_forum.php
+            forum_index.php
+            style2.css
+            white.css
+
+David  10 Feb 2011
+    - client: if a logical filename contains /'s,
+        create the needed dirs under the slot dir
+    - user web: pages with translatable text should not be cached.
+        Fix this for home page; there are some others
+
+    client/
+        app_start.cpp
+    html/user/
+        sample_index.php
+
+David  11 Feb 2011
+    - manager: project properties: if no venue, show "default"
+
+    clientgui/
+        DlgItemProperties.cpp
+
+David  11 Feb 2011
+    - user web: style tweaks
+    html/user/
+        forum_post.php
+        main.css
+        white.css
+
+David  11 Feb 2011
+    - user web: disable "delete account" feature
+
+    html/
+        user/
+            delete_account.php
+        inc/
+            user.inc
+
+David  11 Feb 2011
+    - user web: bug fixes
+    html/user/
+        team_quit_action.php
+        team_manage.php
+        forum_moderate_post.php
+
+David  13 Feb 2011
+    - user web: fix venue change
+    html/
+        inc/
+            prefs.inc
+            util.inc
+        user/
+            host_venue_action.php
+
+David  13 Feb 2011
+    - user web: bug fixes
+
+    html/user/
+        forum_moderate_thread.php
+        add_venue.phhp
+
+David  13 Feb 2011
+    - user web: bug fix
+
+    html/user/
+        forum_reply.php
+
+David  13 Feb 2011
+    - user web: bug fix
+    html/user/
+        forum_banishment_vote_action.php
+
+David  14 Feb 2011
+    - user web: bug fix
+    html/user/
+        pm.php
+
+David  14 Feb 2011
+    - user web: fix [img] BBcode problem
+    html/inc/
+        text_transform.inc
+
+David  14 Feb 2011
+    - user web: various fixes
+    html/
+        inc/
+            prefs.inc
+        user/
+            main.css
+            prefs_remove.php
+            forum_reply.php
+            white.css
+            add_venue.php
+            forum_edit.php
+
+David  14 Feb 2011
+    - user web: fixes
+    html/user/
+        sample_index.php
+        main.css
+
+David  14 Feb 2011
+    - client, linux: use X server for idle detection if available
+
+    configure.ac
+    client/
+        hostinfo_unix.cpp
+
 Charlie 15 Feb 2011
     Mac Installer: Fix the code which deletes installer receipts to use  
         the current package name (which changed when I eliminated the 
@@ -8683,6 +8874,308 @@ David  16 Feb 2011
 Rom    16 Feb 2011
     - Tag for 6.12.15 release, all platforms
       boinc_core_release_6_12_15
+
+    /
+        configure.ac
+        version.h
+
+Charlie 18 Feb 2011
+    - Mac: Update link to NVIDIA CUDA Mac driver download page.
+    
+    mac_installer/
+        GR-ReadMe.rtf
+        PTP-ReadMe.rtf
+        ReadMe.rtf
+
+David  17 Feb 2011
+    - client: when detach project, remove its RSS feeds from list
+    - client: remove once-per-week limit for client-generated notices;
+        need to show "network connection required" more often
+    - client: when remove "network conn required" notice
+        (because now have conn)
+        set the flag that says complete notice list is being sent
+    - client: if RSS feed fetch returns <error_num>,
+        show the corresponding message rather than "XML parse error"
+
+    client/
+        client_state.cpp
+        cs_notice.cpp
+        gui_rpc_server_ops.cpp
+        http_curl.cpp
+        net_stats.cpp,h
+
+Rom    18 Feb 2011
+    - client: Fast User Switching does not change the session protocol
+        to RDP when the active session is put into the background and
+        a new one is brought into the foreground.  It appears it is safe
+        to use the connected state in addition to the protocol
+        to detect when the session is no longer capable of processing
+        GPU work
+        
+    lib/
+        win_util.cpp
+
+David  18 Feb 2011
+    - client: more notice-related fixes.
+        I'm working on this case:
+        - start up
+        - disconnect (produces notice)
+        - reconnect (removes notice)
+        The client is now doing the right thing.
+        The manager is not.
+
+    client/
+        acct_setup.h
+        cs_notice.cpp,h
+        gui_rpc_server.h
+        gui_rpc_server_ops.cpp
+
+David  19 Feb 2011
+    - client: make "wait 30 sec after exclusive app exits" apply to network too
+    - client: fix bug in "wait 30 sec after exclusive app exits" logic
+    - client: fix compile warning and possible bug in is_remote_desktop()
+    - win: remove wrappture_example from solution
+        (until Hubzereo guys get their win lib working)
+
+	client/
+		app.cpp
+		cs_prefs.cpp
+	lib/
+		win_util.cpp
+
+Charlie 21 Feb 2011
+    - client: fix compiler warning.
+        
+    client/
+        cs_notice.cpp
+
+David  22 Feb 2011
+    - client: surround the opaque field in a CDATA block.
+
+    client/
+        acct_mgr.cpp
+
+David  22 Feb 2011
+    - client: wait 15 seconds (instead of 5) for an app to exit
+        before killing it.
+        Apparently some apps take ~10 sec on slow computers.
+
+    client/
+        client_state.h
+        app_control.cpp
+
+David  22 Feb 2011
+    - client: in the loop that starts up apps,
+        check if we've been in the loop for 10 sec.
+        If so, break out of it and reschedule.
+        Avoid starving GUI RPCs and heartbeats.
+
+    client/
+        cpu_sched.cpp
+        client_state.h
+
+David  22 Feb 2011
+    - client: finish [22902] (pass user ID, team ID to apps).
+        Forgot to parse them in scheduler reply.
+
+    client/
+        scheduler_op.cpp
+        
+David  23 Feb 2011
+    - client: on finish upload, trigger work fetch
+        (since we may have been waiting for upload finish)
+    - client: fix crash: if remove an RSS feed, remove its active HTTP op if any.
+
+    client/
+        cs_notice.cpp
+        pers_file_xfer.cpp
+        work_fetch.cpp
+
+Rom    2 Mar 2011
+    - MGR: Properly handle the case where the only notice in the manager
+        is the 'no notice' notice and then we transition to a single notice
+        from another source.
+
+    clientgui/
+        NoticeListCtrl.cpp, .h
+
+David  2 Mar 2011
+    - manager: show notice create time rather than arrival time
+    - client: don't show "need network" notice if we don't need it
+
+    clientgui/
+        NoticeListCtrl.cpp
+    client/
+        cs_notice.cpp
+
+David  2 Mar 2011
+    - client: when get a bunch of notices from RSS feed,
+        sort them by create time before appending to notice list.
+        This ensures that, in the Notices tab,
+        notices are ordered decreasing create time within an RSS feed
+        (though not necessarily across feeds)
+
+    client/
+        cs_notice.cpp,h
+
+Rom    2 Mar 2011
+    - MGR: Turn -boincargs into a string instead of an option.
+
+    clientgui/
+        BOINCGUIApp.cpp
+
+Rom    2 Mar 2011
+    - MGR: Turn off the task pane for the notices tab.
+    
+    clientgui/
+        ViewNotices.cpp
+
+Rom    2 Mar 2011
+    - MGR: Disable our color scheme is a non-white background is selected
+        for the current theme. My commit on 3 Mar 2010 wasn't good enough
+        for High-Contrast themes.
+        
+    clientgui/
+        BOINCBaseView.cpp
+        DlgEventLog.cpp
+
+David  2 Mar 2011
+	- client: in deciding whether to remove the "need network" notice,
+		we were using the wrong (too high-level) interface
+
+	client/
+		cs_notice.cpp
+
+Rom    3 Mar 2011
+    - MGR: Change the reminder frequency interval to hours and adjust the min/max
+        values to 0/24.  Default value is now 6 hours between notification reminders.
+        
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCDialupManager.cpp
+        BOINCTaskBar.cpp
+        DlgOptions.cpp
+
+Rom    16 Feb 2011
+    - Tag for 6.12.16 release, all platforms
+      boinc_core_release_6_12_16
+
+    /
+        configure.ac
+        version.h
+
+David  28 Feb 2011
+    - boinccmd: fix --get_project_config operation
+
+    client/
+        boinc_cmd.cpp
+
+David  3 Mar 2011
+    - client: fix inaccuracy in RR simulation reported by Bill Barber.
+        The problem arises when there are jobs of projects
+        with widely differing resource shares,
+        and results in an overestimation of saturated time.
+
+        Old: at the start of simulation, call WORK_FETCH::compute_shares() 
+            to get resources of runnable projects.
+            Use these throughout the simulation.
+
+        Problem: suppose you have 2 runnable projects;
+            P1 has large RS, P2 has small RS.
+            P1's jobs finish quickly.
+            P2's jobs then are running alone,
+            but their FLOPS is scaled (incorrectly) by P2's small RS.
+
+        Solution: recompute relative CPU resource share within the
+            simulation loop,
+            and compute it over the projects that have actives jobs
+            in the simulation.
+    client/
+        rr_sim.cpp
+        client_types.h
+
+Charlie 3 Mar 2011
+    - MGR: reduce duration of notifications on Mac from 15 to 5 seconds.
+
+    clientgui/
+        BOINCTaskBar.cpp
+
+David  3 Mar 2011
+    - manager: fix copyright date in about box
+
+    clientgui/
+        DlgAbout.cpp
+
+David  4 Mar 2011
+    - client: fix spurious error when removing a notice RSS feed
+
+    client/
+        cs_notice.cpp
+
+David  6 Mar 2011
+    - client: print smoothed as well as instantaneous WSS
+    - manager: make RPC reason strings translatable
+
+    client/
+        app.cpp
+    clientgui/
+        ViewProjects.cpp
+
+Rom    7 Mar 2011
+    - MGR: Refactor part of the Options dialog out of the Advanced Frame
+        code.
+    - MGR: Change the Reminder Frequency option in the Options dialog to
+        a combo box.
+        
+    TODO: Change the taskbar logic to handle the 'always' case.
+    
+    clientgui/
+        AdvancedFrame.cpp
+        BOINCBaseFrame.cpp, .h
+        BOINCTaskBar.cpp
+        DlgOptions.cpp, .h
+
+Rom    7 Mar 2011
+    - MGR: ComboBox's are zero index based.
+    
+    clientgui/
+        DlgOptions.cpp, .h
+
+Rom    7 Mar 2011
+    - MGR: Handle the 'always' option by only popping a new balloon if the
+        unread notice count differs from the last time we popped a
+        balloon.
+        
+    clientgui/
+        BOINCTaskBar.cpp, .h
+
+Rom    7 Feb 2011
+    - Tag for 6.12.17 release, all platforms
+      boinc_core_release_6_12_17
+
+    /
+        configure.ac
+        version.h
+
+Rom    7 Mar 2011
+    - MGR: Don't attempt to set the project or account manager if the project
+        list control does not contain any items.  This can cause a crash
+        if the all_projects_list.xml is empty.
+        
+    clientgui/
+        AccountManagerInfoPage.cpp
+        ProjectInfoPage.cpp
+
+Rom    7 Mar 2011
+    - Backout change set [23175], it prevents work-fetch with 6.12 scheduler.
+    
+    client/
+        rr_sim.cpp
+        client_types.h
+
+Rom    7 Feb 2011
+    - Tag for 6.12.18 release, all platforms
+      boinc_core_release_6_12_18
 
     /
         configure.ac

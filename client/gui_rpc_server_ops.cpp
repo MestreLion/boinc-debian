@@ -1061,16 +1061,12 @@ static void handle_set_cc_config(char* buf, MIOFILE& fout) {
     );
 }
 
-static void handle_get_notices(char* buf, MIOFILE& fout, bool notice_refresh) {
+static void handle_get_notices(
+    char* buf, GUI_RPC_CONN& grpc, MIOFILE& fout, bool public_only
+) {
     int seqno = 0;
     parse_int(buf, "<seqno>", seqno);
-    notices.write(seqno, fout, false, notice_refresh);
-}
-
-static void handle_get_notices_public(char* buf, MIOFILE& fout, bool notice_refresh) {
-    int seqno = 0;
-    parse_int(buf, "<seqno>", seqno);
-    notices.write(seqno, fout, true, notice_refresh);
+    notices.write(seqno, grpc, fout, public_only);
 }
 
 static bool complete_post_request(char* buf) {
@@ -1229,8 +1225,8 @@ int GUI_RPC_CONN::handle_rpc() {
     } else if (match_req(request_msg, "get_all_projects_list")) {
         read_all_projects_list_file(mf);
     } else if (match_req(request_msg, "get_notices_public")) {
-        handle_get_notices_public(request_msg, mf, notice_refresh);
-        notice_refresh = false;
+        handle_get_notices(request_msg, *this, mf, true);
+        clear_notice_refresh();
 
     // Operations that require authentication start here
 
@@ -1312,8 +1308,8 @@ int GUI_RPC_CONN::handle_rpc() {
         handle_set_debts(request_msg, mf);
 #endif
     } else if (match_req(request_msg, "get_notices")) {
-        handle_get_notices(request_msg, mf, notice_refresh);
-        notice_refresh = false;
+        handle_get_notices(request_msg, *this, mf, false);
+        clear_notice_refresh();
     } else {
 
         // RPCs after this point require authentication,
@@ -1380,7 +1376,7 @@ int GUI_RPC_CONN::handle_rpc() {
         send(sock, p, n, 0);
         p[n-1]=0;   // replace 003 with NULL
         if (log_flags.gui_rpc_debug) {
-            if (n > 50) p[50] = 0;
+            if (n > 128) p[128] = 0;
             msg_printf(0, MSG_INFO,
                 "[gui_rpc] GUI RPC reply: '%s'\n", p
             );
