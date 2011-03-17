@@ -42,7 +42,7 @@
 
 #define MIN_IDLE_TIME_FOR_NOTIFICATION 45
 // How long to bounce Dock icon on Mac
-#define MAX_NOTIFICATION_DURATION 15
+#define MAX_NOTIFICATION_DURATION 5
 #endif
 
 DEFINE_EVENT_TYPE(wxEVT_TASKBAR_RELOADSKIN)
@@ -98,6 +98,7 @@ CTaskBarIcon::CTaskBarIcon(wxString title, wxIcon* icon, wxIcon* iconDisconnecte
     m_bMouseButtonPressed = false;
 
     m_dtLastNotificationAlertExecuted = wxDateTime((time_t)0);
+    m_iLastNotificationUnreadMessageCount = 0;
 #ifdef __WXMAC__
     m_pNotificationRequest = NULL;
 #endif
@@ -290,6 +291,7 @@ void CTaskBarIcon::OnRButtonUp(wxTaskBarIconEvent& WXUNUSED(event)) {
 
 
 #ifdef __WXMSW__
+
 void CTaskBarIcon::OnShutdown(wxTaskBarIconExEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnShutdown - Function Begin"));
 
@@ -299,7 +301,8 @@ void CTaskBarIcon::OnShutdown(wxTaskBarIconExEvent& event) {
 
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnShutdown - Function End"));
 }
-void CTaskBarIcon::OnAppRestore(wxTaskBarIconExEvent& event) {
+
+void CTaskBarIcon::OnAppRestore(wxTaskBarIconExEvent&) {
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnAppRestore - Function Begin"));
 
     ResetTaskBar();
@@ -307,6 +310,7 @@ void CTaskBarIcon::OnAppRestore(wxTaskBarIconExEvent& event) {
 
     wxLogTrace(wxT("Function Start/End"), wxT("CTaskBarIcon::OnAppRestore - Function End"));
 }
+
 #endif
 
 
@@ -744,7 +748,9 @@ void CTaskBarIcon::UpdateNoticeStatus() {
         && (pFrame->GetReminderFrequency() != 0)
     ) {
 
-        if (pDoc->GetUnreadNoticeCount()) {
+        if (pDoc->GetUnreadNoticeCount() 
+            && (pDoc->GetUnreadNoticeCount() != m_iLastNotificationUnreadMessageCount)
+        ) {
 #ifdef __WXMAC__
             // Delay notification while user is inactive
             // NOTE: This API requires OS 10.4 or later
@@ -756,6 +762,7 @@ void CTaskBarIcon::UpdateNoticeStatus() {
 #endif
             // Update cached info
             m_dtLastNotificationAlertExecuted = wxDateTime::Now();
+            m_iLastNotificationUnreadMessageCount = pDoc->GetUnreadNoticeCount();
 
             if (IsBalloonsSupported()) {
                 // Display balloon

@@ -186,8 +186,7 @@ msgstr ""
 msgid ""
 "Tasks for ATI GPU are available, but your preferences are set to not accept "
 "them"
-msgstr ""
-"Доступны задачи для ГП ATI, но ваши настройки не позволяют принимать их"
+msgstr "Доступны задачи для ГП ATI, но ваши настройки не позволяют принимать их"
 
 #: ../sched/sched_send.cpp:1466
 msgid ""

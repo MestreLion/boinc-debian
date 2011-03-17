@@ -56,13 +56,14 @@
 
 #include "gui_http.h"
 #include "client_types.h"
+#include "gui_rpc_server.h"
 
 #include "notice.h"
 
 struct NOTICES {
     std::deque<NOTICE> notices;
         // stored newest (i.e. highest seqno) message first
-    void write(int seqno, MIOFILE&, bool public_only, bool notice_refresh);
+    void write(int seqno, GUI_RPC_CONN&, MIOFILE&, bool public_only);
     bool append(NOTICE&);
     void init();
     void init_rss();
@@ -71,7 +72,11 @@ struct NOTICES {
     bool remove_dups(NOTICE&);
     void remove_network_msg();
     void clear_keep();
+        // prior to parsing an RSS feed, we mark all notices as "don't keep".
+        // We clear this flag if the notice is present in the feed.
     void unkeep(const char* url);
+        // called after parsing an RSS feed,
+        // to remove notices that weren't in the feed.
 };
 
 extern NOTICES notices;

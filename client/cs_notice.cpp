@@ -28,6 +28,7 @@
 #include "parse.h"
 #include "url.h"
 #include "filesys.h"
+#include "str_util.h"
 
 #include "client_state.h"
 #include "client_msgs.h"
@@ -325,13 +326,9 @@ bool NOTICES::remove_dups(NOTICE& n) {
         } else if (same_text(n, n2)) {
             int min_diff = 0;
 
-            // show a given system notice (client or scheduler)
-            // at most once a week
+            // show a given scheduler notice at most once a week
             //
             if (!strcmp(n.category, "scheduler")) {
-                min_diff = 7*86400;
-            }
-            if (!strcmp(n.category, "client")) {
                 min_diff = 7*86400;
             }
 
@@ -471,6 +468,10 @@ void NOTICES::remove_network_msg() {
         NOTICE& n = *i;
         if (!strcmp(n.description.c_str(), NEED_NETWORK_MSG)) {
             i = notices.erase(i);
+            gstate.gui_rpcs.set_notice_refresh();
+            if (log_flags.notice_debug) {
+                msg_printf(0, MSG_INFO, "REMOVING NETWORK MESSAGE");
+            }
         } else {
             ++i;
         }
@@ -480,19 +481,28 @@ void NOTICES::remove_network_msg() {
 // write notices newer than seqno as XML (for GUI RPC).
 // Write them in order of increasing seqno
 //
-void NOTICES::write(int seqno, MIOFILE& fout, bool public_only, bool notice_refresh) {
+void NOTICES::write(int seqno, GUI_RPC_CONN& grpc, MIOFILE& fout, bool public_only) {
     unsigned int i;
+    MIOFILE mf;
 
-    if (net_status.network_status() != NETWORK_STATUS_WANT_CONNECTION) {
+    if (!net_status.need_physical_connection) {
         remove_network_msg();
     }
+    if (log_flags.notice_debug) {
+        msg_printf(0, MSG_INFO, "NOTICES::write: seqno %d, refresh %s, %d notices",
+            seqno, grpc.get_notice_refresh()?"true":"false", (int)notices.size()
+        );
+    }
     fout.printf("<notices>\n");
-    if (notice_refresh) {
+    if (grpc.get_notice_refresh()) {
         NOTICE n;
         n.seqno = -1;
         seqno = -1;
         i = notices.size();
         n.write(fout, true);
+        if (log_flags.notice_debug) {
+            msg_printf(0, MSG_INFO, "NOTICES::write: sending -1 seqno notice");
+        }
     } else {
         for (i=0; i<notices.size(); i++) {
             NOTICE& n = notices[i];
@@ -502,6 +512,9 @@ void NOTICES::write(int seqno, MIOFILE& fout, bool public_only, bool notice_refr
     for (; i>0; i--) {
         NOTICE& n = notices[i-1];
         if (public_only && n.is_private) continue;
+        if (log_flags.notice_debug) {
+            msg_printf(0, MSG_INFO, "NOTICES::write: sending notice %d", n.seqno);
+        }
         n.write(fout, true);
     }
     fout.printf("</notices>\n");
@@ -574,6 +587,10 @@ void RSS_FEED::write(MIOFILE& fout) {
     );
 }
 
+static inline bool create_time_asc(NOTICE n1, NOTICE n2) {
+    return n1.create_time < n2.create_time;
+}
+
 // parse the actual RSS feed.
 //
 int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
@@ -581,7 +598,8 @@ int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
     bool is_tag;
     nitems = 0;
     int ntotal = 0, nerror = 0;
-    int func_ret = ERR_XML_PARSE;
+    int retval, func_ret = ERR_XML_PARSE;
+    vector<NOTICE> new_notices;
 
     notices.clear_keep();
 
@@ -615,11 +633,29 @@ int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
                 n.keep = true;
                 strcpy(n.feed_url, url);
                 strcpy(n.project_name, project_name);
-                if (notices.append(n)) {
-                    nitems++;
-                }
+                new_notices.push_back(n);
             }
             continue;
+        }
+        if (xp.parse_int(tag, "error_num", retval)) {
+            if (log_flags.notice_debug) {
+                msg_printf(0,MSG_INFO,
+                    "[notice] RSS fetch returned error %d (%s)",
+                    retval,
+                    boincerror(retval)
+                );
+            }
+            return retval;
+        }
+    }
+
+    //  sort new notices by increasing create time, and append them
+    //
+    std::sort(new_notices.begin(), new_notices.end(), create_time_asc);
+    for (unsigned int i=0; i<new_notices.size(); i++) {
+        NOTICE& n = new_notices[i];
+        if (notices.append(n)) {
+            nitems++;
         }
     }
     notices.unkeep(url);
@@ -814,6 +850,9 @@ void RSS_FEEDS::update_feed_list() {
             // cancel op if active
             //
             if (rss_feed_op.rfp == &(*iter)) {
+                if (rss_feed_op.gui_http->is_busy()) {
+                    gstate.http_ops->remove(&rss_feed_op.gui_http->http_op);
+                }
                 rss_feed_op.rfp = NULL;
             }
             if (log_flags.notice_debug) {
