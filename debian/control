@@ -14,7 +14,7 @@ Build-Depends: debhelper (>= 7.0.50~), po-debconf, dh-buildinfo,
  libcurl4-openssl-dev (>= 7.17.1), freeglut3-dev, libsm-dev, libice-dev,
  libxmu-dev, libxi-dev, libx11-dev, libjpeg62-dev, libwxgtk2.8-dev,
  libsqlite3-dev, libgtk2.0-dev, libxcb-atom1-dev, pkg-config (>= 0.15),
- libtool, libnotify-dev, libmysqlclient-dev, python
+ libtool, libnotify-dev, libmysqlclient-dev, python, libfcgi-dev
 Homepage: http://boinc.berkeley.edu/
 Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git
 Vcs-Browser: http://git.debian.org/?p=pkg-boinc/boinc.git
@@ -102,7 +102,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
  python, python-mysqldb,
  mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi,
  php5, php5-cli, php5-mysql,
- tcsh, openssl (>= 0.9.8), adduser
+ tcsh, openssl (>= 0.9.8), adduser, libfcgi0ldbl
 Recommends: libapache2-mod-php5, php5-gd
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
