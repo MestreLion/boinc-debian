@@ -1,6 +1,7 @@
 boinc (6.12.18+dfsg-2) UNRELEASED; urgency=low
 
   * First attempt to fix compilation on HURD
+  * Added debconf it.po (Closes: #619436)
 
  -- Steffen Moeller <moeller@debian.org>  Wed, 23 Mar 2011 11:43:00 +0100
 
@@ -56,8 +57,7 @@ boinc (6.12.8+dfsg-5) experimental; urgency=low
 
 boinc (6.12.8+dfsg-4) experimental; urgency=low
 
-  * Completely removing quilt from debian/*
-    (Closes: #608639).
+  * Completely removing quilt from debian/* (Closes: #608639).
   * Added libnotify-dev and libmysqlclient-dev as build dependency.
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 02 Jan 2011 15:58:19 +0100
