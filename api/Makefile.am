@@ -16,11 +16,11 @@ graphics2_files = \
     gutil.cpp \
     gutil_text.cpp \
     reduce_lib.cpp \
-    texfont.cpp \
     texture.cpp \
-    txf_util.cpp \
     graphics2.cpp \
     graphics2_unix.cpp
+
+# removed:  texfont.cpp txf_util.cpp
 
 if OS_DARWIN
     graphics2_files += mac_icon.cpp

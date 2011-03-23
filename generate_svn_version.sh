@@ -7,7 +7,9 @@ echo "#ifndef SVN_VERSION_H" > $TMPFILE
 echo "#define SVN_VERSION_H" >> $TMPFILE
 echo "" >> $TMPFILE
 
-if [ -d .git ]; then
+if [ -d debian ]; then
+    CMD=""
+elif [ -d .git ]; then
     CMD="git svn info"
 elif [ -d .svn ]; then
     CMD="svn info"

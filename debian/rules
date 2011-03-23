@@ -3,7 +3,7 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# Uncomment this to compile with gcc-snapshot.
+# Uncomment the following lines to compile with gcc-snapshot.
 #export  CC=/usr/lib/gcc-snapshot/bin/gcc
 #export CXX=/usr/lib/gcc-snapshot/bin/g++
 #export CPP=/usr/lib/gcc-snapshot/bin/cpp
@@ -74,6 +74,16 @@ endif
 ifeq ($(DEB_HOST_GNU_TYPE), sparc-linux-gnu)
   TYPE_FLAGS += --with-boinc-platform=sparc-sun-linux-gnu
 endif
+
+# Not touching BOINC platform for hurd for the very moment.
+# Manually specify the MAXPATHLEN for GNU where this limit
+# is not existing.
+ifeq ($(DEB_HOST_GNU_TYPE), i486-gnu)
+  # setting it to the regular limit for the other flavours of Debian
+  CFLAGS += -DMAXPATHLEN=4096
+  #TYPE_FLAGS += --with-boinc-platform=i686-pc-hurd-gnu
+endif
+
 
 CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall

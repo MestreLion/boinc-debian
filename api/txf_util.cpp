@@ -26,14 +26,15 @@
 #include "filesys.h"
 #include "boinc_api.h"
 
-#include "texfont.h"
+//#include "texfont.h"
 #include "txf_util.h"
 
 #ifndef _MAX_PATH
 #define _MAX_PATH 256
 #endif 
 
-static TexFont* txf[TXF_NUM_FONT];
+//static TexFont* txf[TXF_NUM_FONT];
+static void* txf[TXF_NUM_FONT];
 
 // load fonts. call once.
 //

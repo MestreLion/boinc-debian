@@ -30,7 +30,6 @@
 */
 
 #include <Carbon/Carbon.h>
-#include <sys/param.h>  // for MAXPATHLEN
 #include <sys/stat.h>
 
 #include "boinc_api.h"
@@ -141,12 +140,13 @@ static char * PersistentFGets(char *buf, size_t buflen, FILE *f) {
 
 void getPathToThisApp(char* pathBuf, size_t bufSize) {
     FILE *f;
-    char buf[MAXPATHLEN], *c;
+    char *buf; // A fixed buffer of MAXPATHLEN is too much and not required to fix this way
+    char *c;
     pid_t myPID = getpid();
     int i;
     struct stat stat_buf;
     
-    strcpy(pathBuf, GRAPHICS_APP_FILENAME);
+    strncpy(pathBuf, GRAPHICS_APP_FILENAME, bufSize);
     if (!stat(pathBuf, &stat_buf)) {
        // stat() returns zero on success
        return;
@@ -159,8 +159,12 @@ void getPathToThisApp(char* pathBuf, size_t bufSize) {
     // (or the soft-link to it.)  So all we need for the path to this 
     // application is the file name.  We use the -c option so ps strips off 
     // any command-line arguments for us.
-    sprintf(buf, "ps -wcp %d -o command=", myPID);
+    buf=(char*)malloc(sizeof(char)*(20+100));
+    if (!buf)
+        return;
+    snprintf(buf, 20+100-1, "ps -wcp %d -o command=", myPID);
     f = popen(buf,  "r");
+    free(buf); buf=(char*)NULL;
     if (!f)
         return;
     PersistentFGets(pathBuf, bufSize, f);  // Skip over line of column headings

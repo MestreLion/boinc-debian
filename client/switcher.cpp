@@ -27,9 +27,6 @@
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>  // for MAXPATHLEN
-#endif
 #include <pwd.h>	// getpwuid
 #include <grp.h>
 
@@ -52,10 +49,9 @@ int main(int argc, char** argv) {
     strcpy(group_name, "boinc_project");
 
 #if 0           // For debugging only
-    char	current_dir[MAXPATHLEN];
-
-    getcwd( current_dir, sizeof(current_dir));
+    char *current_dir=get_current_dir_name();
     fprintf(stderr, "current directory = %s\n", current_dir);
+    free(current_dir); current_dir=NULL;
     
     for (int i=0; i<argc; i++) {
         fprintf(stderr, "switcher arg %d: %s\n", i, argv[i]);

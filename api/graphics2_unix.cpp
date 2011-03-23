@@ -45,8 +45,6 @@ static int win=0;
 static int checkparentcounter=0;
 
 #ifdef __APPLE__
-#include <sys/param.h>  // for MAXPATHLEN
-
 static bool need_show = false;
 #endif
 
@@ -224,8 +222,7 @@ void boinc_graphics_loop(int argc, char** argv, const char* title) {
     }
 
 #ifdef __APPLE__
-    char dir [MAXPATHLEN];
-    getcwd(dir, MAXPATHLEN);
+    char *dir=get_current_dir_name();
 #endif
     for (int i=1; i<argc; i++) {
         if (!strcmp(argv[i], "--fullscreen")) {
@@ -237,7 +234,10 @@ void boinc_graphics_loop(int argc, char** argv, const char* title) {
     glutTimerFunc(TIMER_INTERVAL_MSEC, timer_handler, 0);      
 #ifdef __APPLE__
     // Apparently glut changed our working directory in OS 10.3.9
-    chdir(dir);
+    if (chdir(dir)) {
+	# some error message should be here;
+    }
+    free(dir);
 #endif
     glutMainLoop();
 }
