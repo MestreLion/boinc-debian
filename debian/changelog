@@ -1,6 +1,7 @@
 boinc (6.12.18+dfsg-2) UNRELEASED; urgency=low
 
   * First attempt to fix compilation on HURD
+  * Addressing lintian errors on python paths/versions
 
  -- Steffen Moeller <moeller@debian.org>  Wed, 23 Mar 2011 11:43:00 +0100
 
