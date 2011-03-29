@@ -230,7 +230,8 @@ CScreensaver::CScreensaver() {
     m_CoreClientPID = nil;
     setSSMessageText(0);
     m_CurrentBannerMessage = 0;
-    m_QuitDataManagementProc = false;
+    m_bQuitDataManagementProc = false;
+    m_bDataManagementProcStopped = false;
     m_BrandText = "BOINC";
     
     m_hDataManagementThread = NULL;
@@ -295,7 +296,8 @@ int CScreensaver::Create() {
         if (saverState == SaverState_LaunchingCoreClient)
         {
             SetError(FALSE, 0);
-            m_QuitDataManagementProc = false;
+            m_bQuitDataManagementProc = false;
+            m_bDataManagementProcStopped = false;
             if (rpc == NULL) {
                 rpc = new RPC_CLIENT;
             }
@@ -562,7 +564,7 @@ void CScreensaver::ShutdownSaver() {
     m_CoreClientPID = 0;
 //    gQuitCounter = 0;
     m_wasAlreadyRunning = false;
-    m_QuitDataManagementProc = false;
+    m_bQuitDataManagementProc = false;
     saverState = SaverState_Idle;
 }
 
@@ -603,7 +605,7 @@ void CScreensaver::HandleRPCError() {
     // If Core Client is hung, it might cause RPCs to hang, preventing us from 
     // shutting down the Data Management Thread, so don't reinitialize the RPC 
     // client if we have told the Data Management Thread to exit.
-    if (m_QuitDataManagementProc) {
+    if (m_bQuitDataManagementProc) {
         return;
     }
     
@@ -638,20 +640,19 @@ bool CScreensaver::CreateDataManagementThread() {
 
 
 bool CScreensaver::DestroyDataManagementThread() {
-    int i;
-    
-    m_QuitDataManagementProc = true;  // Tell DataManagementProc thread to exit
-    
-    for (i=0; i<10; i++) {  // Wait up to 1 second for DataManagementProc thread to exit
-        if (m_hDataManagementThread == NULL) return true;
+    m_bQuitDataManagementProc = true;  // Tell DataManagementProc thread to exit
+    for (int i=0; i<10; i++) {  // Wait up to 1 second for DataManagementProc thread to exit
+        if (m_bDataManagementProcStopped) return true;
         boinc_sleep(0.1);
     }
+
     rpc->close();    // In case DataManagementProc is hung waiting for RPC
     m_hDataManagementThread = NULL; // Don't delay more if this routine is called again.
     if (m_hGraphicsApplication) {
         terminate_screensaver(m_hGraphicsApplication, NULL);
         m_hGraphicsApplication = 0;
     }
+
     return true;
 }
 
@@ -869,4 +870,4 @@ void PrintBacktrace(void) {
 // Dummy routine to satisfy linker
 }
 
-const char *BOINC_RCSID_7ce0778d35="$Id: mac_saver_module.cpp 22679 2010-11-11 11:58:41Z charlief $";
+const char *BOINC_RCSID_7ce0778d35="$Id: mac_saver_module.cpp 23274 2011-03-25 18:03:01Z romw $";
