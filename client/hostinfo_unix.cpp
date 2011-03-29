@@ -1098,8 +1098,8 @@ int GetMaxCPUTemperature() {
 // see if Virtualbox is installed
 //
 int HOST_INFO::get_virtualbox_version() {
-    char path[500]; // less than MAXPATHLEN and more than required below
-    char cmd [500+35];
+    char path[MAXPATHLEN];
+    char cmd [MAXPATHLEN+35];
     char *newlinePtr;
     FILE* fd;
 

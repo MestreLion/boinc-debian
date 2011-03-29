@@ -21,8 +21,6 @@
 #ifndef _TXF_UTIL_
 #define _TXF_UTIL_
 
-#include <GL/gl.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

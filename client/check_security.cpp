@@ -23,12 +23,7 @@
 #include <unistd.h>
 #include <pwd.h>	// getpwnam
 #include <grp.h>
-
-#include <sys/param.h>  // for MAXPATHLEN, not available e.g. for HURD
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 40000
-#endif
-
+#include <sys/param.h>  // for MAXPATHLEN
 #include <dirent.h>
 #include <cerrno>
 

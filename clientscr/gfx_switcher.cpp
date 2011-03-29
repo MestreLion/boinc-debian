@@ -27,12 +27,8 @@
 #include <cstring>
 #include <cerrno>
 #ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>  // for MAXPATHLEN, not available e.g. for HURD
+#include <sys/param.h>  // for MAXPATHLEN
 #endif
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 40000
-#endif
-
 #include <pwd.h>	// getpwuid
 #include <grp.h>
 
@@ -88,9 +84,10 @@ int main(int argc, char** argv) {
 
     // NOTE: call print_to_log_file only after switching user and group
 #if 0           // For debugging only
-    char	*current_dir = get_current_dir_name();
+    char	current_dir[MAXPATHLEN];
+
+    getcwd( current_dir, sizeof(current_dir));
     print_to_log_file( "current directory = %s", current_dir);
-    free(current_dir); current_dir=(char *) NULL;
     
     for (int i=0; i<argc; i++) {
          print_to_log_file("switcher arg %d: %s", i, argv[i]);
