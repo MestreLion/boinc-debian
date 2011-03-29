@@ -3,7 +3,30 @@ The to-do list for developers of the BOINC Debian packages is here:
 
 This is a more detailed todo anyway:
 
-TODO for this version(6.4.5)
+= TODO for version 6.12.19 =
+============================
+
+The stripchart should become a package on its own
+
+A    boinc-6.12.19+dfsg.orig/stripchart
+A    boinc-6.12.19+dfsg.orig/stripchart/stripchart
+A    boinc-6.12.19+dfsg.orig/stripchart/samples
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/parse_config
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/looper
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/db_looper
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/crontab
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/dir_size
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/db_query
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/datafiles
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/db_count
+A    boinc-6.12.19+dfsg.orig/stripchart/samples/get_load
+A    boinc-6.12.19+dfsg.orig/stripchart/stripchart.cgi
+A    boinc-6.12.19+dfsg.orig/stripchart/stripchart.cnf
+A    boinc-6.12.19+dfsg.orig/stripchart/README
+
+
+= TODO since version 6.4.5 =
+============================
 
 Init script
 ===========
