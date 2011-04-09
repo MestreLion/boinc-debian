@@ -7,3 +7,4 @@ MakefileWrapper.patch
 wrapperURL.patch
 FlatBookStaticChar.patch
 csh2tcsh.patch
+AdvancedFrame_const.patch
