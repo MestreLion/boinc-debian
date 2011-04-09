@@ -300,6 +300,8 @@ override_dh_install: $(SAMPLES)
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	# delete empty dirs
 	if [ -d debian/boinc-manager/usr/share/locale ] ; then find debian/boinc-manager/usr/share/locale -type d -empty -delete; fi
+	# delete .la files (Closes: #621197)
+	find $(CURDIR)/debian -name "*.la" | xargs -r rm -f
 
 override_dh_compress:
 	dh_compress -Xsamples

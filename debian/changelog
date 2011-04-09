@@ -1,10 +1,11 @@
-boinc (6.12.22+dfsg-1) UNRELEASED; urgency=low
+boinc (6.12.22+dfsg-1) unstable; urgency=low
 
   * First attempt to fix compilation on HURD.
   * Added debconf it.po (Closes: #619436).
   * Addressing lintian errors on python paths/versions.
+  * Removing *.la files (Closes: #621197).
 
- -- Steffen Moeller <moeller@debian.org>  Wed, 23 Mar 2011 11:43:00 +0100
+ -- Steffen Moeller <moeller@debian.org>  Sat, 09 Apr 2011 17:32:20 +0200
 
 boinc (6.12.18+dfsg-1) unstable; urgency=low
 
