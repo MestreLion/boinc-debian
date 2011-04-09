@@ -8,3 +8,4 @@ wrapperURL.patch
 FlatBookStaticChar.patch
 csh2tcsh.patch
 AdvancedFrame_const.patch
+advanced_link_image_const.patch
