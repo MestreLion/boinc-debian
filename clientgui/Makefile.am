@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 23226 2011-03-11 12:41:26Z charlief $
+## $Id: Makefile.am 23334 2011-04-05 17:14:56Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -98,7 +98,6 @@ boincmgr_SOURCES = \
     stdwx.cpp \
     TermsOfUsePage.cpp \
     UnavailablePage.cpp \
-    UserDisagreesPage.cpp \
     ValidateAccountKey.cpp \
     ValidateEmailAddress.cpp \
     ValidateURL.cpp \

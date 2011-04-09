@@ -9255,3 +9255,94 @@ Rom    25 Feb 2011
     /
         configure.ac
         version.h
+
+Rom    29 Mar 2011
+    - WINSCR: So after looking over all the logs from WCG and now from Jacob
+        Klein a pattern started to emerge.  At the end of the log files the last
+        message logged was 0x12 which translates into WM_QUIT.  The latest
+        documentation on WM_QUIT states it should never show up in the message
+        loop to begin with.
+        
+        The docs now say that WM_QUIT should not be sent to the message loop by
+        way of PostMessage.  We have been doing things this way for over 5 years.
+        
+        Change the shutdown logic so that only the primary curtain window can call
+        PostQuitMessage() and all other curtain windows just exit when they receive
+        a WM_DESTROY message.
+        
+        I'm not sure what causes this to be a problem on some machines and not
+        others.  But preliminary results from Jacob are encouraging.
+        
+    clientscr/
+        screensaver_win.cpp, .h
+
+Rom    4 April 2011
+    - Tag for 6.12.20 release, all platforms
+      boinc_core_release_6_12_20
+
+    /
+        configure.ac
+        version.h
+
+David  4 Apr 2011
+    - client: discard messages whose create time OR arrival time
+        is more than 30 days ago
+
+    client/
+        cs_notices.cpp
+
+Rom    4 April 2011
+    - Tag for 6.12.21 release, all platforms
+      boinc_core_release_6_12_21
+
+    /
+        configure.ac
+        version.h
+
+Rom    28 Mar 2011
+    - MGR: Handle the link click events from the notices control for the
+        Simgle GUI notices dialog box.
+        
+    clientgui/
+        sg_DlgMessages.cpp, .h
+
+Charlie 29 Mar 2011
+    - MGR: Fix compile break.
+    
+    clientgui/
+        sg_DlgMessages.h
+
+Rom    29 Mar 2011
+    - MGR: Remove UserDisagreesPage from the wizard, replace functionality
+        by enabling/disabling the next button as needed.
+    - MGR: Fix a couple of warnings.
+
+    clientgui/
+        sg_CustomControls.cpp
+        sg_DlgMessages.cpp
+        TermsOfUsePage.cpp
+        UserDisagreesPage.cpp, .h (Deleted)
+        WizardAttach.cpp, .h
+
+David  4 Apr 2011
+    - client: use larger buffer for app command line,
+        enough to accommodate 64KB from wu.cmdline
+
+    client/
+        app_start.cpp
+
+Rom    5 April 2011
+    - Tag for 6.12.22 release, all platforms
+      boinc_core_release_6_12_22
+
+    /
+        configure.ac
+        version.h
+
+Charlie 30 Mar 2011
+    - Mac: Eliminate unused source files UserDisagreesPage.cpp, .h from Mac 
+        project.  (Checked into boinc_core_release_6_12_22.)
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
