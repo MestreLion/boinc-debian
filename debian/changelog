@@ -1,3 +1,20 @@
+boinc (6.12.22+dfsg-2) UNRELEASED; urgency=low
+
+  * Changed init dependencies to $all which may help speeding up the
+    boot process and grants time initialising CUDA when kdm is also
+    installed.
+
+  * Also granting the boinc user access to the X display by invoking
+    xhost +local:boinc if xhost is installed. The package providing
+    the tool, i.e. x11-xserver-utils,  is now suggested as a runtime
+    dependency.
+
+  Those changes together should close (lp: #587426), yet untested because
+  of a lack of respective hardware.  Many thanks go to Skip for keeping
+  up the spirit to address this.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 16 Apr 2011 20:24:12 +0200
+
 boinc (6.12.22+dfsg-1) unstable; urgency=low
 
   * First attempt to fix compilation on HURD.

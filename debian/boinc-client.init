@@ -1,7 +1,7 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:          boinc
-# Required-Start:    $local_fs $remote_fs
+# Required-Start:    $all
 # Required-Stop:     $local_fs $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
@@ -88,6 +88,10 @@ start()
   if is_running; then
     log_progress_msg "already running"
   else
+    if [ -x /usr/bin/xhost ]; then
+       # grant the boinc client to perform GPU computing
+       xhost local:boinc
+    fi
     start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
       --make-pidfile --user $BOINC_USER --chuid $BOINC_USER \
       --chdir $BOINC_DIR --exec $BOINC_CLIENT -- $BOINC_OPTS
