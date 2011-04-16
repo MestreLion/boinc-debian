@@ -9,9 +9,10 @@ boinc (6.12.22+dfsg-2) UNRELEASED; urgency=low
     the tool, i.e. x11-xserver-utils,  is now suggested as a runtime
     dependency.
 
-  Those changes together should close (lp: #587426), yet untested because
-  of a lack of respective hardware.  Many thanks go to Skip for keeping
-  up the spirit to address this.
+  This with some likelihood (Closes: #557871, #596656) (lp: #587426,
+  lp: #414244, lp: #525241). It remains yet untested because of a lack
+  of respective hardware.  Many thanks go to Skip for keeping up the
+  spirit to address this.
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 16 Apr 2011 20:24:12 +0200
 
