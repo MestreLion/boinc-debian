@@ -365,6 +365,12 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     return 0;
 }
 
+// the project is uploading, and it started recently
+//
+static inline bool actively_uploading(PROJECT* p) {
+    return p->uploading() && (gstate.now - p->last_upload_start < WF_DEFER_INTERVAL);
+}
+
 // called from the client's polling loop.
 // initiate scheduler RPC activity if needed and possible
 //
@@ -424,7 +430,7 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
     // report overdue results
     //
     p = find_project_with_overdue_results();
-    if (p) {
+    if (p && !actively_uploading(p)) {
         work_fetch.compute_work_request(p);
         scheduler_op->init_op_project(p, RPC_REASON_RESULTS_DUE);
         return true;
@@ -445,7 +451,7 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
 
     p = work_fetch.choose_project();
     if (p) {
-        if (p->uploading() && (gstate.now - p->last_upload_start < WF_DEFER_INTERVAL)) {
+        if (actively_uploading(p)) {
             if (log_flags.work_fetch_debug) {
                 msg_printf(p, MSG_INFO,
                     "[wfd] deferring work fetch; upload active, started %d sec ago",
@@ -559,7 +565,9 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     for (i=0; i<sr.messages.size(); i++) {
         USER_MESSAGE& um = sr.messages[i];
         int prio = (!strcmp(um.priority.c_str(), "notice"))?MSG_SCHEDULER_ALERT:MSG_INFO;
-        msg_printf(project, prio, um.message.c_str());
+        char buf[1024];
+        string_substitute(um.message.c_str(), buf, sizeof(buf), "%", "%%");
+        msg_printf(project, prio, buf);
     }
 
     if (log_flags.sched_op_debug && sr.request_delay) {
