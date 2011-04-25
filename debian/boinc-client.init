@@ -90,7 +90,7 @@ start()
   else
     if [ -x /usr/bin/xhost ]; then
        # grant the boinc client to perform GPU computing
-       xhost local:boinc
+       xhost local:boinc || echo -n "xhost error ignored, GPU computing may not be possible"
     fi
     start-stop-daemon --start --quiet --background --pidfile $PIDFILE \
       --make-pidfile --user $BOINC_USER --chuid $BOINC_USER \
