@@ -9346,3 +9346,147 @@ Charlie 30 Mar 2011
      mac_build/
         boinc.xcodeproj/
             project.pbxproj
+
+David  6 Apr 2011
+    - client: if PREFS::max_ncpus_pct is 0, don't set it to 100;
+        doing so prevents PREFS::max_ncpus from having any effect.
+
+    lib/
+        prefs.cpp
+
+David  8 Apr 2011
+    - client: defer reporting completed tasks if an upload started recently;
+        we might be able to report more tasks once the upload completes.
+
+    client/
+        cs_scheduler.cpp
+
+Rom    11 Apr 2011
+    - MGR: Remove unneeded asserts.
+    
+    clientgui/
+        BOINCTaskBar.cpp
+
+Rom    13 Apr 2011
+    - MGR: Add missing keyboard accelerators for the event log.
+    - MGR: Re-enable the next button when the terms of use wizard
+        page when the back button is pressed.
+        
+    clientgui/
+        DlgEventLog.cpp
+        TermsOfUsePage.cpp
+
+David  13 Apr 2011
+    - client:
+        - add <heartbeat_debug> log flag
+        - show trickle-up and int file upload msgs if <app_msg_receive> set
+        - if scheduler RPC reason is trickle-up, say so
+    - manager:
+        - restore "non CPU intensive" to task description
+        - project properties: show if RPC in progress or trickle-up pending.
+            (show these low-probability things only if present)
+    - manager: fix Unix build
+
+    (from Ian Hay)
+
+    clientgui/
+        MainDocument.cpp
+        Makefile.am
+        DlgITemProperties.cpp
+    lib/
+        gui_rpc_client_print.cpp
+    client/
+        log_flags.cpp,h
+        scheduler_op.cpp
+        app.cpp
+        app_control.cpp
+
+Rom    14 Apr 2011
+    - MGR: Check to see if keyboard accelerators can be redefined on the fly.
+    
+    clientgui/
+        DlgEventLog.cpp
+
+Rom    14 Apr 2011
+    - MGR: Add missing event handler map item.
+    
+    clientgui/
+        sg_DlgMessages.cpp
+
+David  15 Apr 2011
+    - client: fix bug that cause notice RSS feeds to disappear and reappear,
+        and notices to erroneously be shown as new.
+
+    client/
+        cs_notice.cpp
+
+David  18 Apr 2011
+    - client: when estimating job runtime based on fraction done,
+        use the elapsed time when fraction done was last reported,
+        not current elapsed time.
+        Fix problem where est time remaining increases linearly,
+        then abruptly decreases when new frac done is reported.
+        From Bruce Allen.
+
+    client/
+        app.h
+        app_control.cpp
+        work_fetch.cpp
+
+David  18 Apr 2011
+    - client: fix a couple of the messages that are appended to
+        a job's stderr when the job is aborted
+
+    client/
+        client_state.cpp
+        app_start.cpp
+
+David  18 Apr 2011
+    - client: replace % with %% in messages from scheduler
+        (else they're interpreted as format strings)
+
+    client/
+        client_state.h
+        cs_scheduler.cpp
+
+Rom    19 Apr 2011
+    - MGR: Adjust the width of the various tabs in advanced view if the notice text
+        width changes.
+    - MGR: Remove dead code.
+    
+    clientgui/
+        BOINCBaseFrame.cpp, .h
+        AdvancedFrame.cpp
+
+Rom    20 April 2011
+    - Tag for 6.12.23 release, all platforms
+      boinc_core_release_6_12_23
+
+    /
+        configure.ac
+        version.h
+
+Charlie 22 Apr 2011
+    - Mac: We no longer request PowerPC applications on Intel Macs 
+        because all projects supporting Macs should have Intel 
+        applications by now, and PowerPC emulation ("Rosetta") is 
+        not always supported in newer versions of OS X.
+
+    client/
+        cs_platforms.cpp
+
+Rom    23 April 2011
+    - Tag for 6.12.24 release, all platforms
+      boinc_core_release_6_12_24
+
+    /
+        configure.ac
+        version.h
+
+Rom    24 April 2011
+    - Tag for 6.12.25 release, all platforms
+      boinc_core_release_6_12_25
+
+    /
+        configure.ac
+        version.h
