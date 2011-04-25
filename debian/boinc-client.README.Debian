@@ -74,7 +74,7 @@ follow these instructions:
  2. Copy the entire content of your old BOINC data directory to
     '/var/lib/boinc-client'.
  
- 3. Make all files in that directory writeable by the user and group
+ 3. Make all files in that directory writable by the user and group
     boinc:
      % chown -R boinc:boinc /var/lib/boinc-client
 
