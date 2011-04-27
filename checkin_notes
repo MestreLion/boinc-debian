@@ -9490,3 +9490,68 @@ Rom    24 April 2011
     /
         configure.ac
         version.h
+
+David  23 Apr 2011
+    - client: don't use the Snooze mechanism to handle
+        OS-requested suspension
+        (especially with a 1-hour snooze period).
+        Instead, handle them directly.
+
+    client/
+        client_state.cpp,h
+        cs_prefs.cpp
+        main.cpp
+        sysmon_win.cpp
+    clientgui/
+        MainDocument.cpp
+    lib/
+        common_defs.cpp
+        str_util.cpp
+
+Charlie 24 Apr 2011
+    - client: fix bug: statement had no effect.
+
+    lib/
+        str_util.cpp
+
+David  24 Apr 2011
+    - account manager RPC: include TIME_STATS and NET_STATS in request message
+
+    client/
+        acct_mgr.cpp
+
+David  24 Apr 2011
+	- client: show error messages from account managers correctly
+	- client: win compile fix
+	
+	client/
+        acct_mgr.cpp
+		sysmon_win.cpp
+
+David  25 Apr 2011
+    - client: fix bugs in runtime estimation of jobs that
+        have run before but are not currently running.
+        Old:
+        - We maintain the most recent fraction_done in state file.
+            But for apps that checkpoint seldom or never,
+            this is not the relevant value,
+            and frac done may go down when the app runs.
+        - fraction_done_elapsed_time is not initialized,
+            and can have garbage values for jobs that haven't run yet.
+        New:
+        - Record, in the state file, the values of
+            fraction_done and fraction_done_elapsed_time
+            at the most recent checkpoint.
+            When the client starts up, use these values.
+
+    client/
+        app.cpp,h
+        app_control.cpp
+
+Rom    25 April 2011
+    - Tag for 6.12.26 release, all platforms
+      boinc_core_release_6_12_26
+
+    /
+        configure.ac
+        version.h
