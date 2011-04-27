@@ -1,7 +1,7 @@
 Index: boinc/api/Makefile.am
 ===================================================================
---- boinc.orig/api/Makefile.am	2010-07-18 22:04:47.000000000 +0200
-+++ boinc/api/Makefile.am	2010-07-18 22:09:39.000000000 +0200
+--- boinc.orig/api/Makefile.am	2011-04-27 22:39:13.000000000 +0200
++++ boinc/api/Makefile.am	2011-04-27 22:45:42.000000000 +0200
 @@ -16,12 +16,12 @@
      gutil.cpp \
      gutil_text.cpp \
@@ -19,8 +19,8 @@ Index: boinc/api/Makefile.am
      graphics2_files += macglutfix.m
 Index: boinc/api/txf_util.cpp
 ===================================================================
---- boinc.orig/api/txf_util.cpp	2010-07-18 22:03:58.000000000 +0200
-+++ boinc/api/txf_util.cpp	2010-07-18 22:08:53.000000000 +0200
+--- boinc.orig/api/txf_util.cpp	2011-04-27 22:39:13.000000000 +0200
++++ boinc/api/txf_util.cpp	2011-04-27 22:45:42.000000000 +0200
 @@ -26,14 +26,15 @@
  #include "filesys.h"
  #include "boinc_api.h"
@@ -41,8 +41,8 @@ Index: boinc/api/txf_util.cpp
  //
 Index: boinc/api/txf_util.h
 ===================================================================
---- boinc.orig/api/txf_util.h	2010-07-18 22:07:21.000000000 +0200
-+++ boinc/api/txf_util.h	2010-07-18 22:07:36.000000000 +0200
+--- boinc.orig/api/txf_util.h	2011-04-27 22:39:13.000000000 +0200
++++ boinc/api/txf_util.h	2011-04-27 22:45:42.000000000 +0200
 @@ -21,6 +21,8 @@
  #ifndef _TXF_UTIL_
  #define _TXF_UTIL_

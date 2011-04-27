@@ -1,7 +1,7 @@
 Index: boinc/clientgui/res/skins/default/graphic/advanced_link_image.xpm
 ===================================================================
---- boinc.orig/clientgui/res/skins/default/graphic/advanced_link_image.xpm	2011-04-09 16:01:00.000000000 +0200
-+++ boinc/clientgui/res/skins/default/graphic/advanced_link_image.xpm	2011-04-09 16:01:15.000000000 +0200
+--- boinc.orig/clientgui/res/skins/default/graphic/advanced_link_image.xpm	2011-04-27 22:39:12.000000000 +0200
++++ boinc/clientgui/res/skins/default/graphic/advanced_link_image.xpm	2011-04-27 22:45:43.000000000 +0200
 @@ -1,5 +1,5 @@
  /* XPM */
 -static char *advanced_link_image_xpm[] = {

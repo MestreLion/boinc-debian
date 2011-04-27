@@ -1,7 +1,7 @@
 Index: boinc/samples/wrapper/wrapper.cpp
 ===================================================================
---- boinc.orig/samples/wrapper/wrapper.cpp	2011-01-01 14:39:08.000000000 +0100
-+++ boinc/samples/wrapper/wrapper.cpp	2011-01-01 14:39:24.000000000 +0100
+--- boinc.orig/samples/wrapper/wrapper.cpp	2011-04-27 22:39:13.000000000 +0200
++++ boinc/samples/wrapper/wrapper.cpp	2011-04-27 22:45:42.000000000 +0200
 @@ -25,7 +25,7 @@
  // - checkpointing
  //      (at the level of task; or potentially within task)
