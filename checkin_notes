@@ -9555,3 +9555,173 @@ Rom    25 April 2011
     /
         configure.ac
         version.h
+
+Charlie 22 May 2011
+    - SCR: Fix Mac crash bug when user clicks SS Test button in system preferences.
+        
+    clientscr/
+        mac_saver_module.cpp
+
+Rom    23 May 2011
+    - client: Detect processor counts when the number of processors exceed 64 on
+        Windows.
+
+    client/
+        hostinfo_win.cpp
+
+David  28 Apr 2011
+    - client: change the handling of account manager replies:
+        Old:
+            If the AM sends us a project we're already attached to,
+            and the authenticator is different,
+            print an error message and don't change anything.
+        Problem:
+            If the AM is using weak authenticators,
+            and the user has changed their password,
+            the weak authenticator changes.
+            In this case the AM will send the new weak auth,
+            the client will ignore it,
+            and all subsequent scheduler RPCs will fail
+            until the user removes/adds the project.
+        Solution:
+            If the AM sends us a new auth for a project, use it.
+        Note:
+            From the time the password is changed on the project
+            to the next AM RPC,
+            the client will have a bad weak auth and scheduler RPCs will fail.
+            That's OK.
+
+    client/
+        acct_mgr.cpp
+        cpu_sched.cpp
+
+David  28 Apr 2011
+    - client: update to previous commit:
+        only change the authenticator if both old and new
+        authenticators are weak
+        (strong authenticators don't change).
+
+    client/
+        acct_mgr.cpp
+
+David  7 May 2011
+    - client: add <http_transfer_timeout_bps> config option.
+        Defines the transfer rate below which the connection
+        is considered idle, and timeout starts
+
+    client/
+        http_curl.cpp
+        cs_files.cpp
+        log_flags.cpp,h
+
+David  7 May 2011
+    - client: implement "report immediately" at the level of
+        individual jobs rather than globally.
+        To use this, projects must add <report_immediately/>
+        to the <result> elements in job templates
+
+    client/
+        client_types.cpp,h
+        cs_scheduler.cpp
+
+David  10 May 2011
+    - client: don't check memory usage immediately after hibernation
+
+    client/
+        client_state.h
+        app.cpp
+
+David  11 May 2011
+    - client: show HTTP errors in text form as well as number
+
+    client/
+        pers_file_xfer.cpp
+        file_xfer.cpp
+
+David  11 May 2011
+    - client: fix problem with recursion in dir_size(), this time for real.
+
+    lib/
+        filesys.cpp
+
+David  13 May 2011
+    - client/manager: don't show resource usage for non-CPU-intensive jobs
+
+    client/
+        client_types.cpp
+    clientgui/
+        MainDocument.cpp
+
+David  16 May 2011
+    - client: XML-escape the contents of stderr files;
+        otherwise non-ASCII characters in client_state.xml
+        make it invalid XML
+    - client: fix (I think) to scheduling logic.
+        a job is preemptable if it's finished its time slice and
+        Old: has checkpointed in last 10 sec
+        New: has checkpointed since the end of the time slice
+
+    client/
+        app_control.cpp
+        cpu_sched.cpp
+
+Rom    19 May 2011
+    - client: Account for new registry location that the new VirtualBox installer
+        stashes the version number.  Check the new location first, if not found go
+        back to the original location.
+        
+    client/
+        hostinfo_win.cpp
+
+David  19 May 2011
+    - client: add log messages showing steps in exiting all tasks,
+        enabled by <task_debug/>
+    - client: remove redundant task-start messages
+
+    client/
+        app_start.cpp
+        app_control.cpp
+
+David  20 May 2011
+    - client: on hibernate, don't wait for apps to exit
+        (NCI apps never will)
+
+    client/
+        sysmon_win.cpp
+
+David  21 May 2011
+    - client: if project is set to "don't request more work",
+        report completed tasks immediately
+
+    client/
+        cs_scheduler.cpp
+
+Rom    23 May 2011
+    - Tag for 6.12.27 release, all platforms
+      boinc_core_release_6_12_27
+
+    /
+        configure.ac
+        version.h
+
+Charlie 25 May 2011
+    - MGR: Fix shutting down of Client on Linux.
+
+    clientgui/
+        BOINCGUIApp.cpp
+
+David  25 May 2011
+    - client: escape only non-ASCII chars in stderr out, not control chars
+
+    lib/
+        parse.cpp,h
+    client/
+        app_control.cpp
+
+Rom    25 May 2011
+    - Tag for 6.12.28 release, all platforms
+      boinc_core_release_6_12_28
+
+    /
+        configure.ac
+        version.h

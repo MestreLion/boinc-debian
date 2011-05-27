@@ -736,7 +736,7 @@ int ACTIVE_TASK::abort_task(int exit_status, const char* msg) {
 // check for the stderr file, copy to result record
 //
 bool ACTIVE_TASK::read_stderr_file() {
-    std::string stderr_file;
+    char* buf1, *buf2;
     char path[256];
 
     // truncate stderr output to the last 63KB;
@@ -745,12 +745,13 @@ bool ACTIVE_TASK::read_stderr_file() {
     int max_len = 63*1024;
     sprintf(path, "%s/%s", slot_dir, STDERR_FILE);
     if (!boinc_file_exists(path)) return false;
-    if (read_file_string(path, stderr_file, max_len, !config.stderr_head)) {
+    if (read_file_malloc(path, buf1, max_len, !config.stderr_head)) {
         return false;
     }
-
+    buf2 = (char*)malloc(2*max_len);
+    non_ascii_escape(buf1, buf2, 2*max_len);
     result->stderr_out += "<stderr_txt>\n";
-    result->stderr_out += stderr_file;
+    result->stderr_out += buf2;
     result->stderr_out += "\n</stderr_txt>\n";
     return true;
 }
@@ -817,14 +818,37 @@ void ACTIVE_TASK_SET::request_reread_app_info() {
 // or when a project is detached or reset
 //
 int ACTIVE_TASK_SET::exit_tasks(PROJECT* proj) {
+    if (log_flags.task_debug) {
+        msg_printf(NULL, MSG_INFO, "[task_debug] requesting tasks to exit");
+    }
     request_tasks_exit(proj);
 
     // Wait 15 seconds for them to exit normally; if they don't then kill them
     //
     if (wait_for_exit(MAX_EXIT_TIME, proj)) {
+        if (log_flags.task_debug) {
+            msg_printf(NULL, MSG_INFO,
+                "[task_debug] all tasks haven't exited after %d sec; killing them",
+                MAX_EXIT_TIME
+            );
+        }
         kill_tasks(proj);
+        if (wait_for_exit(5, proj)) {
+            if (log_flags.task_debug) {
+                msg_printf(NULL, MSG_INFO,
+                    "[task_debug] tasks still not exited after 5 secs; giving up"
+                );
+            }
+        } else {
+            if (log_flags.task_debug) {
+                msg_printf(NULL, MSG_INFO, "[task_debug] all tasks exited");
+            }
+        }
+    } else {
+        if (log_flags.task_debug) {
+            msg_printf(NULL, MSG_INFO, "[task_debug] all tasks exited");
+        }
     }
-    wait_for_exit(5, proj);
 
     // get final checkpoint_cpu_times
     //

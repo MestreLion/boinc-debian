@@ -1006,12 +1006,25 @@ int get_processor_features(char* vendor, char* features, int features_size) {
 
 // Returns the CPU count
 //
+typedef DWORD (WINAPI *GAPC)(WORD);
+#ifndef ALL_PROCESSOR_GROUPS
+#define ALL_PROCESSOR_GROUPS 0xffff
+#endif
 int get_processor_count(int& processor_count) {
-    SYSTEM_INFO SystemInfo;
-    memset( &SystemInfo, NULL, sizeof( SystemInfo ) );
-    ::GetSystemInfo( &SystemInfo );
+    GAPC gapc = (GAPC) GetProcAddress(
+        GetModuleHandle(_T("kernel32.dll")),
+        "GetActiveProcessorCount"
+    );
 
-    processor_count = SystemInfo.dwNumberOfProcessors;
+    if (gapc) {
+        processor_count = gapc(ALL_PROCESSOR_GROUPS);
+    } else {
+        SYSTEM_INFO SystemInfo;
+        memset( &SystemInfo, NULL, sizeof( SystemInfo ) );
+        ::GetSystemInfo( &SystemInfo );
+
+        processor_count = SystemInfo.dwNumberOfProcessors;
+    }
     return 0;
 }
 
@@ -1128,10 +1141,15 @@ int HOST_INFO::get_virtualbox_version() {
         }
 
         lRet = RegQueryValueEx(
-            hKey, "Version", NULL, NULL, (LPBYTE) szVersion, &dwVersion
+            hKey, "VersionExt", NULL, NULL, (LPBYTE) szVersion, &dwVersion
         );
         if((lRet != ERROR_SUCCESS) || (dwVersion > sizeof(szVersion))) {
-            return 1;
+            lRet = RegQueryValueEx(
+                hKey, "Version", NULL, NULL, (LPBYTE) szVersion, &dwVersion
+            );
+            if((lRet != ERROR_SUCCESS) || (dwVersion > sizeof(szVersion))) {
+                return 1;
+            }
         }
 
         strncat(szInstallDir, "\\virtualbox.exe", sizeof(szInstallDir) - strlen(szInstallDir));
