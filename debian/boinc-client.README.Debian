@@ -36,6 +36,11 @@ the 'boinccmd' console program or the graphical BOINC Manager
 ('boincmgr') should be used. Have a look at the man pages of both
 for more information.
 
+If the project you are joining only offers 32 bit binaries but
+you are on amd64 then also install the ia32-libs package. This is
+more likely for the graphics to be required than for the core
+computations, so don't worry to much, just be aware of it.
+
 
 2. Installing and configuring BOINC application packages
 --------------------------------------------------------
