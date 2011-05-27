@@ -1,8 +1,19 @@
-boinc (6.12.26+dfsg-2) UNRELEASED; urgency=low
+boinc (6.12.28+dfsg-1) unstable; urgency=low
 
-  * Mentioned ia32-libs also in the README.Debian (Closes: #562431).
+   * New upstream version.
+
+     Likely to now truly compile also on the HURD.
+
+   * Mentioned ia32-libs also in the README.Debian (Closes: #562431).
 
  -- Steffen Moeller <moeller@debian.org>  Wed, 27 Apr 2011 22:33:56 +0200
+
+boinc (6.12.27+dfsg-1) unstable; urgency=low
+
+   * New upstream version.
+
+ -- Steffen Moeller <moeller@debian.org>  Wed, 25 May 2011 17:17:58 +0200
+
   
 boinc (6.12.26+dfsg-1) unstable; urgency=low
 
