@@ -378,6 +378,10 @@ int ACCT_MGR_OP::parse(FILE* f) {
     return ERR_XML_PARSE;
 }
 
+static inline bool is_weak_auth(const char* auth) {
+    return (strstr(auth, "_") != NULL);
+}
+
 void ACCT_MGR_OP::handle_reply(int http_op_retval) {
 #ifndef SIM
     unsigned int i;
@@ -485,68 +489,83 @@ void ACCT_MGR_OP::handle_reply(int http_op_retval) {
                         gstate.detach_project(pp);
                     }
                 } else {
-                    // BAM! leaves authenticator blank if our request message
+                    // The AM can leave authenticator blank if request message
                     // had the current account info
                     //
-                    if (acct.authenticator.size() && strcmp(pp->authenticator, acct.authenticator.c_str())) {
-                        msg_printf(pp, MSG_INFO,
-                            "Already attached under another account"
-                        );
-                    } else {
-                        //msg_printf(pp, MSG_INFO, "Already attached");
-                        pp->attached_via_acct_mgr = true;
-                        if (acct.dont_request_more_work.present) {
-                            pp->dont_request_more_work = acct.dont_request_more_work.value;
-                        }
-                        if (acct.detach_when_done.present) {
-                            pp->detach_when_done = acct.detach_when_done.value;
-                            if (pp->detach_when_done) {
-                                pp->dont_request_more_work = true;
-                            }
-                        }
-
-                        // initiate a scheduler RPC if requested by AMS
-                        //
-                        if (acct.update) {
-                            pp->sched_rpc_pending = RPC_REASON_ACCT_MGR_REQ;
-                            pp->min_rpc_time = 0;
-                        }
-                        if (acct.resource_share.present) {
-                            pp->ams_resource_share = acct.resource_share.value;
-                            pp->resource_share = pp->ams_resource_share;
-                        } else {
-                            // no host-specific resource share;
-                            // if currently have one, restore to value from web
+                    if (acct.authenticator.size()) {
+                        if (strcmp(pp->authenticator, acct.authenticator.c_str())) {
+                            // if old and new auths are both weak,
+                            // use the new one
                             //
-                            if (pp->ams_resource_share >= 0) {
-                                pp->ams_resource_share = -1;
-                                PROJECT p2;
-                                strcpy(p2.master_url, pp->master_url);
-                                retval = p2.parse_account_file();
-                                if (!retval) {
-                                    pp->resource_share = p2.resource_share;
-                                } else {
-                                    pp->resource_share = 100;
-                                }
-                            }
-                        }
-
-                        if (acct.suspend.present) {
-                            if (acct.suspend.value) {
-                                pp->suspend();
+                            if (is_weak_auth(pp->authenticator)
+                                && is_weak_auth(acct.authenticator.c_str())
+                            ) {
+                                strcpy(pp->authenticator, acct.authenticator.c_str());
+                                msg_printf(pp, MSG_INFO,
+                                    "Received new authenticator from account manager"
+                                );
                             } else {
-                                pp->resume();
+                                // otherwise skip this update
+                                //
+                                msg_printf(pp, MSG_INFO,
+                                    "Already attached to a different account"
+                                );
+                                continue;
                             }
                         }
-                        if (acct.abort_not_started.present) {
-                            if (acct.abort_not_started.value) {
-                                pp->abort_not_started();
-                            }
-                        }
-                        pp->no_cpu_ams = acct.no_cpu;
-                        pp->no_cuda_ams = acct.no_cuda;
-                        pp->no_ati_ams = acct.no_ati;
                     }
+                    pp->attached_via_acct_mgr = true;
+                    if (acct.dont_request_more_work.present) {
+                        pp->dont_request_more_work = acct.dont_request_more_work.value;
+                    }
+                    if (acct.detach_when_done.present) {
+                        pp->detach_when_done = acct.detach_when_done.value;
+                        if (pp->detach_when_done) {
+                            pp->dont_request_more_work = true;
+                        }
+                    }
+
+                    // initiate a scheduler RPC if requested by AMS
+                    //
+                    if (acct.update) {
+                        pp->sched_rpc_pending = RPC_REASON_ACCT_MGR_REQ;
+                        pp->min_rpc_time = 0;
+                    }
+                    if (acct.resource_share.present) {
+                        pp->ams_resource_share = acct.resource_share.value;
+                        pp->resource_share = pp->ams_resource_share;
+                    } else {
+                        // no host-specific resource share;
+                        // if currently have one, restore to value from web
+                        //
+                        if (pp->ams_resource_share >= 0) {
+                            pp->ams_resource_share = -1;
+                            PROJECT p2;
+                            strcpy(p2.master_url, pp->master_url);
+                            retval = p2.parse_account_file();
+                            if (!retval) {
+                                pp->resource_share = p2.resource_share;
+                            } else {
+                                pp->resource_share = 100;
+                            }
+                        }
+                    }
+
+                    if (acct.suspend.present) {
+                        if (acct.suspend.value) {
+                            pp->suspend();
+                        } else {
+                            pp->resume();
+                        }
+                    }
+                    if (acct.abort_not_started.present) {
+                        if (acct.abort_not_started.value) {
+                            pp->abort_not_started();
+                        }
+                    }
+                    pp->no_cpu_ams = acct.no_cpu;
+                    pp->no_cuda_ams = acct.no_cuda;
+                    pp->no_ati_ams = acct.no_ati;
                 }
             } else {
                 // here we don't already have the project.
