@@ -1,3 +1,9 @@
+boinc (6.12.28+dfsg-2) unstable; urgency=low
+
+   * Adjusting build dependencies for Debian unstable.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 28 May 2011 10:44:59 +0200
+
 boinc (6.12.28+dfsg-1) unstable; urgency=low
 
    * New upstream version.
@@ -6,7 +12,7 @@ boinc (6.12.28+dfsg-1) unstable; urgency=low
 
    * Mentioned ia32-libs also in the README.Debian (Closes: #562431).
 
- -- Steffen Moeller <moeller@debian.org>  Wed, 27 Apr 2011 22:33:56 +0200
+ -- Steffen Moeller <moeller@debian.org>  Fri, 27 May 2011 23:54:18 +0200
 
 boinc (6.12.27+dfsg-1) unstable; urgency=low
 
