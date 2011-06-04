@@ -99,7 +99,7 @@ Section: net
 Architecture: any
 Provides: boinc-server
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
- python, python-mysqldb,
+ python-support, python, python-mysqldb,
  mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi,
  php5, php5-cli, php5-mysql,
  tcsh, openssl (>= 0.9.8), adduser, libfcgi0ldbl
