@@ -37,6 +37,15 @@ Repackaged upstream source:
    $ VERSION=6.10.58 ./debian/rules get-orig-source
 
 
+Screen saver
+------------
+
+No screen saver is built, disabled in the patch
+debian/patches/Makefile_subdirs.patch, which also allowed for the
+removal of the build dependencies
+ libxcb-util0-dev|libxcb-atom1-dev
+
+
 Removed non-dfsg upstream files
 ===============================
  The files removed from upstream tag are:
