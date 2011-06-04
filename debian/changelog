@@ -2,6 +2,8 @@ boinc (6.12.28+dfsg-3) UNRELEASED; urgency=low
 
    * Added explicit dependency on python-support for boinc-server-maker.
    * Overriding csh and soname lintian warnings.
+   * Addressing the crypt_prog issue.
+   * Eliminating build path from python config
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 28 May 2011 10:44:59 +0200
 

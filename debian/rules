@@ -268,6 +268,7 @@ install: install-stamp
 install-stamp: build update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 	dh install
+	sed -i 's%^TOP_BUILD_DIR.*%TOP_BUILD_DIR = "/usr/share/boinc-server-maker"%' debian/boinc-server-maker/usr/share/pyshared/Boinc/boinc_path_config.py
 	touch $@
 
 override_dh_strip:
