@@ -305,7 +305,7 @@ override_dh_install: $(SAMPLES)
 	find $(CURDIR)/debian -name "*.la" | xargs -r rm -f
 
 override_dh_compress:
-	dh_compress -Xsamples
+	dh_compress -Xsamples -X.cpp
 
 override_dh_installexamples:
 	dh_installexamples -Xjpeglib 
