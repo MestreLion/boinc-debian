@@ -4,9 +4,10 @@ boinc (6.12.28+dfsg-3) unstable; urgency=low
    * Overriding csh and soname lintian warnings.
    * Addressing the crypt_prog issue.
    * Eliminating build path from python config
-   * Eperienting with elimination of leading and ending blanks from Makefile lines
+   * Eperienting with elimination of leading and ending blanks from
+     Makefile lines.
 
- -- Steffen Moeller <moeller@debian.org>  Sat, 28 May 2011 10:44:59 +0200
+ -- Steffen Moeller <moeller@debian.org>  Sat, 04 Jun 2011 20:33:45 +0200
 
 boinc (6.12.28+dfsg-2) unstable; urgency=low
 
