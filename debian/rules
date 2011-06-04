@@ -146,7 +146,7 @@ override_dh_auto_configure:
 	@echo
 	cp -f /usr/share/misc/config.guess config.guess
 	cp -f /usr/share/misc/config.sub config.sub
-	./configure $(CFGFLAGS_boinc-client)
+	./configure $(CFGFLAGS_boinc-client) CPPFLAGS=""
 
 update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
@@ -267,8 +267,8 @@ install: install-stamp
 
 install-stamp: build update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	sed -i 's%^TOP_BUILD_DIR.*%TOP_BUILD_DIR = "/usr/share/boinc-server-maker"%' $(CURDIR)/debian/tmp/usr/lib/python2.6/site-packages/boinc_path_config.py
 	dh install
-	sed -i 's%^TOP_BUILD_DIR.*%TOP_BUILD_DIR = "/usr/share/boinc-server-maker"%' debian/boinc-server-maker/usr/share/pyshared/Boinc/boinc_path_config.py
 	touch $@
 
 override_dh_strip:

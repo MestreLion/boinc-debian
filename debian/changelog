@@ -1,3 +1,11 @@
+boinc (6.12.28+dfsg-4) unstable; urgency=low
+
+   * Fixed target of sed instruction (and FTBFS with it)
+   * Explicitly setting CPPFLAGS to empty, which may help
+     kfreebsd.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 04 Jun 2011 21:51:53 +0200
+
 boinc (6.12.28+dfsg-3) unstable; urgency=low
 
    * Added explicit dependency on python-support for boinc-server-maker.
