@@ -1,3 +1,4 @@
+debian/fetch_example_applications.sh
 samples/atiopencl/Makefile
 samples/atiopencl/atiopencl.cpp
 samples/atiopencl/atiopencl.hpp
