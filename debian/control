@@ -37,8 +37,10 @@ Description: metapackage for the BOINC client and the manager
 
 Package: boinc-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3), adduser, ca-certificates
-Suggests: boinc-app-seti, boinc-manager, x11-xserver-utils, ia32-libs
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3), adduser,
+ ca-certificates
+Recommends: ia32-libs [amd64]
+Suggests: boinc-app-seti, boinc-manager, x11-xserver-utils
 Breaks: udev (<< 136-1)
 Description: core client for the BOINC distributed computing infrastructure
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
@@ -59,7 +61,7 @@ Package: boinc-manager
 Section: x11
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: boinc-client, ia32-libs
+Recommends: boinc-client, ia32-libs-gtk [amd64]
 Suggests: libgl1-mesa-glx, libxt6
 Description: GUI to control and monitor the BOINC core client
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a

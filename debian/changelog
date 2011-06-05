@@ -2,6 +2,9 @@ boinc (6.12.28+dfsg-7) UNRELEASED; urgency=low
 
   * Added download script for binary applications from
     Debian.
+  * Added recommends in -manager for ia32-lib-gtk
+    for amd64 only to better guarantee functional graphics
+  * Added recommends in -client for ia32-lib
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 05 Jun 2011 23:44:49 +0200
 
