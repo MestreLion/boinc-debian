@@ -32,7 +32,6 @@ aclocal.m4
 autom4te.cache/
 autoreconf-stamp
 */*.po
-version.h
 ./.gitignore
 */*.php
 lib/crypt_prog
