@@ -100,6 +100,7 @@ Package: boinc-server-maker
 Section: net
 Architecture: any
 Provides: boinc-server
+Recommends: uuid-runtime
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
  python-support, python, python-mysqldb,
  mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi,
