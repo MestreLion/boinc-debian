@@ -10,3 +10,4 @@ FlatBookStaticChar.patch
 csh2tcsh.patch
 AdvancedFrame_const.patch
 advanced_link_image_const.patch
+file_upload_handler_permission.patch

@@ -1,0 +1,17 @@
+Author: SZTAKI developers
+Description: Files uploaded shall also be writable by the group
+Disclaimer: This patch aims at being adopted by upstream.
+
+Index: boinc/sched/file_upload_handler.cpp
+===================================================================
+--- boinc.orig/sched/file_upload_handler.cpp	2011-06-09 19:51:40.000000000 +0200
++++ boinc/sched/file_upload_handler.cpp	2011-06-09 19:52:47.000000000 +0200
+@@ -159,7 +159,7 @@
+     //
+     int fd = open(path,
+         O_WRONLY|O_CREAT|O_APPEND,
+-        S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
++        S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH
+     );
+     if (fd<0) {
+         return return_error(ERR_TRANSIENT,
