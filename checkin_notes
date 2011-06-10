@@ -9725,3 +9725,247 @@ Rom    25 May 2011
     /
         configure.ac
         version.h
+
+David  8 Mar 2011
+    - client: don't put CDATA around account manager opaque data
+        in request msg
+
+    client/
+        acct_mgr.cpp
+
+David  6 Apr 2011
+    - manager: change simple view notices window title from Messages to Notices
+
+    clientgui/
+        sg_DlgMessages.cpp
+
+David  25 May 2011
+    - client: equate notices if their text is the same after removing digits,
+        so that "need 25 GB disk" and "need 24 GB disk"
+        don't result in 2 notices.
+
+    client/
+        cs_notices.cpp
+
+David  25 May 2011
+	- client: if <ncpus> is specified in config file,
+		set host_info.p_ncpus to that value,
+		so that scheduler requests report that number of CPUs
+
+	client/
+		cpu_sched.cpp
+
+David  25 May 2011
+    - client: fix boinc_make_dirs() (from Josh Highley)
+    - client: allow "non_cpu_intensive" to be specified independently
+        for different apps in a project.
+        This is intended to support projects that use the
+        Attic file distribution system,
+        which needs to have a daemon running.
+
+    lib/
+        filesys.cpp,h
+    client/
+        client_types.cpp,h
+        app_control.cpp
+        cpu_sched.cpp
+
+David  31 May 2011
+    - client: when killing a nonresponsive task,
+        kill its descendant processes too
+
+    client/
+        client_state.cpp
+        app_control.cpp
+
+David  31 May 2011
+    - client: Rom pointed out that on Win in secure mode,
+        the client won't be able to convert descendant PIDs to handles,
+        and therefore won't be able to terminate them.  Sigh.
+        So terminate the main process using its handle
+        (we'll still kill descendants in the non-secure case)
+
+    client/
+        app_control.cpp
+
+David  3 Jun 2011
+    - client: my checkin of 8 Apr 2011 didn't work in some cases, e.g.:
+        - client finishes a job
+        - before upload starts, work fetch runs and decides to fetch work
+            from that project.
+        Solution:
+        - set PROJECT::last_upload_start when job finishes,
+            and clear it when a job is uploaded.
+        - defer scheduler RPC for a limited time if last_upload_start
+            is set, even if a transfer is not active
+
+    client/
+        client_state.cpp
+        cs_scheduler.cpp
+
+David  5 Jun 2011
+    - client: condition "Got server request to delete file" messages
+        on <file_xfer_debug>
+
+    client/
+        cs_scheduler.cpp
+
+David  5 Jun 2011
+    - lib: fix compile warning
+
+    lib/
+        filesys.cpp
+
+Charlie 6 Jun 2011
+    - MGR: Port cookie logic updates from trunk: 
+        - Support Google Chrome cookies.  Convert Google Chrome browser time 
+            (microseconds since January 1, 1601) to UNIX time (seconds since 
+            January 1, 1970).
+        If Firefox 3 SQL query fails because cookie database is locked, 
+        make a temporary copy of the cookie file and query that.  This works 
+        around a bug in some builds of Firefox 3.5.x.
+        - Add SQLite3 v3.7.6.3 source code to Mac XCode project, adding
+            initializers for two local variables to suppress compiler warnings; 
+            don't link Mac Manager with older pre-installed sqlite3 library.
+        
+    clientgui/
+        browser.cpp, .h
+        sqlite3.c (added)
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 7 Jun 2011
+    - MGR: Fix bug I introduced on 6 Aug 2010: if currently connected host name is 
+        empty string, we must treat it as localhost.  Implement different logic to 
+        skip exit confirmation dialog and avoid shutting down client if second 
+        instance of Manager is launched but Select Computer dialog is cancelled.
+        
+    clientgui/
+        MainDocument.cpp, .h
+
+Rom    7 Jun 2011
+    - MGR: Cleanup compiler warnings. Fixes# 1051
+        (From: Steffen Möller)
+        
+    clientgui/
+        AdvancedFrame.cpp
+    clientgui/common/
+        wxFlatNotebookImages.h
+    clientgui/res/skins/default
+        advanced_link_image.xpm
+
+Rom    7 Jun 2011
+    - Tag for 6.12.29 release, all platforms
+      boinc_core_release_6_12_29
+
+    /
+        configure.ac
+        version.h
+
+Charlie 22 Feb 2011
+    - Mac: Add new procinfo.cpp to XCode Project.
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 21 Apr 2011
+    - Mac: Update XCode Project to link procinfo.cpp and procinfo_mac.cpp into 
+        boinscr (ss_app) because boinc_api.cpp now calls kill_descendants() and 
+        suspend_or_resume_descendants().
+    
+    lib
+        procinfo_mac.cpp
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  25 May 2011
+    - Manager: tweak messages in exit dialog
+
+    clientgui/
+        DlgExitMessage.cpp
+
+Charlie 8 Jun 2011
+    - MGR: Use same exit confirmation dialog wording for Linux as for Windows.
+
+    clientgui/
+        DlgExitMessage.cpp
+
+David  31 May 2011
+    - manager: tweak strings related to task FLOP size
+
+    clientgui/
+        DlgItemProperties.cpp
+
+Charlie 8 Jun 2011
+    - MGR: Fix About dialog to show (PowerPC) instead of (x86) when appropriate.
+    
+    clientgui/
+        DlgAbout.cpp
+
+Charlie 8 Jun 2011
+    - MGR: Rework logic to skip exit confirmation dialog and avoid shutting down 
+        client if second instance of Manager is launched, so it works if connect 
+        to remote host fails.
+    - MGR: If original instance of Manager is connected to remote host (or none)
+        when exiting Manager. skip exit confirmation dialog but do shut down local 
+        client if requested in most recently run exit dialog, whether or not 
+        "Remember this decision" was set.
+        
+    clientgui/
+        BOINCGUIApp.cpp, .h
+        MainDocument.cpp, .h
+
+Rom    8 Jun 2011
+    - MGR: Disable list view rules for now.
+    
+    clientgui/
+        BOINCBaseView.h
+
+Rom    8 Jun 2011
+    - Tag for 6.12.30 release, all platforms
+      boinc_core_release_6_12_30
+
+    /
+        configure.ac
+        version.h
+
+Rom    8 Jun 2011
+    - Tag for 6.12.31 release, all platforms
+      boinc_core_release_6_12_31
+
+    /
+        configure.ac
+        version.h
+
+Charlie 8 Jun 2011
+    - MGR: Restore list view rules again.
+    
+    clientgui/
+        BOINCBaseView.h
+
+Charlie 9 Jun 2011
+    - MGR: Revert wording in Exit and Properties dialogs so existing translations 
+        will work.
+
+    clientgui/
+        DlgExitMessage.cpp
+        DlgItemProperties.cpp
+
+Charlie 9 Jun 2011
+    - MGR: Event Log menu item restores Event Log when Minimized; fixed on Mac 
+        and Windows XP, hopefully on other versions of Windows OS.
+    
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCGUIApp.cpp
+
+Rom    8 Jun 2011
+    - Tag for 6.12.32 release, all platforms
+      boinc_core_release_6_12_32
+
+    /
+        configure.ac
+        version.h

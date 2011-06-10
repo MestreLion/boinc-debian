@@ -258,7 +258,7 @@ bool CNetworkConnection::IsComputerNameLocal(const wxString& strMachine) {
     }
 
     if (strMachine.empty()) {
-        return false;
+        return true;
     } else if (wxT("localhost") == strMachine.Lower()) {
         return true;
     } else if (wxT("localhost.localdomain") == strMachine.Lower()) {
@@ -515,9 +515,8 @@ int CMainDocument::OnExit() {
     if (m_pClientManager) {
         if (wxGetApp().ShouldShutdownCoreClient()) {
             // Shut down only local clients on Manager exit
-            GetConnectedComputerName(strConnectedCompter);
-            if (IsComputerNameLocal(strConnectedCompter)) {
-                m_pClientManager->ShutdownBOINCCore();
+            if (!wxGetApp().IsMgrMultipleInstance()) {
+                    m_pClientManager->ShutdownBOINCCore();
             }
         }
         

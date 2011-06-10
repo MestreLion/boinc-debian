@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 22875 2011-01-04 17:05:52Z romw $
+## $Id: Makefile.am 23690 2011-06-08 17:55:56Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -54,6 +54,7 @@ generic_sources = \
 	notice.cpp \
     parse.cpp \
     prefs.cpp \
+    procinfo.cpp \
     procinfo_unix.cpp \
     proxy_info.cpp \
     shmem.cpp \

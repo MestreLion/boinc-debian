@@ -368,7 +368,7 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
 // the project is uploading, and it started recently
 //
 static inline bool actively_uploading(PROJECT* p) {
-    return p->uploading() && (gstate.now - p->last_upload_start < WF_DEFER_INTERVAL);
+    return gstate.now - p->last_upload_start < WF_DEFER_INTERVAL;
 }
 
 // called from the client's polling loop.
@@ -733,9 +733,12 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     for (i=0; i<sr.file_deletes.size(); i++) {
         fip = lookup_file_info(project, sr.file_deletes[i].c_str());
         if (fip) {
-            msg_printf(project, MSG_INFO,
-                "Got server request to delete file %s", fip->name
-            );
+            if (log_flags.file_xfer_debug) {
+                msg_printf(project, MSG_INFO,
+                    "[file_xfer_debug] Got server request to delete file %s",
+                    fip->name
+                );
+            }
             fip->marked_for_delete = true;
         }
     }

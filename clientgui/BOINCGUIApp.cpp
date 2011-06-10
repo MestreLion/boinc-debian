@@ -886,6 +886,9 @@ int CBOINCGUIApp::StartBOINCDefaultScreensaverTest() {
 void CBOINCGUIApp::DisplayEventLog(bool bShowWindow) {
     if (m_pEventLog ) {
         if (bShowWindow) {
+            if (m_pEventLog->IsIconized()) {
+                m_pEventLog->Iconize(false);
+            }
             m_pEventLog->Raise();
         }
     } else {
@@ -1077,8 +1080,10 @@ int CBOINCGUIApp::ConfirmExit() {
 
     // Don't run confirmation dialog if logging out or shutting down Mac, 
     // or if emergency exit from AsyncRPCDlg
-    if (s_bSkipExitConfirmation)
-        return 1;
+    if (s_bSkipExitConfirmation) return 1;
+
+    // Don't run confirmation dialog if second instance of Manager 
+    if (IsMgrMultipleInstance()) return 1;
 
 #ifndef __WXMSW__
     if (!m_iDisplayExitDialog) {

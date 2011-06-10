@@ -1,12 +1,12 @@
 dnl -*- autoconf -*-
 
-dnl $Id: configure.ac 23603 2011-05-25 17:15:45Z romw $
+dnl $Id: configure.ac 23703 2011-06-09 15:34:39Z romw $
 
 dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.58)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 6.12.28)
+AC_INIT(BOINC, 6.12.32)
 AC_CONFIG_MACRO_DIR([m4])
 LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
 AC_SUBST([LIBBOINC_VERSION])
@@ -19,8 +19,8 @@ AM_INIT_AUTOMAKE(dist-zip)
 
 AC_CONFIG_SRCDIR(lib/shmem.cpp)
 
-AC_REVISION([$Revision: 23603 $]) 
-REV=`echo '$Revision: 23603 $' | awk "{print $2}"`
+AC_REVISION([$Revision: 23703 $]) 
+REV=`echo '$Revision: 23703 $' | awk "{print $2}"`
 RDATE=`date '+%Y.%m.%d'`
 if test -d .svn ; then
   REV=`svn info | grep Revision | awk '{print $2}'`
