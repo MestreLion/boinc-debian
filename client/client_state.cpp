@@ -710,6 +710,7 @@ bool CLIENT_STATE::poll_slow_events() {
 
     // active_tasks.get_memory_usage() sets variables needed by 
     // check_suspend_processing(), so it must be called first.
+    //
     active_tasks.get_memory_usage();
     suspend_reason = check_suspend_processing();
 
@@ -1463,6 +1464,7 @@ bool CLIENT_STATE::update_results() {
             if (rp->is_upload_done()) {
                 rp->ready_to_report = true;
                 rp->completed_time = gstate.now;
+                rp->project->last_upload_start = 0;
                 rp->set_state(RESULT_FILES_UPLOADED, "CS::update_results");
 
                 // clear backoffs for app's resources;
