@@ -1,10 +1,14 @@
-boinc (6.12.32+dfsg-1) UNRELEASED; urgency=low
+boinc (6.12.32+dfsg-1) unstable; urgency=low
 
   * New upstream version.
-    - finally fixed build on HURD
+    - finally contains MAXPATHLEN fixes for building on HURD
     - fewer warnings while compiling
   * Initial preparations for merging with developments
     for Debian and beyond at SZTAKI, Budapest.
+  * amd64 package now explicitly presents itself also
+    as i686 savvy as an alternative platform name and such such it now
+    not only recommends but depends with its -client on ia32-lib
+    (Closes: #562431) (lp: #560143).
 
  -- Steffen Moeller <moeller@debian.org>  Fri, 10 Jun 2011 13:56:34 +0200
 

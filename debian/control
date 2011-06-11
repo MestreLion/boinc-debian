@@ -38,8 +38,7 @@ Description: metapackage for the BOINC client and the manager
 Package: boinc-client
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3), adduser,
- ca-certificates
-Recommends: ia32-libs [amd64]
+ ca-certificates, ia32-libs [amd64]
 Suggests: boinc-app-seti, boinc-manager, x11-xserver-utils
 Breaks: udev (<< 136-1)
 Description: core client for the BOINC distributed computing infrastructure
