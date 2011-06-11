@@ -100,13 +100,12 @@ Package: boinc-server-maker
 Section: net
 Architecture: any
 Provides: boinc-server
-Recommends: uuid-runtime
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
  python-support, python, python-mysqldb,
  mysql-server-5.0 | virtual-mysql-server, apache2 | httpd-cgi,
  php5, php5-cli, php5-mysql,
  tcsh, openssl (>= 0.9.8), adduser, libfcgi0ldbl
-Recommends: libapache2-mod-php5, php5-gd
+Recommends: libapache2-mod-php5, php5-gd, uuid-runtime
 Suggests: boinc-app-examples
 Description: BOINC server applications and data files
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
