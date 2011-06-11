@@ -1,7 +1,7 @@
 Index: boinc/Makefile.am
 ===================================================================
---- boinc.orig/Makefile.am	2011-06-04 19:41:50.000000000 +0200
-+++ boinc/Makefile.am	2011-06-04 19:49:16.000000000 +0200
+--- boinc.orig/Makefile.am	2011-06-10 10:39:29.000000000 +0200
++++ boinc/Makefile.am	2011-06-11 18:45:03.000000000 +0200
 @@ -9,15 +9,15 @@
  ACLOCAL_AMFLAGS = -I m4
  
@@ -39,8 +39,8 @@ Index: boinc/Makefile.am
  # svn_version.h should always be rebuilt.
 Index: boinc/Makefile.incl
 ===================================================================
---- boinc.orig/Makefile.incl	2011-06-04 19:41:37.000000000 +0200
-+++ boinc/Makefile.incl	2011-06-04 19:41:48.000000000 +0200
+--- boinc.orig/Makefile.incl	2011-06-10 10:39:29.000000000 +0200
++++ boinc/Makefile.incl	2011-06-11 18:45:03.000000000 +0200
 @@ -18,13 +18,13 @@
  AM_LIBTOOLFLAGS =
  
@@ -64,8 +64,8 @@ Index: boinc/Makefile.incl
  AM_CFLAGS =
 Index: boinc/api/Makefile.am
 ===================================================================
---- boinc.orig/api/Makefile.am	2011-06-04 19:48:05.000000000 +0200
-+++ boinc/api/Makefile.am	2011-06-04 19:48:16.000000000 +0200
+--- boinc.orig/api/Makefile.am	2011-06-10 10:39:30.000000000 +0200
++++ boinc/api/Makefile.am	2011-06-11 18:45:03.000000000 +0200
 @@ -7,24 +7,24 @@
  
  # stuff linked into both main app and graphics app
@@ -106,8 +106,8 @@ Index: boinc/api/Makefile.am
  EXTRA_DIST = *.h
 Index: boinc/client/Makefile.am
 ===================================================================
---- boinc.orig/client/Makefile.am	2011-06-04 19:46:27.000000000 +0200
-+++ boinc/client/Makefile.am	2011-06-04 19:47:01.000000000 +0200
+--- boinc.orig/client/Makefile.am	2011-06-10 10:39:30.000000000 +0200
++++ boinc/client/Makefile.am	2011-06-11 18:45:03.000000000 +0200
 @@ -4,7 +4,7 @@
  include $(top_srcdir)/Makefile.incl
  
@@ -243,8 +243,8 @@ Index: boinc/client/Makefile.am
 +	win
 Index: boinc/clientgui/Makefile.am
 ===================================================================
---- boinc.orig/clientgui/Makefile.am	2011-06-04 19:47:11.000000000 +0200
-+++ boinc/clientgui/Makefile.am	2011-06-04 19:48:40.000000000 +0200
+--- boinc.orig/clientgui/Makefile.am	2011-06-10 10:39:30.000000000 +0200
++++ boinc/clientgui/Makefile.am	2011-06-11 18:45:03.000000000 +0200
 @@ -4,7 +4,7 @@
  include $(top_srcdir)/Makefile.incl
  
@@ -458,8 +458,8 @@ Index: boinc/clientgui/Makefile.am
  boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS)
 Index: boinc/clientscr/Makefile.am
 ===================================================================
---- boinc.orig/clientscr/Makefile.am	2011-06-04 19:46:06.000000000 +0200
-+++ boinc/clientscr/Makefile.am	2011-06-04 19:46:17.000000000 +0200
+--- boinc.orig/clientscr/Makefile.am	2011-06-10 10:39:30.000000000 +0200
++++ boinc/clientscr/Makefile.am	2011-06-11 18:45:03.000000000 +0200
 @@ -4,7 +4,7 @@
  include $(top_srcdir)/Makefile.incl
  
@@ -480,8 +480,8 @@ Index: boinc/clientscr/Makefile.am
  
 Index: boinc/doc/Makefile.am
 ===================================================================
---- boinc.orig/doc/Makefile.am	2011-06-04 19:44:51.000000000 +0200
-+++ boinc/doc/Makefile.am	2011-06-04 19:44:58.000000000 +0200
+--- boinc.orig/doc/Makefile.am	2011-06-10 10:39:30.000000000 +0200
++++ boinc/doc/Makefile.am	2011-06-11 18:45:03.000000000 +0200
 @@ -4,7 +4,7 @@
  include $(top_srcdir)/Makefile.incl
  
@@ -493,9 +493,9 @@ Index: boinc/doc/Makefile.am
  SUBDIRS = $(MAYBE_MANPAGES)
 Index: boinc/lib/Makefile.am
 ===================================================================
---- boinc.orig/lib/Makefile.am	2011-06-04 19:45:10.000000000 +0200
-+++ boinc/lib/Makefile.am	2011-06-04 19:45:54.000000000 +0200
-@@ -17,70 +17,70 @@
+--- boinc.orig/lib/Makefile.am	2011-06-11 18:04:00.000000000 +0200
++++ boinc/lib/Makefile.am	2011-06-11 18:46:12.000000000 +0200
+@@ -17,71 +17,71 @@
  if ENABLE_LIBRARIES
  
  libfcgi_sources = \
@@ -567,6 +567,7 @@ Index: boinc/lib/Makefile.am
  	notice.cpp \
 -    parse.cpp \
 -    prefs.cpp \
+-    procinfo.cpp \
 -    procinfo_unix.cpp \
 -    proxy_info.cpp \
 -    shmem.cpp \
@@ -575,6 +576,7 @@ Index: boinc/lib/Makefile.am
 -    unix_util.cpp \
 +	parse.cpp \
 +	prefs.cpp \
++	procinfo.cpp \
 +	procinfo_unix.cpp \
 +	proxy_info.cpp \
 +	shmem.cpp \
@@ -621,7 +623,7 @@ Index: boinc/lib/Makefile.am
  else
  mac_sources = 
  mac_headers =
-@@ -89,52 +89,52 @@
+@@ -90,52 +90,52 @@
  
  if INSTALL_HEADERS
  pkginclude_HEADERS = \
@@ -716,8 +718,8 @@ Index: boinc/lib/Makefile.am
  libboinc_la_SOURCES = $(generic_sources) $(mac_sources)
 Index: boinc/sched/Makefile.am
 ===================================================================
---- boinc.orig/sched/Makefile.am	2011-06-04 19:43:43.000000000 +0200
-+++ boinc/sched/Makefile.am	2011-06-04 19:48:55.000000000 +0200
+--- boinc.orig/sched/Makefile.am	2011-06-10 10:39:30.000000000 +0200
++++ boinc/sched/Makefile.am	2011-06-11 18:45:03.000000000 +0200
 @@ -9,16 +9,16 @@
  if ENABLE_LIBRARIES
  

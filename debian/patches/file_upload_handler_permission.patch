@@ -1,6 +1,8 @@
 Author: SZTAKI developers
 Description: Files uploaded shall also be writable by the group
-Disclaimer: This patch aims at being adopted by upstream.
+Disclaimer: This patch aims at being adopted by upstream. It may
+ however be Debian-specific. Here, users are commonly created with
+ a group of the same name.
 
 Index: boinc/sched/file_upload_handler.cpp
 ===================================================================

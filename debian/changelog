@@ -2,7 +2,8 @@ boinc (6.12.32+dfsg-1) unstable; urgency=low
 
   * New upstream version.
     - finally contains MAXPATHLEN fixes for building on HURD
-    - fewer warnings while compiling
+    - fewer warnings while compiling (some Debian patches
+      accepted)
   * Initial preparations for merging with developments
     for Debian and beyond at SZTAKI, Budapest.
   * amd64 package now explicitly presents itself also
