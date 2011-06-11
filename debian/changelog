@@ -1,3 +1,10 @@
+boinc (6.12.32+dfsg-2) UNRELEASED; urgency=low
+
+  * The boinc package now depends on binaries
+    of the same version.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 11 Jun 2011 23:09:24 +0200
+
 boinc (6.12.32+dfsg-1) unstable; urgency=low
 
   * New upstream version.
