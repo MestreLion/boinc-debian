@@ -8,3 +8,4 @@ MakefileWrapper.patch
 wrapperURL.patch
 csh2tcsh.patch
 file_upload_handler_permission.patch
+upstream_sztaki_usingTempfileInUpdateVersions.patch
