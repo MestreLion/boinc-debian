@@ -1,0 +1,22 @@
+Index: boinc/html/ops/job_times.php
+===================================================================
+--- boinc.orig/html/ops/job_times.php	2011-06-12 21:52:01.000000000 +0200
++++ boinc/html/ops/job_times.php	2011-06-12 21:56:15.000000000 +0200
+@@ -205,11 +205,16 @@
+ 
+ if (get_str('submit', true)=='OK') {
+     set_time_limit(0);
+-    $appid = $_GET['appid'];
++
++    $appid=0;
++    if (!array_key_exists('appid',$_GET)) {
++        $appid = $_GET['appid'];
++    }
+     if (!$appid) {
+         echo "Must supply an appid";
+         exit;
+     }
++
+     $platformid = $_GET['platformid'];
+     $quantum = $_GET['quantum'];
+     $nresults = $_GET['nresults'];
