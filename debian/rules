@@ -281,7 +281,6 @@ install: install-stamp
 
 install-stamp: build update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
-	sed -i 's%^TOP_BUILD_DIR.*%TOP_BUILD_DIR = "/usr/share/boinc-server-maker"%' $(CURDIR)/debian/tmp/usr/lib/python2.6/site-packages/boinc_path_config.py
 	dh install
 	touch $@
 

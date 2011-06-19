@@ -1,0 +1,11 @@
+Index: boinc/py/boinc_path_config.py.in
+===================================================================
+--- boinc.orig/py/boinc_path_config.py.in	2011-06-19 02:36:44.000000000 +0200
++++ boinc/py/boinc_path_config.py.in	2011-06-19 02:37:42.000000000 +0200
+@@ -8,5 +8,5 @@
+ 
+ import sys, os
+ 
+-TOP_BUILD_DIR = "@TOP_BUILD_DIR@"
++TOP_BUILD_DIR = "/usr/share/boinc-server"
+ sys.path.insert(0, os.path.join(TOP_BUILD_DIR, 'py'))
