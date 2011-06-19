@@ -9969,3 +9969,32 @@ Rom    8 Jun 2011
     /
         configure.ac
         version.h
+
+Charlie 9 Jun 2011
+    - MGR: Event Log menu item restores Event Log when Minimized; fixed on Mac 
+        and Windows XP, hopefully on other versions of Windows OS.
+    
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCGUIApp.cpp
+
+David  10 Jun 2011
+    - client: fix bug in logic that defers work fetch if upload active
+
+    client/
+        cs_scheduler.cpp
+
+David  10 Jun 2011
+    - client: initialize some PROJECT fields (from Ian Hay).
+        May fix bug in defer work fetch while uploading logic
+
+    client/
+        client_types.cpp
+
+Rom    8 Jun 2011
+    - Tag for 6.12.33 release, all platforms
+      boinc_core_release_6_12_33
+
+    /
+        configure.ac
+        version.h
