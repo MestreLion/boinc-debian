@@ -3,4 +3,4 @@ usr/lib/boinc-server/tools
 usr/share/boinc-server/bin
 usr/share/boinc-server/lib
 usr/share/boinc-server/tools
-usr/share/boinc-server/samples/example_app
+#usr/share/boinc-server/samples/example_app

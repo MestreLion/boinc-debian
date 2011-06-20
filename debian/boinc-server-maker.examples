@@ -1,4 +1,6 @@
 debian/fetch_example_applications.sh
+debian/upper_case_wu
+debian/upper_case_result
 samples/atiopencl/Makefile
 samples/atiopencl/atiopencl.cpp
 samples/atiopencl/atiopencl.hpp

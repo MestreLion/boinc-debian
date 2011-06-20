@@ -88,6 +88,16 @@ sched/show_shmem		     usr/lib/boinc-server/bin
 sched/trickle_handler		    usr/lib/boinc-server/bin
 sched/update_stats		    usr/lib/boinc-server/bin
 sched/wu_check		    usr/lib/boinc-server/bin
+sched/file_upload_handler	    usr/lib/boinc-server/bin
+sched/transitioner		    usr/lib/boinc-server/bin
+sched/sample_bitwise_validator	    usr/lib/boinc-server/bin
+sched/sample_trivial_validator	    usr/lib/boinc-server/bin
+sched/sample_dummy_assimilator	    usr/lib/boinc-server/bin
+sched/sample_assimilator	    usr/lib/boinc-server/bin
+sched/sample_work_generator	    usr/lib/boinc-server/bin
+sched/single_job_assimilator	    usr/lib/boinc-server/bin
+sched/assimilator.py		    usr/lib/boinc-server/bin
+sched/pymw_assimilator.py	    usr/lib/boinc-server/bin
 
 #usr/bin/crypt_prog		     usr/lib/boinc-server/bin
 # In lib/crypt_prog is just a wrapper for the real binary
@@ -95,9 +105,7 @@ sched/wu_check		    usr/lib/boinc-server/bin
 #lib/crypt_prog		     usr/lib/boinc-server/bin
 lib/.libs/crypt_prog		     usr/lib/boinc-server/bin
 #usr/bin/switcher		     usr/lib/boinc-server/bin	# also in client
-
-
 #usr/bin/wu_check		     usr/lib/boinc-server/bin
-sched/wu_check		             usr/lib/boinc-server/bin
+
 
 #usr/libexec/sched  		     usr/lib/boinc-server
