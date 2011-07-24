@@ -1,15 +1,15 @@
 Index: boinc/generate_svn_version.sh
 ===================================================================
---- boinc.orig/generate_svn_version.sh	2011-04-27 22:39:13.000000000 +0200
-+++ boinc/generate_svn_version.sh	2011-04-27 22:45:42.000000000 +0200
+--- boinc.orig/generate_svn_version.sh	2011-07-24 19:39:09.000000000 +0200
++++ boinc/generate_svn_version.sh	2011-07-24 22:50:22.000000000 +0200
 @@ -7,7 +7,9 @@
  echo "#define SVN_VERSION_H" >> $TMPFILE
  echo "" >> $TMPFILE
  
--if [ -d .git ]; then
-+if [ -d debian ]; then
+-if [ -d .git/svn ]; then
++if [ -d "debian" ]; then
 +    CMD=""
-+elif [ -d .git ]; then
++elif [ -d .git/svn ]; then
      CMD="git svn info"
- elif [ -d .svn ]; then
-     CMD="svn info"
+ elif [ -d .git ]; then
+     GIT_LOG=`git log -n1 --pretty="format:%H"`

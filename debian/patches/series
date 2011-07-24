@@ -1,16 +1,11 @@
 stripchart_debian.patch
 upstream_sztaki_configureEval.patch
-AvoidingBlanksInMakefiles.patch
 pythonPath.patch
-calculate_credit_multiplier.patch
 generate_less.patch
 texfont_removal.patch
 Makefile_subdirs.patch
-MakefileWrapper.patch
-wrapperURL.patch
 csh2tcsh.patch
 file_upload_handler_permission.patch
-upstream_sztaki_usingTempfileInUpdateVersions.patch
+possible_size_type_error.patch
 upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
-upstream_sztaki_ProperArrayPhpIndexCheck_JobTimes.patch
 debian_debian_AdjustBoincTopdirPython.patch
