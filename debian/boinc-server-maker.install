@@ -28,8 +28,6 @@ tools/run_in_ops                     usr/lib/boinc-server/tools
 #html/user/server_status.php          usr/share/boinc-server/html/user
 
 
-#usr/bin/calculate_credit_multiplier  usr/share/boinc-server/tools
-tools/calculate_credit_multiplier  usr/share/boinc-server/tools
 #usr/bin/dbcheck_files_exist          usr/share/boinc-server/tools
 tools/dbcheck_files_exist            usr/share/boinc-server/tools
 #usr/bin/grep_logs                    usr/share/boinc-server/tools
@@ -71,12 +69,8 @@ sched/get_file			    usr/lib/boinc-server/bin
 #usr/bin/make_work		     usr/lib/boinc-server/bin
 sched/make_work		     usr/lib/boinc-server/bin
 sched/message_handler				usr/lib/boinc-server/bin
-#usr/bin/request_file_list	     usr/lib/boinc-server/bin
-sched/request_file_list		     usr/lib/boinc-server/bin
 #usr/bin/sched_driver		     usr/lib/boinc-server/bin
 sched/sched_driver		    usr/lib/boinc-server/bin
-#usr/bin/send_file		     usr/lib/boinc-server/bin
-sched/send_file		    usr/lib/boinc-server/bin
 #usr/bin/start            	     usr/share/boinc-server/bin
 sched/start			    usr/lib/boinc-server/bin
 #usr/bin/status		 	     usr/share/boinc-server/bin
@@ -85,7 +79,6 @@ sched/status		    usr/lib/boinc-server/bin
 sched/stop			     usr/share/boinc-server/bin
 #usr/bin/show_shmem		     usr/lib/boinc-server/bin
 sched/show_shmem		     usr/lib/boinc-server/bin
-sched/trickle_handler		    usr/lib/boinc-server/bin
 sched/update_stats		    usr/lib/boinc-server/bin
 sched/wu_check		    usr/lib/boinc-server/bin
 sched/file_upload_handler	    usr/lib/boinc-server/bin

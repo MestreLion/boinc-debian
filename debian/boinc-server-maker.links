@@ -13,13 +13,10 @@ usr/lib/boinc-server/bin/file_deleter		usr/share/boinc-server/sched/file_deleter
 usr/lib/boinc-server/bin/get_file		usr/share/boinc-server/sched/get_file
 usr/lib/boinc-server/bin/make_work		usr/share/boinc-server/sched/make_work
 usr/lib/boinc-server/bin/message_handler	usr/share/boinc-server/sched/message_handler
-usr/lib/boinc-server/bin/request_file_list	usr/share/boinc-server/sched/request_file_list
 usr/lib/boinc-server/bin/sched_driver		usr/share/boinc-server/sched/sched_driver
-usr/lib/boinc-server/bin/send_file		usr/share/boinc-server/sched/send_file
 usr/lib/boinc-server/bin/show_shmem		usr/share/boinc-server/sched/show_shmem
 usr/lib/boinc-server/bin/start			usr/share/boinc-server/bin/start
 usr/lib/boinc-server/bin/status			usr/share/boinc-server/bin/status
-usr/lib/boinc-server/bin/trickle_handler	usr/share/boinc-server/sched/trickle_handler
 usr/lib/boinc-server/bin/update_stats		usr/share/boinc-server/sched/update_stats
 usr/lib/boinc-server/bin/wu_check		usr/share/boinc-server/sched/wu_check
 usr/lib/boinc-server/bin/file_upload_handler	    usr/share/boinc-server/sched/file_upload_handler
