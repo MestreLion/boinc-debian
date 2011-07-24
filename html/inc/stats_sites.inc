@@ -37,9 +37,6 @@ $cpid_stats_sites = array(
     array("The Knights Who Say 'Ni!'",
         "http://stats.kwsn.net/user.php?proj=all&amp;cpid=%s"
     ),
-    array("Team Starfire World BOINC Stats 'N Stones",
-        "http://statsnstones.tswb.org/userdetail.aspx?cpid=%s"
-    ),
 );
 
 $stats_sites = array(
@@ -48,11 +45,6 @@ $stats_sites = array(
         "Formula BOINC",
         "(Team ranking based on position within projects,
         as in Formula 1 racing, rather than total points)"
-    ),
-    array(
-        "http://statsnstones.tswb.org/",
-        "Team Starfire World BOINC Stats 'N Stones",
-        ""
     ),
     array(
         "http://www.allprojectstats.com/",
@@ -208,5 +200,5 @@ function site_list($sites) {
 $GLOBALS['cpid_stats_sites'] = $cpid_stats_sites;
 $GLOBALS['host_sites'] = $host_sites;
 
-$cvs_version_tracker[]="\$Id: stats_sites.inc 22414 2010-09-27 20:34:47Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: stats_sites.inc 22859 2011-01-02 03:07:14Z davea $";  //Generated automatically - do not edit
 ?>

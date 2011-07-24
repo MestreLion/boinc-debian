@@ -23,7 +23,11 @@ require_once("../project/project.inc");
 
 function svn_revision($path) {
     $out = array();
-    exec("svn info http://boinc.berkeley.edu/svn/$path", $out);
+    $cmd = "svn info http://boinc.berkeley.edu/svn/$path";
+    if (defined("SVN_CONFIG_DIRECTORY")) {
+        $cmd .= " --config-dir ". SVN_CONFIG_DIRECTORY;
+    }
+    exec($cmd, $out);
     foreach ($out as $line) {
         $x = strstr($line, "Last Changed Rev: ");
         if ($x) {
@@ -214,5 +218,5 @@ echo "<h3>Periodic or special tasks</h3>
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: index.php 21848 2010-06-30 19:04:36Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: index.php 23386 2011-04-19 20:17:51Z davea $";  //Generated automatically - do not edit
 ?>

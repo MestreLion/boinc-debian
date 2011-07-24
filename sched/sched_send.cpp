@@ -101,7 +101,7 @@ void WORK_REQ::get_job_limits() {
     if (n < 1) n = 1;
     effective_ncpus = n;
 
-    n = g_request->coprocs.cuda.count + g_request->coprocs.ati.count;
+    n = g_request->coprocs.nvidia.count + g_request->coprocs.ati.count;
     if (n > MAX_GPUS) n = MAX_GPUS;
     effective_ngpus = n;
 
@@ -118,15 +118,13 @@ void WORK_REQ::get_job_limits() {
         g_wreq->max_jobs_per_rpc = 999999;
     }
 
-    config.max_jobs_in_progress.reset(g_reply->host, g_request->coprocs);
-
     if (config.debug_quota) {
         log_messages.printf(MSG_NORMAL,
-            "[quota] max jobs per RPC: %d\n",
-            g_wreq->max_jobs_per_rpc
+            "[quota] effective ncpus %d ngpus %d\n",
+            effective_ncpus, effective_ngpus
         );
-        config.max_jobs_in_progress.print_log();
     }
+    config.max_jobs_in_progress.reset(effective_ncpus, effective_ngpus);
 }
 
 static const char* find_user_friendly_name(int appid) {
@@ -559,7 +557,7 @@ static inline bool hard_app(APP& app) {
 
 static inline double get_estimated_delay(BEST_APP_VERSION& bav) {
     if (bav.host_usage.ncudas) {
-        return g_request->coprocs.cuda.estimated_delay;
+        return g_request->coprocs.nvidia.estimated_delay;
     } else if (bav.host_usage.natis) {
         return g_request->coprocs.ati.estimated_delay;
     } else {
@@ -568,19 +566,16 @@ static inline double get_estimated_delay(BEST_APP_VERSION& bav) {
 }
 
 static inline void update_estimated_delay(BEST_APP_VERSION& bav, double dt) {
-    if (bav.host_usage.ncudas) {
-        g_request->coprocs.cuda.estimated_delay += dt;
-    } else if (bav.host_usage.natis) {
-        g_request->coprocs.ati.estimated_delay += dt;
-    } else {
-        g_request->cpu_estimated_delay += dt;
-    }
+    g_request->coprocs.nvidia.estimated_delay += dt*bav.host_usage.ncudas/g_request->coprocs.nvidia.count;
+    g_request->coprocs.ati.estimated_delay += dt*bav.host_usage.natis/g_request->coprocs.ati.count;
+    g_request->cpu_estimated_delay += dt*bav.host_usage.avg_ncpus/g_request->host.p_ncpus;
 }
 
 // return the delay bound to use for this job/host.
 // Actually, return two: optimistic (lower) and pessimistic (higher).
 // If the deadline check with the optimistic bound fails,
 // try the pessimistic bound.
+// TODO: clean up this mess
 //
 static void get_delay_bound_range(
     WORKUNIT& wu,
@@ -723,6 +718,12 @@ int wu_is_infeasible_fast(
         return INFEASIBLE_CUSTOM;
     }
 
+    if (config.user_filter) {
+        if (wu.batch && wu.batch != g_reply->user.id) {
+            return INFEASIBLE_USER_FILTER;
+        }
+    }
+
     // homogeneous redundancy: can't send if app uses HR and
     // 1) host is of unknown HR class
     //
@@ -802,7 +803,7 @@ static int insert_after(char* buffer, const char* after, const char* text) {
         log_messages.printf(MSG_CRITICAL,
             "insert_after: %s not found in %s\n", after, buffer
         );
-        return ERR_NULL;
+        return ERR_XML_PARSE;
     }
     p += strlen(after);
     strcpy(temp, p);
@@ -837,7 +838,7 @@ static int insert_wu_tags(WORKUNIT& wu, APP& app) {
 // Add the given workunit, app, and app version to a reply.
 //
 static int add_wu_to_reply(
-    WORKUNIT& wu, SCHEDULER_REPLY& reply, APP* app, BEST_APP_VERSION* bavp
+    WORKUNIT& wu, SCHEDULER_REPLY&, APP* app, BEST_APP_VERSION* bavp
 ) {
     int retval;
     WORKUNIT wu2, wu3;
@@ -879,7 +880,9 @@ static int add_wu_to_reply(
     }
     retval = insert_wu_tags(wu2, *app);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "insert_wu_tags failed %d\n", retval);
+        log_messages.printf(MSG_CRITICAL,
+            "insert_wu_tags failed: %s\n", boincerror(retval)
+        );
         return retval;
     }
     wu3 = wu2;
@@ -917,7 +920,11 @@ static int insert_deadline_tag(RESULT& result) {
     return 0;
 }
 
-int update_wu_transition_time(WORKUNIT wu, time_t x) {
+// update workunit when send an instance of it:
+// - transition time
+// - app_version_id, if app uses homogeneous app version
+//
+int update_wu_on_send(WORKUNIT wu, time_t x, APP& app, BEST_APP_VERSION& bav) {
     DB_WORKUNIT dbwu;
     char buf[256];
 
@@ -929,6 +936,11 @@ int update_wu_transition_time(WORKUNIT wu, time_t x) {
         "transition_time=if(transition_time<%d, transition_time, %d)",
         (int)x, (int)x
     );
+    if (app.homogeneous_app_version && (bav.avp->id != wu.app_version_id)) {
+        char buf2[256];
+        sprintf(buf2, ", app_version_id=%d", bav.avp->id);
+        strcat(buf, buf2);
+    }
     return dbwu.update_field(buf);
 }
 
@@ -975,6 +987,9 @@ bool work_needed(bool locality_sched) {
     // see if we've reached limits on in-progress jobs
     //
     bool some_type_allowed = false;
+
+    // check GPU limit
+    //
     if (config.max_jobs_in_progress.exceeded(NULL, true)) {
         if (config.debug_quota) {
             log_messages.printf(MSG_NORMAL,
@@ -988,6 +1003,9 @@ bool work_needed(bool locality_sched) {
     } else {
         some_type_allowed = true;
     }
+
+    // check CPU limit
+    //
     if (config.max_jobs_in_progress.exceeded(NULL, false)) {
         if (config.debug_quota) {
             log_messages.printf(MSG_NORMAL,
@@ -999,6 +1017,7 @@ bool work_needed(bool locality_sched) {
     } else {
         some_type_allowed = true;
     }
+
     if (!some_type_allowed) {
         if (config.debug_send) {
             log_messages.printf(MSG_NORMAL,
@@ -1063,7 +1082,7 @@ inline static int get_app_version_id(BEST_APP_VERSION* bavp) {
 }
 
 int add_result_to_reply(
-    DB_RESULT& result, WORKUNIT& wu, BEST_APP_VERSION* bavp,
+    SCHED_DB_RESULT& result, WORKUNIT& wu, BEST_APP_VERSION* bavp,
     bool locality_scheduling
 ) {
     int retval;
@@ -1109,7 +1128,7 @@ int add_result_to_reply(
             );
         }
     }
-    retval = result.mark_as_sent(old_server_state);
+    retval = result.mark_as_sent(old_server_state, config.report_grace_period);
     if (retval == ERR_DB_NOT_FOUND) {
         log_messages.printf(MSG_CRITICAL,
             "[RESULT#%d] [HOST#%d]: CAN'T SEND, already sent to another host\n",
@@ -1117,7 +1136,7 @@ int add_result_to_reply(
         );
     } else if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "add_result_to_reply: can't update result: %d\n", retval
+            "add_result_to_reply: can't update result: %s\n", boincerror(retval)
         );
     }
     if (retval) return retval;
@@ -1130,7 +1149,9 @@ int add_result_to_reply(
         );
     }
 
-    retval = update_wu_transition_time(wu, result.report_deadline);
+    retval = update_wu_on_send(
+        wu, result.report_deadline + config.report_grace_period, *app, *bavp
+    );
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
             "add_result_to_reply: can't update WU transition time: %d\n",
@@ -1153,11 +1174,11 @@ int add_result_to_reply(
     retval = insert_deadline_tag(result);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "add_result_to_reply: can't insert deadline tag: %d\n", retval
+            "add_result_to_reply: can't insert deadline tag: %s\n", boincerror(retval)
         );
         return retval;
     }
-    result.bavp = bavp;
+    result.bav = *bavp;
     g_reply->insert_result(result);
     if (g_wreq->rsc_spec_request) {
         if (bavp->host_usage.ncudas) {
@@ -1234,7 +1255,7 @@ int add_result_to_reply(
             retval = dbwu.update_field(buf);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "WU update failed: %d", retval
+                    "WU update failed: %s", boincerror(retval)
                 );
             }
         }
@@ -1291,7 +1312,7 @@ static void send_user_messages() {
 
     // Mac client with GPU but too-old client
     //
-    if (g_request->coprocs.cuda.count
+    if (g_request->coprocs.nvidia.count
         && ssp->have_cuda_apps
         && strstr(g_request->host.os_name, "Darwin")
         && g_request->core_client_version < 61028
@@ -1304,7 +1325,7 @@ static void send_user_messages() {
 
     // GPU-only project, client lacks GPU
     //
-    bool usable_gpu = (ssp->have_cuda_apps && g_request->coprocs.cuda.count)
+    bool usable_gpu = (ssp->have_cuda_apps && g_request->coprocs.nvidia.count)
         || (ssp->have_ati_apps && g_request->coprocs.ati.count);
     if (!ssp->have_cpu_apps && !usable_gpu) {
         if (ssp->have_cuda_apps) {
@@ -1327,10 +1348,10 @@ static void send_user_messages() {
         }
     }
 
-    if (g_request->coprocs.cuda.count && ssp->have_cuda_apps) {
+    if (g_request->coprocs.nvidia.count && ssp->have_cuda_apps) {
         send_gpu_messages(cuda_requirements,
-            g_request->coprocs.cuda.prop.dtotalGlobalMem,
-            g_request->coprocs.cuda.display_driver_version,
+            g_request->coprocs.nvidia.prop.dtotalGlobalMem,
+            g_request->coprocs.nvidia.display_driver_version,
             "NVIDIA GPU"
         );
     }
@@ -1349,7 +1370,7 @@ static void send_user_messages() {
     if (!config.locality_scheduling && !config.locality_scheduler_fraction && !config.matchmaker) {
         if (g_wreq->njobs_sent && !g_wreq->user_apps_only) {
             g_reply->insert_message(
-                "No work can be sent for the applications you have selected",
+                "No tasks are available for the applications you have selected",
                 "low"
             );
 
@@ -1363,7 +1384,7 @@ static void send_user_messages() {
                     if (app) {
                         char explanation[256];
                         sprintf(explanation,
-                            "No work is available for %s",
+                            "No tasks are available for %s",
                             find_user_friendly_name(g_wreq->preferred_apps[i].appid)
                         );
                         g_reply->insert_message( explanation, "low");
@@ -1377,11 +1398,11 @@ static void send_user_messages() {
                 g_reply->insert_message(g_wreq->no_work_messages.at(j));
             }
             g_reply->insert_message(
-                "Your preferences allow work from applications other than those selected",
+                "Your preferences allow tasks from applications other than those selected",
                 "low"
             );
             g_reply->insert_message(
-                "Sending work from other applications", "low"
+                "Sending tasks from other applications", "low"
             );
         }
     }
@@ -1390,7 +1411,7 @@ static void send_user_messages() {
     //
     if (g_wreq->njobs_sent == 0) {
         g_reply->set_delay(DELAY_NO_WORK_TEMP);
-        g_reply->insert_message("No work sent", "low");
+        g_reply->insert_message("No tasks sent", "low");
 
         // Tell the user about applications with no work
         //
@@ -1399,7 +1420,7 @@ static void send_user_messages() {
                 APP* app = ssp->lookup_app(g_wreq->preferred_apps[i].appid);
                 // don't write message if the app is deprecated
                 if (app != NULL) {
-                    sprintf(buf, "No work is available for %s",
+                    sprintf(buf, "No tasks are available for %s",
                         find_user_friendly_name(
                             g_wreq->preferred_apps[i].appid
                         )
@@ -1416,8 +1437,8 @@ static void send_user_messages() {
         }
         if (g_wreq->no_allowed_apps_available) {
             g_reply->insert_message(
-                _("No work available for the applications you have selected.  Please check your project preferences on the web site."),
-                "notice"
+                _("No tasks are available for the applications you have selected."),
+                "low"
             );
         }
         if (g_wreq->speed.insufficient) {
@@ -1453,25 +1474,25 @@ static void send_user_messages() {
             );
             g_reply->set_delay(DELAY_NO_WORK_PERM);
             log_messages.printf(MSG_NORMAL,
-                "Not sending work because newer client version required\n"
+                "Not sending tasks because newer client version required\n"
             );
         }
         if (g_wreq->no_cuda_prefs) {
             g_reply->insert_message(
                 _("Tasks for NVIDIA GPU are available, but your preferences are set to not accept them"),
-                "notice"
+                "low"
             );
         }
         if (g_wreq->no_ati_prefs) {
             g_reply->insert_message(
                 _("Tasks for ATI GPU are available, but your preferences are set to not accept them"),
-                "notice"
+                "low"
             );
         }
         if (g_wreq->no_cpu_prefs) {
             g_reply->insert_message(
                 _("Tasks for CPU are available, but your preferences are set to not accept them"),
-                "notice"
+                "low"
             );
         }
         DB_HOST_APP_VERSION* havp = quota_exceeded_version();
@@ -1527,11 +1548,11 @@ void send_work_setup() {
     get_running_frac();
     g_wreq->get_job_limits();
 
-    if (g_request->coprocs.cuda.count) {
-        g_wreq->cuda_req_secs = clamp_req_sec(g_request->coprocs.cuda.req_secs);
-        g_wreq->cuda_req_instances = g_request->coprocs.cuda.req_instances;
-        if (g_request->coprocs.cuda.estimated_delay < 0) {
-            g_request->coprocs.cuda.estimated_delay = g_request->cpu_estimated_delay;
+    if (g_request->coprocs.nvidia.count) {
+        g_wreq->cuda_req_secs = clamp_req_sec(g_request->coprocs.nvidia.req_secs);
+        g_wreq->cuda_req_instances = g_request->coprocs.nvidia.req_instances;
+        if (g_request->coprocs.nvidia.estimated_delay < 0) {
+            g_request->coprocs.nvidia.estimated_delay = g_request->cpu_estimated_delay;
         }
     }
     if (g_request->coprocs.ati.count) {
@@ -1572,6 +1593,12 @@ void send_work_setup() {
 
     // print details of request to log
     //
+    if (config.debug_quota) {
+        log_messages.printf(MSG_NORMAL,
+            "[quota] max jobs per RPC: %d\n", g_wreq->max_jobs_per_rpc
+        );
+        config.max_jobs_in_progress.print_log();
+    }
     if (config.debug_send) {
         log_messages.printf(MSG_NORMAL,
             "[send] %s matchmaker scheduling; %s EDF sim\n",
@@ -1583,11 +1610,11 @@ void send_work_setup() {
             g_wreq->cpu_req_secs, g_wreq->cpu_req_instances,
             g_request->cpu_estimated_delay
         );
-        if (g_request->coprocs.cuda.count) {
+        if (g_request->coprocs.nvidia.count) {
             log_messages.printf(MSG_NORMAL,
                 "[send] CUDA: req %.2f sec, %.2f instances; est delay %.2f\n",
                 g_wreq->cuda_req_secs, g_wreq->cuda_req_instances,
-                g_request->coprocs.cuda.estimated_delay
+                g_request->coprocs.nvidia.estimated_delay
             );
         }
         if (g_request->coprocs.ati.count) {
@@ -1633,7 +1660,7 @@ void send_work_setup() {
 
 // If a record is not in DB, create it.
 //
-int update_host_app_versions(vector<RESULT>& results, int hostid) {
+int update_host_app_versions(vector<SCHED_DB_RESULT>& results, int hostid) {
     vector<DB_HOST_APP_VERSION> new_havs;
     unsigned int i, j;
     int retval;
@@ -1648,6 +1675,7 @@ int update_host_app_versions(vector<RESULT>& results, int hostid) {
                 DB_HOST_APP_VERSION& hav = new_havs[j];
                 if (hav.app_version_id == gavid) {
                     found = true;
+                    hav.n_jobs_today++;
                 }
             }
             if (!found) {
@@ -1655,6 +1683,7 @@ int update_host_app_versions(vector<RESULT>& results, int hostid) {
                 hav.clear();
                 hav.host_id = hostid;
                 hav.app_version_id = gavid;
+                hav.n_jobs_today = 1;
                 new_havs.push_back(hav);
             }
         }
@@ -1668,7 +1697,7 @@ int update_host_app_versions(vector<RESULT>& results, int hostid) {
         retval = hav.insert();
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "hav.insert(): %d\n", retval
+                "hav.insert(): %s\n", boincerror(retval)
             );
         } else {
             if (config.debug_credit) {
@@ -1767,10 +1796,10 @@ done:
     retval = update_host_app_versions(g_reply->results, g_reply->host.id);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "update_host_app_versions() failed: %d\n", retval
+            "update_host_app_versions() failed: %s\n", boincerror(retval)
         );
     }
     send_user_messages();
 }
 
-const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 22651 2010-11-08 17:57:13Z romw $";
+const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 23789 2011-07-01 02:12:11Z davea $";

@@ -1,5 +1,7 @@
 <?php
 
+Header("Location: http://boinc.berkeley.edu/dev/sim_web.php");
+exit;
 require_once("docutil.php");
 
 function show_form() {
@@ -18,6 +20,12 @@ function show_form() {
 </textarea>
 
     <p>
+    <b>global_prefs_override.xml:</b> (the host's preferences override file)
+    <br>
+    <textarea name=global_prefs_override rows=10 cols=80>
+</textarea>
+
+    <p>
     <b>cc_config.xml:</b> (the client configuration options)
     <br>
     <textarea name=cc_config rows=10 cols=80>
@@ -32,24 +40,18 @@ function show_form() {
     <br>Duration: <input name=duration value=86400>
     <p>
     <b>
-    The following controls enable various experimental policies.
-    The standard policy (as of 5.10.13) is no checkboxes enabled,
-    and the 'Normal' DCF policy.
+    Scheduling policy options:
     </b>
 
     <p>
-    Server does EDF simulation based on current workload? <input type=checkbox name=suw>
+    Client uses Recent Estimated Credit scheduling? <input type=checkbox name=rec>
+    <br>(default: debt-based scheduling)
     <p>
-    Client uses Round-Robin (old-style) CPU scheduling? <input type=checkbox name=rr_only>
+    Server does EDF simulation to predict deadline misses? <input type=checkbox name=suw>
+    <br>(default: approximate method)
     <p>
-    Client uses old work fetch policy? <input type=checkbox name=work_fetch_old>
-    <p>
-    Duration correction factor: <input type=radio name=dcf value=normal checked> Normal
-        : <input type=radio name=dcf value=stats> Stats
-        : <input type=radio name=dcf value=dual> Dual
-        : <input type=radio name=dcf value=none> None
-    <p>
-    HTML output lines per file: <input name=line_limit>
+    Client uses only round-robin CPU scheduling? <input type=checkbox name=rr_only>
+    <br>(default: round-robin and EDF hybrid)
     <p>
     <input type=submit name=submit value=\"Run simulation\">
 
@@ -57,18 +59,45 @@ function show_form() {
     ";
 }
 
+// ?? the actual function doesn't seem to work here
+function file_put_contents_aux($fname, $str) {
+    $f = fopen($fname, "w");
+    if (!$f) die("fopen");
+    $x = fwrite($f, $str);
+    if (!$x) die("fwrite");
+    fclose($f);
+}
+
 if ($_POST['submit']) {
     chdir("sim");
 
-    if (!file_put_contents("client_state.xml", $_POST['client_state'])) {
-        echo "Can't write client_state.xml - check permissions\n"; exit();
+    $prefix = tempnam("/tmp", "sim");
+
+    $x = $_POST['client_state'];
+    if (!strlen($x)) {
+        die("missing state");
     }
-    if (!file_put_contents("global_prefs.xml", $_POST['global_prefs'])) {
-        echo "Can't write global_prefs.xml - check permissions\n"; exit();
+    $state_fname = $prefix."client_state.xml";
+    file_put_contents_aux($state_fname, $x);
+
+    $x = $_POST['global_prefs'];
+    if (strlen($x)) {
+        $prefs_fname = $prefix."global_prefs.xml";
+        file_put_contents_aux($prefs_fname, $x);
     }
-    if (!file_put_contents("cc_config.xml", $_POST['cc_config'])) {
-        echo "Can't write cc_config.xml - check permissions\n"; exit();
+
+    $x = $_POST['global_prefs_override'];
+    if (strlen($x)) {
+        $prefs_override_fname = $prefix."global_prefs_override.xml";
+        file_put_contents_aux($prefs_override_fname, $x);
     }
+
+    $x = $_POST['cc_config'];
+    if (strlen($x)) {
+        $config_fname = $prefix."cc_config.xml";
+        file_put_contents_aux($config_fname, $x);
+    }
+
     $duration = $_POST['duration'];
 
     $delta = $_POST['delta'];
@@ -91,31 +120,17 @@ if ($_POST['submit']) {
     if ($_POST['rr_only']) {
         $rr_only = '--cpu_sched_rr_only';
     }
-    $work_fetch_old = '';
-    if ($_POST['work_fetch_old']) {
-        $work_fetch_old = '--work_fetch_old';
+
+    $prog = "./sim_debt";
+    if ($_POST['use_rec']) {
+        $prog = "./sim_rec";
     }
 
-    $dcfflag = "";
-    $dcf = ($_POST['dcf']);
-    if ($dcf == "stats") {
-        $dcfflag = '--dcf_stats';
-    } else if ($dcf == 'none') {
-        $dcfflag = '--dcf_dont_use';
-    } else if ($dcf == 'dual') {
-        $dcfflag = '--dual_dcf';
-    }
+    $cmd = "$prog --duration $duration --delta $delta $suw --file_prefix $prefix $rr_only $llflag";
 
-    $llflag = '';
-    $line_limit = $_POST['line_limit'];
-    if ($line_limit) {
-        $llflag = "--line_limit $line_limit";
-    }
+    $x = system($cmd);
 
-    Header("Location: sim/sim_out_0.html");
-    $cmd = "./sim --duration $duration --delta $delta $suw $dcfflag $rr_only $work_fetch_old $llflag";
-    system("/bin/rm sim_log.txt sim_out_*.html");
-    system($cmd);
+    Header("Location: ".$prefix."index.html");
 } else {
     page_head("BOINC client simulator");
     echo "

@@ -53,6 +53,8 @@ int sleep_interval = SLEEP_INTERVAL;
 int one_pass_N_WU=0;
 int g_argc;
 char** g_argv;
+char* results_prefix = NULL;
+char* transcripts_prefix = NULL;
 
 void usage(char** argv) {
     fprintf(stderr,
@@ -156,7 +158,7 @@ bool do_pass(APP& app) {
         retval = assimilate_handler(wu, results, canonical_result);
         if (retval && retval != DEFER_ASSIMILATION) {
             log_messages.printf(MSG_CRITICAL,
-                "[%s] handler returned error %d; exiting\n", wu.name, retval
+                "[%s] handler error: %s; exiting\n", wu.name, boincerror(retval)
             );
             exit(retval);
         }
@@ -168,13 +170,13 @@ bool do_pass(APP& app) {
                 assimilate_state = ASSIMILATE_INIT;
             }
             sprintf(
-                buf, "assimilate_state=%d, transition_time=%d", 
+                buf, "assimilate_state=%d, transition_time=%d",
                 assimilate_state, (int)time(0)
             );
             retval = wu.update_field(buf);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "[%s] update failed: %d\n", wu.name, retval
+                    "[%s] update failed: %s\n", wu.name, boincerror(retval)
                 );
                 exit(1);
             }
@@ -230,7 +232,7 @@ int main(int argc, char** argv) {
             // your project.
             update_db = false;
         } else if (is_arg(argv[i], "noinsert")) {
-            // This option is also for testing and is used to 
+            // This option is also for testing and is used to
             // prevent the inserting of results into the *backend*
             // (as opposed to the boinc) DB.
             noinsert = true;
@@ -242,6 +244,10 @@ int main(int argc, char** argv) {
         } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
             printf("%s\n", SVN_VERSION);
             exit(0);
+	} else if (is_arg(argv[i], "results_prefix")) {
+	    results_prefix=argv[++i];
+	} else if (is_arg(argv[i], "transcripts_prefix")) {
+            transcripts_prefix=argv[++i];
         } else {
             log_messages.printf(MSG_CRITICAL, "Unrecognized arg: %s\n", argv[i]);
             usage(argv);
@@ -282,13 +288,13 @@ int main(int argc, char** argv) {
     }
     install_stop_signal_handler();
     do {
-      if (!do_pass(app)) {
-	if (!one_pass) {
-          sleep(sleep_interval);
+        if (!do_pass(app)) {
+            if (!one_pass) {
+                sleep(sleep_interval);
+            }
         }
-      }
     } while (!one_pass);
 }
 
 
-const char *BOINC_RCSID_7841370789 = "$Id: assimilator.cpp 22033 2010-07-22 18:22:14Z davea $";
+const char *BOINC_RCSID_7841370789 = "$Id: assimilator.cpp 23241 2011-03-18 08:20:11Z bema $";

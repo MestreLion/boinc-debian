@@ -30,10 +30,10 @@
 */
 
 #include <Carbon/Carbon.h>
-#include <sys/param.h>  // for MAXPATHLEN
 #include <sys/stat.h>
 
 #include "boinc_api.h"
+#include "filesys.h"
 #include "common_defs.h"
 
 #define RESIDICON -16455
@@ -215,4 +215,3 @@ int setMacIcon(char *filename, char *iconData, long iconSize) {
     boinc_resolve_filename(filename, path, sizeof(path));
     return(setMacRsrcForFile(path, iconData, iconSize, 'icns', RESIDICON, rsrcName));
 }
-const char *BOINC_RCSID_112a101526="$Id: mac_icon.cpp 16069 2008-09-26 18:20:24Z davea $";

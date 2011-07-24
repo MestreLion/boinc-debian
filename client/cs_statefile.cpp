@@ -82,10 +82,6 @@ static inline bool arrived_first(RESULT* r0, RESULT* r1) {
 // Parse the client_state.xml file
 //
 int CLIENT_STATE::parse_state_file() {
-    PROJECT *project=NULL;
-    char buf[256];
-    int retval=0;
-    int failnum;
     const char *fname;
 
     // Look for a valid state file:
@@ -111,6 +107,14 @@ int CLIENT_STATE::parse_state_file() {
         old_release = BOINC_RELEASE;
         return ERR_FOPEN;
     }
+    return parse_state_file_aux(fname);
+}
+
+int CLIENT_STATE::parse_state_file_aux(const char* fname) {
+    PROJECT *project=NULL;
+    char buf[256];
+    int retval=0;
+    int failnum;
 
     FILE* f = fopen(fname, "r");
     MIOFILE mf;
@@ -279,10 +283,10 @@ int CLIENT_STATE::parse_state_file() {
                     strcpy(avp->platform, get_primary_platform());
                 }
             }
-            if (avp->missing_coproc()) {
+            if (avp->missing_coproc) {
                 msg_printf(project, MSG_INFO,
                     "Application uses missing %s GPU",
-                    avp->ncudas?"NVIDIA":"ATI"
+                    avp->missing_coproc_name
                 );
             }
             retval = link_app_version(project, avp);
@@ -367,7 +371,7 @@ int CLIENT_STATE::parse_state_file() {
                 delete rp;
                 continue;
             }
-            if (rp->avp->missing_coproc()) {
+            if (rp->avp->missing_coproc) {
                 msg_printf(project, MSG_INFO,
                     "Missing coprocessor for task %s", rp->name
                 );
@@ -392,6 +396,7 @@ int CLIENT_STATE::parse_state_file() {
         if (match_tag(buf, "<host_info>")) {
 #ifdef SIM
             retval = host_info.parse(mf, false);
+            coprocs = host_info._coprocs;
 #else
             retval = host_info.parse(mf, true);
 #endif
@@ -481,7 +486,7 @@ int CLIENT_STATE::parse_state_file() {
         if (parse_str(buf, "<newer_version>", newer_version)) {
             continue;
         }
-#ifndef SIM
+#ifdef ENABLE_AUTO_UPDATE
         if (match_tag(buf, "<auto_update>")) {
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
@@ -702,9 +707,11 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
             if (results[i]->project == p) results[i]->write(f, false);
         }
         p->write_project_files(f);
+#ifdef ENABLE_AUTO_UPDATE
         if (auto_update.present && auto_update.project==p) {
             auto_update.write(f);
         }
+#endif
     }
     active_tasks.write(f);
     f.printf(
@@ -892,6 +899,16 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
     //
     retval = host_info.write(f, true, false);
     if (retval) return retval;
+
+    // the following are for compatibility with old managers
+    //
+    if (coprocs.have_nvidia()) {
+        f.printf("<have_cuda/>\n");
+    }
+    if (coprocs.have_ati()) {
+        f.printf("<have_ati/>\n");
+    }
+
     retval = time_stats.write(f, false);
     if (retval) return retval;
     retval = net_stats.write(f);
@@ -923,16 +940,12 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
         "<core_client_major_version>%d</core_client_major_version>\n"
         "<core_client_minor_version>%d</core_client_minor_version>\n"
         "<core_client_release>%d</core_client_release>\n"
-        "<executing_as_daemon>%d</executing_as_daemon>\n"
-        "<have_cuda>%d</have_cuda>\n"
-        "<have_ati>%d</have_ati>\n",
+        "<executing_as_daemon>%d</executing_as_daemon>\n",
         get_primary_platform(),
         core_client_version.major,
         core_client_version.minor,
         core_client_version.release,
-        executing_as_daemon?1:0,
-        host_info.have_cuda()?1:0,
-        host_info.have_ati()?1:0
+        executing_as_daemon?1:0
     );
     for (i=0; i<platforms.size(); i++) {
         f.printf(

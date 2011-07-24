@@ -75,4 +75,3 @@ int main(int argc, char** argv) {
     return retval;
 }
     
-const char *BOINC_RCSID_fe1ac2ec91="$Id: make_app_icon_h.cpp 17388 2009-02-26 00:23:23Z korpela $";

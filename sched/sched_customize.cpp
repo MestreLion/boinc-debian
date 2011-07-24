@@ -117,7 +117,7 @@ static inline void coproc_perf(
 // the following is for an app that can use anywhere from 1 to 64 threads
 //
 static inline bool app_plan_mt(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+    SCHEDULER_REQUEST& sreq, HOST_USAGE& hu
 ) {
     double ncpus = g_wreq->effective_ncpus;
         // number of usable CPUs, taking user prefs into account
@@ -132,8 +132,8 @@ static inline bool app_plan_mt(
     hu.peak_flops = sreq.host.p_fpops*hu.avg_ncpus;
     if (config.debug_version_select) {
         log_messages.printf(MSG_NORMAL,
-            "[version] %s Multi-thread app projected %.2fGS\n",
-            plan_class, hu.projected_flops/1e9
+            "[version] Multi-thread app projected %.2fGS\n",
+            hu.projected_flops/1e9
         );
     }
     return true;
@@ -172,12 +172,12 @@ static bool ati_check(COPROC_ATI& c, HOST_USAGE& hu,
 
     coproc_perf(
         g_request->host.p_fpops,
-        hu.natis*c.peak_flops(),
+        hu.natis*c.peak_flops,
         cpu_frac,
         hu.projected_flops,
         hu.avg_ncpus
     );
-    hu.peak_flops = hu.natis*c.peak_flops() + hu.avg_ncpus*g_request->host.p_fpops;
+    hu.peak_flops = hu.natis*c.peak_flops + hu.avg_ncpus*g_request->host.p_fpops;
     hu.max_ncpus = hu.avg_ncpus;
     hu.projected_flops *= flops_scale;
     return true;
@@ -239,10 +239,6 @@ static inline bool app_plan_ati(
             return false;
         }
     }
-    if (!strcmp(plan_class, "ati_opencl")) {
-        // OpenCL not yet supported in standard ATI drivers
-        return false;
-    }
 
     if (config.debug_version_select) {
         log_messages.printf(MSG_NORMAL,
@@ -265,7 +261,7 @@ GPU_REQUIREMENTS cuda_requirements;
 #define CUDA3_MIN_DRIVER_VERSION        19500
 #define CUDA_OPENCL_MIN_DRIVER_VERSION  19713
 
-static bool cuda_check(COPROC_CUDA& c, HOST_USAGE& hu,
+static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
     int min_cc, int max_cc,
     int min_cuda_version, int min_driver_version,
     double min_ram,
@@ -305,12 +301,12 @@ static bool cuda_check(COPROC_CUDA& c, HOST_USAGE& hu,
 
     coproc_perf(
         g_request->host.p_fpops,
-        hu.ncudas*c.peak_flops(),
+        hu.ncudas*c.peak_flops,
         cpu_frac,
         hu.projected_flops,
         hu.avg_ncpus
     );
-    hu.peak_flops = hu.ncudas*c.peak_flops() + hu.avg_ncpus*g_request->host.p_fpops;
+    hu.peak_flops = hu.ncudas*c.peak_flops + hu.avg_ncpus*g_request->host.p_fpops;
     hu.max_ncpus = hu.avg_ncpus;
     hu.projected_flops *= flops_scale;
     return true;
@@ -321,7 +317,7 @@ static bool cuda_check(COPROC_CUDA& c, HOST_USAGE& hu,
 static inline bool app_plan_cuda(
     SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
 ) {
-    COPROC_CUDA& c = sreq.coprocs.cuda;
+    COPROC_NVIDIA& c = sreq.coprocs.nvidia;
     if (!c.count) {
         return false;
     }
@@ -398,7 +394,7 @@ static inline bool app_plan_cuda(
 // This will cause the client (6.7+) to run it at non-idle priority
 //
 static inline bool app_plan_nci(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+    SCHEDULER_REQUEST& sreq, HOST_USAGE& hu
 ) {
     hu.avg_ncpus = .01;
     hu.max_ncpus = .01;
@@ -409,16 +405,20 @@ static inline bool app_plan_nci(
     return true;
 }
 
-// the following is for an app that requires a processor with SSE3,
-// and will run 10% faster if so
+// the following is for an app version that requires a processor with SSE3,
+// and will run 10% faster than the non-SSE3 version
 //
 static inline bool app_plan_sse3(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+    SCHEDULER_REQUEST& sreq, HOST_USAGE& hu
 ) {
     downcase_string(sreq.host.p_features);
     if (!strstr(sreq.host.p_features, "sse3")) {
-        //add_no_work_message("Your CPU lacks SSE3");
-        return false;
+        // Pre-6.x clients report CPU features in p_model
+        //
+        if (!strstr(sreq.host.p_model, "sse3")) {
+            //add_no_work_message("Your CPU lacks SSE3");
+            return false;
+        }
     }
     hu.avg_ncpus = 1;
     hu.max_ncpus = 1;
@@ -439,20 +439,45 @@ static inline bool app_plan_opencl_ati(
     return false;
 }
 
+static inline bool app_plan_vbox32(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
+    if (strlen(sreq.host.virtualbox_version) == 0) return false;
+    int n, maj, min, rel;
+    n = sscanf(sreq.host.virtualbox_version, "%d.%d.%d", &maj, &min, &rel);
+    if (n != 3) return false;
+    if (maj < 3) return false;
+    if (maj == 3 and min < 2) return false;
+    return true;
+}
+
+static inline bool app_plan_vbox64(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
+    if (strlen(sreq.host.virtualbox_version) == 0) return false;
+    if (!is_64b_platform(sreq.platform.name)) return false;
+    int n, maj, min, rel;
+    n = sscanf(sreq.host.virtualbox_version, "%d.%d.%d", &maj, &min, &rel);
+    if (n != 3) return false;
+    if (maj < 3) return false;
+    if (maj == 3 and min < 2) return false;
+    return true;
+}
+
 // app planning function.
 // See http://boinc.berkeley.edu/trac/wiki/AppPlan
 //
 bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu) {
     if (!strcmp(plan_class, "mt")) {
-        return app_plan_mt(sreq, plan_class, hu);
+        return app_plan_mt(sreq, hu);
     } else if (strstr(plan_class, "ati")) {
         return app_plan_ati(sreq, plan_class, hu);
     } else if (strstr(plan_class, "cuda")) {
         return app_plan_cuda(sreq, plan_class, hu);
     } else if (!strcmp(plan_class, "nci")) {
-        return app_plan_nci(sreq, plan_class, hu);
+        return app_plan_nci(sreq, hu);
     } else if (!strcmp(plan_class, "sse3")) {
-        return app_plan_sse3(sreq, plan_class, hu);
+        return app_plan_sse3(sreq, hu);
+    } else if (!strcmp(plan_class, "vbox32")) {
+        return app_plan_vbox32(sreq, hu);
+    } else if (!strcmp(plan_class, "vbox64")) {
+        return app_plan_vbox64(sreq, hu);
     }
     log_messages.printf(MSG_CRITICAL,
         "Unknown plan class: %s\n", plan_class

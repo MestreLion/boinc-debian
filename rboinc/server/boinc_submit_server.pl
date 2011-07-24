@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# $Id: boinc_submit_server.pl 353 2010-03-02 14:56:21Z toni $
+# $Id: boinc_submit_server.pl 23083 2011-02-22 21:28:13Z tonig $
 
 # The remote-boinc server-side perl script. Should run as a CGI in an
 # Apache2 instance.

@@ -62,6 +62,7 @@
 using std::max;
 
 CLIENT_STATE gstate;
+COPROCS coprocs;
 
 CLIENT_STATE::CLIENT_STATE()
     : lookup_website_op(&gui_http),
@@ -107,6 +108,7 @@ CLIENT_STATE::CLIENT_STATE()
     started_by_screensaver = false;
     requested_exit = false;
     os_requested_suspend = false;
+    os_requested_suspend_time = 0;
     cleanup_completed = false;
     in_abort_sequence = false;
     master_fetch_period = MASTER_FETCH_PERIOD;
@@ -162,7 +164,7 @@ void CLIENT_STATE::show_host_info() {
     int major, minor, rev;
     sscanf(host_info.os_version, "%d.%d.%d", &major, &minor, &rev);
     msg_printf(NULL, MSG_INFO,
-        "OS: Mac OS X 10.%d.%d (%s %s)", major-4, minor, 
+        "OS: Mac OS X 10.%d.%d (%s %s)", major-4, minor,
         host_info.os_name, host_info.os_version
     );
 #else
@@ -194,23 +196,40 @@ void CLIENT_STATE::show_host_info() {
     }
 }
 
+int rsc_index(const char* name) {
+    const char* nm = strcmp(name, "CUDA")?name:"NVIDIA";
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        if (!strcmp(nm, coprocs.coprocs[i].type)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+const char* rsc_name(int i) {
+    return coprocs.coprocs[i].type;
+}
+
+void init_exclude_gpu() {
+    for (unsigned int i=0; i<config.exclude_gpus.size(); i++) {
+        EXCLUDE_GPU& eg = config.exclude_gpus[i];
+        PROJECT* p = gstate.lookup_project(eg.url.c_str());
+        if (!p) continue;
+        p->exclude_gpus.push_back(eg);
+    }
+}
+
 // set no_X_apps for anonymous platform project
 //
 static void check_no_apps(PROJECT* p) {
-    p->no_cpu_apps = true;
-    p->no_cuda_apps = true;
-    p->no_ati_apps = true;
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        p->no_rsc_apps[i] = true;
+    }
 
     for (unsigned int i=0; i<gstate.app_versions.size(); i++) {
         APP_VERSION* avp = gstate.app_versions[i];
         if (avp->project != p) continue;
-        if (avp->ncudas > 0) {
-            p->no_cuda_apps = false;
-        } else if (avp->natis > 0) {
-            p->no_ati_apps = false;
-        } else {
-            p->no_cpu_apps = false;
-        }
+        p->no_rsc_apps[avp->gpu_usage.rsc_type] = false;
     }
 }
 
@@ -246,6 +265,32 @@ double calculate_exponential_backoff(int n, double MIN, double MAX) {
 
 #ifndef SIM
 
+void CLIENT_STATE::set_now() {
+    double x = dtime();
+
+    // if time went backward significantly, clear delays
+    //
+    if (x < (now-60)) {
+        clear_absolute_times();
+    }
+
+#ifdef _WIN32
+    // On Win, check for evidence that we're awake after a suspension
+    // (in case we missed the event announcing this)
+    // 
+    if (os_requested_suspend) {
+        if (x > now+10) {
+            msg_printf(0, MSG_INFO, "Resuming after OS suspension");
+            os_requested_suspend = false;
+        } else if (x > os_requested_suspend_time + 300) {
+            msg_printf(0, MSG_INFO, "Resuming after OS suspension");
+            os_requested_suspend = false;
+        }
+    }
+#endif
+    now = x;
+}
+
 int CLIENT_STATE::init() {
     int retval;
     unsigned int i;
@@ -259,7 +304,7 @@ int CLIENT_STATE::init() {
 
     notices.init();
     daily_xfer_history.init();
-    
+
     detect_platforms();
     time_stats.start();
 
@@ -305,19 +350,24 @@ int CLIENT_STATE::init() {
     parse_account_files();
     parse_statistics_files();
 
-    host_info.clear_host_info();
     host_info.get_host_info();
     set_ncpus();
     show_host_info();
 
     // check for GPUs.
     //
+    for (int j=1; j<coprocs.n_rsc; j++) {
+        msg_printf(NULL, MSG_INFO, "GPU specified in cc_config.xml: %d %s",
+            coprocs.coprocs[j].count,
+            coprocs.coprocs[j].type
+        );
+    }
     if (!config.no_gpus) {
         vector<string> descs;
         vector<string> warnings;
-        host_info.coprocs.get(
+        coprocs.get(
             config.use_all_gpus, descs, warnings,
-            config.ignore_cuda_dev, config.ignore_ati_dev
+            config.ignore_nvidia_dev, config.ignore_ati_dev
         );
         for (i=0; i<descs.size(); i++) {
             msg_printf(NULL, MSG_INFO, descs[i].c_str());
@@ -327,22 +377,45 @@ int CLIENT_STATE::init() {
                 msg_printf(NULL, MSG_INFO, warnings[i].c_str());
             }
         }
-        if (host_info.coprocs.none() ) {
-            msg_printf(NULL, MSG_INFO, "No usable GPUs found");
-        }
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an NVIDIA GPU");
-        host_info.coprocs.cuda.fake(18000, 256*MEGA, 2);
-        host_info.coprocs.cuda.available_ram_fake[0] = 256*MEGA;
-        host_info.coprocs.cuda.available_ram_fake[1] = 192*MEGA;
+        coprocs.nvidia.fake(18000, 256*MEGA, 2);
+        coprocs.nvidia.available_ram_fake[0] = 256*MEGA;
+        coprocs.nvidia.available_ram_fake[1] = 192*MEGA;
 #endif
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
-        host_info.coprocs.ati.fake(512*MEGA, 2);
-        host_info.coprocs.ati.available_ram_fake[0] = 256*MEGA;
-        host_info.coprocs.ati.available_ram_fake[1] = 192*MEGA;
+        coprocs.ati.fake(512*MEGA, 2);
+        coprocs.ati.available_ram_fake[0] = 256*MEGA;
+        coprocs.ati.available_ram_fake[1] = 192*MEGA;
 #endif
     }
+
+    if (coprocs.have_nvidia()) {
+        if (rsc_index("NVIDIA")>0) {
+            msg_printf(NULL, MSG_INFO, "NVIDIA GPU info taken from cc_config.xml");
+        } else {
+            coprocs.add(coprocs.nvidia);
+        }
+    }
+    if (coprocs.have_ati()) {
+        if (rsc_index("ATI")>0) {
+            msg_printf(NULL, MSG_INFO, "ATI GPU info taken from cc_config.xml");
+        } else {
+            coprocs.add(coprocs.ati);
+        }
+    }
+    host_info._coprocs = coprocs;
+    
+    if (coprocs.none() ) {
+        msg_printf(NULL, MSG_INFO, "No usable GPUs found");
+    }
+	for (int j=1; j<coprocs.n_rsc; j++) {
+		COPROC& cp = coprocs.coprocs[j];
+		if (cp.have_opencl) {
+			msg_printf(NULL, MSG_INFO, "%s GPU is OpenCL-capable", cp.type);
+		}
+	}
 
     // check for app_info.xml file in project dirs.
     // If find, read app info from there, set project.anonymous_platform
@@ -393,11 +466,8 @@ int CLIENT_STATE::init() {
             // for GPU apps, use conservative estimate:
             // assume app will run at peak CPU speed, not peak GPU
             //
-            if (avp->ncudas) {
-                avp->flops += avp->ncudas * host_info.p_fpops;
-            }
-            if (avp->natis) {
-                avp->flops += avp->natis * host_info.p_fpops;
+            if (avp->gpu_usage.rsc_type) {
+                avp->flops += avp->gpu_usage.usage * host_info.p_fpops;
             }
         }
     }
@@ -540,7 +610,9 @@ int CLIENT_STATE::init() {
         all_projects_list_check_time = 0;
     }
 
+#ifdef ENABLE_AUTO_UPDATE
     auto_update.init();
+#endif
 
     http_ops->cleanup_temp_files();
 
@@ -555,6 +627,12 @@ int CLIENT_STATE::init() {
     // warn user if some jobs need more memory than available
     //
     check_too_large_jobs();
+
+    // fill in exclude-GPU flags
+    //
+    init_exclude_gpu();
+
+    project_priority_init();
 
     initialized = true;
     return 0;
@@ -581,7 +659,7 @@ void CLIENT_STATE::do_io_or_sleep(double x) {
     while (1) {
         curl_fds.zero();
         gui_rpc_fds.zero();
-		http_ops->get_fdset(curl_fds);
+        http_ops->get_fdset(curl_fds);
         all_fds = curl_fds;
         gui_rpcs.get_fdset(gui_rpc_fds, all_fds);
         double_to_timeval(x, tv);
@@ -659,7 +737,7 @@ bool CLIENT_STATE::poll_slow_events() {
         last_wakeup_time = now;
     }
 
-	if (should_run_cpu_benchmarks() && !are_cpu_benchmarks_running()) {
+    if (should_run_cpu_benchmarks() && !are_cpu_benchmarks_running()) {
         run_cpu_benchmarks = false;
         start_cpu_benchmarks();
     }
@@ -680,8 +758,8 @@ bool CLIENT_STATE::poll_slow_events() {
     // NVIDIA provides an interface for finding if a GPU is
     // running a graphics app.  ATI doesn't as far as I know
     //
-    if (host_info.have_cuda() && user_active && !global_prefs.run_gpu_if_user_active) {
-        if (host_info.coprocs.cuda.check_running_graphics_app()) {
+    if (host_info.have_nvidia() && user_active && !global_prefs.run_gpu_if_user_active) {
+        if (host_info.coprocs.nvidia.check_running_graphics_app()) {
             request_schedule_cpus("GPU state change");
         }
     }
@@ -708,7 +786,7 @@ bool CLIENT_STATE::poll_slow_events() {
     }
 #endif
 
-    // active_tasks.get_memory_usage() sets variables needed by 
+    // active_tasks.get_memory_usage() sets variables needed by
     // check_suspend_processing(), so it must be called first.
     //
     active_tasks.get_memory_usage();
@@ -791,8 +869,10 @@ bool CLIENT_STATE::poll_slow_events() {
     // in that order (active_tasks_poll() sets must_schedule_cpus,
     // and handle_finished_apps() must be done before schedule_cpus()
 
-	check_project_timeout();
-    //auto_update.poll();
+    check_project_timeout();
+#ifdef ENABLE_AUTO_UPDATE
+    auto_update.poll();
+#endif
     POLL_ACTION(active_tasks           , active_tasks.poll      );
     POLL_ACTION(garbage_collect        , garbage_collect        );
     POLL_ACTION(gui_http               , gui_http.poll          );
@@ -950,13 +1030,17 @@ int CLIENT_STATE::link_app_version(PROJECT* p, APP_VERSION* avp) {
     avp->app = app;
 
     if (lookup_app_version(app, avp->platform, avp->version_num, avp->plan_class)) {
+#ifndef SIM
         msg_printf(p, MSG_INTERNAL_ERROR,
             "State file error: duplicate app version: %s %s %d %s",
             avp->app_name, avp->platform, avp->version_num, avp->plan_class
         );
+#endif
         return ERR_NOT_UNIQUE;
     }
-    
+
+#ifndef SIM
+
     strcpy(avp->graphics_exec_path, "");
     strcpy(avp->graphics_exec_file, "");
 
@@ -987,6 +1071,7 @@ int CLIENT_STATE::link_app_version(PROJECT* p, APP_VERSION* avp) {
 
         file_ref.file_info = fip;
     }
+#endif
     return 0;
 }
 
@@ -1196,6 +1281,7 @@ bool CLIENT_STATE::garbage_collect_always() {
         }
     }
 
+#ifdef ENABLE_AUTO_UPDATE
     // reference-count auto update files
     //
     if (auto_update.present) {
@@ -1203,6 +1289,7 @@ bool CLIENT_STATE::garbage_collect_always() {
             auto_update.file_refs[i].file_info->ref_cnt++;
         }
     }
+#endif
 
     // Scan through RESULTs.
     // delete RESULTs that have been reported and acked.
@@ -1366,12 +1453,11 @@ bool CLIENT_STATE::garbage_collect_always() {
 
     // reference-count sticky files not marked for deletion
     //
-    
+
     for (fi_iter = file_infos.begin(); fi_iter!=file_infos.end(); fi_iter++) {
         fip = *fi_iter;
         if (!fip->sticky) continue;
         if (fip->status < 0) continue;
-        if (fip->marked_for_delete) continue;
         fip->ref_cnt++;
     }
 
@@ -1714,9 +1800,9 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
     project->ams_resource_share = -1;
     project->min_rpc_time = 0;
     project->pwf.reset(project);
-    project->cpu_pwf.reset();
-    project->cuda_pwf.reset();
-    project->ati_pwf.reset();
+    for (int j=0; j<coprocs.n_rsc; j++) {
+        project->rsc_pwf[j].reset();
+    }
     write_state_file();
     return 0;
 }
@@ -1883,12 +1969,12 @@ void CLIENT_STATE::clear_absolute_times() {
         }
         p->download_backoff.next_xfer_time = 0;
         p->upload_backoff.next_xfer_time = 0;
-        p->cpu_pwf.clear_backoff();
-        p->cuda_pwf.clear_backoff();
-        p->ati_pwf.clear_backoff();
-#ifdef USE_REC
-        p->wfd.rec_time = now;
-#endif
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            p->rsc_pwf[j].clear_backoff();
+        }
+//#ifdef USE_REC
+        p->pwf.rec_time = now;
+//#endif
     }
     for (i=0; i<pers_file_xfers->pers_file_xfers.size(); i++) {
         PERS_FILE_XFER* pfx = pers_file_xfers->pers_file_xfers[i];

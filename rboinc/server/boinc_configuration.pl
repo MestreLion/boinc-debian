@@ -1,7 +1,7 @@
 # Site-specific configuration constants (used by the server side
 # component). 
 #
-# $Id: boinc_configuration.pl 356 2010-03-02 15:00:31Z toni $
+# $Id: boinc_configuration.pl 23083 2011-02-22 21:28:13Z tonig $
 
 
 
@@ -44,23 +44,6 @@ return {
 # of executable name (x86_64 or i686).
     ENCODE_EXECUTABLE => "$cgi/etc/encodeinput",
     ENCODE_CODE => -1,
-
-# File extension table. The funny layout is to simplify XML-ing &
-# lookups later.  The server will send this list to the client. The
-# client will NOT download files if a file with the same name exists,
-# OR one with the appended extensions.
-    ALIAS_TABLE => [
-	{ Extension => "_0",
-	  Alias => [ ".log", ".log.gz", ".log.gz.bad" ] },
-	{ Extension => "_1",
-	  Alias => [ ".coor" ] },
-	{ Extension => "_2",
-	  Alias => [ ".vel" ] },
-	{ Extension => "_3",
-	  Alias => [ ".idx" ] },
-	{ Extension => "_4",
-	  Alias => [ ".dcd", ".dcd.gz", ".dcd.gz.bad" ] },
-	],
 
 
 # Directory for miscellaneous files (eg. defaults)

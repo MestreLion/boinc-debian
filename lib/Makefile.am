@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 23690 2011-06-08 17:55:56Z romw $
+## $Id: Makefile.am 23551 2011-05-17 00:31:41Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -35,6 +35,7 @@ libfcgi_sources = \
 generic_sources = \
     app_ipc.cpp \
     base64.cpp \
+	cc_config.cpp \
     cert_sig.cpp \
     coproc.cpp \
     diagnostics.cpp \
@@ -54,7 +55,7 @@ generic_sources = \
 	notice.cpp \
     parse.cpp \
     prefs.cpp \
-    procinfo.cpp \
+	procinfo.cpp \
     procinfo_unix.cpp \
     proxy_info.cpp \
     shmem.cpp \
@@ -96,7 +97,9 @@ pkginclude_HEADERS = \
     boinc_fcgi.h \
     boinc_win.h \
     cal_boinc.h \
+	cc_config.h \
     cert_sig.h \
+    cl_boinc.h \
     common_defs.h \
     coproc.h \
     crypt.h \
@@ -117,6 +120,7 @@ pkginclude_HEADERS = \
 	notice.h \
     parse.h \
     prefs.h \
+	procinfo.h \
     proxy_info.h \
     stackwalker_imports.h \
     stackwalker_win.h \

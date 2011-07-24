@@ -22,15 +22,10 @@
  *  Display and Manage BOINC Application Versions
  * 
  * This page presents a form with information about application versions.
- * Some of the fields can be changed.   An application version can be deleted
- * by entering the word "DELETE" (all caps required) in the provided field.   
- * It is better to deprecate a version first than to delete it, but it is also 
- * good to remove old versions after they have been unused for a while,
- * lest you over-fill the feeder (which results in new versions not being
- * used by clients).
+ * Some of the fields can be changed.
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_app_versions.php 20745 2010-02-26 21:34:20Z davea $
+ * @(#) $Id: manage_app_versions.php 23364 2011-04-13 19:19:36Z davea $
 \***********************************************************************/
 
 // TODO: rewrite this using the new DB interface
@@ -43,7 +38,7 @@ db_init();
 
 $result = mysql_query("SELECT * FROM platform");
 $Nplatform =  mysql_num_rows($result);
-for($i=0;$i<=$Nplatform;$i++){
+for($i=0;$i<$Nplatform;$i++){
     $item=mysql_fetch_object($result);
     $id=$item->id;
     $plat_off[$id]=$item->deprecated; 
@@ -54,7 +49,7 @@ mysql_free_result($result);
 
 $result = mysql_query("SELECT * FROM app");
 $Napp =  mysql_num_rows($result);
-for($i=0;$i<=$Napp;$i++){
+for($i=0;$i<$Napp;$i++){
     $item=mysql_fetch_object($result);
     $id=$item->id;
     $app_off[$id]=$item->deprecated; 
@@ -76,15 +71,6 @@ if( !empty($_POST) ) {
     for($j=1;$j<=$Nrow;$j++){  // test/update each row in DB
         $item=mysql_fetch_object($result);
         $id=$item->id;
-
-        /* Delete this entry? */
-        $field="delete_".$id; 
-        if ($_POST[$field]=='DELETE' ) {
-            $cmd =  "DELETE FROM app_version WHERE id=$id";
-            $commands .= "<P><pre>$cmd</pre>\n";
-            mysql_query($cmd);
-            continue;  // next row, this one is gone
-        }
 
         /* Change deprecated status? */
         $field="deprecated_".$id;
@@ -145,8 +131,6 @@ echo "<TR><TH>ID #</TH>
       <TH>minimum<br>core version</TH>
       <TH>maximum<br>core version</TH>
       <TH>deprecated?</TH>
-      <TH>DELETE?<sup>*</sup>
-    </TH>
        </TR>\n";
 
 $q="SELECT * FROM app_version ORDER BY appid, version_num, platformid";
@@ -192,17 +176,12 @@ for($j=1;$j<=$Nrow;$j++){
     echo "  <TD align='center'>
     <input name='$field' type='checkbox' $v></TD>\n";
 
-    $field="delete_".$id; 
-    echo "  <TD align='center'>
-    <input type='text' size='6' name='$field' value=''></TD>\n";
     echo "</tr> "; 
 }
 mysql_free_result($result);
 
 
-echo "<tr><td colspan=7><font color='RED'><sup>*</sup>
-    To delete an entry you must enter 'DELETE' in this field.
-    </font></td>
+echo "<tr><td colspan=7> </td>
     <td align='center' colspan=2 bgcolor='#FFFF88'>
     <input type='submit' value='Update'></td>
     </tr>
@@ -215,5 +194,5 @@ echo "</form><P>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_app_versions.php 20745 2010-02-26 21:34:20Z davea $"; 
+$cvs_version_tracker[]="\$Id: manage_app_versions.php 23364 2011-04-13 19:19:36Z davea $"; 
 ?>

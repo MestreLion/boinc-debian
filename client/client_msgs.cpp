@@ -41,6 +41,11 @@ using std::deque;
 
 MESSAGE_DESCS message_descs;
 
+#ifdef SIM
+extern void show_message(
+    PROJ_AM *p, char* msg, int priority, bool is_html, const char* link
+);
+#else
 // Show a message:
 // 1) As a MESSAGE_DESC (for GUI event log)
 // 2) As a NOTICE, if high priority (for GUI notices)
@@ -79,7 +84,6 @@ void show_message(PROJ_AM *p, char* msg, int priority, bool is_html, const char*
     }
     message_descs.insert(p, priority, (int)gstate.now, event_msg);
 
-#ifndef SIM
     // add a notice
     //
     switch (priority) {
@@ -105,7 +109,6 @@ void show_message(PROJ_AM *p, char* msg, int priority, bool is_html, const char*
         strcpy(n.category, (priority==MSG_USER_ALERT)?"client":"scheduler");
         notices.append(n);
     }
-#endif
 
     strip_translation(message);
 
@@ -123,6 +126,7 @@ void show_message(PROJ_AM *p, char* msg, int priority, bool is_html, const char*
     }
 #endif
 }
+#endif
 
 // Takes a printf style formatted string, inserts the proper values,
 // and passes it to show_message
@@ -235,20 +239,4 @@ void MESSAGE_DESCS::cleanup() {
         delete msgs[i];
     }
     msgs.clear();
-}
-
-inline void remove_str(char* p, const char* str) {
-    size_t n = strlen(str);
-    while (1) {
-        p = strstr(p, str);
-        if (!p) break;
-        strcpy(p, p+n);
-    }
-}
-
-// remove _( and ") from string
-//
-void strip_translation(char* p) {
-    remove_str(p, "_(\""); 
-    remove_str(p, "\")"); 
 }

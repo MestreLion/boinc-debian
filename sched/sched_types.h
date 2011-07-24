@@ -32,8 +32,8 @@
 // this records an app for which the user will accept work
 //
 struct APP_INFO {
-	int appid;
-	int work_available;
+    int appid;
+    int work_available;
 };
 
 // represents a resource (disk etc.) that the client may not have enough of
@@ -94,6 +94,12 @@ struct HOST_USAGE {
         projected_flops = x;
         peak_flops = x;
         strcpy(cmdline, "");
+    }
+    inline bool is_sequential_app() {
+         if (ncudas) return false;
+         if (natis) return false;
+         if (avg_ncpus != 1) return false;
+         return true;
     }
     inline int resource_type() {
         if (ncudas) {
@@ -178,12 +184,28 @@ struct BEST_APP_VERSION {
 
     DB_HOST_APP_VERSION* host_app_version();
         // get the HOST_APP_VERSION, if any
-        
+
     BEST_APP_VERSION() {
         present = false;
         cavp = NULL;
         avp = NULL;
     }
+};
+
+struct SCHED_DB_RESULT : DB_RESULT {
+    // the following used by the scheduler, but not stored in the DB
+    //
+    char wu_name[256];
+    double fpops_per_cpu_sec;
+    double fpops_cumulative;
+    double intops_per_cpu_sec;
+    double intops_cumulative;
+    int units;      // used for granting credit by # of units processed
+    int parse_from_client(FILE*);
+    char platform_name[256];
+    BEST_APP_VERSION bav;
+
+    int write_to_client(FILE*);
 };
 
 // subset of global prefs used by scheduler
@@ -258,7 +280,7 @@ struct SCHEDULER_REQUEST {
     int core_client_version;    // 10000*major + 100*minor + release
     int rpc_seqno;
     double work_req_seconds;
-		// in "normalized CPU seconds" (see work_req.php)
+        // in "normalized CPU seconds" (see work_req.php)
     double cpu_req_secs;
     double cpu_req_instances;
     double resource_share_fraction;
@@ -282,7 +304,7 @@ struct SCHEDULER_REQUEST {
     HOST host;      // request message is parsed into here.
                     // does NOT contain the full host record.
     COPROCS coprocs;
-    std::vector<RESULT> results;
+    std::vector<SCHED_DB_RESULT> results;
         // completed results being reported
     std::vector<MSG_FROM_HOST_DESC> msgs_from_host;
     std::vector<FILE_INFO> file_infos;
@@ -309,8 +331,8 @@ struct SCHEDULER_REQUEST {
     int last_rpc_dayofyear;
     int current_rpc_dayofyear;
 
-    SCHEDULER_REQUEST();
-    ~SCHEDULER_REQUEST();
+    SCHEDULER_REQUEST(){};
+    ~SCHEDULER_REQUEST(){};
     const char* parse(FILE*);
     int write(FILE*); // write request info to file: not complete
 };
@@ -347,9 +369,9 @@ struct WORK_REQ {
     bool no_cuda;
     bool no_ati;
     bool no_cpu;
-	bool allow_non_preferred_apps;
-	bool allow_beta_work;
-	std::vector<APP_INFO> preferred_apps;
+    bool allow_non_preferred_apps;
+    bool allow_beta_work;
+    std::vector<APP_INFO> preferred_apps;
 
     bool has_reliable_version;
         // whether the host has a reliable app version
@@ -429,7 +451,6 @@ struct WORK_REQ {
 
     std::vector<USER_MESSAGE> no_work_messages;
     std::vector<BEST_APP_VERSION*> best_app_versions;
-    std::vector<BEST_APP_VERSION*> all_best_app_versions;
     std::vector<DB_HOST_APP_VERSION> host_app_versions;
     std::vector<DB_HOST_APP_VERSION> host_app_versions_orig;
 
@@ -451,11 +472,7 @@ struct WORK_REQ {
     void add_no_work_message(const char*);
     void get_job_limits();
 
-    ~WORK_REQ() {
-        for (unsigned int i=0; i<all_best_app_versions.size(); i++) {
-            delete all_best_app_versions[i];
-        }
-    }
+    ~WORK_REQ() {}
 };
 
 // NOTE: if any field requires initialization,
@@ -479,7 +496,7 @@ struct SCHEDULER_REPLY {
     std::vector<APP> apps;
     std::vector<APP_VERSION> app_versions;
     std::vector<WORKUNIT>wus;
-    std::vector<RESULT>results;
+    std::vector<SCHED_DB_RESULT>results;
     std::vector<std::string>result_acks;
     std::vector<std::string>result_aborts;
     std::vector<std::string>result_abort_if_not_starteds;
@@ -496,7 +513,7 @@ struct SCHEDULER_REPLY {
     void insert_app_unique(APP&);
     void insert_app_version_unique(APP_VERSION&);
     void insert_workunit_unique(WORKUNIT&);
-    void insert_result(RESULT&);
+    void insert_result(SCHED_DB_RESULT&);
     void insert_message(const char* msg, const char* prio);
     void insert_message(USER_MESSAGE&);
     void set_delay(double);
@@ -518,5 +535,9 @@ extern void write_host_app_versions();
 
 extern DB_HOST_APP_VERSION* gavid_to_havp(int gavid);
 extern DB_HOST_APP_VERSION* quota_exceeded_version();
+
+inline bool is_64b_platform(const char* name) {
+    return (strstr(name, "64") != NULL);
+}
 
 #endif

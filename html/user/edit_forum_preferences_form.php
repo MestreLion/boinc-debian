@@ -20,7 +20,10 @@
 // forum preferences.  It relies upon edit_forum_preferences_action.php
 // to do anything.
 
+require_once("../inc/util.inc");
 require_once("../inc/forum.inc");
+
+check_get_args(array());
 
 $user = get_logged_in_user();
 BoincForumPrefs::lookup($user);
@@ -208,5 +211,5 @@ row2("Or click here to reset preferences to the defaults",
 end_table();
 page_tail();
 
-$cvs_version_tracker[]="\$Id: edit_forum_preferences_form.php 22394 2010-09-20 23:59:25Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: edit_forum_preferences_form.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

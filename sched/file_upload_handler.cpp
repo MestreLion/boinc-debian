@@ -158,7 +158,7 @@ int copy_socket_to_file(FILE* in, char* path, double offset, double nbytes) {
     // used with stream buffered IO.
     //
     int fd = open(path,
-        O_WRONLY|O_CREAT|O_APPEND,
+        O_WRONLY|O_CREAT,
         S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
     );
     if (fd<0) {
@@ -195,6 +195,7 @@ int copy_socket_to_file(FILE* in, char* path, double offset, double nbytes) {
             path, (int)sbuf.st_size, offset
         );
     }
+    if (offset) lseek(fd, offset, SEEK_SET);
     if (sbuf.st_size > offset) {
         log_messages.printf(MSG_CRITICAL,
             "file %s length on disk %d bytes; host upload starting at %.0f bytes.\n",
@@ -717,4 +718,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 21181 2010-04-15 03:13:56Z davea $";
+const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 23062 2011-02-18 01:06:00Z davea $";

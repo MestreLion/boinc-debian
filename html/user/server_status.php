@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// server_status.php 
+// server_status.php
 //   (or server_status.php?xml=1)
 //
 // outputs general information about BOINC server status gathered from
@@ -34,7 +34,7 @@
 // See commented example in the code.
 //
 // You can get an xml version of the stats via the web when the url has the
-// optional "?xml=1" tag at the end, i.e 
+// optional "?xml=1" tag at the end, i.e
 //   http://yourboincproject.edu/server_status.php?xml=1
 //
 // You should edit the following variables in config.xml to suit your needs:
@@ -54,18 +54,15 @@ require_once("../inc/xml.inc");
 require_once("../inc/cache.inc");
 require_once("../inc/translation.inc");
 
-$xml = get_int("xml", true);
+check_get_args(array("xml"));
 
-$cache_args = $languages_in_use[0];
-if ($xml) $cache_args = "xml=1";
-$cache_period = 3600;
-start_cache($cache_period, $cache_args);
+$xml = get_int("xml", true);
 
 // daemon status outputs: 1 (running) 0 (not running) or -1 (disabled)
 //
 function daemon_status($host, $pidname, $progname, $disabled) {
     global $ssh_exe, $ps_exe, $project_host;
-    $path = "../../pid_$host/$pidname.pid";
+    $path = "../../pid_$host/$pidname";
     $running = 0;
     if (is_file($path)) {
         $pid = file_get_contents($path);
@@ -85,10 +82,10 @@ function daemon_status($host, $pidname, $progname, $disabled) {
     return $running;
 }
 
-function show_status($host, $function, $running) {
+function show_status($host, $progname, $running) {
     global $xml;
-    $xmlstring = "    <daemon>\n      <host>$host</host>\n      <command>$function</command>\n";
-    $htmlstring = "<tr><td>$function</td><td>$host</td>";
+    $xmlstring = "    <daemon>\n      <host>$host</host>\n      <command>$progname</command>\n";
+    $htmlstring = "<tr><td>$progname</td><td>$host</td>";
     if ($running == 1) {
         $xmlstring .= "      <status>running</status>\n";
         $htmlstring .= "<td class=\"running\">".tra("Running")."</td>\n";
@@ -111,7 +108,7 @@ function show_status($host, $function, $running) {
 
 function show_daemon_status($host, $pidname, $progname, $disabled) {
     $running = daemon_status($host, $pidname, $progname, $disabled);
-    show_status($host, $pidname, $running);
+    show_status($host, $progname, $running);
 }
 
 function show_counts($key, $xmlkey, $value) {
@@ -126,45 +123,68 @@ function show_counts($key, $xmlkey, $value) {
     return 0;
 }
 
-function get_mysql_count ($query) {
-    $result = mysql_query("select count(*) as count from " . $query);
-    $count = mysql_fetch_object($result);
-    mysql_free_result($result);
-    return $count->count;
+function get_mysql_count($query) {
+    $count = unserialize(get_cached_data(3600, "get_mysql_count".$query));
+    if ($count == false) {
+        $result = mysql_query("select count(*) as count from " . $query);
+        $count = mysql_fetch_object($result);
+        mysql_free_result($result);
+        $count = $count->count;
+        set_cached_data(3600, serialize($count), "get_mysql_count".$query);
+    }
+    return $count;
 }
 
-function get_mysql_value ($query) {
-    $result = mysql_query($query);
-    $row = mysql_fetch_object($result);
-    mysql_free_result($result);
-    return $row->value;
+function get_mysql_value($query) {
+    $value = unserialize(get_cached_data(3600, "get_mysql_value".$query));
+    if ($value == false) {
+        $result = mysql_query($query);
+        $row = mysql_fetch_object($result);
+        mysql_free_result($result);
+        $value = $row->value;
+        set_cached_data(3600, serialize($value), "get_mysql_value".$query);
+    }
+    return $value;
 }
 
 function get_mysql_assoc($query) {
-    $sql = "SELECT * FROM app WHERE deprecated != 1";
-    $result = mysql_query($sql);
-    while($row = mysql_fetch_assoc($result)) {
-        $assoc[] = $row;
+    $assoc = unserialize(get_cached_data(3600, "get_mysql_assoc".$query));
+    if ($assoc == false) {
+        $sql = "SELECT * FROM app WHERE deprecated != 1";
+        $result = mysql_query($sql);
+        while($row = mysql_fetch_assoc($result)) {
+            $assoc[] = $row;
+        }
+        mysql_free_result($result);
+        set_cached_data(3600, serialize($assoc), "get_mysql_assoc".$query);
     }
-    mysql_free_result($result);
     return $assoc;
 }
 
-function get_mysql_user ($clause) {
-    $result = mysql_query("select count(userid) as userid from (SELECT distinct userid FROM result where validate_state=1 and received_time > (unix_timestamp()-(3600*24*1)) " . $clause . ") t");
-    $count = mysql_fetch_object($result);
-    mysql_free_result($result);
-    return $count->userid;
+function get_mysql_user($clause) {
+    $count = unserialize(get_cached_data(3600, "get_mysql_user".$clause));
+    if ($count == false) {
+        $result = mysql_query("select count(userid) as userid from (SELECT distinct userid FROM result where validate_state=1 and received_time > (unix_timestamp()-(3600*24*1)) " . $clause . ") t");
+        $count = mysql_fetch_object($result);
+        mysql_free_result($result);
+        $count = $count->userid;
+        set_cached_data(3600, serialize($count), "get_mysql_user".$clause);
+    }
+    return $count;
 }
 
-function get_cpu_time ($appid) {
-    $result = mysql_query("
-	Select ceil(avg(cpu_time)/3600*100)/100 as cpu_time, 
-       		ceil(min(cpu_time)/3600*100)/100 as min, 
-       		ceil(max(cpu_time)/3600*100)/100 as max 
-	from (SELECT cpu_time FROM `result` WHERE appid = $appid and validate_state =1 and received_time > (unix_timestamp()-(3600*24)) ORDER BY `received_time` DESC limit 100) t");
-    $count = mysql_fetch_object($result);
-    mysql_free_result($result);
+function get_cpu_time($appid) {
+    $count = unserialize(get_cached_data(3600, "get_cpu_time".$appid));
+    if ($count == false) {
+        $result = mysql_query("
+        Select ceil(avg(cpu_time)/3600*100)/100 as cpu_time,
+                   ceil(min(cpu_time)/3600*100)/100 as min,
+                   ceil(max(cpu_time)/3600*100)/100 as max
+        from (SELECT cpu_time FROM `result` WHERE appid = $appid and validate_state =1 and received_time > (unix_timestamp()-(3600*24)) ORDER BY `received_time` DESC limit 100) t");
+        $count = mysql_fetch_object($result);
+        mysql_free_result($result);
+        set_cached_data(3600, serialize($count), "get_cpu_time".$appid);
+    }
     return $count;
 }
 
@@ -190,7 +210,7 @@ if ($uldl_host == "") {
 $ssh_exe = parse_element($config_vars,"<ssh_exe>");
 if ($ssh_exe == "") {
     $ssh_exe = "/usr/bin/ssh";
-} 
+}
 $ps_exe = parse_element($config_vars,"<ps_exe>");
 if ($ps_exe == "") {
     $ps_exe = "/bin/ps";
@@ -254,18 +274,21 @@ while ($thisxml = trim(parse_next_element($config_xml,"<daemon>",$cursor))) {
         $host = $project_host;
     }
     $cmd = parse_element($thisxml,"<cmd>");
-    list($ncmd) = explode(" ",$cmd);
+    list($cmd) = explode(" ", $cmd);
     $log = parse_element($thisxml,"<output>");
     if (!$log) {
-        $log = $ncmd . ".log";
+        $log = $cmd . ".log";
     }
-    list($nlog) = explode(".log",$log);
+    list($log) = explode(".log", $log);
     $pid = parse_element($thisxml,"<pid_file>");
     if (!$pid) {
-        $pid = $ncmd . ".pid";
+        $pid = $cmd . ".pid";
     }
     $disabled = parse_element($thisxml,"<disabled>");
-    show_daemon_status($host, $nlog, $ncmd, $disabled);
+
+    // surrogate for command
+    list($c) = explode(".", $log);
+    show_daemon_status($host, $pid, $c, $disabled);
 }
 
 $xmlstring = "  </daemon_status>\n  <database_file_states>\n";
@@ -335,12 +358,16 @@ if ($retval) {
         get_mysql_count("result where file_delete_state=1")
     );
 
-    $result = mysql_query("select MIN(transition_time) as min from workunit");
-    $min = mysql_fetch_object($result);
-    mysql_free_result($result);
-    $gap = (time() - $min->min)/3600;
-    if (($gap < 0) || ($min->min == 0)) {
-        $gap = 0;
+    $gap = unserialize(get_cached_data(3600, "transitioner_backlog"));
+    if ($gap === false) {
+        $result = mysql_query("select MIN(transition_time) as min from workunit");
+        $min = mysql_fetch_object($result);
+        mysql_free_result($result);
+        $gap = (time() - $min->min)/3600;
+        if (($gap < 0) || ($min->min == 0)) {
+            $gap = 0;
+        }
+        set_cached_data(3600, serialize($gap), "transitioner_backlog");
     }
     show_counts(
         tra("Transitioner backlog (hours)"),
@@ -349,69 +376,78 @@ if ($retval) {
     );
     if (!$xml) {
         echo "</table></td><td>";
-	echo "<table>";
-	echo "<tr><th>".tra("Users")."</th><th>#</th></tr>";
-	show_counts(
-		tra("with recent credit"),
-		"users_with_recent_credit",
-		get_mysql_count("user where expavg_credit>1")
-	);
-	show_counts(
-		tra("with credit"),
-		"users_with_credit",
-		get_mysql_count("user where total_credit>0")
-	);
-	show_counts(
-		tra("registered in past 24 hours"),
-		"users_registered_in_past_24_hours",
-		get_mysql_count("user where create_time > (unix_timestamp() - (24*3600))")
-	);
-	echo "<tr><th>".tra("Computers")."</th><th>#</th></tr>";
-	show_counts(
-		tra("with recent credit"),
-		"hosts_with_recent_credit",
-		get_mysql_count("host where expavg_credit>1")
-	);
-	show_counts(
-		tra("with credit"),
-		"hosts_with_credit",
-		get_mysql_count("host where total_credit>0")
-	);
-	show_counts(
-		tra("registered in past 24 hours"),
-		"hosts_registered_in_past_24_hours",
-		get_mysql_count("host where create_time > (unix_timestamp() - (24*3600))")
-	);
-	// 100,000 cobblestones = 1 TeraFLOPS 
-	// divide by 2, because double credits
-	show_counts(
-		tra("current GigaFLOPs"),
-		"current_floating_point_speed",
-		get_mysql_value("SELECT sum(expavg_credit)/200 as value FROM user")
-	);
+    echo "<table>";
+    echo "<tr><th>".tra("Users")."</th><th>#</th></tr>";
+    show_counts(
+        tra("with recent credit"),
+        "users_with_recent_credit",
+        get_mysql_count("user where expavg_credit>1")
+    );
+    show_counts(
+        tra("with credit"),
+        "users_with_credit",
+        get_mysql_count("user where total_credit>0")
+    );
+    show_counts(
+        tra("registered in past 24 hours"),
+        "users_registered_in_past_24_hours",
+        get_mysql_count("user where create_time > (unix_timestamp() - (24*3600))")
+    );
+    echo "<tr><th>".tra("Computers")."</th><th>#</th></tr>";
+    show_counts(
+        tra("with recent credit"),
+        "hosts_with_recent_credit",
+        get_mysql_count("host where expavg_credit>1")
+    );
+    show_counts(
+        tra("with credit"),
+        "hosts_with_credit",
+        get_mysql_count("host where total_credit>0")
+    );
+    show_counts(
+        tra("registered in past 24 hours"),
+        "hosts_registered_in_past_24_hours",
+        get_mysql_count("host where create_time > (unix_timestamp() - (24*3600))")
+    );
+    // 200 cobblestones = 1 GigaFLOPS
+    show_counts(
+        tra("current GigaFLOPs"),
+        "current_floating_point_speed",
+        get_mysql_value("SELECT sum(expavg_credit)/200 as value FROM user")
+    );
 
-	end_table();
-	echo "</td></tr></table>";
+    end_table();
+    echo "</td></tr></table>";
 
-	start_table();
-       	echo "<tr><th colspan=5>".tra("Tasks by application")."</th></tr>";
-	row_heading_array(array(tra("application"),tra("unsent"),tra("in progress"),tra("avg runtime of last 100 results in h (min-max)"),tra("users in last 24h")));
-	$apps = get_mysql_assoc("SELECT * FROM app WHERE deprecated != 1");
-	foreach($apps as $app) {
-	    $appid = $app["id"];
-	    $uf_name = $app["user_friendly_name"];
-	    echo "<tr><td>$uf_name</td>
-                    <td>" . number_format(get_mysql_count("result where server_state = 2 and appid = $appid")) . "</td>
-                    <td>" . number_format(get_mysql_count("result where server_state = 4 and appid = $appid")) . "</td>
-                    <td>";
-            $count = get_cpu_time($appid);
-            echo number_format($count->cpu_time,2) . " (" . number_format($count->min,2) . " - " . number_format($count->max,2) . ")";
-            echo "</td>
-                    <td>" . number_format(get_mysql_user("and appid = $appid")) . "</td>
-                </tr>";
-	}
-	end_table();
-	
+    start_table();
+   echo "<tr><th colspan=5>".tra("Tasks by application")."</th></tr>";
+    row_heading_array(
+        array(
+            tra("application"),
+            tra("unsent"),
+            tra("in progress"),
+            tra("avg runtime of last 100 results in h (min-max)"),
+            tra("users in last 24h")
+        )
+    );
+    $apps = get_mysql_assoc("SELECT * FROM app WHERE deprecated != 1");
+    foreach($apps as $app) {
+        $appid = $app["id"];
+        $uf_name = $app["user_friendly_name"];
+        echo "<tr><td>$uf_name</td>
+            <td>" . number_format(get_mysql_count("result where server_state = 2 and appid = $appid")) . "</td>
+            <td>" . number_format(get_mysql_count("result where server_state = 4 and appid = $appid")) . "</td>
+            <td>"
+        ;
+        $count = get_cpu_time($appid);
+        echo number_format($count->cpu_time,2) . " (" . number_format($count->min,2) . " - " . number_format($count->max,2) . ")";
+        echo "</td>
+            <td>" . number_format(get_mysql_user("and appid = $appid")) . "</td>
+            </tr>"
+        ;
+    }
+    end_table();
+
     }
 }
 
@@ -427,5 +463,4 @@ if ($xml) {
     page_tail();
 }
 
-end_cache($cache_period, $cache_args);
 ?>

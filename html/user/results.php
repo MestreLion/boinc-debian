@@ -22,6 +22,8 @@ require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/result.inc");
 
+check_get_args(array("hostid", "userid", "offset", "appid", "state", "show_names"));
+
 $config = get_config();
 if (!parse_bool($config, "show_results")) {
     error_page(tra("This feature is turned off temporarily"));
@@ -42,6 +44,13 @@ $show_names = get_int("show_names", true);
 if (!$show_names) $show_names=0;
 
 $s = $state_name[$state];
+if ($appid) {
+	$app = BoincApp::lookup_id($appid);
+	if ($app) {
+		$s .= " $app->user_friendly_name ";
+	}
+}
+
 if ($hostid) {
     $host = BoincHost::lookup_id($hostid);
     if (!$host) error_page(tra("No computer with ID %1 found", $hostid));
@@ -77,8 +86,9 @@ $info->show_names = $show_names;
 $info->state = $state;
 $info->appid = $appid;
 
+$nav = result_navigation($info, $clause);
 if (count($results)) {
-    echo show_result_navigation($info);
+    echo $nav;
     result_table_start(true, $show_host_link, $info);
     $i = 0;
     foreach ($results as $result) {
@@ -93,7 +103,7 @@ if (count($results)) {
     end_table();
 }
 
-echo show_result_navigation($info);
+echo $nav;
 
 page_tail();
 ?>

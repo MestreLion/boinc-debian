@@ -650,7 +650,7 @@ bool CScreensaver::DestroyDataManagementThread() {
     }
 
     if (rpc) {
-    rpc->close();    // In case DataManagementProc is hung waiting for RPC
+        rpc->close();    // In case DataManagementProc is hung waiting for RPC
     }
     m_hDataManagementThread = NULL; // Don't delay more if this routine is called again.
     if (m_hGraphicsApplication) {

@@ -308,9 +308,9 @@ double linux_cpu_time(int pid) {
 
 void boinc_crash() {
 #ifdef _WIN32
-	DebugBreak();
+    DebugBreak();
 #else
-	*(int*)0 = 0;
+    *(int*)0 = 0;
 #endif
 }
 
@@ -551,3 +551,22 @@ bool boinc_is_finite(double x) {
 #endif
 }
 
+#define PI2 (2*3.1415926)
+
+// generate normal random numbers using Box-Muller.
+// this generates 2 at a time, so cache the other one
+//
+double rand_normal() {
+    static bool cached;
+    static double cached_value;
+    if (cached) {
+        cached = false;
+        return cached_value;
+    }
+    double u1 = drand();
+    double u2 = drand();
+    double z = sqrt(-2*log(u1));
+    cached_value = z*sin(PI2*u2);
+    cached = true;
+    return z*cos(PI2*u2);
+}

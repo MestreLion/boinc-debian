@@ -150,8 +150,8 @@ void get_log_path(char* p, const char* filename) {
 }
 
 static void filename_hash(const char* filename, int fanout, char* dir) {
-	std::string s = md5_string((const unsigned char*)filename, strlen(filename));
-	int x = strtol(s.substr(1, 7).c_str(), 0, 16);
+    std::string s = md5_string((const unsigned char*)filename, strlen(filename));
+    int x = strtol(s.substr(1, 7).c_str(), 0, 16);
     sprintf(dir, "%x", x % fanout);
 }
 
@@ -160,7 +160,7 @@ static void filename_hash(const char* filename, int fanout, char* dir) {
 //
 int dir_hier_path(
     const char* filename, const char* root, int fanout,
-	char* path, bool create
+    char* path, bool create
 ) {
     char dir[256], dirpath[256];
     int retval;
@@ -176,7 +176,9 @@ int dir_hier_path(
     if (create) {
         retval = boinc_mkdir(dirpath);
         if (retval && (errno != EEXIST)) {
-            fprintf(stderr, "boinc_mkdir(%s): retval %d errno %d\n", dirpath, retval, errno);
+            fprintf(stderr, "boinc_mkdir(%s): %s: errno %d\n",
+                dirpath, boincerror(retval), errno
+            );
             return ERR_MKDIR;
         }
     }
@@ -188,7 +190,7 @@ int dir_hier_path(
 //
 int dir_hier_url(
     const char* filename, const char* root, int fanout,
-	char* result
+    char* result
 ) {
     char dir[256];
 
@@ -270,13 +272,13 @@ bool is_arg(const char* x, const char* y) {
 
 #ifdef GCL_SIMULATOR
 
-void simulator_signal_handler(int signum){    
+void simulator_signal_handler(int signum) {
     FILE *fsim;
     char currenttime[64];
     fsim = fopen(config.project_path("simulator/sim_time.txt"),"r");
     if(fsim){
         fscanf(fsim,"%s", currenttime);
-        simtime = atof(currenttime); 
+        simtime = atof(currenttime);
         fclose(fsim);
     }
     log_messages.printf(MSG_NORMAL,
@@ -291,8 +293,8 @@ int itime() {
 void continue_simulation(const char *daemonname){
     char daemonfilelok[64];
     char daemonfile[64];
-    sprintf(daemonfile, config.project_path("simulator/sim_%s.txt"),daemonname);
-    sprintf(daemonfilelok, config.project_path("simulator/sim_%s.lok"),daemonname);
+    sprintf(daemonfile, strcat((char*)config.project_path("simulator/"),"sim_%s.txt"),daemonname);
+    sprintf(daemonfilelok, strcat((char*)config.project_path("simulator/"),"sim_%s.lok"),daemonname);
     FILE *fsimlok = fopen(daemonfilelok, "w");
     if (fsimlok){
         fclose(fsimlok);
@@ -306,4 +308,4 @@ void continue_simulation(const char *daemonname){
 
 #endif
 
-const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 21181 2010-04-15 03:13:56Z davea $";
+const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 22933 2011-01-20 21:32:00Z davea $";

@@ -68,14 +68,14 @@ int CLIENT_APP_VERSION::parse(FILE* f) {
             app = ssp->lookup_app_name(app_name);
             if (!app) return ERR_NOT_FOUND;
 
-            double f = host_usage.avg_ncpus * g_reply->host.p_fpops;
-            if (host_usage.ncudas && g_request->coprocs.cuda.count) {
-                f += host_usage.ncudas*g_request->coprocs.cuda.peak_flops();
+            double pf = host_usage.avg_ncpus * g_reply->host.p_fpops;
+            if (host_usage.ncudas && g_request->coprocs.nvidia.count) {
+                pf += host_usage.ncudas*g_request->coprocs.nvidia.peak_flops;
             }
             if (host_usage.natis && g_request->coprocs.ati.count) {
-                f += host_usage.natis*g_request->coprocs.ati.peak_flops();
+                pf += host_usage.natis*g_request->coprocs.ati.peak_flops;
             }
-            host_usage.peak_flops = f;
+            host_usage.peak_flops = pf;
             return 0;
         }
         if (parse_str(buf, "<app_name>", app_name, 256)) continue;
@@ -177,18 +177,11 @@ void WORK_REQ::add_no_work_message(const char* message) {
     no_work_messages.push_back(USER_MESSAGE(message, "notice"));
 }
 
-
-SCHEDULER_REQUEST::SCHEDULER_REQUEST() {
-}
-
-SCHEDULER_REQUEST::~SCHEDULER_REQUEST() {
-}
-
 // return an error message or NULL
 //
 const char* SCHEDULER_REQUEST::parse(FILE* fin) {
     char buf[256];
-    RESULT result;
+    SCHED_DB_RESULT result;
     int retval;
 
     strcpy(authenticator, "");
@@ -217,10 +210,14 @@ const char* SCHEDULER_REQUEST::parse(FILE* fin) {
     client_cap_plan_class = false;
     sandbox = -1;
     allow_multiple_clients = -1;
-    coprocs.clear();
+
+    // TODO: use XML_PARSER FOR THIS
 
     if (!fgets(buf, sizeof(buf), fin)) {
         return "fgets() failed";
+    }
+    if (strstr(buf, "<?xml")) {
+        fgets(buf, sizeof(buf), fin);
     }
     if (!match_tag(buf, "<scheduler_request>")) return "no start tag";
     while (fgets(buf, sizeof(buf), fin)) {
@@ -906,12 +903,12 @@ int SCHEDULER_REPLY::write(FILE* fout, SCHEDULER_REQUEST& sreq) {
     }
 
     fprintf(fout,
-        "<have_cpu_apps>%d</have_cpu_apps>\n"
-        "<have_cuda_apps>%d</have_cuda_apps>\n"
-        "<have_ati_apps>%d</have_ati_apps>\n",
-        ssp->have_cpu_apps?1:0,
-        ssp->have_cuda_apps?1:0,
-        ssp->have_ati_apps?1:0
+        "<no_cpu_apps>%d</no_cpu_apps>\n"
+        "<no_cuda_apps>%d</no_cuda_apps>\n"
+        "<no_ati_apps>%d</no_ati_apps>\n",
+        ssp->have_cpu_apps?0:1,
+        ssp->have_cuda_apps?0:1,
+        ssp->have_ati_apps?0:1
     );
     gui_urls.get_gui_urls(user, host, team, buf);
     fputs(buf, fout);
@@ -964,7 +961,7 @@ void SCHEDULER_REPLY::insert_workunit_unique(WORKUNIT& wu) {
     wus.push_back(wu);
 }
 
-void SCHEDULER_REPLY::insert_result(RESULT& result) {
+void SCHEDULER_REPLY::insert_result(SCHED_DB_RESULT& result) {
     results.push_back(result);
 }
 
@@ -977,7 +974,14 @@ void SCHEDULER_REPLY::insert_message(USER_MESSAGE& um) {
 }
 
 USER_MESSAGE::USER_MESSAGE(const char* m, const char* p) {
-    message = m;
+    if (g_request->core_client_version < 61200) {
+        char buf[1024];
+        strcpy(buf, m);
+        strip_translation(buf);
+        message = buf;
+    } else {
+        message = m;
+    }
     priority = p;
 }
 
@@ -1050,7 +1054,7 @@ int APP_VERSION::write(FILE* fout) {
     return 0;
 }
 
-int RESULT::write_to_client(FILE* fout) {
+int SCHED_DB_RESULT::write_to_client(FILE* fout) {
     char buf[BLOB_SIZE];
 
     strcpy(buf, xml_doc_in);
@@ -1062,8 +1066,8 @@ int RESULT::write_to_client(FILE* fout) {
     *p = 0;
     fputs(buf, fout);
 
-    APP_VERSION* avp = bavp->avp;
-    CLIENT_APP_VERSION* cavp = bavp->cavp;
+    APP_VERSION* avp = bav.avp;
+    CLIENT_APP_VERSION* cavp = bav.cavp;
     if (avp) {
         PLATFORM* pp = ssp->lookup_platform_id(avp->platformid);
         fprintf(fout,
@@ -1085,8 +1089,9 @@ int RESULT::write_to_client(FILE* fout) {
     return 0;
 }
 
-int RESULT::parse_from_client(FILE* fin) {
+int SCHED_DB_RESULT::parse_from_client(FILE* fin) {
     char buf[256];
+    char tmp[BLOB_SIZE];
 
     // should be non-zero if exit_status is not found
     exit_status = ERR_NO_EXIT_STATUS;
@@ -1371,7 +1376,7 @@ void write_host_app_versions() {
         int retval = hav.update_scheduler(hav_orig);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "CRITICAL: hav.update_sched() returned %d\n", retval
+                "CRITICAL: hav.update_sched() error: %s\n", boincerror(retval)
             );
         }
     }
@@ -1397,4 +1402,4 @@ DB_HOST_APP_VERSION* quota_exceeded_version() {
     return NULL;
 }
 
-const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 22915 2011-01-17 18:38:17Z romw $";
+const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 23789 2011-07-01 02:12:11Z davea $";

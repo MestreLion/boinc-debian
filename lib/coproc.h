@@ -71,9 +71,15 @@
 #endif
 
 #include "miofile.h"
+#include "parse.h"
 #include "cal_boinc.h"
+#include "cl_boinc.h"
 
 #define MAX_COPROC_INSTANCES 64
+#define MAX_RSC 8
+    // max # of processing resources types
+
+#define MAX_OPENCL_PLATFORMS 16
 
 // represents a requirement for a coproc.
 // This is a parsed version of the <coproc> elements in an <app_version>
@@ -85,7 +91,30 @@ struct COPROC_REQ {
     int parse(MIOFILE&);
 };
 
-// represents a coproc on a particular computer.
+// For now, there will be some duplication between the values present in 
+// the OPENCL_DEVICE_PROP struct and the NVIDA and / or ATI structs
+struct OPENCL_DEVICE_PROP {
+    cl_device_id device_id;
+    char name[256];                     // Device name
+    char vendor[256];                   // Device vendor (NVIDIA, ATI, AMD, etc.)
+    cl_uint vendor_id;                  // OpenCL ID of device vendor
+    cl_bool available;                  // Is this device available?
+    cl_device_fp_config hp_fp_config;   // Half precision floating point capabilities
+    cl_device_fp_config sp_fp_config;   // Single precision floating point capabilities
+    cl_device_fp_config dp_fp_config;   // Double precision floating point capabilities
+    cl_bool little_endian;              // TRUE if little-endian
+    cl_device_exec_capabilities exec_capab; // Execution capabilities
+    char extensions[1024];              // List of device extensions
+    cl_ulong global_RAM;                // Size of global memory
+    cl_ulong local_RAM;                 // Size of local memory
+    cl_uint max_clock_freq;             // Max configured clock frequencin in MHz
+    cl_uint max_cores;                  // Max number of parallel computer cores
+    char openCL_device_version[64];     // OpenCL version supported by device; example: "OpenCL 1.1 beta"
+    char openCL_driver_version[32];     // For example: "CLH 1.0"
+};
+
+
+// represents a set of identical coprocessors on a particular computer.
 // Abstract class;
 // objects will always be a derived class (COPROC_CUDA, COPROC_ATI)
 // Used in both client and server.
@@ -93,8 +122,12 @@ struct COPROC_REQ {
 struct COPROC {
     char type[256];     // must be unique
     int count;          // how many are present
-    double used;           // how many are in use (used by client)
-
+    double peak_flops;
+    double used;        // how many are in use (used by client)
+    bool have_cuda;     // True if this GPU supports CUDA on this computer
+    bool have_cal;      // True if this GPU supports CAL on this computer
+    bool have_opencl;   // True if this GPU supports openCL on this computer
+    
     // the following are used in both client and server for work-fetch info
     //
     double req_secs;
@@ -116,6 +149,8 @@ struct COPROC {
     //
     int device_nums[MAX_COPROC_INSTANCES];
     int device_num;     // temp used in scan process
+    cl_device_id opencl_device_ids[MAX_COPROC_INSTANCES];
+    int opencl_device_count;
     bool running_graphics_app[MAX_COPROC_INSTANCES];
         // is this GPU running a graphics app (NVIDIA only)
     double available_ram[MAX_COPROC_INSTANCES];
@@ -124,26 +159,37 @@ struct COPROC {
     double available_ram_fake[MAX_COPROC_INSTANCES];
 
     double last_print_time;
+    
+    OPENCL_DEVICE_PROP opencl_prop;
 
 #ifndef _USING_FCGI_
-    virtual void write_xml(MIOFILE&);
+    void write_xml(MIOFILE&);
     void write_request(MIOFILE&);
+    int parse(XML_PARSER&);
 #endif
+
     inline void clear() {
         // can't just memcpy() - trashes vtable
         type[0] = 0;
         count = 0;
+        peak_flops = 0;
         used = 0;
+        have_cuda = false;
+        have_cal = false;
+        have_opencl = false;
         req_secs = 0;
         req_instances = 0;
+        opencl_device_count = 0;
         estimated_delay = 0;
         for (int i=0; i<MAX_COPROC_INSTANCES; i++) {
             device_nums[i] = 0;
+            opencl_device_ids[i] = 0;
             running_graphics_app[i] = true;
             available_ram[i] = 0;
             available_ram_fake[i] = 0;
             available_ram_unknown[i] = true;
         }
+        memset(&opencl_prop, 0, sizeof(opencl_prop));
     }
     inline void clear_usage() {
         for (int i=0; i<count; i++) {
@@ -158,8 +204,6 @@ struct COPROC {
     COPROC() {
         clear();
     }
-    virtual ~COPROC(){}
-    int parse(MIOFILE&);
     void print_available_ram();
 };
 
@@ -167,7 +211,8 @@ struct COPROC {
 // doesn't have to match exactly since we get the attributes one at a time.
 //
 struct CUDA_DEVICE_PROP {
-  char   name[256];
+  char  name[256];
+  int   deviceHandle;
   unsigned int totalGlobalMem;
     // not used on the server; dtotalGlobalMem is used instead
     // (since some boards have >= 4GB)
@@ -188,16 +233,15 @@ struct CUDA_DEVICE_PROP {
   double dtotalGlobalMem;   // not defined in client
 };
 
-struct COPROC_CUDA : public COPROC {
+struct COPROC_NVIDIA : public COPROC {
     int cuda_version;  // CUDA runtime version
     int display_driver_version;
     CUDA_DEVICE_PROP prop;
 
 #ifndef _USING_FCGI_
-    virtual void write_xml(MIOFILE&, bool include_request);
+    void write_xml(MIOFILE&, bool include_request);
 #endif
-    COPROC_CUDA(): COPROC("CUDA"){}
-    virtual ~COPROC_CUDA(){}
+    COPROC_NVIDIA(): COPROC("NVIDIA"){}
     void get(
         bool use_all,
         std::vector<std::string>&, std::vector<std::string>&,
@@ -206,23 +250,19 @@ struct COPROC_CUDA : public COPROC {
 	void description(char*);
     void clear();
     int parse(MIOFILE&);
-
-    // Estimate of peak FLOPS.
-    // FLOPS for a given app may be much less;
-    // e.g. for SETI@home it's about 0.18 of the peak
-    //
-    inline double peak_flops() {
+    void get_available_ram();
+	void set_peak_flops() {
         // clock rate is scaled down by 1000;
         // each processor has 8 or 32 cores;
         // each core can do 2 ops per clock
         //
         int cores_per_proc = (prop.major>=2)?32:8;
         double x = (1000.*prop.clockRate) * prop.multiProcessorCount * cores_per_proc * 2.;
-        return x?x:5e10;
-    }
-    void get_available_ram();
+        peak_flops =  x?x:5e10;
+	}
 
     bool check_running_graphics_app();
+    bool matches(OPENCL_DEVICE_PROP& OpenCLprop);
     void fake(int driver_version, double ram, int count);
 
 };
@@ -238,10 +278,9 @@ struct COPROC_ATI : public COPROC {
     CALdeviceattribs attribs; 
     CALdeviceinfo info;
 #ifndef _USING_FCGI_
-    virtual void write_xml(MIOFILE&, bool include_request);
+    void write_xml(MIOFILE&, bool include_request);
 #endif
     COPROC_ATI(): COPROC("ATI"){}
-    virtual ~COPROC_ATI(){}
     void get(
         bool use_all,
         std::vector<std::string>&, std::vector<std::string>&,
@@ -250,27 +289,34 @@ struct COPROC_ATI : public COPROC {
     void description(char*);
     void clear();
     int parse(MIOFILE&);
-    inline double peak_flops() {
-		double x = attribs.numberOfSIMD * attribs.wavefrontSize * 2.5 * attribs.engineClock * 1.e6;
-        // clock is in MHz
-        return x?x:5e10;
-    }
     void get_available_ram();
+    bool matches(OPENCL_DEVICE_PROP& OpenCLprop);
+	void set_peak_flops() {
+        double x = attribs.numberOfSIMD * attribs.wavefrontSize * 2.5 * attribs.engineClock * 1.e6;
+        // clock is in MHz
+        peak_flops = x?x:5e10;
+	}
     void fake(double, int);
 };
 
 struct COPROCS {
-    COPROC_CUDA cuda;
+    int n_rsc;
+    COPROC coprocs[MAX_RSC];
+    COPROC_NVIDIA nvidia;
     COPROC_ATI ati;
 
-    COPROCS(){}
-    ~COPROCS(){}    // don't delete coprocs; else crash in APP_INIT_DATA logic
     void write_xml(MIOFILE& out, bool include_request);
     void get(
         bool use_all, std::vector<std::string> &descs,
         std::vector<std::string> &warnings,
-        std::vector<int>& ignore_cuda_dev,
+        std::vector<int>& ignore_nvidia_dev,
         std::vector<int>& ignore_ati_dev
+    );
+    void get_opencl(bool use_all, std::vector<std::string> &warnings);
+    cl_int get_opencl_info(
+        OPENCL_DEVICE_PROP& prop, 
+        cl_uint device_index, 
+        std::vector<std::string> &warnings
     );
     int parse(MIOFILE&);
     void summary_string(char*, int);
@@ -280,26 +326,57 @@ struct COPROCS {
     // to avoid messing w/ master copy
     //
     void clone(COPROCS& c, bool copy_used) {
-        cuda = c.cuda;
-        ati = c.ati;
-        if (!copy_used) {
-            cuda.used = 0;
-            ati.used = 0;
+        n_rsc = c.n_rsc;
+        for (int i=0; i<n_rsc; i++) {
+            coprocs[i] = c.coprocs[i];
+            if (!copy_used) {
+                coprocs[i].used = 0;
+            }
         }
     }
-    inline void clear() {
-        cuda.count = 0;
-        ati.count = 0;
+    void clear() {
+        n_rsc = 0;
+        for (int i=0; i<MAX_RSC; i++) {
+            coprocs[i].clear();
+        }
+        nvidia.clear();
+        ati.clear();
+        COPROC c;
+        strcpy(c.type, "CPU");
+        add(c);
     }
     inline void clear_usage() {
-        cuda.clear_usage();
-        ati.clear_usage();
+        for (int i=0; i<n_rsc; i++) {
+            coprocs[i].clear_usage();
+        }
     }
     inline bool none() {
-        return (cuda.count==0) && (ati.count==0);
+        return (n_rsc == 1);
     }
     inline int ndevs() {
-        return cuda.count + ati.count;
+        int n=0;
+        for (int i=1; i<n_rsc; i++) {
+            n += coprocs[i].count;
+        }
+        return n;
+    }
+    inline bool have_nvidia() {
+        return (nvidia.count > 0);
+    }
+    inline bool have_ati() {
+        return (ati.count > 0);
+    }
+    int add(COPROC& c) {
+        coprocs[n_rsc++] = c;
+        return 0;
+    }
+    COPROCS() {
+        n_rsc = 0;
+        nvidia.count = 0;
+        ati.count = 0;
+        COPROC c;
+        strcpy(c.type, "CPU");
+        add(c);
     }
 };
 

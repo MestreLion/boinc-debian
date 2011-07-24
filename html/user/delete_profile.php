@@ -20,8 +20,12 @@ require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/profile.inc");
 
-function delete_profile($user) {
-    $result = BoincProfile::delete_aux("userid = $user->id");
+check_get_args(array("delete"));
+
+$user = get_logged_in_user();
+
+if (isset($_POST['delete']) && $_POST['delete']) {
+    $result = delete_profile($user);
     if (!$result) {
         error_page("couldn't delete profile - please try again later");
     }
@@ -30,12 +34,6 @@ function delete_profile($user) {
     $user->update("has_profile=0");
     echo "Your profile has been deleted<br>";
     page_tail();
-}
-
-$user = get_logged_in_user();
-
-if (isset($_POST['delete']) && $_POST['delete']) {
-    delete_profile($user);
     exit();
 }
 

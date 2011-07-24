@@ -19,6 +19,8 @@
 require_once("../inc/forum.inc");
 require_once("../inc/forum_email.inc");
 
+check_get_args(array("id", "action", "tnow", "ttok"));
+
 function mod_comment() {
     $x = "";
     $reason = post_str('reason', true);
@@ -143,5 +145,5 @@ send_moderation_email($forum, $post, $thread, $explanation, $action_name);
 
 header('Location: forum_thread.php?id='.$thread->id);
 
-$cvs_version_tracker[]="\$Id: forum_moderate_post_action.php 22275 2010-08-20 19:04:09Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_moderate_post_action.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

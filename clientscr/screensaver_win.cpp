@@ -77,23 +77,23 @@ INT WINAPI WinMain(
         return retval;
     }
 
+    // Initialize Screensaver
     if (FAILED(hr = BOINCSS.Create(hInstance))) {
         BOINCSS.DisplayErrorMsg(hr);
         WSACleanup();
         return 0;
     }
 
+    // Run Screensaver
     retval = BOINCSS.Run();
     
     // Cleanup any existing screensaver objects and handles
+    BOINCTRACE("WinMain - Cleanup Screensaver Resources\n");
     BOINCSS.Cleanup();
 
     // Cleanup the Windows sockets interface.
+    BOINCTRACE("WinMain - Cleanup Winsock Resources\n");
     WSACleanup();
-
-    // Instruct the OS to terminate the screensaver by any
-    //   means nessassary.
-    TerminateProcess(GetCurrentProcess(), retval);
 
     return retval;
 }
@@ -171,10 +171,7 @@ HRESULT CScreensaver::Create(HINSTANCE hInstance) {
         "stdoutscr",
         "stderrscr"
     );
-    if (retval) {
-        BOINCTRACE("WinMain - BOINC Screensaver Diagnostic Error '%d'\n", retval);
-        MessageBox(NULL, NULL, "BOINC Screensaver Diagnostic Error", MB_OK);
-    }
+
 
     // Parse the command line and do the appropriate thing
     m_SaverMode = ParseCommandLine(GetCommandLine());
@@ -360,10 +357,12 @@ HRESULT CScreensaver::Run() {
 // Cleanup anything that needs cleaning.
 //
 HRESULT CScreensaver::Cleanup() {
+    BOINCTRACE("CScreensaver::Cleanup - Cleanup graphics application if running\n");
     if (m_hGraphicsApplication) {
         TerminateProcess(m_hGraphicsApplication, 0);
         m_hGraphicsApplication = NULL;
     }
+    BOINCTRACE("CScreensaver::Cleanup - Cleanup RPC client\n");
     if (rpc) {
         rpc->close();
         delete rpc;
@@ -379,11 +378,8 @@ HRESULT CScreensaver::Cleanup() {
 //
 HRESULT CScreensaver::DisplayErrorMsg(HRESULT hr) {
     TCHAR strMsg[512];
-
     GetTextForError(hr, strMsg, 512);
-
     MessageBox(m_hWnd, strMsg, m_strWindowTitle, MB_ICONERROR | MB_OK);
-
     return hr;
 }
 
@@ -887,12 +883,14 @@ DWORD WINAPI CScreensaver::InputActivityProcStub(LPVOID UNUSED(lpParam)) {
 //
 DWORD WINAPI CScreensaver::InputActivityProc() {
     LASTINPUTINFO lii;
+    bool          bAutoBreak = false;
     DWORD         dwCounter = 0;
+
     lii.cbSize = sizeof(LASTINPUTINFO);
 
     BOINCTRACE(_T("CScreensaver::InputActivityProc - Last Input Activity '%d'.\n"), m_dwLastInputTimeAtStartup);
 
-    while(true) {
+    while(!bAutoBreak) {
         if (GetLastInputInfo(&lii)) {
             if (dwCounter > 4) {
                 BOINCTRACE(_T("CScreensaver::InputActivityProc - Heartbeat.\n"));
@@ -902,6 +900,7 @@ DWORD WINAPI CScreensaver::InputActivityProc() {
                 BOINCTRACE(_T("CScreensaver::InputActivityProc - Activity Detected.\n"));
                 SetError(TRUE, SCRAPPERR_BOINCSHUTDOWNEVENT);
                 FireInterruptSaverEvent();
+                bAutoBreak = true;
             }
         } else {
             BOINCTRACE(_T("CScreensaver::InputActivityProc - Failed to detect input activity.\n"));
@@ -910,10 +909,13 @@ DWORD WINAPI CScreensaver::InputActivityProc() {
             fprintf(stdout, _T("development team.\n\n"));
             SetError(TRUE, SCRAPPERR_BOINCSHUTDOWNEVENT);
             FireInterruptSaverEvent();
-        }
+            bAutoBreak = true;
+       }
         dwCounter++;
         boinc_sleep(0.25);
     }
+
+    return 0;
 }
 
 
@@ -1396,6 +1398,15 @@ LRESULT CScreensaver::SaverProc(
             BOINCTRACE(_T("CScreensaver::SaverProc Received WM_POWERBROADCAST\n"));
             if (wParam == PBT_APMQUERYSUSPEND)
                 FireInterruptSaverEvent();
+            break;
+
+        case WM_QUIT:
+            BOINCTRACE(_T("CScreensaver::SaverProc Received WM_QUIT\n"));
+#ifdef _DEBUG
+            DebugBreak();
+#else
+            TerminateProcess(GetCurrentProcess(), 0);
+#endif
             break;
     }
 

@@ -73,7 +73,6 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     MIOFILE mf;
     unsigned int i;
     RESULT* rp;
-    int retval;
     double disk_total, disk_project;
 
     get_sched_request_filename(*p, buf, sizeof(buf));
@@ -148,11 +147,11 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
         fprintf(f, "    <code_sign_key>\n%s</code_sign_key>\n", p->code_sign_key);
     }
 
-	// send working prefs
-	//
-	fprintf(f, "<working_global_preferences>\n");
-	global_prefs.write(mf);
-	fprintf(f, "</working_global_preferences>\n");
+    // send working prefs
+    //
+    fprintf(f, "<working_global_preferences>\n");
+    global_prefs.write(mf);
+    fprintf(f, "</working_global_preferences>\n");
 
     // send master global preferences if present and not host-specific
     //
@@ -205,8 +204,7 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     //
     host_info.get_host_info();
     set_ncpus();
-    retval = host_info.write(mf, !config.suppress_net_info, false);
-    //if (retval) return retval;
+    host_info.write(mf, !config.suppress_net_info, false);
 
     // get and write disk usage
     //
@@ -222,19 +220,21 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
 
     // copy request values from RSC_WORK_FETCH to COPROC
     //
-    if (host_info.have_cuda()) {
-        host_info.coprocs.cuda.req_secs = cuda_work_fetch.req_secs;
-        host_info.coprocs.cuda.req_instances = cuda_work_fetch.req_instances;
-        host_info.coprocs.cuda.estimated_delay = cuda_work_fetch.req_secs?cuda_work_fetch.busy_time_estimator.get_busy_time():0;
+    int j = rsc_index("NVIDIA");
+    if (j > 0) {
+        coprocs.nvidia.req_secs = rsc_work_fetch[j].req_secs;
+        coprocs.nvidia.req_instances = rsc_work_fetch[j].req_instances;
+        coprocs.nvidia.estimated_delay = rsc_work_fetch[j].req_secs?rsc_work_fetch[j].busy_time_estimator.get_busy_time():0;
     }
-    if (host_info.have_ati()) {
-        host_info.coprocs.ati.req_secs = ati_work_fetch.req_secs;
-        host_info.coprocs.ati.req_instances = ati_work_fetch.req_instances;
-        host_info.coprocs.ati.estimated_delay = ati_work_fetch.req_secs?ati_work_fetch.busy_time_estimator.get_busy_time():0;
+    j = rsc_index("ATI");
+    if (j > 0) {
+        coprocs.ati.req_secs = rsc_work_fetch[j].req_secs;
+        coprocs.ati.req_instances = rsc_work_fetch[j].req_instances;
+        coprocs.ati.estimated_delay = rsc_work_fetch[j].req_secs?rsc_work_fetch[j].busy_time_estimator.get_busy_time():0;
     }
 
-    if (!host_info.coprocs.none()) {
-        host_info.coprocs.write_xml(mf, true);
+    if (coprocs.n_rsc > 1) {
+        coprocs.write_xml(mf, true);
     }
 
     // report completed jobs
@@ -262,20 +262,16 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     for (i=0; i<file_infos.size(); i++) {
         FILE_INFO* fip = file_infos[i];
         if (fip->project != p) continue;
-        if (!fip->report_on_rpc) continue;
-        if (fip->marked_for_delete) continue;
+        if (!fip->sticky) continue;
         fprintf(f,
             "    <file_info>\n"
             "        <name>%s</name>\n"
             "        <nbytes>%f</nbytes>\n"
             "        <status>%d</status>\n"
-            "        <report_on_rpc/>\n"
             "    </file_info>\n",
             fip->name, fip->nbytes, fip->status
         );
     }
-
-    // NOTE: there's also a send_file_list flag, not currently used
 
     if (p->send_time_stats_log) {
         fprintf(f, "<time_stats_log>\n");
@@ -292,7 +288,7 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     // send descriptions of app versions
     //
     fprintf(f, "<app_versions>\n");
-    int j=0;
+    j=0;
     for (i=0; i<app_versions.size(); i++) {
         APP_VERSION* avp = app_versions[i];
         if (avp->project != p) continue;
@@ -339,21 +335,28 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
             rp = results[i];
             double x = rp->estimated_time_remaining();
             if (x == 0) continue;
+            strcpy(buf, "");
+            int rt = rp->avp->gpu_usage.rsc_type;
+            if (rt) {
+                if (rt == rsc_index("NVIDIA")) {
+                    sprintf(buf, "        <ncudas>%f</ncudas>\n", rp->avp->gpu_usage.usage);
+                } else if (rt == rsc_index("ATI")) {
+                    sprintf(buf, "        <natis>%f</natis>\n", rp->avp->gpu_usage.usage);
+                }
+            }
             fprintf(f,
                 "    <ip_result>\n"
                 "        <name>%s</name>\n"
                 "        <report_deadline>%.0f</report_deadline>\n"
                 "        <time_remaining>%.2f</time_remaining>\n"
                 "        <avg_ncpus>%f</avg_ncpus>\n"
-                "        <ncudas>%f</ncudas>\n"
-                "        <natis>%f</natis>\n"
+                "%s"
                 "    </ip_result>\n",
                 rp->name,
                 rp->report_deadline,
                 x,
                 rp->avp->avg_ncpus,
-                rp->avp->ncudas,
-                rp->avp->natis
+                buf
             );
         }
         fprintf(f, "</in_progress_results>\n");
@@ -389,8 +392,8 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
 
     if (network_suspended) return false;
 
-	// check only every 5 sec
-	//
+    // check only every 5 sec
+    //
     if (now - last_time < SCHEDULER_RPC_POLL_PERIOD) return false;
     last_time = now;
 
@@ -413,9 +416,9 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
         // clear backoffs to allow work requests
         //
         if (p->sched_rpc_pending == RPC_REASON_USER_REQ) {
-            p->cpu_pwf.clear_backoff();
-            p->cuda_pwf.clear_backoff();
-            p->ati_pwf.clear_backoff();
+            for (int i=0; i<coprocs.n_rsc; i++) {
+                p->rsc_pwf[i].clear_backoff();
+            }
         }
         work_fetch.compute_work_request(p);
         scheduler_op->init_op_project(p, p->sched_rpc_pending);
@@ -427,7 +430,7 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
         scheduler_op->init_op_project(p, RPC_REASON_TRICKLE_UP);
         return true;
     }
-    
+
     // report overdue results
     //
     p = find_project_with_overdue_results();
@@ -465,7 +468,10 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
 }
 
 static inline bool requested_work() {
-    return (cpu_work_fetch.req_secs || cuda_work_fetch.req_secs || ati_work_fetch.req_secs);
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        if (rsc_work_fetch[i].req_secs) return true;
+    }
+    return false;
 }
 
 // Handle the reply from a scheduler
@@ -476,7 +482,7 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     int retval;
     unsigned int i;
     bool signature_valid, update_global_prefs=false, update_project_prefs=false;
-    char buf[256], filename[256];
+    char buf[1024], filename[256];
     std::string old_gui_urls = project->gui_urls;
     PROJECT* p2;
     vector<RESULT*>new_results;
@@ -563,7 +569,6 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     for (i=0; i<sr.messages.size(); i++) {
         USER_MESSAGE& um = sr.messages[i];
         int prio = (!strcmp(um.priority.c_str(), "notice"))?MSG_SCHEDULER_ALERT:MSG_INFO;
-        char buf[1024];
         string_substitute(um.message.c_str(), buf, sizeof(buf), "%", "%%");
         msg_printf(project, prio, buf);
     }
@@ -580,7 +585,7 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     if (sr.project_is_down) {
         if (sr.request_delay) {
             double x = now + sr.request_delay;
-			project->set_min_rpc_time(x, "project is down");
+            project->set_min_rpc_time(x, "project is down");
         }
         return ERR_PROJECT_DOWN;
     }
@@ -589,24 +594,24 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     // insert extra elements, write to disk, and parse
     //
     if (sr.global_prefs_xml) {
-		// skip this if we have host-specific prefs
-		// and we're talking to an old scheduler
-		//
-		if (!global_prefs.host_specific || sr.scheduler_version >= 507) {
-			retval = save_global_prefs(
-				sr.global_prefs_xml, project->master_url, scheduler_url
-			);
-			if (retval) {
-				return retval;
-			}
-			update_global_prefs = true;
-		} else {
-			if (log_flags.sched_op_debug) {
-				msg_printf(project, MSG_INFO,
-					"ignoring prefs from old server; we have host-specific prefs"
-				);
-			}
-		}
+        // skip this if we have host-specific prefs
+        // and we're talking to an old scheduler
+        //
+        if (!global_prefs.host_specific || sr.scheduler_version >= 507) {
+            retval = save_global_prefs(
+                sr.global_prefs_xml, project->master_url, scheduler_url
+            );
+            if (retval) {
+                return retval;
+            }
+            update_global_prefs = true;
+        } else {
+            if (log_flags.sched_op_debug) {
+                msg_printf(project, MSG_INFO,
+                    "ignoring prefs from old server; we have host-specific prefs"
+                );
+            }
+        }
     }
 
     // see if we have a new venue from this project
@@ -737,7 +742,7 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
                     fip->name
                 );
             }
-            fip->marked_for_delete = true;
+            fip->sticky = false;
         }
     }
     for (i=0; i<sr.app_versions.size(); i++) {
@@ -758,10 +763,10 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
                 continue;
             }
         }
-        if (avpp.missing_coproc()) {
+        if (avpp.missing_coproc) {
             msg_printf(project, MSG_INTERNAL_ERROR,
                 "App version uses non-existent %s GPU",
-                avpp.ncudas?"NVIDIA":"ATI"
+                avpp.missing_coproc_name
             );
         }
         APP* app = lookup_app(project, avpp.app_name);
@@ -783,8 +788,7 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
             avp->max_ncpus = avpp.max_ncpus;
             avp->flops = avpp.flops;
             strcpy(avp->cmdline, avpp.cmdline);
-            avp->ncudas = avpp.ncudas;
-            avp->natis = avpp.natis;
+            avp->gpu_usage = avpp.gpu_usage;
             strlcpy(avp->api_version, avpp.api_version, sizeof(avp->api_version));
 
             // if we had download failures, clear them
@@ -817,9 +821,10 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
         wup->clear_errors();
         workunits.push_back(wup);
     }
-    double est_cpu_duration = 0;
-    double est_cuda_duration = 0;
-    double est_ati_duration = 0;
+    double est_rsc_duration[MAX_RSC];
+    for (int j=0; j<coprocs.n_rsc; j++) {
+        est_rsc_duration[j] = 0;
+    }
     for (i=0; i<sr.results.size(); i++) {
         if (lookup_result(project, sr.results[i].name)) {
             msg_printf(project, MSG_INTERNAL_ERROR,
@@ -852,7 +857,7 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
             delete rp;
             continue;
         }
-        if (rp->avp->missing_coproc()) {
+        if (rp->avp->missing_coproc) {
             msg_printf(project, MSG_INTERNAL_ERROR,
                 "Missing coprocessor for task %s; aborting", rp->name
             );
@@ -860,15 +865,13 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
             continue;
         } else {
             rp->set_state(RESULT_NEW, "handle_scheduler_reply");
-            if (rp->avp->ncudas) {
-                est_cuda_duration += rp->estimated_duration();
+            int rt = rp->avp->gpu_usage.rsc_type;
+            if (rt > 0) {
+                est_rsc_duration[rt] += rp->estimated_duration();
                 gpus_usable = true;
                     // trigger a check of whether GPU is actually usable
-            } else if (rp->avp->natis) {
-                est_ati_duration += rp->estimated_duration();
-                gpus_usable = true;
             } else {
-                est_cpu_duration += rp->estimated_duration();
+                est_rsc_duration[0] += rp->estimated_duration();
             }
         }
         rp->wup->version_num = rp->version_num;
@@ -880,20 +883,10 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
 
     if (log_flags.sched_op_debug) {
         if (sr.results.size()) {
-            msg_printf(project, MSG_INFO,
-                "[sched_op] estimated total CPU task duration: %.0f seconds",
-                est_cpu_duration
-            );
-            if (host_info.have_cuda()) {
+            for (int j=0; j<coprocs.n_rsc; j++) {
                 msg_printf(project, MSG_INFO,
-                    "[sched_op] estimated total NVIDIA GPU task duration: %.0f seconds",
-                    est_cuda_duration
-                );
-            }
-            if (host_info.have_ati()) {
-                msg_printf(project, MSG_INFO,
-                    "[sched_op] estimated total ATI GPU task duration: %.0f seconds",
-                    est_ati_duration
+                    "[sched_op] estimated total %s task duration: %.0f seconds",
+                    rsc_name(j), est_rsc_duration[j]
                 );
             }
         }
@@ -957,9 +950,6 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     if (sr.message_ack) {
         remove_trickle_files(project);
     }
-    if (sr.send_file_list) {
-        project->send_file_list = true;
-    }
     if (sr.send_full_workload) {
         project->send_full_workload = true;
     }
@@ -988,11 +978,13 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
         project->rpc_seqno = 0;
     }
 
+#ifdef ENABLE_AUTO_UPDATE
     if (sr.auto_update.present) {
         if (!sr.auto_update.validate_and_link(project)) {
             auto_update = sr.auto_update;
         }
     }
+#endif
 
     project->link_project_files(true);
 
@@ -1037,22 +1029,22 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
 #endif // SIM
 
 void CLIENT_STATE::check_project_timeout() {
-	unsigned int i;
-	for (i=0; i<projects.size(); i++) {
-		PROJECT* p = projects[i];
-		if (p->possibly_backed_off && now > p->min_rpc_time) {
-			p->possibly_backed_off = false;
+    unsigned int i;
+    for (i=0; i<projects.size(); i++) {
+        PROJECT* p = projects[i];
+        if (p->possibly_backed_off && now > p->min_rpc_time) {
+            p->possibly_backed_off = false;
             char buf[256];
             sprintf(buf, "Backoff ended for %s", p->get_project_name());
-			request_work_fetch(buf);
-		}
-	}
+            request_work_fetch(buf);
+        }
+    }
 }
 
 void PROJECT::set_min_rpc_time(double future_time, const char* reason) {
     if (future_time <= min_rpc_time) return;
     min_rpc_time = future_time;
-	possibly_backed_off = true;
+    possibly_backed_off = true;
     if (log_flags.sched_op_debug) {
         msg_printf(this, MSG_INFO,
             "[sched_op] Deferring communication for %s",
@@ -1202,7 +1194,7 @@ PROJECT* CLIENT_STATE::find_project_with_overdue_results() {
 }
 
 // trigger work fetch
-// 
+//
 void CLIENT_STATE::request_work_fetch(const char* where) {
     if (log_flags.work_fetch_debug) {
         msg_printf(0, MSG_INFO, "[work_fetch] Request work fetch: %s", where);

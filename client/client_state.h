@@ -36,6 +36,7 @@ using std::vector;
 #include "client_types.h"
 #include "current_version.h"
 #include "file_xfer.h"
+#include "file_names.h"
 #include "gui_rpc_server.h"
 #include "gui_http.h"
 #include "hostinfo.h"
@@ -83,7 +84,9 @@ struct CLIENT_STATE {
     GUI_RPC_CONN_SET gui_rpcs;
 #endif
     GUI_HTTP gui_http;
+#ifdef ENABLE_AUTO_UPDATE
     AUTO_UPDATE auto_update;
+#endif
     LOOKUP_WEBSITE_OP lookup_website_op;
     GET_CURRENT_VERSION_OP get_current_version_op;
     GET_PROJECT_LIST_OP get_project_list_op;
@@ -118,6 +121,7 @@ struct CLIENT_STATE {
         // we should suspend for OS reasonts (used on Win only).
         // Set when
         // - got BATTERY_LOW, SUSPEND, SERVICE_CONTROL_PAUSE
+    double os_requested_suspend_time;
     bool cleanup_completed;
     bool in_abort_sequence;
         // Determine when it is safe to leave the quit_client() handler
@@ -259,13 +263,7 @@ struct CLIENT_STATE {
     int nresults_for_project(PROJECT*);
     void check_clock_reset();
     void clear_absolute_times();
-    inline void set_now() {
-        double x = dtime();
-        if (x < (now-60)) {
-            clear_absolute_times();
-        }
-        now = x;
-    }
+    void set_now();
 
 // --------------- cpu_sched.cpp:
     double total_resource_share();
@@ -382,7 +380,10 @@ struct CLIENT_STATE {
     int allowed_project_disk_usage(double&);
     int suspend_tasks(int reason);
     int resume_tasks(int reason=0);
-    void read_global_prefs();
+    void read_global_prefs(
+        const char* fname = GLOBAL_PREFS_FILE_NAME,
+        const char* override_fname = GLOBAL_PREFS_OVERRIDE_FILE
+    );
     int save_global_prefs(char* prefs, char* url, char* sched);
     double available_ram();
     double max_available_ram();
@@ -414,6 +415,7 @@ struct CLIENT_STATE {
 // --------------- cs_statefile.cpp:
     void set_client_state_dirty(const char*);
     int parse_state_file();
+    int parse_state_file_aux(const char*);
     int write_state(MIOFILE&);
     int write_state_file();
     int write_state_file_if_needed();
@@ -470,25 +472,20 @@ struct CLIENT_STATE {
     void compute_nuploading_results();
 
 #ifdef SIM
-    void html_start(bool);
-    void html_rec();
-    void html_end(bool);
-    std::string html_msg;
     double share_violation();
     double monotony();
 
-    void do_client_simulation();
     void handle_completed_results(PROJECT*);
     void get_workload(vector<IP_RESULT>&);
-    void simulate();
     bool simulate_rpc(PROJECT*);
-    void print_project_results(FILE*);
 #endif
 };
 
 extern CLIENT_STATE gstate;
 
 extern bool gpus_usable;
+    // set to false if GPUs not usable because of remote desktop
+    // or login situation (Windows)
 
 // return a random double in the range [MIN,min(e^n,MAX))
 
@@ -497,6 +494,7 @@ extern double calculate_exponential_backoff(
 );
 
 extern void print_suspend_tasks_message(int);
+
 
 //////// TIME-RELATED CONSTANTS ////////////
 

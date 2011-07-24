@@ -47,6 +47,10 @@ struct SCHED_CONFIG {
     char db_user[256];
     char db_passwd[256];
     char db_host[256];
+    char replica_db_name[256];
+    char replica_db_user[256];
+    char replica_db_passwd[256];
+    char replica_db_host[256];
     int shmem_key;
     char project_dir[256];
     char key_dir[256];
@@ -54,8 +58,10 @@ struct SCHED_CONFIG {
     char download_dir[256];
     char upload_url[256];
     char upload_dir[256];
-    int grace_period_hours;
-    int delete_delay_hours;
+    int report_grace_period;
+        // grace period for reporting results;
+        // server's report deadline is client's deadline + this
+    double delete_delay;
     bool msg_to_host;
     bool non_cpu_intensive;
     bool verify_files_on_app_start;
@@ -90,6 +96,7 @@ struct SCHED_CONFIG {
         // user name under which web server runs (default: apache)
     bool enable_assignment;
     bool job_size_matching;
+    bool dont_send_jobs;
 
     //////////// STUFF RELEVANT ONLY TO SCHEDULER FOLLOWS ///////////
 
@@ -112,6 +119,7 @@ struct SCHED_CONFIG {
     vector<regex_t> *locality_scheduling_workunit_file;
     vector<regex_t> *locality_scheduling_sticky_file;
     bool matchmaker;
+    int max_download_urls_per_file;
     int max_ncpus;
     JOB_LIMITS max_jobs_in_progress;
     int max_wus_to_send;            // max results per RPC is this * mult
@@ -136,16 +144,6 @@ struct SCHED_CONFIG {
     double reliable_reduced_delay_bound;
         // Reduce the delay bounds for reliable hosts by this percent
     char replace_download_url_by_timezone[256];
-    int max_download_urls_per_file;
-    int report_max;
-    bool request_time_stats_log;
-    bool resend_lost_results;
-    int sched_debug_level;
-    char sched_lockfile_dir[256];
-    bool send_result_abort;
-    char symstore[256];
-    bool workload_sim;
-        // Do workload simulation in deciding whether to send a result
     bool prefer_primary_platform;
         // When selecting app versions,
         // use the client's primary platform if a version exists.
@@ -153,6 +151,17 @@ struct SCHED_CONFIG {
         // rather than trying the 32-bit version to see if it's faster.
         // Do this only if you're sure that your 64-bit versions are
         // always faster than the corresponding 32-bit versions
+    int report_max;
+    bool request_time_stats_log;
+    bool resend_lost_results;
+    int sched_debug_level;
+    char sched_lockfile_dir[256];
+    bool send_result_abort;
+    char symstore[256];
+    bool user_filter;
+        // send a job to a user only if wu.batch == user.id
+    bool workload_sim;
+        // Do workload simulation in deciding whether to send a result
 
     // scheduler log flags
     //

@@ -20,6 +20,8 @@ require_once("../inc/db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/team.inc");
 
+check_get_args(array("tnow", "ttok"));
+
 db_init();
 $user = get_logged_in_user(true);
 check_tokens($user->authenticator);
@@ -35,5 +37,5 @@ if ($user->teamid == $team->id) {
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_quit_action.php 20582 2010-02-16 01:06:03Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_quit_action.php 23023 2011-02-11 18:32:47Z boincadm $";  //Generated automatically - do not edit
 ?>

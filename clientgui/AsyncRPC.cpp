@@ -662,8 +662,17 @@ int RPCThread::ProcessRPCRequest() {
             *(GLOBAL_PREFS_MASK*)(current_request->arg2)
         );
         break;
-    case RPC_SET_DEBTS:
-        retval = (m_pDoc->rpcClient).set_debts(*(std::vector<PROJECT>*)(current_request->arg1));
+    case RPC_GET_CC_CONFIG:
+         retval = (m_pDoc->rpcClient).get_cc_config(
+            *(CONFIG*)(current_request->arg1),
+            *(LOG_FLAGS*)(current_request->arg2)
+        );
+        break;
+    case RPC_SET_CC_CONFIG:
+         retval = (m_pDoc->rpcClient).set_cc_config(
+            *(CONFIG*)(current_request->arg1),
+            *(LOG_FLAGS*)(current_request->arg2)
+        );
         break;
     default:
         break;
@@ -1003,7 +1012,7 @@ void CMainDocument::HandleCompletedRPC() {
                 exchangeBuf->global_prefs = arg1->global_prefs;
                 exchangeBuf->version_info = arg1->version_info;
                 exchangeBuf->executing_as_daemon = arg1->executing_as_daemon;
-                exchangeBuf->have_cuda = arg1->have_cuda;
+                exchangeBuf->have_nvidia = arg1->have_nvidia;
                 exchangeBuf->have_ati = arg1->have_ati;
             }
             break;

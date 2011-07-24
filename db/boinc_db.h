@@ -83,6 +83,8 @@ struct APP {
         // Approximates (actual FLOPS)/wu.rsc_fpops_est
     bool host_scale_check;
         // use host scaling cautiously, to thwart cherry picking
+    bool homogeneous_app_version;
+        // do all instances of each job using the same app version
 
     int write(FILE*);
     void clear();
@@ -125,8 +127,8 @@ struct APP_VERSION {
         // this is the reciprocal of efficiency
     double pfc_scale;
         // PFC scaling factor for this app (or 0 if not enough data)
-        // The reciprocal of this version's efficiency relative
-        // to that of the most efficient version
+        // The reciprocal of this version's efficiency, averaged over all jobs,
+        // relative to that of the most efficient version
     double expavg_credit;
     double expavg_time;
 
@@ -428,6 +430,9 @@ struct WORKUNIT {
     double rsc_bandwidth_bound;
         // send only to hosts with at least this much download bandwidth
     int fileset_id;
+    int app_version_id;
+        // if app uses homogeneous_app_version,
+        // which version this job is committed to (0 if none)
 
     // the following not used in the DB
     char app_name[256];
@@ -526,6 +531,7 @@ struct RESULT {
     double opaque;                  // project-specific; usually external ID
     int random;                     // determines send order
     int app_version_num;            // version# of app (not core client)
+        // DEPRECATED - THIS DOESN'T DETERMINE VERSION ANY MORE
     int appid;                      // copy of WU's appid
     int exit_status;                // application exit status, if any
     int teamid;
@@ -543,20 +549,12 @@ struct RESULT {
         // -1 anon platform, unknown resource type (relic)
         // -2/-3/-4 anonymous platform (see variants above)
 
-    // the following used by the scheduler, but not stored in the DB
+    // the following used by AQUA; delete when they don't need any more
     //
-    char wu_name[256];
-    double fpops_per_cpu_sec;
     double fpops_cumulative;
-    double intops_per_cpu_sec;
     double intops_cumulative;
-    int units;      // used for granting credit by # of units processed
-    int parse_from_client(FILE*);
-    char platform_name[256];
-    BEST_APP_VERSION* bavp;
 
     void clear();
-    int write_to_client(FILE*);
 };
 
 struct MSG_FROM_HOST {
@@ -609,6 +607,7 @@ struct TRANSITIONER_ITEM {
     int priority;
     int hr_class;
     int batch;
+    int app_version_id;
     int res_id; // This is the RESULT ID
     char res_name[256];
     int res_report_deadline;
@@ -758,7 +757,7 @@ class DB_RESULT : public DB_BASE, public RESULT {
 public:
     DB_RESULT(DB_CONN* p=0);
     int get_id();
-    int mark_as_sent(int old_server_state);
+    int mark_as_sent(int old_server_state, int report_grace_period);
     void db_print(char*);
     void db_print_values(char*);
     void db_parse(MYSQL_ROW &row);

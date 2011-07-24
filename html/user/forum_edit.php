@@ -24,6 +24,8 @@
 require_once('../inc/forum.inc');
 require_once('../inc/bbcode_html.inc');
 
+check_get_args(array("id", "tnow", "ttok"));
+
 $logged_in_user = get_logged_in_user();
 BoincForumPrefs::lookup($logged_in_user);
 
@@ -98,8 +100,8 @@ case 1:
 
 if ($preview == tra("Preview")) {
     $options = null;
-    echo "<div id=\"preview\">\n";
-    echo "<div class=\"header\">".tra("Preview")."</div>\n";
+	echo "<h2>".tra("Preview")."</h2>\n";
+    echo "<div class=pm_preview>";
     echo output_transform($content, $options);
     echo "</div>\n";
 }
@@ -126,12 +128,12 @@ if ($can_edit_title) {
 if ($preview) {
     row2(
         tra("Message").html_info().post_warning(),
-        $bbcode_html."<textarea name=\"content\" rows=\"12\" cols=\"80\">".htmlspecialchars($content)."</textarea>"
+        $bbcode_html."<textarea name=\"content\" rows=\"12\" cols=\"80\" class=\"message_field\">".htmlspecialchars($content)."</textarea>"
     );
 } else {
     row2(
         tra("Message").html_info().post_warning(),
-        $bbcode_html.'<textarea name="content" rows="12" cols="80">'.htmlspecialchars($post->content).'</textarea>'
+        $bbcode_html.'<textarea name="content" rows="12" cols="80" class="message_field">'.htmlspecialchars($post->content).'</textarea>'
     );
 }
 
@@ -151,5 +153,5 @@ echo "</form>";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_edit.php 18487 2009-06-23 17:15:17Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_edit.php 23030 2011-02-14 19:49:30Z boincadm $";  //Generated automatically - do not edit
 ?>

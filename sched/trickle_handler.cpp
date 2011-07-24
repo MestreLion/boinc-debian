@@ -14,7 +14,8 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
-//
+
+
 // trickle_handler - framework for trickle-up message handler
 //
 //  --variety variety
@@ -40,51 +41,9 @@
 #include "sched_config.h"
 #include "sched_util.h"
 #include "sched_msgs.h"
+#include "trickle_handler.h"
 
 char variety[256];
-
-extern int handle_trickle(MSG_FROM_HOST&);
-
-// The following is an example.
-// It echoes whatever the app sent us, as a trickle-down message.
-// Replace it with your own function.
-//
-// Note: you're passed the host ID (in mfh.hostid).
-// From this you can get the HOST and USER records with
-// DB_HOST host;
-// DB_USER user;
-// host.lookup_id(mfh.hostid);
-// user.lookup_id(host.userid);
-//
-// Then you can modify and update these as needed, e.g. to grant credit.
-// (in that case you may also need update the team).
-// See is_valid() in validator.cpp.
-//
-int handle_trickle(MSG_FROM_HOST& mfh) {
-    int retval;
-
-    printf(
-        "got trickle-up \n%s\n\n",
-        mfh.xml
-    );
-    DB_MSG_TO_HOST mth;
-    mth.clear();
-    mth.create_time = time(0);
-    mth.hostid = mfh.hostid;
-    strcpy(mth.variety, mfh.variety);
-    mth.handled = false;
-    sprintf(mth.xml,
-        "<trickle_down>\n"
-        "%s"
-        "</trickle_down>\n",
-        mfh.xml
-    );
-    retval = mth.insert();
-    if (retval) {
-        printf("insert failed %d\n", retval);
-    }
-    return 0;
-}
 
 // make one pass through trickle_ups with handled == 0
 // return true if there were any
@@ -123,7 +82,9 @@ int main_loop(bool one_pass) {
         config.db_name, config.db_host, config.db_user, config.db_passwd
     );
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "boinc_db.open failed: %d\n", retval);
+        log_messages.printf(MSG_CRITICAL,
+            "boinc_db.open failed: %s\n", boincerror(retval)
+        );
         exit(1);
     }
 
@@ -167,14 +128,19 @@ int main(int argc, char** argv) {
             one_pass = true;
         } else if (is_arg(argv[i], "variety")) {
             if (!argv[++i]) {
-                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                log_messages.printf(MSG_CRITICAL,
+                    "%s requires an argument\n\n", argv[--i]
+                );
                 usage(argv[0]);
                 exit(1);
             }
             strcpy(variety, argv[i]);
         } else if (!strcmp(argv[i], "-d")) {
             if (!argv[++i]) {
-                log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
+                log_messages.printf(MSG_CRITICAL,
+                    "%s requires an argument\n\n", argv[--i]
+                    
+                );
                 usage(argv[0]);
                 exit(1);
             }
@@ -188,7 +154,9 @@ int main(int argc, char** argv) {
             usage(argv[0]);
             exit(0);
         } else {
-            log_messages.printf(MSG_CRITICAL, "unknown command line argument: %s\n\n", argv[i]);
+            log_messages.printf(MSG_CRITICAL,
+                "unknown command line argument: %s\n\n", argv[i]
+            );
             usage(argv[0]);
             exit(1);
         }
@@ -211,4 +179,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_560388f67e = "$Id: trickle_handler.cpp 21181 2010-04-15 03:13:56Z davea $";
+const char *BOINC_RCSID_560388f67e = "$Id: trickle_handler.cpp 23118 2011-02-27 00:10:14Z davea $";

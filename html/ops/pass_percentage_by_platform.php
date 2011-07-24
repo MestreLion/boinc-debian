@@ -35,11 +35,14 @@ admin_page_head("Pass percentage by platform");
 
 */
 
-$query_appid = $_GET['appid'];
-$query_nsecs = $_GET['nsecs'];
+$query_appid = get_int('appid');
+$query_nsecs = get_int('nsecs');
 $query_received_time = time() - $query_nsecs;
-$query_all_versions = $_GET['allversions'];
-$query_all_platforms = $_GET['allplatforms'];
+$query_all_versions = get_str('allversions', true);
+$query_all_platforms = get_str('allplatforms', true);
+
+$allplatforms = "";
+$allversions = "";
 
 if ($query_all_platforms == "1") {
   $unknown_platform = "host.os_name";
@@ -199,5 +202,5 @@ echo "</form>\n";
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: pass_percentage_by_platform.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: pass_percentage_by_platform.php 23755 2011-06-20 17:17:56Z davea $";  //Generated automatically - do not edit
 ?>

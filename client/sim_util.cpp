@@ -53,7 +53,7 @@ void HOST_INFO::generate_host_cpid() {}
 
 //int get_connected_state() {return 1;}
 
-void show_message(PROJECT *p, char* msg, int priority, const char*) {
+void show_message(PROJ_AM *p, char* msg, int priority, bool, const char*) {
     const char* x;
     char message[1024];
 
@@ -105,7 +105,7 @@ int ACTIVE_TASK::resume_or_start(bool first_time) {
     set_task_state(PROCESS_EXECUTING, "start");
     char buf[256];
     sprintf(buf, "Starting %s: %.2fG<br>", result->name, flops_left/1e9);
-    gstate.html_msg += buf;
+    html_msg += buf;
     return 0;
 }
 
@@ -122,48 +122,19 @@ int ACTIVE_TASK::init(RESULT* rp) {
     return 0;
 }
 
-void CLIENT_STATE::print_project_results(FILE* f) {
-    for (unsigned int i=0; i<projects.size(); i++) {
-        PROJECT* p = projects[i];
-        p->print_results(f, sim_results);
-    }
-}
-
-
 //////////////// OTHER
 
-// http://www.cs.wm.edu/~va/software/park/rvgs.c
 double NORMAL_DIST::sample() {
-  const double p0 = 0.322232431088;     const double q0 = 0.099348462606;
-  const double p1 = 1.0;                const double q1 = 0.588581570495;
-  const double p2 = 0.342242088547;     const double q2 = 0.531103462366;
-  const double p3 = 0.204231210245e-1;  const double q3 = 0.103537752850;
-  const double p4 = 0.453642210148e-4;  const double q4 = 0.385607006340e-2;
-  double u, t, p, q, z;
-
-  u   = drand();
-  if (u < 0.5)
-    t = sqrt(-2.0 * log(u));
-  else
-    t = sqrt(-2.0 * log(1.0 - u));
-  p   = p0 + t * (p1 + t * (p2 + t * (p3 + t * p4)));
-  q   = q0 + t * (q1 + t * (q2 + t * (q3 + t * q4)));
-  if (u < 0.5)
-    z = (p / q) - t;
-  else
-    z = t - (p / q);
-  return (mean + stdev * z);
-
+    if (!std_dev) return mean;
+    return (mean + std_dev * rand_normal());
 }
 
 inline double exponential(double mean) {
     return -mean*log(1-drand());
 }
 
-bool RANDOM_PROCESS::sample(double t) {
+bool RANDOM_PROCESS::sample(double diff) {
     if (frac==1) return true;
-    double diff = t-last_time;
-    last_time = t;
     time_left -= diff;
     if (time_left < 0) {
         if (value) {
@@ -174,44 +145,33 @@ bool RANDOM_PROCESS::sample(double t) {
             value = true;
         }
     }
+#if 0
     msg_printf(0, MSG_INFO,
-        "value: %d lambda: %f t %f time_left %f",
-        value, lambda, t, time_left
+        "value: %d lambda: %f time_left %f",
+        value, lambda, time_left
     );
+#endif
     return value;
 }
 
 RANDOM_PROCESS::RANDOM_PROCESS() {
     frac = 1;
+    last_time = 0;
 }
 
-void RANDOM_PROCESS::init(double st) {
-    last_time = st;
+void RANDOM_PROCESS::init(double f, double l) {
+    frac = f;
+    lambda = l;
+    last_time = 0;
     value = true;
     time_left = exponential(lambda);
     off_lambda = lambda/frac - lambda;
 }
 
-int NORMAL_DIST::parse(XML_PARSER& xp, const char* end_tag) {
-    char tag[256];
-    bool is_tag;
-    while(!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) return ERR_XML_PARSE;
-        if (xp.parse_double(tag, "mean", mean)) continue;
-        else if (xp.parse_double(tag, "stdev", stdev)) continue;
-        else if (!strcmp(tag, end_tag)) return 0;
-        else {
-            printf("unrecognized: %s\n", tag);
-            return ERR_XML_PARSE;
-        }
-    }
-    return ERR_XML_PARSE;
-}
-
 int UNIFORM_DIST::parse(XML_PARSER& xp, const char* end_tag) {
     char tag[256];
     bool is_tag;
-    while(!xp.get(tag, sizeof(tag), is_tag)) {
+    while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) return ERR_XML_PARSE;
         if (xp.parse_double(tag, "lo", lo)) continue;
         else if (xp.parse_double(tag, "hi", hi)) continue;
@@ -224,13 +184,13 @@ int UNIFORM_DIST::parse(XML_PARSER& xp, const char* end_tag) {
     return ERR_XML_PARSE;
 }
 
-int RANDOM_PROCESS::parse(XML_PARSER& xp, const char* end_tag) {
+int NORMAL_DIST::parse(XML_PARSER& xp, const char* end_tag) {
     char tag[256];
     bool is_tag;
     while(!xp.get(tag, sizeof(tag), is_tag)) {
         if (!is_tag) return ERR_XML_PARSE;
-        if (xp.parse_double(tag, "frac", frac)) continue;
-        else if (xp.parse_double(tag, "lambda", lambda)) continue;
+        if (xp.parse_double(tag, "mean", mean)) continue;
+        else if (xp.parse_double(tag, "std_dev", std_dev)) continue;
         else if (!strcmp(tag, end_tag)) return 0;
         else {
             printf("unrecognized: %s\n", tag);
@@ -239,4 +199,3 @@ int RANDOM_PROCESS::parse(XML_PARSER& xp, const char* end_tag) {
     }
     return ERR_XML_PARSE;
 }
-

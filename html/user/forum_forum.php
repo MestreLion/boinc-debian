@@ -23,6 +23,8 @@ require_once('../inc/time.inc');
 require_once('../inc/forum.inc');
 require_once('../inc/pm.inc');
 
+check_get_args(array("id", "sort", "start"));
+
 $id = get_int("id");
 $sort_style = get_int("sort", true);
 $start = get_int("start", true);
@@ -64,7 +66,7 @@ if (!$sort_style) {
 
 switch ($forum->parent_type) {
 case 0:
-    $category = BoincCategory::lookup_id($forum->category); 
+    $category = BoincCategory::lookup_id($forum->category);
     if ($category->is_helpdesk){
         page_head(tra("Questions and Answers").' : '.$forum->title);
         echo '<link href="forum_help_desk.php" rel="up" title="Forum Index">';
@@ -76,7 +78,7 @@ case 0:
     show_forum_title($category, $forum, NULL);
     break;
 case 1:
-    $team = BoincTeam::lookup_id($forum->category); 
+    $team = BoincTeam::lookup_id($forum->category);
     page_head("Team message board for <a href=team_display.php?teamid=$team->id>$team->name</a>");
     show_forum_header($user);
     show_team_forum_title($forum);
@@ -86,7 +88,7 @@ case 1:
 echo '
     <p>
     <form action="forum_forum.php" method="get">
-    <table width="100%" cellspacing="0" cellpadding="0">
+    <table width="100%" cellspacing="0" cellpadding="0" class="forum_toplinks">
     <tr valign="top">
     <td colspan=2>
 ';
@@ -127,13 +129,20 @@ page_tail();
 //
 function show_forum($forum, $start, $sort_style, $user) {
     $gotoStr = "";
-    $nav = show_page_nav($forum, $start);
+    $nav = show_page_nav($forum, $sort_style, $start);
     if ($nav) {
         $gotoStr = "<div align=\"right\">$nav</div><br>";
     }
     echo $gotoStr; // Display the navbar
-    start_forum_table(array("", tra("Threads"), tra("Posts"), tra("Author"), tra("Views"), "<nobr>".tra("Last post")."</nobr>"));
-    
+    start_forum_table(array(
+        "",
+        tra("Threads"),
+        tra("Posts"),
+        tra("Author"),
+        tra("Views"),
+        "<nobr>".tra("Last post")."</nobr>")
+    );
+
     $sticky_first = !$user || !$user->prefs->ignore_sticky_posts;
 
     // Show hidden threads if logged in user is a moderator
@@ -147,27 +156,26 @@ function show_forum($forum, $start, $sort_style, $user) {
     if ($user) {
         $subs = BoincSubscription::enum("userid=$user->id");
     }
-    
+
     // Run through the list of threads, displaying each of them
     $n = 0; $i=0;
     foreach ($threads as $thread) {
         $owner = BoincUser::lookup_id($thread->owner);
         $unread = thread_is_unread($user, $thread);
-        
+
         //if ($thread->status==1){
             // This is an answered helpdesk thread
         if ($user && is_subscribed($thread, $subs)) {
             echo '<tr class="row_hd'.$n.'">';
         } else {
             // Just a standard thread.
-            echo '<tr class="row'.$n.'">';    
+            echo '<tr class="row'.$n.'">';
         }
-        
-        echo "<td width=\"1%\" align=\"right\"><nobr>";
+
+        echo "<td width=\"1%\" class=\"threadicon\"><nobr>";
         if ($thread->hidden) {
-            echo "[hidden]";
-        }
-        if ($unread) {
+            show_image(IMAGE_HIDDEN, "This thread is hidden", "hidden");
+        } else if ($unread) {
             if ($thread->sticky) {
                 if ($thread->locked) {
                     show_image(NEW_IMAGE_STICKY_LOCKED, "This thread is sticky and locked, and you haven't read it yet", "sticky/locked/unread");
@@ -191,6 +199,8 @@ function show_forum($forum, $start, $sort_style, $user) {
             } else {
                 if ($thread->locked) {
                     show_image(IMAGE_LOCKED, "This thread is locked", "locked");
+                } else {
+                    show_image(IMAGE_POST, "You read this thread", "read");
                 }
             }
         }
@@ -205,10 +215,10 @@ function show_forum($forum, $start, $sort_style, $user) {
         $n = ($n+1)%2;
 
         echo '
-            <td>'.($thread->replies+1).'</td>
+            <td class="numbers">'.($thread->replies+1).'</td>
             <td>'.user_links($owner).'</td>
-            <td>'.$thread->views.'</td>
-            <td class=\"lastpost\">'.time_diff_str($thread->timestamp, time()).'</td>
+            <td class="numbers">'.$thread->views.'</td>
+            <td class="lastpost">'.time_diff_str($thread->timestamp, time()).'</td>
             </tr>
         ';
         flush();

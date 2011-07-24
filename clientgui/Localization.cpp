@@ -158,4 +158,3 @@ CLocalization::CLocalization() {
 
 }
 
-const char *BOINC_RCSID_4632804e37="$Id: Localization.cpp 15762 2008-08-06 18:36:30Z davea $";

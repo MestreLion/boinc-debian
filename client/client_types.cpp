@@ -65,17 +65,13 @@ void PROJECT::init() {
     project_specific_prefs = "";
     gui_urls = "";
     resource_share = 100;
-    no_cpu_pref = false;
-    no_cuda_pref = false;
-    no_ati_pref = false;
-    no_cpu_apps = false;
-    no_cuda_apps = false;
-    no_ati_apps = false;
-    no_cpu_ams = false;
-    no_cuda_ams = false;
-    no_ati_ams = false;
-    cuda_defer_sched = false;
-    ati_defer_sched = false;
+    for (int i=0; i<MAX_RSC; i++) {
+        no_rsc_pref[i] = false;
+        no_rsc_apps[i] = false;
+        no_rsc_ams[i] = false;
+        rsc_defer_sched[i] = false;
+    }
+    exclude_gpus.clear();
     strcpy(host_venue, "");
     using_venue_specific_prefs = false;
     scheduler_urls.clear();
@@ -100,7 +96,7 @@ void PROJECT::init() {
     nrpc_failures = 0;
     master_fetch_failures = 0;
     min_rpc_time = 0;
-	possibly_backed_off = true;
+    possibly_backed_off = true;
     master_url_fetch_pending = false;
     sched_rpc_pending = 0;
     next_rpc_time = 0;
@@ -110,7 +106,6 @@ void PROJECT::init() {
     non_cpu_intensive = false;
     verify_files_on_app_start = false;
     pwf.reset(this);
-    send_file_list = false;
     send_time_stats_log = 0;
     send_job_log = 0;
     send_full_workload = false;
@@ -145,13 +140,50 @@ void PROJECT::init() {
 #endif
 }
 
+static void handle_no_rsc_ams(PROJECT* p, const char* name) {
+    int i = rsc_index(name);
+    if (i < 0) return;
+    p->no_rsc_ams[i] = true;
+}
+
+static void handle_no_rsc_pref(PROJECT* p, const char* name) {
+    int i = rsc_index(name);
+    if (i<0) return;
+    p->no_rsc_pref[i] = true;
+}
+
+static void handle_no_rsc_apps(PROJECT* p, const char* name) {
+    int i = rsc_index(name);
+    if (i < 0) return;
+    p->no_rsc_apps[i] = true;
+}
+
+static bool parse_rsc_param(MIOFILE& in, const char* end_tag, int& rsc_type, double& value) {
+    char buf[256], name[256];
+    bool val_found = false;
+
+    rsc_type = -1;
+    while (in.fgets(buf, 256)) {
+        if (match_tag(buf, end_tag)) {
+            return (rsc_type > 0 && val_found);
+        }
+        if (parse_str(buf, "<name>", name, sizeof(name))) {
+            rsc_type = rsc_index(name);
+            continue;
+        }
+        if (parse_double(buf, "<rsc_type>", value)) {
+            val_found = true;
+        }
+    }
+    return false;
+}
 // parse project fields from client_state.xml
 //
 int PROJECT::parse_state(MIOFILE& in) {
     char buf[256];
     std::string sched_url;
     string str1, str2;
-    int retval;
+    int retval, rt;
     double x;
     bool btemp;
 
@@ -203,7 +235,6 @@ int PROJECT::parse_state(MIOFILE& in) {
         if (parse_int(buf, "<sched_rpc_pending>", sched_rpc_pending)) continue;
         if (parse_double(buf, "<next_rpc_time>", next_rpc_time)) continue;
         if (parse_bool(buf, "trickle_up_pending", trickle_up_pending)) continue;
-        if (parse_bool(buf, "send_file_list", send_file_list)) continue;
         if (parse_int(buf, "<send_time_stats_log>", send_time_stats_log)) continue;
         if (parse_int(buf, "<send_job_log>", send_job_log)) continue;
         if (parse_bool(buf, "send_full_workload", send_full_workload)) continue;
@@ -213,42 +244,85 @@ int PROJECT::parse_state(MIOFILE& in) {
         if (parse_bool(buf, "dont_request_more_work", dont_request_more_work)) continue;
         if (parse_bool(buf, "detach_when_done", detach_when_done)) continue;
         if (parse_bool(buf, "ended", ended)) continue;
-#ifdef USE_REC
+//#ifdef USE_REC
         if (parse_double(buf, "<rec>", pwf.rec)) continue;
         if (parse_double(buf, "<rec_time>", pwf.rec_time)) continue;
-#else
-        if (parse_double(buf, "<short_term_debt>", cpu_pwf.short_term_debt)) continue;
-        if (parse_double(buf, "<long_term_debt>", cpu_pwf.long_term_debt)) continue;
-#endif
-        if (parse_double(buf, "<cpu_backoff_interval>", cpu_pwf.backoff_interval)) continue;
-        if (parse_double(buf, "<cpu_backoff_time>", cpu_pwf.backoff_time)) {
-            if (cpu_pwf.backoff_time > gstate.now + 28*SECONDS_PER_DAY) {
-                cpu_pwf.backoff_time = gstate.now + 28*SECONDS_PER_DAY;
+//#else
+        if (parse_double(buf, "<short_term_debt>", rsc_pwf[0].short_term_debt)) continue;
+        if (parse_double(buf, "<long_term_debt>", rsc_pwf[0].long_term_debt)) continue;
+//#endif
+        if (parse_double(buf, "<cpu_backoff_interval>", rsc_pwf[0].backoff_interval)) continue;
+        if (parse_double(buf, "<cpu_backoff_time>", rsc_pwf[0].backoff_time)) {
+            if (rsc_pwf[0].backoff_time > gstate.now + 28*SECONDS_PER_DAY) {
+                rsc_pwf[0].backoff_time = gstate.now + 28*SECONDS_PER_DAY;
             }
             continue;
         }
-#ifndef USE_REC
-        if (parse_double(buf, "<cuda_short_term_debt>", cuda_pwf.short_term_debt)) continue;
-        if (parse_double(buf, "<cuda_debt>", cuda_pwf.long_term_debt)) continue;
-#endif
-        if (parse_double(buf, "<cuda_backoff_interval>", cuda_pwf.backoff_interval)) continue;
-        if (parse_double(buf, "<cuda_backoff_time>", cuda_pwf.backoff_time)) continue;
-#ifndef USE_REC
-        if (parse_double(buf, "<ati_short_term_debt>", ati_pwf.short_term_debt)) continue;
-        if (parse_double(buf, "<ati_debt>", ati_pwf.long_term_debt)) continue;
-#endif
-        if (parse_double(buf, "<ati_backoff_interval>", ati_pwf.backoff_interval)) continue;
-        if (parse_double(buf, "<ati_backoff_time>", ati_pwf.backoff_time)) continue;
-        if (parse_double(buf, "<resource_share>", x)) continue;
+//#ifndef USE_REC
+        if (match_tag(buf, "<rsc_short_term_debt>")) {
+            if (parse_rsc_param(in, "</rsc_short_term_debt>", rt, x)) {
+                rsc_pwf[rt].short_term_debt = x;
+            }
+            continue;
+        }
+        if (match_tag(buf, "<rsc_long_term_debt>")) {
+            if (parse_rsc_param(in, "</rsc_long_term_debt>", rt, x)) {
+                rsc_pwf[rt].long_term_debt = x;
+            }
+            continue;
+        }
+//#endif
+        if (match_tag(buf, "<rsc_backoff_interval>")) {
+            if (parse_rsc_param(in, "</rsc_backoff_interval>", rt, x)) {
+                rsc_pwf[rt].backoff_interval = x;
+            }
+            continue;
+        }
+        if (match_tag(buf, "<rsc_backoff_time>")) {
+            if (parse_rsc_param(in, "</rsc_backoff_time>", rt, x)) {
+                rsc_pwf[rt].backoff_time = x;
+            }
+            continue;
+        }
+        if (parse_double(buf, "<resource_share>", resource_share)) continue;
             // not authoritative
         if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
         if (parse_bool(buf, "attached_via_acct_mgr", attached_via_acct_mgr)) continue;
-        if (parse_bool(buf, "no_cpu_apps", no_cpu_apps)) continue;
-        if (parse_bool(buf, "no_cuda_apps", no_cuda_apps)) continue;
-        if (parse_bool(buf, "no_ati_apps", no_ati_apps)) continue;
-        if (parse_bool(buf, "no_cpu_ams", no_cpu_ams)) continue;
-        if (parse_bool(buf, "no_cuda_ams", no_cuda_ams)) continue;
-        if (parse_bool(buf, "no_ati_ams", no_ati_ams)) continue;
+        if (parse_bool(buf, "no_cpu_apps", btemp)) {
+            if (btemp) handle_no_rsc_apps(this, "CPU");
+            continue;
+        }
+        if (parse_bool(buf, "no_cuda_apps", btemp)) {
+            if (btemp) handle_no_rsc_apps(this, "NVIDIA");
+            continue;
+        }
+        if (parse_bool(buf, "no_ati_apps", btemp)) {
+            if (btemp) handle_no_rsc_apps(this, "ATI");
+            continue;
+        }
+        if (parse_str(buf, "<no_rsc_apps>", buf, sizeof(buf))) {
+            handle_no_rsc_apps(this, buf);
+            continue;
+        }
+        if (parse_bool(buf, "no_cpu_ams", btemp)) {
+            if (btemp) handle_no_rsc_ams(this, "CPU");
+            continue;
+        }
+        if (parse_bool(buf, "no_cuda_ams", btemp)) {
+            if (btemp) handle_no_rsc_ams(this, "NVIDIA");
+            continue;
+        }
+        if (parse_bool(buf, "no_ati_ams", btemp)) {
+            if (btemp) handle_no_rsc_ams(this, "ATI");
+            continue;
+        }
+        if (parse_str(buf, "<no_rsc_ams>", buf, sizeof(buf))) {
+            handle_no_rsc_ams(this, buf);
+            continue;
+        }
+        if (parse_str(buf, "<no_rsc_pref>", buf, sizeof(buf))) {
+            handle_no_rsc_pref(this, buf);
+        }
 
             // backwards compat - old state files had ams_resource_share = 0
         if (parse_double(buf, "<ams_resource_share_new>", ams_resource_share)) continue;
@@ -304,39 +378,18 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         "    <master_fetch_failures>%d</master_fetch_failures>\n"
         "    <min_rpc_time>%f</min_rpc_time>\n"
         "    <next_rpc_time>%f</next_rpc_time>\n"
-#ifdef USE_REC
+//#ifdef USE_REC
         "    <rec>%f</rec>\n"
         "    <rec_time>%f</rec_time>\n"
-#else
-        "    <short_term_debt>%f</short_term_debt>\n"
-        "    <long_term_debt>%f</long_term_debt>\n"
-#endif
-        "    <cpu_backoff_interval>%f</cpu_backoff_interval>\n"
-        "    <cpu_backoff_time>%f</cpu_backoff_time>\n"
-#ifndef USE_REC
-        "    <cuda_short_term_debt>%f</cuda_short_term_debt>\n"
-        "    <cuda_debt>%f</cuda_debt>\n"
-#endif
-        "    <cuda_backoff_interval>%f</cuda_backoff_interval>\n"
-        "    <cuda_backoff_time>%f</cuda_backoff_time>\n"
-#ifndef USE_REC
-        "    <ati_short_term_debt>%f</ati_short_term_debt>\n"
-        "    <ati_debt>%f</ati_debt>\n"
-#endif
-        "    <ati_backoff_interval>%f</ati_backoff_interval>\n"
-        "    <ati_backoff_time>%f</ati_backoff_time>\n"
+//#endif
+
         "    <resource_share>%f</resource_share>\n"
         "    <duration_correction_factor>%f</duration_correction_factor>\n"
-		"    <sched_rpc_pending>%d</sched_rpc_pending>\n"
-		"    <send_time_stats_log>%d</send_time_stats_log>\n"
-		"    <send_job_log>%d</send_job_log>\n"
-		"    <no_cpu_apps>%d</no_cpu_apps>\n"
-		"    <no_cuda_apps>%d</no_cuda_apps>\n"
-		"    <no_ati_apps>%d</no_ati_apps>\n"
-		"    <no_cpu_ams>%d</no_cpu_ams>\n"
-		"    <no_cuda_ams>%d</no_cuda_ams>\n"
-		"    <no_ati_ams>%d</no_ati_ams>\n"
-        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+        "    <sched_rpc_pending>%d</sched_rpc_pending>\n"
+        "    <send_time_stats_log>%d</send_time_stats_log>\n"
+        "    <send_job_log>%d</send_job_log>\n"
+        "    <sched_priority>%f</sched_priority>\n"
+        "%s%s%s%s%s%s%s%s%s%s%s%s%s",
         master_url,
         project_name,
         symstore,
@@ -360,42 +413,19 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         master_fetch_failures,
         min_rpc_time,
         next_rpc_time,
-#ifdef USE_REC
+//#ifdef USE_REC
         pwf.rec,
         pwf.rec_time,
-#else
-        cpu_pwf.short_term_debt,
-        cpu_pwf.long_term_debt,
-#endif
-        cpu_pwf.backoff_interval,
-        cpu_pwf.backoff_time,
-#ifndef USE_REC
-        cuda_pwf.short_term_debt,
-        cuda_pwf.long_term_debt,
-#endif
-        cuda_pwf.backoff_interval,
-        cuda_pwf.backoff_time,
-#ifndef USE_REC
-        ati_pwf.short_term_debt,
-        ati_pwf.long_term_debt,
-#endif
-        ati_pwf.backoff_interval,
-        ati_pwf.backoff_time,
+//#else
         resource_share,
         duration_correction_factor,
-		sched_rpc_pending,
+        sched_rpc_pending,
         send_time_stats_log,
         send_job_log,
-        no_cpu_apps?1:0,
-        no_cuda_apps?1:0,
-        no_ati_apps?1:0,
-        no_cpu_ams?1:0,
-        no_cuda_ams?1:0,
-        no_ati_ams?1:0,
+        project_priority(this),
         anonymous_platform?"    <anonymous_platform/>\n":"",
         master_url_fetch_pending?"    <master_url_fetch_pending/>\n":"",
         trickle_up_pending?"    <trickle_up_pending/>\n":"",
-        send_file_list?"    <send_file_list/>\n":"",
         send_full_workload?"    <send_full_workload/>\n":"",
         non_cpu_intensive?"    <non_cpu_intensive/>\n":"",
         verify_files_on_app_start?"    <verify_files_on_app_start/>\n":"",
@@ -407,6 +437,43 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         (this == gstate.scheduler_op->cur_proj)?"   <scheduler_rpc_in_progress/>\n":"",
         use_symlinks?"    <use_symlinks/>\n":""
     );
+    for (int j=0; j<coprocs.n_rsc; j++) {
+        out.printf(
+//#ifndef USE_REC
+            "    <rsc_short_term_debt>\n"
+            "        <name>%s</name>\n"
+            "        <value>%f</value>\n"
+            "    </rsc_short_term_debt>\n"
+            "    <rsc_long_term_debt>\n"
+            "        <name>%s</name>\n"
+            "        <value>%f</value>\n"
+            "    </rsc_long_term_debt>\n"
+//#endif
+            "    <rsc_backoff_time>\n"
+            "        <name>%s</name>\n"
+            "        <value>%f</value>\n"
+            "    </rsc_backoff_time>\n"
+            "    <rsc_backoff_interval>\n"
+            "        <name>%s</name>\n"
+            "        <value>%f</value>\n"
+            "    </rsc_backoff_interval>\n",
+//#ifndef USE_REC
+            rsc_name(j), rsc_pwf[j].short_term_debt,
+            rsc_name(j), rsc_pwf[j].long_term_debt,
+//#endif
+            rsc_name(j), rsc_pwf[j].backoff_interval,
+            rsc_name(j), rsc_pwf[j].backoff_time
+        );
+        if (no_rsc_ams[j]) {
+            out.printf("    <no_rsc_ams>%s</no_rsc_ams>\n", rsc_name(j));
+        }
+        if (no_rsc_apps[j]) {
+            out.printf("    <no_rsc_apps>%s</no_rsc_apps>\n", rsc_name(j));
+        }
+        if (no_rsc_pref[j]) {
+            out.printf("    <no_rsc_pref>%s</no_rsc_pref>\n", rsc_name(j));
+        }
+    }
     if (ams_resource_share >= 0) {
         out.printf("    <ams_resource_share_new>%f</ams_resource_share_new>\n",
             ams_resource_share
@@ -432,9 +499,6 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
                 upload_backoff.next_xfer_time - gstate.now
             );
         }
-        if (no_cpu_pref) out.printf("    <no_cpu_pref/>\n");
-        if (no_cuda_pref) out.printf("    <no_cuda_pref/>\n");
-        if (no_ati_pref) out.printf("    <no_ati_pref/>\n");
         if (strlen(host_venue)) {
             out.printf("    <venue>%s</venue>\n", host_venue);
         }
@@ -487,11 +551,13 @@ void PROJECT::copy_state_fields(PROJECT& p) {
     sched_rpc_pending = p.sched_rpc_pending;
     trickle_up_pending = p.trickle_up_pending;
     safe_strcpy(code_sign_key, p.code_sign_key);
-    cpu_pwf = p.cpu_pwf;
-    cuda_pwf = p.cuda_pwf;
-    ati_pwf = p.ati_pwf;
+    for (int i=0; i<MAX_RSC; i++) {
+        rsc_pwf[i] = p.rsc_pwf[i];
+        no_rsc_pref[i] = p.no_rsc_pref[i];
+        no_rsc_apps[i] = p.no_rsc_apps[i];
+        no_rsc_ams[i] = p.no_rsc_ams[i];
+    }
     pwf = p.pwf;
-    send_file_list = p.send_file_list;
     send_full_workload = p.send_full_workload;
     send_time_stats_log = p.send_time_stats_log;
     send_job_log = p.send_job_log;
@@ -626,7 +692,6 @@ int PROJECT::parse_project_files(MIOFILE& in, bool delete_existing_symlinks) {
     unsigned int i;
     char project_dir[256], path[256];
 
-    
     if (delete_existing_symlinks) {
         // delete current sym links.
         // This is done when parsing scheduler reply,
@@ -663,7 +728,7 @@ int PROJECT::parse_project_files(MIOFILE& in, bool delete_existing_symlinks) {
 // and flag FILE_INFOs as being project files.
 //
 void PROJECT::link_project_files(bool recreate_symlink_files) {
-	FILE_INFO* fip;
+    FILE_INFO* fip;
     vector<FILE_REF>::iterator fref_iter;
     fref_iter = project_files.begin();
     while (fref_iter != project_files.end()) {
@@ -681,14 +746,14 @@ void PROJECT::link_project_files(bool recreate_symlink_files) {
         fref_iter++;
     }
 
-	if (recreate_symlink_files) {
-		for (unsigned i=0; i<gstate.file_infos.size(); i++) {
-			fip = gstate.file_infos[i];
-			if (fip->project == this && fip->is_project_file && fip->status == FILE_PRESENT) {
-				write_symlink_for_project_file(fip);
-			}
-		}
-	}
+    if (recreate_symlink_files) {
+        for (unsigned i=0; i<gstate.file_infos.size(); i++) {
+            fip = gstate.file_infos[i];
+            if (fip->project == this && fip->is_project_file && fip->status == FILE_PRESENT) {
+                write_symlink_for_project_file(fip);
+            }
+        }
+    }
 }
 
 void PROJECT::write_project_files(MIOFILE& f) {
@@ -800,13 +865,11 @@ FILE_INFO::FILE_INFO() {
     uploaded = false;
     upload_when_present = false;
     sticky = false;
-    marked_for_delete = false;
-    report_on_rpc = false;
     gzip_when_done = false;
     signature_required = false;
     is_user_file = false;
     is_project_file = false;
-	is_auto_update_file = false;
+    is_auto_update_file = false;
     pers_file_xfer = NULL;
     result = NULL;
     project = NULL;
@@ -838,7 +901,7 @@ int FILE_INFO::set_permissions() {
     get_pathname(this, pathname, sizeof(pathname));
 
     if (g_use_sandbox) {
-        // give exec permissions for user, group and others but give 
+        // give exec permissions for user, group and others but give
         // read permissions only for user and group to protect account keys
         retval = set_to_project_group(pathname);
         if (retval) return retval;
@@ -940,8 +1003,6 @@ int FILE_INFO::parse(MIOFILE& in, bool from_server) {
         if (parse_bool(buf, "uploaded", uploaded)) continue;
         if (parse_bool(buf, "upload_when_present", upload_when_present)) continue;
         if (parse_bool(buf, "sticky", sticky)) continue;
-        if (parse_bool(buf, "marked_for_delete", marked_for_delete)) continue;
-        if (parse_bool(buf, "report_on_rpc", report_on_rpc)) continue;
         if (parse_bool(buf, "gzip_when_done", gzip_when_done)) continue;
         if (parse_bool(buf, "signature_required", signature_required)) continue;
         if (parse_bool(buf, "is_project_file", is_project_file)) continue;
@@ -1018,8 +1079,6 @@ int FILE_INFO::write(MIOFILE& out, bool to_server) {
         if (uploaded) out.printf("    <uploaded/>\n");
         if (upload_when_present) out.printf("    <upload_when_present/>\n");
         if (sticky) out.printf("    <sticky/>\n");
-        if (marked_for_delete) out.printf("    <marked_for_delete/>\n");
-        if (report_on_rpc) out.printf("    <report_on_rpc/>\n");
         if (gzip_when_done) out.printf("    <gzip_when_done/>\n");
         if (signature_required) out.printf("    <signature_required/>\n");
         if (is_user_file) out.printf("    <is_user_file/>\n");
@@ -1070,7 +1129,6 @@ int FILE_INFO::write_gui(MIOFILE& out) {
     if (uploaded) out.printf("    <uploaded/>\n");
     if (upload_when_present) out.printf("    <upload_when_present/>\n");
     if (sticky) out.printf("    <sticky/>\n");
-    if (marked_for_delete) out.printf("    <marked_for_delete/>\n");
 
     if (pers_file_xfer) {
         pers_file_xfer->write(out);
@@ -1248,12 +1306,16 @@ int APP_VERSION::parse(MIOFILE& in) {
     strcpy(cmdline, "");
     avg_ncpus = 1;
     max_ncpus = 1;
-    ncudas = 0;
-    natis = 0;
+    gpu_usage.rsc_type = 0;
+    gpu_usage.usage = 0;
     gpu_ram = 0;
     app = NULL;
     project = NULL;
     flops = gstate.host_info.p_fpops;
+    missing_coproc = false;
+    strcpy(missing_coproc_name, "");
+    dont_throttle = false;
+
     while (in.fgets(buf, 256)) {
         if (match_tag(buf, "</app_version>")) return 0;
         if (parse_str(buf, "<app_name>", app_name, sizeof(app_name))) continue;
@@ -1275,17 +1337,21 @@ int APP_VERSION::parse(MIOFILE& in) {
             COPROC_REQ cp;
             int retval = cp.parse(in);
             if (!retval) {
-                if (!strcmp(cp.type, "CUDA")) {
-                    ncudas = cp.count;
-                }
-                if (!strcmp(cp.type, "ATI")) {
-                    natis = cp.count;
+                int rt = rsc_index(cp.type);
+                if (rt > 0) {
+                    gpu_usage.rsc_type = rt;
+                    gpu_usage.usage = cp.count;
+                } else {
+                    missing_coproc = true;
+                    missing_coproc_usage = cp.count;
+                    strcpy(missing_coproc_name, cp.type);
                 }
             } else {
                 msg_printf(0, MSG_INTERNAL_ERROR, "Error parsing <coproc>");
             }
             continue;
         }
+        if (parse_bool(buf, "dont_throttle", dont_throttle)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
                 "[unparsed_xml] APP_VERSION::parse(): unrecognized: %s\n", buf
@@ -1329,28 +1395,35 @@ int APP_VERSION::write(MIOFILE& out, bool write_file_info) {
             if (retval) return retval;
         }
     }
-    if (ncudas) {
+    if (gpu_usage.rsc_type) {
         out.printf(
             "    <coproc>\n"
-            "        <type>CUDA</type>\n"
+            "        <type>%s</type>\n"
             "        <count>%f</count>\n"
             "    </coproc>\n",
-            ncudas
+            rsc_name(gpu_usage.rsc_type),
+            gpu_usage.usage
         );
     }
-    if (natis) {
+    if (missing_coproc) {
         out.printf(
             "    <coproc>\n"
-            "        <type>ATI</type>\n"
+            "        <type>%s</type>\n"
             "        <count>%f</count>\n"
             "    </coproc>\n",
-            natis
+            missing_coproc_name,
+            missing_coproc_usage
         );
     }
     if (gpu_ram) {
         out.printf(
             "    <gpu_ram>%f</gpu_ram>\n",
             gpu_ram
+        );
+    }
+    if (dont_throttle) {
+        out.printf(
+            "    <dont_throttle/>\n"
         );
     }
 
@@ -1387,16 +1460,6 @@ void APP_VERSION::get_file_errors(string& str) {
     }
 }
 
-bool APP_VERSION::missing_coproc() {
-    if (ncudas && gstate.host_info.coprocs.cuda.count==0) {
-        return true;
-    }
-    if (natis && gstate.host_info.coprocs.ati.count==0) {
-        return true;
-    }
-    return false;
-}
-
 void APP_VERSION::clear_errors() {
     int x;
     unsigned int i;
@@ -1423,15 +1486,15 @@ int FILE_REF::parse(MIOFILE& in) {
     strcpy(open_name, "");
     main_program = false;
     copy_file = false;
-	optional = false;
+    optional = false;
     while (in.fgets(buf, 256)) {
         if (match_tag(buf, "</file_ref>")) return 0;
         if (parse_str(buf, "<file_name>", file_name, sizeof(file_name))) continue;
         if (parse_str(buf, "<open_name>", open_name, sizeof(open_name))) continue;
         if (parse_bool(buf, "main_program", main_program)) continue;
         if (parse_bool(buf, "copy_file", copy_file)) continue;
-		if (parse_bool(buf, "optional", optional)) continue;
-		if (parse_bool(buf, "no_validate", temp)) continue;
+        if (parse_bool(buf, "optional", optional)) continue;
+        if (parse_bool(buf, "no_validate", temp)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
                 "[unparsed_xml] FILE_REF::parse(): unrecognized: %s\n", buf
@@ -1517,7 +1580,9 @@ int WORKUNIT::parse(MIOFILE& in) {
         if (parse_double(buf, "<rsc_disk_bound>", rsc_disk_bound)) continue;
         if (match_tag(buf, "<file_ref>")) {
             file_ref.parse(in);
+#ifndef SIM
             input_files.push_back(file_ref);
+#endif
             continue;
         }
         // unused stuff
@@ -1721,7 +1786,9 @@ int RESULT::parse_state(MIOFILE& in) {
         }
         if (match_tag(buf, "<file_ref>")) {
             file_ref.parse(in);
+#ifndef SIM
             output_files.push_back(file_ref);
+#endif
             continue;
         }
         if (parse_double(buf, "<final_cpu_time>", final_cpu_time)) continue;
@@ -1903,16 +1970,16 @@ int RESULT::write_gui(MIOFILE& out) {
     if (!strlen(resources)) {
         // only need to compute this string once
         //
-        if (avp->ncudas) {
+        if (avp->gpu_usage.rsc_type) {
             sprintf(resources,
-                "%.2f CPUs + %.2f NVIDIA GPUs",
-                avp->avg_ncpus, avp->ncudas
+                "%.2f CPUs + %.2f %s GPUs",
+                avp->avg_ncpus,
+                avp->gpu_usage.usage,
+                rsc_name(avp->gpu_usage.rsc_type)
             );
-        } else if (avp->natis) {
-            sprintf(resources,
-                "%.2f CPUs + %.2f ATI GPUs",
-                avp->avg_ncpus, avp->natis
-                
+        } else if (avp->missing_coproc) {
+            sprintf(resources, "%.2f CPUs + %s GPU (missing)",
+                avp->avg_ncpus, avp->missing_coproc_name
             );
         } else if (!project->non_cpu_intensive && (avp->avg_ncpus != 1)) {
             sprintf(resources, "%.2f CPUs", avp->avg_ncpus);
@@ -1924,10 +1991,11 @@ int RESULT::write_gui(MIOFILE& out) {
         char buf[256];
         strcpy(buf, "");
         if (atp && atp->task_state() == PROCESS_EXECUTING) {
-            if (avp->ncudas && gstate.host_info.coprocs.cuda.count>1) {
-                sprintf(buf, " (device %d)", coproc_indices[0]);
-            } else if (avp->natis && gstate.host_info.coprocs.ati.count>1) {
-                sprintf(buf, " (device %d)", coproc_indices[0]);
+            if (avp->gpu_usage.rsc_type) {
+                COPROC& cp = coprocs.coprocs[avp->gpu_usage.rsc_type];
+                sprintf(buf, " (device %d)",
+                    cp.device_nums[coproc_indices[0]]
+                );
             }
         }
         out.printf(
@@ -1960,7 +2028,7 @@ bool RESULT::is_upload_done() {
     return true;
 }
 
-// resets all FILE_INFO's in result to uploaded = false 
+// resets all FILE_INFO's in result to uploaded = false
 // if upload_when_present is true.
 //
 void RESULT::clear_uploaded_flags() {
@@ -2099,10 +2167,10 @@ int MODE::get_current() {
 }
 
 double MODE::delay() {
-	if (temp_timeout > gstate.now) {
-		return temp_timeout - gstate.now;
-	} else {
-		return 0;
-	}
+    if (temp_timeout > gstate.now) {
+        return temp_timeout - gstate.now;
+    } else {
+        return 0;
+    }
 }
 

@@ -21,6 +21,8 @@ require_once("../inc/util.inc");
 require_once("../inc/email.inc");
 require_once("../inc/team.inc");
 
+check_get_args(array("xml", "creditonly", "teamid", "account_key", "plain"));
+
 $xml = get_int('xml', true);
 if ($xml) {
     $creditonly = get_int('creditonly', true);
@@ -77,5 +79,5 @@ if (!$plain) {
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: team_email_list.php 21780 2010-06-20 08:35:36Z Rytis $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_email_list.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

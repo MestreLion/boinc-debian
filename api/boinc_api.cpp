@@ -80,17 +80,18 @@
 #endif
 #endif
 
+#include "app_ipc.h"
+#include "common_defs.h"
 #include "diagnostics.h"
-#include "parse.h"
-#include "shmem.h"
-#include "util.h"
-#include "str_util.h"
-#include "str_replace.h"
+#include "error_numbers.h"
 #include "filesys.h"
 #include "mem_usage.h"
-#include "error_numbers.h"
-#include "common_defs.h"
-#include "app_ipc.h"
+#include "parse.h"
+#include "procinfo.h"
+#include "shmem.h"
+#include "str_util.h"
+#include "str_replace.h"
+#include "util.h"
 
 #include "boinc_api.h"
 
@@ -119,7 +120,6 @@ static volatile bool ready_to_checkpoint = false;
 static volatile int in_critical_section = 0;
 static volatile double last_wu_cpu_time;
 static volatile bool standalone = false;
-static volatile bool is_parallel = false;
 static volatile double initial_wu_cpu_time;
 static volatile bool have_new_trickle_up = false;
 static volatile bool have_trickle_down = true;
@@ -176,7 +176,7 @@ static struct rusage worker_thread_ru;
 #endif
 
 static BOINC_OPTIONS options;
-static volatile BOINC_STATUS boinc_status;
+volatile BOINC_STATUS boinc_status;
 
 // vars related to intermediate file upload
 struct UPLOAD_FILE_STATUS {
@@ -196,6 +196,7 @@ static int start_worker_signals();
 char* boinc_msg_prefix(char* sbuf, int len) {
     char buf[256];
     struct tm tm;
+    struct tm *tmp = &tm;
     int n;
 
     time_t x = time(0);
@@ -204,14 +205,18 @@ char* boinc_msg_prefix(char* sbuf, int len) {
         return sbuf;
     }
 #ifdef _WIN32
+#ifdef __MINGW32__
+    if ((tmp = localtime(&x)) == NULL) {
+#else
     if (localtime_s(&tm, &x) == EINVAL) {
+#endif
 #else
     if (localtime_r(&x, &tm) == NULL) {
 #endif
         strcpy(sbuf, "localtime() failed");
         return sbuf;
     }
-    if (strftime(buf, sizeof(buf)-1, "%H:%M:%S", &tm) == 0) {
+    if (strftime(buf, sizeof(buf)-1, "%H:%M:%S", tmp) == 0) {
         strcpy(sbuf, "strftime() failed");
         return sbuf;
     }
@@ -342,6 +347,65 @@ static bool update_app_progress(double cpu_t, double cp_cpu_t) {
     return app_client_shm->shm->app_status.send_msg(msg_buf);
 }
 
+static void handle_heartbeat_msg() {
+    char buf[MSG_CHANNEL_SIZE];
+    double dtemp;
+    bool btemp;
+
+    if (app_client_shm->shm->heartbeat.get_msg(buf)) {
+        boinc_status.network_suspended = false;
+        if (match_tag(buf, "<heartbeat/>")) {
+            heartbeat_giveup_time = interrupt_count + HEARTBEAT_GIVEUP_COUNT;
+        }
+        if (parse_double(buf, "<wss>", dtemp)) {
+            boinc_status.working_set_size = dtemp;
+        }
+        if (parse_double(buf, "<max_wss>", dtemp)) {
+            boinc_status.max_working_set_size = dtemp;
+        }
+        if (parse_bool(buf, "suspend_network", btemp)) {
+            boinc_status.network_suspended = btemp;
+        }
+    }
+}
+
+#ifndef _WIN32
+// For multithread apps on Unix, the main process executes the following.
+//
+static void parallel_master(int child_pid) {
+    char buf[MSG_CHANNEL_SIZE];
+    int exit_status;
+    while (1) {
+        boinc_sleep(TIMER_PERIOD);
+        interrupt_count++;
+        if (app_client_shm) {
+            handle_heartbeat_msg();
+            if (app_client_shm->shm->process_control_request.get_msg(buf)) {
+                if (match_tag(buf, "<suspend/>")) {
+                    kill(child_pid, SIGSTOP);
+                } else if (match_tag(buf, "<resume/>")) {
+                    kill(child_pid, SIGCONT);
+                } else if (match_tag(buf, "<quit/>")) {
+                    kill(child_pid, SIGKILL);
+                    exit(0);
+                } else if (match_tag(buf, "<abort/>")) {
+                    kill(child_pid, SIGKILL);
+                    exit(EXIT_ABORTED_BY_CLIENT);
+                }
+            }
+
+            if (heartbeat_giveup_time < interrupt_count) {
+                kill(child_pid, SIGKILL);
+                exit(0);
+            }
+        }
+        if (interrupt_count % TIMERS_PER_SEC) continue;
+        if (waitpid(child_pid, &exit_status, WNOHANG) == child_pid) break;
+    }
+    boinc_finish(exit_status);
+}
+#endif
+
 int boinc_init() {
     int retval;
     if (!diagnostics_is_initialized()) {
@@ -354,6 +418,30 @@ int boinc_init() {
 
 int boinc_init_options(BOINC_OPTIONS* opt) {
     int retval;
+#ifndef _WIN32
+    if (options.multi_thread) {
+        int child_pid = fork();
+        if (child_pid) {
+            // original process - master
+            //
+            options.send_status_msgs = false;
+            retval = boinc_init_options_general(options);
+            if (retval) {
+                kill(child_pid, SIGKILL);
+                return retval;
+            }
+            parallel_master(child_pid);
+        }
+        // new process - slave
+        //
+        options.main_program = false;
+        options.check_heartbeat = false;
+        options.handle_process_control = false;
+        options.multi_thread = false;
+        options.multi_process = false;
+        return boinc_init_options(&options);
+    }
+#endif
     retval = boinc_init_options_general(*opt);
     if (retval) return retval;
     retval = start_timer_thread();
@@ -363,6 +451,13 @@ int boinc_init_options(BOINC_OPTIONS* opt) {
     if (retval) return retval;
 #endif
     return 0;
+}
+
+int boinc_init_parallel() {
+    BOINC_OPTIONS _options;
+    boinc_options_defaults(_options);
+    _options.multi_thread = true;
+    return boinc_init_options(&_options);
 }
 
 int boinc_init_options_general(BOINC_OPTIONS& opt) {
@@ -448,6 +543,7 @@ int boinc_init_options_general(BOINC_OPTIONS& opt) {
 int boinc_get_status(BOINC_STATUS *s) {
     s->no_heartbeat = boinc_status.no_heartbeat;
     s->suspended = boinc_status.suspended;
+    s->suspend_request = boinc_status.suspend_request;
     s->quit_request = boinc_status.quit_request;
     s->reread_init_data_file = boinc_status.reread_init_data_file;
     s->abort_request = boinc_status.abort_request;
@@ -523,9 +619,7 @@ void boinc_exit(int status) {
     int retval;
     char buf[256];
 
-    if (options.backwards_compatible_graphics) {
-        graphics_cleanup();
-    }
+    graphics_cleanup();
     
     if (options.main_program && file_lock.locked) {
         retval = file_lock.unlock(LOCKFILE);
@@ -546,7 +640,11 @@ void boinc_exit(int status) {
         }
     }
 
-    fflush(NULL);
+    // kill any processes the app may have created
+    //
+    if (options.multi_process) {
+        kill_descendants();
+    }
 
     boinc_finish_diag();
 
@@ -555,7 +653,9 @@ void boinc_exit(int status) {
     // or triggering endless exit()/atexit() loops.
     //
     BOINCINFO("Exit Status: %d", status);
-#if   defined(_WIN32)
+    fflush(NULL);
+
+#if defined(_WIN32)
     // Halt all the threads and cleans up.
     TerminateProcess(GetCurrentProcess(), status);
     // note: the above CAN return!
@@ -647,9 +747,9 @@ int boinc_report_app_status(
     if (standalone) return 0;
 
     sprintf(msg_buf,
-        "<current_cpu_time>%10.4f</current_cpu_time>\n"
-        "<checkpoint_cpu_time>%.15e</checkpoint_cpu_time>\n"
-        "<fraction_done>%2.8f</fraction_done>\n",
+        "<current_cpu_time>%e</current_cpu_time>\n"
+        "<checkpoint_cpu_time>%e</checkpoint_cpu_time>\n"
+        "<fraction_done>%e</fraction_done>\n",
         cpu_time,
         checkpoint_cpu_time,
         _fraction_done
@@ -680,11 +780,15 @@ int suspend_activities() {
     static DWORD pid;
     if (!pid) pid = GetCurrentProcessId();
     if (options.direct_process_action) {
-        if (is_parallel) {
+        if (options.multi_thread) {
             suspend_or_resume_threads(pid, timer_thread_id, false);
         } else {
             SuspendThread(worker_thread_handle);
         }
+    }
+#else
+    if (options.multi_process) {
+        suspend_or_resume_descendants(0, false);
     }
 #endif
     return 0;
@@ -697,11 +801,15 @@ int resume_activities() {
     static DWORD pid;
     if (!pid) pid = GetCurrentProcessId();
     if (options.direct_process_action) {
-        if (is_parallel) {
+        if (options.multi_thread) {
             suspend_or_resume_threads(pid, timer_thread_id, true);
         } else {
             ResumeThread(worker_thread_handle);
         }
+    }
+#else
+    if (options.multi_process) {
+        suspend_or_resume_descendants(0, true);
     }
 #endif
     return 0;
@@ -715,28 +823,6 @@ int restore_activities() {
         retval = resume_activities();
     }
     return retval;
-}
-
-static void handle_heartbeat_msg() {
-    char buf[MSG_CHANNEL_SIZE];
-    double dtemp;
-    bool btemp;
-
-    if (app_client_shm->shm->heartbeat.get_msg(buf)) {
-        boinc_status.network_suspended = false;
-        if (match_tag(buf, "<heartbeat/>")) {
-            heartbeat_giveup_time = interrupt_count + HEARTBEAT_GIVEUP_COUNT;
-        }
-        if (parse_double(buf, "<wss>", dtemp)) {
-            boinc_status.working_set_size = dtemp;
-        }
-        if (parse_double(buf, "<max_wss>", dtemp)) {
-            boinc_status.max_working_set_size = dtemp;
-        }
-        if (parse_bool(buf, "suspend_network", btemp)) {
-            boinc_status.network_suspended = btemp;
-        }
-    }
 }
 
 static void handle_upload_file_status() {
@@ -800,26 +886,39 @@ static void handle_process_control_msg() {
         );
 #endif
         if (match_tag(buf, "<suspend/>")) {
+            if (in_critical_section) {
+                boinc_status.suspend_request = true;
+            } else {
+                boinc_status.suspended = true;
+                suspend_activities();
+            }
+        }
+
+        if (!in_critical_section && boinc_status.suspend_request) {
             boinc_status.suspended = true;
+            boinc_status.suspend_request = false;
             suspend_activities();
         }
 
         if (match_tag(buf, "<resume/>")) {
-            boinc_status.suspended = false;
-            resume_activities();
+            if (boinc_status.suspended) {
+                boinc_status.suspended = false;
+                resume_activities();
+            }
+            boinc_status.suspend_request = false;
         }
 
-        if (match_tag(buf, "<quit/>")) {
+        if (boinc_status.quit_request || match_tag(buf, "<quit/>")) {
             BOINCINFO("Received quit message");
             boinc_status.quit_request = true;
-            if (options.direct_process_action) {
+            if (!in_critical_section && options.direct_process_action) {
                 exit_from_timer_thread(0);
             }
         }
-        if (match_tag(buf, "<abort/>")) {
+        if (boinc_status.abort_request || match_tag(buf, "<abort/>")) {
             BOINCINFO("Received abort message");
             boinc_status.abort_request = true;
-            if (options.direct_process_action) {
+            if (!in_critical_section && options.direct_process_action) {
                 diagnostics_set_aborted_via_gui();
 #if   defined(_WIN32)
                 // Cause a controlled assert and dump the callstacks.
@@ -861,9 +960,9 @@ struct GRAPHICS_APP {
 #else
         strcpy(abspath, path);
 #endif
-        argv[0] = (char*)GRAPHICS_APP_FILENAME;
+        argv[0] = const_cast<char*>(GRAPHICS_APP_FILENAME);
         if (fullscreen) {
-            argv[1] = (char*)"--fullscreen";
+            argv[1] = const_cast<char*>("--fullscreen");
             argv[2] = 0;
             argc = 2;
         } else {
@@ -983,12 +1082,10 @@ static void timer_handler() {
         if (options.handle_trickle_downs) {
             handle_trickle_down_msg();
         }
-        if (in_critical_section==0 && options.handle_process_control) {
+        if (options.handle_process_control) {
             handle_process_control_msg();
         }
-        if (options.backwards_compatible_graphics) {
-            handle_graphics_messages();
-        }
+        handle_graphics_messages();
     }
 
     if (interrupt_count % TIMERS_PER_SEC) return;
@@ -1012,10 +1109,10 @@ static void timer_handler() {
     //
     if (in_critical_section==0 && options.check_heartbeat) {
         if (heartbeat_giveup_time < interrupt_count) {
-            fprintf(stderr,
-                "%s No heartbeat from core client for 30 sec - exiting\n",
-                boinc_msg_prefix(buf, sizeof(buf))
-            );
+            boinc_msg_prefix(buf, sizeof(buf));
+            buf[255] = 0;  // paranoia
+            fputs(buf, stderr);
+            fputs(" No heartbeat from core client for 30 sec - exiting\n", stderr);
             if (options.direct_process_action) {
                 exit_from_timer_thread(0);
             } else {
@@ -1320,68 +1417,3 @@ double boinc_get_fraction_done() {
 double boinc_elapsed_time() {
     return running_interrupt_count*TIMER_PERIOD;
 }
-
-#ifndef _WIN32
-static void parallel_master(int child_pid) {
-    char buf[MSG_CHANNEL_SIZE];
-    int exit_status;
-    while (1) {
-        boinc_sleep(TIMER_PERIOD);
-        interrupt_count++;
-        if (app_client_shm) {
-            handle_heartbeat_msg();
-            if (app_client_shm->shm->process_control_request.get_msg(buf)) {
-                if (match_tag(buf, "<suspend/>")) {
-                    kill(child_pid, SIGSTOP);
-                } else if (match_tag(buf, "<resume/>")) {
-                    kill(child_pid, SIGCONT);
-                } else if (match_tag(buf, "<quit/>")) {
-                    kill(child_pid, SIGKILL);
-                    exit(0);
-                } else if (match_tag(buf, "<abort/>")) {
-                    kill(child_pid, SIGKILL);
-                    exit(EXIT_ABORTED_BY_CLIENT);
-                }
-            }
-
-            if (heartbeat_giveup_time < interrupt_count) {
-                kill(child_pid, SIGKILL);
-                exit(0);
-            }
-        }
-        if (interrupt_count % TIMERS_PER_SEC) continue;
-        if (waitpid(child_pid, &exit_status, WNOHANG) == child_pid) break;
-    }
-    boinc_finish(exit_status);
-}
-#endif
-
-int boinc_init_parallel() {
-#ifdef _WIN32
-    is_parallel = true;
-    return boinc_init();
-#else
-    BOINC_OPTIONS options;
-    boinc_options_defaults(options);
-
-    int child_pid = fork();
-    if (child_pid) {
-        // original process - master
-        //
-        options.send_status_msgs = false;
-        int retval = boinc_init_options_general(options);
-        if (retval) {
-            kill(child_pid, SIGKILL);
-            return retval;
-        }
-        parallel_master(child_pid);
-    }
-    // new process - slave
-    //
-    options.main_program = false;
-    options.check_heartbeat = false;
-    options.handle_process_control = false;
-    return boinc_init_options(&options);
-#endif
-}
-

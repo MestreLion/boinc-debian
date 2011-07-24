@@ -20,6 +20,8 @@ require_once("../inc/boinc_db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/team.inc");
 
+check_get_args(array());
+
 $user = get_logged_in_user();
 $team = BoincTeam::lookup_id($user->teamid);
 if (!$team) {
@@ -82,5 +84,5 @@ echo "<p><a href=\"team_display.php?teamid=".$team->id."\">".tra("Return to team
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_founder_transfer_form.php 20582 2010-02-16 01:06:03Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_founder_transfer_form.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

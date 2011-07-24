@@ -111,4 +111,3 @@ int get_key(char* path, int id, key_t& key) {
     return 0;
 }
 
-const char *BOINC_RCSID_9412b586d1 = "$Id: synch.cpp 17388 2009-02-26 00:23:23Z korpela $";

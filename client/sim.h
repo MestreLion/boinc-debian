@@ -32,9 +32,10 @@ struct SIM_RESULTS {
     double monotony;
     double wasted_frac;
     double idle_frac;
+    int nrpcs;
 
     void compute();
-    void print(FILE* f, const char* title=0);
+    void print(FILE* f, bool human_readable=false);
     void parse(FILE* f);
     void add(SIM_RESULTS& r);
     void divide(int);
@@ -57,7 +58,7 @@ struct PROJECT_RESULTS {
 
 struct NORMAL_DIST {
     double mean;
-    double stdev;
+    double std_dev;
     int parse(XML_PARSER&, const char* end_tag);
     double sample();
 };
@@ -77,14 +78,14 @@ class RANDOM_PROCESS {
 public:
     double frac;
     double lambda;
-    int parse(XML_PARSER&, const char* end_tag);
-    bool sample(double);
-    void init(double);
+    bool sample(double dt);
+    void init(double f, double l);
     RANDOM_PROCESS();
 };
 
 extern FILE* logfile;
 extern bool user_active;
+extern std::string html_msg;
 extern SIM_RESULTS sim_results;
 extern double calculate_exponential_backoff(
     int n, double MIN, double MAX
@@ -97,7 +98,14 @@ extern bool dual_dcf;
 extern bool work_fetch_old;
 extern bool gpus_usable;
 
-#define START_TIME  946684800
+extern RANDOM_PROCESS on_proc;
+extern RANDOM_PROCESS connected_proc;
+extern RANDOM_PROCESS active_proc;
+extern RANDOM_PROCESS gpu_active_proc;
+
+//#define START_TIME  946684800
     // Jan 1 2000
+#define START_TIME  3600
+    // should be at least an hour or so
 
 #endif

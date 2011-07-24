@@ -90,7 +90,7 @@ static int result_timed_out(
     int retval = hav_lookup(hav, res_item.res_hostid, gavid);
     if (retval) {
         log_messages.printf(MSG_NORMAL,
-            "result_timed_out(): hav_lookup failed %d\n", retval
+            "result_timed_out(): hav_lookup failed: %s\n", boincerror(retval)
         );
         return retval;
     }
@@ -135,7 +135,8 @@ static int result_timed_out(
     retval = hav.update_fields_noid(query, clause);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "CRITICAL result_timed_out(): hav updated failed: %d\n", retval
+            "CRITICAL result_timed_out(): hav updated failed: %s\n",
+            boincerror(retval)
         );
     }
     return 0;
@@ -171,7 +172,7 @@ int handle_wu(
         retval = wu.update_field(buf);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "update_field failed %d\n", retval
+                "update_field failed: %s\n", boincerror(retval)
             );
         }
         return 0;
@@ -186,6 +187,7 @@ int handle_wu(
     nover = 0;
     nerrors = 0;
     nsuccess = 0;
+        // not counting invalid results!!!!
     ncouldnt_send = 0;
     nno_reply = 0;
     ndidnt_need = 0;
@@ -224,7 +226,7 @@ int handle_wu(
 
     // Scan this WU's results, and
     // 1) count those in various server states;
-    // 2) identify time-out results and update their server state and outcome
+    // 2) identify timed-out results and update their server state and outcome
     // 3) find the max result suffix (in case need to generate new ones)
     // 4) see if we have a new result to validate
     //    (outcome SUCCESS and validate_state INIT)
@@ -246,7 +248,8 @@ int handle_wu(
             if (res_item.res_report_deadline < now) {
                 log_messages.printf(MSG_NORMAL,
                     "[WU#%d %s] [RESULT#%d %s] result timed out (%d < %d) server_state:IN_PROGRESS=>OVER; outcome:NO_REPLY\n",
-                    wu_item.id, wu_item.name, res_item.res_id, res_item.res_name,
+                    wu_item.id, wu_item.name, res_item.res_id,
+                    res_item.res_name,
                     res_item.res_report_deadline, (int)now
                 );
                 res_item.res_server_state = RESULT_SERVER_STATE_OVER;
@@ -254,15 +257,15 @@ int handle_wu(
                 retval = transitioner.update_result(res_item);
                 if (retval) {
                     log_messages.printf(MSG_CRITICAL,
-                        "[WU#%d %s] [RESULT#%d %s] update_result(): %d\n",
+                        "[WU#%d %s] [RESULT#%d %s] update_result(): %s\n",
                         wu_item.id, wu_item.name, res_item.res_id,
-                        res_item.res_name, retval
+                        res_item.res_name, boincerror(retval)
                     );
                 }
                 retval = result_timed_out(res_item, wu_item);
                 if (retval) {
                     log_messages.printf(MSG_CRITICAL,
-                        "result_timed_out() error %d\n", retval
+                        "result_timed_out() error: %s\n", boincerror(retval)
                     );
                     exit(1);
                 }
@@ -287,16 +290,28 @@ int handle_wu(
                     if (canonical_result_files_deleted) {
                         res_item.res_validate_state = VALIDATE_STATE_TOO_LATE;
                         retval = transitioner.update_result(res_item);
-                        log_messages.printf(MSG_NORMAL,
-                            "[WU#%d %s] [RESULT#%d %s] validate_state:INIT=>TOO_LATE retval %d\n",
-                            wu_item.id, wu_item.name, res_item.res_id,
-                            res_item.res_name, retval
-                        );
+                        if (retval) {
+                            log_messages.printf(MSG_CRITICAL,
+                                "[WU#%d %s] [RESULT#%d %s] update_result(): %s\n",
+                                wu_item.id, wu_item.name, res_item.res_id,
+                                res_item.res_name, boincerror(retval)
+                            );
+                        } else {
+                            log_messages.printf(MSG_NORMAL,
+                                "[WU#%d %s] [RESULT#%d %s] validate_state:INIT=>TOO_LATE\n",
+                                wu_item.id, wu_item.name, res_item.res_id,
+                                res_item.res_name
+                            );
+                        }
                     } else {
                         have_new_result_to_validate = true;
                     }
                 }
-                nsuccess++;
+                // don't count invalid results as successful
+                //
+                if (res_item.res_validate_state != VALIDATE_STATE_INVALID) {
+                    nsuccess++;
+                }
                 break;
             case RESULT_OUTCOME_CLIENT_ERROR:
             case RESULT_OUTCOME_VALIDATE_ERROR:
@@ -337,10 +352,12 @@ int handle_wu(
     }
 
     // if WU has results with errors and no success yet,
-    // reset homogeneous redundancy class to give other platforms a try
+    // reset homogeneous redundancy class to give other platforms a try;
+    // also reset app version ID if using HAV
     //
     if (nerrors && !(nsuccess || ninprogress)) {
         wu_item.hr_class = 0;
+        wu_item.app_version_id = 0;
     }
 
     if (nerrors > wu_item.max_error_results) {
@@ -413,8 +430,9 @@ int handle_wu(
                 retval = transitioner.update_result(res_item);
                 if (retval) {
                     log_messages.printf(MSG_CRITICAL,
-                        "[WU#%d %s] [RESULT#%d %s] result.update() == %d\n",
-                        wu_item.id, wu_item.name, res_item.res_id, res_item.res_name, retval
+                        "[WU#%d %s] [RESULT#%d %s] result.update(): %s\n",
+                        wu_item.id, wu_item.name, res_item.res_id,
+                        res_item.res_name, boincerror(retval)
                     );
                 }
             }
@@ -453,8 +471,8 @@ int handle_wu(
                 );
                 if (retval) {
                     log_messages.printf(MSG_CRITICAL,
-                        "[WU#%d %s] create_result_ti() %d\n",
-                        wu_item.id, wu_item.name, retval
+                        "[WU#%d %s] create_result_ti(): %s\n",
+                        wu_item.id, wu_item.name, boincerror(retval)
                     );
                     return retval;
                 }
@@ -469,8 +487,8 @@ int handle_wu(
             retval = r.insert_batch(values);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "[WU#%d %s] insert_batch() %d\n",
-                    wu_item.id, wu_item.name, retval
+                    "[WU#%d %s] insert_batch(): %s\n",
+                    wu_item.id, wu_item.name, boincerror(retval)
                 );
                 return retval;
             }
@@ -497,7 +515,7 @@ int handle_wu(
                     all_over_and_ready_to_assimilate = false;
                 }
             } else if (res_item.res_outcome == RESULT_OUTCOME_NO_REPLY) {
-                if ((res_item.res_report_deadline + config.grace_period_hours*3600) > now) {
+                if (now < res_item.res_report_deadline) {
                     all_over_and_validated = false;
                 }
             }
@@ -507,9 +525,8 @@ int handle_wu(
         }
     }
 
-    // If we are deferring assimilation until all results are over
-    // and validated then when that happens we need to make sure
-    // that it gets advanced to assimilate ready
+    // If we are deferring assimilation until all results are over and validated,
+    // when that happens make sure that WU state is advanced to assimilate ready
     // the items.size is a kludge
     //
     if (all_over_and_ready_to_assimilate
@@ -519,144 +536,121 @@ int handle_wu(
     ) {
         wu_item.assimilate_state = ASSIMILATE_READY;
         log_messages.printf(MSG_NORMAL,
-            "[WU#%d %s] Deferred assimililation now set to ASSIMILATE_STATE_READY\n",
+            "[WU#%d %s] Deferred assimilation now set to ASSIMILATE_STATE_READY\n",
             wu_item.id, wu_item.name
         );
     }
+
     // if WU is assimilated, trigger file deletion
     //
-    if (wu_item.assimilate_state == ASSIMILATE_DONE
-        && ((most_recently_returned + config.delete_delay_hours*3600) < now)
-    ) {
-        // can delete input files if all results OVER
-        //
-        if (all_over_and_validated && wu_item.file_delete_state == FILE_DELETE_INIT) {
-            wu_item.file_delete_state = FILE_DELETE_READY;
-            log_messages.printf(MSG_DEBUG,
-                "[WU#%d %s] ASSIMILATE_DONE: file_delete_state:=>READY\n",
-                wu_item.id, wu_item.name
-            );
-        }
-
-        // output of error results can be deleted immediately;
-        // output of success results can be deleted if validated
-        //
-        for (i=0; i<items.size(); i++) {
-            TRANSITIONER_ITEM& res_item = items[i];
-
-            // can delete canonical result outputs only if all successful
-            // results have been validated
+    double deferred_file_delete_time = 0;
+    if (wu_item.assimilate_state == ASSIMILATE_DONE) {
+        if (now >= (most_recently_returned + config.delete_delay)) {
+            // can delete input files if all results OVER
             //
-            if (((int)i == canonical_result_index) && !all_over_and_validated) {
-                continue;
-            }
-
-            if (!res_item.res_id) continue;
-            do_delete = false;
-            switch(res_item.res_outcome) {
-            case RESULT_OUTCOME_CLIENT_ERROR:
-                do_delete = true;
-                break;
-            case RESULT_OUTCOME_SUCCESS:
-                do_delete = (res_item.res_validate_state != VALIDATE_STATE_INIT);
-                break;
-            }
-            if (do_delete && res_item.res_file_delete_state == FILE_DELETE_INIT) {
-                log_messages.printf(MSG_NORMAL,
-                    "[WU#%d %s] [RESULT#%d %s] file_delete_state:=>READY\n",
-                    wu_item.id, wu_item.name, res_item.res_id, res_item.res_name
+            if (all_over_and_validated && wu_item.file_delete_state == FILE_DELETE_INIT) {
+                wu_item.file_delete_state = FILE_DELETE_READY;
+                log_messages.printf(MSG_DEBUG,
+                    "[WU#%d %s] ASSIMILATE_DONE: file_delete_state:=>READY\n",
+                    wu_item.id, wu_item.name
                 );
-                res_item.res_file_delete_state = FILE_DELETE_READY;
+            }
 
-                retval = transitioner.update_result(res_item);
-                if (retval) {
-                    log_messages.printf(MSG_CRITICAL,
-                        "[WU#%d %s] [RESULT#%d %s] result.update() == %d\n",
-                        wu_item.id, wu_item.name, res_item.res_id, res_item.res_name, retval
+            // output of error results can be deleted immediately;
+            // output of success results can be deleted if validated
+            //
+            for (i=0; i<items.size(); i++) {
+                TRANSITIONER_ITEM& res_item = items[i];
+
+                // can delete canonical result outputs only if all successful
+                // results have been validated
+                //
+                if (((int)i == canonical_result_index) && !all_over_and_validated) {
+                    continue;
+                }
+
+                if (!res_item.res_id) continue;
+                do_delete = false;
+                switch(res_item.res_outcome) {
+                case RESULT_OUTCOME_CLIENT_ERROR:
+                    do_delete = true;
+                    break;
+                case RESULT_OUTCOME_SUCCESS:
+                    do_delete = (res_item.res_validate_state != VALIDATE_STATE_INIT);
+                    break;
+                }
+                if (do_delete && res_item.res_file_delete_state == FILE_DELETE_INIT) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[WU#%d %s] [RESULT#%d %s] file_delete_state:=>READY\n",
+                        wu_item.id, wu_item.name, res_item.res_id, res_item.res_name
                     );
+                    res_item.res_file_delete_state = FILE_DELETE_READY;
+
+                    retval = transitioner.update_result(res_item);
+                    if (retval) {
+                        log_messages.printf(MSG_CRITICAL,
+                            "[WU#%d %s] [RESULT#%d %s] result.update(): %s\n",
+                            wu_item.id, wu_item.name, res_item.res_id,
+                            res_item.res_name, boincerror(retval)
+                        );
+                    }
                 }
             }
+        } else {
+            deferred_file_delete_time = most_recently_returned + config.delete_delay;
+            log_messages.printf(MSG_DEBUG,
+                "[WU#%d %s] deferring file deletion for %.0f seconds\n",
+                wu_item.id,
+                wu_item.name,
+                deferred_file_delete_time - now
+            );
         }
-    } else if (wu_item.assimilate_state == ASSIMILATE_DONE) {
-        log_messages.printf(MSG_DEBUG,
-            "[WU#%d %s] not checking for results ready for delete because deferred delete time has not expired.  That will occur in %.0f seconds\n",
-            wu_item.id,
-            wu_item.name,
-            most_recently_returned + config.delete_delay_hours*3600-now
-        );
     }
 
-    // compute next transition time = minimum timeout of in-progress results
+    // Compute next transition time.
+    // This is the min of
+    // - timeouts of in-progress results
+    // - deferred file deletion time
+    // - safety net
+    //
+    // It is then adjusted to deal with transitioner congestion
     //
     if (wu_item.canonical_resultid || wu_item.error_mask) {
         wu_item.transition_time = INT_MAX;
     } else {
-        // If there is no canonical result and no WU-level error,
+        // Safety net: if there is no canonical result and no WU-level error,
         // make sure that the transitioner will process this WU again.
-        // In principle this is not needed, but it makes
-        // the BOINC back-end more robust.
+        // In principle this is not needed,
+        // but it makes the BOINC back-end more robust.
         //
         const int ten_days = 10*86400;
         int long_delay = (int)(1.5*wu_item.delay_bound);
         wu_item.transition_time = (long_delay > ten_days) ? long_delay : ten_days;
         wu_item.transition_time += time(0);
     }
-    int max_grace_or_delay_time = 0;  
+
+    // handle timeout of in-progress results
+    //
     for (i=0; i<items.size(); i++) {
         TRANSITIONER_ITEM& res_item = items[i];
         if (!res_item.res_id) continue;
         if (res_item.res_server_state == RESULT_SERVER_STATE_IN_PROGRESS) {
-            // In cases where a result has been RESENT to a host, the
-            // report deadline time may be EARLIER than
-            // sent_time + delay_bound
-            // because the sent_time has been updated with the later
-            // "resend" time.
-            //
-            // x = res_item.res_sent_time + wu_item.delay_bound;
             x = res_item.res_report_deadline;
             if (x < wu_item.transition_time) {
                 wu_item.transition_time = x;
             }
-        } else if (res_item.res_server_state == RESULT_SERVER_STATE_OVER) {
-            if (res_item.res_outcome == RESULT_OUTCOME_NO_REPLY) {
-                // Transition again after the grace period has expired
-                //
-                x = res_item.res_report_deadline + config.grace_period_hours*3600;
-                if (x > now) {
-                    if (x > max_grace_or_delay_time) {
-                        max_grace_or_delay_time = x;
-                    }
-                }
-            } else if (res_item.res_outcome == RESULT_OUTCOME_SUCCESS
-                || res_item.res_outcome == RESULT_OUTCOME_CLIENT_ERROR
-                || res_item.res_outcome == RESULT_OUTCOME_VALIDATE_ERROR
-            ) {
-                // Transition again after deferred delete period has expired
-                //
-                x = res_item.res_received_time + config.delete_delay_hours*3600;
-                if (x > now) {
-                    if (x > max_grace_or_delay_time && res_item.res_received_time > 0) {
-                        max_grace_or_delay_time = x;
-                    }
-                }
-            }
         }
     }
 
-    // If either of the grace period or delete delay is less than
-    // the next transition time then use that value
+    // handle deferred file deletion
     //
-    if (max_grace_or_delay_time < wu_item.transition_time
-        && max_grace_or_delay_time > now
-        && ninprogress == 0
+    if (deferred_file_delete_time
+        && deferred_file_delete_time < wu_item.transition_time
     ) {
-        wu_item.transition_time = max_grace_or_delay_time;
-        log_messages.printf(MSG_NORMAL,
-            "[WU#%d %s] Delaying transition due to grace period or delete delay.  New transition time: %d\n",
-            wu_item.id, wu_item.name, wu_item.transition_time
-        );
+        wu_item.transition_time = deferred_file_delete_time;
     }
-    
+
+    // Handle transitioner overload.
     // If transition time is in the past,
     // the system is bogged down and behind schedule.
     // Delay processing of the WU by an amount DOUBLE the amount we are behind,
@@ -681,8 +675,8 @@ int handle_wu(
     retval = transitioner.update_workunit(wu_item, wu_item_original);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "[WU#%d %s] workunit.update() == %d\n",
-            wu_item.id, wu_item.name, retval
+            "[WU#%d %s] workunit.update(): %s\n",
+            wu_item.id, wu_item.name, boincerror(retval)
         );
         return retval;
     }
@@ -706,7 +700,7 @@ bool do_pass() {
         if (retval) {
             if (retval != ERR_DB_NOT_FOUND) {
                 log_messages.printf(MSG_CRITICAL,
-                    "WU enum error%d; exiting\n", retval
+                    "WU enum error: %s; exiting\n", boincerror(retval)
                 );
                 exit(1);
             }
@@ -717,8 +711,8 @@ bool do_pass() {
         retval = handle_wu(transitioner, items);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "[WU#%d %s] handle_wu: %d; quitting\n",
-                wu_item.id, wu_item.name, retval
+                "[WU#%d %s] handle_wu: %s; quitting\n",
+                wu_item.id, wu_item.name, boincerror(retval)
             );
             exit(1);
         }
@@ -733,7 +727,9 @@ void main_loop() {
 
     retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "boinc_db.open: %d\n", retval);
+        log_messages.printf(MSG_CRITICAL,
+            "boinc_db.open: %s\n", boincerror(retval)
+        );
         exit(1);
     }
 
@@ -838,4 +834,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 21835 2010-06-29 03:20:19Z boincadm $";
+const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 23636 2011-06-06 03:40:42Z davea $";

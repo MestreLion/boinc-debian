@@ -68,7 +68,7 @@ bool CLIENT_STATE::start_new_file_xfer(PERS_FILE_XFER& pfx) {
         }
     }
     if (nproj >= config.max_file_xfers_per_project) return false;
-	if (ntotal >= config.max_file_xfers) return false;
+    if (ntotal >= config.max_file_xfers) return false;
     return true;
 }
 

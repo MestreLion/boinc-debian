@@ -32,6 +32,7 @@ function show_forum_rss_item($thread, $userid, $threads_only, $truncate) {
     } else {
         $posts = BoincPost::enum("thread=$thread->id $clause2 order by timestamp desc limit 1");
     }
+    if (!count($posts)) return;
     $post = $posts[0];
     $post_date = gmdate('D, d M Y H:i:s',$post->timestamp).' GMT';
     $t = bb2html($post->content, true);
@@ -63,9 +64,9 @@ function forum_rss($forumid, $userid, $truncate, $threads_only, $ndays) {
     $tlimit = time() - $ndays*86400;
 
     if ($threads_only) {
-        $q = "$clause and status=0 and hidden=0 and sticky=0 and create_time > $tlimit order by create_time desc";
+        $q = "$clause and hidden=0 and sticky=0 and create_time > $tlimit order by create_time desc";
     } else {
-        $q = "$clause and status=0 and hidden=0 and sticky=0 and timestamp > $tlimit order by timestamp desc";
+        $q = "$clause and hidden=0 and sticky=0 and timestamp > $tlimit order by timestamp desc";
     }
 
     $threads = BoincThread::enum($q);
@@ -93,7 +94,7 @@ function forum_rss($forumid, $userid, $truncate, $threads_only, $ndays) {
     }
     $channel_image = URL_BASE . "rss_image.gif";
     $language = "en-us";
-    echo "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" ?>
+    echo "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>
         <rss version=\"2.0\">
         <channel>
         <title>".$description."</title>

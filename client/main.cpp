@@ -164,7 +164,7 @@ static void init_core_client(int argc, char** argv) {
     setbuf(stdout, 0);
     setbuf(stderr, 0);
 
-    config.clear();
+    config.defaults();
     gstate.parse_cmdline(argc, argv);
     gstate.now = dtime();
 
@@ -216,9 +216,9 @@ static void init_core_client(int argc, char** argv) {
 
     // Win32 - detach from console if requested
 #ifdef _WIN32
-	if (gstate.detach_console) {
-		FreeConsole();
-	}
+    if (gstate.detach_console) {
+        FreeConsole();
+    }
 #endif
 
     // Unix: install signal handlers
@@ -254,7 +254,7 @@ static int initialize() {
     }
 #endif
 
-	curl_init();
+    curl_init();
 
 #ifdef _WIN32
     if(!startup_idle_monitor()) {
@@ -289,7 +289,7 @@ static int finalize() {
 
 #endif
 
-	curl_cleanup();
+    curl_cleanup();
 
     gstate.free_mem();
 
@@ -300,7 +300,7 @@ static int finalize() {
 
 int boinc_main_loop() {
     int retval;
-    
+
     retval = initialize();
     if (retval) return retval;
 
@@ -446,7 +446,7 @@ int main(int argc, char** argv) {
     if ( (argc > 1) && (strcmp(argv[1], "-daemon") == 0 || strcmp(argv[1], "--daemon") == 0) ) {
         retval = initialize_service_dispatcher(argc, argv);
     } else {
-        retval = boinc_main_loop(); 
+        retval = boinc_main_loop();
     }
 
 #else
@@ -481,7 +481,7 @@ int main(int argc, char** argv) {
     }
 #endif  // SANDBOX
 
-    retval = boinc_main_loop(); 
+    retval = boinc_main_loop();
 
 #endif
     return retval;

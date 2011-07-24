@@ -12,6 +12,7 @@ h1 {
 }
 
 hr {
+    border:0;
 	border-top: 2px solid #e8e8e8;
 }
 
@@ -22,6 +23,12 @@ hr.news_line {
 
 table.bordered {
 	border-color: #e8e8e8;
+    border-width: 2px;
+    border-style: solid;
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    -khtml-border-radius: 6px;
+    border-radius: 6px;
 }
 
 th {
@@ -86,7 +93,7 @@ input[type="button"],
 input[type="submit"],
 .btn,
 a.button {
-	background: #f2f2f2 url(img/white_grad.png) repeat-x scroll left top;
+	background: #EDEDED url(img/white_grad.png) repeat-x scroll left top;
 	color: black;
 	border-color: #ccc;
 }
@@ -100,48 +107,54 @@ input.btn:hover,
 	color: #0069A1;
 }
 
-input[type="text"], select, textarea {
-	border-color: #d8d8d8;
+input[type="text"], input[type="password"], select, textarea {
+	border-color: #bbb;
 }
 
-#news {
+input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+	border-color: #0069A1;
+}
+
+td.news {
 	background-color: #dff0ff;
 	border-color: #add8e6;
 }
 
-#news h3 {
-	color: #666;
-}
-
-#uotd {
+td.uotd {
 	background-color: #d3d3d3;
 	border-color: #eee;
 }
 
-td.category , tr.subtitle{
-	background-color: #ddd;
+td.category {
+   background-color: #ddd;
 }
 
 td.postheader {
 	background-color: #eee;
+	color: #333;
 }
 
 td.postbody {
-	background: transparent url('img/75pct_white.png');
+	background-color: #fff;
 }
 
 td.postfooter {
 	background-color: #eee;
+	color: #333;
 }
 
-tr.postseperator {
+tr.postseparator {
 	background-color: #c8c8c8;
-	border-color: #aaa;
+    border-color: #aaa;
 }
 
 div.authorcol {
 	background-color: white;
 	border-color: #c8c8c8;
+}
+
+.authorinfo {
+	color: #333;
 }
 
 .authorinfo img {
@@ -175,12 +188,17 @@ span.highlight {
 	color: #090;
 }
 
-#preview {
+div.pm_preview {
+    border-width: 2px;
+    border-style: solid;
+    margin: 1em;
+    padding: 0.2em;
+    font-size: 1.1em;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+
 	border-color: #ccc;
 	background-color: #eee;
-}
-
-#preview .header {
 	border-bottom-color:  #ccc;
 }
 

@@ -21,7 +21,7 @@
 function friend_notify_req_email_line($notify) {
     $src_user = BoincUser::lookup_id($notify->opaque);
     if (!$src_user) return "";
-    return "$src_user->name has added you as a friend; please confirm";
+    return "$src_user->name has requested friendship with you. Please accept or decline.";
 }
 
 function friend_notify_accept_email_line($notify) {
@@ -36,7 +36,7 @@ function friend_notify_accept_email_line($notify) {
 function friend_notify_req_web_line($notify) {
     $user = BoincUser::lookup_id($notify->opaque);
     return "
-        <a href=friend.php?action=query&userid=$notify->opaque>Friendship request</a> from $user->name
+        <a href=friend.php?action=query&userid=$notify->opaque>Friendship request</a> from <a href=show_user.php?userid=$user->id>$user->name</a>
     ";
 }
 
@@ -94,8 +94,8 @@ Do not reply to this message.
 function friend_req_rss($notify, &$title, &$msg, &$url) {
     $src_user = BoincUser::lookup_id($notify->opaque);
     $title = "Friend request";
-    $msg = "$src_user->name has added you as a friend; please confirm or decline";
-    $url = URL_BASE."friend.php?action=query&userid=$notify->opaque";
+    $msg = "$src_user->name has requested friendship with you. Please accept or decline.";
+    $url = URL_BASE."friend.php?action=query&target_userid=$notify->userid&userid=$notify->opaque";
 }
 
 function friend_accept_rss($notify, &$title, &$msg, &$url) {

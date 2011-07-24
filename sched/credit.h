@@ -19,10 +19,6 @@
 
 #include "boinc_db.h"
 
-// Historical note: named after Jeff Cobb
-//
-#define COBBLESTONE_FACTOR 100.0
-
 #define ERROR_RATE_INIT 0.1
     // the initial error rate of a host or app version
 
@@ -30,8 +26,6 @@
     // use host scaling only if have this many samples for host
 #define MIN_VERSION_SAMPLES   100
     // update a version's scale only if it has this many samples
-#define COBBLESTONE_SCALE 200/86400e9
-    // multiply normalized PFC by this to get Cobblestones
 
 // parameters for maintaining averages.
 // per-host averages respond faster to change
@@ -47,9 +41,8 @@
 extern double fpops_to_credit(double fpops, double intops);
     // credit that should be granted for a given number of
     // floating-point and integer ops
-extern int grant_credit(
-    DB_HOST& host, double start_time, double cpu_time, double credit
-);
+extern double cpu_time_to_credit(double cpu_time, HOST&);
+extern int grant_credit(DB_HOST& host, double start_time, double credit);
 
 extern int update_av_scales(struct SCHED_SHMEM*);
 extern int assign_credit_set(

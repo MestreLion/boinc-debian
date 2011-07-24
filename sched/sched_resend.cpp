@@ -100,7 +100,7 @@ static int possibly_give_result_new_deadline(
 // Return true if there were any such jobs
 //
 bool resend_lost_work() {
-    DB_RESULT result;
+    SCHED_DB_RESULT result;
     std::vector<DB_RESULT>results;
     unsigned int i;
     char buf[256];
@@ -148,9 +148,9 @@ bool resend_lost_work() {
             continue;
         }
 
+        APP* app = ssp->lookup_app(wu.appid);
         bavp = get_app_version(wu, false, false);
         if (!bavp) {
-            APP* app = ssp->lookup_app(wu.appid);
             log_messages.printf(MSG_CRITICAL,
                 "[HOST#%d] can't resend [RESULT#%d]: no app version for %s\n",
                 g_reply->host.id, result.id, app->name
@@ -166,9 +166,13 @@ bool resend_lost_work() {
         // so that the transitioner does 'the right thing'.
         //
         if (
-            wu.error_mask ||
-            wu.canonical_resultid ||
-            possibly_give_result_new_deadline(result, wu, *bavp)
+            wu.error_mask
+            || wu.canonical_resultid
+            || wu_is_infeasible_fast(
+                wu, result.server_state, result.priority, result.report_deadline,
+                *app, *bavp
+            )
+            || possibly_give_result_new_deadline(result, wu, *bavp)
         ) {
             if (config.debug_resend) {
                 log_messages.printf(MSG_NORMAL,
@@ -177,18 +181,23 @@ bool resend_lost_work() {
                 );
             }
             result.report_deadline = time(0)-1;
-            retval = result.mark_as_sent(result.server_state);
+            retval = result.mark_as_sent(result.server_state, config.report_grace_period);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "resend_lost_work: can't update result deadline: %d\n", retval
+                    "resend_lost_work: can't update result deadline: %s\n",
+                    boincerror(retval)
                 );
                 continue;
             }
 
-            retval = update_wu_transition_time(wu, result.report_deadline);
+            retval = update_wu_on_send(
+                wu, result.report_deadline + config.report_grace_period,
+                *app, *bavp
+            );
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "resend_lost_result: can't update WU transition time: %d\n", retval
+                    "resend_lost_result: can't update WU transition time: %s\n",
+                    boincerror(retval)
                 );
                 continue;
             }
@@ -227,4 +236,4 @@ bool resend_lost_work() {
     return did_any;
 }
 
-const char *BOINC_RCSID_3be23838b4="$Id: sched_resend.cpp 21749 2010-06-15 17:56:30Z davea $";
+const char *BOINC_RCSID_3be23838b4="$Id: sched_resend.cpp 23636 2011-06-06 03:40:42Z davea $";

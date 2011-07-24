@@ -35,12 +35,12 @@
 
 #include "credit.h"
 
-// TODO: delete
-double fpops_to_credit(double fpops, double intops) {
-    // TODO: use fp_weight if specified in config file
-    double fpc = (fpops/1e9)*COBBLESTONE_FACTOR/SECONDS_PER_DAY;
-    double intc = (intops/1e9)*COBBLESTONE_FACTOR/SECONDS_PER_DAY;
-    return std::max(fpc, intc);
+double fpops_to_credit(double fpops) {
+    return fpops*COBBLESTONE_SCALE;
+}
+
+double cpu_time_to_credit(double cpu_time, HOST& host) {
+    return fpops_to_credit(cpu_time*host.p_fpops);
 }
 
 // Grant the host (and associated user and team)
@@ -48,9 +48,7 @@ double fpops_to_credit(double fpops, double intops) {
 // Update the user and team records,
 // but not the host record (caller must update)
 //
-int grant_credit(
-    DB_HOST& host, double start_time, double cpu_time, double credit
-) {
+int grant_credit(DB_HOST& host, double start_time, double credit) {
     DB_USER user;
     DB_TEAM team;
     int retval;
@@ -71,8 +69,8 @@ int grant_credit(
     retval = user.lookup_id(host.userid);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "lookup of user %d failed %d\n",
-            host.userid, retval
+            "lookup of user %d failed: %s\n",
+            host.userid, boincerror(retval)
         );
         return retval;
     }
@@ -89,8 +87,8 @@ int grant_credit(
     retval = user.update_field(buf);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "update of user %d failed %d\n",
-             host.userid, retval
+            "update of user %d failed: %s\n",
+             host.userid, boincerror(retval)
         );
     }
 
@@ -100,8 +98,8 @@ int grant_credit(
         retval = team.lookup_id(user.teamid);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "lookup of team %d failed %d\n",
-                user.teamid, retval
+                "lookup of team %d failed: %s\n",
+                user.teamid, boincerror(retval)
             );
             return retval;
         }
@@ -117,8 +115,8 @@ int grant_credit(
         retval = team.update_field(buf);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "update of team %d failed %d\n",
-                team.id, retval
+                "update of team %d failed: %s\n",
+                team.id, boincerror(retval)
             );
         }
     }
@@ -336,6 +334,17 @@ inline double wu_estimated_pfc(WORKUNIT& wu, DB_APP& app) {
 }
 inline double wu_estimated_credit(WORKUNIT& wu, DB_APP& app) {
     return wu_estimated_pfc(wu, app)*COBBLESTONE_SCALE;
+}
+
+inline bool is_pfc_sane(double x, WORKUNIT& wu, DB_APP& app) {
+    if (x > 1e4 || x < 1e-4) {
+        log_messages.printf(MSG_CRITICAL,
+            "Bad FLOP ratio (%f): check workunit.rsc_fpops_est for %s (app %s)\n",
+            x, wu.name, app.name
+        );
+        return false;
+    }
+    return true;
 }
 
 // Compute or estimate "claimed peak FLOP count".
@@ -639,7 +648,10 @@ int get_pfc(
                 raw_pfc, wu.rsc_fpops_est
             );
         }
-        avp->pfc_samples.push_back(raw_pfc/wu.rsc_fpops_est);
+        double x = raw_pfc / wu.rsc_fpops_est;
+        if (is_pfc_sane(x, wu, app)) {
+            avp->pfc_samples.push_back(x);
+        }
     }
 
     if (config.debug_credit) {
@@ -650,11 +662,11 @@ int get_pfc(
             (r.received_time - r.sent_time)
         );
     }
-                
-    hav.pfc.update(
-        raw_pfc / wu.rsc_fpops_est,
-        HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
-    );
+
+    double x = raw_pfc / wu.rsc_fpops_est;
+    if (is_pfc_sane(x, wu, app)) {
+        hav.pfc.update(x, HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT);
+    }
     hav.et.update_var(
         r.elapsed_time / wu.rsc_fpops_est,
         HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
@@ -704,8 +716,7 @@ double vec_min(vector<double>& v) {
 }
 
 // Called by validator when canonical result has been selected.
-// Compute credit for valid instances, store in result.granted_credit
-// and return as credit
+// Compute credit for valid instances
 //
 int assign_credit_set(
     WORKUNIT& wu, vector<RESULT>& results,
@@ -726,8 +737,10 @@ int assign_credit_set(
         DB_HOST_APP_VERSION& hav = host_app_versions[i];
         retval = get_pfc(r, wu, app, app_versions, hav, pfc, mode);
         if (retval) {
-            log_messages.printf(MSG_CRITICAL, "get_pfc() error: %d\n", retval);
-            return retval;
+            log_messages.printf(MSG_CRITICAL,
+                "get_pfc() error: %s\n", boincerror(retval)
+            );
+            continue;
         } else {
             if (config.debug_credit) {
                 log_messages.printf(MSG_NORMAL,
@@ -736,17 +749,21 @@ int assign_credit_set(
                 );
             }
         }
-        if (max_granted_credit && pfc*COBBLESTONE_SCALE > max_granted_credit) {
-            log_messages.printf(MSG_NORMAL,
-                "[credit] Credit too high: %f\n", pfc*COBBLESTONE_SCALE
-            );
-            pfc = wu_estimated_pfc(wu, app);
-        }
         if (pfc > wu.rsc_fpops_bound) {
             log_messages.printf(MSG_NORMAL,
                 "[credit] PFC too high: %f\n", pfc*COBBLESTONE_SCALE
             );
             pfc = wu_estimated_pfc(wu, app);
+        }
+
+        // max_granted_credit trumps rsc_fpops_bound;
+        // the latter may be set absurdly high
+        //
+        if (max_granted_credit && pfc*COBBLESTONE_SCALE > max_granted_credit) {
+            log_messages.printf(MSG_NORMAL,
+                "[credit] Credit too high: %f\n", pfc*COBBLESTONE_SCALE
+            );
+            pfc = max_granted_credit/COBBLESTONE_SCALE;
         }
         if (mode == PFC_MODE_NORMAL) {
             normal.push_back(pfc);
@@ -762,20 +779,18 @@ int assign_credit_set(
     double x;
     if (normal.size()) {
         x = low_average(normal);
-    } else {
+    } else if (approx.size()) {
         x = vec_min(approx);
+    } else {
+        x = 0;
     }
+
     x *= COBBLESTONE_SCALE;
     if (config.debug_credit) {
         log_messages.printf(MSG_NORMAL,
             "[credit] [WU#%d] assign_credit_set: credit %g\n",
             wu.id, x
         );
-    }
-    for (i=0; i<results.size(); i++) {
-        RESULT& r = results[i];
-        if (r.validate_state != VALIDATE_STATE_VALID) continue;
-        r.granted_credit = x;
     }
     credit = x;
     return 0;
@@ -820,7 +835,7 @@ int write_modified_app_versions(vector<DB_APP_VERSION>& app_versions) {
             }
             continue;
         }
-        while (1) {
+        for (int k=0; k<10; k++) {
             double pfc_n_orig = av.pfc.n;
             double expavg_credit_orig = av.expavg_credit;
 

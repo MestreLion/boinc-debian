@@ -63,6 +63,45 @@ void segv_handler(int) {
 }
 #endif
 
+#ifdef _WIN32
+
+HMODULE opencl_lib = NULL;
+
+typedef cl_int (__stdcall *CL_PLATFORMIDS) (cl_uint, cl_platform_id*, cl_uint*);
+typedef cl_int (__stdcall *CL_PLATFORMINFO) (cl_platform_id, cl_platform_info, size_t, void*, size_t*);
+typedef cl_int (__stdcall *CL_DEVICEIDS)(cl_platform_id, cl_device_type, cl_uint, cl_device_id*, cl_uint*);
+typedef cl_int (__stdcall *CL_INFO) (cl_device_id, cl_device_info, size_t, void*, size_t*);
+
+CL_PLATFORMIDS  __clGetPlatformIDs = NULL;
+CL_PLATFORMINFO __clGetPlatformInfo = NULL;
+CL_DEVICEIDS    __clGetDeviceIDs = NULL;
+CL_INFO         __clGetDeviceInfo = NULL;
+
+#else
+
+void* opencl_lib = NULL;
+
+cl_int (*__clGetPlatformIDs)(cl_uint    /* num_entries */,
+                 cl_platform_id * /* platforms */,
+                 cl_uint *        /* num_platforms */);
+cl_int (*__clGetPlatformInfo)(cl_platform_id   /* platform */,
+                  cl_platform_info /* param_name */,
+                  size_t           /* param_value_size */,
+                  void *           /* param_value */,
+                  size_t *         /* param_value_size_ret */);
+cl_int (*__clGetDeviceIDs)(cl_platform_id   /* platform */,
+               cl_device_type   /* device_type */,
+               cl_uint          /* num_entries */,
+               cl_device_id *   /* devices */,
+               cl_uint *        /* num_devices */);
+cl_int (*__clGetDeviceInfo)(cl_device_id    /* device */,
+                cl_device_info  /* param_name */,
+                size_t          /* param_value_size */,
+                void *          /* param_value */,
+                size_t *        /* param_value_size_ret */);
+
+#endif
+
 void COPROC::print_available_ram() {
 #ifdef MEASURE_AVAILABLE_RAM
     if (gstate.now - last_print_time < 60) return;
@@ -89,15 +128,411 @@ void COPROC::print_available_ram() {
 #endif
 }
 
+
+//TODO: Determine how we want to compare OpenCL devices - this is only a placeholder
+// return 1/-1/0 if device 1 is more/less/same capable than device 2.
+// factors (decreasing priority):
+// - global memory
+// - local memory
+// - number of cores
+// - speed
+//
+// If "loose", tolerate small memory diff
+//
+int opencl_compare(OPENCL_DEVICE_PROP& c1, OPENCL_DEVICE_PROP& c2, bool loose) {
+    if (loose) {
+        if (c1.global_RAM > 1.4*c2.global_RAM) return 1;
+        if (c1.global_RAM < .7* c2.global_RAM) return -1;
+        return 0;
+    }
+    if (c1.global_RAM > c2.global_RAM) return 1;
+    if (c1.global_RAM < c2.global_RAM) return -1;
+
+    if (loose) {
+        if (c1.local_RAM > 1.4*c2.local_RAM) return 1;
+        if (c1.local_RAM < .7* c2.local_RAM) return -1;
+        return 0;
+    }
+    if (c1.local_RAM > c2.local_RAM) return 1;
+    if (c1.local_RAM < c2.local_RAM) return -1;
+
+    if (c1.max_cores > c2.max_cores) return 1;
+    if (c1.max_cores < c2.max_cores) return -1;
+
+    if (c1.max_clock_freq > c2.max_clock_freq) return 1;
+    if (c1.max_clock_freq < c2.max_clock_freq) return -1;
+
+    return 0;
+}
+
+void COPROCS::get_opencl(bool use_all, vector<string>&warnings) {
+    cl_int ciErrNum;
+    cl_platform_id platforms[MAX_OPENCL_PLATFORMS];
+    cl_uint num_platforms, platform_index, num_devices, device_index;
+    cl_device_id devices[MAX_COPROC_INSTANCES];
+    OPENCL_DEVICE_PROP prop;
+    vector<OPENCL_DEVICE_PROP> nvidia_opencls;
+    vector<OPENCL_DEVICE_PROP> ati_opencls;
+    unsigned int i;
+
+#ifdef _WIN32
+    opencl_lib = LoadLibrary("OpenCL.dll");
+    if (!opencl_lib) {
+        warnings.push_back("No OpenCL library found");
+        return;
+    }
+
+    __clGetPlatformIDs = (CL_PLATFORMIDS)GetProcAddress( opencl_lib, "clGetPlatformIDs" );
+    __clGetPlatformInfo = (CL_PLATFORMINFO)( opencl_lib, "clGetPlatformInfo" );
+    __clGetDeviceIDs = (CL_DEVICEIDS)GetProcAddress( opencl_lib, "clGetDeviceIDs" );
+    __clGetDeviceInfo = (CL_INFO)GetProcAddress( opencl_lib, "clGetDeviceInfo" );
+#else
+#ifdef __APPLE__
+    opencl_lib = dlopen("/System/Library/Frameworks/OpenCL.framework/Versions/Current/OpenCL", RTLD_NOW);
+#else
+// TODO: Is this correct?
+    opencl_lib = dlopen("libOpenCL.so", RTLD_NOW);
+#endif
+    if (!opencl_lib) {
+        warnings.push_back("No OpenCL library found");
+        return;
+    }
+    __clGetPlatformIDs = (cl_int(*)(cl_uint, cl_platform_id*, cl_uint*)) dlsym( opencl_lib, "clGetPlatformIDs" );
+    __clGetPlatformInfo = (cl_int(*)(cl_platform_id, cl_platform_info, size_t, void*, size_t*)) dlsym( opencl_lib, "clGetPlatformInfo" );
+    __clGetDeviceIDs = (cl_int(*)(cl_platform_id, cl_device_type, cl_uint, cl_device_id*, cl_uint*)) dlsym( opencl_lib, "clGetDeviceIDs" );
+    __clGetDeviceInfo = (cl_int(*)(cl_device_id, cl_device_info, size_t, void*, size_t*)) dlsym( opencl_lib, "clGetDeviceInfo" );
+#endif
+
+    if (!__clGetPlatformIDs) {
+        warnings.push_back("clGetPlatformIDs() missing from OpenCL library");
+        return;
+    }
+    if (!__clGetPlatformInfo) {
+        warnings.push_back("clGetPlatformInfo() missing from OpenCL library");
+        return;
+    }
+    if (!__clGetDeviceIDs) {
+        warnings.push_back("clGetDeviceIDs() missing from OpenCL library");
+        return;
+    }
+    if (!__clGetDeviceInfo) {
+        warnings.push_back("clGetDeviceInfo() missing from OpenCL library");
+        return;
+    }
+
+    ciErrNum = (*__clGetPlatformIDs)(MAX_OPENCL_PLATFORMS, platforms, &num_platforms);
+    if ((ciErrNum != CL_SUCCESS) || (num_platforms == 0)) {
+        warnings.push_back("clGetPlatformIDs() failed to return any OpenCL platforms");
+        return;
+    }
+    
+    for (platform_index=0; platform_index<num_platforms; ++platform_index) {
+        ciErrNum = (*__clGetDeviceIDs)(
+            platforms[platform_index], CL_DEVICE_TYPE_GPU, MAX_COPROC_INSTANCES, devices, &num_devices
+        );
+        if (ciErrNum != CL_SUCCESS) {
+            char buf[256];
+            sprintf(buf, "clGetDeviceIDs for platform #%d returned error %d", platform_index, ciErrNum);
+            warnings.push_back(buf);
+            return;
+        }
+
+        for (device_index=0; device_index<num_devices; ++device_index) {
+            memset(&prop, 0, sizeof(prop));
+            prop.device_id = devices[device_index];
+            
+//TODO: Should we store the platform(s) for each GPU found?
+//TODO: Must we check if multiple platforms found the same GPU and merge the records?
+
+            ciErrNum = get_opencl_info(prop, device_index, warnings);
+            if (ciErrNum != CL_SUCCESS) break;
+            
+            if (strstr(prop.vendor, "NVIDIA")) {
+                 nvidia_opencls.push_back(prop);
+            }
+            if ((strstr(prop.vendor, "ATI")) || 
+                (strstr(prop.vendor, "AMD")) ||  
+                (strstr(prop.vendor, "Advanced Micro Devices, Inc."))
+            ) {
+                 ati_opencls.push_back(prop);
+            }
+        }
+    }
+
+    if ((nvidia_opencls.size() == 0) && (ati_opencls.size() == 0)) {
+        warnings.push_back("OpenCL library present but no OpenCL-capable GPUs found");
+        return;
+    }
+
+    if (nvidia.have_cuda) { // If CUDA already found the "best" NVIDIA GPU
+        for (i=0; i<nvidia_opencls.size(); i++) {
+            if (nvidia.matches(nvidia_opencls[i])) {
+                // TODO: how do we exclude those listed by config.ignore_nvidia_dev ??
+                nvidia.opencl_prop = nvidia_opencls[i];
+                nvidia.opencl_device_ids[nvidia.opencl_device_count++] = nvidia_opencls[i].device_id;
+                nvidia.have_opencl = true;
+            }
+        }
+    } else {
+        // identify the most capable NVIDIA OpenCL GPU
+        //
+        bool first = true;
+        for (i=0; i<nvidia_opencls.size(); i++) {
+//TODO: Temporary code for testing
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc_debug] COPROC_NVIDIA [no CUDA]: nvidia_opencls[%d].name = '%s'; nvidia_opencls[%d].device_id = %p",
+                    i, nvidia_opencls[i].name, i, nvidia_opencls[i].device_id);
+                msg_printf(0, MSG_INFO,
+                    "[coproc_debug] COPROC_NVIDIA [no CUDA]: nvidia_opencls[%d].global_RAM = %lu; nvidia_opencls[%d].local_RAM = %lu",
+                    i, nvidia_opencls[i].global_RAM, i, nvidia_opencls[i].local_RAM);
+            }
+//          if (in_vector(nvidia_opencls[i].device_num, ignore_devs)) continue;
+            bool is_best = false;
+            if (first) {
+                is_best = true;
+                first = false;
+            } else if (opencl_compare(nvidia_opencls[i], nvidia.opencl_prop, false) > 0) {
+                is_best = true;
+            }
+            if (is_best) {
+                nvidia.opencl_prop = nvidia_opencls[i];     // fill in what info we have
+                strcpy(nvidia.prop.name, nvidia_opencls[i].name);
+                nvidia.prop.totalGlobalMem = nvidia_opencls[i].global_RAM;
+                nvidia.prop.clockRate = nvidia_opencls[i].max_clock_freq * 1000;
+                nvidia.have_opencl = true;
+            }
+        }
+
+        // see which other instances are equivalent,
+        // and set the "opencl_device_count" and "opencl_device_ids" fields
+        //
+        nvidia.opencl_device_count = 0;
+        for (i=0; i<nvidia_opencls.size(); i++) {
+#if 0
+// TODO: should we implement config.ignore_opencl_dev?
+            char buf2[256];
+//TODO: What should description() be for OpenCL?
+            nvidia_opencls[i].description(buf);
+            if (in_vector(nvidia_opencls[i].device_num, ignore_devs)) {
+                sprintf(buf2, "NVIDIA GPU %d (ignored by config): %s", nvidia_opencls[i].device_num, buf);
+            } else 
+#endif
+            if (use_all || !opencl_compare(nvidia_opencls[i], nvidia.opencl_prop, true)) {
+                nvidia.opencl_device_ids[nvidia.opencl_device_count++] = nvidia_opencls[i].device_id;
+//                sprintf(buf2, "NVIDIA GPU %d: %s", nvidia_opencls[i].device_num, buf);
+//            } else {
+//                sprintf(buf2, "NVIDIA GPU %d (not used): %s", nvidia_opencls[i].device_num, buf);
+            }
+//            descs.push_back(string(buf2));
+        }
+    }           // End if (! nvidia.have_cuda)
+
+    if (ati.have_cal) { // If CAL already found the "best" CAL GPU
+        for (i=0; i<ati_opencls.size(); i++) {
+            if (ati.matches(ati_opencls[i])) {
+                // TODO: how do we exclude those listed by config.ignore_ati_dev ??
+                ati.opencl_prop = ati_opencls[i];
+                ati.opencl_device_ids[ati.opencl_device_count++] = ati_opencls[i].device_id;
+                ati.have_opencl = true;
+            }
+        }
+    } else {
+        // identify the most capable ATI OpenCL GPU
+        //
+        bool first = true;
+        for (i=0; i<ati_opencls.size(); i++) {
+//TODO: Temporary code for testing
+            if (log_flags.coproc_debug) {
+                msg_printf(0, MSG_INFO,
+                    "[coproc_debug] COPROC_ATI [no CAL]: ati_opencls[%d].name = '%s'; ati_opencls[%d].device_id = %p",
+                    i, ati_opencls[i].name, i, ati_opencls[i].device_id);
+                msg_printf(0, MSG_INFO,
+                    "[coproc_debug] COPROC_ATI [no CAL]: ati_opencls[%d].global_RAM = %lu; ati_opencls[%d].local_RAM = %lu",
+                    i, ati_opencls[i].global_RAM, i, ati_opencls[i].local_RAM);
+            }
+//          if (in_vector(ati_opencls[i].device_num, ignore_devs)) continue;
+            bool is_best = false;
+            if (first) {
+                is_best = true;
+                first = false;
+            } else if (opencl_compare(ati_opencls[i], ati.opencl_prop, false) > 0) {
+                is_best = true;
+            }
+            if (is_best) {
+                ati.opencl_prop = ati_opencls[i];     // fill in what info we have
+                strcpy(ati.name, ati_opencls[i].name);
+                ati.attribs.localRAM = ati_opencls[i].local_RAM;
+                ati.attribs.engineClock = ati_opencls[i].max_clock_freq;
+                ati.have_opencl = true;
+            }
+        }
+
+        // see which other instances are equivalent,
+        // and set the "opencl_device_count" and "opencl_device_ids" fields
+        //
+        ati.opencl_device_count = 0;
+        for (i=0; i<ati_opencls.size(); i++) {
+#if 0
+// TODO: should we implement config.ignore_opencl_dev?
+            char buf2[256];
+            ati_opencls[i].description(buf);
+            if (in_vector(ati_opencls[i].device_num, ignore_devs)) {
+                sprintf(buf2, "ATI GPU %d (ignored by config): %s", ati_opencls[i].device_num, buf);
+            } else 
+#endif
+            if (use_all || !opencl_compare(ati_opencls[i], ati.opencl_prop, true)) {
+                ati.opencl_device_ids[ati.opencl_device_count++] = ati_opencls[i].device_id;
+//                sprintf(buf2, "ATI GPU %d: %s", ati_opencls[i].device_num, buf);
+//            } else {
+//                sprintf(buf2, "ATI GPU %d (not used): %s", ati_opencls[i].device_num, buf);
+            }
+//            descs.push_back(string(buf2));
+        }
+    }           // End if (! ati.have_cuda)
+//TODO: Add code to add for other GPU vendors
+}
+
+cl_int COPROCS::get_opencl_info(
+    OPENCL_DEVICE_PROP& prop, 
+    cl_uint device_index, 
+    vector<string>&warnings
+) {
+    cl_int ciErrNum;
+    char buf[256];
+    
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_NAME, sizeof(prop.name), prop.name, NULL);
+    if ((ciErrNum != CL_SUCCESS) || (prop.name[0] == 0)) {
+        sprintf(buf, "clGetDeviceInfo failed to get name for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_VENDOR, sizeof(prop.vendor), prop.vendor, NULL);
+    if ((ciErrNum != CL_SUCCESS) || (prop.vendor[0] == 0)) {
+        sprintf(buf, "clGetDeviceInfo failed to get vendor for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_VENDOR_ID, sizeof(prop.vendor_id), &prop.vendor_id, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get vendor ID for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_AVAILABLE, sizeof(prop.available), &prop.available, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get availability for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_HALF_FP_CONFIG, sizeof(prop.hp_fp_config), &prop.hp_fp_config, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        if ((ciErrNum == CL_INVALID_VALUE) || (ciErrNum == CL_INVALID_OPERATION)) {
+            prop.hp_fp_config = 0;  // Not supported by OpenCL 1.0
+        } else {
+            sprintf(buf, "clGetDeviceInfo failed to get half-precision floating point capabilities for GPU %d", (int)device_index);
+            warnings.push_back(buf);
+            return ciErrNum;
+        }
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_SINGLE_FP_CONFIG, sizeof(prop.sp_fp_config), &prop.sp_fp_config, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get single-precision floating point capabilities for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_DOUBLE_FP_CONFIG, sizeof(prop.dp_fp_config), &prop.dp_fp_config, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        if ((ciErrNum == CL_INVALID_VALUE) || (ciErrNum == CL_INVALID_OPERATION)) {
+            prop.dp_fp_config = 0;  // Not supported by OpenCL 1.0
+        } else {
+            sprintf(buf, "clGetDeviceInfo failed to get double-precision floating point capabilities for GPU %d", (int)device_index);
+            warnings.push_back(buf);
+            return ciErrNum;
+        }
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_ENDIAN_LITTLE, sizeof(prop.little_endian), &prop.little_endian, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get little or big endian for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_EXECUTION_CAPABILITIES, sizeof(prop.exec_capab), &prop.exec_capab, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get execution capabilities for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_EXTENSIONS, sizeof(prop.extensions), prop.extensions, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get device extensions for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(prop.global_RAM), &prop.global_RAM, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get global RAM size for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(prop.local_RAM), &prop.local_RAM, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get local RAM size for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(prop.max_clock_freq), &prop.max_clock_freq, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get max number of cores for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(prop.max_cores), &prop.max_cores, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get local RAM size for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_VERSION, sizeof(prop.openCL_device_version), prop.openCL_device_version, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get OpenCL version supported by GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DRIVER_VERSION, sizeof(prop.openCL_driver_version), prop.openCL_driver_version, NULL);
+    if (ciErrNum != CL_SUCCESS) {
+        sprintf(buf, "clGetDeviceInfo failed to get OpenCL driver version for GPU %d", (int)device_index);
+        warnings.push_back(buf);
+        return ciErrNum;
+    }
+
+    return CL_SUCCESS;
+}
+
 void COPROCS::get(
     bool use_all, vector<string>&descs, vector<string>&warnings,
-    vector<int>& ignore_cuda_dev,
+    vector<int>& ignore_nvidia_dev,
     vector<int>& ignore_ati_dev
 ) {
 
 #ifdef _WIN32
     try {
-        cuda.get(use_all, descs, warnings, ignore_cuda_dev);
+        nvidia.get(use_all, descs, warnings, ignore_nvidia_dev);
     }
     catch (...) {
         warnings.push_back("Caught SIGSEGV in NVIDIA GPU detection");
@@ -108,12 +543,18 @@ void COPROCS::get(
     catch (...) {
         warnings.push_back("Caught SIGSEGV in ATI GPU detection");
     }
+    try {
+        get_opencl(use_all, warnings);
+    } 
+    catch (...) {
+        warnings.push_back("Caught SIGSEGV in OpenCL detection");
+    }
 #else
     void (*old_sig)(int) = signal(SIGSEGV, segv_handler);
     if (setjmp(resume)) {
         warnings.push_back("Caught SIGSEGV in NVIDIA GPU detection");
     } else {
-        cuda.get(use_all, descs, warnings, ignore_cuda_dev);
+        nvidia.get(use_all, descs, warnings, ignore_nvidia_dev);
     }
 #ifndef __APPLE__       // ATI does not yet support CAL on Macs
     if (setjmp(resume)) {
@@ -122,9 +563,18 @@ void COPROCS::get(
         ati.get(use_all, descs, warnings, ignore_ati_dev);
     }
 #endif
+    if (setjmp(resume)) {
+        warnings.push_back("Caught SIGSEGV in OpenCL detection");
+    } else {
+        get_opencl(use_all, warnings);
+    }
     signal(SIGSEGV, old_sig);
 #endif
 }
+
+
+////////////////// NVIDIA STARTS HERE /////////////////
+//
 
 // return 1/-1/0 if device 1 is more/less/same capable than device 2.
 // factors (decreasing priority):
@@ -135,7 +585,7 @@ void COPROCS::get(
 //
 // If "loose", ignore FLOPS and tolerate small memory diff
 //
-int cuda_compare(COPROC_CUDA& c1, COPROC_CUDA& c2, bool loose) {
+int nvidia_compare(COPROC_NVIDIA& c1, COPROC_NVIDIA& c2, bool loose) {
     if (c1.prop.major > c2.prop.major) return 1;
     if (c1.prop.major < c2.prop.major) return -1;
     if (c1.prop.minor > c2.prop.minor) return 1;
@@ -149,8 +599,8 @@ int cuda_compare(COPROC_CUDA& c1, COPROC_CUDA& c2, bool loose) {
     }
     if (c1.prop.totalGlobalMem > c2.prop.totalGlobalMem) return 1;
     if (c1.prop.totalGlobalMem < c2.prop.totalGlobalMem) return -1;
-    double s1 = c1.peak_flops();
-    double s2 = c2.peak_flops();
+    double s1 = c1.peak_flops;
+    double s2 = c2.peak_flops;
     if (s1 > s2) return 1;
     if (s1 < s2) return -1;
     return 0;
@@ -227,13 +677,13 @@ int (*__cuMemGetInfo)(unsigned int*, unsigned int*);
 // NVIDIA interfaces are documented here:
 // http://developer.download.nvidia.com/compute/cuda/2_3/toolkit/docs/online/index.html
 
-void COPROC_CUDA::get(
+void COPROC_NVIDIA::get(
     bool use_all,    // if false, use only those equivalent to most capable
     vector<string>& descs,
     vector<string>& warnings,
     vector<int>& ignore_devs
 ) {
-    int count, retval;
+    int cuda_ndevs, retval;
     char buf[256];
 
 #ifdef _WIN32
@@ -353,7 +803,6 @@ void COPROC_CUDA::get(
         return;
     }
 
-    int cuda_version;
     retval = (*__cuDriverGetVersion)(&cuda_version);
     if (retval) {
         sprintf(buf, "cuDriverGetVersion() returned %d", retval);
@@ -361,21 +810,21 @@ void COPROC_CUDA::get(
         return;
     }
 
-    vector<COPROC_CUDA> gpus;
-    retval = (*__cuDeviceGetCount)(&count);
+    vector<COPROC_NVIDIA> gpus;
+    retval = (*__cuDeviceGetCount)(&cuda_ndevs);
     if (retval) {
         sprintf(buf, "cuDeviceGetCount() returned %d", retval);
         warnings.push_back(buf);
         return;
     }
-    sprintf(buf, "NVIDIA library reports %d GPU%s", count, (count==1)?"":"s");
+    sprintf(buf, "NVIDIA library reports %d GPU%s", cuda_ndevs, (cuda_ndevs==1)?"":"s");
     warnings.push_back(buf);
 
     int j;
     unsigned int i;
-    COPROC_CUDA cc;
+    COPROC_NVIDIA cc;
     string s;
-    for (j=0; j<count; j++) {
+    for (j=0; j<cuda_ndevs; j++) {
         memset(&cc.prop, 0, sizeof(cc.prop));
         int device;
         retval = (*__cuDeviceGet)(&device, j);
@@ -384,6 +833,7 @@ void COPROC_CUDA::get(
             warnings.push_back(buf);
             return;
         }
+        cc.prop.deviceHandle = device;
         (*__cuDeviceGetName)(cc.prop.name, 256, device);
         if (retval) {
             sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
@@ -416,8 +866,10 @@ void COPROC_CUDA::get(
 #else
         cc.display_driver_version = 0;
 #endif
+        cc.have_cuda = true;
         cc.cuda_version = cuda_version;
         cc.device_num = j;
+		cc.set_peak_flops();
         gpus.push_back(cc);
     }
 
@@ -428,46 +880,41 @@ void COPROC_CUDA::get(
 
     // identify the most capable non-ignored instance
     //
-    COPROC_CUDA best;
     bool first = true;
     for (i=0; i<gpus.size(); i++) {
         if (in_vector(gpus[i].device_num, ignore_devs)) continue;
         if (first) {
-            best = gpus[i];
+            *this = gpus[i];
             first = false;
-        } else if (cuda_compare(gpus[i], best, false) > 0) {
-            best = gpus[i];
+        } else if (nvidia_compare(gpus[i], *this, false) > 0) {
+            *this = gpus[i];
         }
     }
 
     // see which other instances are equivalent,
     // and set the "count" and "device_nums" fields
     //
-    best.count = 0;
+    count = 0;
     for (i=0; i<gpus.size(); i++) {
         char buf2[256];
         gpus[i].description(buf);
         if (in_vector(gpus[i].device_num, ignore_devs)) {
             sprintf(buf2, "NVIDIA GPU %d (ignored by config): %s", gpus[i].device_num, buf);
-        } else if (use_all || !cuda_compare(gpus[i], best, true)) {
-            best.device_nums[best.count] = gpus[i].device_num;
-            best.count++;
+        } else if (use_all || !nvidia_compare(gpus[i], *this, true)) {
+            device_nums[count] = gpus[i].device_num;
+            count++;
             sprintf(buf2, "NVIDIA GPU %d: %s", gpus[i].device_num, buf);
         } else {
             sprintf(buf2, "NVIDIA GPU %d (not used): %s", gpus[i].device_num, buf);
         }
         descs.push_back(string(buf2));
     }
-
-    if (best.count) {
-        *this = best;
-    }
 }
 
 // fake a NVIDIA GPU (for debugging)
 //
-void COPROC_CUDA::fake(int driver_version, double ram, int n) {
-   strcpy(type, "CUDA");
+void COPROC_NVIDIA::fake(int driver_version, double ram, int n) {
+   strcpy(type, "NVIDIA");
    count = n;
    for (int i=0; i<count; i++) {
        device_nums[i] = i;
@@ -493,12 +940,13 @@ void COPROC_CUDA::fake(int driver_version, double ram, int n) {
    prop.clockRate = 1250000;
    prop.textureAlignment = 1000;
    prop.multiProcessorCount = 14;
+   set_peak_flops();
 }
 
 // See how much RAM is available on each GPU.
 // If this fails, set "available_ram_unknown"
 //
-void COPROC_CUDA::get_available_ram() {
+void COPROC_NVIDIA::get_available_ram() {
 #ifdef MEASURE_AVAILABLE_RAM
     int device, i, retval;
     unsigned int memfree, memtotal;
@@ -560,7 +1008,7 @@ void COPROC_CUDA::get_available_ram() {
 // check whether each GPU is running a graphics app (assume yes)
 // return true if there's been a change since last time
 //
-bool COPROC_CUDA::check_running_graphics_app() {
+bool COPROC_NVIDIA::check_running_graphics_app() {
     int retval, j;
     bool change = false;
     for (j=0; j<count; j++) {
@@ -579,6 +1027,44 @@ bool COPROC_CUDA::check_running_graphics_app() {
         running_graphics_app[j] = new_val;
     }
     return change;
+}
+
+bool COPROC_NVIDIA::matches(OPENCL_DEVICE_PROP& OpenCLprop) {
+    bool retval = true;
+
+//TODO: Temporary code for testing
+    if (log_flags.coproc_debug) {
+        msg_printf(0, MSG_INFO,
+            "[coproc_debug] COPROC_NVIDIA [in matches()]: prop.name = '%s'; OpenCLprop.name = '%s'",
+            prop.name, OpenCLprop.name);
+        msg_printf(0, MSG_INFO,
+            "[coproc_debug] COPROC_NVIDIA [in matches()]: device_num = %d, prop.deviceHandle = %d; OpenCLprop.device_id = %p",
+            device_num, prop.deviceHandle, OpenCLprop.device_id);
+        msg_printf(0, MSG_INFO,
+            "[coproc_debug] COPROC_NVIDIA [in matches()]: prop.totalGlobalMem = %u; OpenCLprop.global_RAM = %lu; OpenCLprop.local_RAM = %lu",
+            prop.totalGlobalMem, OpenCLprop.global_RAM, OpenCLprop.local_RAM);
+    }
+
+#if 0//def _WIN32
+//TODO: Verify this test is correct
+    if (prop.deviceHandle != OpenCLprop.device_id) return false;
+#else
+    if (strcmp(prop.name, OpenCLprop.name)) retval = false;
+//TODO: Figure out why these don't match
+//TODO: Should there be "loose" comparisons here?
+//    if (prop.totalGlobalMem != OpenCLprop.global_RAM) return false;
+//    if ((prop.clockRate / 1000) != (int)OpenCLprop.max_clock_freq) retval = false;
+#endif
+
+//TODO: Temporary code for testing
+    if (log_flags.coproc_debug) {
+        if (retval) {
+            msg_printf(0, MSG_INFO, "[coproc_debug] COPROC_NVIDIA: Match Found!");
+        } else {
+            msg_printf(0, MSG_INFO, "[coproc_debug] COPROC_NVIDIA: Match NOT Found!");
+        }
+    }
+    return retval;
 }
 
 ////////////////// ATI STARTS HERE /////////////////
@@ -603,8 +1089,8 @@ int ati_compare(COPROC_ATI& c1, COPROC_ATI& c2, bool loose) {
     }
     if (c1.attribs.localRAM > c2.attribs.localRAM) return 1;
     if (c1.attribs.localRAM < c2.attribs.localRAM) return -1;
-    double s1 = c1.peak_flops();
-    double s2 = c2.peak_flops();
+    double s1 = c1.peak_flops;
+    double s2 = c2.peak_flops;
     if (s1 > s2) return 1;
     if (s1 < s2) return -1;
     return 0;
@@ -651,13 +1137,8 @@ void COPROC_ATI::get(
 ) {
     CALuint numDevices, cal_major, cal_minor, cal_imp;
     CALdevice device;
-    CALdeviceinfo info;
-    CALdeviceattribs attribs;
     char buf[256];
-    bool amdrt_detected = false;
-    bool atirt_detected = false;
     int retval;
-    unsigned int i;
 
     attribs.struct_size = sizeof(CALdeviceattribs);
     device = 0;
@@ -868,11 +1349,12 @@ void COPROC_ATI::get(
         case 19:
             gpu_name="AMD Radeon HD 6300 series (Caicos)";
             break;
-		// there arent any other target ids inside the Shadercompiler (YET !!! )
+        // there arent any other target ids inside the Shadercompiler (YET !!! )
         default:
             gpu_name="ATI unknown";
             break;
         }
+        cc.have_cal = true;
         cc.attribs = attribs;
         cc.info = info;
         strcpy(cc.name, gpu_name.c_str());
@@ -880,6 +1362,7 @@ void COPROC_ATI::get(
         cc.amdrt_detected = amdrt_detected;
         cc.atirt_detected = atirt_detected;
         cc.device_num = i;
+		cc.set_peak_flops();
         gpus.push_back(cc);
     }
 
@@ -892,36 +1375,32 @@ void COPROC_ATI::get(
         return;
     }
 
-    COPROC_ATI best;
     bool first = true;
+    unsigned int i;
     for (i=0; i<gpus.size(); i++) {
         if (in_vector(gpus[i].device_num, ignore_devs)) continue;
         if (first) {
-            best = gpus[i];
+            *this = gpus[i];
             first = false;
-        } else if (ati_compare(gpus[i], best, false) > 0) {
-            best = gpus[i];
+        } else if (ati_compare(gpus[i], *this, false) > 0) {
+            *this = gpus[i];
         }
     }
 
-    best.count = 0;
+    count = 0;
     for (i=0; i<gpus.size(); i++) {
-        char buf[256], buf2[256];
+        char buf2[256];
         gpus[i].description(buf);
         if (in_vector(gpus[i].device_num, ignore_devs)) {
             sprintf(buf2, "ATI GPU %d (ignored by config): %s", gpus[i].device_num, buf);
-        } else if (use_all || !ati_compare(gpus[i], best, true)) {
-            best.device_nums[best.count] = gpus[i].device_num;
-            best.count++;
+        } else if (use_all || !ati_compare(gpus[i], *this, true)) {
+            device_nums[count] = gpus[i].device_num;
+            count++;
             sprintf(buf2, "ATI GPU %d: %s", gpus[i].device_num, buf);
         } else {
             sprintf(buf2, "ATI GPU %d: (not used) %s", gpus[i].device_num, buf);
         }
         descs.push_back(string(buf2));
-    }
-
-    if (best.count) {
-        *this = best;
     }
 }
 
@@ -939,6 +1418,7 @@ void COPROC_ATI::fake(double ram, int n) {
     for (int i=0; i<count; i++) {
         device_nums[i] = i;
     }
+	set_peak_flops();
 }
 
 void COPROC_ATI::get_available_ram() {
@@ -1004,4 +1484,42 @@ void COPROC_ATI::get_available_ram() {
         available_ram[i] = attribs.localRAM*MEGA;
     }
 #endif
+}
+
+bool COPROC_ATI::matches(OPENCL_DEVICE_PROP& OpenCLprop) {
+    bool retval = true;
+
+//TODO: Temporary code for testing
+    if (log_flags.coproc_debug) {
+        msg_printf(0, MSG_INFO,
+            "[coproc_debug] COPROC_ATI [in matches()]: prop.name = '%s'; OpenCLprop.name = '%s'",
+            name, OpenCLprop.name);
+        msg_printf(0, MSG_INFO,
+            "[coproc_debug] COPROC_ATI [in matches()]: device_num = %d; OpenCLprop.device_id = %p",
+            device_num, OpenCLprop.device_id);
+        msg_printf(0, MSG_INFO,
+            "[coproc_debug] COPROC_ATI [in matches()]: attribs.localRAM = %u; OpenCLprop.global_RAM = %lu; OpenCLprop.local_RAM = %lu",
+            attribs.localRAM, OpenCLprop.global_RAM, OpenCLprop.local_RAM);
+    }
+
+#if 0//def _WIN32
+//TODO: Verify this test is correct
+    if (prop.deviceHandle != OpenCLprop.device_id) return false;
+#else
+    if (strcmp(name, OpenCLprop.name)) retval = false;
+//TODO: Figure out why these don't match
+//TODO: Should there be "loose" comparisons here?
+//    if (attribs.localRAM != OpenCLprop.local_RAM) retval = false;
+//    if (attribs.engineClock != OpenCLprop.max_clock_freq) retval = false;
+#endif
+
+//TODO: Temporary code for testing
+    if (log_flags.coproc_debug) {
+        if (retval) {
+            msg_printf(0, MSG_INFO, "[coproc_debug] COPROC_ATI: Match Found!");
+        } else {
+            msg_printf(0, MSG_INFO, "[coproc_debug] COPROC_ATI: Match NOT Found!");
+        }
+    }
+    return retval;
 }

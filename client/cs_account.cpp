@@ -85,16 +85,22 @@ int PROJECT::write_account_file() {
     return 0;
 }
 
+void handle_no_rsc_pref(PROJECT* p, const char* name) {
+    int i = rsc_index(name);
+    if (i < 0) return;
+    p->no_rsc_pref[i] = true;
+}
+
 // parse an account_*.xml file, ignoring <venue> elements
 // (since we don't know the host venue yet)
 //
 int PROJECT::parse_account(FILE* in) {
-    char buf[256];
+    char buf[256], buf2[256];
     int retval;
-    bool in_project_prefs = false;
-    no_cpu_pref = false;
-    no_cuda_pref = false;
-    no_ati_pref = false;
+    bool in_project_prefs = false, btemp;
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        no_rsc_pref[i] = false;
+    }
 
     strcpy(master_url, "");
     strcpy(authenticator, "");
@@ -120,9 +126,22 @@ int PROJECT::parse_account(FILE* in) {
             continue;
         } else if (parse_str(buf, "<authenticator>", authenticator, sizeof(authenticator))) continue;
         else if (parse_double(buf, "<resource_share>", resource_share)) continue;
-        else if (parse_bool(buf, "no_cpu", no_cpu_pref)) continue;
-        else if (parse_bool(buf, "no_cuda", no_cuda_pref)) continue;
-        else if (parse_bool(buf, "no_ati", no_ati_pref)) continue;
+        else if (parse_bool(buf, "no_cpu", btemp)) {
+            if (btemp) handle_no_rsc_pref(this, "CPU");
+            continue;
+        }
+        else if (parse_bool(buf, "no_cuda", btemp)) {
+            if (btemp) handle_no_rsc_pref(this, "NVIDIA");
+            continue;
+        }
+        else if (parse_bool(buf, "no_ati", btemp)) {
+            if (btemp) handle_no_rsc_pref(this, "ATI");
+            continue;
+        }
+        else if (parse_str(buf, "no_rsc", buf2, sizeof(buf2))) {
+            handle_no_rsc_pref(this, buf2);
+            continue;
+        }
         else if (parse_str(buf, "<project_name>", project_name, sizeof(project_name))) continue;
         else if (match_tag(buf, "<gui_urls>")) {
             string foo;
@@ -158,9 +177,9 @@ int PROJECT::parse_account(FILE* in) {
 // (so that we know the host venue)
 //
 int PROJECT::parse_account_file_venue() {
-    char buf[256], venue[256], path[256];
+    char buf[256], venue[256], path[256], buf2[256];
     int retval;
-    bool in_right_venue = false;
+    bool in_right_venue = false, btemp;
 
     get_account_filename(master_url, path);
     FILE* in = boinc_fopen(path, "r");
@@ -175,9 +194,12 @@ int PROJECT::parse_account_file_venue() {
             if (!strcmp(venue, host_venue)) {
                 using_venue_specific_prefs = true;
                 in_right_venue = true;
-                no_cpu_pref = false;    // reset these
-                no_cuda_pref = false;
-                no_ati_pref = false;
+
+                // reset these
+                //
+                for (int i=0; i<coprocs.n_rsc; i++) {
+                    no_rsc_pref[i] = false;
+                }
             } else {
                 std::string devnull;
                 retval = copy_element_contents(in, "</venue>", devnull);
@@ -200,9 +222,22 @@ int PROJECT::parse_account_file_venue() {
         } else if (parse_double(buf, "<resource_share>", resource_share)) {
             continue;
         }
-        else if (parse_bool(buf, "no_cpu", no_cpu_pref)) continue;
-        else if (parse_bool(buf, "no_cuda", no_cuda_pref)) continue;
-        else if (parse_bool(buf, "no_ati", no_ati_pref)) continue;
+        else if (parse_bool(buf, "no_cpu", btemp)) {
+            if (btemp) handle_no_rsc_pref(this, "CPU");
+            continue;
+        }
+        else if (parse_bool(buf, "no_cuda", btemp)) {
+            if (btemp) handle_no_rsc_pref(this, "NVIDIA");
+            continue;
+        }
+        else if (parse_bool(buf, "no_ati", btemp)) {
+            if (btemp) handle_no_rsc_pref(this, "ATI");
+            continue;
+        }
+        else if (parse_str(buf, "no_rsc", buf2, sizeof(buf2))) {
+            handle_no_rsc_pref(this, buf2);
+            continue;
+        }
         else {
             if (log_flags.unparsed_xml) {
                 msg_printf(0, MSG_INFO,

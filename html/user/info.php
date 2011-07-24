@@ -19,6 +19,8 @@
 require_once('../inc/util.inc');
 require_once('../inc/translation.inc');
 
+check_get_args(array());
+
 page_head(tra("Read our rules and policies"));
 
 $show_default = true;
@@ -56,5 +58,5 @@ echo "
     <p>".tra("These other projects are not associated with %1, and we cannot vouch for their security practices or the nature of their research. Join them at your own risk.", PROJECT);
 }
 page_tail();
-$cvs_version_tracker[]="\$Id: info.php 16780 2009-01-05 17:40:33Z jbk $";
+$cvs_version_tracker[]="\$Id: info.php 23010 2011-02-09 22:11:34Z davea $";
 ?>

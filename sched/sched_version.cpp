@@ -27,10 +27,6 @@
 
 #include "sched_version.h"
 
-inline bool is_64b_platform(const char* name) {
-    return (strstr(name, "64") != NULL);
-}
-
 inline void dont_need_message(
     const char* p, APP_VERSION* avp, CLIENT_APP_VERSION* cavp
 ) {
@@ -104,8 +100,8 @@ inline int host_usage_to_gavid(HOST_USAGE& hu, APP& app) {
 inline int scaled_max_jobs_per_day(DB_HOST_APP_VERSION& hav, HOST_USAGE& hu) {
     int n = hav.max_jobs_per_day;
     if (hu.ncudas) {
-        if (g_request->coprocs.cuda.count) {
-            n *= g_request->coprocs.cuda.count;
+        if (g_request->coprocs.nvidia.count) {
+            n *= g_request->coprocs.nvidia.count;
         }
         if (config.gpu_multiplier) {
             n *= config.gpu_multiplier;
@@ -327,11 +323,11 @@ void estimate_flops(HOST_USAGE& hu, APP_VERSION& av) {
             );
         }
     } else {
-        if (av.pfc_scale) {
-            hu.projected_flops *= av.pfc_scale;
+        if (av.pfc.n > MIN_VERSION_SAMPLES) {
+            hu.projected_flops = hu.peak_flops/av.pfc.get_avg();
             if (config.debug_version_select) {
                 log_messages.printf(MSG_NORMAL,
-                    "[version] [AV#%d] (%s) adjusting projected flops based on PFC scale: %.2fG\n",
+                    "[version] [AV#%d] (%s) adjusting projected flops based on PFC avg: %.2fG\n",
                     av.id, av.plan_class, hu.projected_flops/1e9
                 );
             }
@@ -378,6 +374,39 @@ static double max_32b_address_space() {
     return 2*GIGA;
 }
 
+// The WU is already committed to an app version.
+// - check if this host supports that platform
+// - if plan class, check if this host can handle it
+// - check if we need work for the resource
+//
+static BEST_APP_VERSION* check_homogeneous_app_version(
+    WORKUNIT& wu, bool reliable_only
+) {
+    static BEST_APP_VERSION bav;
+
+    bool found=false;
+    APP_VERSION *avp = ssp->lookup_app_version(wu.app_version_id);
+    for (unsigned int i=0; i<g_request->platforms.list.size(); i++) {
+        PLATFORM* p = g_request->platforms.list[i];
+        if (p->id == avp->platformid) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) return NULL;
+    if (strlen(avp->plan_class)) {
+        if (!app_plan(*g_request, avp->plan_class, bav.host_usage)) {
+            return NULL;
+        }
+    } else {
+        bav.host_usage.sequential_app(g_reply->host.p_fpops);
+    }
+    if (!need_this_resource(bav.host_usage, avp, NULL)) {
+        return NULL;
+    }
+    return &bav;
+}
+
 // return BEST_APP_VERSION for the given job and host, or NULL if none
 //
 // check_req: check whether we still need work for the resource
@@ -415,6 +444,13 @@ BEST_APP_VERSION* get_app_version(
         return NULL;
     }
 
+    // handle the case where we're using homogeneous app version
+    // and the WU is already committed to an app version
+    //
+    if (app->homogeneous_app_version && wu.app_version_id) {
+        return check_homogeneous_app_version(wu, reliable_only);
+    }
+
     // see if app is already in memoized array
     //
     std::vector<BEST_APP_VERSION*>::iterator bavi;
@@ -436,7 +472,9 @@ BEST_APP_VERSION* get_app_version(
             // if we're at the jobs-in-progress limit for this
             // app and resource type, fall through and find another version
             //
-            if (config.max_jobs_in_progress.exceeded(app, bavp->host_usage.uses_gpu())) {
+            if (config.max_jobs_in_progress.exceeded(
+                app, bavp->host_usage.uses_gpu())
+            ) {
                 if (config.debug_version_select) {
                     app_version_desc(*bavp, buf);
                     log_messages.printf(MSG_NORMAL,
@@ -508,6 +546,9 @@ BEST_APP_VERSION* get_app_version(
         bavi++;
     }
 
+    // here if app was not in memoized array,
+    // or we couldn't use the app version there.
+
     if (config.debug_version_select) {
         log_messages.printf(MSG_NORMAL,
             "[version] looking for version of %s\n",
@@ -537,7 +578,6 @@ BEST_APP_VERSION* get_app_version(
             }
         }
         g_wreq->best_app_versions.push_back(bavp);
-        g_wreq->all_best_app_versions.push_back(bavp);
         if (!bavp->present) return NULL;
         return bavp;
     }
@@ -576,17 +616,19 @@ BEST_APP_VERSION* get_app_version(
                 continue;
             }
             if (strlen(av.plan_class)) {
-                if (!g_request->client_cap_plan_class) {
-                    if (config.debug_version_select) {
-                        log_messages.printf(MSG_NORMAL,
-                            "[version] [AV#%d] client %d lacks plan class capability\n",
-                            av.id, g_request->core_client_version
-                        );
-                    }
-                    continue;
-                }
                 if (!app_plan(*g_request, av.plan_class, host_usage)) {
                     continue;
+                }
+                if (!g_request->client_cap_plan_class) {
+                    if (!host_usage.is_sequential_app()) {
+                        if (config.debug_version_select) {
+                            log_messages.printf(MSG_NORMAL,
+                                "[version] [AV#%d] client %d lacks plan class capability\n",
+                                av.id, g_request->core_client_version
+                            );
+                        }
+                        continue;
+                    }
                 }
             } else {
                 host_usage.sequential_app(g_reply->host.p_fpops);
@@ -646,6 +688,12 @@ BEST_APP_VERSION* get_app_version(
             // skip versions for which we're at the jobs-in-progress limit
             //
             if (config.max_jobs_in_progress.exceeded(app, host_usage.uses_gpu())) {
+                if (config.debug_version_select) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[version] [AV#%d] jobs in progress limit exceeded\n",
+                        av.id
+                    );
+                }
                 continue;
             }
 
@@ -663,9 +711,11 @@ BEST_APP_VERSION* get_app_version(
 
             estimate_flops(host_usage, av);
 
-            // pick the fastest version
+            // pick the fastest version.
+            // Throw in a random factor in case the estimates are off.
             //
-            if (host_usage.projected_flops > bavp->host_usage.projected_flops) {
+            double r = 1 + .1*rand_normal();
+            if (r*host_usage.projected_flops > bavp->host_usage.projected_flops) {
                 bavp->host_usage = host_usage;
                 bavp->avp = &av;
                 bavp->reliable = app_version_is_reliable(av.id);
@@ -704,9 +754,10 @@ BEST_APP_VERSION* get_app_version(
         }
         if (no_version_for_platform) {
             sprintf(message,
-                "%s %s.",
+                "%s %s %s.",
                 app->user_friendly_name,
-                _("is not available for your type of computer")
+                _("is not available for"),
+                g_request->platforms.list[0]->user_friendly_name
             );
             add_no_work_message(message);
         }

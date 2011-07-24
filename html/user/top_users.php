@@ -21,6 +21,8 @@ require_once("../inc/util.inc");
 require_once("../inc/user.inc");
 require_once("../inc/boinc_db.inc");
 
+check_get_args(array("sort_by", "offset"));
+
 $config = get_config();
 $users_per_page = parse_config($config, "<users_per_page>");
 if (!$users_per_page) {
@@ -104,7 +106,7 @@ if ($offset < ITEM_LIMIT) {
 
         //save data in cache
         //
-        set_cache_data(serialize($data),$cache_args);
+        set_cached_data(TOP_PAGES_TTL, serialize($data),$cache_args);
     }
 } else {
     error_page(tra("Limit exceeded - Sorry, first %1 items only", ITEM_LIMIT));

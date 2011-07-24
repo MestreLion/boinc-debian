@@ -20,6 +20,9 @@ require_once('../inc/db.inc');
 require_once('../inc/util.inc');
 require_once('../inc/countries.inc');
 require_once('../inc/translation.inc');
+require_once('../inc/recaptchalib.php');
+
+check_get_args(array("next_url", "teamid"));
 
 $next_url = sanitize_local_url(get_str('next_url', true));
 
@@ -76,17 +79,17 @@ start_table();
 if(defined('INVITE_CODES')) {
      row2(
          tra("Invitation Code")."<br><span class=\"description\">".tra("A valid invitation code is required to create an account.")."</span>",
-         "<input name=\"invite_code\" size=\"30\">"
+         "<input type=\"text\" name=\"invite_code\" size=\"30\" >"
      );
 } 
 
 row2(
     tra("Name")."<br><span class=\"description\">".tra("Identifies you on our web site. Use your real name or a nickname.")."</span>",
-    "<input name=\"new_name\" size=\"30\">"
+    "<input type=\"text\" name=\"new_name\" size=\"30\">"
 );
 row2(
     tra("Email Address")."<br><span class=\"description\">".tra("Must be a valid address of the form 'name@domain'.")."</span>",
-    "<input name=\"new_email_addr\" size=\"50\">"
+    "<input type=\"text\" name=\"new_email_addr\" size=\"50\">"
 );
 $min_passwd_length = parse_element($config, "<min_passwd_length>");
 if (!$min_passwd_length) {
@@ -107,8 +110,20 @@ print_country_select();
 echo "</select></td></tr>\n";
 row2(
     tra("Postal or ZIP Code")."<br><span class=\"description\">".tra("Optional")."</span>",
-    "<input name=\"postal_code\" size=\"20\">"
+    "<input type=\"text\" name=\"postal_code\" size=\"20\">"
 );
+
+// Check if we need reCaptcha for making more safe the creation of accounts
+$publickey = parse_config($config, "<recaptcha_public_key>");
+
+if ($publickey) {
+
+        row2(
+            tra("Please enter the words shown in the image"),
+            recaptcha_get_html($publickey)
+        );
+}
+
 row2("",
     "<input type=\"submit\" value=\"".tra("Create account")."\">"
 );
@@ -117,6 +132,6 @@ echo "
     </form>
 ";
 
-$cvs_version_tracker[]="\$Id: create_account_form.php 22471 2010-10-07 17:41:29Z romw $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: create_account_form.php 23755 2011-06-20 17:17:56Z davea $";  //Generated automatically - do not edit
 page_tail();
 ?>

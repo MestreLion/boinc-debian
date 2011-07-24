@@ -23,7 +23,7 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
-#else 
+#else
 #include "config.h"
 #endif
 
@@ -163,7 +163,6 @@ int ACTIVE_TASK::preempt(int preempt_type) {
                 result->name
             );
         }
-        set_task_state(PROCESS_QUIT_PENDING, "preempt");
         retval = request_exit();
     } else {
         if (log_flags.cpu_sched) {
@@ -194,7 +193,7 @@ void ACTIVE_TASK::cleanup_task() {
     }
 #else
     int retval;
-    
+
     if (app_client_shm.shm) {
 #ifndef __EMX__
         if (app_version->api_major_version() >= 6) {
@@ -268,10 +267,10 @@ bool app_running(vector<PROCINFO>& piv, const char* p) {
 
 #if 0  // debugging
 void procinfo_show(PROCINFO& pi, vector<PROCINFO>& piv) {
-	unsigned int i;
-	memset(&pi, 0, sizeof(pi));
-	for (i=0; i<piv.size(); i++) {
-		PROCINFO& p = piv[i];
+    unsigned int i;
+    memset(&pi, 0, sizeof(pi));
+    for (i=0; i<piv.size(); i++) {
+        PROCINFO& p = piv[i];
 
         pi.kernel_time += p.kernel_time;
         pi.user_time += p.user_time;
@@ -285,7 +284,7 @@ void procinfo_show(PROCINFO& pi, vector<PROCINFO>& piv) {
 void ACTIVE_TASK_SET::get_memory_usage() {
     static double last_mem_time=0;
     unsigned int i;
-	int retval;
+    int retval;
     static bool first = true;
     static double last_cpu_time;
 
@@ -302,14 +301,14 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     last_mem_time = gstate.now;
     vector<PROCINFO> piv;
     retval = procinfo_setup(piv);
-	if (retval) {
-		if (log_flags.mem_usage_debug) {
-			msg_printf(NULL, MSG_INTERNAL_ERROR,
-				"[mem_usage] procinfo_setup() returned %d", retval
-			);
-		}
-		return;
-	}
+    if (retval) {
+        if (log_flags.mem_usage_debug) {
+            msg_printf(NULL, MSG_INTERNAL_ERROR,
+                "[mem_usage] procinfo_setup() returned %d", retval
+            );
+        }
+        return;
+    }
     for (i=0; i<active_tasks.size(); i++) {
         ACTIVE_TASK* atp = active_tasks[i];
         if (atp->task_state() == PROCESS_UNINITIALIZED) continue;
@@ -333,7 +332,7 @@ void ACTIVE_TASK_SET::get_memory_usage() {
         pi.page_fault_rate = pf/diff;
         if (log_flags.mem_usage_debug) {
             msg_printf(atp->result->project, MSG_INFO,
-                "[mem_usage] %s: WS %.2fMB, smoothed %.2fMB page %.2fMB, %.2f page faults/sec, user CPU %.3f, kernel CPU %.3f",
+                "[mem_usage] %s: WS %.2fMB, smoothed %.2fMB, page %.2fMB, %.2f page faults/sec, user CPU %.3f, kernel CPU %.3f",
                 atp->result->name,
                 pi.working_set_size/MEGA,
                 pi.working_set_size_smoothed/MEGA,
@@ -729,6 +728,10 @@ int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
     while (fin.fgets(buf, 256)) {
         if (match_tag(buf, "</active_task_set>")) return 0;
         else if (match_tag(buf, "<active_task>")) {
+#ifdef SIM
+            ACTIVE_TASK at;
+            at.parse(fin);
+#else
             atp = new ACTIVE_TASK;
             retval = atp->parse(fin);
             if (!retval) {
@@ -742,6 +745,7 @@ int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
             }
             if (!retval) active_tasks.push_back(atp);
             else delete atp;
+#endif
         } else {
             if (log_flags.unparsed_xml) {
                 msg_printf(NULL, MSG_INFO,
@@ -756,63 +760,59 @@ int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
 #ifndef SIM
 
 void MSG_QUEUE::init(char* n) {
-	strcpy(name, n);
-	last_block = 0;
-	msgs.clear();
+    strcpy(name, n);
+    last_block = 0;
+    msgs.clear();
 }
 
 void MSG_QUEUE::msg_queue_send(const char* msg, MSG_CHANNEL& channel) {
     if ((msgs.size()==0) && channel.send_msg(msg)) {
-		if (log_flags.app_msg_send) {
+        if (log_flags.app_msg_send) {
             msg_printf(NULL, MSG_INFO, "[app_msg_send] sent %s to %s", msg, name);
-		}
+        }
         last_block = 0;
-		return;
+        return;
     }
-	if (log_flags.app_msg_send) {
+    if (log_flags.app_msg_send) {
         msg_printf(NULL, MSG_INFO, "[app_msg_send] deferred %s to %s", msg, name);
-	}
+    }
     msgs.push_back(std::string(msg));
-	if (!last_block) last_block = gstate.now;
+    if (!last_block) last_block = gstate.now;
 }
 
 void MSG_QUEUE::msg_queue_poll(MSG_CHANNEL& channel) {
     if (msgs.size() > 0) {
-		if (log_flags.app_msg_send) {
-			msg_printf(NULL, MSG_INFO,
-				"[app_msg_send] poll: %d msgs queued for %s:",
-				(int)msgs.size(), name
-			);
-		}
+        if (log_flags.app_msg_send) {
+            msg_printf(NULL, MSG_INFO,
+                "[app_msg_send] poll: %d msgs queued for %s:",
+                (int)msgs.size(), name
+            );
+        }
         if (channel.send_msg(msgs[0].c_str())) {
-			if (log_flags.app_msg_send) {
-				msg_printf(NULL, MSG_INFO, "[app_msg_send] poll: delayed sent %s", (msgs[0].c_str()));
-			}
+            if (log_flags.app_msg_send) {
+                msg_printf(NULL, MSG_INFO, "[app_msg_send] poll: delayed sent %s", (msgs[0].c_str()));
+            }
             msgs.erase(msgs.begin());
-			last_block = 0;
-		}
-		for (unsigned int i=0; i<msgs.size(); i++) {
-			if (log_flags.app_msg_send) {
-				msg_printf(NULL, MSG_INFO, "[app_msg_send] poll:  deferred: %s", (msgs[0].c_str()));
-			}
-		}
+            last_block = 0;
+        }
+        for (unsigned int i=0; i<msgs.size(); i++) {
+            if (log_flags.app_msg_send) {
+                msg_printf(NULL, MSG_INFO,
+                    "[app_msg_send] poll: deferred: %s", (msgs[0].c_str())
+                );
+            }
+        }
     }
 }
 
 // if the last message in the buffer is "msg", remove it and return 1
 //
 int MSG_QUEUE::msg_queue_purge(const char* msg) {
-	int count = (int)msgs.size();
-	if (!count) return 0;
-	vector<string>::iterator iter = msgs.begin();
-	for (int i=0; i<count-1; i++) {
-		iter++;
-	}
-	if (log_flags.app_msg_send) {
-		msg_printf(NULL, MSG_INFO,
-		    "[app_msg_send] purge: wanted  %s last msg is %s in %s",
-		    msg, iter->c_str(), name
-	    );
+    int count = (int)msgs.size();
+    if (!count) return 0;
+    vector<string>::iterator iter = msgs.begin();
+    for (int i=0; i<count-1; i++) {
+        iter++;
     }
     if (log_flags.app_msg_send) {
         msg_printf(NULL, MSG_INFO,
@@ -831,11 +831,11 @@ int MSG_QUEUE::msg_queue_purge(const char* msg) {
 }
 
 bool MSG_QUEUE::timeout(double diff) {
-	if (!last_block) return false;
-	if (gstate.now - last_block > diff) {
-		return true;
-	}
-	return false;
+    if (!last_block) return false;
+    if (gstate.now - last_block > diff) {
+        return true;
+    }
+    return false;
 }
 
 #endif

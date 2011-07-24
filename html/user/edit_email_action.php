@@ -21,6 +21,8 @@ require_once("../inc/util.inc");
 require_once("../inc/email.inc");
 require_once("../inc/user.inc");
 
+check_get_args(array());
+
 $user = get_logged_in_user();
 
 $email_addr = strtolower(post_str("email_addr"));
@@ -60,6 +62,9 @@ if (!is_valid_email_addr($email_addr)) {
                 echo "
                     The email address of your account is now $email_addr.
                 ";
+                if (defined("SHOW_NONVALIDATED_EMAIL_ADDR")) {
+                    echo "<p>Please <a href=validate_email_addr.php>validate this email address</a>.\n";
+                }
             } else {
                 echo "
                     We can't update your email address

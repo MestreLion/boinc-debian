@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 23334 2011-04-05 17:14:56Z romw $
+## $Id: Makefile.am 23365 2011-04-14 01:04:10Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -21,6 +21,7 @@ if OS_DARWIN
    mac_sources = mac/SystemMenu.m \
                  mac/mac_saver_module.cpp \
                  mac/Mac_Saver_ModuleView.m \
+                 mac/MacBitmapComboBox.cpp \
                  mac/MacSysMenu.cpp \
                  mac/Mac_GUI.cpp\
                  mac/browser_safari.mm
@@ -59,7 +60,6 @@ boincmgr_SOURCES = \
     CompletionErrorPage.cpp \
     CompletionPage.cpp \
     common/wxPieCtrl.cpp \
-    common/wxFlatNotebook.cpp \
     DlgAbout.cpp 		\
     DlgAdvPreferences.cpp \
     DlgAdvPreferencesBase.cpp \
@@ -83,17 +83,16 @@ boincmgr_SOURCES = \
     ProjectPropertiesPage.cpp \
     ProxyInfoPage.cpp \
     ProxyPage.cpp \
-    sg_BoincSimpleGUI.cpp \
-    sg_ClientStateIndicator.cpp \
+    sg_BoincSimpleFrame.cpp \
     sg_CustomControls.cpp \
     sg_DlgMessages.cpp \
     sg_DlgPreferences.cpp \
-    sg_ImageButton.cpp \
-    sg_ImageLoader.cpp \
-    sg_ProgressBar.cpp \
-    sg_ProjectsComponent.cpp \
-    sg_StatImageLoader.cpp \
-    sg_ViewTabPage.cpp \
+    sg_PanelBase.cpp \
+    sg_ProjectCommandPopup.cpp \
+    sg_ProjectPanel.cpp \
+    sg_ProjectWebSitesPopup.cpp \
+    sg_TaskCommandPopup.cpp \
+    sg_TaskPanel.cpp \
     SkinManager.cpp \
     stdwx.cpp \
     TermsOfUsePage.cpp \
@@ -118,9 +117,9 @@ EXTRA_DIST = *.h \
     ../lib/error_numbers.h \
     locale $(mac_headers)
 
-boincmgr_CPPFLAGS = $(AM_CPPFLAGS) $(WX_CPPFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS)
-boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS)
-boincmgr_LDADD = $(LIBBOINC) $(SQLITE3_LIBS) $(LIBNOTIFY_LIBS) $(CLIENTGUILIBS) $(BOINC_EXTRA_LIBS) $(CLIENTLIBS)
+boincmgr_CPPFLAGS = $(AM_CPPFLAGS) $(WX_CPPFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) `pkg-config --cflags gtk+-2.0`
+boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) `pkg-config --cflags gtk+-2.0`
+boincmgr_LDFLAGS = $(LIBBOINC) $(SQLITE3_LIBS) $(LIBNOTIFY_LIBS) $(CLIENTGUILIBS) $(BOINC_EXTRA_LIBS) $(CLIENTLIBS) `pkg-config --libs gtk+-2.0` -lnotify
 
 win_config.h: $(top_srcdir)/config.h
 	grep '#define.*BOINC.*VERSION' $^ > $@

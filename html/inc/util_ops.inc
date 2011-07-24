@@ -128,6 +128,7 @@ function print_login_form_ops($next_url='') {
     ";
     row2("Email", "<input name=email_addr size=40>");
     row2("Password", "<input type=password name=passwd size=40>");
+    row2(tra("Stay logged in on this computer"), '<input type="checkbox" name="stay_logged_in" checked>');
     row2("", "<input type=submit value=OK>");
     end_table();
 }
@@ -204,11 +205,30 @@ if (!function_exists('auth_ops')) {
     }
 }
 
-function error_page_ops($msg) {
+function admin_error_page($msg) {
     admin_page_head("Unable to handle request");
     echo $msg;
     admin_page_tail();
     exit;
+}
+
+// given a list of app versions,
+// return a list of the current, non-deprecated ones
+//
+function current_versions($avs) {
+    foreach($avs as $av) {
+        foreach ($avs as $av2) {
+            if ($av->id == $av2->id) continue;
+            if ($av->platformid == $av2->platformid && $av->plan_class == $av2->plan_class && $av->version_num > $av2->version_num) {
+                $av2->deprecated = 1;
+            }
+        }
+    }
+    $x = array();
+    foreach($avs as $av) {
+        if (!$av->deprecated) $x[] = $av;
+    }
+    return $x;
 }
 
 if (isset($cli_only)) {
@@ -223,5 +243,5 @@ if (!isset($skip_auth_ops) && array_key_exists("SERVER_PORT", $_SERVER)) {
     auth_ops();
 }
 
-$cvs_version_tracker[]="\$Id: util_ops.inc 20671 2010-02-21 04:45:52Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util_ops.inc 23840 2011-07-13 21:50:48Z davea $";  //Generated automatically - do not edit
 ?>

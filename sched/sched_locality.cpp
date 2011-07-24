@@ -275,9 +275,9 @@ int decrement_disk_space_locality( WORKUNIT& wu) {
 // - already sent a result for this WU
 // - no app_version available
 //
-static int possibly_send_result(DB_RESULT& result) {
+static int possibly_send_result(SCHED_DB_RESULT& result) {
     DB_WORKUNIT wu;
-    DB_RESULT result2;
+    SCHED_DB_RESULT result2;
     int retval, count;
     char buf[256];
     BEST_APP_VERSION* bavp;
@@ -289,7 +289,7 @@ static int possibly_send_result(DB_RESULT& result) {
 
     bavp = get_app_version(wu, true, false);
 
-    if (!bavp && is_anonymous(g_request->platforms.list[0])) {
+    if (!config.locality_scheduler_fraction && !bavp && is_anonymous(g_request->platforms.list[0])) {
         char help_msg_buf[512];
         sprintf(help_msg_buf,
             "To get more %s work, finish current work, stop BOINC, remove app_info.xml file, and restart.",
@@ -349,7 +349,8 @@ static bool retrieve_single_trigger_by_fileset_name(char *fileset_name, DB_SCHED
     }
     else {
         log_messages.printf(MSG_CRITICAL,
-                "[locality] trigger retrieval for filename %s failed with error %i\n", fileset_name, retval
+            "[locality] trigger retrieval for filename %s failed with error %s\n",
+            fileset_name, boincerror(retval)
         );
         return false;
     }
@@ -361,12 +362,12 @@ static bool retrieve_single_trigger_by_fileset_name(char *fileset_name, DB_SCHED
 // (no way to be sure if it succeeded).
 //
 int make_more_work_for_file(char* filename) {
-	int retval = 0;
+    int retval = 0;
     DB_SCHED_TRIGGER trigger;
 
 
     if (!retrieve_single_trigger_by_fileset_name(filename, trigger)) {
-    	// trigger retrieval failed (message logged by previous method)
+        // trigger retrieval failed (message logged by previous method)
         return -1;
     }
 
@@ -390,7 +391,10 @@ int make_more_work_for_file(char* filename) {
     // for this fileset. If this operation fails, don't worry or tarry!
     retval = trigger.update_single_state(DB_SCHED_TRIGGER::state_need_work, true);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "unable to set need_work state for trigger %s (error: %d)\n", filename, retval);
+        log_messages.printf(MSG_CRITICAL,
+            "unable to set need_work state for trigger %s (error: %s)\n",
+            filename, boincerror(retval)
+        );
         return -1;
     }
 
@@ -510,11 +514,11 @@ static int get_working_set_filename(char *filename, bool slowhost) {
 
 
 static void flag_for_possible_removal(char* fileset_name) {
-	int retval = 0;
+    int retval = 0;
     DB_SCHED_TRIGGER trigger;
 
     if (!retrieve_single_trigger_by_fileset_name(fileset_name, trigger)) {
-    	// trigger retrieval failed (message logged by previous method)
+        // trigger retrieval failed (message logged by previous method)
         return;
     }
 
@@ -526,7 +530,10 @@ static void flag_for_possible_removal(char* fileset_name) {
     // set trigger state to working_set_removal
     retval = trigger.update_single_state(DB_SCHED_TRIGGER::state_working_set_removal, true);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "unable to set working_set_removal state for trigger %s (error: %d)\n", fileset_name, retval);
+        log_messages.printf(MSG_CRITICAL,
+            "unable to set working_set_removal state for trigger %s (error: %s)\n",
+            fileset_name, boincerror(retval)
+        );
     }
 }
 
@@ -540,7 +547,7 @@ static int send_results_for_file(
     int& nsent,
     bool /*in_working_set*/
 ) {
-    DB_RESULT result, prev_result;
+    SCHED_DB_RESULT result, prev_result;
     char buf[256], query[1024];
     int i, maxid, retval_max, retval_lookup, sleep_made_no_work=0;
 
@@ -765,7 +772,7 @@ static int send_results_for_file(
 static int send_new_file_work_deterministic_seeded(
     int& nsent, const char *start_f, const char *end_f
 ) {
-    DB_RESULT result;
+    SCHED_DB_RESULT result;
     char filename[256], min_resultname[256], query[1024];
     int retval;
 
@@ -969,7 +976,7 @@ static int send_new_file_work() {
 static int send_old_work(int t_min, int t_max) {
     char buf[1024], filename[256];
     int retval, extract_retval, nsent;
-    DB_RESULT result;
+    SCHED_DB_RESULT result;
     int now=time(0);
 
     if (!work_needed(true)) {
@@ -1191,13 +1198,13 @@ void send_work_locality() {
             // generate corresponding l1_XXXX.XX_S5R4 and *_S5R7 patterns and delete it also
             //
             if (strlen(fi.name)==15 && !strncmp("h1_", fi.name, 3)) {
-	        FILE_INFO fil4,fil7,fih7;
-		fil4=fi;
-		fil4.name[0]='l';
-		fil7=fil4;
-		fil7.name[14]='7';
-		fih7=fi;
-		fih7.name[14]='7';
+                FILE_INFO fil4,fil7,fih7;
+                fil4=fi;
+                fil4.name[0]='l';
+                fil7=fil4;
+                fil7.name[14]='7';
+                fih7=fi;
+                fih7.name[14]='7';
                 g_reply->file_deletes.push_back(fil4);
                 g_reply->file_deletes.push_back(fil7);
                 g_reply->file_deletes.push_back(fih7);
@@ -1300,4 +1307,4 @@ void send_file_deletes() {
 
 // (8) If addtional results are needed, return to step 4 above.
 
-const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 22052 2010-07-23 17:43:20Z davea $";
+const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 23636 2011-06-06 03:40:42Z davea $";

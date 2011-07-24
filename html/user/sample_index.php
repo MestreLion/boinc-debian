@@ -16,6 +16,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+// This is a template for your web site's front page.
+// You are encouraged to customize this file,
+// and to create a graphical identity for your web site
+// my developing your own stylesheet
+// and customizing the header/footer functions in html/project/project.inc
+
 require_once("../inc/db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/news.inc");
@@ -26,15 +32,29 @@ require_once("../inc/translation.inc");
 require_once("../inc/text_transform.inc");
 require_once("../project/project.inc");
 
+check_get_args(array());
+
 function show_nav() {
     $config = get_config();
     $master_url = parse_config($config, "<master_url>");
-    echo "<div id=\"mainnav\">
-        <h2>About ".PROJECT."</h2>
-        XXX is a research project that uses Internet-connected
-        computers to do research in XXX.
-        You can participate by downloading and running a free program
-        on your computer.
+    $no_computing = parse_config($config, "<no_computing>");
+    echo "<div class=\"mainnav\">
+        <h2 class=headline>About ".PROJECT."</h2>
+    ";
+    if ($no_computing) {
+        echo "
+            XXX is a research project that uses volunteers
+            to do research in XXX.
+        ";
+    } else {
+        echo "
+            XXX is a research project that uses Internet-connected
+            computers to do research in XXX.
+            You can participate by downloading and running a free program
+            on your computer.
+        ";
+    }
+    echo "
         <p>
         XXX is based at 
         [describe your institution, with link to web page]
@@ -42,29 +62,50 @@ function show_nav() {
         <li> [Link to page describing your research in detail]
         <li> [Link to page listing project personnel, and an email address]
         </ul>
-        <h2>Join ".PROJECT."</h2>
+        <h2 class=headline>Join ".PROJECT."</h2>
         <ul>
-        <li><a href=\"info.php\">".tra("Read our rules and policies")."</a>
-        <li> This project uses BOINC.
-            If you're already running BOINC, select Add Project.
-            If not, <a target=\"_new\" href=\"http://boinc.berkeley.edu/download.php\">download BOINC</a>.
-        <li> When prompted, enter <br><b>".$master_url."</b>
-        <li> If you're running a command-line version of BOINC,
-            <a href=\"create_account_form.php\">create an account</a> first.
-        <li> If you have any problems,
-            <a target=\"_new\" href=\"http://boinc.berkeley.edu/help.php\">get help here</a>.
+    ";
+    if ($no_computing) {
+        echo "
+            <li> <a href=\"create_account_form.php\">Create an account</a>
+        ";
+    } else {
+        echo "
+            <li><a href=\"info.php\">".tra("Read our rules and policies")."</a>
+            <li> This project uses BOINC.
+                If you're already running BOINC, select Add Project.
+                If not, <a target=\"_new\" href=\"http://boinc.berkeley.edu/download.php\">download BOINC</a>.
+            <li> When prompted, enter <br><b>".$master_url."</b>
+            <li> If you're running a command-line version of BOINC,
+                <a href=\"create_account_form.php\">create an account</a> first.
+            <li> If you have any problems,
+                <a target=\"_new\" href=\"http://boinc.berkeley.edu/wiki/BOINC_Help\">get help here</a>.
+        ";
+    }
+    echo "
         </ul>
 
-        <h2>Returning participants</h2>
+        <h2 class=headline>Returning participants</h2>
         <ul>
-        <li><a href=\"home.php\">Your account</a> - view stats, modify preferences
-        <li><a href=server_status.php>Server status</a>
-        <li><a href=\"team.php\">Teams</a> - create or join a team
-        <li><a href=\"cert1.php\">Certificate</a>
-        <li> <a href=\"apps.php\">".tra("Applications")."</a>
-
+    ";
+    if ($no_computing) {
+        echo "
+            <li><a href=\"bossa_apps.php\">Do work</a>
+            <li><a href=\"home.php\">Your account</a> - view stats, modify preferences
+            <li><a href=\"team.php\">Teams</a> - create or join a team
+        ";
+    } else {
+        echo "
+            <li><a href=\"home.php\">Your account</a> - view stats, modify preferences
+            <li><a href=server_status.php>Server status</a>
+            <li><a href=\"team.php\">Teams</a> - create or join a team
+            <li><a href=\"cert1.php\">Certificate</a>
+            <li><a href=\"apps.php\">".tra("Applications")."</a>
+        ";
+    }
+    echo "
         </ul>
-        <h2>".tra("Community")."</h2>
+        <h2 class=headline>".tra("Community")."</h2>
         <ul>
         <li><a href=\"profile_menu.php\">".tra("Profiles")."</a>
         <li><a href=\"user_search.php\">User search</a>
@@ -75,12 +116,6 @@ function show_nav() {
         </ul>
         </div>
     ";
-}
-
-$caching = false;
-
-if ($caching) {
-    start_cache(INDEX_PAGE_TTL);
 }
 
 $stopped = web_stopped();
@@ -94,15 +129,23 @@ echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://
 echo "<html>
     <head>
     <title>".PROJECT."</title>
-	<link rel=\"stylesheet\" type=\"text/css\" href=\"main.css\" media=\"all\" />
+    <link rel=\"stylesheet\" type=\"text/css\" href=\"main.css\" media=\"all\" />
     <link rel=\"stylesheet\" type=\"text/css\" href=\"".STYLESHEET."\">
     <link rel=\"alternate\" type=\"application/rss+xml\" title=\"".$rssname."\" href=\"".$rsslink."\">
 ";
 include 'schedulers.txt';
 echo "
     </head><body>
-    <span class=page_title>".PROJECT."</span>
-    <table cellpadding=\"8\" cellspacing=\"4\">
+    <div class=page_title>".PROJECT."</div>
+";
+
+if (!$stopped) {
+    get_logged_in_user(false);
+    show_login_info();
+}
+
+echo "
+    <table cellpadding=\"8\" cellspacing=\"4\" class=bordered>
     <tr><td rowspan=\"2\" valign=\"top\" width=\"40%\">
 ";
 
@@ -127,8 +170,8 @@ if (!$stopped) {
     $profile = get_current_uotd();
     if ($profile) {
         echo "
-            <td id=\"uotd\">
-            <h2>".tra("User of the day")."</h2>
+            <td class=uotd>
+            <h2 class=headline>".tra("User of the day")."</h2>
         ";
         show_uotd($profile);
         echo "</td></tr>\n";
@@ -136,8 +179,8 @@ if (!$stopped) {
 }
 
 echo "
-    <tr><td id=\"news\">
-    <h2>News</h2>
+    <tr><td class=news>
+    <h2 class=headline>News</h2>
     <p>
 ";
 include("motd.php");
@@ -147,12 +190,6 @@ echo "
     </tr></table>
 ";
 
-
-if ($caching) {
-    page_tail_main(true);
-    end_cache(INDEX_PAGE_TTL);
-} else {
-    page_tail_main();
-}
+page_tail_main();
 
 ?>

@@ -32,7 +32,7 @@ function team_search_form($params) {
     start_table();
     row2('<b>'.tra('Search criteria (use one or more)').'</b>', '');
     row2(tra('Key words').'<br><span class="note">'.tra('Find teams with these words in their names or descriptions').'</span>',
-        '<input name="keywords" value="' . htmlspecialchars($params->keywords) . '">');
+        '<input type="text" name="keywords" value="' . htmlspecialchars($params->keywords) . '">');
     row2_init(tra('Country'), '');
     echo '<select name="country"><option value="" selected>---</option>';
     $country = $params->country;
@@ -89,7 +89,7 @@ function display_team_page($team, $user) {
         }
         row2(tra('Web site'), "<a href=$x>$x</a>");
     }
-    
+
     if (!no_computing()) {
         row2(tra('Total credit'), format_credit_large($team->total_credit));
         row2(tra('Recent average credit'), format_credit_large($team->expavg_credit));
@@ -196,7 +196,7 @@ function display_team_members($team, $offset, $sort_by) {
     } else {
         $sort_clause = "expavg_credit desc";
     }
-    
+
     start_table();
     echo '<tr>
         <th>'.tra('Name').'</th>
@@ -225,11 +225,16 @@ function display_team_members($team, $offset, $sort_by) {
         <th>'.tra('Country').'</th>
         </tr>
     ';
-
-    if ($nosort) {
-        $users = BoincUser::enum("teamid=$team->id limit $offset,$n");
-    } else {
-        $users = BoincUser::enum("teamid=$team->id order by $sort_clause limit $offset,$n");
+    
+    $cache_args = "teamid=".$team->id."&mosort=".$nosort."&order=".$sort_clause."&limit=".$offset."_".$n;
+    $users = unserialize(get_cached_data(TEAM_PAGE_TTL, $cache_args));
+    if (!$users) {
+        if ($nosort) {
+            $users = BoincUser::enum("teamid=$team->id limit $offset,$n");
+        } else {
+            $users = BoincUser::enum("teamid=$team->id order by $sort_clause limit $offset,$n");
+        }
+        set_cached_data(TEAM_PAGE_TTL, serialize($users), $cache_args);
     }
 
     $j = $offset + 1;
@@ -430,7 +435,7 @@ function team_edit_form($team, $label, $url) {
     );
     row2(tra('URL of team web page, if any').':<br><font size=-2>('.tra('without "http://"').')
         '.tra('This URL will be linked to from the team\'s page on this site.'),
-        "<input name=url size=60 value='$team->url'>"
+        "<input type=text name=url size=60 value='$team->url'>"
     );
     row2(tra('Description of team').':
         <br><span class="note">
@@ -445,7 +450,7 @@ function team_edit_form($team, $label, $url) {
         "<select name=country>"
     );
     print_country_select($team->country);
-    
+
     echo "</select></td></tr>\n";
     $x = $team->joinable?"checked":"";
     row2(tra("Accept new members?"), "<input type=checkbox name=joinable $x>");
@@ -566,6 +571,6 @@ function make_team(
     }
 }
 
-$cvs_version_tracker[]="\$Id: team.inc 22319 2010-09-07 18:20:29Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team.inc 23230 2011-03-13 20:05:25Z Rytis $";  //Generated automatically - do not edit
 
 ?>

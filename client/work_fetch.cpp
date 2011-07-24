@@ -33,9 +33,10 @@
 
 using std::vector;
 
-RSC_WORK_FETCH cuda_work_fetch;
-RSC_WORK_FETCH ati_work_fetch;
-RSC_WORK_FETCH cpu_work_fetch;
+bool use_rec = true;
+bool use_hyst_fetch = true;
+
+RSC_WORK_FETCH rsc_work_fetch[MAX_RSC];
 WORK_FETCH work_fetch;
 
 #define FETCH_IF_IDLE_INSTANCE          0
@@ -64,27 +65,10 @@ static const char* criterion_name(int criterion) {
     return "unknown";
 }
 
-static inline const char* rsc_name(int t) {
-    switch (t) {
-    case RSC_TYPE_CPU: return "CPU";
-    case RSC_TYPE_CUDA: return "NVIDIA GPU";
-    case RSC_TYPE_ATI: return "ATI GPU";
-    }
-    return "Unknown";
-}
-
 inline bool dont_fetch(PROJECT* p, int rsc_type) {
-    switch(rsc_type) {
-    case RSC_TYPE_CPU:
-        if (p->no_cpu_pref || p->no_cpu_apps) return true;
-        break;
-    case RSC_TYPE_CUDA:
-        if (p->no_cuda_pref || p->no_cuda_apps) return true;
-        break;
-    case RSC_TYPE_ATI:
-        if (p->no_ati_pref || p->no_ati_apps) return true;
-        break;
-    }
+    if (p->no_rsc_pref[rsc_type]) return true;
+    if (p->no_rsc_apps[rsc_type]) return true;
+    if (p->no_rsc_ams[rsc_type]) return true;
     return false;
 }
 
@@ -106,14 +90,7 @@ inline bool has_coproc_app(PROJECT* p, int rsc_type) {
     for (i=0; i<gstate.app_versions.size(); i++) {
         APP_VERSION* avp = gstate.app_versions[i];
         if (avp->project != p) continue;
-        switch(rsc_type) {
-        case RSC_TYPE_CUDA:
-            if (avp->ncudas) return true;
-            break;
-        case RSC_TYPE_ATI:
-            if (avp->natis) return true;
-            break;
-        }
+        if (avp->gpu_usage.rsc_type == rsc_type) return true;
     }
     return false;
 }
@@ -121,22 +98,8 @@ inline bool has_coproc_app(PROJECT* p, int rsc_type) {
 ///////////////  RSC_PROJECT_WORK_FETCH  ///////////////
 
 bool RSC_PROJECT_WORK_FETCH::compute_may_have_work(PROJECT* p, int rsc_type) {
-    switch(rsc_type) {
-    case RSC_TYPE_CPU:
-        if (p->no_cpu_pref) return false;
-        if (p->no_cpu_apps) return false;
-        break;
-    case RSC_TYPE_CUDA:
-        if (p->no_cuda_pref) return false;
-        if (p->no_cuda_apps) return false;
-        if (p->cuda_defer_sched) return false;
-        break;
-    case RSC_TYPE_ATI:
-        if (p->no_ati_pref) return false;
-        if (p->no_ati_apps) return false;
-        if (p->ati_defer_sched) return false;
-        break;
-    }
+    if (dont_fetch(p, rsc_type)) return false;
+    if (p->rsc_defer_sched[rsc_type]) return false;
     return (backoff_time < gstate.now);
 }
 
@@ -150,7 +113,7 @@ void RSC_PROJECT_WORK_FETCH::rr_init(PROJECT* p, int rsc_type) {
     deadlines_missed = 0;
 }
 
-#ifndef USE_REC
+//#ifndef USE_REC
 // see if the project's debt is beyond what would normally happen;
 // if so we conclude that it had a long job that ran in EDF mode;
 // avoid asking it for work unless absolutely necessary.
@@ -191,7 +154,7 @@ bool RSC_PROJECT_WORK_FETCH::debt_eligible(PROJECT* p, RSC_WORK_FETCH& rwf) {
     if (p->min_rpc_time > gstate.now) return false;
     return true;
 }
-#endif
+//#endif
 
 void RSC_PROJECT_WORK_FETCH::backoff(PROJECT* p, const char* name) {
     if (backoff_interval) {
@@ -212,12 +175,7 @@ void RSC_PROJECT_WORK_FETCH::backoff(PROJECT* p, const char* name) {
 ///////////////  RSC_WORK_FETCH  ///////////////
 
 RSC_PROJECT_WORK_FETCH& RSC_WORK_FETCH::project_state(PROJECT* p) {
-    switch(rsc_type) {
-    case RSC_TYPE_CPU: return p->cpu_pwf;
-    case RSC_TYPE_CUDA: return p->cuda_pwf;
-    case RSC_TYPE_ATI: return p->ati_pwf;
-    default: return p->cpu_pwf;
-    }
+    return p->rsc_pwf[rsc_type];
 }
 
 bool RSC_WORK_FETCH::may_have_work(PROJECT* p) {
@@ -241,6 +199,7 @@ void RSC_WORK_FETCH::rr_init() {
 void RSC_WORK_FETCH::accumulate_shortfall(double d_time) {
     double idle = ninstances - sim_nused;
     if (idle > 1e-6) {
+        //msg_printf(0, MSG_INFO, "adding shortfall %d %f", rsc_type, idle*d_time);
         shortfall += idle*d_time;
     }
 #if 0
@@ -264,6 +223,34 @@ void RSC_WORK_FETCH::update_busy_time(double dur, double nused) {
 static bool wacky_dcf(PROJECT* p) {
     double dcf = p->duration_correction_factor;
     return (dcf < 0.02 || dcf > 80.0);
+}
+
+PROJECT* RSC_WORK_FETCH::choose_project_hyst() {
+    PROJECT* pbest = NULL;
+    if (saturated_time > gstate.work_buf_min()) return NULL;
+    for (unsigned i=0; i<gstate.projects.size(); i++) {
+        PROJECT* p = gstate.projects[i];
+        if (!p->pwf.can_fetch_work) continue;
+        if (!project_state(p).may_have_work) continue;
+        RSC_PROJECT_WORK_FETCH& rpwf = project_state(p);
+        if (rpwf.anon_skip) continue;
+        if (pbest) {
+if (use_rec) {
+            if (project_priority(pbest) > project_priority(p)) {
+                continue;
+            }
+} else {
+            if (pbest->pwf.overall_debt > p->pwf.overall_debt) {
+                continue;
+            }
+}
+        }
+        pbest = p;
+    }
+    if (!pbest) return NULL;
+    work_fetch.clear_request();
+    work_fetch.set_all_requests_hyst(pbest, rsc_type);
+    return pbest;
 }
 
 // Choose the best project to ask for work for this resource,
@@ -295,9 +282,9 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
         if (rpwf.anon_skip) continue;
         switch (criterion) {
         case FETCH_IF_MINOR_SHORTFALL:
-#ifndef USE_REC
+if (!use_rec) {
             if (rpwf.overworked()) continue;
-#endif
+}
             if (wacky_dcf(p)) continue;
             if (!p->resource_share) continue;
             break;
@@ -306,10 +293,13 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
             if (!p->resource_share) continue;
             break;
         case FETCH_IF_PROJECT_STARVED:
-#ifndef USE_REC
+if (!use_rec) {
             if (rpwf.overworked()) continue;
-#endif
             if (rpwf.nused_total >= ninstances*rpwf.fetchable_share) continue;
+} else {
+            if (project_priority(p) < 0) continue;
+            if (rpwf.nused_total >= ninstances) continue;
+}
             if (!p->resource_share) continue;
             break;
         }
@@ -318,15 +308,15 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
             if (!p->resource_share) {
                 continue;
             }
-#ifdef USE_REC
+if (use_rec) {
             if (project_priority(pbest) > project_priority(p)) {
                 continue;
             }
-#else
+} else {
             if (pbest->pwf.overall_debt > p->pwf.overall_debt) {
                 continue;
             }
-#endif
+}
         }
         pbest = p;
     }
@@ -346,7 +336,11 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
     case FETCH_IF_MINOR_SHORTFALL:
         // in this case, potentially request work for all resources
         //
-        work_fetch.set_all_requests(pbest);
+        if (use_rec && (project_priority(pbest) < 0)) {
+            set_request(pbest, true);
+        } else {
+            work_fetch.set_all_requests(pbest);
+        }
         break;
     }
     // in principle there should be a nonzero request.
@@ -376,6 +370,8 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
 // don't request anything if project is overworked or backed off.
 //
 void RSC_WORK_FETCH::set_request(PROJECT* p, bool allow_overworked) {
+    if (dont_fetch(p, rsc_type)) return;
+
     // if backup project, fetch 1 job per idle instance
     //
     if (p->resource_share == 0) {
@@ -391,9 +387,9 @@ void RSC_WORK_FETCH::set_request(PROJECT* p, bool allow_overworked) {
     RSC_PROJECT_WORK_FETCH& w = project_state(p);
     if (!w.may_have_work) return;
     if (w.anon_skip) return;
-#ifndef USE_REC
+if (!use_rec) {
     if (!allow_overworked && w.overworked()) return;
-#endif
+}
     if (shortfall) {
         if (wacky_dcf(p)) {
             // if project's DCF is too big or small,
@@ -407,7 +403,12 @@ void RSC_WORK_FETCH::set_request(PROJECT* p, bool allow_overworked) {
 
     // the number of additional instances needed to have our share
     //
-    double x1 = (ninstances * w.fetchable_share) - w.nused_total;
+    double x1;
+    if (use_rec) {
+        x1 = ninstances - w.nused_total;
+    } else {
+        x1 = (ninstances * w.fetchable_share) - w.nused_total;
+    }
 
     // our share of the idle instances
     //
@@ -430,25 +431,13 @@ void RSC_WORK_FETCH::print_state(const char* name) {
         PROJECT* p = gstate.projects[i];
         if (p->non_cpu_intensive) continue;
         RSC_PROJECT_WORK_FETCH& pwf = project_state(p);
-        bool blocked_by_prefs = false, no_apps = false;
-        switch (rsc_type) {
-        case RSC_TYPE_CPU:
-            if (p->no_cpu_pref) blocked_by_prefs = true;
-            if (p->no_cpu_apps) no_apps = true;
-            break;
-        case RSC_TYPE_CUDA:
-            if (p->no_cuda_pref) blocked_by_prefs = true;
-            if (p->no_cuda_apps) no_apps = true;
-            break;
-        case RSC_TYPE_ATI:
-            if (p->no_ati_pref) blocked_by_prefs = true;
-            if (p->no_ati_apps) no_apps = true;
-            break;
-        }
+        bool no_rsc_pref = p->no_rsc_pref[rsc_type];
+        bool no_rsc_apps = p->no_rsc_apps[rsc_type];
+        bool no_rsc_ams = p->no_rsc_ams[rsc_type];
         double bt = pwf.backoff_time>gstate.now?pwf.backoff_time-gstate.now:0;
-#ifdef USE_REC
+if (use_rec) {
         msg_printf(p, MSG_INFO,
-            "[work_fetch] %s: fetch share %.2f rec %.5f prio %.5f backoff dt %.2f int %.2f%s%s%s%s%s%s%s",
+            "[work_fetch] %s: fetch share %.2f rec %.5f prio %.5f backoff dt %.2f int %.2f%s%s%s%s%s%s%s%s",
             name,
             pwf.fetchable_share, p->pwf.rec, project_priority(p), bt, pwf.backoff_interval,
             p->suspended_via_gui?" (susp via GUI)":"",
@@ -456,10 +445,11 @@ void RSC_WORK_FETCH::print_state(const char* name) {
             p->min_rpc_time > gstate.now?" (comm deferred)":"",
             p->dont_request_more_work?" (no new tasks)":"",
             p->too_many_uploading_results?" (too many uploads)":"",
-            blocked_by_prefs?" (blocked by prefs)":"",
-            no_apps?" (no apps)":""
+            no_rsc_pref?" (blocked by prefs)":"",
+            no_rsc_apps?" (no apps)":"",
+            no_rsc_ams?" (blocked by account manager)":""
         );
-#else
+} else {
         msg_printf(p, MSG_INFO,
             "[work_fetch] %s: fetch share %.2f LTD %.2f backoff dt %.2f int %.2f%s%s%s%s%s%s%s",
             name,
@@ -470,9 +460,9 @@ void RSC_WORK_FETCH::print_state(const char* name) {
             p->dont_request_more_work?" (no new tasks)":"",
             pwf.overworked()?" (overworked)":"",
             p->too_many_uploading_results?" (too many uploads)":"",
-            blocked_by_prefs?" (blocked by prefs)":""
+            no_rsc_pref?" (blocked by prefs)":""
         );
-#endif
+}
     }
 }
 
@@ -481,7 +471,7 @@ void RSC_WORK_FETCH::clear_request() {
     req_instances = 0;
 }
 
-#ifndef USE_REC
+//#ifndef USE_REC
 // update long-term debts for a resource.
 //
 void RSC_WORK_FETCH::update_long_term_debts() {
@@ -675,7 +665,7 @@ void RSC_WORK_FETCH::update_short_term_debts() {
         }
     }
 }
-#endif
+//#endif
 
 ///////////////  PROJECT_WORK_FETCH  ///////////////
 
@@ -692,43 +682,68 @@ bool PROJECT_WORK_FETCH::compute_can_fetch_work(PROJECT* p) {
 }
 
 void PROJECT_WORK_FETCH::reset(PROJECT* p) {
-    p->cpu_pwf.reset();
-    p->cuda_pwf.reset();
-    p->ati_pwf.reset();
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        p->rsc_pwf[i].reset();
+    }
 }
 
 ///////////////  WORK_FETCH  ///////////////
 
 void WORK_FETCH::rr_init() {
-    cpu_work_fetch.rr_init();
-    // do these even if no device; there may be "coproc_missing" jobs
-    cuda_work_fetch.rr_init();
-    ati_work_fetch.rr_init();
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        rsc_work_fetch[i].rr_init();
+    }
     for (unsigned int i=0; i<gstate.projects.size(); i++) {
         PROJECT* p = gstate.projects[i];
         p->pwf.can_fetch_work = p->pwf.compute_can_fetch_work(p);
         p->pwf.has_runnable_jobs = false;
-        p->cpu_pwf.rr_init(p, RSC_TYPE_CPU);
-        if (gstate.host_info.have_cuda()) {
-            p->cuda_pwf.rr_init(p, RSC_TYPE_CUDA);
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            p->rsc_pwf[j].rr_init(p, j);
         }
-        if (gstate.host_info.have_ati()) {
-            p->ati_pwf.rr_init(p, RSC_TYPE_ATI);
+    }
+}
+
+// if the given project is highest-priority among the projects
+// eligible for the resource, set request fields
+//
+void RSC_WORK_FETCH::supplement(PROJECT* pp) {
+    double x = project_priority(pp);
+    for (unsigned i=0; i<gstate.projects.size(); i++) {
+        PROJECT* p = gstate.projects[i];
+        if (p == pp) continue;
+        if (!p->pwf.can_fetch_work) continue;
+        if (!project_state(p).may_have_work) continue;
+        RSC_PROJECT_WORK_FETCH& rpwf = project_state(p);
+        if (rpwf.anon_skip) continue;
+        if (project_priority(p) > x) {
+            return;
+        }
+    }
+    // didn't find a better project; ask for work
+    set_request(pp, true);
+}
+
+void WORK_FETCH::set_all_requests_hyst(PROJECT* p, int rsc_type) {
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        if (i == rsc_type) {
+            rsc_work_fetch[i].set_request(p, true);
+        } else {
+            if (i==0 || gpus_usable) {
+                rsc_work_fetch[i].supplement(p);
+            }
         }
     }
 }
 
 void WORK_FETCH::set_all_requests(PROJECT* p) {
-    cpu_work_fetch.set_request(p, false);
-    if (gstate.host_info.have_cuda() && gpus_usable) {
-        cuda_work_fetch.set_request(p, false);
-    }
-    if (gstate.host_info.have_ati() && gpus_usable) {
-        ati_work_fetch.set_request(p, false);
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        if (i==0 || gpus_usable) {
+            rsc_work_fetch[i].set_request(p, false);
+        }
     }
 }
 
-#ifndef USE_REC
+//#ifndef USE_REC
 // Compute an "overall long-term debt" for each project.
 // This is a sum of per-resource terms, scaled by the relative speed of the resource.
 // The term for a resource is its LTD plus an estimate of queued work.
@@ -741,9 +756,9 @@ void WORK_FETCH::set_overall_debts() {
 
     for (i=0; i<gstate.projects.size(); i++) {
         p = gstate.projects[i];
-        p->cpu_pwf.queue_est = 0;
-        p->cuda_pwf.queue_est = 0;
-        p->ati_pwf.queue_est = 0;
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            p->rsc_pwf[j].queue_est = 0;
+        }
     }
     for (i=0; i<gstate.results.size(); i++) {
         rp = gstate.results[i];
@@ -752,21 +767,19 @@ void WORK_FETCH::set_overall_debts() {
         if (p->non_cpu_intensive) continue;
         double dt = rp->estimated_time_remaining();
         avp = rp->avp;
-        p->cpu_pwf.queue_est += dt*avp->avg_ncpus;
-        p->cuda_pwf.queue_est += dt*avp->ncudas;
-        p->ati_pwf.queue_est += dt*avp->natis;
+        p->rsc_pwf[0].queue_est += dt*avp->avg_ncpus;
+        int rt = avp->gpu_usage.rsc_type;
+        if (rt) {
+            p->rsc_pwf[rt].queue_est += dt*avp->gpu_usage.usage;
+        }
     }
     for (i=0; i<gstate.projects.size(); i++) {
         p = gstate.projects[i];
-        double queue_debt = p->cpu_pwf.queue_est/gstate.ncpus;
-        p->pwf.overall_debt = p->cpu_pwf.long_term_debt - queue_debt;
-        if (gstate.host_info.have_cuda()) {
-            p->pwf.overall_debt += cuda_work_fetch.relative_speed*
-                (p->cuda_pwf.long_term_debt - p->cuda_pwf.queue_est/gstate.host_info.coprocs.cuda.count);
-        }
-        if (gstate.host_info.have_ati()) {
-            p->pwf.overall_debt += ati_work_fetch.relative_speed*
-                (p->ati_pwf.long_term_debt - p->ati_pwf.queue_est/gstate.host_info.coprocs.ati.count);
+        double queue_debt = p->rsc_pwf[0].queue_est/gstate.ncpus;
+        p->pwf.overall_debt = p->rsc_pwf[0].long_term_debt - queue_debt;
+        for (int j=1; j<coprocs.n_rsc; j++) {
+            p->pwf.overall_debt += rsc_work_fetch[j].relative_speed*
+                (p->rsc_pwf[j].long_term_debt - p->rsc_pwf[j].queue_est/coprocs.coprocs[j].count);
         }
     }
 }
@@ -774,43 +787,39 @@ void WORK_FETCH::set_overall_debts() {
 void WORK_FETCH::zero_debts() {
     for (unsigned i=0; i<gstate.projects.size(); i++) {
         PROJECT* p = gstate.projects[i];
-        p->cpu_pwf.zero_debt();
-        p->cuda_pwf.zero_debt();
-        p->ati_pwf.zero_debt();
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            p->rsc_pwf[j].zero_debt();
+        }
     }
 }
-#endif
+//#endif
 
 void WORK_FETCH::print_state() {
     msg_printf(0, MSG_INFO, "[work_fetch] ------- start work fetch state -------");
     msg_printf(0, MSG_INFO, "[work_fetch] target work buffer: %.2f + %.2f sec",
         gstate.work_buf_min(), gstate.work_buf_additional()
     );
-    cpu_work_fetch.print_state("CPU");
-    if (gstate.host_info.have_cuda()) {
-        cuda_work_fetch.print_state("NVIDIA GPU");
-    }
-    if (gstate.host_info.have_ati()) {
-        ati_work_fetch.print_state("ATI GPU");
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        rsc_work_fetch[i].print_state(rsc_name(i));
     }
     for (unsigned int i=0; i<gstate.projects.size(); i++) {
         PROJECT* p = gstate.projects[i];
         if (p->non_cpu_intensive) continue;
-#ifdef USE_REC
+if (use_rec) {
         msg_printf(p, MSG_INFO, "[work_fetch] REC %f", p->pwf.rec);
-#else
+} else {
         msg_printf(p, MSG_INFO, "[work_fetch] overall LTD %.2f",
             p->pwf.overall_debt
         );
-#endif
+}
     }
     msg_printf(0, MSG_INFO, "[work_fetch] ------- end work fetch state -------");
 }
 
 void WORK_FETCH::clear_request() {
-    cpu_work_fetch.clear_request();
-    cuda_work_fetch.clear_request();
-    ati_work_fetch.clear_request();
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        rsc_work_fetch[i].clear_request();
+    }
 }
 
 // we're going to contact this project for reasons other than work fetch;
@@ -820,9 +829,10 @@ void WORK_FETCH::compute_work_request(PROJECT* p) {
     clear_request();
     if (config.fetch_minimal_work && gstate.had_or_requested_work) return;
     if (p->dont_request_more_work) return;
+    if (p->resource_share  == 0) return;
     if (p->non_cpu_intensive) {
         if (!has_a_job(p)) {
-            cpu_work_fetch.req_secs = 1;
+            rsc_work_fetch[0].req_secs = 1;
         }
         return;
     }
@@ -831,19 +841,18 @@ void WORK_FETCH::compute_work_request(PROJECT* p) {
     // Temporarily clear resource backoffs,
     // since we're going to contact this project in any case.
     //
-    double cpu_save = p->cpu_pwf.backoff_time;
-    double cuda_save = p->cuda_pwf.backoff_time;
-    double ati_save = p->ati_pwf.backoff_time;
-    p->cpu_pwf.backoff_time = 0;
-    p->cuda_pwf.backoff_time = 0;
-    p->ati_pwf.backoff_time = 0;
+    double backoff_save[MAX_RSC];
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        backoff_save[i] = p->rsc_pwf[i].backoff_time;
+        p->rsc_pwf[i].backoff_time = 0;
+    }
     PROJECT* pbest = choose_project();
-    p->cpu_pwf.backoff_time = cpu_save;
-    p->cuda_pwf.backoff_time = cuda_save;
-    p->ati_pwf.backoff_time = ati_save;
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        p->rsc_pwf[i].backoff_time = backoff_save[i];
+    }
     if (p == pbest) {
         // Ask for work for all devices w/ a shortfall.
-        // Otherwise we can have a situation where a GPU is idle,
+        // Otherwise we can have a situation where a CPU is idle,
         // we ask only for GPU work, and the project never has any
         //
         work_fetch.set_all_requests(pbest);
@@ -862,10 +871,10 @@ PROJECT* WORK_FETCH::non_cpu_intensive_project_needing_work() {
         PROJECT* p = gstate.projects[i];
         if (!p->non_cpu_intensive) continue;
         if (!p->can_request_work()) continue;
-        if (p->cpu_pwf.backoff_time > gstate.now) continue;
+        if (p->rsc_pwf[0].backoff_time > gstate.now) continue;
         if (has_a_job(p)) continue;
         clear_request();
-        cpu_work_fetch.req_secs = 1;
+        rsc_work_fetch[0].req_secs = 1;
         return p;
     }
     return 0;
@@ -878,7 +887,7 @@ PROJECT* WORK_FETCH::choose_project() {
     PROJECT* p = 0;
 
     if (log_flags.work_fetch_debug) {
-        msg_printf(0, MSG_INFO, "[work_fetch]: work fetch start");
+        msg_printf(0, MSG_INFO, "[work_fetch] work fetch start");
     }
 
     p = non_cpu_intensive_project_needing_work();
@@ -887,56 +896,68 @@ PROJECT* WORK_FETCH::choose_project() {
     gstate.compute_nuploading_results();
 
     gstate.rr_simulation();
-#ifdef USE_REC
+    compute_shares();
+if (use_rec) {
     project_priority_init();
-#else
+    for (unsigned int i=0; i<gstate.results.size(); i++) {
+        RESULT* rp = gstate.results[i];
+        adjust_rec_work_fetch(rp);
+    }
+} else {
     set_overall_debts();
-#endif
+}
 
-    bool cuda_usable = gstate.host_info.have_cuda() && gpus_usable;
-    bool ati_usable = gstate.host_info.have_ati() && gpus_usable;
+if (use_hyst_fetch) {
+    if (gpus_usable) {
+        for (int i=1; i<coprocs.n_rsc; i++) {
+            p = rsc_work_fetch[i].choose_project_hyst();
+            if (p) break;
+        }
+    }
+    if (!p) {
+        p = rsc_work_fetch[0].choose_project_hyst();
+    }
+} else {
+    if (gpus_usable) {
+        for (int i=1; i<coprocs.n_rsc; i++) {
+            p = rsc_work_fetch[i].choose_project(FETCH_IF_IDLE_INSTANCE);
+            if (p) break;
+        }
+    }
+    if (!p) {
+        p = rsc_work_fetch[0].choose_project(FETCH_IF_IDLE_INSTANCE);
+    }
 
-    if (cuda_usable) {
-        p = cuda_work_fetch.choose_project(FETCH_IF_IDLE_INSTANCE);
-    }
-    if (!p && ati_usable) {
-        p = ati_work_fetch.choose_project(FETCH_IF_IDLE_INSTANCE);
-    }
-    if (!p) {
-        p = cpu_work_fetch.choose_project(FETCH_IF_IDLE_INSTANCE);
-    }
-    if (!p && cuda_usable) {
-        p = cuda_work_fetch.choose_project(FETCH_IF_MAJOR_SHORTFALL);
-    }
-    if (!p && ati_usable) {
-        p = ati_work_fetch.choose_project(FETCH_IF_MAJOR_SHORTFALL);
+    if (!p && gpus_usable) {
+        for (int i=1; i<coprocs.n_rsc; i++) {
+            p = rsc_work_fetch[i].choose_project(FETCH_IF_MAJOR_SHORTFALL);
+            if (p) break;
+        }
     }
     if (!p) {
-        p = cpu_work_fetch.choose_project(FETCH_IF_MAJOR_SHORTFALL);
+        p = rsc_work_fetch[0].choose_project(FETCH_IF_MAJOR_SHORTFALL);
     }
-    if (!p && cuda_usable) {
-        p = cuda_work_fetch.choose_project(FETCH_IF_MINOR_SHORTFALL);
-    }
-    if (!p && ati_usable) {
-        p = ati_work_fetch.choose_project(FETCH_IF_MINOR_SHORTFALL);
+    
+    if (!p && gpus_usable) {
+        for (int i=1; i<coprocs.n_rsc; i++) {
+            p = rsc_work_fetch[i].choose_project(FETCH_IF_MINOR_SHORTFALL);
+            if (p) break;
+        }
     }
     if (!p) {
-        p = cpu_work_fetch.choose_project(FETCH_IF_MINOR_SHORTFALL);
+        p = rsc_work_fetch[0].choose_project(FETCH_IF_MINOR_SHORTFALL);
     }
-#if 1
-    // don't try to maintain GPU work for all projects,
-    // since we don't use round-robin scheduling for GPUs
-    //
-    if (!p && cuda_usable) {
-        p = cuda_work_fetch.choose_project(FETCH_IF_PROJECT_STARVED);
+
+    if (!p && gpus_usable) {
+        for (int i=1; i<coprocs.n_rsc; i++) {
+            p = rsc_work_fetch[i].choose_project(FETCH_IF_PROJECT_STARVED);
+            if (p) break;
+        }
     }
-    if (!p && ati_usable) {
-        p = ati_work_fetch.choose_project(FETCH_IF_PROJECT_STARVED);
-    }
-#endif
     if (!p) {
-        p = cpu_work_fetch.choose_project(FETCH_IF_PROJECT_STARVED);
+        p = rsc_work_fetch[0].choose_project(FETCH_IF_PROJECT_STARVED);
     }
+}
 
     if (log_flags.work_fetch_debug) {
         print_state();
@@ -952,17 +973,13 @@ void WORK_FETCH::accumulate_inst_sec(ACTIVE_TASK* atp, double dt) {
     APP_VERSION* avp = atp->result->avp;
     PROJECT* p = atp->result->project;
     double x = dt*avp->avg_ncpus;
-    p->cpu_pwf.secs_this_debt_interval += x;
-    cpu_work_fetch.secs_this_debt_interval += x;
-    if (gstate.host_info.have_cuda()) {
-        x = dt*avp->ncudas;
-        p->cuda_pwf.secs_this_debt_interval += x;
-        cuda_work_fetch.secs_this_debt_interval += x;
-    }
-    if (gstate.host_info.have_ati()) {
-        x = dt*avp->natis;
-        p->ati_pwf.secs_this_debt_interval += x;
-        ati_work_fetch.secs_this_debt_interval += x;
+    p->rsc_pwf[0].secs_this_debt_interval += x;
+    rsc_work_fetch[0].secs_this_debt_interval += x;
+    int rt = avp->gpu_usage.rsc_type;
+    if (rt) {
+        x = dt*avp->gpu_usage.usage;
+        p->rsc_pwf[rt].secs_this_debt_interval += x;
+        rsc_work_fetch[rt].secs_this_debt_interval += x;
     }
 }
 
@@ -974,47 +991,31 @@ void WORK_FETCH::compute_shares() {
     for (i=0; i<gstate.projects.size(); i++) {
         p = gstate.projects[i];
         if (p->non_cpu_intensive) continue;
-        if (p->cpu_pwf.has_runnable_jobs) {
-            cpu_work_fetch.total_runnable_share += p->resource_share;
-        }
-        if (p->cuda_pwf.has_runnable_jobs) {
-            cuda_work_fetch.total_runnable_share += p->resource_share;
-        }
-        if (p->ati_pwf.has_runnable_jobs) {
-            ati_work_fetch.total_runnable_share += p->resource_share;
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            if (p->rsc_pwf[j].has_runnable_jobs) {
+                rsc_work_fetch[j].total_runnable_share += p->resource_share;
+            }
         }
         if (!p->pwf.can_fetch_work) continue;
-        if (p->cpu_pwf.may_have_work) {
-            cpu_work_fetch.total_fetchable_share += p->resource_share;
-        }
-        if (gstate.host_info.have_cuda() && p->cuda_pwf.may_have_work) {
-            cuda_work_fetch.total_fetchable_share += p->resource_share;
-        }
-        if (gstate.host_info.have_ati() && p->ati_pwf.may_have_work) {
-            ati_work_fetch.total_fetchable_share += p->resource_share;
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            if (p->rsc_pwf[j].may_have_work) {
+                rsc_work_fetch[j].total_fetchable_share += p->resource_share;
+            }
         }
     }
     for (i=0; i<gstate.projects.size(); i++) {
         p = gstate.projects[i];
         if (p->non_cpu_intensive) continue;
-        if (p->cpu_pwf.has_runnable_jobs) {
-            p->cpu_pwf.runnable_share = p->resource_share/cpu_work_fetch.total_runnable_share;
-        }
-        if (p->cuda_pwf.has_runnable_jobs) {
-            p->cuda_pwf.runnable_share = p->resource_share/cuda_work_fetch.total_runnable_share;
-        }
-        if (p->ati_pwf.has_runnable_jobs) {
-            p->ati_pwf.runnable_share = p->resource_share/ati_work_fetch.total_runnable_share;
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            if (p->rsc_pwf[j].has_runnable_jobs) {
+                p->rsc_pwf[j].runnable_share = p->resource_share/rsc_work_fetch[j].total_runnable_share;
+            }
         }
         if (!p->pwf.can_fetch_work) continue;
-        if (p->cpu_pwf.may_have_work) {
-            p->cpu_pwf.fetchable_share = cpu_work_fetch.total_fetchable_share?p->resource_share/cpu_work_fetch.total_fetchable_share:1;
-        }
-        if (gstate.host_info.have_cuda() && p->cuda_pwf.may_have_work) {
-            p->cuda_pwf.fetchable_share = cuda_work_fetch.total_fetchable_share?p->resource_share/cuda_work_fetch.total_fetchable_share:1;
-        }
-        if (gstate.host_info.have_ati() && p->ati_pwf.may_have_work) {
-            p->ati_pwf.fetchable_share = ati_work_fetch.total_fetchable_share?p->resource_share/ati_work_fetch.total_fetchable_share:1;
+        for (int j=0; j<coprocs.n_rsc; j++) {
+            if (p->rsc_pwf[j].may_have_work) {
+                p->rsc_pwf[j].fetchable_share = rsc_work_fetch[j].total_fetchable_share?p->resource_share/rsc_work_fetch[j].total_fetchable_share:1;
+            }
         }
     }
 }
@@ -1023,24 +1024,18 @@ void WORK_FETCH::request_string(char* buf) {
     char buf2[256];
     sprintf(buf,
         "[work_fetch] request: CPU (%.2f sec, %.2f inst)",
-        cpu_work_fetch.req_secs, cpu_work_fetch.req_instances
+        rsc_work_fetch[0].req_secs, rsc_work_fetch[0].req_instances
     );
-    if (gstate.host_info.have_cuda()) {
-        sprintf(buf2, " NVIDIA GPU (%.2f sec, %.2f inst)",
-            cuda_work_fetch.req_secs, cuda_work_fetch.req_instances
-        );
-        strcat(buf, buf2);
-    }
-    if (gstate.host_info.have_ati()) {
-        sprintf(buf2, " ATI GPU (%.2f sec, %.2f inst)",
-            ati_work_fetch.req_secs, ati_work_fetch.req_instances
+    for (int i=1; i<coprocs.n_rsc; i++) {
+        sprintf(buf2, " %s (%.2f sec, %.2f inst)",
+            rsc_name(i), rsc_work_fetch[i].req_secs, rsc_work_fetch[i].req_instances
         );
         strcat(buf, buf2);
     }
 }
 
 void WORK_FETCH::write_request(FILE* f, PROJECT* p) {
-    double work_req = cpu_work_fetch.req_secs;
+    double work_req = rsc_work_fetch[0].req_secs;
 
     // if project is anonymous platform, set the overall work req
     // to the max of the requests of resource types for which we have versions.
@@ -1048,14 +1043,11 @@ void WORK_FETCH::write_request(FILE* f, PROJECT* p) {
     // THIS CAN BE REMOVED AT SOME POINT
     //
     if (p->anonymous_platform) {
-        if (has_coproc_app(p, RSC_TYPE_CUDA)) {
-            if (cuda_work_fetch.req_secs > work_req) {
-                work_req = cuda_work_fetch.req_secs;
-            }
-        }
-        if (has_coproc_app(p, RSC_TYPE_ATI)) {
-            if (ati_work_fetch.req_secs > work_req) {
-                work_req = ati_work_fetch.req_secs;
+        for (int i=1; i<coprocs.n_rsc; i++) {
+            if (has_coproc_app(p, i)) {
+                if (rsc_work_fetch[i].req_secs > work_req) {
+                    work_req = rsc_work_fetch[i].req_secs;
+                }
             }
         }
     }
@@ -1065,9 +1057,9 @@ void WORK_FETCH::write_request(FILE* f, PROJECT* p) {
         "    <cpu_req_instances>%f</cpu_req_instances>\n"
         "    <estimated_delay>%f</estimated_delay>\n",
         work_req,
-        cpu_work_fetch.req_secs,
-        cpu_work_fetch.req_instances,
-        cpu_work_fetch.req_secs?cpu_work_fetch.busy_time_estimator.get_busy_time():0
+        rsc_work_fetch[0].req_secs,
+        rsc_work_fetch[0].req_instances,
+        rsc_work_fetch[0].req_secs?rsc_work_fetch[0].busy_time_estimator.get_busy_time():0
     );
     if (log_flags.work_fetch_debug) {
         char buf[256];
@@ -1079,21 +1071,11 @@ void WORK_FETCH::write_request(FILE* f, PROJECT* p) {
 // we just got a scheduler reply with the given jobs; update backoffs
 //
 void WORK_FETCH::handle_reply(
-    PROJECT* p, SCHEDULER_REPLY* srp, vector<RESULT*> new_results
+    PROJECT* p, SCHEDULER_REPLY*, vector<RESULT*> new_results
 ) {
-    unsigned int i;
-    bool got_cpu = false, got_cuda = false, got_ati = false;
-
-    // handle project-supplied backoff requests
-    //
-    if (srp->cpu_backoff) {
-        p->cpu_pwf.backoff_time = gstate.now + srp->cpu_backoff;
-    }
-    if (srp->cuda_backoff) {
-        p->cuda_pwf.backoff_time = gstate.now + srp->cuda_backoff;
-    }
-    if (srp->ati_backoff) {
-        p->ati_pwf.backoff_time = gstate.now + srp->ati_backoff;
+    bool got_rsc[MAX_RSC];
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        got_rsc[i] = false;
     }
 
     // if didn't get any jobs, back off on requested resource types
@@ -1102,14 +1084,10 @@ void WORK_FETCH::handle_reply(
         // but not if RPC was requested by project
         //
         if (p->sched_rpc_pending != RPC_REASON_PROJECT_REQ) {
-            if (cpu_work_fetch.req_secs && !srp->cpu_backoff) {
-                p->cpu_pwf.backoff(p, "CPU");
-            }
-            if (gstate.host_info.have_cuda() && gstate.host_info.coprocs.cuda.req_secs && !srp->cuda_backoff) {
-                p->cuda_pwf.backoff(p, "NVIDIA GPU");
-            }
-            if (gstate.host_info.have_ati() && gstate.host_info.coprocs.ati.req_secs && !srp->ati_backoff) {
-                p->ati_pwf.backoff(p, "ATI GPU");
+            for (int i=0; i<coprocs.n_rsc; i++) {
+                if (rsc_work_fetch[i].req_secs) {
+                    p->rsc_pwf[i].backoff(p, rsc_name(i));
+                }
             }
         }
         return;
@@ -1117,15 +1095,13 @@ void WORK_FETCH::handle_reply(
 
     // if we did get jobs, clear backoff on resource types
     //
-    for (i=0; i<new_results.size(); i++) {
+    for (unsigned int i=0; i<new_results.size(); i++) {
         RESULT* rp = new_results[i];
-        if (rp->avp->ncudas) got_cuda = true;
-        else if (rp->avp->natis) got_ati = true;
-        else got_cpu = true;
+        got_rsc[rp->avp->gpu_usage.rsc_type] = true;
     }
-    if (got_cpu) p->cpu_pwf.clear_backoff();
-    if (got_cuda) p->cuda_pwf.clear_backoff();
-    if (got_ati) p->ati_pwf.clear_backoff();
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        if (got_rsc[i]) p->rsc_pwf[i].clear_backoff();
+    }
 }
 
 // set up for initial RPC.
@@ -1133,48 +1109,33 @@ void WORK_FETCH::handle_reply(
 // (this is probably what user wants)
 //
 void WORK_FETCH::set_initial_work_request() {
-    cpu_work_fetch.req_secs = 1;
-    cpu_work_fetch.req_instances = 0;
-    cpu_work_fetch.busy_time_estimator.reset();
-    if (gstate.host_info.have_cuda()) {
-        cuda_work_fetch.req_secs = 1;
-        cuda_work_fetch.req_instances = 0;
-        cuda_work_fetch.busy_time_estimator.reset();
-    }
-    if (gstate.host_info.have_ati()) {
-        ati_work_fetch.req_secs = 1;
-        ati_work_fetch.req_instances = 0;
-        ati_work_fetch.busy_time_estimator.reset();
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        rsc_work_fetch[i].req_secs = 1;
+        rsc_work_fetch[i].req_instances = 0;
+        rsc_work_fetch[i].busy_time_estimator.reset();
     }
 }
 
 // called once, at client startup
 //
 void WORK_FETCH::init() {
-    cpu_work_fetch.init(RSC_TYPE_CPU, gstate.ncpus, 1);
-    double cpu_flops = gstate.ncpus*gstate.host_info.p_fpops;
+    rsc_work_fetch[0].init(0, gstate.ncpus, 1);
+    double cpu_flops = gstate.host_info.p_fpops;
 
     // use 20% as a rough estimate of GPU efficiency
 
-    if (gstate.host_info.have_cuda()) {
-        cuda_work_fetch.init(
-            RSC_TYPE_CUDA, gstate.host_info.coprocs.cuda.count,
-            gstate.host_info.coprocs.cuda.count*0.2*gstate.host_info.coprocs.cuda.peak_flops()/cpu_flops
-        );
-    }
-    if (gstate.host_info.have_ati()) {
-        ati_work_fetch.init(
-            RSC_TYPE_ATI,
-            gstate.host_info.coprocs.ati.count,
-            gstate.host_info.coprocs.ati.count*0.2*gstate.host_info.coprocs.ati.peak_flops()/cpu_flops
+    for (int i=1; i<coprocs.n_rsc; i++) {
+        rsc_work_fetch[i].init(
+            i, coprocs.coprocs[i].count,
+            coprocs.coprocs[i].count*0.2*coprocs.coprocs[i].peak_flops/cpu_flops
         );
     }
 
-#ifndef USE_REC
+if (!use_rec) {
     if (config.zero_debts) {
         zero_debts();
     }
-#endif
+}
 
     // see what resources anon platform projects can use
     //
@@ -1182,19 +1143,13 @@ void WORK_FETCH::init() {
     for (i=0; i<gstate.projects.size(); i++) {
         PROJECT* p = gstate.projects[i];
         if (!p->anonymous_platform) continue;
-        p->cpu_pwf.anon_skip = true;
-        p->cuda_pwf.anon_skip = true;
-        p->ati_pwf.anon_skip = true;
+        for (int k=0; k<coprocs.n_rsc; k++) {
+            p->rsc_pwf[k].anon_skip = true;
+        }
         for (j=0; j<gstate.app_versions.size(); j++) {
             APP_VERSION* avp = gstate.app_versions[j];
             if (avp->project != p) continue;
-            if (avp->ncudas) {
-                p->cuda_pwf.anon_skip = false;
-            } else if (avp->natis) {
-                p->ati_pwf.anon_skip = false;
-            } else {
-                p->cpu_pwf.anon_skip = false;
-            }
+            p->rsc_pwf[avp->gpu_usage.rsc_type].anon_skip = false;
         }
     }
 }
@@ -1202,13 +1157,7 @@ void WORK_FETCH::init() {
 // clear backoff for app's resource
 //
 void WORK_FETCH::clear_backoffs(APP_VERSION& av) {
-    if (av.ncudas) {
-        av.project->cuda_pwf.clear_backoff();
-    } else if (av.natis) {
-        av.project->ati_pwf.clear_backoff();
-    } else {
-        av.project->cpu_pwf.clear_backoff();
-    }
+    av.project->rsc_pwf[av.gpu_usage.rsc_type].clear_backoff();
 }
 
 ////////////////////////
@@ -1227,11 +1176,10 @@ void CLIENT_STATE::compute_nuploading_results() {
         }
     }
     int n = gstate.ncpus;
-    if (gstate.host_info.have_cuda() && gstate.host_info.coprocs.cuda.count > n) {
-        n = gstate.host_info.coprocs.cuda.count;
-    }
-    if (gstate.host_info.have_ati() && gstate.host_info.coprocs.ati.count > n) {
-        n = gstate.host_info.coprocs.ati.count;
+    for (int j=1; j<coprocs.n_rsc; j++) {
+        if (coprocs.coprocs[j].count > n) {
+            n = coprocs.coprocs[j].count;
+        }
     }
     n *= 2;
     for (i=0; i<projects.size(); i++) {
@@ -1246,18 +1194,10 @@ bool PROJECT::runnable(int rsc_type) {
     for (unsigned int i=0; i<gstate.results.size(); i++) {
         RESULT* rp = gstate.results[i];
         if (rp->project != this) continue;
-        switch (rsc_type) {
-        case RSC_TYPE_ANY:
-            break;
-        case RSC_TYPE_CPU:
-            if (rp->uses_coprocs()) continue;
-            break;
-        case RSC_TYPE_CUDA:
-            if (rp->avp->ncudas == 0) continue;
-            break;
-        case RSC_TYPE_ATI:
-            if (rp->avp->natis == 0) continue;
-            break;
+        if (rsc_type != RSC_TYPE_ANY) {
+            if (rp->avp->gpu_usage.rsc_type != rsc_type) {
+                continue;
+            }
         }
         if (rp->runnable()) return true;
     }
@@ -1395,6 +1335,10 @@ double ACTIVE_TASK::est_dur() {
     double x = fd_weight*frac_est + wu_weight*wu_est;
 #if 0
     if (log_flags.rr_simulation) {
+        msg_printf(result->project, MSG_INFO,
+            "[rr_sim] %s frac_est %f = %f/%f",
+            result->name, frac_est, fraction_done_elapsed_time, fraction_done
+        );
         msg_printf(result->project, MSG_INFO,
             "[rr_sim] %s dur: %.2f = %.3f*%.2f + %.3f*%.2f",
             result->name, x, fd_weight, frac_est, wu_weight, wu_est

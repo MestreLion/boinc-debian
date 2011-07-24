@@ -698,7 +698,7 @@ void CDlgEventLog::OnMove(wxMoveEvent& event) {
     SetWindowDimensions();
     event.Skip();
 }
-    
+
 
 /*!
  * wxEVT_COMMAND_BUTTON_CLICKED event handler for ID_COPYAll
