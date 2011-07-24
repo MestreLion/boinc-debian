@@ -137,7 +137,7 @@ CFGFLAGS_boinc-client = \
 
 clean:
 	dh clean
-	find . -name "Makefile" | xargs -r rm
+	find . -name "Makefile" | grep -v samples | xargs -r rm
 	rm -f configure
 
 # Commands not to execute - empty overrides
