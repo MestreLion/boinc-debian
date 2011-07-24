@@ -1,4 +1,4 @@
-## $Id: db_base.py 18258 2009-06-02 04:07:53Z davea $
+## $Id: db_base.py 22616 2010-11-03 18:25:24Z davea $
 
 # quarl 2003-10-16 initial version based on conglomeration of
 #                  coursesurvey/database.py and boinc/database.py
@@ -15,7 +15,7 @@ from __future__ import generators
 import MySQLdb, MySQLdb.cursors
 import sys, os, weakref
 
-ID = '$Id: db_base.py 18258 2009-06-02 04:07:53Z davea $'
+ID = '$Id: db_base.py 22616 2010-11-03 18:25:24Z davea $'
 
 dbconnection = None
 
@@ -127,13 +127,13 @@ def _select_object(table, searchdict, extra_args="", extra_params=[], select_wha
     if join:
         command += "," + join
     for (key,value) in searchdict.items():
-        # note: if value == 0, we want to look for it.
-        if value != None and value != '':
-            escaped_value = dbconnection.escape_string(str(value))
-            if key == 'text':
-                parameters.append("instr(%s,'%s')"%(key,escaped_value))
-            else:
-                parameters.append("%s='%s'"%(key,escaped_value))
+        if value == None:
+            value = ''
+        escaped_value = dbconnection.escape_string(str(value))
+        if key == 'text':
+            parameters.append("instr(%s,'%s')"%(key,escaped_value))
+        else:
+            parameters.append("%s='%s'"%(key,escaped_value))
     if parameters:
         command += ' WHERE ' + ' AND '.join(parameters)
     if extra_args:

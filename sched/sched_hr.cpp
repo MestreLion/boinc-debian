@@ -78,7 +78,7 @@ bool already_sent_to_different_platform_careful(WORKUNIT& workunit, APP& app) {
     retval = db_wu.get_field_int("hr_class", wu_hr_class);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "can't get hr_class for [WU#%d]: %d\n", db_wu.id, retval
+            "can't get hr_class for [WU#%d]: %s\n", db_wu.id, boincerror(retval)
         );
         return true;
     }
@@ -101,4 +101,4 @@ bool already_sent_to_different_platform_careful(WORKUNIT& workunit, APP& app) {
     return g_wreq->hr_reject_temp;
 }
 
-const char *BOINC_RCSID_4196d9a5b4="$Id: sched_hr.cpp 21093 2010-04-05 18:59:16Z davea $";
+const char *BOINC_RCSID_4196d9a5b4="$Id: sched_hr.cpp 22647 2010-11-08 17:51:57Z davea $";

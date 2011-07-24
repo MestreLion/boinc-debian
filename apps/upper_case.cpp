@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
 
     // main loop - read characters, convert to UC, write
     //
-    for (int i=0; ; i++) {
+    for (i=0; ; i++) {
         c = fgetc(infile);
 
         if (c == EOF) break;
@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
     //
     if (cpu_time) {
         double start = dtime();
-        for (int i=0; ; i++) {
+        for (i=0; ; i++) {
             double e = dtime()-start;
             if (e > cpu_time) break;
             fd = .5 + .5*(e/cpu_time);
@@ -305,5 +305,5 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: upper_case.cpp 22363 2010-09-15 23:03:30Z davea $";
+const char *BOINC_RCSID_33ac47a071 = "$Id: upper_case.cpp 23710 2011-06-12 20:58:43Z davea $";
 

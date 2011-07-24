@@ -113,9 +113,9 @@ function show_other_projects($user, $personal) {
     if (count($user->projects) > 1) {
         usort($user->projects, "cmp");
         if ($personal) {
-            echo "<h3>".tra("Projects in which you are participating")."</h3>";
+            echo "<h2>".tra("Projects in which you are participating")."</h2>";
         } else {
-            echo "<h3>".tra("Projects in which %1 is participating", $user->name)."</h3>";
+            echo "<h2>".tra("Projects in which %1 is participating", $user->name)."</h2>";
         }
         start_table();
         row_heading_array(array(
@@ -157,7 +157,7 @@ function show_user_stats_private($user) {
     foreach ($cpid_stats_sites as $site) {
         $name = $site[0];
         $y = sprintf($site[1], $cpid);
-        $x .= "<a href=\"$y\">$name</a><br/>";
+        $x .= "<a href=\"$y\">$name</a><br/>\n";
     }
     $x .= "<br/><span class=\"smalltext\">".tra("Cross-project ID").": $cpid</span>\n";
     row2(tra("Cross-project statistics"), $x);
@@ -192,12 +192,10 @@ function weak_auth($user) {
 // show static user info (private)
 //
 function show_user_info_private($user) {
-    if (is_valid_email_addr($user->email_addr)) {
-        $email_text = $user->email_addr;
-    } else {
-        $email_text = tra("Email address verification pending");
+    $email_text = $user->email_addr;
+    if (defined("SHOW_NONVALIDATED_EMAIL_ADDR") && !$user->email_validated) {
+        $email_text .= " (<a href=validate_email_addr.php>must be validated</a>)";
     }
-
     row1(tra("Account information"));
     row2(tra("Name"), $user->name);
     row2(tra("Email address"), $email_text);
@@ -209,8 +207,10 @@ function show_user_info_private($user) {
     row2(tra("Postal code"), $user->postal_code);
     row2(tra("%1 member since", PROJECT), date_str($user->create_time));
     $url_tokens = url_tokens($user->authenticator);
-    row2(tra("Change"), "<a href=\"edit_email_form.php\">".tra("email address")."</a> | <a href=\"".SECURE_URL_BASE."/edit_passwd_form.php\">".tra("password")."</a> | <a href=\"edit_user_info_form.php?$url_tokens\">".tra("other account info")."</a>");
-    row2("", "<a href=\"logout.php?$url_tokens\">".tra("Log out")."</a>");
+    row2(tra("Change"), "<a href=\"edit_email_form.php\">".tra("email address")."</a>
+        | <a href=\"".SECURE_URL_BASE."/edit_passwd_form.php\">".tra("password")."</a>
+        | <a href=\"edit_user_info_form.php?$url_tokens\">".tra("other account info")."</a>"
+    );
     row2(tra("User ID")."<br/><span class=\"note\">".tra("Used in community functions")."</span>", $user->id);
     if (!no_computing()) {
         row2(tra("Account key")."<br/><span class=\"note\">".tra("Provides full access to your account")."</span>", $user->authenticator);
@@ -293,7 +293,7 @@ function show_community_private($user) {
     }
 
     $friends = BoincFriend::enum("user_src=$user->id and reciprocated=1");
-    $x = "<a href=\"user_search.php\">".tra("Find friends")."</a><br\>\n";
+    $x = "<a href=\"user_search.php\">".tra("Find friends")."</a><br/>\n";
     $n = count($friends);
     if ($n) {
         foreach($friends as $friend) {
@@ -310,6 +310,7 @@ function show_community_private($user) {
 //
 function show_user_summary_public($user) {
     global $g_logged_in_user;
+    row2(tra("User ID"), $user->id);
     row2(tra("%1 member since", PROJECT), date_str($user->create_time));
     row2(tra("Country"), $user->country);
     if (strlen($user->url)) {
@@ -416,6 +417,7 @@ function show_account_private($user) {
     end_table();
     show_other_projects($user, true);
     project_user_page_private($user);
+    //echo "<a href=delete_account.php>Delete account</a>\n";
     echo "</td><td valign=top>";
     start_table();
     show_community_private($user);
@@ -466,6 +468,6 @@ function make_user(
     }
 }
 
-$cvs_version_tracker[]="\$Id: user.inc 22366 2010-09-15 23:47:49Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: user.inc 23387 2011-04-20 14:50:50Z davea $";  //Generated automatically - do not edit
 
 ?>

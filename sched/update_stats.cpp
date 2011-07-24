@@ -20,11 +20,17 @@
 // These fields are updates as new credit is granted;
 // the purpose of this program is to decay credit of entities
 // that are inactive for long periods.
-// Hence it should be run about once a day at most.
+// Run it about once a day.
 //
 // Also updates the nusers field of teams
 //
-// usage: update_stats [--update_teams] [--update_users] [--update_hosts]
+// usage: update_stats args
+//  [--update_teams]
+//  [--update_users]
+//  [--update_hosts]
+//  [--min_age nsec] don't update items updated more recently than this
+
+
 #include "config.h"
 #include <cstdio>
 #include <cstring>
@@ -42,13 +48,12 @@
 #include "sched_util.h"
 #include "sched_msgs.h"
 
-#ifdef EINSTEIN_AT_HOME
-#define UPDATE_INTERVAL 3600*24;
-#else
-#define UPDATE_INTERVAL 3600*24*4;
-#endif
+// If the item's average credit has been updated more recently than this,
+// don't update it (optimizes performance).
 
-double update_time_cutoff;
+#define MIN_AGE 86400
+
+double max_update_time;
 
 int update_users() {
     DB_USER user;
@@ -57,7 +62,8 @@ int update_users() {
     double now = dtime();
 
     while (1) {
-        retval = user.enumerate("where expavg_credit>0.1");
+        sprintf(buf, "where expavg_credit>0.1 and expavg_time < %f", max_update_time);
+        retval = user.enumerate(buf);
         if (retval) {
             if (retval != ERR_DB_NOT_FOUND) {
                 log_messages.printf(MSG_CRITICAL, "lost DB conn\n");
@@ -65,8 +71,6 @@ int update_users() {
             }
             break;
         }
-
-        if (user.expavg_time > update_time_cutoff) continue;
         update_average(
             now, 0, 0, CREDIT_HALF_LIFE, user.expavg_credit, user.expavg_time
         );
@@ -90,7 +94,8 @@ int update_hosts() {
     double now = dtime();
 
     while (1) {
-        retval = host.enumerate("where expavg_credit>0.1");
+        sprintf(buf, "where expavg_credit>0.1 and expavg_time < %f", max_update_time);
+        retval = host.enumerate(buf);
         if (retval) {
             if (retval != ERR_DB_NOT_FOUND) {
                 log_messages.printf(MSG_CRITICAL, "lost DB conn\n");
@@ -98,8 +103,6 @@ int update_hosts() {
             }
             break;
         }
-
-        if (host.expavg_time > update_time_cutoff) continue;
         update_average(
             now, 0, 0, CREDIT_HALF_LIFE, host.expavg_credit, host.expavg_time
         );
@@ -169,7 +172,7 @@ int update_teams() {
             );
             continue;
         }
-        if (team.expavg_time < update_time_cutoff) {
+        if (team.expavg_time < max_update_time) {
             update_average(
                 now, 0, 0, CREDIT_HALF_LIFE, team.expavg_credit,
                 team.expavg_time
@@ -210,10 +213,11 @@ void usage(char *name) {
 
 int main(int argc, char** argv) {
     int retval, i;
-    bool do_update_teams = false, do_update_users = false;
+    bool do_update_teams = false;
+    bool do_update_users = false;
     bool do_update_hosts = false;
 
-    update_time_cutoff = time(0) - UPDATE_INTERVAL;
+    max_update_time = time(0) - MIN_AGE;
 
     check_stop_daemons();
 
@@ -224,6 +228,9 @@ int main(int argc, char** argv) {
             do_update_users = true;
         } else if (is_arg(argv[i], "update_hosts")) {
             do_update_hosts = true;
+        } else if (is_arg(argv[i], "min_age")) {
+            double x = atof(argv[++i]);
+            max_update_time = time(0) - x;
         } else if (!strcmp(argv[i], "-d")) {
             if (!argv[++i]) {
                 log_messages.printf(MSG_CRITICAL, "%s requires an argument\n\n", argv[--i]);
@@ -246,6 +253,14 @@ int main(int argc, char** argv) {
         }
     }
 
+    // if no do_update flags set, set them all
+    //
+    if (!do_update_teams && !do_update_users && !do_update_hosts) {
+        do_update_teams = true;
+        do_update_users = true;
+        do_update_hosts = true;
+    }
+
     log_messages.printf(MSG_NORMAL, "Starting\n");
 
     retval = config.parse_file();
@@ -263,14 +278,17 @@ int main(int argc, char** argv) {
     retval = boinc_db.set_isolation_level(READ_UNCOMMITTED);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "boinc_db.set_isolation_level: %d; %s\n", retval, boinc_db.error_string()
+            "boinc_db.set_isolation_level: %s; %s\n",
+            boincerror(retval), boinc_db.error_string()
         );
     }
 
     if (do_update_users) {
         retval = update_users();
         if (retval) {
-            log_messages.printf(MSG_CRITICAL, "update_users failed: %d\n", retval);
+            log_messages.printf(MSG_CRITICAL,
+                "update_users failed: %s\n", boincerror(retval)
+            );
             exit(1);
         }
     }
@@ -278,7 +296,9 @@ int main(int argc, char** argv) {
     if (do_update_hosts) {
         retval = update_hosts();
         if (retval) {
-            log_messages.printf(MSG_CRITICAL, "update_hosts failed: %d\n", retval);
+            log_messages.printf(MSG_CRITICAL,
+                "update_hosts failed: %s\n", boincerror(retval)
+            );
             exit(1);
         }
     }
@@ -286,7 +306,9 @@ int main(int argc, char** argv) {
     if (do_update_teams) {
         retval = update_teams();
         if (retval) {
-            log_messages.printf(MSG_CRITICAL, "update_teams failed: %d\n", retval);
+            log_messages.printf(MSG_CRITICAL,
+                "update_teams failed: %s\n", boincerror(retval)
+            );
             exit(1);
         }
     }
@@ -295,4 +317,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_6b05e9ecce = "$Id: update_stats.cpp 22642 2010-11-08 17:40:52Z romw $";
+const char *BOINC_RCSID_6b05e9ecce = "$Id: update_stats.cpp 23509 2011-05-06 12:33:12Z davea $";

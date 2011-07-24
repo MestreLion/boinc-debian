@@ -21,6 +21,8 @@ require_once("../inc/util.inc");
 require_once("../inc/team.inc");
 require_once("../inc/db.inc");
 
+check_get_args(array("sort_by", "type", "offset"));
+
 $config = get_config();
 $teams_per_page = parse_config($config, "<teams_per_page>");
 if (!$teams_per_page) {
@@ -92,7 +94,7 @@ if ($offset < ITEM_LIMIT) {
             $team->nusers = team_count_members($team->id);
         }
         //save data in cache
-        set_cache_data(teams_to_store($data),$cache_args);
+        set_cached_data(TOP_PAGES_TTL, teams_to_store($data), $cache_args);
     }
 } else {
     error_page(tra("Limit exceeded - Sorry, first %1 items only", ITEM_LIMIT));

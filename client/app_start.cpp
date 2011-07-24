@@ -119,10 +119,7 @@ static void debug_print_argv(char** argv) {
 static void coproc_cmdline(
     int rsc_type, RESULT* rp, double ninstances, char* cmdline
 ) {
-    COPROC* coproc = (rsc_type==RSC_TYPE_CUDA)
-        ?(COPROC*)&gstate.host_info.coprocs.cuda
-        :(COPROC*)&gstate.host_info.coprocs.ati
-    ;
+    COPROC* coproc = &coprocs.coprocs[rsc_type];
     for (int j=0; j<ninstances; j++) {
         int k = rp->coproc_indices[j];
         // sanity check
@@ -272,6 +269,32 @@ int ACTIVE_TASK::write_app_init_file() {
     return retval;
 }
 
+// Given a logical name of the form D1/D2/.../Dn/F,
+// create the directories D1 ... Dn in the slot dir
+//
+static int create_dirs_for_logical_name(
+    const char* name, const char* slot_dir
+) {
+    char buf[1024];
+    char dir_path[1024];
+    int retval;
+
+    strcpy(buf, name);
+    strcpy(dir_path, slot_dir);
+    char* p = buf;
+    while (1) {
+        char* q = strstr(p, "/");
+        if (!q) break;
+        *q = 0;
+        strcat(dir_path, "/");
+        strcat(dir_path, p);
+        retval = boinc_mkdir(dir_path);
+        if (retval) return retval;
+        p = q+1;
+    }
+    return 0;
+}
+
 // set up a file reference, given a slot dir and project dir.
 // This means:
 // 1) copy the file to slot dir, if reference is by copy
@@ -284,10 +307,13 @@ static int setup_file(
     char link_path[256], rel_file_path[256];
     int retval;
 
-    sprintf(link_path,
-        "%s/%s",
-        slot_dir, strlen(fref.open_name)?fref.open_name:fip->name
-    );
+    if (strlen(fref.open_name)) {
+        create_dirs_for_logical_name(fref.open_name, slot_dir);
+        sprintf(link_path, "%s/%s", slot_dir, fref.open_name);
+    } else {
+        sprintf(link_path, "%s/%s", slot_dir, fip->name);
+    }
+
     sprintf(rel_file_path, "../../%s", file_path );
 
     // if anonymous platform, this is called even if not first time,
@@ -395,7 +421,7 @@ int ACTIVE_TASK::start(bool first_time) {
     unsigned int i;
     FILE_REF fref;
     FILE_INFO* fip;
-    int retval;
+    int retval, rt;
 
     // if this job less than one CPU, run it at above idle priority
     //
@@ -547,11 +573,9 @@ int ACTIVE_TASK::start(bool first_time) {
     sprintf(cmdline, "%s %s %s",
         exec_path, wup->command_line.c_str(), app_version->cmdline
     );
-    if (app_version->ncudas) {
-        coproc_cmdline(RSC_TYPE_CUDA, result, app_version->ncudas, cmdline);
-    }
-    if (app_version->natis) {
-        coproc_cmdline(RSC_TYPE_ATI, result, app_version->natis, cmdline);
+    rt = app_version->gpu_usage.rsc_type;
+    if (rt) {
+        coproc_cmdline(rt, result, app_version->gpu_usage.usage, cmdline);
     }
 
     relative_to_absolute(slot_dir, slotdirpath);
@@ -738,11 +762,10 @@ int ACTIVE_TASK::start(bool first_time) {
     sprintf(cmdline, "%s %s",
         wup->command_line.c_str(), app_version->cmdline
     );
-    if (app_version->ncudas) {
-        coproc_cmdline(RSC_TYPE_CUDA, result, app_version->ncudas, cmdline);
-    }
-    if (app_version->natis) {
-        coproc_cmdline(RSC_TYPE_ATI, result, app_version->natis, cmdline);
+
+    rt = app_version->gpu_usage.rsc_type;
+    if (rt) {
+        coproc_cmdline(rt, result, app_version->gpu_usage.usage, cmdline);
     }
 
     // Set up core/app shared memory seg if needed
@@ -883,21 +906,21 @@ int ACTIVE_TASK::start(bool first_time) {
 #endif
 #if defined (HAVE_SCHED_SETSCHEDULER) && defined(SCHED_BATCH) && defined (__linux__)
             if (!high_priority) {
-                struct sched_param p;
-                p.sched_priority = 0;
-                if (sched_setscheduler(0, SCHED_BATCH, &p)) {
+                struct sched_param sp;
+                sp.sched_priority = 0;
+                if (sched_setscheduler(0, SCHED_BATCH, &sp)) {
                     perror("sched_setscheduler");
                 }
             }
 #endif
         }
-        sprintf(buf, "../../%s", exec_path );
+        sprintf(buf, "../../%s", exec_path);
         if (g_use_sandbox) {
             char switcher_path[100];
             sprintf(switcher_path, "../../%s/%s",
                 SWITCHER_DIR, SWITCHER_FILE_NAME
             );
-            argv[0] = SWITCHER_FILE_NAME;
+            argv[0] = const_cast<char*>(SWITCHER_FILE_NAME);
             argv[1] = buf;
             argv[2] = exec_name;
             parse_command_line(cmdline, argv+3);

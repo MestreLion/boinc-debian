@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "client_types.h"
-#include "auto_update.h"
+//#include "auto_update.h"
 #include "http_curl.h"
 #include "prefs.h"
 
@@ -125,10 +125,9 @@ struct SCHEDULER_REPLY {
     int send_time_stats_log;
     int send_job_log;
     int scheduler_version;
+#ifdef ENABLE_AUTO_UPDATE
     AUTO_UPDATE auto_update;
-    double cpu_backoff;
-    double cuda_backoff;
-    double ati_backoff;
+#endif
     std::vector<RSS_FEED> sr_feeds;
     bool got_rss_feeds;
         // whether scheduler reply included <rss_feeds>
@@ -137,6 +136,8 @@ struct SCHEDULER_REPLY {
     SCHEDULER_REPLY();
     ~SCHEDULER_REPLY();
     int parse(FILE*, PROJECT*);
+    void handle_backoff(const char*, double);
+    void handle_rsc_backoff(FILE*);
 };
 
 #endif

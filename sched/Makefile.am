@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 21894 2010-07-12 21:35:05Z davea $
+## $Id: Makefile.am 23431 2011-04-24 21:33:51Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -93,9 +93,8 @@ bin_PROGRAMS = \
     delete_file \
     get_file \
     make_work \
-    request_file_list \
     sched_driver \
-    send_file \
+    put_file \
     show_shmem \
     wu_check
 
@@ -114,7 +113,8 @@ sched_PROGRAMS = \
     sample_work_generator \
     single_job_assimilator \
     transitioner \
-    trickle_handler \
+    trickle_credit \
+    trickle_echo \
     update_stats
 
 cgi_PROGRAMS= \
@@ -228,8 +228,11 @@ db_dump_LDADD = $(SERVERLIBS)
 db_purge_SOURCES = db_purge.cpp
 db_purge_LDADD = $(SERVERLIBS)
 
-trickle_handler_SOURCES = trickle_handler.cpp
-trickle_handler_LDADD = $(SERVERLIBS)
+trickle_credit_SOURCES = trickle_credit.cpp trickle_handler.cpp
+trickle_credit_LDADD = $(SERVERLIBS)
+
+trickle_echo_SOURCES = trickle_echo.cpp trickle_handler.cpp
+trickle_echo_LDADD = $(SERVERLIBS)
 
 update_stats_SOURCES = update_stats.cpp
 update_stats_LDADD = $(SERVERLIBS)
@@ -246,14 +249,11 @@ transitioner_LDADD = $(SERVERLIBS)
 message_handler_SOURCES = message_handler.cpp
 message_handler_LDADD = $(SERVERLIBS)
 
-request_file_list_SOURCES = request_file_list.cpp
-request_file_list_LDADD = $(SERVERLIBS)
-
 get_file_SOURCES = get_file.cpp
 get_file_LDADD = $(SERVERLIBS)
 
-send_file_SOURCES = send_file.cpp
-send_file_LDADD = $(SERVERLIBS)
+put_file_SOURCES = put_file.cpp
+put_file_LDADD = $(SERVERLIBS)
 
 delete_file_SOURCES = delete_file.cpp
 delete_file_LDADD = $(SERVERLIBS)

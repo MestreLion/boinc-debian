@@ -22,6 +22,8 @@ require_once("../inc/util.inc");
 require_once("../inc/profile.inc");
 require_once("../inc/uotd.inc");
 
+check_get_args(array("cmd"));
+
 db_init();
 
 $option = get_str('cmd', true);
@@ -71,7 +73,7 @@ echo "</ul></td></tr>";
 row1(tra("Search profile text"));
 rowify("
     <form action=\"profile_search_action.php\" method=\"GET\">
-    <input name=\"search_string\">
+    <input type=\"text\" name=\"search_string\">
     <input type=\"submit\" value=\"".tra("Search")."\">
     </form>
 ");
@@ -106,5 +108,5 @@ function select_profile($cmd) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile_menu.php 17278 2009-02-17 17:39:57Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: profile_menu.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

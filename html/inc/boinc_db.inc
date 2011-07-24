@@ -16,8 +16,9 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-require_once("../inc/db_conn.inc");
-require_once("../inc/util_basic.inc");
+$d = dirname(__FILE__);
+require_once("$d/db_conn.inc");
+require_once("$d/util_basic.inc");
 
 class BoincDb extends DbConn {
     static $instance;
@@ -40,6 +41,12 @@ class BoincDb extends DbConn {
         }
         $instance = new DbConn();
         if ($readonly && $replica_host) {
+            $x = parse_config($config, '<replica_db_user>');
+            if ($x) $user = $x;
+            $x = parse_config($config, '<replica_db_passwd>');
+            if ($x) $passwd = $x;
+            $x = parse_config($config, '<replica_db_name>');
+            if ($x) $name = $x;
             $retval = $instance->init_conn($user, $passwd, $replica_host, $name);
             if ($retval) {
                 self::$instance = $instance;
@@ -138,6 +145,10 @@ class BoincUser {
         $db->delete_aux('profile', "userid=$this->id");
         return $db->delete($this, 'user');
     }
+    function sum($field) {
+        $db = BoincDb::get();
+        return $db->sum('user', $field);
+    }
 }
 
 class BoincTeam {
@@ -215,6 +226,10 @@ class BoincResult {
         $db = BoincDb::get();
         return $db->enum('result', 'BoincResult', $clause);
     }
+	static function enum_fields($fields, $where_clause, $order_clause) {
+        $db = BoincDb::get();
+		return $db->enum_fields('result', 'BoincResult', $fields, $where_clause, $order_clause);
+	}
     static function update_aux($clause) {
         $db = BoincDb::get();
         return $db->update_aux('result', $clause);
@@ -233,6 +248,10 @@ class BoincWorkunit {
     static function lookup_id($id) {
         $db = BoincDb::get();
         return $db->lookup_id($id, 'workunit', 'BoincWorkunit');
+    }
+    static function lookup($clause) {
+        $db = BoincDb::get();
+        return $db->lookup('workunit', 'BoincWorkunit', $clause);
     }
     static function insert($clause) {
         $db = BoincDb::get();
@@ -269,6 +288,10 @@ class BoincApp {
         if (!$ret) return $ret;
         return $db->insert_id();
     }
+    function update($clause) {
+        $db = BoincDb::get();
+        return $db->update($this, 'app', $clause);
+    }
 }
 
 class BoincAppVersion {
@@ -283,6 +306,16 @@ class BoincAppVersion {
     static function lookup_id($id) {
         $db = BoincDb::get();
         return $db->lookup_id($id, 'app_version', 'BoincAppVersion');
+    }
+    static function insert($clause) {
+        $db = BoincDb::get();
+        $ret = $db->insert('app_version', $clause);
+        if (!$ret) return $ret;
+        return $db->insert_id();
+    }
+    function update($clause) {
+        $db = BoincDb::get();
+        return $db->update($this, 'app_version', $clause);
     }
 }
 
@@ -387,6 +420,10 @@ class BoincHostAppVersion {
             'host_app_version', 'BoincHostAppVersion',
             "host_id=$host_id and app_version_id=$app_version_id"
         );
+    }
+    static function update_aux($clause) {
+        $db = BoincDb::get();
+        return $db->update_aux('host_app_version', $clause);
     }
 }
 

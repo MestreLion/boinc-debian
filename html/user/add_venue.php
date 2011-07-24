@@ -79,7 +79,7 @@ if ($action) {
         } else {
             $prefs->$venue = $new_prefs;
             project_prefs_update($user, $prefs);
-            Header("Location: prefs.php?subset=$subset&c");
+            Header("Location: prefs.php?subset=$subset$c");
         }
     }
 } else {
@@ -94,5 +94,5 @@ if ($action) {
     print_prefs_form("add", $subset, $venue, $user, $prefs, $columns);
 }
 page_tail();
-$cvs_version_tracker[]="\$Id: add_venue.php 22315 2010-09-04 22:13:27Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: add_venue.php 23030 2011-02-14 19:49:30Z boincadm $";  //Generated automatically - do not edit
 ?>

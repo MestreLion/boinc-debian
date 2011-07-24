@@ -22,6 +22,8 @@ require_once("../inc/user.inc");
 require_once("../inc/host.inc");
 require_once("../inc/boinc_db.inc");
 
+check_get_args(array("sort_by", "offset"));
+
 $config = get_config();
 $hosts_per_page = parse_config($config, "<hosts_per_page>");
 if (!$hosts_per_page) {
@@ -71,7 +73,7 @@ if ($cacheddata){
     $data = store_to_hosts($cacheddata);
 } else {
     $data = get_top_hosts($offset,$sort_by);
-    set_cache_data(hosts_to_store($data), $cache_args);
+    set_cached_data(TOP_PAGES_TTL, hosts_to_store($data), $cache_args);
 };
 
 

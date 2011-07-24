@@ -208,7 +208,7 @@ int open_database() {
 // Apache will send it a SIGTERM.
 // Record this in the log file and close the DB conn.
 //
-void sigterm_handler(int signo) {
+void sigterm_handler(int /*signo*/) {
     if (db_opened) {
         boinc_db.close();
     }
@@ -340,7 +340,7 @@ void attach_to_feeder_shmem() {
     }
 
     all_apps_use_hr = true;
-    for (int i=0; i<ssp->napps; i++) {
+    for (i=0; i<ssp->napps; i++) {
         if (!ssp->apps[i].homogeneous_redundancy) {
             all_apps_use_hr = false;
             break;
@@ -617,8 +617,8 @@ done:
 
 void RSC_JOB_LIMIT::print_log(const char* rsc_name) {
     log_messages.printf(MSG_NORMAL,
-        "[quota] %s: base %d scaled %d\n",
-        rsc_name, base_limit, scaled_limit
+        "[quota] %s: base %d scaled %d njobs %d\n",
+        rsc_name, base_limit, scaled_limit, njobs
     );
 }
 
@@ -629,15 +629,18 @@ void JOB_LIMIT::print_log() {
 }
 
 void JOB_LIMITS::print_log() {
-    log_messages.printf(MSG_NORMAL, "[quota] Overall limit on jobs in progress:\n");
+    log_messages.printf(MSG_NORMAL, "[quota] Overall limits on jobs in progress:\n");
     project_limits.print_log();
     for (unsigned int i=0; i<app_limits.size(); i++) {
         if (app_limits[i].any_limit()) {
-            APP* app = &ssp->apps[i];
-            log_messages.printf(MSG_NORMAL, "Limits for %s:\n", app->name);
+            APP* app = ssp->lookup_app_name(app_limits[i].app_name);
+            if (!app) continue;
+            log_messages.printf(MSG_NORMAL,
+                "[quota] Limits for %s:\n", app->name
+            );
             app_limits[i].print_log();
         }
     }
 }
 
-const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 22343 2010-09-13 23:40:32Z davea $";
+const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 23710 2011-06-12 20:58:43Z davea $";

@@ -27,21 +27,18 @@ function pm_header() {
     echo "</div>\n";
 }
 
-function pm_form($error = null) {
+function pm_form($replyto, $userid, $error = null) {
     global $bbcode_html, $bbcode_js;
     global $g_logged_in_user;
     page_head(tra("Send private message"),'','','', $bbcode_js);
     
     if (post_str("preview", true) == tra("Preview")) {
         $options = new output_options;
-        echo "<div id=\"preview\">\n";
-        echo "<div class=\"header\">".tra("Preview")."</div>\n";
+        echo tra("Preview");
+        echo "<div class=\"pm_preview\">\n";
         echo output_transform(post_str("content", true), $options);
         echo "</div>\n";
     }
-    
-    $replyto = get_int("replyto", true);
-    $userid = get_int("userid", true);
     
     $subject = null;
     $content = null;
@@ -53,7 +50,7 @@ function pm_form($error = null) {
         $content = "[quote]".$message->content."[/quote]\n";
         $userid = $message->senderid;
         $user = BoincUser::lookup_id($userid);
-        if ($user != null) {
+        if ($user) {
             $writeto = $userid." (".$user->name.")";
         }
         $subject = $message->subject;
@@ -66,7 +63,7 @@ function pm_form($error = null) {
             $writeto = $userid." (".$user->name.")";
         }
     } else {
-        $writeto = post_str("to", true);
+        $writeto = sanitize_tags(post_str("to", true));
         $subject = post_str("subject", true);
         $content = post_str("content", true);
     }
@@ -199,9 +196,16 @@ function pm_email_remind($user) {
 function pm_rss($notify, &$title, &$msg, &$url) {
     $pm = BoincPrivateMessage::lookup_id($notify->opaque);
     $from_user = BoincUser::lookup_id($pm->senderid);
-    $title = tra("Private message from")." $from_user->name: $pm->subject";
-    $msg = "$pm->content";
+    $title = tra("Private message");
+    $msg = "You have received a <a href=".URL_BASE."pm.php>private message</a>.";
     $url = URL_BASE."pm.php";
+}
+
+function pm_delete_user($user) {
+    $mm = BoincPrivateMessage::enum("userid=$user->id or senderid=$user->id");
+    foreach ($mm as $m) {
+        $m->delete();
+    }
 }
 
 $cvs_version_tracker[]="\$Id: pm.inc 14019 2007-11-01 23:04:39Z davea $";

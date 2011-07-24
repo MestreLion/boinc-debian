@@ -16,14 +16,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 // search for posts or a thread.
 // Takes input from forum_search.php
  
 require_once('../inc/time.inc');
 require_once('../inc/text_transform.inc');
 require_once('../inc/forum.inc');
+
+check_get_args(array());
 
 // Searches for the keywords in the $keyword_list array in thread titles.
 // Optionally filters by forum, user, time, or hidden if specified.
@@ -83,6 +83,8 @@ function search_thread_titles(
 function search_post_content(
     $keyword_list, $forum, $user, $time, $limit, $sort_style, $show_hidden
 ){
+    $db = BoincDb::get();
+
     $search_string="%";
     foreach ($keyword_list as $key => $word){
         $search_string.=mysql_escape_string($word)."%";
@@ -92,9 +94,9 @@ function search_post_content(
     // because that's where the link to forum is
     //
     if ($forum) {
-        $optional_join = " LEFT JOIN DBNAME.thread ON post.thread = thread.id";
+        $optional_join = " LEFT JOIN ".$db->db_name.".thread ON post.thread = thread.id";
     }
-    $query = "select post.* from DBNAME.post".$optional_join." where content like '".$search_string."'";
+    $query = "select post.* from ".$db->db_name.".post".$optional_join." where content like '".$search_string."'";
     if ($forum) {
         $query.=" and forum = $forum->id";
     }
@@ -164,7 +166,7 @@ $threads = search_thread_titles($search_list, $forum, $user, $min_timestamp, rou
 
 // Display the threads while we search for posts
 if (count($threads)){
-    echo "<span class=title>Thread titles matching your query:</span>";
+    echo "<span class=title>" . tra("Thread titles matching your query:") . "</span>";
     show_thread_and_context_header();
     $i = 0;
     foreach ($threads as $thread){
@@ -184,7 +186,7 @@ $posts = search_post_content(
 );
 
 if (count($posts)){
-    echo "<span class=title>Messages matching your query:</span>";
+    echo "<span class=title>" . tra("Messages matching your query:") . "</span>";
     start_table();
     $n = 1;
     $options = get_output_options($logged_in_user);
@@ -217,5 +219,5 @@ echo "<p><a href=\"forum_search.php\">Perform another search</a></p>";
 page_tail();
 exit;
 
-$cvs_version_tracker[]="\$Id: forum_search_action.php 15982 2008-09-09 14:59:50Z Rytis $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_search_action.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

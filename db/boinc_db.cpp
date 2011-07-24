@@ -195,7 +195,8 @@ void DB_APP::db_print(char* buf){
         "beta=%d, "
         "target_nresults=%d, "
         "min_avg_pfc=%.15e, "
-        "host_scale_check=%d, ",
+        "host_scale_check=%d, "
+        "homogeneous_app_version=%d, ",
         create_time,
         name,
         min_version,
@@ -206,7 +207,8 @@ void DB_APP::db_print(char* buf){
         beta?1:0,
         target_nresults,
         min_avg_pfc,
-        host_scale_check?1:0
+        host_scale_check?1:0,
+        homogeneous_app_version?1:0
     );
 }
 
@@ -225,6 +227,7 @@ void DB_APP::db_parse(MYSQL_ROW &r) {
     target_nresults = atoi(r[i++]);
     min_avg_pfc = atof(r[i++]);
     host_scale_check = (atoi(r[i++]) != 0);
+    homogeneous_app_version = (atoi(r[i++]) != 0);
 }
 
 void DB_APP_VERSION::db_print(char* buf){
@@ -779,7 +782,8 @@ void DB_WORKUNIT::db_print(char* buf){
         "result_template_file='%s', "
         "priority=%d, "
         "rsc_bandwidth_bound=%.15e, "
-        "fileset_id=%d ",
+        "fileset_id=%d, "
+        "app_version_id=%d ",
         create_time, appid,
         name, xml_doc, batch,
         rsc_fpops_est, rsc_fpops_bound, rsc_memory_bound, rsc_disk_bound,
@@ -796,7 +800,8 @@ void DB_WORKUNIT::db_print(char* buf){
         result_template_file,
         priority,
         rsc_bandwidth_bound,
-        fileset_id
+        fileset_id,
+        app_version_id
     );
 }
 
@@ -833,6 +838,7 @@ void DB_WORKUNIT::db_parse(MYSQL_ROW &r) {
     strcpy2(mod_time, r[i++]);
     rsc_bandwidth_bound = atof(r[i++]);
     fileset_id = atoi(r[i++]);
+    app_version_id = atoi(r[i++]);
 }
 
 void DB_CREDITED_JOB::db_print(char* buf){
@@ -914,15 +920,21 @@ void DB_RESULT::db_print_values(char* buf){
 // The "... and server_state=%d" is a safeguard against
 // the case where another scheduler tries to send this result at the same time
 //
-int DB_RESULT::mark_as_sent(int old_server_state) {
+int DB_RESULT::mark_as_sent(int old_server_state, int report_grace_period) {
     char query[MAX_QUERY_LEN];
     int retval;
 
     sprintf(query,
         "update result set server_state=%d, hostid=%d, userid=%d, sent_time=%d, report_deadline=%d, flops_estimate=%.15e, app_version_id=%d  where id=%d and server_state=%d",
-        server_state, hostid, userid, sent_time, report_deadline,
-        flops_estimate, app_version_id,
-        id, old_server_state
+        server_state,
+        hostid,
+        userid,
+        sent_time,
+        report_deadline + report_grace_period,
+        flops_estimate,
+        app_version_id,
+        id,
+        old_server_state
     );
     retval = db->do_query(query);
     if (retval) return retval;
@@ -1235,6 +1247,7 @@ void TRANSITIONER_ITEM::parse(MYSQL_ROW& r) {
     priority = atoi(r[i++]);
     hr_class = atoi(r[i++]);
     batch = atoi(r[i++]);
+    app_version_id = atoi(r[i++]);
 
     // use safe_atoi() from here on cuz they might not be there
     //
@@ -1293,6 +1306,7 @@ int DB_TRANSITIONER_ITEM_SET::enumerate(
             "   wu.priority, "
             "   wu.hr_class, "
             "   wu.batch, "
+            "   wu.app_version_id, "
             "   res.id, "
             "   res.name, "
             "   res.report_deadline, "
@@ -1409,6 +1423,10 @@ int DB_TRANSITIONER_ITEM_SET::update_workunit(
     }
     if (ti.hr_class != ti_original.hr_class) {
         sprintf(buf, " hr_class=%d,", ti.hr_class);
+        strcat(updates, buf);
+    }
+    if (ti.app_version_id != ti_original.app_version_id) {
+        sprintf(buf, " app_version_id=%d,", ti.app_version_id);
         strcat(updates, buf);
     }
     int n = strlen(updates);
@@ -1587,13 +1605,14 @@ int DB_VALIDATOR_ITEM_SET::update_result(RESULT& res) {
 
     sprintf(query,
         "update result set validate_state=%d, granted_credit=%.15e, "
-        "server_state=%d, outcome=%d, opaque=%lf "
+        "server_state=%d, outcome=%d, opaque=%lf, random=%d "
         "where id=%d",
         res.validate_state,
         res.granted_credit,
         res.server_state,
         res.outcome,
         res.opaque,
+        res.random,
         res.id
     );
     int retval = db->do_query(query);
@@ -1661,6 +1680,7 @@ void WORK_ITEM::parse(MYSQL_ROW& r) {
     strcpy2(wu.mod_time, r[i++]);
     wu.rsc_bandwidth_bound = atof(r[i++]);
     wu.fileset_id = atoi(r[i++]);
+    wu.app_version_id = atoi(r[i++]);
 }
 
 int DB_WORK_ITEM::enumerate(
@@ -2264,4 +2284,4 @@ int DB_FILESET_SCHED_TRIGGER_ITEM_SET::contains_trigger(const char* fileset_name
     return 0;
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 22390 2010-09-20 17:16:44Z boincadm $";
+const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 23648 2011-06-07 04:12:49Z davea $";

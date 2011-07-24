@@ -368,8 +368,8 @@ lookup_user_and_make_new_host:
             );
             g_reply->set_delay(DELAY_MISSING_KEY);
             log_messages.printf(MSG_CRITICAL,
-                "[HOST#<none>] Bad authenticator '%s': %d\n",
-                g_request->authenticator, retval
+                "[HOST#<none>] Bad authenticator '%s': %s\n",
+                g_request->authenticator, boincerror(retval)
             );
             return ERR_AUTHENTICATOR;
         }
@@ -559,7 +559,9 @@ static int update_host_record(HOST& initial_host, HOST& xhost, USER& user) {
     }
     retval = host.update_diff_sched(initial_host);
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "host.update() failed: %d\n", retval);
+        log_messages.printf(MSG_CRITICAL,
+            "host.update() failed: %s\n", boincerror(retval)
+        );
     }
     return 0;
 }
@@ -772,7 +774,7 @@ int handle_global_prefs() {
             int retval = user.update_field(buf);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "user.update_field() failed: %d\n", retval
+                    "user.update_field() failed: %s\n", boincerror(retval)
                 );
             }
         }
@@ -994,8 +996,8 @@ void handle_msgs_from_host() {
         retval = mfh.insert();
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "[HOST#%d] message insert failed: %d\n",
-                g_reply->host.id, retval
+                "[HOST#%d] message insert failed: %s\n",
+                g_reply->host.id, boincerror(retval)
             );
             g_reply->send_msg_ack = false;
 
@@ -1056,7 +1058,7 @@ bool bad_install_type() {
 static inline bool requesting_work() {
     if (g_request->work_req_seconds > 0) return true;
     if (g_request->cpu_req_secs > 0) return true;
-    if (g_request->coprocs.cuda.count && g_request->coprocs.cuda.req_secs) return true;
+    if (g_request->coprocs.nvidia.count && g_request->coprocs.nvidia.req_secs) return true;
     if (g_request->coprocs.ati.count && g_request->coprocs.ati.req_secs) return true;
     return false;
 }
@@ -1066,7 +1068,7 @@ void process_request(char* code_sign_key) {
     int retval;
     double last_rpc_time;
     struct tm *rpc_time_tm;
-    bool ok_to_send_work = true;
+    bool ok_to_send_work = !config.dont_send_jobs;
     bool have_no_work = false;
     char buf[256];
     HOST initial_host;
@@ -1082,15 +1084,15 @@ void process_request(char* code_sign_key) {
         || unacceptable_cpu()
     ) {
         ok_to_send_work = false;
-
-        // if no results, return without accessing DB
-        //
-        if (g_request->results.size() == 0) {
-            return;
-        }
-    } else {
-        warn_user_if_core_client_upgrade_scheduled();
     }
+
+    // if no jobs reported and none to send, return without accessing DB
+    //
+    if (!ok_to_send_work && !g_request->results.size()) {
+        return;
+    }
+
+    warn_user_if_core_client_upgrade_scheduled();
 
     if (requesting_work()) {
         if (config.locality_scheduling || config.locality_scheduler_fraction || config.enable_assignment) {
@@ -1374,4 +1376,4 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     }
 }
 
-const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 22453 2010-10-06 16:04:22Z davea $";
+const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 23281 2011-03-25 22:47:49Z davea $";

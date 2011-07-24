@@ -22,24 +22,21 @@ define("COPYRIGHT_HOLDER", "REPLACE WITH COPYRIGHT HOLDER");
 define("SYS_ADMIN_EMAIL", "admin@$master_url");
 define("UOTD_ADMIN_EMAIL", "admin@$master_url");
     // who gets user of the day pool running low e-mails?
+//define("MEMCACHE_SERVERS", "127.0.0.1:11211");
 
 // Email addresses separated by pipe ( | ) that will receive user reported 
 // offensive forum posts.
 define("POST_REPORT_EMAILS", "moderator1@$master_url|moderator2@$master_url");
 
-// set the following var if your project is behind a proxy.
-// This is used on ops/index.php to get the current SVN rev from BOINC
-//$project_http_proxy = "tcp://proxyname:port"
+// set the following if SVN requires specific configuration (e.g. proxy)
+// Used on ops/index.php.
+// define("SVN_CONFIG_DIRECTORY", "/home/boincadm/.subversion/");
 
 function project_banner($title, $prefix) {
     // Put your project title and logo here
     // If you include any links, prepend URL with $prefix
 
-    echo "
-        <p>
-        <span class=\"page_title\">$title</span>
-        <p>
-    ";
+    echo "<div class=\"page_title\">$title</div>";
 }
 
 function project_footer($show_return, $show_date, $prefix) {

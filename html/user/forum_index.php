@@ -23,6 +23,8 @@ require_once('../inc/forum.inc');
 require_once('../inc/pm.inc');
 require_once('../inc/time.inc');
 
+check_get_args(array("read", "return", "tnow", "ttok"));
+
 $user = get_logged_in_user(false);
 
 // Process request to mark all posts as read
@@ -55,9 +57,7 @@ function show_forum_summary($forum, $i) {
     echo "
         <tr class=\"row$j\">
         <td>
-            <em>
             <a href=\"forum_forum.php?id=$forum->id\">$t</a>
-            </em>
             <br><span class=\"smalltext\">$d</span>
         </td>
         <td class=\"numbers\">$forum->threads</td>
@@ -74,24 +74,26 @@ show_forum_header($user);
 if (FORUM_QA_MERGED_MODE === true){
     $categories = BoincCategory::enum("true order by orderID");
 } else {
-    echo "
-	<p>
-        ".tra("If you have a question or problem, please use the %1Questions & Answers%2 section of the message boards.", "<a href=\"forum_help_desk.php\">", "</a>")."
-        </p>
-    ";
+    echo "<p>"
+        .tra("If you have a question or problem, please use the %1Questions & Answers%2 section of the message boards.", "<a href=\"forum_help_desk.php\">", "</a>")
+        ."</p>"
+    ;
     $categories = BoincCategory::enum("is_helpdesk=0 order by orderID");
 }
 $first = true;
 foreach ($categories as $category) {
     if ($first) {
         $first = false;
-	echo "<p>";
+        echo "<p>";
         show_forum_title($category, NULL, NULL);
         echo "<p>";
         show_mark_as_read_button($user);
-        start_forum_table(
-            array(tra("Topic"), tra("Threads"), tra("Posts"), tra("Last post"))
-        );
+        start_forum_table(array(
+            tra("Topic"),
+            tra("Threads"),
+            tra("Posts"),
+            tra("Last post")
+        ));
     }
     if (strlen($category->name)) {
         echo '
@@ -138,5 +140,5 @@ page_tail();
 flush();
 BoincForumLogging::cleanup();
 
-$cvs_version_tracker[]="\$Id: forum_index.php 17013 2009-01-25 12:17:24Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_index.php 23018 2011-02-10 22:45:39Z davea $";  //Generated automatically - do not edit
 ?>

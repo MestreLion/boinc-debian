@@ -73,6 +73,7 @@ int SCHED_CONFIG::parse(FILE* f) {
     XML_PARSER xp(&mf);
     int retval, itemp;
     regex_t re;
+    double x;
 
     mf.init_file(f);
 
@@ -101,6 +102,18 @@ int SCHED_CONFIG::parse(FILE* f) {
             char hostname[256];
             gethostname(hostname, 256);
             if (!strcmp(hostname, db_host)) strcpy(db_host, "localhost");
+            if (!strlen(replica_db_host)) {
+                strcpy(replica_db_host, db_host);
+            }
+            if (!strlen(replica_db_name)) {
+                strcpy(replica_db_name, db_name);
+            }
+            if (!strlen(replica_db_user)) {
+                strcpy(replica_db_user, db_user);
+            }
+            if (!strlen(replica_db_passwd)) {
+                strcpy(replica_db_passwd, db_passwd);
+            }
             return 0;
         }
         if (xp.parse_str(tag, "master_url", master_url, sizeof(master_url))) continue;
@@ -109,6 +122,10 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_str(tag, "db_user", db_user, sizeof(db_user))) continue;
         if (xp.parse_str(tag, "db_passwd", db_passwd, sizeof(db_passwd))) continue;
         if (xp.parse_str(tag, "db_host", db_host, sizeof(db_host))) continue;
+        if (xp.parse_str(tag, "replica_db_name", replica_db_name, sizeof(replica_db_name))) continue;
+        if (xp.parse_str(tag, "replica_db_user", replica_db_user, sizeof(replica_db_user))) continue;
+        if (xp.parse_str(tag, "replica_db_passwd", replica_db_passwd, sizeof(replica_db_passwd))) continue;
+        if (xp.parse_str(tag, "replica_db_host", replica_db_host, sizeof(replica_db_host))) continue;
         if (xp.parse_str(tag, "project_dir", project_dir, sizeof(project_dir))) continue;
         if (xp.parse_int(tag, "shmem_key", shmem_key)) continue;
         if (xp.parse_str(tag, "key_dir", key_dir, sizeof(key_dir))) continue;
@@ -138,8 +155,15 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_int(tag, "reliable_priority_on_over", reliable_priority_on_over)) continue;
         if (xp.parse_int(tag, "reliable_priority_on_over_except_error", reliable_priority_on_over_except_error)) continue;
         if (xp.parse_int(tag, "reliable_on_priority", reliable_on_priority)) continue;
-        if (xp.parse_int(tag, "grace_period_hours", grace_period_hours)) continue;
-        if (xp.parse_int(tag, "delete_delay_hours", delete_delay_hours)) continue;
+        if (xp.parse_double(tag, "grace_period_hours", x)) {
+            report_grace_period = (int)(x*3600);
+            continue;
+        }
+        if (xp.parse_int(tag, "report_grace_period", report_grace_period)) continue;
+        if (xp.parse_double(tag, "delete_delay_hours", x)) {
+            delete_delay = x*3600;
+            continue;
+        }
         if (xp.parse_bool(tag, "distinct_beta_apps", distinct_beta_apps)) continue;
         if (xp.parse_bool(tag, "ended", ended)) continue;
         if (xp.parse_int(tag, "shmem_work_items", shmem_work_items)) continue;
@@ -147,6 +171,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_str(tag, "httpd_user", httpd_user, sizeof(httpd_user))) continue;
         if (xp.parse_bool(tag, "enable_assignment", enable_assignment)) continue;
         if (xp.parse_bool(tag, "job_size_matching", job_size_matching)) continue;
+        if (xp.parse_bool(tag, "dont_send_jobs", dont_send_jobs)) continue;
 
         //////////// STUFF RELEVANT ONLY TO SCHEDULER STARTS HERE ///////
 
@@ -203,10 +228,12 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_int(tag, "max_ncpus", max_ncpus)) continue;
         if (xp.parse_int(tag, "max_wus_in_progress", itemp)) {
             max_jobs_in_progress.project_limits.cpu.base_limit = itemp;
+            max_jobs_in_progress.project_limits.cpu.per_proc = true;
             continue;
         }
         if (xp.parse_int(tag, "max_wus_in_progress_gpu", itemp)) {
             max_jobs_in_progress.project_limits.gpu.base_limit = itemp;
+            max_jobs_in_progress.project_limits.gpu.per_proc = true;
             continue;
         }
         if (xp.parse_int(tag, "max_wus_to_send", max_wus_to_send)) continue;
@@ -257,6 +284,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool(tag, "send_result_abort", send_result_abort)) continue;
         if (xp.parse_str(tag, "symstore", symstore, sizeof(symstore))) continue;
 
+        if (xp.parse_bool(tag, "user_filter", user_filter)) continue;
         if (xp.parse_bool(tag, "workload_sim", workload_sim)) continue;
         if (xp.parse_bool(tag, "prefer_primary_platform", prefer_primary_platform)) continue;
 
@@ -327,6 +355,15 @@ int SCHED_CONFIG::download_path(const char* filename, char* path) {
     return dir_hier_path(filename, download_dir, uldl_dir_fanout, path, true);
 }
 
+static bool is_project_dir(const char* dir) {
+    char buf[1024];
+    sprintf(buf, "%s/%s", dir, CONFIG_FILE);
+    if (!is_file(buf)) return false;
+    sprintf(buf, "%s/cgi-bin", dir);
+    if (!is_dir(buf)) return false;
+    return true;
+}
+
 // Does 2 things:
 // - locate project directory.  This is either
 //      a) env var BOINC_PROJECT_DIR, if defined
@@ -342,11 +379,18 @@ const char *SCHED_CONFIG::project_path(const char *fmt, ...) {
     if (!strlen(project_dir)) {
         char *p = getenv("BOINC_PROJECT_DIR");
         if (p) {
+            if (!is_project_dir(p)) {
+                fprintf(stderr, "BOINC_PROJECT_DIR env var exists but is not a project dir\n");
+                exit(1);
+            }
             strlcpy(project_dir, p, sizeof(project_dir));
-        } else if (boinc_file_exists(CONFIG_FILE)) {
+        } else if (is_project_dir(".")) {
             strcpy(project_dir, ".");
-        } else {
+        } else if (is_project_dir("..")) {
             strcpy(project_dir, "..");
+        } else {
+            fprintf(stderr, "Not in a project directory or subdirectory\n");
+            exit(1);
         }
     }
 
@@ -357,4 +401,4 @@ const char *SCHED_CONFIG::project_path(const char *fmt, ...) {
     return (const char *)path;
 }
 
-const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 22282 2010-08-22 19:13:25Z davea $";
+const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 23556 2011-05-17 21:11:39Z davea $";

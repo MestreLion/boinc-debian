@@ -459,64 +459,25 @@ void CPanelPreferences::CreateControls()
     wxBoxSizer* itemBoxSizer44 = new wxBoxSizer(wxHORIZONTAL);
     itemBoxSizer2->Add(itemBoxSizer44, 0, wxALIGN_RIGHT|wxALL, 5);
 
-    wxBitmapButton* itemBitmapButton44 = new wxBitmapButton(
-        itemDialog1,
-        wxID_OK,
-        *pSkinSimple->GetSaveButton()->GetBitmap(),
-        wxDefaultPosition,
-        wxSize(
-            (*pSkinSimple->GetSaveButton()->GetBitmap()).GetWidth(),
-            (*pSkinSimple->GetSaveButton()->GetBitmap()).GetHeight()
-        ),
-        wxBU_AUTODRAW
-    );
-	if ( pSkinSimple->GetSaveButton()->GetBitmapClicked() != NULL ) {
-		itemBitmapButton44->SetBitmapSelected(*pSkinSimple->GetSaveButton()->GetBitmapClicked());
-	}
-    itemBoxSizer44->Add(itemBitmapButton44, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxButton* itemButton44 = new wxButton( itemDialog1, wxID_OK, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
 
-    wxBitmapButton* itemBitmapButton45 = new wxBitmapButton(
-        itemDialog1,
-        wxID_CANCEL,
-        *pSkinSimple->GetCancelButton()->GetBitmap(),
-        wxDefaultPosition,
-        wxSize(
-            (*pSkinSimple->GetCancelButton()->GetBitmap()).GetWidth(),
-            (*pSkinSimple->GetCancelButton()->GetBitmap()).GetHeight()
-        ),
-        wxBU_AUTODRAW
-    );
-	if ( pSkinSimple->GetCancelButton()->GetBitmapClicked() != NULL ) {
-		itemBitmapButton45->SetBitmapSelected(*pSkinSimple->GetCancelButton()->GetBitmapClicked());
-	}
-    itemBoxSizer44->Add(itemBitmapButton45, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    itemBoxSizer44->Add(itemButton44, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+
+    wxButton* itemButton45 = new wxButton( itemDialog1, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+    itemBoxSizer44->Add(itemButton45, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
 #ifndef __WXMSW__
 #ifdef __WXMAC__
-	wxBitmapButton* itemButton46 = new wxBitmapButton(
-        this,
-        ID_SIMPLE_HELP,
-        *pSkinSimple->GetHelpButton()->GetBitmap(),
-        wxDefaultPosition,
-        wxSize(
-            (*pSkinSimple->GetHelpButton()->GetBitmap()).GetWidth(),
-            (*pSkinSimple->GetHelpButton()->GetBitmap()).GetHeight()
-        ),
-        wxBU_AUTODRAW
-    );
-	if ( pSkinSimple->GetHelpButton()->GetBitmapClicked() != NULL ) {
-		itemButton46->SetBitmapSelected(*pSkinSimple->GetHelpButton()->GetBitmapClicked());
-	}
+    wxButton* itemButton46 = new wxButton( this, ID_SIMPLE_HELP, _("Help"), wxDefaultPosition, wxDefaultSize, 0 );
 #ifdef wxUSE_TOOLTIPS
     wxString helpTip;
     helpTip.Printf(_("Get help with %s"), pSkinAdvanced->GetApplicationShortName().c_str());
 	itemButton46->SetToolTip(helpTip);
 #endif
-    itemBoxSizer44->Add(itemButton46, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 #else
-    wxContextHelpButton* itemButton45 = new wxContextHelpButton(this);
-    itemBoxSizer44->Add(itemButton45, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    wxContextHelpButton* itemButton46 = new wxContextHelpButton(this);
 #endif
+    itemBoxSizer44->Add(itemButton46, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
 #endif
 
     // Set validators
@@ -981,13 +942,11 @@ bool CPanelPreferences::SavePreferenceSettings() {
 
 bool CPanelPreferences::SaveSkinSettings() {
     CSkinManager* pSkinManager = wxGetApp().GetSkinManager();
-    wxLocale* pLocale = wxGetApp().GetLocale();
 
     wxASSERT(pSkinManager);
-    wxASSERT(pLocale);
     wxASSERT(wxDynamicCast(pSkinManager, CSkinManager));
 
-    pSkinManager->ReloadSkin(pLocale, m_strSkinSelector);
+    pSkinManager->ReloadSkin(m_strSkinSelector);
 
     return true;
 }

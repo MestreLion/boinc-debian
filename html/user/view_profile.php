@@ -18,6 +18,8 @@
 
 require_once("../inc/profile.inc");
 
+check_get_args(array("userid"));
+
 $userid = get_int('userid');
 $user = BoincUser::lookup_id($userid);
 if (!$user) {
@@ -38,7 +40,7 @@ if ($cacheddata){
 } else {
     // Need to generate a new bunch of data
     $community_links_object = get_community_links_object($user);
-    set_cache_data(serialize($community_links_object), $cache_args);
+    set_cached_data(USER_PROFILE_TTL, serialize($community_links_object), $cache_args);
 }
 
 page_head(tra("Profile: %1", $user->name));

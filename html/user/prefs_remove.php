@@ -20,6 +20,8 @@ include_once("../inc/db.inc");
 include_once("../inc/util.inc");
 include_once("../inc/prefs.inc");
 
+check_get_args(array("subset", "venue", "confirmed", "cols", "tnow", "ttok"));
+
 db_init();
 
 $user = get_logged_in_user();
@@ -29,7 +31,7 @@ $subset = get_str("subset");
 $venue = get_str("venue");
 $confirmed = get_str("confirmed", true);
 $columns = get_int("cols", true);
-$c = $columns?"&amp;cols=$columns":"";
+$c = $columns?"&cols=$columns":"";
 
 if ($confirmed) {
     if ($subset == "global") {
@@ -49,12 +51,12 @@ if ($confirmed) {
         tra("Are you sure you want to delete your separate %1 preferences for %2?", subset_name($subset), $venue).
         "</p><br><br>\n";
     show_button(
-        "prefs_remove.php?subset=$subset&amp;venue=$venue&amp;confirmed=yes$c$tokens",
+        "prefs_remove.php?subset=$subset&venue=$venue&confirmed=yes$c$tokens",
         tra("Yes"), tra("Remove preferences")
     );
     show_button("prefs.php?subset=$subset$c", tra("Cancel"), tra("Cancel"));
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: prefs_remove.php 20568 2010-02-15 04:30:25Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: prefs_remove.php 23030 2011-02-14 19:49:30Z boincadm $";  //Generated automatically - do not edit
 ?>

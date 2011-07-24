@@ -24,6 +24,12 @@ require_once("../inc/boinc_db.inc");
 require_once("../inc/translation.inc");
 require_once("../inc/profile.inc");
 
+// don't allow /... at the end of URL
+
+if (array_key_exists("PATH_INFO", $_SERVER)) {
+    die("bad URL");
+}
+
 ini_set("memory_limit", "64M");
 
 date_default_timezone_set("UTC");
@@ -34,6 +40,7 @@ if (!defined('SECURE_URL_BASE')) {
 
 $generating_xml = false;
 $caching = false;
+$did_page_head = false;
 
 function send_cookie($name, $value, $permanent, $ops=false) {
     // the following allows independent login for projects on the same server
@@ -66,10 +73,11 @@ function get_user_from_id($id) {
 }
 
 $g_logged_in_user = null;
+$got_logged_in_user = false;
 
 function get_logged_in_user($must_be_logged_in=true) {
-    global $g_logged_in_user;
-    if ($g_logged_in_user) return $g_logged_in_user;
+    global $g_logged_in_user, $got_logged_in_user;;
+    if ($got_logged_in_user) return $g_logged_in_user;
 
     check_web_stopped();
 
@@ -81,23 +89,38 @@ function get_logged_in_user($must_be_logged_in=true) {
         $g_logged_in_user = BoincUser::lookup("authenticator='$authenticator'");
     }
     if ($must_be_logged_in && !$g_logged_in_user) {
-        $next_url = $_SERVER['REQUEST_URI'];
-        $n = strrpos($next_url, "/");
-        if ($n) {
-            $next_url = substr($next_url, $n+1);
+        $next_url = '';
+        if (array_key_exists('REQUEST_URI', $_SERVER)) {
+            $next_url = $_SERVER['REQUEST_URI'];
+            $n = strrpos($next_url, "/");
+            if ($n) {
+                $next_url = substr($next_url, $n+1);
+            }
         }
+        $next_url = urlencode($next_url);
         Header("Location: login_form.php?next_url=$next_url");
+        exit;
     }
     return $g_logged_in_user;
 }
 
-function show_login($user) {
+function show_login_info($prefix="") {
+    $user = get_logged_in_user(false);
+    echo "
+        <table width=100% cellpadding=0 cellspacing=0>
+        <td align=right>
+    ";
     if ($user) {
-        echo tra("Logged in as %1.", $user->name)."\n";
-        echo "<br><a href=\"login_form.php\">".tra("Log in as someone else.")."</a>\n";
+        $url_tokens = url_tokens($user->authenticator);
+        echo "$user->name | <a href=".$prefix."logout.php?$url_tokens>".tra("log out")."</a>";
     } else {
-        echo tra("Not logged in.");
+        echo "<a href=".$prefix."login_form.php>".tra("log in")."</a>";
     }
+    echo "
+        </td>
+        </tr>
+        </table>
+    ";
 }
 
 $cache_control_extra="";
@@ -110,13 +133,13 @@ if (!function_exists("page_head")){
 function page_head(
     $title, $java_onload=null, $title_plain=null, $prefix="", $head_extra=null
 ) {
-    global $caching;
-    global $cache_control_extra;
+    global $caching, $cache_control_extra, $did_page_head;
 
+	$did_page_head = true;
     $stylesheet = URL_BASE.STYLESHEET;
     $rssname = PROJECT . " RSS 2.0";
     $rsslink = URL_BASE."rss_main.php";
-    
+
     header("Content-type: text/html; charset=utf-8");
     if (!$caching) {
         header ("Expires: Mon, 26 Jul 1997 05:00:00 UTC");    // Date in the past
@@ -124,17 +147,16 @@ function page_head(
         header ("Cache-Control: $cache_control_extra no-cache, must-revalidate, post-check=0, pre-check=0");  // HTTP/1.1
         header ("Pragma: no-cache");                          // HTTP/1.0
     }
-    
+
     echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
- 
     
     if (!$title_plain) {
         echo "<html><head><title>".strip_tags($title)."</title>\n";
     } else {
         echo "<html><head><title>".strip_tags($title_plain)."</title>\n";
     }
-    echo "<link rel=stylesheet type=\"text/css\" href=\"main.css\" media=\"all\" />
-		<link rel=stylesheet type=\"text/css\" href=\"$stylesheet\">
+    echo "<link rel=stylesheet type=\"text/css\" href=\"".URL_BASE."main.css\" media=\"all\" />
+        <link rel=stylesheet type=\"text/css\" href=\"$stylesheet\">
         <link rel=alternate type=\"application/rss+xml\" title=\"$rssname\" href=\"$rsslink\">
         $head_extra
         </head>
@@ -145,7 +167,17 @@ function page_head(
         echo "<body>";
     }
     display_cvs_versions();
+
     project_banner($title, $prefix);
+    switch($title) {    //kludge
+    case tra("Log in"):
+    case tra("Create an account"):
+    case tra("Server status page"):
+        break;
+    default:
+        show_login_info($prefix);
+    }
+
 }
 }
 
@@ -226,7 +258,7 @@ function date_str($x) {
 
 function time_str($x) {
     if ($x == 0) return "---";
-    return gmdate('j M Y G:i:s', $x) . " UTC";
+    return gmdate('j M Y | G:i:s', $x) . " UTC";
 }
 
 function pretty_time_str($x) {
@@ -439,10 +471,10 @@ function friend_links($user) {
         }
         $title = tra("View the profile of %1", $user->name);
         $alt = tra("Profile");
-        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="'.$title.'" src="'.$img_url.'" alt="'.$alt.'"></a><br>';
+        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img title="'.$title.'" src="'.$img_url.'" alt="'.$alt.'"></a><br>';
     }
     $x .= " <a href=\"".URL_BASE."show_user.php?userid=".$user->id."\">".$user->name."</a>";
-    if ($user->donated == 1) { 
+    if ($user->donated == 1) {
         require_once("../project/donations.inc");
         $x .= DONATION_LINK;
     }
@@ -458,10 +490,10 @@ function user_links($user) {
     $x = "";
     if ($user->has_profile) {
         $img_url = URL_BASE."img/head_20.png";
-        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img class="userimg" title="View the profile of '.$user->name.'" src="'.$img_url.'" alt="Profile"></a>';
+        $x .= ' <a href="'.URL_BASE.'view_profile.php?userid='.$user->id.'"><img title="View the profile of '.$user->name.'" src="'.$img_url.'" alt="Profile"></a>';
     }
     $x .= " <a href=\"".URL_BASE."show_user.php?userid=".$user->id."\">".$user->name."</a>";
-    if ($user->donated == 1) { 
+    if ($user->donated == 1) {
         require_once("../project/donations.inc");
         $x .= DONATION_LINK;
     }
@@ -504,14 +536,30 @@ function undo_magic_quotes($x) {
     return $x;
 }
 
+// check for bogus GET args
+//
+function check_get_args($args) {
+    foreach ($_GET as $key => $val) {
+        if (!in_array($key, $args)) {
+            Header("Location: extra_arg_$key.html");
+            die;
+        }
+    }
+}
+
 function get_int($name, $optional=false) {
     $x=null;
     if (isset($_GET[$name])) $x = $_GET[$name];
     if (!is_numeric($x)) {
         if ($optional) {
+            if ($x) {
+                Header("Location: non_num_arg.html");
+                die;
+            }
             return null;
         } else {
-            error_page("missing or bad parameter: $name; supplied: ".htmlspecialchars($x));
+            Header("Location: missing_arg_$name.html");
+            die;
         }
     }
     return (int)$x;
@@ -540,15 +588,6 @@ function get_str($name, $optional=false) {
         $x = $_GET[$name];
     }
     return undo_magic_quotes($x);
-}
-
-function get_venue($name) {
-    $x = $_GET[$name];
-    if ($x == "") return $x;
-    if ($x == "home") return $x;
-    if ($x == "work") return $x;
-    if ($x == "school") return $x;
-    error_page("no such venue: $x");
 }
 
 function post_str($name, $optional=false) {
@@ -620,14 +659,14 @@ function select_from_array($name, $array, $selection) {
     return $out;
 }
 
-// Convert to entities, while preserving already-encoded entities. 
+// Convert to entities, while preserving already-encoded entities.
 // Do NOT use if $str contains valid HTML tags.
 //
-function boinc_htmlentities($str) { 
-    $str = html_entity_decode($str, ENT_COMPAT, "UTF-8"); 
-    $str = htmlentities($str, ENT_COMPAT, "UTF-8"); 
-    return $str; 
-} 
+function boinc_htmlentities($str) {
+    $str = html_entity_decode($str, ENT_COMPAT, "UTF-8");
+    $str = htmlentities($str, ENT_COMPAT, "UTF-8");
+    return $str;
+}
 
 function strip_bbcode($string){
     return preg_replace("/((\[.+\])+?)(.+?)((\[\/.+\])+?)/","",$string);
@@ -656,9 +695,9 @@ function current_url() {
 // @param text The text to display on the button
 // @param desc The title of the destination - typically used as a popup
 // @param class The optional CSS class of the button. Defaults to a standard button
-// 
+//
 function show_button($url, $text, $desc, $class="button") {
-    echo "<a href=\"".$url."\" title=\"".addslashes($desc)."\" class=\"".$class."\">".$text."</a>";
+    echo "<a href=\"".$url."\" title=\"".addslashes($desc)."\" class=\"".$class."\">".$text."</a>\n";
 }
 
 // When multiple buttons (or actions) are presented in a list you can
@@ -683,13 +722,18 @@ function show_image($src, $title, $alt, $height=null) {
 }
 
 function check_web_stopped() {
-    global $generating_xml;
+    global $generating_xml, $did_page_head;
     if (web_stopped()) {
         if ($generating_xml) {
             xml_error(-183);
         } else {
-            page_head(tra("Project down for maintenance"));
-            echo tra("This page requires database access.  Our database server is temporarily shut down for maintenance.  Please try again later.");
+			if (!$did_page_head) {
+				page_head(tra("Project down for maintenance"));
+			}
+            echo tra(
+				"%1 is temporarily shut down for maintenance.  Please try again later.",
+				PROJECT
+			);
             page_tail();
             exit();
         }
@@ -780,6 +824,6 @@ function sanitize_email($x) {
 }
 
 
-$cvs_version_tracker[]="\$Id: util.inc 22445 2010-10-04 23:48:01Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util.inc 23624 2011-06-01 04:29:43Z boincadm $";  //Generated automatically - do not edit
 
 ?>

@@ -403,7 +403,7 @@ int dir_size(const char* dirpath, double& size, bool recurse) {
     } while (FindNextFileA(hFind, &findData));
 	::FindClose(hFind);
 #else
-    char filename[256], subdir[256];
+    char filename[1024], subdir[1024];
     int retval=0;
     DIRREF dirp;
     double x;
@@ -422,7 +422,7 @@ int dir_size(const char* dirpath, double& size, bool recurse) {
                 if (retval) continue;
                 size += x;
             }
-        } else {
+        } else if (is_file(subdir)) {
             retval = file_size(subdir, x);
             if (retval) continue;
             size += x;
@@ -434,7 +434,6 @@ int dir_size(const char* dirpath, double& size, bool recurse) {
 }
 
 FILE* boinc_fopen(const char* path, const char* mode) {
-
     // if opening for read, and file isn't there,
     // leave now (avoid 5-second delay!!)
     //
@@ -486,25 +485,25 @@ FILE* boinc_fopen(const char* path, const char* mode) {
 
 
 int boinc_file_exists(const char* path) {
-   struct stat buf;
-   if (stat(path, &buf)) {
-       return false;     // stat() returns zero on success
-   }
-   return true;
+    struct stat buf;
+    if (stat(path, &buf)) {
+        return false;     // stat() returns zero on success
+    }
+    return true;
 }
 
 // same, but doesn't traverse symlinks
 //
 int boinc_file_or_symlink_exists(const char* path) {
-   struct stat buf;
+    struct stat buf;
 #ifdef _WIN32
-   if (stat(path, &buf)) {
+    if (stat(path, &buf)) {
 #else
-   if (lstat(path, &buf)) {
+    if (lstat(path, &buf)) {
 #endif
-       return false;     // stat() returns zero on success
-   }
-   return true;
+        return false;     // stat() returns zero on success
+    }
+    return true;
 }
 
 // returns zero on success, nonzero if didn't touch file
@@ -755,13 +754,13 @@ int get_filesystem_info(double &total_space, double &free_space, char*) {
     if (pGetDiskFreeSpaceEx) {
         ULARGE_INTEGER TotalNumberOfFreeBytes;
         ULARGE_INTEGER TotalNumberOfBytes;
-        ULARGE_INTEGER TotalNumberOfBytesFreeToCaller;
+        ULARGE_INTEGER FreeBytesAvailable;
         pGetDiskFreeSpaceEx(
-            buf, &TotalNumberOfBytesFreeToCaller, &TotalNumberOfBytes,
+            buf, &FreeBytesAvailable, &TotalNumberOfBytes,
             &TotalNumberOfFreeBytes
         );
         signed __int64 uMB;
-        uMB = TotalNumberOfFreeBytes.QuadPart / (1024 * 1024);
+        uMB = FreeBytesAvailable.QuadPart / (1024 * 1024);
         free_space = uMB * 1024.0 * 1024.0;
         uMB = TotalNumberOfBytes.QuadPart / (1024 * 1024);
         total_space = uMB * 1024.0 * 1024.0;

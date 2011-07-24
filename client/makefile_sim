@@ -9,10 +9,10 @@ OBJS = \
 	acct_mgr.o \
 	acct_setup.o \
     app.o \
-	auto_update.o \
     client_msgs.o \
     client_state.o \
     client_types.o \
+    coproc_detect.o \
     cpu_sched.o \
 	cs_account.o \
     cs_apps.o \
@@ -23,6 +23,7 @@ OBJS = \
     cs_proxy.o \
     cs_scheduler.o \
     cs_statefile.o \
+	current_version.o \
 	file_names.o \
 	file_xfer.o \
 	gui_http.o \
@@ -38,6 +39,7 @@ OBJS = \
     time_stats.o \
     work_fetch.o \
     ../sched/edf_sim.o \
+    ../lib/cc_config.o \
     ../lib/cert_sig.o \
     ../lib/coproc.o \
     ../lib/crypt.o \

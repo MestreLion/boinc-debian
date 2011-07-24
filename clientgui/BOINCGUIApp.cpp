@@ -40,7 +40,6 @@
 #include "Events.h"
 #include "common/wxFlatNotebook.h"
 #include "BOINCInternetFSHandler.h"
-//#include "BOINCMemoryFSHandler.h"
 #include "LogBOINC.h"
 #include "BOINCGUIApp.h"
 #include "SkinManager.h"
@@ -49,12 +48,10 @@
 #include "BOINCTaskBar.h"
 #include "BOINCBaseFrame.h"
 #include "AdvancedFrame.h"
-#include "sg_ImageLoader.h"
-#include "sg_StatImageLoader.h"
-#include "sg_BoincSimpleGUI.h"
 #include "DlgExitMessage.h"
 #include "DlgEventLog.h"
 #include "procinfo.h"
+#include "sg_BoincSimpleFrame.h"
 
 
 DEFINE_EVENT_TYPE(wxEVT_RPC_FINISHED)
@@ -356,10 +353,7 @@ bool CBOINCGUIApp::OnInit() {
 
     // Load desired manager skin
     m_pConfig->Read(wxT("Skin"), &strDesiredSkinName, m_pSkinManager->GetDefaultSkinName());
-    m_pSkinManager->ReloadSkin(
-        m_pLocale, 
-        strDesiredSkinName
-    );
+    m_pSkinManager->ReloadSkin(strDesiredSkinName);
 
 
 #ifdef __WXMSW__
@@ -1085,15 +1079,11 @@ int CBOINCGUIApp::ConfirmExit() {
     // Don't run confirmation dialog if second instance of Manager 
     if (IsMgrMultipleInstance()) return 1;
 
-#ifndef __WXMSW__
     if (!m_iDisplayExitDialog) {
-        return 1;   // User doesn't want to display the dialog and wants to shutdown the client.
+        // Mac: User doesn't want to display the dialog and just wants to use their previous value.
+        // Win & Linux: User doesn't want to display the dialog and wants to shutdown the client.
+        return 1;
     }
-#else
-    if (!m_iDisplayExitDialog) {
-		return 1;   // User doesn't want to display the dialog and just wants to use their previous value
-	}
-#endif
 
     bWasVisible = IsApplicationVisible();
     ShowApplication(true);

@@ -21,6 +21,8 @@
 require_once('../inc/forum.inc');
 require_once('../inc/util.inc');
 
+check_get_args(array("post", "choice"));
+
 $config = get_config();
 if (parse_bool($config, "no_forum_rating")) {
     page_head("Rating offline");
@@ -91,5 +93,5 @@ function show_result_page($success, $post, $thread, $choice) {
     exit;
 }
 
-$cvs_version_tracker[]="\$Id: forum_rate.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_rate.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

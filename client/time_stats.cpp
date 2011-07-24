@@ -30,15 +30,19 @@
 #endif
 #endif
 
+#include "error_numbers.h"
+#include "filesys.h"
 #include "parse.h"
 #include "util.h"
-#include "filesys.h"
-#include "error_numbers.h"
+
 #include "client_msgs.h"
-#include "file_names.h"
 #include "client_state.h"
-#include "network.h"
+#include "file_names.h"
 #include "log_flags.h"
+#include "network.h"
+#ifdef SIM
+#include "sim.h"
+#endif
 
 #include "time_stats.h"
 
@@ -145,11 +149,11 @@ void TIME_STATS::get_log_after(double t, MIOFILE& mf) {
 // so these get written to disk only when other activities
 // cause this to happen.  Maybe should change this.
 //
-void TIME_STATS::update(int suspend_reason, int gpu_suspend_reason) {
+void TIME_STATS::update(int suspend_reason, int _gpu_suspend_reason) {
     double dt, w1, w2;
 
     bool is_active = !(suspend_reason & ~SUSPEND_REASON_CPU_THROTTLE);
-    bool is_gpu_active = is_active && !gpu_suspend_reason;
+    bool is_gpu_active = is_active && !_gpu_suspend_reason;
     if (last_update == 0) {
         // this is the first time this client has executed.
         // Assume that everything is active
@@ -287,9 +291,27 @@ int TIME_STATS::write(MIOFILE& out, bool to_server) {
 int TIME_STATS::parse(MIOFILE& in) {
     char buf[256];
     double x;
+#ifdef SIM
+    double on_lambda = 3600, connected_lambda = 3600;
+    double active_lambda = 3600, gpu_active_lambda = 3600;
+#endif
 
     while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</time_stats>")) return 0;
+        if (match_tag(buf, "</time_stats>")) {
+#ifdef SIM
+            on_proc.init(on_frac, on_lambda);
+            connected_proc.init(connected_frac, connected_lambda);
+            active_proc.init(active_frac, active_lambda);
+            gpu_active_proc.init(gpu_active_frac, gpu_active_lambda);
+#endif
+            return 0;
+        }
+#ifdef SIM
+        else if (parse_double(buf, "<on_lambda>", on_lambda)) continue;
+        else if (parse_double(buf, "<connected_lambda>", connected_lambda)) continue;
+        else if (parse_double(buf, "<active_lambda>", active_lambda)) continue;
+        else if (parse_double(buf, "<gpu_active_lambda>", gpu_active_lambda)) continue;
+#endif
         else if (parse_double(buf, "<last_update>", x)) {
             if (x < 0 || x > gstate.now) {
 #ifndef SIM

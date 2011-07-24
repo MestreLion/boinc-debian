@@ -1,4 +1,4 @@
-## $Id: setup_project.py 22200 2010-08-11 20:08:13Z davea $
+## $Id: setup_project.py 23357 2011-04-08 19:36:26Z davea $
 
 # module for setting up a new project (either a real project or a test project
 # see tools/makeproject, test/testbase.py).
@@ -305,6 +305,12 @@ def install_boinc_files(dest_dir, install_web_files, install_server_files):
 
     create_project_dirs(dest_dir);
 
+    # make a symbolic link from html/user/user_profile to html/user_profile
+    try:
+        my_symlink(dir('html/user_profile'), dir('html/user/user_profile'));
+    except:
+        pass
+
     # copy html/ops files in all cases.
     # The critical one is db_update.php,
     # which is needed even for a server_only upgrade
@@ -356,13 +362,17 @@ sys.path.insert(0, os.path.join('%s', 'py'))
 
     if os.path.isfile(dir('cgi-bin', 'cgi')):
         os.rename(dir('cgi-bin', 'cgi'), dir('cgi-bin', 'cgi.old'))
+    if os.path.isfile(dir('cgi-bin', 'fcgi')):
+        os.rename(dir('cgi-bin', 'fcgi'), dir('cgi-bin', 'fcgi.old'))
+        map(lambda (s): install(builddir('sched',s), dir('cgi-bin',s)),
+            [ 'fcgi'])
     if os.path.isfile(dir('cgi-bin', 'file_upload_handler')):
         os.rename(dir('cgi-bin', 'file_upload_handler'), dir('cgi-bin', 'file_upload_handler.old'))
 
     map(lambda (s): install(builddir('sched',s), dir('cgi-bin',s)),
         [ 'cgi', 'file_upload_handler'])
     map(lambda (s): install(builddir('sched',s), dir('bin',s)),
-        [ 'make_work', 'feeder', 'transitioner',
+        [ 'make_work', 'feeder', 'transitioner', 'transitioner_catchup.php',
           'sample_bitwise_validator', 'sample_trivial_validator',
           'file_deleter', 'sample_dummy_assimilator',
           'sample_assimilator', 'sample_work_generator',
@@ -374,7 +384,7 @@ sys.path.insert(0, os.path.join('%s', 'py'))
         [ 'appmgr', 'create_work', 'xadd', 'dbcheck_files_exist', 'run_in_ops',
           'update_versions', 'parse_config', 'grep_logs', 'db_query',
           'watch_tcp', 'sign_executable', 'dir_hier_move',
-          'dir_hier_path' ])
+          'dir_hier_path', 'boinc_submit', 'demo_submit', 'demo_query' ])
     map(lambda (s): install(srcdir('lib',s), dir('bin',s)),
         [ 'crypt_prog' ])
     map(lambda (s): install(srcdir('sched',s), dir('',s)),
@@ -402,6 +412,8 @@ class Project:
         self.config = configxml.ConfigFile(self.dir('config.xml')).init_empty()
         config = self.config.config
 
+        # this is where default project config is defined
+
         config.long_name = self.long_name
         config.db_user = options.db_user
         config.db_name = db_name or options.user_name + '_' + self.short_name
@@ -420,6 +432,8 @@ class Project:
         config.fuh_debug_level = 3
         config.one_result_per_user_per_wu = 0
         config.send_result_abort = 1
+        config.dont_generate_upload_certificates = 1
+        config.ignore_upload_certificates = 1
         if web_only:
             config.no_computing = 1
 
@@ -497,8 +511,6 @@ class Project:
             self.dir('html/project/project_specific_prefs.inc'))
         install(srcdir('html/project.sample/cache_parameters.inc'),
             self.dir('html/project/cache_parameters.inc'))
-        install(srcdir('html/ops', 'sample_server_status.php'),
-            self.dir('html/user/server_status.php'))
         install(srcdir('tools/project.xml'), self.dir('project.xml'))
         if not self.production:
             install(srcdir('test/uc_result'), self.dir('templates/uc_result'))

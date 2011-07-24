@@ -57,7 +57,7 @@ int handle_message(MSG_FROM_HOST& mfh) {
     strcpy(mth.xml, mfh.xml);
     retval = mth.insert();
     if (retval) {
-        printf("insert failed %d\n", retval);
+        printf("insert failed %s\n", boincerror(retval));
     }
     return 0;
 }
@@ -101,7 +101,7 @@ int main_loop(bool one_pass) {
     retval = boinc_db.open(config.db_name, config.db_host, config.db_user, config.db_passwd);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "boinc_db.open failed: %d\n", retval
+            "boinc_db.open failed: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -185,4 +185,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_ff3b9880d4 = "$Id: message_handler.cpp 21181 2010-04-15 03:13:56Z davea $";
+const char *BOINC_RCSID_ff3b9880d4 = "$Id: message_handler.cpp 22647 2010-11-08 17:51:57Z davea $";

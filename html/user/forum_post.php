@@ -24,6 +24,9 @@ require_once('../inc/forum_email.inc');
 require_once('../inc/forum.inc');
 require_once('../inc/bbcode_html.inc');
 require_once('../inc/akismet.inc');
+require_once('../inc/news.inc');
+
+check_get_args(array("id", "title", "force_title", "tnow", "ttok", "export"));
 
 $logged_in_user = get_logged_in_user();
 BoincForumPrefs::lookup($logged_in_user);
@@ -44,15 +47,16 @@ check_post_access($logged_in_user, $forum);
 $title = post_str("title", true);
 if (!$title) $title = get_str("title", true);
 $force_title = get_str("force_title", true);
+$export = post_str("export", true);
 $content = post_str("content", true);
 $preview = post_str("preview", true);
 $warning = null;
 
 if ($content && $title && (!$preview)){
-    if (post_str('add_signature',true)=="add_it"){
-        $add_signature=true;    // set a flag and concatenate later
+    if (post_str('add_signature', true) == "add_it"){
+        $add_signature = true;    // set a flag and concatenate later
     }  else {
-        $add_signature=false;
+        $add_signature = false;
     }
     check_tokens($logged_in_user->authenticator);
     if (!akismet_check($logged_in_user, $content)) {
@@ -62,7 +66,7 @@ if ($content && $title && (!$preview)){
         $preview = tra("Preview");
     } else {
         $thread = create_thread(
-            $title, $content, $logged_in_user, $forum, $add_signature
+            $title, $content, $logged_in_user, $forum, $add_signature, $export
         );
         header('Location: forum_thread.php?id=' . $thread->id);
     }
@@ -87,8 +91,8 @@ case 1:
 
 if ($preview == tra("Preview")) {
     $options = null;
-    echo "<div id=\"preview\">\n";
-    echo "<div class=\"header\">".tra("Preview")."</div>\n";
+	echo "<h2>".tra("Preview")."</h2>\n";
+    echo "<div class=\"pm_preview\">";
     echo output_transform($content, $options);
     echo "</div>\n";
 }
@@ -98,7 +102,7 @@ echo form_tokens($logged_in_user->authenticator);
 
 start_table();
 
-row1(tra("Create a new thread")); //New thread
+row1(tra("Create a new thread"));
 $submit_help = "";
 $body_help = "";
 
@@ -114,9 +118,8 @@ if ($force_title && $title){
     );
 }
 
-//Message
 row2(tra("Message").html_info().post_warning().$body_help,
-     $bbcode_html."<textarea name=\"content\" rows=\"12\" cols=\"54\">".htmlspecialchars($content)."</textarea>"
+     $bbcode_html."<textarea name=\"content\" rows=\"12\" cols=\"80\" class=\"message_field\">".htmlspecialchars($content)."</textarea>"
 );
 
 if (!$logged_in_user->prefs->no_signature_by_default) {
@@ -125,7 +128,10 @@ if (!$logged_in_user->prefs->no_signature_by_default) {
     $enable_signature="";
 }
 
-row2("", "<input name=\"add_signature\" value=\"add_it\" ".$enable_signature." type=\"checkbox\">".tra("Add my signature to this post"));
+if (is_news_forum($forum)) {
+    row2("", "<input name=export type=checkbox> Show this item as a Notice in the BOINC Manager<br><span class=note>Do so only for items likely to be of interest to all volunteers</span>");
+}
+row2("", "<input name=\"add_signature\" value=\"add_it\" ".$enable_signature." type=\"checkbox\"> ".tra("Add my signature to this post"));
 row2("", "<input type=\"submit\" name=\"preview\" value=\"".tra("Preview")."\"> <input type=\"submit\" value=\"OK\">");
 
 
@@ -135,5 +141,5 @@ echo "</form>\n";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_post.php 19951 2009-12-17 00:17:37Z boincadm $";
+$cvs_version_tracker[]="\$Id: forum_post.php 23721 2011-06-14 05:42:52Z davea $";
 ?>

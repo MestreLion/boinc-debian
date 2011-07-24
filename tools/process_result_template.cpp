@@ -98,6 +98,7 @@ int remove_signatures(char* xml) {
 // macro-substitute a result template:
 // - replace OUTFILE_x with base_filename_x, etc.
 // - add signatures for file uploads
+// - strip enclosing <output_template> tags
 //
 // This is called only from the transitioner,
 // to create a new result for a WU
@@ -140,7 +141,15 @@ int process_result_template(
         retval = add_signatures(result_template, key);
         if (retval) return retval;
     }
+
+    strcpy(temp, result_template);
+    p = strstr(temp, "<output_template>\n");
+    if (!p) p = temp;
+    q = strstr(temp, "</output_template>\n");
+    if (q) *q = 0;
+    strcpy(result_template, p);
+    
     return 0;
 }
 
-const char *BOINC_RCSID_e5e1e879f3 = "$Id: process_result_template.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_e5e1e879f3 = "$Id: process_result_template.cpp 23783 2011-06-29 22:26:45Z davea $";

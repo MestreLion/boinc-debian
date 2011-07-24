@@ -96,28 +96,21 @@ class PREF_BOOL extends PREF {
     function show_form($prefs, $error) {
         $tag = $this->tag;
         if ($this->invert) {
-            $disp_yes = "no";
-            $disp_no = "yes";
-            $val = !$prefs->$tag;
+            $checked = !$prefs->$tag;
         } else {
-            $disp_yes = "yes";
-            $disp_no = "no";
-            $val = $prefs->$tag;
+            $checked = $prefs->$tag;
         }
         echo "<td class=fieldvalue>"
-            .tra("yes")
-            ." <input type=radio name=$this->tag value=$disp_yes "
-            .($val?"checked":"")
-            ."> "
-            .tra("no")
-            ." <input type=radio name=$this->tag value=$disp_no "
-            .($val?"":"checked")
+            ."<input type=checkbox name=$this->tag "
+            . ($checked?"checked":"")
             ."></td>
         ";
     }
     function parse_form(&$prefs, &$error) {
         $tag = $this->tag;
-        $prefs->$tag = ($_GET[$tag] == 'yes');
+        $val = array_key_exists($tag, $_GET);
+        if ($this->invert) $val = !$val;
+        $prefs->$tag = $val;
     }
     function xml_string($prefs) {
         $tag = $this->tag;
@@ -168,8 +161,6 @@ class NUM_SPEC {
         if (is_numeric($v)) {
             $v /= $this->scale;
             if ($v == 0) $v = "";
-        } else {
-            $v = $prefs->$tag;
         }
         return "<input size=5 name=$tag value='$v'> $this->suffix ";
     }
@@ -178,7 +169,7 @@ class NUM_SPEC {
         if ($in == "") $in = 0;
         if (!is_numeric($in)) {
             $error = true;
-            $out = $x;
+            $out = $in;
             return;
         }
         $out = $in*$this->scale;

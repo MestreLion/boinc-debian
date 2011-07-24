@@ -149,6 +149,10 @@ mach_port_t gEventHandle = NULL;
 #define _SC_PAGESIZE _SC_PAGE_SIZE
 #endif
 
+#if HAVE_XSS
+#include <X11/extensions/scrnsaver.h>
+#endif
+
 // The following is intended to be true both on Linux
 // and Debian GNU/kFreeBSD (see trac #521)
 //
@@ -711,7 +715,7 @@ static void get_cpu_info_haiku(HOST_INFO& host) {
         // this CPU doesn't support cpuid
         return;
     }
-	
+
     snprintf(host.p_vendor, sizeof(host.p_vendor), "%.12s",
         cpuInfo.eax_0.vendor_id);
     
@@ -762,7 +766,7 @@ static void get_cpu_info_haiku(HOST_INFO& host) {
     }
 
     get_cpuid(&cpuInfo, 1, cpu);
-	
+
     int family, stepping, model;
 
     family = cpuInfo.eax_1.family + (cpuInfo.eax_1.family == 0xf ?
@@ -842,12 +846,12 @@ static void get_cpu_info_haiku(HOST_INFO& host) {
 // detect the network usage totals for the host.
 //
 int get_network_usage_totals(unsigned int& total_received, unsigned int& total_sent) {
-	static size_t  sysctlBufferSize = 0;
-	static uint8_t *sysctlBuffer = NULL;
+    static size_t  sysctlBufferSize = 0;
+    static uint8_t *sysctlBuffer = NULL;
 
-	int	mib[] = { CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST, 0 };
+    int    mib[] = { CTL_NET, PF_ROUTE, 0, 0, NET_RT_IFLIST, 0 };
     struct if_msghdr *ifmsg;
-	size_t currentSize = 0;
+    size_t currentSize = 0;
 
     total_received = 0;
     total_sent = 0;
@@ -993,12 +997,11 @@ kern_return_t SMCClose()
 }
 
 
-kern_return_t SMCReadKey(UInt32 key, SMCBytes_t val)
-{
+kern_return_t SMCReadKey(UInt32 key, SMCBytes_t val) {
     kern_return_t       result;
     SMCKeyData_t        inputStructure;
     SMCKeyData_t        outputStructure;
- 	size_t              structureInputSize;
+     size_t              structureInputSize;
     size_t              structureOutputSize;
 
     memset(&inputStructure, 0, sizeof(SMCKeyData_t));
@@ -1010,20 +1013,21 @@ kern_return_t SMCReadKey(UInt32 key, SMCBytes_t val)
 
     structureInputSize = sizeof(inputStructure);
     structureOutputSize = sizeof(outputStructure);
-	result = IOConnectMethodStructureIStructureO(
-                    conn, KERNEL_INDEX_SMC, structureInputSize, &structureOutputSize, 
-                    &inputStructure, &outputStructure
-            );
-    if (result != kIOReturnSuccess)
+    result = IOConnectMethodStructureIStructureO(
+        conn, KERNEL_INDEX_SMC, structureInputSize, &structureOutputSize, 
+        &inputStructure, &outputStructure
+    );
+    if (result != kIOReturnSuccess) {
         return result;
+    }
 
     inputStructure.keyInfo.dataSize = outputStructure.keyInfo.dataSize;
     inputStructure.data8 = SMC_CMD_READ_BYTES;
 
-	result = IOConnectMethodStructureIStructureO(
-                    conn, KERNEL_INDEX_SMC, structureInputSize, &structureOutputSize, 
-                    &inputStructure, &outputStructure
-            );
+    result = IOConnectMethodStructureIStructureO(
+        conn, KERNEL_INDEX_SMC, structureInputSize, &structureOutputSize, 
+        &inputStructure, &outputStructure
+    );
     if (result != kIOReturnSuccess)
         return result;
 
@@ -1144,6 +1148,7 @@ int HOST_INFO::get_virtualbox_version() {
 
     return 0;
 }
+
 
 // Rules:
 // - Keep code in the right place
@@ -1678,7 +1683,33 @@ bool interrupts_idle(time_t t) {
     }
     return last_irq < t;
 }
-#endif
+
+#if HAVE_XSS
+// Ask the X server for user idle time (using XScreenSaver API)
+// Returns true if the idle_treshold is smaller than the
+// idle time of the user (means: true = user is idle)
+bool xss_idle(long idle_treshold) {
+    static XScreenSaverInfo* xssInfo = NULL;
+    static Display* disp = NULL;
+    
+    long idle_time = 0;
+    
+    if(disp != NULL) {
+        XScreenSaverQueryInfo(disp, DefaultRootWindow(disp), xssInfo);
+        idle_time = xssInfo->idle / 1000; // xssInfo->idle is in ms
+    } else {
+        disp = XOpenDisplay(NULL);
+        // XOpenDisplay may return NULL if there is no running X
+        // or DISPLAY points to wrong/invalid display
+        if(disp != NULL) {
+            xssInfo = XScreenSaverAllocInfo();
+        }
+    }
+
+    return idle_treshold < idle_time;
+}
+#endif // HAVE_XSS
+#endif // LINUX_LIKE_SYSTEM
 
 bool HOST_INFO::users_idle(bool check_all_logins, double idle_time_to_run) {
     time_t idle_time = time(0) - (long) (60 * idle_time_to_run);
@@ -1700,6 +1731,13 @@ bool HOST_INFO::users_idle(bool check_all_logins, double idle_time_to_run) {
     if (!interrupts_idle(idle_time)) {
         return false;
     }
+
+#if HAVE_XSS
+    if (!xss_idle((long)(idle_time_to_run * 60))) {
+        return false;
+    }
+#endif
+
 #else
     // We should find out which of the following are actually relevant
     // on which systems (if any)

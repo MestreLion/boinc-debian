@@ -1,12 +1,12 @@
 dnl -*- autoconf -*-
 
-dnl $Id: configure.ac 23715 2011-06-13 16:35:38Z romw $
+dnl $Id: configure.ac 23851 2011-07-18 17:44:30Z romw $
 
 dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.58)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 6.12.33)
+AC_INIT(BOINC, 6.13.1)
 AC_CONFIG_MACRO_DIR([m4])
 LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
 AC_SUBST([LIBBOINC_VERSION])
@@ -19,8 +19,8 @@ AM_INIT_AUTOMAKE(dist-zip)
 
 AC_CONFIG_SRCDIR(lib/shmem.cpp)
 
-AC_REVISION([$Revision: 23715 $]) 
-REV=`echo '$Revision: 23715 $' | awk "{print $2}"`
+AC_REVISION([$Revision: 23851 $]) 
+REV=`echo '$Revision: 23851 $' | awk "{print $2}"`
 RDATE=`date '+%Y.%m.%d'`
 if test -d .svn ; then
   REV=`svn info | grep Revision | awk '{print $2}'`
@@ -549,6 +549,13 @@ fi
 
 AM_CONDITIONAL(BUILD_GRAPHICS_API, [ test "$have_glut" = yes ])
 
+dnl check for X screen saver lib
+AC_CHECK_LIB([Xss], [XScreenSaverAllocInfo], [have_Xss="yes"], [have_Xss="no"])
+AC_CHECK_HEADER([X11/extensions/scrnsaver.h], [have_Xss="yes"], [have_Xss="no"])
+if test "$have_Xss" == no; then
+    AC_MSG_WARN([libxss missing, disabling X ScreenSaver user idle detection])
+fi
+
 dnl --------------------------------------------------------------------------------
 dnl put double-inclusion protection into config.h
 AH_TOP([
@@ -790,6 +797,13 @@ if test "${ac_cv_func_res_init}" != "yes" ; then
   ])
 fi
 LIBS=$svlibs
+
+if test "$have_Xss" == yes; then
+    SAH_CHECK_LIB([Xss],[XScreenSaverAllocInfo],[
+        AC_DEFINE([HAVE_XSS],[1],[Define to 1 if you have xss library])
+        CLIENTLIBS="${sah_lib_last} ${CLIENTLIBS}"])
+    echo DEBUG: CLIENTLIBS=${CLIENTLIBS} >&5
+fi
 
 SAH_CHECK_LIB([resolv],[res_query],[
     AC_DEFINE([HAVE_RESOLV],[1],[Define to 1 if you have the resolv library])

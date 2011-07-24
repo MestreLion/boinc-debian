@@ -154,7 +154,6 @@ void CStatusBar::OnSize(wxSizeEvent& event) {
     wxLogTrace(wxT("Function Start/End"), wxT("CStatusBar::OnSize - Function End"));
 }
 
-
 IMPLEMENT_DYNAMIC_CLASS(CAdvancedFrame, CBOINCBaseFrame)
 
 BEGIN_EVENT_TABLE (CAdvancedFrame, CBOINCBaseFrame)
@@ -477,7 +476,7 @@ bool CAdvancedFrame::CreateMenu() {
         _("Stop work regardless of preferences")
     );
 
-    if (pDoc->state.have_cuda || pDoc->state.have_ati) {
+    if (pDoc->state.have_nvidia || pDoc->state.have_ati) {
 
 #ifndef __WXGTK__
         menuActivity->AppendSeparator();
@@ -1030,7 +1029,7 @@ void CAdvancedFrame::OnSize(wxSizeEvent& event) {
     SaveWindowDimensions();
     event.Skip();
 }
-    
+
 
 void CAdvancedFrame::OnMove(wxMoveEvent& event) {
     SaveWindowDimensions();
@@ -1825,7 +1824,7 @@ void CAdvancedFrame::OnFrameRender(wxTimerEvent& WXUNUSED(event)) {
                 CC_STATUS  status;
                 if ((pDoc->IsConnected()) && (0 == pDoc->GetCoreClientStatus(status))) {
                     UpdateActivityModeControls(status);
-                    if (pDoc->state.have_cuda || pDoc->state.have_ati) {
+                    if (pDoc->state.have_nvidia || pDoc->state.have_ati) {
                         UpdateGPUModeControls(status);
                     }
                     UpdateNetworkModeControls(status);

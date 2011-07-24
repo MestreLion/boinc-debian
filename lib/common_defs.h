@@ -25,6 +25,12 @@
 
 #define GUI_RPC_PORT                                31416
 
+#define COBBLESTONE_SCALE 200/86400e9
+    // multiply normalized PFC by this to get Cobblestones
+
+// run modes for CPU, GPU, network,
+// controlled by Activity menu and snooze button
+//
 #define RUN_MODE_ALWAYS 1
 #define RUN_MODE_AUTO   2
 #define RUN_MODE_NEVER  3
@@ -119,7 +125,7 @@ enum SUSPEND_REASON {
     SUSPEND_REASON_OS = 4096
 };
 
-// States of a result on a client.
+// Values of RESULT::state
 // THESE MUST BE IN NUMERICAL ORDER
 // (because of the > comparison in RESULT::computing_done())
 //

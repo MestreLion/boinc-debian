@@ -23,9 +23,14 @@
 //
 // create_work
 //  --appname name
-//  --wu_name name
-//  --wu_template filename       relative to project root; usually in templates/
-//  --result_template filename   relative to project root; usually in templates/
+//  [ --wu_name name ]
+//      // default: generate a name based on app name
+//  [ --wu_template filename ]
+//      relative to project root; usually in templates/
+//      default: appname_in
+//  [ --result_template filename ]
+//      relative to project root; usually in templates/
+//      default: appname_out
 //  [ --config_dir path ]
 //  [ --batch n ]
 //            the following can be supplied in WU template; see defaults below
@@ -57,11 +62,12 @@
 #include <ctime>
 #include <string>
 
-#include "boinc_db.h"
-#include "crypt.h"
 #include "backend_lib.h"
+#include "boinc_db.h"
 #include "common_defs.h"
+#include "crypt.h"
 #include "sched_config.h"
+#include "util.h"
 
 bool arg(const char** argv, int i, const char* name) {
     char buf[256];
@@ -85,11 +91,13 @@ int main(int argc, const char** argv) {
     char db_user[256],db_host[256];
     char buf[256];
     char additional_xml[256];
+    bool show_wu_name = true;
     bool assign_flag = false;
     bool assign_multi = false;
     int assign_id = 0;
     int assign_type = ASSIGN_NONE;
 
+    strcpy(wu_template_file, "");
     strcpy(result_template_file, "");
     strcpy(app.name, "");
     strcpy(db_passwd, "");
@@ -117,7 +125,12 @@ int main(int argc, const char** argv) {
     while (i < argc) {
         if (arg(argv, i, "appname")) {
             strcpy(app.name, argv[++i]);
+        } else if (arg(argv, i, "d")) {
+            int dl = atoi(argv[++i]);
+            log_messages.set_debug_level(dl);
+            if (dl ==4) g_print_queries = true;
         } else if (arg(argv, i, "wu_name")) {
+            show_wu_name = false;
             strcpy(wu.name, argv[++i]);
         } else if (arg(argv, i, "wu_template")) {
             strcpy(wu_template_file, argv[++i]);
@@ -202,16 +215,13 @@ int main(int argc, const char** argv) {
         exit(1);
     }
     if (!strlen(wu.name)) {
-        fprintf(stderr, "create_work: missing --wu_name\n");
-        exit(1);
+        sprintf(wu.name, "%s_%d_%f", app.name, getpid(), dtime());
     }
     if (!strlen(wu_template_file)) {
-        fprintf(stderr, "create_work: missing --wu_template\n");
-        exit(1);
+        sprintf(wu_template_file, "templates/%s_in", app.name);
     }
     if (!strlen(result_template_file)) {
-        fprintf(stderr, "create_work: missing --result_template\n");
-        exit(1);
+        sprintf(result_template_file, "templates/%s_out", app.name);
     }
 
     if (assign_flag) {
@@ -248,7 +258,9 @@ int main(int argc, const char** argv) {
 
     retval = read_filename(wu_template_file, wu_template, sizeof(wu_template));
     if (retval) {
-        fprintf(stderr, "create_work: can't open WU template: %d\n", retval);
+        fprintf(stderr,
+            "create_work: can't open input template %s\n", wu_template_file
+        );
         exit(1);
     }
 
@@ -270,6 +282,10 @@ int main(int argc, const char** argv) {
     if (retval) {
         fprintf(stderr, "create_work: %d\n", retval);
         exit(1);
+    } else {
+        if (show_wu_name) {
+            printf("workunit name: %s\n", wu.name);
+        }
     }
     if (assign_flag) {
         DB_ASSIGNMENT assignment;
@@ -288,4 +304,4 @@ int main(int argc, const char** argv) {
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 22384 2010-09-17 22:01:42Z davea $";
+const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 23762 2011-06-21 22:56:15Z davea $";

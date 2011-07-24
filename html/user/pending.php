@@ -22,6 +22,8 @@ require_once("../inc/util.inc");
 require_once("../inc/boinc_db.inc");
 require_once("../inc/xml.inc");
 
+check_get_args(array("format", "authenticator"));
+
 BoincDb::get(true);
 
 $config = get_config();
@@ -78,5 +80,5 @@ if ($format == "xml") {
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: pending.php 18146 2009-05-18 16:58:11Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: pending.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-10-06 08:58-0700\n"
-"PO-Revision-Date: 2011-05-13 15:36+0200\n"
+"POT-Creation-Date: 2011-01-26 13:27-0800\n"
+"PO-Revision-Date: 2011-05-13 15:17+0200\n"
 "Last-Translator: Christian <djangofett@gmx.net>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
@@ -17,31 +17,31 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Pootle 2.1.1\n"
 
-#: acct_mgr.cpp:382 acct_mgr.cpp:392
+#: acct_mgr.cpp:411 acct_mgr.cpp:421
 msgid "error"
 msgstr "Fehler"
 
-#: acct_setup.cpp:273
-msgid "A new version of BOINC is available."
-msgstr "Eine neue Version von BOINC ist verfügbar."
+#: client_msgs.cpp:79
+msgid "Message from server"
+msgstr "Nachricht vom Server"
 
-#: acct_setup.cpp:275
-msgid "Download it."
-msgstr "Bitte herunterladen."
+#: client_state.cpp:232
+msgid ""
+"Some tasks need more memory than allowed by your preferences.  Please check "
+"the preferences."
+msgstr ""
+"Einige Aufgaben benötigen mehr Arbeitsspeicher als von ihren Einstellungen "
+"erlaubt wird. Bitte die Einstellungen überprüfen."
 
-#: client_msgs.cpp:106
-msgid "Notice from BOINC"
-msgstr "Nachrichten von BOINC"
-
-#: client_state.cpp:357
+#: client_state.cpp:414
 msgid "Couldn't write state file; check directory permissions"
 msgstr "Konnte Statusdatei nicht schreiben; bitte Zugriffsrechte überprüfen"
 
-#: cs_cmdline.cpp:283
+#: cs_cmdline.cpp:284
 msgid "The HTTP_PROXY environment variable must specify an HTTP proxy"
 msgstr "Die HTTP_PROXY Umgebungsvariable muss einen HTTP-Proxy angeben"
 
-#: cs_scheduler.cpp:512
+#: cs_scheduler.cpp:529
 #, c-format
 msgid ""
 "You used the wrong URL for this project.  When convenient, remove this "
@@ -50,35 +50,39 @@ msgstr ""
 "Du hast die falsche URL für dieses Projekt genutzt. Wenn möglich bitte "
 "dieses Projekt entfernen und %s neu hinzufügen."
 
-#: cs_scheduler.cpp:545
-msgid "Message from"
-msgstr "Nachricht von"
-
-#: cs_statefile.cpp:805 ../sched/sched_types.cpp:273
+#: cs_statefile.cpp:794 ../sched/sched_types.cpp:273
 msgid "Syntax error in app_info.xml"
 msgstr "Syntaxfehler in app_info.xml"
 
-#: cs_statefile.cpp:844
+#: cs_statefile.cpp:833
 msgid "File referenced in app_info.xml does not exist: "
 msgstr "Datei auf die aus app_info.xml verwiesen wurde, existiert nicht: "
+
+#: current_version.cpp:84
+msgid "A new version of BOINC is available."
+msgstr "Eine neue Version von BOINC ist verfügbar."
+
+#: current_version.cpp:86
+msgid "Download it."
+msgstr "Bitte herunterladen."
 
 #: gui_rpc_server.cpp:191
 msgid "Can't resolve hostname in remote_hosts.cfg"
 msgstr "Rechnername in remote_hosts.cfg konnte nicht aufgelöst werden."
 
-#: log_flags.cpp:68 log_flags.cpp:322 log_flags.cpp:450
+#: log_flags.cpp:73 log_flags.cpp:328 log_flags.cpp:461
 msgid "Unexpected text in cc_config.xml"
 msgstr "Unerwarteter Text in cc_config.xml"
 
-#: log_flags.cpp:112 log_flags.cpp:422 log_flags.cpp:467
+#: log_flags.cpp:117 log_flags.cpp:433 log_flags.cpp:480
 msgid "Unrecognized tag in cc_config.xml"
 msgstr "Nicht erkanntes Tag in cc_config.xml"
 
-#: log_flags.cpp:441
+#: log_flags.cpp:452
 msgid "Missing start tag in cc_config.xml"
 msgstr "Fehlendes Starttag in cc_config.xml"
 
-#: log_flags.cpp:475
+#: log_flags.cpp:488
 msgid "Missing end tag in cc_config.xml"
 msgstr "Fehlendes Endetag in cc_config.xml"
 
@@ -88,13 +92,13 @@ msgstr ""
 "Ungültiger oder fehlender Kontoschlüssel.  Projekt entfernen und neu "
 "hinzufügen zum beheben."
 
-#: ../sched/handle_request.cpp:820
+#: ../sched/handle_request.cpp:822
 msgid "Invalid code signing key.  To fix, remove and add this project."
 msgstr ""
 "Ungültiger Signaturschlüssel. Projekt entfernen und neu hinzufügen zum "
 "beheben."
 
-#: ../sched/handle_request.cpp:830
+#: ../sched/handle_request.cpp:832
 msgid ""
 "The project has changed its security key.  Please remove and add this "
 "project."
@@ -102,38 +106,40 @@ msgstr ""
 "Dieses Projekt hat einen neuen Sicherheitsschlüssel. Entfernen und fügen sie "
 "das Projekt neu hinzu."
 
-#: ../sched/handle_request.cpp:914
+# Im Quellcode folgt nach diesem Text die Angabe des erkannten Betriebssystems!
+#: ../sched/handle_request.cpp:916
 msgid "This project doesn't support operating system"
 msgstr "Dieses Projekt unterstützt kein Betriebssystem"
 
-#: ../sched/handle_request.cpp:940
+# Im Quellcode folgt nach diesem Satz die Angabe des erkannten Prozessortyps!
+#: ../sched/handle_request.cpp:942
 msgid "This project doesn't support CPU type"
 msgstr "Dieses Projekt unterstützt keine Prozessortypen"
 
-#: ../sched/handle_request.cpp:964
+#: ../sched/handle_request.cpp:966
 msgid ""
 "Your BOINC client software is too old.  Please install the current version."
 msgstr ""
 "Die BOINC Installation ist zu alt. Bitte die neueste Version installieren."
 
-#: ../sched/handle_request.cpp:1215
+#: ../sched/handle_request.cpp:1217
 msgid "This project doesn't support computers of type"
 msgstr "Dieses Projekt unterstützt keine Computer vom Typ"
 
-#: ../sched/sched_send.cpp:1262
+#: ../sched/sched_send.cpp:1267
 msgid "Upgrade to the latest driver to process tasks using your computer's GPU"
 msgstr ""
 "Auf die neuesten Treiber aktualisieren, um die GPU dieses Computers nutzen "
 "zu können."
 
-#: ../sched/sched_send.cpp:1269
+#: ../sched/sched_send.cpp:1274
 msgid ""
 "Upgrade to the latest driver to use all of this project's GPU applications"
 msgstr ""
 "Auf die neuesten Treiber aktualisieren, um alle GPU-Anwendungen dieses "
 "Projekts nutzen zu können."
 
-#: ../sched/sched_send.cpp:1293
+#: ../sched/sched_send.cpp:1298
 msgid ""
 "A newer version of BOINC is needed to use your NVIDIA GPU; please upgrade to "
 "the current version"
@@ -141,19 +147,19 @@ msgstr ""
 "Eine neuere Version von BOINC ist erforderlich um die NVIDIA GPU zu "
 "verwenden. Bitte auf die aktuellste Version aktualisieren."
 
-#: ../sched/sched_send.cpp:1306
+#: ../sched/sched_send.cpp:1311
 msgid "An NVIDIA or ATI GPU is required to run tasks for this project"
 msgstr "Für dieses Projekt wird eine NVIDIA oder ATI GPU benötigt"
 
-#: ../sched/sched_send.cpp:1311
+#: ../sched/sched_send.cpp:1316
 msgid "An NVIDIA GPU is required to run tasks for this project"
 msgstr "Für dieses Projekt wird eine NVIDIA GPU benötigt"
 
-#: ../sched/sched_send.cpp:1317
+#: ../sched/sched_send.cpp:1322
 msgid "An ATI GPU is required to run tasks for this project"
 msgstr "Für dieses Projekt wird eine ATI GPU benötigt"
 
-#: ../sched/sched_send.cpp:1412
+#: ../sched/sched_send.cpp:1417
 msgid ""
 "No work available for the applications you have selected.  Please check your "
 "project preferences on the web site."
@@ -161,15 +167,15 @@ msgstr ""
 "Für die gewählten Anwendungen ist keine Arbeit verfügbar.  Bitte "
 "Projekteinstellungen auf der Projektwebseite überprüfen."
 
-#: ../sched/sched_send.cpp:1438
+#: ../sched/sched_send.cpp:1443
 msgid "Your computer type is not supported by this project"
 msgstr "Der Computertyp wird von diesem Projekt nicht unterstützt."
 
-#: ../sched/sched_send.cpp:1444
+#: ../sched/sched_send.cpp:1449
 msgid "Newer BOINC version required; please install current version"
 msgstr "Neuere BOINC Version benötigt. Bitte die neueste Software installieren."
 
-#: ../sched/sched_send.cpp:1454
+#: ../sched/sched_send.cpp:1459
 msgid ""
 "Tasks for NVIDIA GPU are available, but your preferences are set to not "
 "accept them"
@@ -177,7 +183,7 @@ msgstr ""
 "Aufgaben für NVIDIA GPUs sind verfügbar, aber Ihre Einstellungen verbieten "
 "diese."
 
-#: ../sched/sched_send.cpp:1460
+#: ../sched/sched_send.cpp:1465
 msgid ""
 "Tasks for ATI GPU are available, but your preferences are set to not accept "
 "them"
@@ -185,7 +191,7 @@ msgstr ""
 "Aufgaben für ATI GPUs sind verfügbar, aber Ihre Einstellungen verbieten "
 "diese."
 
-#: ../sched/sched_send.cpp:1466
+#: ../sched/sched_send.cpp:1471
 msgid ""
 "Tasks for CPU are available, but your preferences are set to not accept them"
 msgstr ""
@@ -196,16 +202,19 @@ msgstr ""
 msgid "Unknown app name in app_info.xml"
 msgstr "Unbekannter Anwendungsname in app_info.xml"
 
-#: ../sched/sched_version.cpp:234
+#: ../sched/sched_version.cpp:230
 msgid "Your app_info.xml file doesn't have a usable version of"
 msgstr "Ihre app_info.xml Datei enthält keine nutzbare Version von"
 
-#: ../sched/sched_version.cpp:691
-msgid "is not available for your type of computer"
-msgstr "ist für diesen Typ von Computer nicht verfügbar."
+#: ../sched/sched_version.cpp:709
+msgid "is not available for"
+msgstr "ist nicht verfügbar für"
 
-#~ msgid "Message from project server:"
-#~ msgstr "Nachricht vom Projektserver:"
+#~ msgid "Notice from BOINC"
+#~ msgstr "Nachrichten von BOINC"
+
+#~ msgid "Message from"
+#~ msgstr "Nachricht von"
 
 #~ msgid ""
 #~ "You may have an outdated code signing key.  Try attaching and reattaching "

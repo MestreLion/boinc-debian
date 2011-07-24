@@ -51,9 +51,9 @@ SCHED_MSG_LOG::~SCHED_MSG_LOG() {
 
 void SCHED_MSG_LOG::close() {
     if (output) {
-	   flush();
-	   fclose(output);
-	   output = NULL;
+        flush();
+        fclose(output);
+        output = NULL;
     }
 }
 
@@ -73,4 +73,4 @@ void SCHED_MSG_LOG::flush() {
 }
 #endif
 
-const char *BOINC_RCSID_b40ff9bb53 = "$Id: sched_msgs.cpp 16921 2009-01-15 20:23:20Z davea $";
+const char *BOINC_RCSID_b40ff9bb53 = "$Id: sched_msgs.cpp 22891 2011-01-07 20:23:22Z davea $";

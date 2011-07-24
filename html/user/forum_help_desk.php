@@ -20,6 +20,8 @@ require_once('../inc/forum.inc');
 require_once('../inc/util.inc');
 require_once('../inc/time.inc');
 
+check_get_args(array());
+
 $user = get_logged_in_user(false);
 
 page_head("Questions and answers");
@@ -40,7 +42,11 @@ foreach ($categories as $category) {
         show_forum_title($category, null, null);
         echo "<p>";
         show_mark_as_read_button($user);
-        start_forum_table(array("Topic", "# Questions", "Last post"));
+        start_forum_table(array(
+            tra("Topic"),
+            tra("# Questions"),
+            tra("Last post")
+        ));
     }
     if (strlen($category->name)) {
         echo "
@@ -51,15 +57,18 @@ foreach ($categories as $category) {
     }
 
     $forums = BoincForum::enum("parent_type=0 and category=$category->id order by orderID");
+	$i = 1;
     foreach ($forums as $forum) {
+		$j = $i % 2;
+		$i++;
         echo "
-        <tr class=\"row1\">
+        <tr class=\"row$j\">
         <td>
-            <b><a href=\"forum_forum.php?id=$forum->id\">$forum->title</a></b>
-            <br>", $forum->description, "
+            <a href=\"forum_forum.php?id=$forum->id\">$forum->title</a>
+            <br><span class=\"smalltext\">", $forum->description, "</span>
         </td>
-        <td>", $forum->threads, "</td>
-        <td>", time_diff_str($forum->timestamp, time()), "</td>
+        <td class=\"numbers\">", $forum->threads, "</td>
+        <td class=\"lastpost\">", time_diff_str($forum->timestamp, time()), "</td>
     </tr>
         ";
     }
@@ -72,5 +81,5 @@ echo "
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_help_desk.php 16079 2008-09-27 10:33:43Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_help_desk.php 23018 2011-02-10 22:45:39Z davea $";  //Generated automatically - do not edit
 ?>

@@ -42,8 +42,6 @@
 #include "main.h"
 #include "scheduler_op.h"
 
-//#define ENABLE_AUTO_UPDATE
-
 using std::vector;
 
 SCHEDULER_OP::SCHEDULER_OP(HTTP_OP_SET* h) {
@@ -213,19 +211,12 @@ void SCHEDULER_OP::rpc_failed(const char* msg) {
 static void request_string(char* buf) {
     bool first = true;
     strcpy(buf, "");
-    if (cpu_work_fetch.req_secs) {
-        strcpy(buf, "CPU");
-        first = false;
-    }
-    if (cuda_work_fetch.req_secs) {
-        if (!first) strcat(buf, " and ");
-        strcat(buf, "NVIDIA GPU");
-        first = false;
-    }
-    if (ati_work_fetch.req_secs) {
-        if (!first) strcat(buf, " and ");
-        strcat(buf, "ATI GPU");
-        first = false;
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        if (rsc_work_fetch[i].req_secs) {
+            if (!first) strcat(buf, " and ");
+            strcat(buf, rsc_name(i));
+            first = false;
+        }
     }
 }
 
@@ -236,7 +227,7 @@ static void request_string(char* buf) {
 int SCHEDULER_OP::start_rpc(PROJECT* p) {
     int retval;
     char request_file[1024], reply_file[1024], buf[256];
-    char *trickle_up_msg;
+    const char *trickle_up_msg;
 
     safe_strcpy(scheduler_url, p->get_scheduler_url(url_index, url_random));
     if (log_flags.sched_ops) {
@@ -270,20 +261,12 @@ int SCHEDULER_OP::start_rpc(PROJECT* p) {
         }
     }
     if (log_flags.sched_op_debug) {
-        msg_printf(p, MSG_INFO,
-            "[sched_op] CPU work request: %.2f seconds; %.2f CPUs",
-            cpu_work_fetch.req_secs, cpu_work_fetch.req_instances
-        );
-        if (gstate.host_info.have_cuda()) {
+        for (int i=0; i<coprocs.n_rsc; i++) {
             msg_printf(p, MSG_INFO,
-                "[sched_op] NVIDIA GPU work request: %.2f seconds; %.2f GPUs",
-                cuda_work_fetch.req_secs, cuda_work_fetch.req_instances
-            );
-        }
-        if (gstate.host_info.have_ati()) {
-            msg_printf(p, MSG_INFO,
-                "[sched_op] ATI GPU work request: %.2f seconds; %.2f GPUs",
-                ati_work_fetch.req_secs, ati_work_fetch.req_instances
+                "[sched_op] %s work request: %.2f seconds; %.2f CPUs",
+                rsc_name(i),
+                rsc_work_fetch[i].req_secs,
+                rsc_work_fetch[i].req_instances
             );
         }
     }
@@ -460,7 +443,7 @@ bool SCHEDULER_OP::poll() {
                     msg_printf(cur_proj, MSG_INFO, "Master file download succeeded");
                     cur_proj->master_fetch_failures = 0;
                     changed = update_urls(cur_proj, urls);
-                    
+
                     // reenable scheduler RPCs if have new URLs
                     //
                     if (changed) {
@@ -523,7 +506,7 @@ bool SCHEDULER_OP::poll() {
                     backoff(cur_proj, "can't parse scheduler reply");
                     break;
                 }
-				cur_proj->sched_rpc_pending = 0;
+                cur_proj->sched_rpc_pending = 0;
                     // do this after handle_scheduler_reply()
             }
             cur_proj = NULL;
@@ -558,15 +541,11 @@ void SCHEDULER_REPLY::clear() {
     code_sign_key_signature = 0;
     message_ack = false;
     project_is_down = false;
-    send_file_list = false;
     send_full_workload = false;
     send_time_stats_log = 0;
     send_job_log = 0;
     messages.clear();
     scheduler_version = 0;
-    cpu_backoff = 0;
-    cuda_backoff = 0;
-    ati_backoff = 0;
     got_rss_feeds = false;
 }
 
@@ -582,6 +561,12 @@ SCHEDULER_REPLY::~SCHEDULER_REPLY() {
 }
 
 #ifndef SIM
+
+static void handle_no_rsc_apps(const char* name, PROJECT* p, bool value) {
+    int i = rsc_index(name);
+    if (i < 0) return;
+    p->no_rsc_apps[i] = value;
+}
 
 // parse a scheduler reply.
 // Some of the items go into the SCHEDULER_REPLY object.
@@ -862,22 +847,25 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
             continue;
         } else if (parse_bool(buf, "no_cpu_apps", btemp)) {
             if (!project->anonymous_platform) {
-                project->no_cpu_apps = btemp;
+                handle_no_rsc_apps("CPU", project, btemp);
             }
             continue;
         } else if (parse_bool(buf, "no_cuda_apps", btemp)) {
             if (!project->anonymous_platform) {
-                project->no_cuda_apps = btemp;
+                handle_no_rsc_apps("NVIDIA", project, btemp);
             }
             continue;
         } else if (parse_bool(buf, "no_ati_apps", btemp)) {
             if (!project->anonymous_platform) {
-                project->no_ati_apps = btemp;
+                handle_no_rsc_apps("ATI", project, btemp);
+            }
+            continue;
+        } else if (parse_str(buf, "no_rsc_apps", buf, sizeof(buf))) {
+            if (!project->anonymous_platform) {
+                handle_no_rsc_apps(buf, project, btemp);
             }
             continue;
         } else if (parse_bool(buf, "verify_files_on_app_start", project->verify_files_on_app_start)) {
-            continue;
-        } else if (parse_bool(buf, "request_file_list", send_file_list)) {
             continue;
         } else if (parse_bool(buf, "send_full_workload", send_full_workload)) {
             continue;
@@ -894,18 +882,6 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
             retval = auto_update.parse(mf);
             if (!retval) auto_update.present = true;
 #endif
-        } else if (parse_double(buf, "<cpu_backoff>", cpu_backoff)) {
-            if (cpu_backoff > 28*SECONDS_PER_DAY) cpu_backoff = 28*SECONDS_PER_DAY;
-            if (cpu_backoff < 0) cpu_backoff = 0;
-            continue;
-        } else if (parse_double(buf, "<cuda_backoff>", cuda_backoff)) {
-            if (cuda_backoff > 28*SECONDS_PER_DAY) cuda_backoff = 28*SECONDS_PER_DAY;
-            if (cuda_backoff < 0) cuda_backoff = 0;
-            continue;
-        } else if (parse_double(buf, "<ati_backoff>", ati_backoff)) {
-            if (ati_backoff > 28*SECONDS_PER_DAY) ati_backoff = 28*SECONDS_PER_DAY;
-            if (ati_backoff < 0) ati_backoff = 0;
-            continue;
         } else if (match_tag(buf, "<rss_feeds>")) {
             got_rss_feeds = true;
             parse_rss_feed_descs(mf, sr_feeds);

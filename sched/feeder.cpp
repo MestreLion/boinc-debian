@@ -19,20 +19,21 @@
 // including an array of work items (results/workunits to send).
 //
 // Usage: feeder [ options ]
-//  [ -d x ]              debug level x
-//  [ -random_order ]     order by "random" field of result
-//  [ -priority_order ]   order by decreasing "priority" field of result
-//  [ -priority_order_create_time ]
-//                        order by priority, then by increasing WU create time
-//  [ -mod n i ]          handle only results with (id mod n) == i
-//  [ -wmod n i ]         handle only workunits with (id mod n) == i
-//                        recommended if using HR with multiple schedulers
-//  [ -sleep_interval x ] sleep x seconds if nothing to do
-//  [ -allapps ]          interleave results from all applications uniformly
-//  [ -appids a1{,a2} ]   get work only for appids a1,... (comma-separated list)
-//  [ -purge_stale x ]    remove work items from the shared memory segment
-//                        that have been there for longer then x minutes
-//                        but haven't been assigned
+//  [ -d x ]                debug level x
+//  [ --random_order ]      order by "random" field of result
+//  [ --priority_order ]    order by decreasing "priority" field of result
+//  [ --priority_order_create_time ]
+//                          order by priority, then by increasing WU create time
+//  [ --mod n i ]           handle only results with (id mod n) == i
+//  [ --wmod n i ]          handle only workunits with (id mod n) == i
+//                          recommended if using HR with multiple schedulers
+//  [ --sleep_interval x ]  sleep x seconds if nothing to do
+//  [ --allapps ]           interleave results from all applications uniformly
+//  [ --appids a1{,a2} ]    get work only for appids a1,...
+//                          (comma-separated list)
+//  [ --purge_stale x ]     remove work items from the shared memory segment
+//                          that have been there for longer then x minutes
+//                          but haven't been assigned
 //
 // The feeder tries to keep the work array filled.
 // It maintains a DB enumerator (DB_WORK_ITEM).
@@ -298,11 +299,13 @@ static bool get_job_from_db(
             // Check for invalid application ID
             //
             if (!ssp->lookup_app(wi.wu.appid)) {
+#if 0
                 log_messages.printf(MSG_CRITICAL,
                     "result [RESULT#%d] has bad appid %d; clean up your DB!\n",
                     wi.res_id, wi.wu.appid
                 );
-                exit(1);
+#endif
+                continue;
             }
             
             // Check for collision (i.e. this result already is in the array)
@@ -526,7 +529,12 @@ void feeder_loop() {
     }
 
     while (1) {
-        bool action = scan_work_array(work_items);
+        bool action;
+        if (config.dont_send_jobs) {
+            action = false;
+        } else {
+            action = scan_work_array(work_items);
+        }
         ssp->ready = true;
         if (!action) {
 #ifdef GCL_SIMULATOR
@@ -551,7 +559,7 @@ void feeder_loop() {
             int retval = update_av_scales(ssp);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "update_av_scales failed: %d\n", retval
+                    "update_av_scales failed: %s\n", boincerror(retval)
                 );
                 exit(1);
             }
@@ -623,7 +631,7 @@ void hr_init() {
     retval = hr_info.read_file();
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "Can't read HR info file: %d\n", retval
+            "Can't read HR info file: %s\n", boincerror(retval)
         );
         exit(1);
     }
@@ -659,20 +667,20 @@ void usage(char *name) {
         "including an array of work items (results/workunits to send).\n\n"
         "Usage: %s [OPTION]...\n\n"
         "Options:\n"
-        "  [ -d X | --debug_level X]         Set Debug level to X\n"
-        "  [ --allapps ]                     Interleave results from all applications uniformly.\n"
-        "  [ --random_order ]                order by \"random\" field of result\n"
-        "  [ --priority_order ]              order by decreasing \"priority\" field of result\n"
-        "  [ --priority_order_create_time ]  order by priority, then by increasing WU create time\n"
-        "  [ --purge_stale ]                 remove work items from the shared memory segment\n"
-        "                                    that have been there for longer then x minutes\n"
-        "                                    but haven't been assigned\n"
-        "  [ --appids a1{,a2} ]              get work only for appids a1,... (comma-separated list)\n"
-        "  [ --mod n i ]                     handle only results with (id mod n) == i\n"
-        "  [ --wmod n i ]                    handle only workunits with (id mod n) == i\n"
-        "  [ --sleep_interval x ]            sleep x seconds if nothing to do\n"
-        "  [ -h | --help ]                   Shows this help text.\n"
-        "  [ -v | --version ]                Shows version information.\n",
+        "  [ -d X | --debug_level X]        Set Debug level to X\n"
+        "  [ --allapps ]                    Interleave results from all applications uniformly.\n"
+        "  [ --random_order ]               order by \"random\" field of result\n"
+        "  [ --priority_order ]             order by decreasing \"priority\" field of result\n"
+        "  [ --priority_order_create_time ] order by priority, then by increasing WU create time\n"
+        "  [ --purge_stale x ]              remove work items from the shared memory segment after x secs\n"
+        "                                   that have been there for longer then x minutes\n"
+        "                                   but haven't been assigned\n"
+        "  [ --appids a1{,a2} ]             get work only for appids a1,... (comma-separated list)\n"
+        "  [ --mod n i ]                    handle only results with (id mod n) == i\n"
+        "  [ --wmod n i ]                   handle only workunits with (id mod n) == i\n"
+        "  [ --sleep_interval x ]           sleep x seconds if nothing to do\n"
+        "  [ -h | --help ]                  Shows this help text.\n"
+        "  [ -v | --version ]               Shows version information.\n",
         name, name
     );
 }
@@ -877,4 +885,4 @@ int main(int argc, char** argv) {
     feeder_loop();
 }
 
-const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 22511 2010-10-14 20:50:22Z romw $";
+const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 22674 2010-11-10 18:17:20Z davea $";

@@ -108,10 +108,14 @@ int PROJECT_LIST_ENTRY::parse(XML_PARSER& xp) {
     while (!xp.get(tag, sizeof(tag), is_tag)) {
         if (!strcmp(tag, "/project")) return 0;
         if (xp.parse_string(tag, "name", name)) continue;
-        if (xp.parse_string(tag, "url", url)) continue;
+        if (xp.parse_string(tag, "url", url)) {
+            continue;
+        }
         if (xp.parse_string(tag, "general_area", general_area)) continue;
         if (xp.parse_string(tag, "specific_area", specific_area)) continue;
-        if (xp.parse_string(tag, "description", description)) continue;
+        if (xp.parse_string(tag, "description", description)) {
+            continue;
+        }
         if (xp.parse_string(tag, "home", home)) continue;
         if (xp.parse_string(tag, "image", image)) continue;
         if (!strcmp(tag, "platforms")) {
@@ -252,16 +256,11 @@ int PROJECT::parse(MIOFILE& in) {
         if (parse_double(buf, "<min_rpc_time>", min_rpc_time)) continue;
         if (parse_double(buf, "<download_backoff>", download_backoff)) continue;
         if (parse_double(buf, "<upload_backoff>", upload_backoff)) continue;
-        if (parse_double(buf, "<short_term_debt>", cpu_short_term_debt)) continue;
-        if (parse_double(buf, "<long_term_debt>", cpu_long_term_debt)) continue;
+        if (parse_double(buf, "<sched_priority>", sched_priority)) continue;
         if (parse_double(buf, "<cpu_backoff_time>", cpu_backoff_time)) continue;
         if (parse_double(buf, "<cpu_backoff_interval>", cpu_backoff_interval)) continue;
-        if (parse_double(buf, "<cuda_debt>", cuda_debt)) continue;
-        if (parse_double(buf, "<cuda_short_term_debt>", cuda_short_term_debt)) continue;
         if (parse_double(buf, "<cuda_backoff_time>", cuda_backoff_time)) continue;
         if (parse_double(buf, "<cuda_backoff_interval>", cuda_backoff_interval)) continue;
-        if (parse_double(buf, "<ati_debt>", ati_debt)) continue;
-        if (parse_double(buf, "<ati_short_term_debt>", ati_short_term_debt)) continue;
         if (parse_double(buf, "<ati_backoff_time>", ati_backoff_time)) continue;
         if (parse_double(buf, "<ati_backoff_interval>", ati_backoff_interval)) continue;
         if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
@@ -315,14 +314,10 @@ void PROJECT::clear() {
     min_rpc_time = 0;
     download_backoff = 0;
     upload_backoff = 0;
-    cpu_short_term_debt = 0;
-    cpu_long_term_debt = 0;
     cpu_backoff_time = 0;
     cpu_backoff_interval = 0;
-    cuda_debt = 0;
     cuda_backoff_time = 0;
     cuda_backoff_interval = 0;
-    ati_debt = 0;
     ati_backoff_time = 0;
     ati_backoff_interval = 0;
     duration_correction_factor = 0;
@@ -749,8 +744,6 @@ int CC_STATE::parse(MIOFILE& fin) {
         if (match_tag(buf, "</client_state>")) break;
 
         if (parse_bool(buf, "executing_as_daemon", executing_as_daemon)) continue;
-        if (parse_bool(buf, "have_cuda", have_cuda)) continue;
-        if (parse_bool(buf, "have_ati", have_ati)) continue;
         if (match_tag(buf, "<project>")) {
             project = new PROJECT();
             retval = project->parse(fin);
@@ -854,6 +847,8 @@ int CC_STATE::parse(MIOFILE& fin) {
             host_info.parse(fin);
             continue;
         }
+        if (parse_bool(buf, "have_cuda", have_nvidia)) continue;
+        if (parse_bool(buf, "have_ati", have_ati)) continue;
     }
     return 0;
 }
@@ -882,7 +877,8 @@ void CC_STATE::clear() {
     results.clear();
     platforms.clear();
     executing_as_daemon = false;
-    have_cuda = false;
+    host_info.clear_host_info();
+    have_nvidia = false;
     have_ati = false;
 }
 
@@ -2394,30 +2390,28 @@ int RPC_CLIENT::read_cc_config() {
     return retval;
 }
 
-int RPC_CLIENT::set_debts(vector<PROJECT> projects) {
+int RPC_CLIENT::get_cc_config(CONFIG& config, LOG_FLAGS& log_flags) {
     int retval;
     SET_LOCALE sl;
-    char buf[1024];
     RPC rpc(this);
-    string s;
 
-    s = "<set_debts>\n";
-    for (unsigned int i=0; i<projects.size(); i++) {
-        PROJECT& p = projects[i];
-        sprintf(buf,
-            "    <project>\n"
-            "        <master_url>%s</master_url>\n"
-            "        <short_term_debt>%f</short_term_debt>\n"
-            "        <long_term_debt>%f</long_term_debt>\n"
-            "    </project>\n",
-            p.master_url,
-            p.cpu_short_term_debt,
-            p.cpu_long_term_debt
-        );
-        s += string(buf);
-    }
-    s += "</set_debts>\n";
-    retval = rpc.do_rpc(s.c_str());
+    retval = rpc.do_rpc("<get_cc_config/>");
+    if (retval) return retval;
+
+    return config.parse(rpc.fin, log_flags);
+}
+
+int RPC_CLIENT::set_cc_config(CONFIG& config, LOG_FLAGS& log_flags) {
+    SET_LOCALE sl;
+    char buf[64000];
+    MIOFILE mf;
+    int retval;
+    RPC rpc(this);
+    
+    mf.init_buf_write(buf, sizeof(buf));
+    config.write(mf, log_flags);
+
+    retval = rpc.do_rpc(buf);
     return retval;
 }
 

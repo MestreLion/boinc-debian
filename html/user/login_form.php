@@ -19,6 +19,8 @@
 require_once("../inc/db.inc");
 require_once("../inc/util.inc");
 
+check_get_args(array("next_url"));
+
 $next_url = sanitize_local_url(get_str('next_url', true));
 
 if (defined('SECURE_URL_BASE')
@@ -32,7 +34,13 @@ if (defined('SECURE_URL_BASE')
 
 $user = get_logged_in_user(false);
 
-page_head("Log in");
+page_head(tra("Log in"));
+
+echo '
+    <a href="openid_login.php?openid_identifier=https://www.google.com/accounts/o8/id"><img src=img/google-button.png></a>
+    <a href="openid_login.php?openid_identifier=http://yahoo.com"><img src=img/yahoo-button.png></a>
+    <br>
+    ';
 
 echo "
     <form name=\"f\" method=\"post\" action=\"".SECURE_URL_BASE."/login_action.php\">
@@ -44,7 +52,7 @@ row2(tra("Email address:") . '<br><span class="note"><a href="get_passwd.php">'.
 row2(tra("Password:") . '<br><span class="note"><a href="get_passwd.php">' . tra("forgot password?") . "</a></span>",
     '<input type="password" name="passwd" size="40" tabindex="2">'
 );
-row2(tra("Stay logged in on this computer"),
+row2(tra("Stay logged in"),
     '<input type="checkbox" name="stay_logged_in" checked>'
 );
 $x = urlencode($next_url);

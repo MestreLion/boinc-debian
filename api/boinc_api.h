@@ -32,37 +32,46 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// parameters passed to the BOINC runtime system
+//
 typedef struct BOINC_OPTIONS {
     // the following are booleans, implemented as ints for portability
-    int backwards_compatible_graphics;
-        // V6 apps should set this so that "Show Graphics" will work
-        // with pre-V6 clients
     int normal_thread_priority;
-        // run app at normal thread priority on Win.
+        // run worker thread at normal thread priority on Win.
         // (default is idle priority)
     int main_program;
         // this is the main program, so
         // - lock a lock file in the slot directory
         // - write finish file on successful boinc_finish()
     int check_heartbeat;
+        // check for timeout of heartbeats from the client;
         // action is determined by direct_process_action (see below)
     int handle_trickle_ups;
-        // this process is allowed to call boinc_send_trickle_up()
+        // periodically check for trickle-up msgs from the app
+        // must set this to use boinc_send_trickle_up()
     int handle_trickle_downs;
         // this process is allowed to call boinc_receive_trickle_down()
     int handle_process_control;
+        // whether runtime system should read suspend/resume/quit/abort
+        // msgs from client.
         // action is determined by direct_process_action (see below)
     int send_status_msgs;
-        // send CPU time / fraction done msgs
+        // whether runtime system should send CPU time / fraction done msgs
     int direct_process_action;
         // if heartbeat fail, or get process control msg, take
         // direction action (exit, suspend, resume).
         // Otherwise just set flag in BOINC status
+    int multi_thread;
+        // set this if application creates threads in main process
+    int multi_process;
+        // set this if application creates subprocesses.
 } BOINC_OPTIONS;
 
 typedef struct BOINC_STATUS {
     int no_heartbeat;
     int suspended;
+    int suspend_request;
     int quit_request;
     int reread_init_data_file;
     int abort_request;
@@ -70,6 +79,8 @@ typedef struct BOINC_STATUS {
     double max_working_set_size;
     int network_suspended;
 } BOINC_STATUS;
+
+extern volatile BOINC_STATUS boinc_status;
 
 typedef void (*FUNC_PTR)();
 
@@ -149,8 +160,9 @@ inline void boinc_options_defaults(BOINC_OPTIONS& b) {
     b.handle_process_control = 1;
     b.send_status_msgs = 1;
     b.direct_process_action = 1;
-    b.backwards_compatible_graphics = 1;
     b.normal_thread_priority = 0;
+    b.multi_thread = 0;
+    b.multi_process = 0;
 }
 
 

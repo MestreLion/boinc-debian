@@ -20,31 +20,30 @@
 
 /***********************************************************************\
  *  Display and Manage BOINC Application Versions
- * 
+ *
  * This page presents a form with information about application versions.
- * Some of the fields can be changed.   An appllication version can be deleted
- * by entering the word "DELETE" (all caps required) in the provided field.   
- * It is better to deprecate a version first than to delete it, but it is also 
- * good to remove old versions after they have been unused for a while,
- * lest you over-fill the feeder (which results in new versions not being
- * used by clients).
+ * Some of the fields can be changed.
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_apps.php 20745 2010-02-26 21:34:20Z davea $
+ * @(#) $Id: manage_apps.php 23835 2011-07-12 05:19:15Z davea $
 \***********************************************************************/
+
+// TODO - code cleanup and use new DB interface
 
 require_once('../inc/util_ops.inc');
 
 db_init();
 
+$commands = "";
+
 // Platform and application labels (are better than numbers)
 
 $result = mysql_query("SELECT * FROM platform");
 $Nplatform =  mysql_num_rows($result);
-for($i=0;$i<=$Nplatform;$i++){
+for($i=0;$i<$Nplatform;$i++){
     $item=mysql_fetch_object($result);
     $id=$item->id;
-    $plat_off[$id]=$item->deprecated; 
+    $plat_off[$id]=$item->deprecated;
     $platform[$id]=$item->user_friendly_name;
  }
 mysql_free_result($result);
@@ -65,18 +64,9 @@ if( !empty($_POST) ) {
         $item=mysql_fetch_object($result);
         $id=$item->id;
 
-        /* Delete this entry? */
-        $field="delete_".$id; 
-        if( $_POST[$field]=='DELETE' ) {
-            $cmd =  "DELETE FROM app WHERE id=$id";
-            $commands .= "<P><pre>$cmd</pre>\n";
-            mysql_query($cmd);
-            continue;  // next row, this one is gone
-        }
-
         /* Change deprecated status? */
         $field="deprecated_".$id;
-        $new_v= ($_POST[$field]=='on') ? 1 : 0;
+        $new_v= (post_str($field, true)=='on') ? 1 : 0;
         $old_v=$item->deprecated;
         if($new_v != $old_v ) {
             $cmd =  "UPDATE app SET deprecated=$new_v WHERE id=$id";
@@ -118,7 +108,7 @@ if( !empty($_POST) ) {
 
     /* Adding a new application */
 
-    if( $_POST['add_app'] ) {
+    if(post_str('add_app', true)) {
         $name= mysql_real_escape_string($_POST['add_name']);
         $user_friendly_name=mysql_real_escape_string($_POST['add_user_friendly_name']);
         if( empty($name) || empty($user_friendly_name) ) {
@@ -143,37 +133,35 @@ if( !empty($_POST) ) {
 
 admin_page_head("Manage Applications");
 
-if($commands) echo $commands;
+if(isset($commands)) echo $commands;
 
 
 $self=$_SERVER['PHP_SELF'];
 echo "<form action='$self' method='POST'>\n";
 
-// Application Table:
-
-echo"<P>
-     <h2>Applications</h2>\n";
 
 start_table("align='center'");
 echo "<TR><TH>ID #</TH>
-      <TH>Name<br>(description)</TH>
-      <TH>Creation<br>Time</TH>
-      <TH>minimum<br>version</TH>
+      <TH>Name and description<br><span class=note>Click for details</span></TH>
+      <TH>Created</TH>
+      <TH>minimum<br>client<br>version</TH>
       <TH>weight</TH>
-      <TH>homogeneous<br>redundancy<br>class (0=none)</TH>
+      <TH>homogeneous<br>redundancy<br>type (0=none)</TH>
       <TH>deprecated?</TH>
-      <TH>DELETE?<sup>*</sup>
-    </TH>
        </TR>\n";
+
+$total_weight = mysql_query('SELECT SUM(weight) AS total_weight FROM app WHERE deprecated=0');
+$total_weight = mysql_fetch_assoc($total_weight);
+$total_weight = $total_weight['total_weight'];
 
 $q="SELECT * FROM app ORDER BY id";
 $result = mysql_query($q);
 $Nrow=mysql_num_rows($result);
-for($j=1;$j<=$Nrow;$j++){
-    $item=mysql_fetch_object($result);
-    $id=$item->id;
+for ($j=1; $j<=$Nrow; $j++){
+    $item = mysql_fetch_object($result);
+    $id = $item->id;
 
-    // grey-out deprecated versions 
+    // grey-out deprecated versions
     $f1=$f2='';
     if($item->deprecated==1) {
         $f1="<font color='GREY'>";
@@ -184,11 +172,10 @@ for($j=1;$j<=$Nrow;$j++){
 
     $name=$item->name;
     $full_name=$item->user_friendly_name;
-    echo "  <TD align='left'>$f1<tt>$name</tt><br>
-                <em>$full_name</em> $f2</TD>\n";
+    echo "  <TD align='left'>$f1<a href=app_details.php?appid=$id>$name</a><br> $full_name $f2</TD>\n";
 
     $time=$item->create_time;
-    echo "  <TD align='center'>$f1 " .time_str($time)."$f2</TD>\n";
+    echo "  <TD align='center'>$f1 " .date_str($time)."$f2</TD>\n";
 
     $field="min_version_".$id;
     $v=$item->min_version;
@@ -199,8 +186,6 @@ for($j=1;$j<=$Nrow;$j++){
     $v=$item->weight;
     echo "  <TD align='center'>
     <input type='text' size='4' name='$field' value='$v'></TD>\n";
-
-
 
     $field="homogeneous_redundancy_".$id;
     $v = $item->homogeneous_redundancy;
@@ -214,17 +199,12 @@ for($j=1;$j<=$Nrow;$j++){
     echo "  <TD align='center'>
     <input name='$field' type='checkbox' $v></TD>\n";
 
-    $field="delete_app_".$id; 
-    echo "  <TD align='center'>
-    <input type='text' size='6' name='$field' value=''></TD>\n";
-    echo "</tr> "; 
+    echo "</tr> ";
  }
 mysql_free_result($result);
 
-echo "<tr><td colspan=6>
-    <sup>*</sup>To delete an entry you must enter the word 'DELETE' in this field,
-        in all capital letters..
-          <td align='center' colspan=2 bgcolor='#FFFF88'>
+echo "<tr><td colspan=6></td>
+          <td align='center' colspan=2>
               <input type='submit' name='update' value='Update'></td>
     </tr>\n";
 
@@ -237,8 +217,8 @@ end_table();
 
 echo"<P>
      <h2>Add an Application</h2>
-  To add an application to the project enter the short name and description 
-  ('user friendly name') below.  You can then control the version limits and 
+  To add an application to the project enter the short name and description
+  ('user friendly name') below.  You can then control the version limits and
   turn on homogeneous redundancy (if desired) when the application appears
   in the table above.
  </p>\n";
@@ -254,7 +234,7 @@ echo "<TR><TH>Name</TH>
 echo "<TR>
         <TD> <input type='text' size='12' name='add_name' value=''></TD>
         <TD> <input type='text' size='35' name='add_user_friendly_name' value=''></TD>
-        <TD align='center' bgcolor='#FFFF88'>
+        <TD align='center' >
              <input type='submit' name='add_app' value='Add Application'></TD>
         </TR>\n";
 
@@ -265,5 +245,5 @@ echo "</form><p>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_apps.php 20745 2010-02-26 21:34:20Z davea $";
+$cvs_version_tracker[]="\$Id: manage_apps.php 23835 2011-07-12 05:19:15Z davea $";
 ?>

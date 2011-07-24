@@ -55,6 +55,15 @@ function news_forum() {
     return BoincForum::lookup("parent_type=0 and title = '$forum_name'");
 }
 
+function is_news_forum($forum) {
+    if (defined("NEWS_FORUM_NAME")) {
+        $forum_name = NEWS_FORUM_NAME;
+    } else {
+        $forum_name = "News";
+    }
+    return $forum->parent_type == 0 && ($forum->title === $forum_name);
+}
+
 function show_news($start, $count) {
     $forum = news_forum();
     if (!$forum) {
@@ -105,5 +114,5 @@ function show_news($start, $count) {
     );
 }
 
-$cvs_version_tracker[]="\$Id: news.inc 21459 2010-05-11 19:25:13Z Rytis $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: news.inc 23119 2011-02-28 19:02:59Z davea $";  //Generated automatically - do not edit
 ?>

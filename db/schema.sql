@@ -50,7 +50,8 @@ create table app (
     beta                    smallint        not null default 0,
     target_nresults         smallint        not null default 0,
     min_avg_pfc             double          not null default 1,
-    host_scale_check        tinyint         not null,
+    host_scale_check        tinyint         not null default 0,
+    homogeneous_app_version tinyint         not null default 0,
     primary key (id)
 ) engine=InnoDB;
 
@@ -241,6 +242,7 @@ create table workunit (
     mod_time            timestamp,
     rsc_bandwidth_bound double      not null,
     fileset_id          integer     not null,
+    app_version_id      integer     not null,
     primary key (id)
 ) engine=InnoDB;
 
@@ -407,6 +409,8 @@ create table thread (
     owner               integer     not null,
         -- user ID of creator
     status              integer     not null,
+        -- whether a question has been answered
+        -- News forum: if set, don't export as notice
     title               varchar(254) not null,
     timestamp           integer     not null,
         -- time of last new or modified post
@@ -634,3 +638,29 @@ create table notify (
     opaque              integer         not null
         -- some other ID, e.g. that of the thread, user or PM record
 );
+
+create table batch (
+    id                  serial          primary key,
+    user_id             integer         not null,
+    create_time         integer         not null,
+    logical_start_time  double          not null,
+    logical_end_time    double          not null,
+    est_completion_time double          not null,
+    njobs               integer         not null
+) engine = InnoDB;
+
+-- permissions for job submission
+--
+create table user_submit (
+    user_id             integer         not null,
+    quota               double          not null,
+    logical_start_time  double          not null,
+    all_apps            tinyint         not null
+) engine = InnoDB;
+
+-- (user, app) submit permissions
+--
+create table user_submit_app (
+    user_id             integer         not null,
+    app_id              integer         not null
+) engine = InnoDB;

@@ -1,7 +1,7 @@
 # Site-specific configuration constants (used by the server side
 # component). 
 #
-# $Id: boinc_configuration_template.pl 356 2010-03-02 15:00:31Z toni $
+# $Id: boinc_configuration_template.pl 23083 2011-02-22 21:28:13Z tonig $
 
 
 # This file is part of RemoteBOINC.

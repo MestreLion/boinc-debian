@@ -22,6 +22,8 @@ require_once("../inc/util.inc");
 require_once("../inc/boinc_db.inc");
 require_once("../inc/result.inc");
 
+check_get_args(array("wuid"));
+
 BoincDb::get(true);
 
 $wuid = get_int("wuid");
@@ -48,7 +50,8 @@ if ($wu->canonical_resultid) {
 // don't show anything more
 // (so that bad guys can't tell if they have an unreplicated job)
 
-if ($app->target_nresults>0 && !$wu->canonical_resultid) {
+$config = get_config();
+if ($app->target_nresults>0 && !$wu->canonical_resultid && !$wu->error_mask && !parse_bool($config, "dont_suppress_pending")) {
     row2(tra("Tasks in progress"), tra("suppressed pending completion"));
     end_table();
 } else {

@@ -5,10 +5,7 @@ function show_linux_info() {
         <p>
         ".tra("The current release is known to work with these Linux versions:")."
         <ul>
-        <li> Fedora Core 7+
-        <li> Debian 4.1+
-        <li> Ubuntu 7.10+
-        <li> Mandriva, Sabayon, Mint, Gentoo, other Debian-based distributions
+        <li> Ubuntu 10.04
         </ul>
         <p>
         ".tra("For other Linux versions, check if a BOINC package is offered by your Linux distribution.")."
@@ -60,19 +57,27 @@ function type_text($type) {
     }
 }
 
-$w611 = array(
-	"num"=>"6.11.9",
+$w613 = array(
+	"num"=>"6.13.0",
 	"status"=>"Development version",
-	"file"=>"boinc_6.11.9_windows_intelx86.exe",
-	"date"=>"1 Oct 2010",
+	"file"=>"boinc_6.13.0_windows_intelx86.exe",
+	"date"=>"7 July 2011",
+	"type"=>"win_new",
+);
+
+$w612 = array(
+	"num"=>"6.12.33",
+	"status"=>"Recommended version",
+	"file"=>"boinc_6.12.33_windows_intelx86.exe",
+	"date"=>"14 Jun 2011",
 	"type"=>"win_new",
 );
 
 $w610 = array(
-	"num"=>"6.10.58",
-	"status"=>"Recommended version",
-	"file"=>"boinc_6.10.58_windows_intelx86.exe",
-	"date"=>"6 July 2010",
+	"num"=>"6.10.60",
+	"status"=>"Older version",
+	"file"=>"boinc_6.10.60_windows_intelx86.exe",
+	"date"=>"25 Mar 2011",
 	"type"=>"win_new",
 );
 
@@ -92,53 +97,52 @@ $w5816 = array(
     "type"=>"win_new",
 );
 
-$w611x64 = array(
-	"num"=>"6.11.9",
+$w613x64 = array(
+	"num"=>"6.13.0",
 	"status"=>"Development version",
-	"file"=>"boinc_6.11.9_windows_x86_64.exe",
-	"date"=>"1 Oct 2010",
+	"file"=>"boinc_6.13.0_windows_x86_64.exe",
+	"date"=>"7 July 2011",
+	"type"=>"win_new",
+);
+
+$w612x64 = array(
+	"num"=>"6.12.33",
+	"status"=>"Recommended version",
+	"file"=>"boinc_6.12.33_windows_x86_64.exe",
+	"date"=>"14 Jun 2011",
 	"type"=>"win_new",
 );
 
 $w610x64 = array(
-	"num"=>"6.10.58",
-	"status"=>"Recommended version",
-	"file"=>"boinc_6.10.58_windows_x86_64.exe",
-	"date"=>"6 July 2010",
+	"num"=>"6.10.60",
+	"status"=>"Older version",
+	"file"=>"boinc_6.10.60_windows_x86_64.exe",
+	"date"=>"25 Mar 2011",
 	"type"=>"win_new",
 );
 
-$w66x64 = array(
-    "num"=>"6.6.38",
-	"status"=>"Older version",
-    "file"=>"boinc_6.6.38_windows_x86_64.exe",
-    "date"=>"28 Oct 2009",
-    "type"=>"win_new",
+$m613 = array(
+	"num"=>"6.13.0",
+	"status"=>"Development version (standard GUI)",
+	"file"=>"boinc_6.13.0_macOSX_universal.zip",
+	"date"=>"7 July 2011",
+	"type"=>"mac_advanced",
+);
+
+$m612 = array(
+	"num"=>"6.12.33",
+	"status"=>"Recommended version (standard GUI)",
+	"file"=>"boinc_6.12.33_macOSX_universal.zip",
+	"date"=>"14 Jun 2011",
+	"type"=>"mac_advanced",
 );
 
 $m610 = array(
 	"num"=>"6.10.58",
-	"status"=>"Recommended version (standard GUI)",
+	"status"=>"Older version (standard GUI)",
 	"file"=>"boinc_6.10.58_macOSX_universal.zip",
 	"date"=>"6 July 2010",
 	"type"=>"mac_advanced",
-);
-
-$m611dev = array(
-	"num"=>"6.11.9",
-	"status"=>"Development version (standard GUI)",
-	"file"=>"boinc_6.11.9_macOSX_universal.zip",
-	"date"=>"1 Oct 2010",
-	"type"=>"mac_advanced",
-);
-
-
-$m610older = array(
-    "num"=>"6.10.21",
-    "status"=>"Older version (standard GUI)",
-	"file"=>"boinc_6.10.21_macOSX_universal.zip",
-	"date"=>"1 Dec 2009",
-    "type"=>"mac_advanced",
 );
 
 $m66 = array(
@@ -149,27 +153,27 @@ $m66 = array(
     "type"=>"mac_advanced",
 );
 
-$m611cdev = array(
-	"num"=>"6.11.9",
+$m613c = array(
+	"num"=>"6.13.0",
 	"status"=>"Development version (Unix command-line version)",
-	"file"=>"boinc_6.11.9_universal-apple-darwin.zip",
-	"date"=>"1 Oct 2010",
+	"file"=>"boinc_6.12.33_universal-apple-darwin.zip",
+	"date"=>"14 Jun 2011",
+	"type"=>"bare_core",
+);
+
+$m612c = array(
+	"num"=>"6.12.33",
+	"status"=>"Recommended version (Unix command-line version)",
+	"file"=>"boinc_6.12.33_universal-apple-darwin.zip",
+	"date"=>"14 Jun 2011",
 	"type"=>"bare_core",
 );
 
 $m610c = array(
 	"num"=>"6.10.58",
-	"status"=>"Recommended version (Unix command-line version)",
+	"status"=>"Older version (Unix command-line version)",
 	"file"=>"boinc_6.10.58_universal-apple-darwin.zip",
 	"date"=>"6 July 2010",
-	"type"=>"bare_core",
-);
-
-$m610colder = array(
-	"num"=>"6.10.21",
-	"status"=>"Older version (Unix command-line version)",
-	"file"=>"boinc_6.10.21_universal-apple-darwin.zip",
-	"date"=>"1 Dec 2009",
 	"type"=>"bare_core",
 );
 
@@ -181,27 +185,27 @@ $m66c = array(
     "type"=>"bare_core",
 );
 
-$l66 = array(
-	"num"=>"6.6.41",
+$l612 = array(
+	"num"=>"6.12.22",
 	"status"=>"Recommended version",
-	"file"=>"boinc_compat_6.6.41_i686-pc-linux-gnu.sh",
-	"date"=>"22 Oct 2009",
+	"file"=>"boinc_compat_6.12.22_i686-pc-linux-gnu.sh",
+	"date"=>"6 Apr 2011",
 	"type"=>"sea",
 );
 
-$l64 = array(
-    "num"=>"6.4.5",
-    "status"=>"Older version",
-    "file"=>"boinc_compat_6.4.5_i686-pc-linux-gnu.sh",
-    "date"=>"9 Dec 2008",
-    "type"=>"sea",
-);
+$l66 = array(
+	"num"=>"6.6.41",
+	"status"=>"Older version",
+	"file"=>"boinc_compat_6.6.41_i686-pc-linux-gnu.sh",
+	"date"=>"22 Oct 2009",
+	"type"=>"sea",
+	);
 
-$l611ubuntudev = array(
-	"num"=>"6.11.9",
-	"status"=>"Development version",
-	"file"=>"boinc_6.11.9_i686-pc-linux-gnu.sh",
-	"date"=>"1 Oct 2010",
+$l612ubuntu = array(
+	"num"=>"6.12.33",
+	"status"=>"Recommended version",
+	"file"=>"boinc_6.12.33_i686-pc-linux-gnu.sh",
+	"date"=>"14 Jun 2011",
 	"type"=>"sea",
 );
 
@@ -213,19 +217,11 @@ $l610ubuntu = array(
 	"type"=>"sea",
 );
 
-$l66ubuntu = array(
-	"num"=>"6.6.41",
-	"status"=>"Older version",
-	"file"=>"boinc_6.6.41_i686-pc-linux-gnu.sh",
-	"date"=>"22 Oct 2009",
-	"type"=>"sea",
-);
-
-$l611ubuntux64dev = array(
-	"num"=>"6.11.9",
-	"status"=>"Development version",
-	"file"=>"boinc_6.11.9_x86_64-pc-linux-gnu.sh",
-	"date"=>"1 Oct 2010",
+$l612ubuntux64 = array(
+	"num"=>"6.12.33",
+	"status"=>"Recommended version",
+	"file"=>"boinc_6.12.33_x86_64-pc-linux-gnu.sh",
+	"date"=>"14 Jun 2011",
 	"type"=>"sea",
 );
 
@@ -234,14 +230,6 @@ $l610ubuntux64 = array(
 	"status"=>"Recommended version",
 	"file"=>"boinc_6.10.58_x86_64-pc-linux-gnu.sh",
 	"date"=>"4 Aug 2010",
-	"type"=>"sea",
-);
-
-$l66ubuntux64 = array(
-	"num"=>"6.6.41",
-	"status"=>"Older version",
-	"file"=>"boinc_6.6.41_x86_64-pc-linux-gnu.sh",
-	"date"=>"22 Oct 2009",
 	"type"=>"sea",
 );
 
@@ -254,7 +242,8 @@ $windows = array(
     "description"=>"2000/XP/Vista/7",
     "dbname" => "windows_intelx86",
     "versions"=>array(
-		$w611,
+		$w613,
+		$w612,
 		$w610,
 		$w66,
         $w5816,
@@ -266,9 +255,9 @@ $windowsx64 = array(
     "description"=>"XP/Vista/7",
     "dbname" => "windows_x86_64",
     "versions"=>array(
-		$w611x64,
+		$w613x64,
+		$w612x64,
 		$w610x64,
-		$w66x64,
     )
 );
 
@@ -277,12 +266,12 @@ $mac = array(
     "description"=>"Version 10.4.0+",
     "dbname" => "powerpc-apple-darwin",
     "versions"=>array(
-        $m611dev,
-        $m611cdev,
-        $m610,
+		$m613,
+		$m613c,
+		$m612,
+		$m612c,
+		$m610,
         $m610c,
-        $m610older,
-        $m610colder,
         $m66,
         $m66c,
     )
@@ -293,8 +282,8 @@ $linuxcompat = array(
     "description"=>"For older Linux versions, both x86 and x64; command-line interface only",
     "dbname" => "i686-pc-linux-gnu",
     "versions"=>array(
-        $l66,
-        $l64,
+		$l612,
+		$l66,
     )
 );
 
@@ -303,9 +292,8 @@ $linux = array(
     "description"=>"For most current Linux/x86 versions; graphical and command-line interfaces",
     "dbname" => "i686-pc-linux-gnu",
     "versions"=>array(
-		$l611ubuntudev,
+		//$l612ubuntu,
 		$l610ubuntu,
-		$l66ubuntu,
     )
 );
 
@@ -314,9 +302,8 @@ $linuxx64 = array(
     "description"=>"For most current Linux/x64 versions; graphical and command-line interfaces",
     "dbname" => "x86_64-pc-linux-gnu",
     "versions"=>array(
-		$l611ubuntux64dev,
+		//$l612ubuntux64,
 		$l610ubuntux64,
-		$l66ubuntux64,
     )
 );
 

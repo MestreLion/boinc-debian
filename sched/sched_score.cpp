@@ -36,12 +36,12 @@
 // TODO: from here to add_result_to_reply()
 // (which updates the DB record) should be a transaction
 //
-int read_sendable_result(DB_RESULT& result) {
+int read_sendable_result(SCHED_DB_RESULT& result) {
     int retval = result.lookup_id(result.id);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "[RESULT#%d] result.lookup_id() failed %d\n",
-            result.id, retval
+            "[RESULT#%d] result.lookup_id() failed %s\n",
+            result.id, boincerror(retval)
         );
         return ERR_NOT_FOUND;
     }
@@ -56,12 +56,12 @@ int read_sendable_result(DB_RESULT& result) {
 }
 
 bool wu_is_infeasible_slow(
-    WU_RESULT& wu_result, SCHEDULER_REQUEST& sreq, SCHEDULER_REPLY& reply
+    WU_RESULT& wu_result, SCHEDULER_REQUEST&, SCHEDULER_REPLY&
 ) {
     char buf[256];
     int retval;
     int n;
-    DB_RESULT result;
+    SCHED_DB_RESULT result;
 
     // Don't send if we've already sent a result of this WU to this user.
     //
@@ -73,7 +73,7 @@ bool wu_is_infeasible_slow(
         retval = result.count(n, buf);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "send_work: can't get result count (%d)\n", retval
+                "send_work: can't get result count (%s)\n", boincerror(retval)
             );
             return true;
         } else {
@@ -100,7 +100,7 @@ bool wu_is_infeasible_slow(
         retval = result.count(n, buf);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "send_work: can't get result count (%d)\n", retval
+                "send_work: can't get result count (%s)\n", boincerror(retval)
             );
             return true;
         } else {
@@ -213,7 +213,7 @@ double JOB_SET::higher_score_disk_usage(double v) {
 
 void JOB_SET::send() {
     WORKUNIT wu;
-    DB_RESULT result;
+    SCHED_DB_RESULT result;
     int retval;
 
     std::list<JOB>::iterator i = jobs.begin();

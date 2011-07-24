@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <vector>
 #include <ctime>
 #include <cassert>
 #include <unistd.h>
@@ -185,9 +186,8 @@ static int process_wu_template(
     const char* command_line,
     const char* additional_xml
 ) {
-    char* p;
     char buf[BLOB_SIZE], md5[33], path[256], url[256], top_download_path[256];
-    string out, cmdline, md5str, urlstr;
+    string out, cmdline, md5str, urlstr, tmpstr;
     int retval, file_number;
     double nbytes, nbytesdef;
     char open_name[256];
@@ -195,30 +195,39 @@ static int process_wu_template(
     int nfiles_parsed = 0;
 
     out = "";
-    for (p=strtok(tmplate, "\n"); p; p=strtok(0, "\n")) {
-        if (match_tag(p, "<file_info>")) {
+    MIOFILE mf;
+    XML_PARSER xp(&mf);
+    char tag[256];
+    bool is_tag;
+    mf.init_buf_read(tmplate);
+    while (!xp.get(tag, sizeof(tag), is_tag)) {
+        if (!is_tag) continue;
+        if (!strcmp(tag, "input_template")) continue;
+        if (!strcmp(tag, "/input_template")) continue;
+        if (!strcmp(tag, "file_info")) {
+            vector<string> urls;
             bool generated_locally = false;
             file_number = nbytesdef = -1;
             md5str = urlstr = "";
             out += "<file_info>\n";
-            while (1) {
-                p = strtok(0, "\n");
-                if (!p) break;
-                if (parse_int(p, "<number>", file_number)) {
+            while (!xp.get(tag, sizeof(tag), is_tag)) {
+                if (xp.parse_int(tag, "number", file_number)) {
                     continue;
-                } else if (parse_bool(p, "generated_locally", generated_locally)) {
+                } else if (xp.parse_bool(tag, "generated_locally", generated_locally)) {
                     continue;
-                } else if (parse_str(p, "<url>", urlstr)) {
+                } else if (xp.parse_string(tag, "url", urlstr)) {
+                    urls.push_back(urlstr);
                     continue;
-                } else if (parse_str(p, "<md5_cksum>", md5str)) {
+                } else if (xp.parse_string(tag, "md5_cksum", md5str)) {
                     continue;
-                } else if (parse_double(p, "<nbytes>", nbytesdef)) {
+                } else if (xp.parse_double(tag, "nbytes", nbytesdef)) {
                     continue;
-                } else if (match_tag(p, "</file_info>")) {
+                } else if (!strcmp(tag, "/file_info")) {
                     if (nbytesdef != -1 || md5str != "" || urlstr != "") {
                         if (nbytesdef == -1 || md5str == "" || urlstr == "") {
                             fprintf(stderr, "All file properties must be defined "
-                                "if at least one defined (url, md5_cksum, nbytes)!\n");
+                                "if at least one is defined (url, md5_cksum, nbytes)!\n"
+                            );
                             return ERR_XML_PARSE;
                         }
                     }
@@ -242,6 +251,8 @@ static int process_wu_template(
                             infiles[file_number]
                         );
                     } else if (nbytesdef == -1) {
+                        // here if nybtes was not supplied; stage the file
+                        //
                         dir_hier_path(
                             infiles[file_number], config_loc.download_dir,
                             config_loc.uldl_dir_fanout, path, true
@@ -263,8 +274,7 @@ static int process_wu_template(
                             if (retval) {
                                 fprintf(stderr, "process_wu_template: md5_file %d\n", retval);
                                 return retval;
-                            }
-                            else if (config_loc.cache_md5_info) {
+                            } else if (config_loc.cache_md5_info) {
                                 write_md5_info(path, md5, nbytes);
                             }
                         }
@@ -285,9 +295,16 @@ static int process_wu_template(
                             nbytes
                         );
                     } else {
+                        // here if nbytes etc. was supplied,
+                        // i.e the file is already staged, possibly remotely
+                        //
+                        urlstr = "";
+                        for (unsigned int i=0; i<urls.size(); i++) {
+                            urlstr += "    <url>" + urls.at(i) + "</url>\n";
+                        }
                         sprintf(buf,
                             "    <name>%s</name>\n"
-                            "    <url>%s</url>\n"
+                            "%s"
                             "    <md5_cksum>%s</md5_cksum>\n"
                             "    <nbytes>%.0f</nbytes>\n"
                             "</file_info>\n",
@@ -300,93 +317,109 @@ static int process_wu_template(
                     out += buf;
                     break;
                 } else {
-                    out += p;
+                    char buf2[1024];
+                    retval = xp.element(tag, buf2, sizeof(buf2));
+                    if (retval) return retval;
+                    out += buf2;
                     out += "\n";
                 }
             }
-        } else if (match_tag(p, "<workunit>")) {
+        } else if (!strcmp(tag, "workunit")) {
             found = true;
             out += "<workunit>\n";
             if (command_line) {
+                //fprintf(stderr, "appending command line: %s\n", command_line);
                 out += "<command_line>\n";
                 out += command_line;
                 out += "\n</command_line>\n";
             }
-        } else if (match_tag(p, "</workunit>")) {
-            if (additional_xml && strlen(additional_xml)) {
-                out += additional_xml;
-                out += "\n";
-            }
-            out += "</workunit>\n";
-        } else if (match_tag(p, "<file_ref>")) {
-            out += "<file_ref>\n";
-            bool found_file_number = false, found_open_name = false;
-            while (1) {
-                p = strtok(0, "\n");
-                if (!p) break;
-                if (parse_int(p, "<file_number>", file_number)) {
-                    sprintf(buf, "    <file_name>%s</file_name>\n",
-                        infiles[file_number]
-                    );
-                    out += buf;
-                    found_file_number = true;
-                    continue;
-                } else if (parse_str(p, "<open_name>", open_name, sizeof(open_name))) {
-                    sprintf(buf, "    <open_name>%s</open_name>\n", open_name);
-                    out += buf;
-                    found_open_name = true;
-                    continue;
-                } else if (match_tag(p, "</file_ref>")) {
-                    if (!found_file_number) {
-                        fprintf(stderr, "No file number found\n");
-                        return ERR_XML_PARSE;
+            while (!xp.get(tag, sizeof(tag), is_tag)) {
+                if (!strcmp(tag, "/workunit")) {
+                    if (additional_xml && strlen(additional_xml)) {
+                        out += additional_xml;
+                        out += "\n";
                     }
-                    if (!found_open_name) {
-                        fprintf(stderr, "No open name found\n");
-                        return ERR_XML_PARSE;
-                    }
-                    out += "</file_ref>\n";
+                    out += "</workunit>\n";
                     break;
+                } else if (!strcmp(tag, "file_ref")) {
+                    out += "<file_ref>\n";
+                    bool found_file_number = false, found_open_name = false;
+                    while (!xp.get(tag, sizeof(tag), is_tag)) {
+                        if (xp.parse_int(tag, "file_number", file_number)) {
+                            sprintf(buf, "    <file_name>%s</file_name>\n",
+                                infiles[file_number]
+                            );
+                            out += buf;
+                            found_file_number = true;
+                            continue;
+                        } else if (xp.parse_str(tag, "open_name", open_name, sizeof(open_name))) {
+                            sprintf(buf, "    <open_name>%s</open_name>\n", open_name);
+                            out += buf;
+                            found_open_name = true;
+                            continue;
+                        } else if (!strcmp(tag, "/file_ref")) {
+                            if (!found_file_number) {
+                                fprintf(stderr, "No file number found\n");
+                                return ERR_XML_PARSE;
+                            }
+                            if (!found_open_name) {
+                                fprintf(stderr, "No open name found\n");
+                                return ERR_XML_PARSE;
+                            }
+                            out += "</file_ref>\n";
+                            break;
+                        } else if (xp.parse_string(tag, "file_name", tmpstr)) {
+                            fprintf(stderr, "<file_name> ignored in <file_ref> element.\n");
+                            continue;
+                        } else {
+                            char buf2[1024];
+                            retval = xp.element(tag, buf2, sizeof(buf2));
+                            if (retval) return retval;
+                            out += buf2;
+                            out += "\n";
+                        }
+                    }
+                } else if (xp.parse_string(tag, "command_line", cmdline)) {
+                    if (command_line) {
+                        fprintf(stderr, "Can't specify command line twice");
+                        return ERR_XML_PARSE;
+                    }
+                    //fprintf(stderr, "parsed command line: %s\n", cmdline.c_str());
+                    out += "<command_line>\n";
+                    out += cmdline;
+                    out += "\n</command_line>\n";
+                } else if (xp.parse_double(tag, "rsc_fpops_est", wu.rsc_fpops_est)) {
+                    continue;
+                } else if (xp.parse_double(tag, "rsc_fpops_bound", wu.rsc_fpops_bound)) {
+                    continue;
+                } else if (xp.parse_double(tag, "rsc_memory_bound", wu.rsc_memory_bound)) {
+                    continue;
+                } else if (xp.parse_double(tag, "rsc_bandwidth_bound", wu.rsc_bandwidth_bound)) {
+                    continue;
+                } else if (xp.parse_double(tag, "rsc_disk_bound", wu.rsc_disk_bound)) {
+                    continue;
+                } else if (xp.parse_int(tag, "batch", wu.batch)) {
+                    continue;
+                } else if (xp.parse_int(tag, "delay_bound", wu.delay_bound)) {
+                    continue;
+                } else if (xp.parse_int(tag, "min_quorum", wu.min_quorum)) {
+                    continue;
+                } else if (xp.parse_int(tag, "target_nresults", wu.target_nresults)) {
+                    continue;
+                } else if (xp.parse_int(tag, "max_error_results", wu.max_error_results)) {
+                    continue;
+                } else if (xp.parse_int(tag, "max_total_results", wu.max_total_results)) {
+                    continue;
+                } else if (xp.parse_int(tag, "max_success_results", wu.max_success_results)) {
+                    continue;
                 } else {
-                    sprintf(buf, "%s\n", p);
-                    out += buf;
+                    char buf2[1024];
+                    retval = xp.element(tag, buf2, sizeof(buf2));
+                    if (retval) return retval;
+                    out += buf2;
+                    out += "\n";
                 }
             }
-        } else if (parse_str(p, "<command_line>", cmdline)) {
-            if (command_line) {
-                fprintf(stderr, "Can't specify command line twice");
-                return ERR_XML_PARSE;
-            }
-            out += "<command_line>\n";
-            out += cmdline;
-            out += "\n</command_line>\n";
-        } else if (parse_double(p, "<rsc_fpops_est>", wu.rsc_fpops_est)) {
-            continue;
-        } else if (parse_double(p, "<rsc_fpops_bound>", wu.rsc_fpops_bound)) {
-            continue;
-        } else if (parse_double(p, "<rsc_memory_bound>", wu.rsc_memory_bound)) {
-            continue;
-        } else if (parse_double(p, "<rsc_bandwidth_bound>", wu.rsc_bandwidth_bound)) {
-            continue;
-        } else if (parse_double(p, "<rsc_disk_bound>", wu.rsc_disk_bound)) {
-            continue;
-        } else if (parse_int(p, "<batch>", wu.batch)) {
-            continue;
-        } else if (parse_int(p, "<delay_bound>", wu.delay_bound)) {
-            continue;
-        } else if (parse_int(p, "<min_quorum>", wu.min_quorum)) {
-            continue;
-        } else if (parse_int(p, "<target_nresults>", wu.target_nresults)) {
-            continue;
-        } else if (parse_int(p, "<max_error_results>", wu.max_error_results)) {
-            continue;
-        } else if (parse_int(p, "<max_total_results>", wu.max_total_results)) {
-            continue;
-        } else if (parse_int(p, "<max_success_results>", wu.max_success_results)) {
-            continue;
-        } else {
-            out += p;
-            out += "\n";
         }
     }
     if (!found) {
@@ -407,6 +440,7 @@ static int process_wu_template(
         );
         return ERR_BUFFER_OVERFLOW;
     }
+    //fprintf(stderr, "copying to xml_doc: %s\n", out.c_str());
     strcpy(wu.xml_doc, out.c_str());
     return 0;
 }
@@ -579,7 +613,7 @@ int create_work(
         wu, wu_template, infiles, ninfiles, config_loc, command_line, additional_xml
     );
     if (retval) {
-        fprintf(stderr, "process_wu_template: %d\n", retval);
+        fprintf(stderr, "process_wu_template(): %d\n", retval);
         return retval;
     }
 
@@ -587,7 +621,10 @@ int create_work(
         result_template_filepath, _result_template, sizeof(_result_template)
     );
     if (retval) {
-        fprintf(stderr, "create_work: can't read result template file %s\n", result_template_filepath);
+        fprintf(stderr,
+            "create_work: can't read result template file %s\n",
+            result_template_filepath
+        );
         return retval;
     }
 
@@ -664,4 +701,191 @@ int create_work(
     return 0;
 }
 
-const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 22320 2010-09-07 20:18:58Z davea $";
+// STUFF RELATED TO FILE UPLOAD/DOWNLOAD
+
+int create_upload_result(
+    DB_RESULT& result, int host_id, const char * file_name
+) {
+    int retval;
+    char result_xml[BLOB_SIZE];
+
+    result.clear();
+    sprintf(result.name, "get_%s_%d_%ld", file_name, host_id, time(0));
+    result.create_time = time(0);
+    result.server_state = RESULT_SERVER_STATE_IN_PROGRESS;
+    result.hostid = host_id;
+    result.outcome = RESULT_OUTCOME_INIT;
+    result.file_delete_state = ASSIMILATE_DONE;
+    result.validate_state = VALIDATE_STATE_NO_CHECK;
+
+    sprintf(result_xml,
+        "<result>\n"
+        "    <wu_name>%s</wu_name>\n"
+        "    <name>%s</wu_name>\n"
+        "    <file_ref>\n"
+        "      <file_name>%s</file_name>\n"
+        "    </file_ref>\n"
+        "</result>\n",
+        result.name, result.name, file_name
+    );
+    strcpy(result.xml_doc_in, result_xml);
+    result.sent_time = time(0);
+    result.report_deadline = 0;
+    result.hostid = host_id;
+    retval = result.insert();
+    if (retval) {
+        fprintf(stderr, "result.insert(): %s\n", boincerror(retval));
+        return retval;
+    }
+    return 0;
+}
+
+int create_upload_message(
+    DB_RESULT& result, int host_id, const char* file_name
+) {;
+    DB_MSG_TO_HOST mth;
+    int retval;
+    mth.clear();
+    mth.create_time = time(0);
+    mth.hostid = host_id;
+    strcpy(mth.variety, "file_xfer");
+    mth.handled = false;
+    sprintf(mth.xml,
+        "<app>\n"
+        "    <name>%s</name>\n"
+        "</app>\n"
+        "<app_version>\n"
+        "    <app_name>%s</app_name>\n"
+        "    <version_num>%d00</version_num>\n"
+        "</app_version>\n"
+        "<file_info>\n"
+        "    <name>%s</name>\n"
+        "    <url>%s</url>\n"
+        "    <max_nbytes>%.0f</max_nbytes>\n"
+        "    <upload_when_present/>\n"
+        "</file_info>\n"
+        "%s"
+        "<workunit>\n"
+        "    <name>%s</name>\n"
+        "    <app_name>%s</app_name>\n"
+        "</workunit>",
+        FILE_MOVER, FILE_MOVER, BOINC_MAJOR_VERSION,
+        file_name, config.upload_url,
+        1e10, result.xml_doc_in, result.name, FILE_MOVER
+    );
+    retval = mth.insert();
+    if (retval) {
+        fprintf(stderr, "msg_to_host.insert(): %s\n", boincerror(retval));
+        return retval;
+    }
+    return 0;
+}
+
+int get_file(int host_id, const char* file_name) {
+    DB_RESULT result;
+    int retval;
+    retval = create_upload_result(result, host_id, file_name);
+    if (retval) return retval;
+    retval = create_upload_message(result, host_id, file_name);
+    return retval;
+}
+
+int create_download_result(
+    DB_RESULT& result, int host_id, const char* file_name
+) {
+    int retval;
+    char result_xml[BLOB_SIZE];
+
+    result.clear();
+    sprintf(result.name, "put_%s_%d_%ld", file_name, host_id, time(0));
+    result.create_time = time(0);
+    result.server_state = RESULT_SERVER_STATE_IN_PROGRESS;
+    result.hostid = host_id;
+    result.outcome = RESULT_OUTCOME_INIT;
+    result.file_delete_state = ASSIMILATE_DONE;
+    result.validate_state = VALIDATE_STATE_NO_CHECK;
+
+    sprintf(result_xml,
+        "<result>\n"
+        "    <wu_name>%s</wu_name>\n"
+        "    <name>%s</name>\n"
+        "</result>\n",
+        result.name, result.name
+    );
+    strcpy(result.xml_doc_in, result_xml);
+    result.sent_time = time(0);
+    result.report_deadline = 0;
+    result.hostid = host_id;
+    retval = result.insert();
+    if (retval) {
+        fprintf(stderr, "result.insert(): %s\n", boincerror(retval));
+        return retval;
+    }
+    return 0;
+}
+
+int create_download_message(
+    DB_RESULT& result, int host_id, const char* file_name
+) {;
+    DB_MSG_TO_HOST mth;
+    int retval;
+    double nbytes;
+    char dirpath[256], urlpath[256], path[256], md5[33];
+    strcpy(dirpath, config.download_dir);
+    strcpy(urlpath, config.download_url);
+    mth.clear();
+    mth.create_time = time(0);
+    mth.hostid = host_id;
+    strcpy(mth.variety, "file_xfer");
+    mth.handled = false;
+    sprintf(path, "%s/%s", dirpath, file_name);
+    retval = md5_file(path, md5, nbytes);
+    if (retval) {
+        fprintf(stderr, "md5_file() error: %s\n", boincerror(retval));
+        return retval;
+    }
+    sprintf(mth.xml,
+        "<app>\n"
+        "    <name>%s</name>\n"
+        "</app>\n"
+        "<app_version>\n"
+        "    <app_name>%s</app_name>\n"
+        "    <version_num>%d00</version_num>\n"
+        "</app_version>\n"
+        "%s"
+         "<file_info>\n"
+        "    <name>%s</name>\n"
+        "    <url>%s/%s</url>\n"
+        "    <md5_cksum>%s</md5_cksum>\n"
+        "    <nbytes>%.0f</nbytes>\n"
+        "    <sticky/>\n"
+        "</file_info>\n"
+        "<workunit>\n"
+        "    <name>%s</name>\n"
+        "    <app_name>%s</app_name>\n"
+        "    <file_ref>\n"
+        "      <file_name>%s</file_name>\n"
+        "    </file_ref>\n"
+        "</workunit>",
+        FILE_MOVER, FILE_MOVER, BOINC_MAJOR_VERSION, result.xml_doc_in,
+        file_name, urlpath, file_name, md5,
+        nbytes, result.name, FILE_MOVER, file_name
+    );
+    retval = mth.insert();
+    if (retval) {
+        fprintf(stderr, "msg_to_host.insert(): %s\n", boincerror(retval));
+        return retval;
+    }
+    return 0;
+}
+
+int put_file(int host_id, const char* file_name) {
+    DB_RESULT result;
+    int retval;
+    retval = create_download_result(result, host_id, file_name);
+    if (retval) return retval;
+    retval = create_download_message(result, host_id, file_name);
+    return retval;
+}
+
+const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 23790 2011-07-04 23:51:00Z davea $";

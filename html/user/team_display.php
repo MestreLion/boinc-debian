@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 require_once("../inc/cache.inc");
 require_once("../inc/util.inc");
 require_once("../inc/boinc_db.inc");
 require_once("../inc/team.inc");
+
+check_get_args(array("teamid"));
 
 $teamid = get_int("teamid");
 $team = BoincTeam::lookup_id($teamid);
@@ -60,7 +60,7 @@ if ($get_from_db) {
     $team->new_members = new_member_list($teamid);
     $team->admins = admin_list($teamid);
     $team->founder = BoincUser::lookup_id($team->userid);
-    set_cache_data(serialize($team), $cache_args);
+    set_cached_data(TEAM_PAGE_TTL, serialize($team), $cache_args);
 }
 
 if (!$team) {

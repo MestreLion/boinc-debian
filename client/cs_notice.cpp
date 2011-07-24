@@ -28,7 +28,6 @@
 #include "parse.h"
 #include "url.h"
 #include "filesys.h"
-#include "str_util.h"
 
 #include "client_state.h"
 #include "client_msgs.h"
@@ -498,7 +497,9 @@ void NOTICES::remove_network_msg() {
         NOTICE& n = *i;
         if (!strcmp(n.description.c_str(), NEED_NETWORK_MSG)) {
             i = notices.erase(i);
+#ifndef SIM
             gstate.gui_rpcs.set_notice_refresh();
+#endif
             if (log_flags.notice_debug) {
                 msg_printf(0, MSG_INFO, "REMOVING NETWORK MESSAGE");
             }
@@ -648,7 +649,7 @@ int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
         if (!strcmp(tag, "item")) {
             NOTICE n;
             ntotal++;
-            int retval = n.parse_rss(xp);
+            retval = n.parse_rss(xp);
             if (retval) {
                 nerror++;
             } else if (n.create_time < gstate.now - 30*86400) {

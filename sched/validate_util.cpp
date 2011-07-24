@@ -184,7 +184,7 @@ int get_credit_from_wu(WORKUNIT& wu, vector<RESULT>&, double& credit) {
     double x;
     int retval;
     DB_WORKUNIT dbwu;
-
+    
     dbwu.id = wu.id;
     retval = dbwu.get_field_str("xml_doc", dbwu.xml_doc, sizeof(dbwu.xml_doc));
     if (!retval) {
@@ -196,4 +196,4 @@ int get_credit_from_wu(WORKUNIT& wu, vector<RESULT>&, double& credit) {
     return ERR_XML_PARSE;
 }
 
-const char *BOINC_RCSID_07049e8a0e = "$Id: validate_util.cpp 21735 2010-06-12 22:08:15Z davea $";
+const char *BOINC_RCSID_07049e8a0e = "$Id: validate_util.cpp 22630 2010-11-05 17:15:27Z davea $";

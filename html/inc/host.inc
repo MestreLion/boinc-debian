@@ -680,6 +680,15 @@ function show_user_hosts($userid, $private, $show_all, $sort, $rev) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: host.inc 22102 2010-08-03 03:56:13Z davea $";  //Generated automatically - do not edit
+// remove user-specific info from a user's hosts
+//
+function anonymize_hosts($user) {
+    $hosts = BoincHost::enum("userid=$user->id");
+    foreach ($hosts as $h) {
+        $h->update("domain_name='', last_ip_addr=''");
+    }
+}
+
+$cvs_version_tracker[]="\$Id: host.inc 23006 2011-02-08 21:38:16Z davea $";  //Generated automatically - do not edit
 
 ?>

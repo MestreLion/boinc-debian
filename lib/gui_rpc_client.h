@@ -35,6 +35,7 @@
 #include "common_defs.h"
 #include "notice.h"
 #include "network.h"
+#include "cc_config.h"
 
 struct GUI_URL {
     std::string name;
@@ -124,16 +125,12 @@ public:
     double download_backoff;
     double upload_backoff;
 
-    double cpu_short_term_debt;
-    double cpu_long_term_debt;
+    double sched_priority;
+
     double cpu_backoff_time;
     double cpu_backoff_interval;
-    double cuda_debt;
-    double cuda_short_term_debt;
     double cuda_backoff_time;
     double cuda_backoff_interval;
-    double ati_debt;
-    double ati_short_term_debt;
     double ati_backoff_time;
     double ati_backoff_interval;
     double duration_correction_factor;
@@ -377,10 +374,10 @@ public:
         // platforms supported by client
     GLOBAL_PREFS global_prefs;  // working prefs, i.e. network + override
     VERSION_INFO version_info;  // populated only if talking to pre-5.6 CC
-    bool executing_as_daemon;   // true if Client is running as a service / daemon
-    bool have_cuda;
-    bool have_ati;
+    bool executing_as_daemon;   // true if client is running as a service / daemon
     HOST_INFO host_info;
+    bool have_nvidia;           // redundant; include for compat (set by <have_cuda/>)
+    bool have_ati;              // redundant; include for compat
 
     CC_STATE();
     ~CC_STATE();
@@ -714,7 +711,9 @@ public:
     int set_global_prefs_override(std::string&);
     int get_global_prefs_override_struct(GLOBAL_PREFS&, GLOBAL_PREFS_MASK&);
     int set_global_prefs_override_struct(GLOBAL_PREFS&, GLOBAL_PREFS_MASK&);
-    int set_debts(std::vector<PROJECT>);
+    int get_cc_config(CONFIG& config, LOG_FLAGS& log_flags);
+    int set_cc_config(CONFIG& config, LOG_FLAGS& log_flags);
+
 };
 
 struct RPC {

@@ -21,6 +21,8 @@
 require_once("../inc/forum_db.inc");
 require_once("../inc/profile.inc");
 
+check_get_args(array("target_userid", "userid", "action"));
+
 // see if there's already a request,
 // and whether the notification record is there
 //
@@ -70,7 +72,7 @@ function handle_add($user) {
         <input type=hidden name=userid value=$destid>
         <input type=hidden name=action value=add_confirm>" .
         tra("You have asked to add %1 as a friend. We will notify %2 and will ask him/her to confirm that you are friends.",
-	"<b>".$destuser->name."</b>","<b>".$destuser->name."</b>") ."
+        "<b>".$destuser->name."</b>","<b>".$destuser->name."</b>") ."
         <p>" .
         tra("Add an optional message here:") ."
         <br>
@@ -118,21 +120,31 @@ function handle_add_confirm($user) {
 // Show destination user the details of request, ask if they accept
 //
 function handle_query($user) {
+    $target_userid = get_int('target_userid', true);
+    if ($target_user && $target_userid != $user->id) {
+        $target_user = BoincUser::lookup_id($target_userid);
+        page_head(tra("Please log in as %1", $target_user->name));
+        echo tra("You must log in as %1 to view this friend request",
+            $target_user->name
+        );
+        page_tail();
+        exit;
+    }
     $srcid = get_int('userid');
     $srcuser = BoincUser::lookup_id($srcid);
     if (!$srcuser) error_page(tra("No such user"));
     $friend = BoincFriend::lookup($srcid, $user->id);
     if (!$friend) error_page(tra("Request not found"));
     page_head(tra("Friend request"));
+	echo time_str($friend->create_time)."<p>\n";
     $x = user_links($srcuser, true);
-    echo tra("%1 has added you as a friend.", $x);
+    echo tra("%1 has requested friendship with you.", $x);
     if (strlen($friend->message)) {
         echo "<p>".tra("%1 says: %2", $srcuser->name, $friend->message)."</p>";
     }
-    echo "
-        <p><ul class=\"actionlist\">";
-    show_actionlist_button("friend.php?action=accept&userid=".$srcid, tra("Accept friendship"), tra("Click accept if %1 is in fact a friend", $srcuser->name));
-    show_actionlist_button("friend.php?action=ignore&userid=".$srcid, tra("Decline"), tra("Click decline if %1 is not a friend", $srcuser->name));
+    echo "<p>";
+    show_button("friend.php?action=accept&userid=".$srcid, tra("Accept friendship"), tra("Click accept if %1 is in fact a friend", $srcuser->name));
+    show_button("friend.php?action=ignore&userid=".$srcid, tra("Decline"), tra("Click decline if %1 is not a friend", $srcuser->name));
     echo "    <p>
     ";
     page_tail();
@@ -218,11 +230,13 @@ function handle_cancel_confirm($user) {
     $destuser = BoincUser::lookup_id($destid);
     if (!$destuser) error_page(tra("No such user"));
     page_head(tra("Cancel friendship?"));
-    echo tra("Are you sure you want to cancel your friendship with %1?",$destuser->name) ."
-        <p>
-    <ul class=\"actionlist\">";
-    show_actionlist_button("friend.php?action=cancel&userid=$destid", tra("Yes"), tra("Cancel friendship"));
-    show_actionlist_button("home.php", tra("No"), tra("Stay friends"));
+    echo
+        tra("Are you sure you want to cancel your friendship with %1?",
+            $destuser->name
+        ) ."<p>\n"
+    ;
+    show_button("friend.php?action=cancel&userid=$destid", tra("Yes"), tra("Cancel friendship"));
+    show_button("home.php", tra("No"), tra("Stay friends"));
     echo "</ul>";
     page_tail();
 }

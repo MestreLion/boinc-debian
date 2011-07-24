@@ -141,14 +141,14 @@ int main(int argc, char** argv) {
     int i, retval, port=0;
     MESSAGES messages;
     NOTICES notices;
-	char passwd_buf[256], hostname_buf[256], *hostname=0;
+    char passwd_buf[256], hostname_buf[256], *hostname=0;
     char* passwd = passwd_buf, *p;
 
 #ifdef _WIN32
     chdir_to_data_dir();
 #endif
-	strcpy(passwd_buf, "");
-	read_gui_rpc_password(passwd_buf);
+    strcpy(passwd_buf, "");
+    read_gui_rpc_password(passwd_buf);
 
 #if defined(_WIN32) && defined(USE_WINSOCK)
     WSADATA wsdata;
@@ -554,22 +554,6 @@ int main(int argc, char** argv) {
             retval = cs.network_status;
         }
         cs.print();
-    } else if (!strcmp(cmd, "--set_debts")) {
-        vector<PROJECT>projects;
-        while (i < argc) {
-            PROJECT proj;
-            strcpy(proj.master_url, next_arg(argc, argv, i));
-            int std = atoi(next_arg(argc, argv, i));
-            proj.cpu_short_term_debt = std;
-            proj.cuda_short_term_debt = std;
-            proj.ati_short_term_debt = std;
-            int ltd = atoi(next_arg(argc, argv, i));
-            proj.cpu_long_term_debt = ltd;
-            proj.cuda_debt = ltd;
-            proj.ati_debt = ltd;
-            projects.push_back(proj);
-        }
-        retval = rpc.set_debts(projects);
     } else if (!strcmp(cmd, "--quit")) {
         retval = rpc.quit();
     } else {

@@ -20,6 +20,7 @@
 // http://www.wxformbuilder.org/
 
 #include "stdwx.h"
+#include "Events.h"
 #include "diagnostics.h"
 #include "util.h"
 #include "mfile.h"
@@ -58,7 +59,7 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 
     topControlsSizer->Add( m_bmpWarning, 0, wxALIGN_CENTER_VERTICAL|wxALL, 0 );
 
-    m_staticText321 = new wxStaticText( this, ID_DEFAULT, _("This dialog controls preferences for this computer only.\nClick OK to set preferences.\nClick Clear to restore web-based settings."), wxDefaultPosition, wxDefaultSize, 0 );
+    m_staticText321 = new wxStaticText( this, ID_DEFAULT, _("This dialog controls preferences for this computer only.\nClick OK to set preferences.\nClick Clear to restore web-based settings (except exclusive apps)."), wxDefaultPosition, wxDefaultSize, 0 );
     topControlsSizer->Add( m_staticText321, 1, wxALL, 1 );
 
     m_btnClear = new wxButton( this, ID_BTN_CLEAR, _("Clear"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -85,6 +86,9 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
     m_panelDiskAndMemory = createDiskAndMemoryTab(m_Notebook);
     m_Notebook->AddPage( m_panelDiskAndMemory, _("disk and memory usage"), false );
 
+    m_panelExlusiveApps = createExclusiveAppsTab(m_Notebook);
+    m_Notebook->AddPage( m_panelExlusiveApps, _("exclusive applications"), false );
+    
     notebookSizer->Add( m_Notebook, 1, wxEXPAND | wxALL, 1 );
 
     m_panelControls->SetSizer( notebookSizer );
@@ -105,7 +109,7 @@ CDlgAdvPreferencesBase::CDlgAdvPreferencesBase( wxWindow* parent, int id, wxStri
 
     buttonSizer->Add( m_btnCancel, 0, wxALL, 5 );
 
-    m_btnHelp = new wxButton( m_panelButtons, wxID_HELP, _("Help"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_btnHelp = new wxButton( m_panelButtons, ID_HELPBOINC, _("Help"), wxDefaultPosition, wxDefaultSize, 0 );
     m_btnHelp->SetToolTip( _("shows the preferences web page") );
 
     buttonSizer->Add( m_btnHelp, 0, wxALL, 5 );
@@ -362,6 +366,7 @@ wxPanel* CDlgAdvPreferencesBase::createProcessorTab(wxNotebook* notebook)
 
     return processorTab;
 }
+
 wxPanel* CDlgAdvPreferencesBase::createNetworkTab(wxNotebook* notebook)
 {
     wxPanel* networkTab = new wxPanel( notebook, ID_TABPAGE_NET, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -562,6 +567,7 @@ wxPanel* CDlgAdvPreferencesBase::createNetworkTab(wxNotebook* notebook)
 
     return networkTab;
 }
+
 wxPanel* CDlgAdvPreferencesBase::createDiskAndMemoryTab(wxNotebook* notebook)
 {
     wxPanel* diskMemoryTab = new wxPanel( notebook, ID_TABPAGE_DISK, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -675,4 +681,69 @@ wxPanel* CDlgAdvPreferencesBase::createDiskAndMemoryTab(wxNotebook* notebook)
     diskAndMemoryBoxSizer->Fit( diskMemoryTab );
 
     return diskMemoryTab;
+}
+
+wxPanel* CDlgAdvPreferencesBase::createExclusiveAppsTab(wxNotebook* notebook)
+{
+    wxPanel* exclusiveAppsTab = new wxPanel( notebook, ID_TABPAGE_EXCLAPPS, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+    exclusiveAppsTab->SetExtraStyle( wxWS_EX_VALIDATE_RECURSIVELY );
+
+    wxBoxSizer* exclusiveAppsTabBoxSizer = new wxBoxSizer( wxVERTICAL );
+
+    wxStaticBoxSizer* exclusiveAppsListBoxSizer = new wxStaticBoxSizer( new wxStaticBox( exclusiveAppsTab, -1, _("Suspend processor and network usage when these applications are running:") ), wxVERTICAL );
+
+    wxBoxSizer* exclusiveAppsBoxSizer = new wxBoxSizer( wxVERTICAL );
+
+    m_exclusiveApsListBox = new wxListBox(exclusiveAppsTab, ID_LISTBOX_EXCLAPPS, wxDefaultPosition, wxDefaultSize, 0, NULL, wxLB_EXTENDED|wxLB_NEEDED_SB|wxLB_SORT);
+    exclusiveAppsBoxSizer->Add(m_exclusiveApsListBox, 1, wxALL|wxEXPAND, 5);
+
+	wxBoxSizer* exclusiveAppsButtonSizer = new wxBoxSizer( wxHORIZONTAL );
+
+    m_addExclusiveAppButton = new wxButton( exclusiveAppsTab, ID_ADDEXCLUSIVEAPPBUTTON, _("Add..."), wxDefaultPosition, wxDefaultSize, 0 );
+    m_addExclusiveAppButton->SetToolTip( _("Add an application to this list"));
+	exclusiveAppsButtonSizer->Add( m_addExclusiveAppButton, 0, wxRIGHT, 5 );
+    
+    exclusiveAppsButtonSizer->AddStretchSpacer();
+    
+    m_removeExclusiveAppButton = new wxButton( exclusiveAppsTab, ID_REMOVEEXCLUSIVEAPPBUTTON, _("Remove"), wxDefaultPosition, wxDefaultSize, 0 );
+    m_removeExclusiveAppButton->SetToolTip( _("Remove an application from this list"));
+	exclusiveAppsButtonSizer->Add( m_removeExclusiveAppButton, 0, wxLEFT, 5 );
+
+    exclusiveAppsBoxSizer->Add(exclusiveAppsButtonSizer, 0, wxEXPAND|wxLEFT|wxRIGHT, 25 );
+
+    wxBoxSizer* moreOptionsLinkSizer = new wxBoxSizer( wxHORIZONTAL );
+
+    moreOptionsLinkSizer->Add(
+        new wxStaticText(
+            exclusiveAppsTab, ID_DEFAULT, _("For advanced options, refer to "),
+            wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT
+        ),
+        0, wxLEFT, 5
+    );
+
+    moreOptionsLinkSizer->Add(
+        new wxHyperlinkCtrl(
+            exclusiveAppsTab, ID_DEFAULT, wxT("http://boinc.berkeley.edu/wiki/Client_configuration"),
+            wxT("http://boinc.berkeley.edu/wiki/Client_configuration"), 
+            wxDefaultPosition, wxDefaultSize, wxHL_DEFAULT_STYLE
+        ),
+#ifdef __WXMAC__
+        0, wxLEFT, 5
+#else
+        0, wxLEFT, 3
+#endif
+    );
+
+    exclusiveAppsBoxSizer->Add(moreOptionsLinkSizer, 0, wxALL, 10);
+        
+    exclusiveAppsListBoxSizer->Add(exclusiveAppsBoxSizer, 1, wxEXPAND, 5 );
+    
+    exclusiveAppsTabBoxSizer->Add(exclusiveAppsListBoxSizer, 1, wxEXPAND, 5 );
+    exclusiveAppsTabBoxSizer->AddStretchSpacer();
+
+    exclusiveAppsTab->SetSizer( exclusiveAppsTabBoxSizer );
+    exclusiveAppsTab->Layout();
+    exclusiveAppsTabBoxSizer->Fit( exclusiveAppsTab );
+
+    return exclusiveAppsTab;
 }

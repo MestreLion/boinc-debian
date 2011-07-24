@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- mode: python; python-indent: 4; -*-
 
-## $Id: start 21057 2010-04-02 19:10:37Z davea $
+## $Id: start 22723 2010-11-19 18:42:44Z davea $
 
 '''
 A program to start/stop BOINC server daemons and run periodic tasks.
@@ -391,8 +391,9 @@ def run_task(task):
     # we don't need the full double-fork because this should finish quickly
     if fork() > 0: return
     if lock_file(get_task_lock_name(task)):
-        print >>sys.stderr, "    Task currently running! (%s)"%task.cmd
-        sys.exit(1)
+        if verbose:
+            print >>sys.stderr, "    Task currently running! (%s)"%task.cmd
+        sys.exit(0)
     redirect(get_task_output_name(task))
     exec_command_string(task.cmd)
 

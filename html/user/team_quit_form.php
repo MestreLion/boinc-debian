@@ -20,6 +20,8 @@ require_once("../inc/db.inc");
 require_once("../inc/util.inc");
 require_once("../inc/team.inc");
 
+check_get_args(array());
+
 db_init();
 $user = get_logged_in_user(true);
 
@@ -42,5 +44,5 @@ echo "<input type=\"hidden\" name=\"id\" value=\"$team->id\">
 ";
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_quit_form.php 20582 2010-02-16 01:06:03Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team_quit_form.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
 ?>

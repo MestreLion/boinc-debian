@@ -22,6 +22,7 @@
 #include <cstring>
 
 #include "config.h"
+
 #include "sched_main.h"
 #include "sched_types.h"
 #include "sched_shmem.h"
@@ -49,7 +50,7 @@ static bool quick_check(
     if (wu_result.state != WR_STATE_PRESENT && wu_result.state != g_pid) {
         return false;
     }
-    
+
     app = ssp->lookup_app(wu_result.workunit.appid);
     if (app == NULL) {
         return false; // this should never happen
@@ -74,7 +75,7 @@ static bool quick_check(
             return false;
         }
     }
-    
+
     // If this is a reliable host and we are checking for results that
     // need a reliable host, then continue if the result is a normal result
     // skip if the app is beta (beta apps don't use the reliable mechanism)
@@ -86,15 +87,29 @@ static bool quick_check(
             return false;
         }
     }
-    
+
     // don't send if we are looking for infeasible results
     // and the result is not infeasible
     //
     if (g_wreq->infeasible_only && (wu_result.infeasible_count==0)) {
         return false;
     }
-    
-    // check app filter if needed
+
+    // Find the app and best app_version for this host.
+    //
+    bavp = get_app_version(wu, true, g_wreq->reliable_only);
+    if (!bavp) {
+        if (config.debug_array) {
+            log_messages.printf(MSG_NORMAL,
+                "[array] No app version\n"
+            );
+        }
+        return false;
+    }
+
+    // Check app filter if needed.
+    // Do this AFTER get_app_version(), otherwise we could send
+    // a misleading message to user
     //
     if (g_wreq->user_apps_only &&
         (!g_wreq->beta_only || config.distinct_beta_apps)
@@ -111,18 +126,6 @@ static bool quick_check(
 #endif
             return false;
         }
-    }
-
-    // Find the app and best app_version for this host.
-    //
-    bavp = get_app_version(wu, true, g_wreq->reliable_only);
-    if (!bavp) {
-        if (config.debug_array) {
-            log_messages.printf(MSG_NORMAL,
-                "[array] No app version\n"
-            );
-        }
-        return false;
     }
 
     // don't send job if host can't handle it
@@ -166,7 +169,7 @@ static bool slow_check(WU_RESULT& wu_result, WORKUNIT& wu, APP* app) {
         retval = result.count(n, buf);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "send_work: can't get result count (%d)\n", retval
+                "send_work: can't get result count (%s)\n", boincerror(retval)
             );
             return false;
         } else {
@@ -193,7 +196,7 @@ static bool slow_check(WU_RESULT& wu_result, WORKUNIT& wu, APP* app) {
         retval = result.count(n, buf);
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "send_work: can't get result count (%d)\n", retval
+                "send_work: can't get result count (%s)\n", boincerror(retval)
             );
             return false;
         } else {
@@ -237,8 +240,8 @@ static bool result_still_sendable(DB_RESULT& result, WORKUNIT& wu) {
     int retval = result.lookup_id(result.id);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "[RESULT#%d] result.lookup_id() failed %d\n",
-            result.id, retval
+            "[RESULT#%d] result.lookup_id() failed: %s\n",
+            result.id, boincerror(retval)
         );
         return false;
     }
@@ -263,7 +266,7 @@ static bool result_still_sendable(DB_RESULT& result, WORKUNIT& wu) {
 // The choice of jobs is limited by flags in g_wreq, as follows:
 // infeasible_only:
 //      send only results that were previously infeasible for some host
-// reliable_only: 
+// reliable_only:
 //      send only retries
 // user_apps_only:
 //      Send only jobs for apps selected by user
@@ -277,10 +280,10 @@ static bool scan_work_array() {
     APP* app;
     BEST_APP_VERSION* bavp;
     bool no_more_needed = false;
-    DB_RESULT result;
+    SCHED_DB_RESULT result;
 
     lock_sema();
-    
+
     rnd_off = rand() % ssp->max_wu_results;
     for (j=0; j<ssp->max_wu_results; j++) {
         i = (j+rnd_off) % ssp->max_wu_results;
@@ -403,4 +406,4 @@ void send_work_old() {
     }
 }
 
-const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 21760 2010-06-16 22:07:19Z davea $";
+const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 23636 2011-06-06 03:40:42Z davea $";

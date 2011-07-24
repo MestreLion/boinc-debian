@@ -14,6 +14,16 @@ array(
 
 $win = array(
 array(
+    'http://www.myfavoritegadgets.info/monitors/BOINCMonitor/BOINCMonitor.html',
+    'BOINC Monitor',
+    '',
+    'A desktop gadget that shows the status of running tasks',
+    'http://www.myfavoritegadgets.info/',
+    'Windows Vista/7',
+    'BOINC Monitor shows BOINC tasks progress. Resizable! Save settings to file.  Color changeable for all gadget\'s elements, include background. You can add new BOINC projects in XML list file.',
+    '1305409902'
+),
+array(
     'http://boincdotnet.tnmshouse.com/',
     'Boinc.NET',
     'beta',
@@ -26,7 +36,7 @@ array(
 array(
     'http://www.efmer.eu/boinc/boinc_tasks/download.html',
     'BoincTasks',
-    '0.20',
+    '1.00',
     'An advanced and powerful BOINC GUI',
     'http://www.efmer.eu/boinc/boinc_tasks/',
     'Windows 2003/XP/Vista/7',
@@ -220,6 +230,16 @@ array('http://mion.faireal.net/BES/',
 
 $linux = array(
 array(
+    'http://www.efmer.eu/boinc/boinc_tasks/download.html',
+    'BoincTasks',
+    '1.00',
+    'An advanced and powerful BOINC GUI (requires Wine)',
+    'http://www.efmer.eu/boinc/boinc_tasks/',
+    'Linux (requires Wine)',
+    'BoincTasks is a visual interface to BOINC, allowing you to view your projects, tasks, and statistics.  It can be used to manage a single computer locally, or all your computers remotely.  It handles large numbers of tasks well, making it ideal for computers with GPUs.',
+    '1254720435'
+),
+array(
     'http://www.vanheusden.com/multitail/',
     'MultiTail',
     '5.0.3',
@@ -325,7 +345,7 @@ array('cpulimit-1.1.tar.gz',
     'CPU limiter',
     '1.1',
     'Limits the CPU usage (good for laptops)',
-    'http://marlon80.interfree.it/cpulimit/index.html',
+    'http://cpulimit.sourceforge.net/',
     '',
     'cpulimit is a simple program that attempts to limit the CPU usage of a process (expressed in percentage, not in cpu time). This is useful to control batch jobs, when you don\'t want they eat too much cpu. It does not act on the nice value or other priority stuff, but on the real cpu usage. Besides it is able to adapt itself to the overall system load, dynamically and quickly.
     <p>
@@ -397,6 +417,16 @@ array('rc.boinc-slackware-linux-latest.txt',
 );
 
 $mac = array(
+array(
+    'http://www.efmer.eu/boinc/boinc_tasks/download.html',
+    'BoincTasks',
+    '1.00',
+    'An advanced and powerful BOINC GUI (requires Wine)',
+    'http://www.efmer.eu/boinc/boinc_tasks/',
+    'Mac OS X (requires Wine)',
+    'BoincTasks is a visual interface to BOINC, allowing you to view your projects, tasks, and statistics.  It can be used to manage a single computer locally, or all your computers remotely.  It handles large numbers of tasks well, making it ideal for computers with GPUs.',
+    '1254720435'
+),
 array(
     'http://brotherbard.com/boinc/',
     'BOINCMenubar 2',
@@ -518,14 +548,14 @@ array('boinc_server_status.zip',
 );
 
 $web = array(
-array('http://download.conmunix.net/pub/boinc_lcs/boinc_lcs_3.0.tar.gz',
+array('http://dl.onext.de/pub/boinc_lcs/boinc_lcs_latest.tar.gz',
     'Boinc LCS',
-    '3.0 final',
+    '3.1',
     'Shows the current state and other information from an unlimited number of BOINC clients connected to the Internet.',
-    'http://www.conmunix.net/boinc-lcs',
+    'http://www.onenext.de/',
     'Apache, PHP',
     'Boinc LCS is a free PHP based script, that allows you to monitor the current state (and other information) from each of your connected BOINC clients. It runs on a simple webserver and is platform independent. Boinc LCS is released under the GNU/GPL license. You can modify and redistribute or just use it!',
-    '1210049520'
+    '1301891920'
 ),
 array('b-sig.zip',
     'Forum signature showing jobs in progress',

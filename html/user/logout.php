@@ -19,11 +19,15 @@
 include_once("../inc/db.inc");
 include_once("../inc/util.inc");
 
+check_get_args(array("tnow", "ttok"));
+
 $user = get_logged_in_user();
 
 if ($user) {
     check_tokens($user->authenticator);
     clear_cookie('auth');
+    $g_logged_in_user = null;
+    header("Location: index.php");
     page_head("Logged out");
     echo "You are now logged out";
     page_tail();

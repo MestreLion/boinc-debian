@@ -119,8 +119,8 @@ int is_valid(DB_HOST& host, RESULT& result, WORKUNIT& wu, DB_HOST_APP_VERSION& h
         retval = credited_job.insert();
         if (retval) {
             log_messages.printf(MSG_CRITICAL,
-                "[RESULT#%d] Warning: credited_job insert failed (userid: %d workunit: %f err: %d)\n",
-                result.id, host.userid, wu.opaque, retval
+                "[RESULT#%d] Warning: credited_job insert failed (userid: %d workunit: %f err: %s)\n",
+                result.id, host.userid, wu.opaque, boincerror(retval)
             );
         } else {
             log_messages.printf(MSG_DEBUG,
@@ -202,7 +202,13 @@ int handle_wu(
              );
 
             check_pair(result, canonical_result, retry);
-            if (retry) transition_time = DELAYED;
+            if (retry) {
+                // this usually means an NFS mount has failed;
+                // arrange to try again later.
+                //
+                transition_time = DELAYED;
+                goto leave;
+            }
             update_result = false;
 
             if (result.outcome == RESULT_OUTCOME_VALIDATE_ERROR) {
@@ -218,8 +224,8 @@ int handle_wu(
             retval = host.lookup_id(result.hostid);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "[RESULT#%d] lookup of host %d failed %d\n",
-                    result.id, result.hostid, retval
+                    "[RESULT#%d] lookup of host %d failed: %s\n",
+                    result.id, result.hostid, boincerror(retval)
                 );
                 continue;
             }
@@ -249,8 +255,8 @@ int handle_wu(
                 retval = is_valid(host, result, wu, havv[0]);
                 if (retval) {
                     log_messages.printf(MSG_NORMAL,
-                        "[RESULT#%d %s] is_valid() error: %d\n",
-                        result.id, result.name, retval
+                        "[RESULT#%d %s] is_valid() error: %s\n",
+                        result.id, result.name, boincerror(retval)
                     );
                 }
                 // do credit computation, but grant credit of canonical result
@@ -260,10 +266,7 @@ int handle_wu(
                     wu, rv, app, app_versions, havv, max_granted_credit, credit
                 );
                 result.granted_credit = canonical_result.granted_credit;
-                grant_credit(
-                    host, result.sent_time, result.cpu_time,
-                    result.granted_credit
-                );
+                grant_credit(host, result.sent_time, result.granted_credit);
                 break;
             case VALIDATE_STATE_INVALID:
                 update_result = true;
@@ -287,8 +290,8 @@ int handle_wu(
                 retval = validator.update_result(result);
                 if (retval) {
                     log_messages.printf(MSG_CRITICAL,
-                        "[RESULT#%d %s] Can't update result: %d\n",
-                        result.id, result.name, retval
+                        "[RESULT#%d %s] Can't update result: %s\n",
+                        result.id, result.name, boincerror(retval)
                     );
                 }
             }
@@ -340,13 +343,11 @@ int handle_wu(
             );
 
             double dummy;
-            retval = check_set(
-                results, wu, canonicalid, dummy, retry
-            );
+            retval = check_set(results, wu, canonicalid, dummy, retry);
             if (retval) {
                 log_messages.printf(MSG_CRITICAL,
-                    "[WU#%d %s] check_set returned %d, exiting\n",
-                    wu.id, wu.name, retval
+                    "[WU#%d %s] check_set() error: %s, exiting\n",
+                    wu.id, wu.name, boincerror(retval)
                 );
                 return retval;
             }
@@ -356,25 +357,25 @@ int handle_wu(
                 retval = get_credit_from_wu(wu, results, credit);
                 if (retval) {
                     log_messages.printf(MSG_CRITICAL,
-                        "[WU#%d %s] get_credit_from_wu returned %d\n",
-                        wu.id, wu.name, retval
+                        "[WU#%d %s] get_credit_from_wu(): credit not specified in WU\n",
+                        wu.id, wu.name
                     );
-                    return retval;
+                    credit = 0;
                 }
-            }
-
-            if (canonicalid) {
-                retval = assign_credit_set(
-                    wu, results, app, app_versions, host_app_versions,
-                    max_granted_credit, credit
-                );
-                if (retval) {
-                    log_messages.printf(MSG_CRITICAL,
-                        "[WU#%d %s] assign_credit_set() returned %d\n",
-                        wu.id, wu.name, retval
+            } else {
+                if (canonicalid) {
+                    retval = assign_credit_set(
+                        wu, results, app, app_versions, host_app_versions,
+                        max_granted_credit, credit
                     );
-                    transition_time = DELAYED;
-                    goto leave;
+                    if (retval) {
+                        log_messages.printf(MSG_CRITICAL,
+                            "[WU#%d %s] assign_credit_set(): %s\n",
+                            wu.id, wu.name, boincerror(retval)
+                        );
+                        transition_time = DELAYED;
+                        goto leave;
+                    }
                 }
             }
 
@@ -410,8 +411,8 @@ int handle_wu(
                     retval = host.lookup_id(result.hostid);
                     if (retval) {
                         log_messages.printf(MSG_CRITICAL,
-                            "[RESULT#%d] lookup of host %d failed %d\n",
-                            result.id, result.hostid, retval
+                            "[RESULT#%d] lookup of host %d: %s\n",
+                            result.id, result.hostid, boincerror(retval)
                         );
                         continue;
                     }
@@ -425,14 +426,12 @@ int handle_wu(
                     retval = is_valid(host, result, wu, host_app_versions[i]);
                     if (retval) {
                         log_messages.printf(MSG_DEBUG,
-                            "[RESULT#%d %s] is_valid() failed: %d\n",
-                            result.id, result.name, retval
+                            "[RESULT#%d %s] is_valid() failed: %s\n",
+                            result.id, result.name, boincerror(retval)
                         );
                     }
-                    grant_credit(
-                        host, result.sent_time, result.cpu_time,
-                        result.granted_credit
-                    );
+                    result.granted_credit = credit;
+                    grant_credit(host, result.sent_time, credit);
                     log_messages.printf(MSG_NORMAL,
                         "[RESULT#%d %s] Valid; granted %f credit [HOST#%d]\n",
                         result.id, result.name, result.granted_credit,
@@ -468,8 +467,8 @@ int handle_wu(
                     retval = validator.update_result(result);
                     if (retval) {
                         log_messages.printf(MSG_CRITICAL,
-                            "[RESULT#%d %s] result.update() failed: %d\n",
-                            result.id, result.name, retval
+                            "[RESULT#%d %s] result.update() failed: %s\n",
+                            result.id, result.name, boincerror(retval)
                         );
                     }
                 }
@@ -503,8 +502,8 @@ int handle_wu(
                     retval = validator.update_result(result);
                     if (retval) {
                         log_messages.printf(MSG_CRITICAL,
-                            "[RESULT#%d %s] result.update() failed: %d\n",
-                            result.id, result.name, retval
+                            "[RESULT#%d %s] result.update() failed: %s\n",
+                            result.id, result.name, boincerror(retval)
                         );
                     }
                 }
@@ -554,8 +553,8 @@ leave:
     retval = validator.update_workunit(wu);
     if (retval) {
         log_messages.printf(MSG_CRITICAL,
-            "[WU#%d %s] update_workunit() failed: %d; exiting\n",
-            wu.id, wu.name, retval
+            "[WU#%d %s] update_workunit() failed: %s; exiting\n",
+            wu.id, wu.name, boincerror(retval)
         );
         return retval;
     }
@@ -602,7 +601,9 @@ int main_loop() {
         config.db_name, config.db_host, config.db_user, config.db_passwd
     );
     if (retval) {
-        log_messages.printf(MSG_CRITICAL, "boinc_db.open failed: %d\n", retval);
+        log_messages.printf(MSG_CRITICAL,
+            "boinc_db.open failed: %s\n", boincerror(retval)
+        );
         exit(1);
     }
 
@@ -645,7 +646,7 @@ int main(int argc, char** argv) {
     int i, retval;
 
     const char *usage = 
-      "\nUsage: %s -app <app-name> [OPTIONS]\n"
+      "\nUsage: %s --app <app-name> [OPTIONS]\n"
       "Start validator for application <app-name>\n\n"
       "Optional arguments:\n"
       "  --one_pass_N_WU N       Validate at most N WUs, then exit\n"
@@ -738,4 +739,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_634dbda0b9 = "$Id: validator.cpp 22418 2010-09-28 20:17:09Z davea $";
+const char *BOINC_RCSID_634dbda0b9 = "$Id: validator.cpp 23506 2011-05-05 14:56:32Z davea $";
