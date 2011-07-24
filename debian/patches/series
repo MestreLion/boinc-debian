@@ -1,3 +1,4 @@
+stripchart_debian.patch
 upstream_sztaki_configureEval.patch
 AvoidingBlanksInMakefiles.patch
 pythonPath.patch
