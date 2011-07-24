@@ -1,3 +1,10 @@
+boinc (6.13.1+dfsg-1) experimental; urgency=low
+
+  * New upstream version
+  * Added boinc-cgi-stripchart package
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 24 Jul 2011 22:20:04 +0200
+
 boinc (6.12.33+dfsg-1) unstable; urgency=low
 
   [Steffen]
