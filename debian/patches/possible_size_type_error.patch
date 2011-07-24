@@ -1,0 +1,34 @@
+Index: boinc/sched/file_upload_handler.cpp
+===================================================================
+--- boinc.orig/sched/file_upload_handler.cpp	2011-07-24 22:59:07.000000000 +0200
++++ boinc/sched/file_upload_handler.cpp	2011-07-24 23:05:51.000000000 +0200
+@@ -209,17 +209,17 @@
+ 
+     while (bytes_left > 0) {
+ 
+-        int n, m, to_write;
++        int m;
+ 
+         m = bytes_left<(double)BLOCK_SIZE ? (int)bytes_left : BLOCK_SIZE;
+ 
+         // try to get m bytes from socket (n>=0 is number actually returned)
+         //
+-        n = fread(buf, 1, m, in);
++        size_t n = fread(buf, 1, m, in);
+ 
+         // try to write n bytes to file
+         //
+-        to_write=n;
++        size_t to_write=n;
+         while (to_write > 0) {
+             ssize_t ret = write(fd, buf+n-to_write, to_write);
+             if (ret < 0) {
+@@ -273,7 +273,7 @@
+     unsigned char buf[BLOCK_SIZE];
+ 
+     while (1) {
+-        int n = fread(buf, 1, BLOCK_SIZE, in);
++        size_t n = fread(buf, 1, BLOCK_SIZE, in);
+         if (n <= 0) return;
+     }
+ }
