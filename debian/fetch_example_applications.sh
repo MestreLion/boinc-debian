@@ -24,70 +24,97 @@ deb2boinc[mips]="mips-linux-gnu"
 deb2boinc[s390]="s390-linux-gnu"
 
 mirror="http://ftp.de.debian.org/debian"
-version="6.12.28+dfsg-2"
+version="6.12.33+dfsg-1"
 
 projectroot=""
 
-sign=$projectroot"/bin/sign_executable"
-key=$projectroot"/keys/code_sign_private"
+sign="$projectroot/bin/sign_executable"
+key="$projectroot/keys/code_sign_private"
 
 shortver=$(echo $version|cut -d . -f-2)
+
+appsdir="apps"
+downloaddir="collection"
+
+if [ -d "$appsdir"]; then
+	echo "Directory '$appsdir' is already existing. Please clean this up first."
+	exit
+fi
+
+echo "I: Retrieving application for all of Debian's architectures."
 
 for arch in ${!deb2boinc[@]}
 do
 
-  if [ -d collection/$arch ]; then
-    echo "Destination directory 'collection/arch' already exiting ... skipping."
+  if [ -d $downloaddir/$arch ]; then
+    echo "W: Destination directory '$downloaddir/$arch' already exiting ... skipping."
     continue
   fi
 
   if [ ! -r $arch.deb ]; then 
     url="$mirror/pool/main/b/boinc/boinc-app-examples_${version}_${arch}.deb"
-    if ! wget -O - $url > ${arch}.deb ; then
-       echo "Platform '$arch' failed to download .... skipping."
+    if ! wget --quiet -O - $url > ${arch}.deb ; then
+       echo "E: Platform '$arch' failed to download .... skipping."
        rm -f ${arch}.deb
        continue
     fi
   fi
 
   ar xvf ${arch}.deb data.tar.gz
-  echo "Untaring"
+  echo "I: Untaring for architecture ${arch}"
   tar xzf data.tar.gz ./usr/lib/boinc-server/apps/
-  echo "Contents:"
+  echo -n "I: Contents:"
   ls ./usr/lib/boinc-server/apps/
-  mkdir -p collection
-  mv ./usr/lib/boinc-server/apps collection/$arch
+  mkdir -p $downloaddir
+  mv ./usr/lib/boinc-server/apps $downloaddir/$arch
   mv usr deleteThisDir
-  rm -r deleteThisDir
+  rm -rf deleteThisDir data.tar.gz ${arch}.deb
 done
 
-if [ -d apps ]
+if [ -d "$appsdir" ]
 then
-    echo App directory already exists, Exiting!!
+    echo "E: App directory '$appsdir' already exists, exiting!!"
     exit
 fi
 
-echo Creating directories
-for f in collection/$arch/*
+echo "Creating directories for all applications in folder '$downloaddir' now in folder '$appsdir'."
+for f in `find collection -type f | xargs -r -l basename| sort -u`
 do
     appname=`echo $f|cut -d / -f3`
-    mkdir -p apps/$appname
+    mkdir -p $appsdir/$appname
 done
 
-for app in apps/*
+for app in $appsdir/*
 do 
-    appname=$(echo $app|cut -d / -f 2)
-    for folder in collection/*
+    appname=$(basename $app)
+    echo "I: Copying files for application '$appname'"
+    echo -n "  "
+    for folder in $downloaddir/*
     do 
 	archname=$(echo $folder|cut -d / -f2)
-	echo Copying $folder/${appname} apps/$appname/${appname}_${shortver}_${deb2boinc[$archname]}
-	cp $folder/${appname} apps/$appname/${appname}_${shortver}_${deb2boinc[$archname]}
+        echo -n " $archname"
+	#echo Copying $folder/$appname $appsdir/$appname/${appname}_${shortver}_${deb2boinc[$archname]}
+	cp $folder/$appname $appsdir/$appname/${appname}_${shortver}_${deb2boinc[$archname]}
     done
+    echo
 done
 
-for binary in apps/*/*
-do
-    echo Signing $binary
-    $sign $binary $key >> ${binary}.sig
-done
+if [ ! -x "$sign" ]; then
+	echo "I: You need to sign the applictions, still. This is to be performed specifically for your project."
+	cat <<EOINSTRUCTIONS
+   Follow the following scheme:
+     sign="\$projectroot/bin/sign_executable"
+     key="\$projectroot/keys/code_sign_private"
+     for binary in $appsdir/*/*
+     do
+        \$sign \$binary \$key > ${binary}.sig
+     done
+EOINSTRUCTIONS
+else
+	for binary in $appsdir/*/*
+	do
+	    echo Signing $binary
+	    $sign $binary $key > ${binary}.sig
+	done
+fi
 
