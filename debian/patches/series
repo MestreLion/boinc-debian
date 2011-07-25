@@ -9,4 +9,3 @@ file_upload_handler_permission.patch
 possible_size_type_error.patch
 upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
 debian_debian_AdjustBoincTopdirPython.patch
-AddedErroneouslyRemovedMakefileForExamplesUc2App.patch
