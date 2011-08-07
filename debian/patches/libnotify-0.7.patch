@@ -1,0 +1,72 @@
+Index: boinc/clientgui/Makefile.am
+===================================================================
+--- boinc.orig/clientgui/Makefile.am	2011-08-08 01:39:01.000000000 +0200
++++ boinc/clientgui/Makefile.am	2011-08-08 01:41:30.000000000 +0200
+@@ -117,9 +117,13 @@
+     ../lib/error_numbers.h \
+     locale $(mac_headers)
+ 
+-boincmgr_CPPFLAGS = $(AM_CPPFLAGS) $(WX_CPPFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) `pkg-config --cflags gtk+-2.0`
+-boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) `pkg-config --cflags gtk+-2.0`
+-boincmgr_LDFLAGS = $(LIBBOINC) $(SQLITE3_LIBS) $(LIBNOTIFY_LIBS) $(CLIENTGUILIBS) $(BOINC_EXTRA_LIBS) $(CLIENTLIBS) `pkg-config --libs gtk+-2.0` -lnotify
++#boincmgr_CPPFLAGS = $(AM_CPPFLAGS) $(WX_CPPFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) `pkg-config --cflags gtk+-2.0`
++boincmgr_CPPFLAGS = $(AM_CPPFLAGS) $(WX_CPPFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) $(GTK_CLFAGS)
++#boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) `pkg-config --cflags gtk+-2.0`
++boincmgr_CXXFLAGS = $(AM_CXXFLAGS) $(WX_CXXFLAGS) $(SQLITE3_CPPFLAGS) $(LIBNOTIFY_CFLAGS) $(CLIENTGUIFLAGS) $(GTK_CFLAGS)
++#boincmgr_LDFLAGS = $(LIBBOINC) $(SQLITE3_LIBS) $(LIBNOTIFY_LIBS) $(CLIENTGUILIBS) $(BOINC_EXTRA_LIBS) $(CLIENTLIBS) `pkg-config --libs gtk+-2.0` -lnotify
++boincmgr_LDADD = $(LIBBOINC) $(SQLITE3_LIBS) $(LIBNOTIFY_LIBS) $(CLIENTGUILIBS) $(BOINC_EXTRA_LIBS) $(CLIENTLIBS) $(GTK_LIBS)
++
+ 
+ win_config.h: $(top_srcdir)/config.h
+ 	grep '#define.*BOINC.*VERSION' $^ > $@
+Index: boinc-6.12.33+dfsg/configure.ac
+===================================================================
+--- boinc-6.12.33+dfsg.orig/configure.ac	2011-08-06 05:52:53.929762904 +0200
++++ boinc-6.12.33+dfsg/configure.ac	2011-08-06 05:55:32.043775140 +0200
+@@ -702,14 +702,12 @@
+ 
+ dnl ---------- libNotify --------------------------------------------------
+ if test "${enable_manager}" = yes ; then
+-  pkg_config_args=libnotify
+-  AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+-
+-  LIBNOTIFY_CFLAGS=`$PKG_CONFIG libnotify --cflags`
+-  LIBNOTIFY_LIBS=`$PKG_CONFIG libnotify --libs`
++  PKG_CHECK_MODULES(LIBNOTIFY, [libnotify >= 0.7.0])
++fi
+ 
+-  AC_SUBST(LIBNOTIFY_CFLAGS)
+-  AC_SUBST(LIBNOTIFY_LIBS)
++dnl ---------- GTK2 -------------------------------------------------------
++if test "${enable_manager}" = yes ; then
++  PKG_CHECK_MODULES(GTK, [gtk+-2.0])
+ fi
+ 
+ dnl ---------- Sqlite3 ----------------------------------------------------
+@@ -846,7 +844,7 @@
+    ],
+   [enable_wx_debug="no"])
+ 
+-CLIENTGUILIBS="${WX_LIBS} ${SQLITE3_LIBS} ${GTK_LIBS}"
++CLIENTGUILIBS="${WX_LIBS} ${SQLITE3_LIBS}"
+ 
+ if test "${enable_client_release}" = "yes" ; then
+    if test "x${WX_LIBS_STATIC}" = "x" ; then
+Index: boinc-6.12.33+dfsg/clientgui/gtk/taskbarex.cpp
+===================================================================
+--- boinc-6.12.33+dfsg.orig/clientgui/gtk/taskbarex.cpp	2011-08-06 05:52:34.806003323 +0200
++++ boinc-6.12.33+dfsg/clientgui/gtk/taskbarex.cpp	2011-08-06 05:52:54.173759836 +0200
+@@ -227,11 +227,10 @@
+     if (!g_pNotification)
+     {
+         g_pNotification = 
+-            notify_notification_new_with_status_icon(
++            notify_notification_new(
+                 title.mb_str(),
+                 message.mb_str(),
+-                desired_icon,
+-                g_pStatusIcon
++                desired_icon
+         );
+ 
+         g_signal_connect(
