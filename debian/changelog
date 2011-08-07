@@ -1,9 +1,28 @@
+boinc (6.13.1+dfsg-2) experimental; urgency=low
+
+  * Bringing notify patch to experimental.
+
+ -- Steffen Moeller <moeller@debian.org>  Mon, 08 Aug 2011 01:36:51 +0200
+
 boinc (6.13.1+dfsg-1) experimental; urgency=low
 
   * New upstream version
   * Added boinc-cgi-stripchart package
+  * Michael's libnotify patch from 6.12.33+dfsg-1.1 not yet included
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 24 Jul 2011 22:20:04 +0200
+
+boinc (6.12.33+dfsg-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Port to libnotify 0.7. (Closes: #636296)
+    - Bump Build-Depends on libnotify to (>= 0.7.0).
+    - Add debian/patches/libnotify-0.7.patch.
+    - Update build system to properly set gtk+-2.0 cflags/ldflags for the
+      boincmgr GUI application.
+    - Update to the new libnotify 0.7 API.
+
+ -- Michael Biebl <biebl@debian.org>  Sat, 06 Aug 2011 05:50:23 +0200
 
 boinc (6.12.33+dfsg-1) unstable; urgency=low
 

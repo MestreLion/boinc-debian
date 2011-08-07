@@ -12,7 +12,7 @@ Build-Depends: debhelper (>= 7.0.50~), po-debconf, dh-buildinfo, pkg-config (>= 
  libtool, autoconf (>= 2.59), autotools-dev, automake1.9 (>= 1.9.3), gettext,
  docbook2x, docbook-xml, libxml2-utils,
  zlib1g-dev, libssl-dev, libcurl4-openssl-dev (>= 7.17.1),
- libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libnotify-dev,
+ libsm-dev, libice-dev, libxmu-dev, libxi-dev, libx11-dev, libnotify-dev (>= 0.7.0),
  freeglut3-dev, libwxgtk2.8-dev, libgtk2.0-dev,
  libsqlite3-dev, libmysqlclient-dev, python, libfcgi-dev, libjpeg8-dev
 Homepage: http://boinc.berkeley.edu/
