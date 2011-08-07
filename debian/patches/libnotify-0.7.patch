@@ -1,7 +1,7 @@
 Index: boinc/clientgui/Makefile.am
 ===================================================================
---- boinc.orig/clientgui/Makefile.am	2011-08-08 01:39:01.000000000 +0200
-+++ boinc/clientgui/Makefile.am	2011-08-08 01:41:30.000000000 +0200
+--- boinc.orig/clientgui/Makefile.am	2011-08-08 01:43:01.000000000 +0200
++++ boinc/clientgui/Makefile.am	2011-08-08 01:44:54.000000000 +0200
 @@ -117,9 +117,13 @@
      ../lib/error_numbers.h \
      locale $(mac_headers)
@@ -19,11 +19,11 @@ Index: boinc/clientgui/Makefile.am
  
  win_config.h: $(top_srcdir)/config.h
  	grep '#define.*BOINC.*VERSION' $^ > $@
-Index: boinc-6.12.33+dfsg/configure.ac
+Index: boinc/configure.ac
 ===================================================================
---- boinc-6.12.33+dfsg.orig/configure.ac	2011-08-06 05:52:53.929762904 +0200
-+++ boinc-6.12.33+dfsg/configure.ac	2011-08-06 05:55:32.043775140 +0200
-@@ -702,14 +702,12 @@
+--- boinc.orig/configure.ac	2011-08-08 01:44:54.000000000 +0200
++++ boinc/configure.ac	2011-08-08 01:44:54.000000000 +0200
+@@ -709,14 +709,12 @@
  
  dnl ---------- libNotify --------------------------------------------------
  if test "${enable_manager}" = yes ; then
@@ -43,7 +43,7 @@ Index: boinc-6.12.33+dfsg/configure.ac
  fi
  
  dnl ---------- Sqlite3 ----------------------------------------------------
-@@ -846,7 +844,7 @@
+@@ -860,7 +858,7 @@
     ],
    [enable_wx_debug="no"])
  
@@ -52,10 +52,10 @@ Index: boinc-6.12.33+dfsg/configure.ac
  
  if test "${enable_client_release}" = "yes" ; then
     if test "x${WX_LIBS_STATIC}" = "x" ; then
-Index: boinc-6.12.33+dfsg/clientgui/gtk/taskbarex.cpp
+Index: boinc/clientgui/gtk/taskbarex.cpp
 ===================================================================
---- boinc-6.12.33+dfsg.orig/clientgui/gtk/taskbarex.cpp	2011-08-06 05:52:34.806003323 +0200
-+++ boinc-6.12.33+dfsg/clientgui/gtk/taskbarex.cpp	2011-08-06 05:52:54.173759836 +0200
+--- boinc.orig/clientgui/gtk/taskbarex.cpp	2011-03-17 18:51:03.000000000 +0100
++++ boinc/clientgui/gtk/taskbarex.cpp	2011-08-08 01:44:54.000000000 +0200
 @@ -227,11 +227,10 @@
      if (!g_pNotification)
      {
