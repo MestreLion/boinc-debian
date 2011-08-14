@@ -10,6 +10,28 @@
 
 set -e
 
+if [ "-h" = "$1" -o "-help" = "$1" -o "--help" = "$1" ]; then
+	cat <<EOHELP
+
+Usage: $0 [<boinc project root dir>|--help]
+
+  This script collects the binaries for multiple platforms of a Debian
+  package.  All parameters are specified by environment variables.
+
+    installroot      path to install directory that together with the
+    fileprojectname  defines the project's root directory.
+    packagename      determines the name of the Debian package to install
+
+  Optional:
+    version          what version exactly shall be installed
+
+  If the packagename is not specified, then it defaults to
+  boinc-app-examples.
+
+EOHELP
+	exit 1
+fi
+
 declare -A deb2boinc
 deb2boinc[armel]="armel-linux-gnu"
 deb2boinc[alpha]="alpha-linux-gnu"
@@ -23,10 +45,29 @@ deb2boinc[sparc64]="sparc64-linux-gnu"
 deb2boinc[mips]="mips-linux-gnu"
 deb2boinc[s390]="s390-linux-gnu"
 
-mirror="http://ftp.de.debian.org/debian"
-version="6.12.33+dfsg-1"
+if [ -z "$packagename" ]; then
+	packagename=boinc-app-examples 
+fi
+if [ -z "$mirror" ]; then
+	mirror="http://ftp.de.debian.org/debian"
+fi
 
-projectroot=""
+version=$(apt-cache show $packagename | grep ^Version | tail -1 | cut -f2 -d\  )
+if [ -z "$version" ]; then
+	echo "apt-cache does not know any version for package '$packagename'."
+	exit 1
+fi
+
+if [ -n "$1" ]; then
+	projectroot=$1
+elif [ -z "$projectroot" ]
+	if [ -n "$installroot" -a -n "$fileprojectname" ]; then
+		projectroot="$installroot/$fileprojectname"
+	else
+		echo "Please specify the project root directory."
+		exit 1
+	fi
+fi
 
 sign="$projectroot/bin/sign_executable"
 key="$projectroot/keys/code_sign_private"
