@@ -162,7 +162,7 @@ Package: boinc-cgi-stripchart
 Section: libs
 Priority: extra
 Architecture: all
-Depends: gnuplot-nox, perl
+Depends: ${misc:Depends}, gnuplot-nox, perl
 Recommends: apache2|httpd-cgi
 Description: CGI script for plotting basic statistical graphs
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
