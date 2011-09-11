@@ -1,7 +1,8 @@
 boinc (6.13.1+dfsg-2) unstable; urgency=low
 
-  * Bringing notify patch to experimental.
+  * Bringing notify patch to unstable.
   * Adjusted build dependency to libjpeg-dev (Closes: #641093)
+  * Further improvements on stripchart.
 
  -- Steffen Moeller <moeller@debian.org>  Mon, 08 Aug 2011 01:36:51 +0200
 
