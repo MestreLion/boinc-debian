@@ -49,6 +49,10 @@
 //    (and write-protect that)
 // In either case, put your version under source-code control, e.g. SVN
 
+#include <string>
+
+using std::string;
+
 #include "str_util.h"
 #include "util.h"
 
@@ -163,7 +167,11 @@ static bool ati_check(COPROC_ATI& c, HOST_USAGE& hu,
     if (c.version_num < min_driver_version) {
         return false;
     }
-    if (c.attribs.localRAM*MEGA < min_ram) {
+    double avail_ram = c.available_ram;
+    if (avail_ram < 0) {
+        avail_ram = c.attribs.localRAM*MEGA;
+    }
+    if (avail_ram < min_ram) {
         return false;
     }
 
@@ -292,7 +300,11 @@ static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
             return false;
         }
     }
-    if (c.prop.dtotalGlobalMem < min_ram) {
+    double avail_ram = c.available_ram;
+    if (avail_ram < 0) {
+        avail_ram = c.prop.dtotalGlobalMem;
+    }
+    if (avail_ram < min_ram) {
         return false;
     }
 
@@ -439,24 +451,31 @@ static inline bool app_plan_opencl_ati(
     return false;
 }
 
-static inline bool app_plan_vbox32(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
+static inline bool app_plan_vbox(
+    SCHEDULER_REQUEST& sreq, HOST_USAGE& hu, bool is_64bit
+) {
+    // make sure they have VirtualBox
+    //
     if (strlen(sreq.host.virtualbox_version) == 0) return false;
     int n, maj, min, rel;
     n = sscanf(sreq.host.virtualbox_version, "%d.%d.%d", &maj, &min, &rel);
     if (n != 3) return false;
     if (maj < 3) return false;
     if (maj == 3 and min < 2) return false;
-    return true;
-}
 
-static inline bool app_plan_vbox64(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
-    if (strlen(sreq.host.virtualbox_version) == 0) return false;
-    if (!is_64b_platform(sreq.platform.name)) return false;
-    int n, maj, min, rel;
-    n = sscanf(sreq.host.virtualbox_version, "%d.%d.%d", &maj, &min, &rel);
-    if (n != 3) return false;
-    if (maj < 3) return false;
-    if (maj == 3 and min < 2) return false;
+    // only send the version for host's primary platform.
+    // A Win64 host can't run a 32-bit VM app:
+    // it will look in the 32-bit half of the registry and fail
+    //
+    PLATFORM* p = g_request->platforms.list[0];
+    if (is_64bit != is_64b_platform(p->name)) {
+        return false;
+    }
+
+    hu.avg_ncpus = 1;
+    hu.max_ncpus = 1;
+    hu.projected_flops = 1.1*sreq.host.p_fpops;
+    hu.peak_flops = sreq.host.p_fpops;
     return true;
 }
 
@@ -475,9 +494,9 @@ bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu) {
     } else if (!strcmp(plan_class, "sse3")) {
         return app_plan_sse3(sreq, hu);
     } else if (!strcmp(plan_class, "vbox32")) {
-        return app_plan_vbox32(sreq, hu);
+        return app_plan_vbox(sreq, hu, false);
     } else if (!strcmp(plan_class, "vbox64")) {
-        return app_plan_vbox64(sreq, hu);
+        return app_plan_vbox(sreq, hu, true);
     }
     log_messages.printf(MSG_CRITICAL,
         "Unknown plan class: %s\n", plan_class
@@ -599,4 +618,14 @@ bool JOB::get_score() {
     est_time = estimate_duration(wu, *bavp);
     disk_usage = wu.rsc_disk_bound;
     return true;
+}
+
+void handle_file_xfer_results() {
+    for (unsigned int i=0; i<g_request->file_xfer_results.size(); i++) {
+        RESULT& r = g_request->file_xfer_results[i];
+        log_messages.printf(MSG_NORMAL,
+            "completed file xfer %s\n", r.name
+        );
+        g_reply->result_acks.push_back(string(r.name));
+    }
 }

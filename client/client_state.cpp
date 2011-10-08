@@ -44,7 +44,7 @@
 #include "error_numbers.h"
 #include "filesys.h"
 #ifdef _WIN32
-#include "proc_control.h"
+#include "run_app_windows.h"
 #endif
 
 #include "file_names.h"
@@ -56,6 +56,7 @@
 #include "shmem.h"
 #include "sandbox.h"
 #include "cs_notice.h"
+#include "cs_trickle.h"
 
 #include "client_state.h"
 
@@ -67,7 +68,8 @@ COPROCS coprocs;
 CLIENT_STATE::CLIENT_STATE()
     : lookup_website_op(&gui_http),
     get_current_version_op(&gui_http),
-    get_project_list_op(&gui_http)
+    get_project_list_op(&gui_http),
+    acct_mgr_op(&gui_http)
 {
     http_ops = new HTTP_OP_SET();
     file_xfers = new FILE_XFER_SET(http_ops);
@@ -76,7 +78,6 @@ CLIENT_STATE::CLIENT_STATE()
     scheduler_op = new SCHEDULER_OP(http_ops);
 #endif
     client_state_dirty = false;
-    exit_before_start = false;
     check_all_logins = false;
     cmdline_gui_rpc_port = 0;
     run_cpu_benchmarks = false;
@@ -102,9 +103,9 @@ CLIENT_STATE::CLIENT_STATE()
     strcpy(main_host_venue, "");
     strcpy(attach_project_url, "");
     strcpy(attach_project_auth, "");
-    run_mode.set(RUN_MODE_AUTO, 0);
-    gpu_mode.set(RUN_MODE_AUTO, 0);
-    network_mode.set(RUN_MODE_AUTO, 0);
+    cpu_run_mode.set(RUN_MODE_AUTO, 0);
+    gpu_run_mode.set(RUN_MODE_AUTO, 0);
+    network_run_mode.set(RUN_MODE_AUTO, 0);
     started_by_screensaver = false;
     requested_exit = false;
     os_requested_suspend = false;
@@ -197,7 +198,7 @@ void CLIENT_STATE::show_host_info() {
 }
 
 int rsc_index(const char* name) {
-    const char* nm = strcmp(name, "CUDA")?name:"NVIDIA";
+    const char* nm = strcmp(name, "CUDA")?name:GPU_TYPE_NVIDIA;
     for (int i=0; i<coprocs.n_rsc; i++) {
         if (!strcmp(nm, coprocs.coprocs[i].type)) {
             return i;
@@ -208,15 +209,6 @@ int rsc_index(const char* name) {
 
 const char* rsc_name(int i) {
     return coprocs.coprocs[i].type;
-}
-
-void init_exclude_gpu() {
-    for (unsigned int i=0; i<config.exclude_gpus.size(); i++) {
-        EXCLUDE_GPU& eg = config.exclude_gpus[i];
-        PROJECT* p = gstate.lookup_project(eg.url.c_str());
-        if (!p) continue;
-        p->exclude_gpus.push_back(eg);
-    }
 }
 
 // set no_X_apps for anonymous platform project
@@ -252,7 +244,7 @@ static void check_too_large_jobs() {
     }
 }
 
-// Sometime has failed N times.
+// Something has failed N times.
 // Calculate an exponential backoff between MIN and MAX
 //
 double calculate_exponential_backoff(int n, double MIN, double MAX) {
@@ -362,7 +354,11 @@ int CLIENT_STATE::init() {
             coprocs.coprocs[j].type
         );
     }
-    if (!config.no_gpus) {
+    if (!config.no_gpus
+#ifdef _WIN32
+        && !executing_as_daemon
+#endif
+        ) {
         vector<string> descs;
         vector<string> warnings;
         coprocs.get(
@@ -379,27 +375,23 @@ int CLIENT_STATE::init() {
         }
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an NVIDIA GPU");
-        coprocs.nvidia.fake(18000, 256*MEGA, 2);
-        coprocs.nvidia.available_ram_fake[0] = 256*MEGA;
-        coprocs.nvidia.available_ram_fake[1] = 192*MEGA;
+        coprocs.nvidia.fake(18000, 256*MEGA, 192*MEGA, 2);
 #endif
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
-        coprocs.ati.fake(512*MEGA, 2);
-        coprocs.ati.available_ram_fake[0] = 256*MEGA;
-        coprocs.ati.available_ram_fake[1] = 192*MEGA;
+        coprocs.ati.fake(512*MEGA, 256*MEGA, 2);
 #endif
     }
 
     if (coprocs.have_nvidia()) {
-        if (rsc_index("NVIDIA")>0) {
+        if (rsc_index(GPU_TYPE_NVIDIA)>0) {
             msg_printf(NULL, MSG_INFO, "NVIDIA GPU info taken from cc_config.xml");
         } else {
             coprocs.add(coprocs.nvidia);
         }
     }
     if (coprocs.have_ati()) {
-        if (rsc_index("ATI")>0) {
+        if (rsc_index(GPU_TYPE_ATI)>0) {
             msg_printf(NULL, MSG_INFO, "ATI GPU info taken from cc_config.xml");
         } else {
             coprocs.add(coprocs.ati);
@@ -416,6 +408,8 @@ int CLIENT_STATE::init() {
 			msg_printf(NULL, MSG_INFO, "%s GPU is OpenCL-capable", cp.type);
 		}
 	}
+
+    set_no_rsc_config();
 
     // check for app_info.xml file in project dirs.
     // If find, read app info from there, set project.anonymous_platform
@@ -627,10 +621,6 @@ int CLIENT_STATE::init() {
     // warn user if some jobs need more memory than available
     //
     check_too_large_jobs();
-
-    // fill in exclude-GPU flags
-    //
-    init_exclude_gpu();
 
     project_priority_init();
 
@@ -853,7 +843,7 @@ bool CLIENT_STATE::poll_slow_events() {
         //
         if (
             old_network_suspend_reason == SUSPEND_REASON_NETWORK_QUOTA_EXCEEDED
-            && network_mode.get_current() == RUN_MODE_AUTO
+            && network_run_mode.get_current() == RUN_MODE_AUTO
         ) {
             pers_file_xfers->add_random_delay(3600);
         }
@@ -877,6 +867,7 @@ bool CLIENT_STATE::poll_slow_events() {
     POLL_ACTION(garbage_collect        , garbage_collect        );
     POLL_ACTION(gui_http               , gui_http.poll          );
     POLL_ACTION(gui_rpc_http           , gui_rpcs.poll          );
+    POLL_ACTION(trickle_up_ops,        trickle_up_poll);
     if (!network_suspended && suspend_reason != SUSPEND_REASON_BENCHMARKS) {
         // don't initiate network activity if we're doing CPU benchmarks
         net_status.poll();
@@ -1532,7 +1523,6 @@ bool CLIENT_STATE::update_results() {
         case RESULT_FILES_DOWNLOADING:
             retval = input_files_available(rp, false);
             if (!retval) {
-                rp->set_state(RESULT_FILES_DOWNLOADED, "CS::update_results");
                 if (rp->avp->app_files.size()==0) {
                     // if this is a file-transfer app, start the upload phase
                     //
@@ -1541,6 +1531,7 @@ bool CLIENT_STATE::update_results() {
                 } else {
                     // else try to start the computation
                     //
+                    rp->set_state(RESULT_FILES_DOWNLOADED, "CS::update_results");
                     request_schedule_cpus("files downloaded");
                 }
                 action = true;
@@ -1736,6 +1727,8 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
     msg_printf(project, MSG_INFO, "Resetting project");
     active_tasks.abort_project(project);
 
+    // stop and remove file transfers
+    //
     for (i=0; i<pers_file_xfers->pers_file_xfers.size(); i++) {
         pxp = pers_file_xfers->pers_file_xfers[i];
         if (pxp->fip->project == project) {
@@ -1752,6 +1745,10 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
     // if we're in the middle of a scheduler op to the project, abort it
     //
     scheduler_op->abort(project);
+
+    // abort other HTTP operations
+    //
+    //http_ops.abort_project_ops(project);
 
     // mark results as server-acked.
     // This will cause garbage_collect to delete them,
@@ -1955,9 +1952,9 @@ void CLIENT_STATE::clear_absolute_times() {
     new_version_check_time = now;
     all_projects_list_check_time = now;
     retry_shmem_time = 0;
-    run_mode.temp_timeout = 0;
-    gpu_mode.temp_timeout = 0;
-    network_mode.temp_timeout = 0;
+    cpu_run_mode.temp_timeout = 0;
+    gpu_run_mode.temp_timeout = 0;
+    network_run_mode.temp_timeout = 0;
     time_stats.last_update = now;
 
     unsigned int i;

@@ -92,7 +92,6 @@ bool parse_bool(const char* buf, const char* tag, bool& result) {
 bool parse_str(const char* buf, const char* tag, char* dest, int destlen) {
     string str;
     const char* p;
-    char tempbuf[1024];
     int len;
 
     p = strstr(buf, tag);
@@ -103,10 +102,10 @@ bool parse_str(const char* buf, const char* tag, char* dest, int destlen) {
     if (!q) return false;
     len = (int)(q-p);
     if (len >= destlen) len = destlen-1;
-    memcpy(tempbuf, p, len);
-    tempbuf[len] = 0;
-    strip_whitespace(tempbuf);
-    xml_unescape(tempbuf, dest, destlen);
+    memcpy(dest, p, len);
+    dest[len] = 0;
+    strip_whitespace(dest);
+    xml_unescape(dest);
     return true;
 }
 
@@ -399,46 +398,49 @@ void xml_escape(const char* in, char* out, int len) {
     *p = 0;
 }
 
-// output buffer need not be larger than input
+// Note: XML unescaping never increases string length
 //
 void xml_unescape(string& in) {
-    char buf[2048];
-    xml_unescape(in.c_str(), buf, sizeof(buf));
+    int n = (int)in.size()+1;
+    char* buf = (char*)malloc(n);
+    strcpy(buf, in.c_str());
+    xml_unescape(buf);
     in = buf;
+    free(buf);
 }
 
-void xml_unescape(const char* in, char* out, int len) {
-    char* p = out;
+void xml_unescape(char* buf) {
+    char* out = buf;
+    char* in = buf;
     while (*in) {
         if (*in != '&') {       // avoid strncmp's if possible
-            *p++ = *in++;
+            *out++ = *in++;
         } else if (!strncmp(in, "&lt;", 4)) {
-            *p++ = '<';
+            *out++ = '<';
             in += 4;
         } else if (!strncmp(in, "&gt;", 4)) {
-            *p++ = '>';
+            *out++ = '>';
             in += 4;
         } else if (!strncmp(in, "&quot;", 4)) {
-            *p++ = '"';
+            *out++ = '"';
             in += 6;
         } else if (!strncmp(in, "&apos;", 4)) {
-            *p++ = '\'';
+            *out++ = '\'';
             in += 6;
         } else if (!strncmp(in, "&amp;", 5)) {
-            *p++ = '&';
+            *out++ = '&';
             in += 5;
         } else if (!strncmp(in, "&#", 2)) {
             in += 2;
             char c = atoi(in);
-            *p++ = c;
+            *out++ = c;
             in = strchr(in, ';');
             if (in) in++;
         } else {
-            *p++ = *in++;
+            *out++ = *in++;
         }
-        if (p > out + len - 2) break;
     }
-    *p = 0;
+    *out = 0;
 }
 
 // we got an unrecognized line.
@@ -512,7 +514,7 @@ int XML_PARSER::scan_comment() {
         }
         if (strlen(buf) > 32) {
             strcpy_overlap(buf, buf+16);
-            p = buf;
+            p -= 16;
         }
     }
 }
@@ -540,7 +542,7 @@ int XML_PARSER::scan_cdata(char* buf, int len) {
 
 // we just read a <; read until we find a >.
 // Given <tag [attr=val attr=val] [/]>:
-// - copy tag (or tag/) to tag_buf
+// - copy tag (or tag/) to buf
 // - copy "attr=val attr=val" to attr_buf
 //
 // Return either
@@ -550,10 +552,10 @@ int XML_PARSER::scan_cdata(char* buf, int len) {
 // XML_PARSE_CDATA
 //
 int XML_PARSER::scan_tag(
-    char* tag_buf, int _tag_len, char* attr_buf, int attr_len
+    char* buf, int _tag_len, char* attr_buf, int attr_len
 ) {
     int c;
-    char* buf_start = tag_buf;
+    char* buf_start = buf;
     bool found_space = false;
     int tag_len = _tag_len;
 
@@ -561,7 +563,7 @@ int XML_PARSER::scan_tag(
         c = f->_getc();
         if (c == EOF) return XML_PARSE_EOF;
         if (c == '>') {
-            *tag_buf = 0;
+            *buf = 0;
             if (attr_buf) *attr_buf = 0;
             return XML_PARSE_TAG;
         }
@@ -574,7 +576,7 @@ int XML_PARSER::scan_tag(
             found_space = true;
         } else if (c == '/') {
             if (--tag_len > 0) {
-                *tag_buf++ = c;
+                *buf++ = c;
             }
         } else {
             if (found_space) {
@@ -585,7 +587,7 @@ int XML_PARSER::scan_tag(
                 }
             } else {
                 if (--tag_len > 0) {
-                    *tag_buf++ = c;
+                    *buf++ = c;
                 }
             }
         }
@@ -647,35 +649,35 @@ int XML_PARSER::get_aux(char* buf, int len, char* attr_buf, int attr_len) {
     }
 }
 
-bool XML_PARSER::get(char* buf, int len, bool& is_tag, char* attr_buf, int attr_len) {
+bool XML_PARSER::get(char* buf, int len, bool& _is_tag, char* attr_buf, int attr_len) {
     switch (get_aux(buf, len, attr_buf, attr_len)) {
     case XML_PARSE_EOF: return true;
     case XML_PARSE_TAG:
-        is_tag = true;
+        _is_tag = true;
         break;
     case XML_PARSE_DATA:
     case XML_PARSE_CDATA:
     default:
-        is_tag = false;
+        _is_tag = false;
         break;
     }
     return false;
 }
+
+#define MAX_XML_STRING  262144
 
 // We just parsed "parsed_tag".
 // If it matches "start_tag", and is followed by a string
 // and by the matching close tag, return the string in "buf",
 // and return true.
 //
-bool XML_PARSER::parse_str(
-    char* parsed_tag, const char* start_tag, char* buf, int len
-) {
-    bool is_tag, eof;
-    char end_tag[256], tag[256], tmp[64000];
+bool XML_PARSER::parse_str(const char* start_tag, char* buf, int len) {
+    bool eof;
+    char end_tag[256], tag[256];
 
     // handle the archaic form <tag/>, which means empty string
     //
-    int n = strlen(parsed_tag);
+    size_t n = strlen(parsed_tag);
     if (parsed_tag[n-1] == '/') {
         strcpy(tag, parsed_tag);
         tag[n-1] = 0;
@@ -694,13 +696,13 @@ bool XML_PARSER::parse_str(
 
     // get text after start tag
     //
-    int retval = get_aux(tmp, 64000, 0, 0);
+    int retval = get_aux(buf, len, 0, 0);
     if (retval == XML_PARSE_EOF) return false;
 
     // if it's the end tag, return empty string
     //
     if (retval == XML_PARSE_TAG) {
-        if (strcmp(tmp, end_tag)) {
+        if (strcmp(buf, end_tag)) {
             return false;
         } else {
             strcpy(buf, "");
@@ -712,19 +714,15 @@ bool XML_PARSER::parse_str(
     if (eof) return false;
     if (!is_tag) return false;
     if (strcmp(tag, end_tag)) return false;
-    if (retval == XML_PARSE_CDATA) {
-        strcpy(buf, tmp);
-    } else {
-        xml_unescape(tmp, buf, len);
+    if (retval != XML_PARSE_CDATA) {
+        xml_unescape(buf);
     }
     return true;
 }
 
-bool XML_PARSER::parse_string(
-    char* parsed_tag, const char* start_tag, string& str
-) {
-    char buf[8192];
-    bool flag = parse_str(parsed_tag, start_tag, buf, sizeof(buf));
+bool XML_PARSER::parse_string(const char* start_tag, string& str) {
+    char buf[MAX_XML_STRING];
+    bool flag = parse_str(start_tag, buf, sizeof(buf));
     if (!flag) return false;
     str = buf;
     return true;
@@ -732,9 +730,9 @@ bool XML_PARSER::parse_string(
 
 // Same, for integers
 //
-bool XML_PARSER::parse_int(char* parsed_tag, const char* start_tag, int& i) {
+bool XML_PARSER::parse_int(const char* start_tag, int& i) {
     char buf[256], *end;
-    bool is_tag, eof;
+    bool eof;
     char end_tag[256], tag[256];
 
     if (strcmp(parsed_tag, start_tag)) return false;
@@ -754,7 +752,7 @@ bool XML_PARSER::parse_int(char* parsed_tag, const char* start_tag, int& i) {
     }
     errno = 0;
     int val = strtol(buf, &end, 0);
-    if (errno == ERANGE) return false;
+    if (errno) return false;
     if (end != buf+strlen(buf)) return false;
 
     eof = get(tag, sizeof(tag), is_tag);
@@ -767,9 +765,9 @@ bool XML_PARSER::parse_int(char* parsed_tag, const char* start_tag, int& i) {
 
 // Same, for doubles
 //
-bool XML_PARSER::parse_double(char* parsed_tag, const char* start_tag, double& x) {
+bool XML_PARSER::parse_double(const char* start_tag, double& x) {
     char buf[256], *end;
-    bool is_tag, eof;
+    bool eof;
     char end_tag[256], tag[256];
 
     if (strcmp(parsed_tag, start_tag)) return false;
@@ -787,7 +785,79 @@ bool XML_PARSER::parse_double(char* parsed_tag, const char* start_tag, double& x
             return false;
         }
     }
+    errno = 0;
     double val = strtod(buf, &end);
+    if (errno) return false;
+    if (end != buf+strlen(buf)) return false;
+
+    eof = get(tag, sizeof(tag), is_tag);
+    if (eof) return false;
+    if (!is_tag) return false;
+    if (strcmp(tag, end_tag)) return false;
+    x = val;
+    return true;
+}
+
+// Same, for unsigned long
+//
+bool XML_PARSER::parse_ulong(const char* start_tag, unsigned long& x) {
+    char buf[256], *end;
+    bool eof;
+    char end_tag[256], tag[256];
+
+    if (strcmp(parsed_tag, start_tag)) return false;
+
+    end_tag[0] = '/';
+    strcpy(end_tag+1, start_tag);
+
+    eof = get(buf, sizeof(buf), is_tag);
+    if (eof) return false;
+    if (is_tag) {
+        if (!strcmp(buf, end_tag)) {
+            x = 0;      // treat <foo></foo> as <foo>0</foo>
+            return true;
+        } else {
+            return false;
+        }
+    }
+    errno = 0;
+    unsigned long val = strtoul(buf, &end, 0);
+    if (errno) return false;
+    if (end != buf+strlen(buf)) return false;
+
+    eof = get(tag, sizeof(tag), is_tag);
+    if (eof) return false;
+    if (!is_tag) return false;
+    if (strcmp(tag, end_tag)) return false;
+    x = val;
+    return true;
+}
+
+// Same, for unsigned long long
+//
+bool XML_PARSER::parse_ulonglong(const char* start_tag, unsigned long long& x) {
+    char buf[256], *end;
+    bool eof;
+    char end_tag[256], tag[256];
+
+    if (strcmp(parsed_tag, start_tag)) return false;
+
+    end_tag[0] = '/';
+    strcpy(end_tag+1, start_tag);
+
+    eof = get(buf, sizeof(buf), is_tag);
+    if (eof) return false;
+    if (is_tag) {
+        if (!strcmp(buf, end_tag)) {
+            x = 0;      // treat <foo></foo> as <foo>0</foo>
+            return true;
+        } else {
+            return false;
+        }
+    }
+    errno = 0;
+    unsigned long long val = boinc_strtoull(buf, &end, 0);
+    if (errno) return false;
     if (end != buf+strlen(buf)) return false;
 
     eof = get(tag, sizeof(tag), is_tag);
@@ -800,9 +870,9 @@ bool XML_PARSER::parse_double(char* parsed_tag, const char* start_tag, double& x
 
 // Same, for bools
 //
-bool XML_PARSER::parse_bool(char* parsed_tag, const char* start_tag, bool& b) {
+bool XML_PARSER::parse_bool(const char* start_tag, bool& b) {
     char buf[256], *end;
-    bool is_tag, eof;
+    bool eof;
     char end_tag[256], tag[256];
 
     // handle the archaic form <tag/>, which means true
@@ -838,7 +908,7 @@ bool XML_PARSER::parse_bool(char* parsed_tag, const char* start_tag, bool& b) {
 //
 bool XML_PARSER::parse_start(const char* start_tag) {
     char tag[256];
-    bool eof, is_tag;
+    bool eof;
 
     eof = get(tag, sizeof(tag), is_tag);
     if (eof || !is_tag ) {
@@ -894,7 +964,6 @@ void XML_PARSER::skip_unexpected(
     const char* start_tag, bool verbose, const char* where
 ) {
     char tag[256], end_tag[256];
-    bool is_tag;
 
     if (verbose) {
         fprintf(stderr, "Unrecognized XML in %s: %s\n", where, start_tag);
@@ -911,21 +980,30 @@ void XML_PARSER::skip_unexpected(
     }
 }
 
-// copy an element (which may contain tags) to the buffer
+// we just parsed a tag.
+// copy this entire element, including start and end tags, to the buffer
 //
-int XML_PARSER::element(const char* start_tag, char* buf, int buflen) {
-    char end_tag[256];
+int XML_PARSER::copy_element(string& out) {
+    char end_tag[256], buf[1024];
 
-    int n = strlen(start_tag);
-    if (start_tag[n-1] == '/') {
-        sprintf(buf, "<%s>", start_tag);
+    // handle <foo/> case
+    //
+    size_t n = strlen(parsed_tag);
+    if (parsed_tag[n-1] == '/') {
+        out = "<";
+        out += parsed_tag;
+        out += ">";
         return 0;
     }
-    if (strchr(start_tag, '/')) return ERR_XML_PARSE;
-    sprintf(end_tag, "</%s>", start_tag);
-    int retval = element_contents(end_tag, buf, buflen);
+    if (strchr(parsed_tag, '/')) return ERR_XML_PARSE;
+    out = "<";
+    out += parsed_tag;
+    out += ">";
+    sprintf(end_tag, "</%s>", parsed_tag);
+    int retval = element_contents(end_tag, buf, sizeof(buf));
     if (retval) return retval;
-    strcat(buf, end_tag);
+    out += buf;
+    out += end_tag;
     return 0;
 }
 
@@ -933,8 +1011,7 @@ int XML_PARSER::element(const char* start_tag, char* buf, int buflen) {
 
 #if 0
 void parse(FILE* f) {
-    char tag[256];
-    bool is_tag, flag;
+    bool flag;
     MIOFILE mf;
     XML_PARSER xp(&mf);
     char name[256];
@@ -946,25 +1023,25 @@ void parse(FILE* f) {
         printf("missing start tag\n");
         return;
     }
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) {
             printf("unexpected text: %s\n", tag);
             continue;
         }
-        if (!strcmp(tag, "/blah")) {
+        if (xp.match_tag("/blah")) {
             printf("success\n");
             return;
-        } else if (xp.parse_str(tag, "str", name, sizeof(name))) {
+        } else if (xp.parse_str("str", name, sizeof(name))) {
             printf("got str: %s\n", name);
-        } else if (xp.parse_int(tag, "int", val)) {
+        } else if (xp.parse_int("int", val)) {
             printf("got int: %d\n", val);
-        } else if (xp.parse_double(tag, "double", x)) {
+        } else if (xp.parse_double("double", x)) {
             printf("got double: %f\n", x);
-        } else if (xp.parse_bool(tag, "bool", flag)) {
+        } else if (xp.parse_bool("bool", flag)) {
             printf("got bool: %d\n", flag);
         } else {
-            printf("unparsed tag: %s\n", tag);
-            xp.skip_unexpected(tag, true, "xml test");
+            printf("unparsed tag: %s\n", xp.parsed_tag);
+            xp.skip_unexpected(true, "xml test");
         }
     }
     printf("unexpected EOF\n");

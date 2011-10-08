@@ -7,8 +7,8 @@ msgstr ""
 "Project-Id-Version: BOINC Client 0.0.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-01-26 13:27-0800\n"
-"PO-Revision-Date: 2010-09-28 10:52+0200\n"
-"Last-Translator: Gen Hayase <gen0215@gmail.com>\n"
+"PO-Revision-Date: 2011-08-28 19:07+0900\n"
+"Last-Translator: je2bwm <je2bwm@jarl.com>\n"
 "Language-Team: \n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -22,7 +22,6 @@ msgid "error"
 msgstr "エラー"
 
 #: client_msgs.cpp:79
-#, fuzzy
 msgid "Message from server"
 msgstr "プロジェクト・サーバからのメッセージ："
 
@@ -30,7 +29,7 @@ msgstr "プロジェクト・サーバからのメッセージ："
 msgid ""
 "Some tasks need more memory than allowed by your preferences.  Please check "
 "the preferences."
-msgstr ""
+msgstr "あなたの設定したプレファレンス(好みの設定)を越えるメモリ量を必要とするタスクがいくつかあります。プレファレンスの内容を確認して下さい。"
 
 #: client_state.cpp:414
 msgid "Couldn't write state file; check directory permissions"
@@ -45,7 +44,7 @@ msgstr "環境変数 HTTP_PROXY で HTTP プロキシを指定する必要があ
 msgid ""
 "You used the wrong URL for this project.  When convenient, remove this "
 "project, then add %s"
-msgstr ""
+msgstr "このプロジェクトに対して誤った URL を使っています。都合の良いときに、このプロジェクトを削除し、その後 %s を追加して下さい。"
 
 #: cs_statefile.cpp:794 ../sched/sched_types.cpp:273
 msgid "Syntax error in app_info.xml"
@@ -53,7 +52,7 @@ msgstr "app_info.xml の中に構文誤りがあります。"
 
 #: cs_statefile.cpp:833
 msgid "File referenced in app_info.xml does not exist: "
-msgstr ""
+msgstr "app_info.xml の中で参照されている次のファイルが存在しません: "
 
 #: current_version.cpp:84
 msgid "A new version of BOINC is available."
@@ -84,20 +83,18 @@ msgid "Missing end tag in cc_config.xml"
 msgstr "cc_config.xml には終了タグがありませんでした。"
 
 #: ../sched/handle_request.cpp:299
-#, fuzzy
 msgid "Invalid or missing account key.  To fix, remove and add this project."
-msgstr "アカウント・キーが無効であるか存在していません。修復するには、このプロジェクトから一旦離脱し、再び参加して下さい。"
+msgstr "アカウント・キーが無効であるか存在していません。修復するには、このプロジェクトを一旦削除し、再び追加して下さい。"
 
 #: ../sched/handle_request.cpp:822
-#, fuzzy
 msgid "Invalid code signing key.  To fix, remove and add this project."
-msgstr "コード署名用のキーが有効ではありません。修復するには、このプロジェクトから一旦離脱し、再び参加して下さい。"
+msgstr "コード署名用のキーが有効ではありません。修復するには、このプロジェクトを一旦削除し、再び追加して下さい。"
 
 #: ../sched/handle_request.cpp:832
 msgid ""
 "The project has changed its security key.  Please remove and add this "
 "project."
-msgstr ""
+msgstr "このプロジェクトはセキュリティ・キーを変更しました。このプロジェクトから一旦削除し、再び追加して下さい。"
 
 #  Poor translation because the implementation and the original text are English-dependent.
 #: ../sched/handle_request.cpp:916
@@ -189,9 +186,8 @@ msgstr "あなたの app_info.xml ファイルには次のアプリケーショ�
 
 #  Poor translation because the implementation and the original text are English-dependent.
 #: ../sched/sched_version.cpp:709
-#, fuzzy
 msgid "is not available for"
-msgstr "は、あなたのコンピュータのタイプでは処理できません。"
+msgstr "は、次に示すご使用中のプラットフォームでは処理できません:"
 
 #~ msgid ""
 #~ "You may have an outdated code signing key.  Try attaching and reattaching "

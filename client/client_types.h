@@ -41,6 +41,7 @@
 #include "rr_sim.h"
 #include "work_fetch.h"
 #include "cs_notice.h"
+#include "cs_trickle.h"
 
 #ifdef SIM
 #include "sim.h"
@@ -57,6 +58,38 @@ extern int rsc_index(const char*);
 extern const char* rsc_name(int);
 extern COPROCS coprocs;
 
+struct FILE_INFO;
+
+// represents a list of URLs (e.g. to download a file)
+// and a current position in that list
+//
+struct URL_LIST {
+    std::vector<std::string> urls;
+    int start_index;
+    int current_index;
+
+    URL_LIST(){};
+
+    void clear() {
+        urls.clear();
+        start_index = -1;
+        current_index = -1;
+    }
+    bool empty() {return urls.empty();}
+    const char* get_init_url();
+    const char* get_next_url();
+    const char* get_current_url(FILE_INFO&);
+    inline void add(std::string url) {
+        urls.push_back(url);
+    }
+    void replace(URL_LIST& ul) {
+        clear();
+        for (unsigned int i=0; i<ul.urls.size(); i++) {
+            add(ul.urls[i]);
+        }
+    }
+};
+
 // If the status is neither of these two,
 // it will be an error code defined in error_numbers.h,
 // indicating an unrecoverable error in the upload or download of the file,
@@ -71,16 +104,15 @@ struct FILE_INFO {
     double max_nbytes;
     double nbytes;
     double upload_offset;
-    bool generated_locally; // file is produced by app
     int status;
     bool executable;        // change file protections to make executable
     bool uploaded;          // file has been uploaded
-    bool upload_when_present;
     bool sticky;            // don't delete unless instructed to do so
     bool signature_required;    // true iff associated with app version
     bool is_user_file;
     bool is_project_file;
 	bool is_auto_update_file;
+    bool anonymous_platform_file;
     bool gzip_when_done;
         // for output files: gzip file when done, and append .gz to its name
     class PERS_FILE_XFER* pers_file_xfer;
@@ -89,16 +121,10 @@ struct FILE_INFO {
         // for upload files (to authenticate)
     PROJECT* project;
     int ref_cnt;
-    std::vector<std::string> urls;
-    int start_url;
-    int current_url;
-    char signed_xml[MAX_FILE_INFO_LEN];
-        // if the file_info is signed (for uploadable files)
-        // this is the text that is signed
-        // Otherwise it is the FILE_INFO's XML descriptor
-        // (without enclosing <file_info> tags)
+    URL_LIST download_urls;
+    URL_LIST upload_urls;
     char xml_signature[MAX_SIGNATURE_LEN];
-        // ... and this is the signature
+        // the upload signature
     char file_signature[MAX_SIGNATURE_LEN];
         // if the file itself is signed (for executable files)
         // this is the signature
@@ -110,14 +136,11 @@ struct FILE_INFO {
     ~FILE_INFO(){}
     void reset();
     int set_permissions();
-    int parse(MIOFILE&, bool from_server);
+    int parse(XML_PARSER&);
     int write(MIOFILE&, bool to_server);
     int write_gui(MIOFILE&);
     int delete_file();
         // attempt to delete the underlying file
-    const char* get_init_url();
-    const char* get_next_url();
-    const char* get_current_url();
     bool had_failure(int& failnum);
     void failure_message(std::string&);
     int merge_info(FILE_INFO&);
@@ -125,6 +148,15 @@ struct FILE_INFO {
     bool verify_file_certs();
     int gzip();
         // gzip file and add .gz to name
+    inline bool uploadable() {
+        return !upload_urls.empty();
+    }
+    inline bool downloadable() {
+        return !download_urls.empty();
+    }
+    inline URL_LIST& get_url_list(bool is_upload) {
+        return is_upload?upload_urls:download_urls;
+    }
 };
 
 // Describes a connection between a file and a workunit, result, or app version
@@ -141,7 +173,7 @@ struct FILE_REF {
 	bool optional;
 		// for output files: app may not generate file;
 		// don't treat as error if file is missing.
-    int parse(MIOFILE&);
+    int parse(XML_PARSER&);
     int write(MIOFILE&);
 };
 
@@ -223,9 +255,10 @@ struct PROJECT : PROJ_AM {
     //
     bool no_rsc_pref[MAX_RSC];
 
-    // list of GPUs not to use for this project
+    // derived from GPU exclusions in cc_config.xml;
+    // disable work fetch if all instances excluded
     //
-    std::vector<EXCLUDE_GPU> exclude_gpus;
+    bool no_rsc_config[MAX_RSC];
 
     // the following are from the project itself
     // (or derived from app version list if anonymous platform)
@@ -343,7 +376,7 @@ struct PROJECT : PROJ_AM {
     std::vector<FILE_REF> project_files;
         // files not specific to apps or work - e.g. icons
     int parse_preferences_for_user_files();
-    int parse_project_files(MIOFILE&, bool delete_existing_symlinks);
+    int parse_project_files(XML_PARSER&, bool delete_existing_symlinks);
     void write_project_files(MIOFILE&);
     void link_project_files(bool recreate_symlink_files);
     int write_symlink_for_project_file(FILE_INFO*);
@@ -390,9 +423,6 @@ struct PROJECT : PROJ_AM {
         // in last X minutes and is still active
     bool uploading();
 
-    RR_SIM_PROJECT_STATUS rr_sim_status;
-        // temps used in CLIENT_STATE::rr_simulation();
-
     struct RESULT *next_runnable_result;
         // the next result to run for this project
     int nuploading_results;
@@ -403,6 +433,7 @@ struct PROJECT : PROJ_AM {
     // stuff for RR sim
     //
     double rr_sim_cpu_share;
+    bool rr_sim_active;
 
     // stuff related to work fetch
     //
@@ -416,11 +447,6 @@ struct PROJECT : PROJ_AM {
     inline int deadlines_missed(int rsc_type) {
         return rsc_pwf[rsc_type].deadlines_missed;
     }
-//#ifndef USE_REC
-    inline double anticipated_debt(int rsc_type) {
-        return rsc_pwf[rsc_type].anticipated_debt;
-    }
-//#endif
     void get_task_durs(double& not_started_dur, double& in_progress_dur);
 
     int nresults_returned;
@@ -436,6 +462,10 @@ struct PROJECT : PROJ_AM {
         return is_upload?upload_backoff:download_backoff;
     }
 
+    // support for replicated trickle-ups
+    //
+    std::vector<TRICKLE_UP_OP*> trickle_up_ops;
+
     PROJECT();
     ~PROJECT(){}
     void init();
@@ -444,7 +474,7 @@ struct PROJECT : PROJ_AM {
     int parse_account(FILE*);
     int parse_account_file_venue();
     int parse_account_file();
-    int parse_state(MIOFILE&);
+    int parse_state(XML_PARSER&);
     int write_state(MIOFILE&, bool gui_rpc=false);
 
     // statistic of the last x days
@@ -505,7 +535,7 @@ struct APP {
     APP() {memset(this, 0, sizeof(APP));}
 #endif
 
-    int parse(MIOFILE&);
+    int parse(XML_PARSER&);
     int write(MIOFILE&);
 };
 
@@ -527,6 +557,9 @@ struct APP_VERSION {
     double flops;
     char cmdline[256];
         // additional cmdline args
+    char file_prefix[256];
+        // prepend this to input/output file logical names
+        // (e.g. "share" for VM apps)
 
     APP* app;
     PROJECT* project;
@@ -552,7 +585,7 @@ struct APP_VERSION {
 
     APP_VERSION(){}
     ~APP_VERSION(){}
-    int parse(MIOFILE&);
+    int parse(XML_PARSER&);
     int write(MIOFILE&, bool write_file_info = true);
     bool had_download_failure(int& failnum);
     void get_file_errors(std::string&);
@@ -584,7 +617,7 @@ struct WORKUNIT {
 
     WORKUNIT(){}
     ~WORKUNIT(){}
-    int parse(MIOFILE&);
+    int parse(XML_PARSER&);
     int write(MIOFILE&);
     bool had_download_failure(int& failnum);
     void get_file_errors(std::string&);
@@ -655,9 +688,9 @@ struct RESULT {
     RESULT(){}
     ~RESULT(){}
     void clear();
-    int parse_server(MIOFILE&);
-    int parse_state(MIOFILE&);
-    int parse_name(FILE*, const char* end_tag);
+    int parse_server(XML_PARSER&);
+    int parse_state(XML_PARSER&);
+    int parse_name(XML_PARSER&, const char* end_tag);
     int write(MIOFILE&, bool to_server);
     int write_gui(MIOFILE&);
     bool is_upload_done();    // files uploaded?
@@ -716,6 +749,7 @@ struct RESULT {
     double rrsim_flops_left;
     double rrsim_finish_delay;
     double rrsim_flops;
+    bool rrsim_done;
 
     bool already_selected;
         // used to keep cpu scheduler from scheduling a result twice
@@ -742,11 +776,11 @@ struct RESULT {
 
 // represents an always/auto/never value, possibly temporarily overridden
 
-struct MODE {
+struct RUN_MODE {
     int perm_mode;
     int temp_mode;
     double temp_timeout;
-    MODE();
+    RUN_MODE();
     void set(int mode, double duration);
     int get_perm();
     int get_current();

@@ -21,30 +21,57 @@
 #ifndef _VBOX_H_
 #define _VBOX_H_
 
-// Return codes
-#define     VBOX_SUCCESS                0x00000000
-#define     VBOX_POPEN_ERROR            0x00000001
-#define     VBOX_PARSER_ERROR           0x00000002
+// represents a VirtualBox VM
 
-// Functions
-extern int virtualbox_generate_vm_root_dir( std::string& dir );
-extern int virtualbox_generate_vm_name( std::string& name );
+struct VBOX_VM {
+    VBOX_VM();
+    ~VBOX_VM(){};
 
-extern bool virtualbox_vm_is_registered();
-extern bool virtualbox_vm_is_hdd_registered();
-extern bool virtualbox_vm_is_running();
+    // name of the OS the VM runs
+    std::string os_name;
+    // size of the memory allocation for the VM, in megabytes
+    std::string memory_size_mb;
+    // name of the virtual machine disk image file
+    std::string image_filename;
+    // unique name for the VM
+    std::string vm_name;
+    bool suspended;
+    // whether network access is temporarily suspended
+    bool network_suspended;
+    // whether to allow network access at all
+    bool enable_network;
+    bool enable_shared_directory;
+    // whether we were instructed to only register the VM.
+    // useful for debugging VMs.
+    bool register_only;
 
-extern int virtualbox_initialize();
-extern int virtualbox_register_vm();
-extern int virtualbox_deregister_stale_vm();
-extern int virtualbox_deregister_vm();
-extern int virtualbox_cleanup();
+    void poll();
+    int run();
+    int stop();
+    int pause();
+    int resume();
+    void cleanup();
+    bool is_running();
 
-extern int virtualbox_startvm();
-extern int virtualbox_stopvm();
-extern int virtualbox_pausevm();
-extern int virtualbox_resumevm();
+    int register_vm();
+    bool is_hdd_registered();
+    bool is_registered();
+    int deregister_stale_vm();
+    int deregister_vm();
+    int start();
+    int set_network_access(bool enabled);
+    int set_cpu_usage_fraction(double);
+    int set_network_max_bytes_sec(double);
+    int get_process_id(int& process_id);
+    int get_network_bytes_sent(double& sent);
+    int get_network_bytes_received(double& received);
 
-extern int virtualbox_monitor();
+    static int initialize();
+    static int get_install_directory(std::string& dir);
+    static int get_slot_directory(std::string& dir);
+    static int vbm_popen(
+        std::string& command, std::string& output, const char* item
+    );
+};
 
 #endif

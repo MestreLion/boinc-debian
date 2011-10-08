@@ -42,14 +42,12 @@
 
 void usage(char* name) {
     fprintf(stderr,
-        "Arrange to delete a file from a host.\n\n"
-        "Usage: %s OPTION...\n\n"
+        "Usage: delete_file [options] : delete a file from a host \n\n"
         "Options:\n"
-        "  --file_name F                 Specify te file to delete.\n"
-        "  --host_id H                   Specify the coresponding host\n"
+        "  --file_name F                 file name\n"
+        "  --host_id H                   host DB ID\n"
         "  [-h | --help]                 Show this help text.\n"
-        "  [-v | --version]              Show version information.\n",
-        name
+        "  [-v | --version]              Show version information.\n"
     );
 }
 
@@ -132,4 +130,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_f6337b04b0 = "$Id: delete_file.cpp 22647 2010-11-08 17:51:57Z davea $";
+const char *BOINC_RCSID_f6337b04b0 = "$Id: delete_file.cpp 23978 2011-08-10 17:11:08Z davea $";

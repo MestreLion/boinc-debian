@@ -682,8 +682,9 @@ msgid "PrimeGrid"
 msgstr ""
 
 #: projects.inc:344
+#, fuzzy
 msgid "Private"
-msgstr ""
+msgstr "privatus"
 
 #: projects.inc:346
 msgid ""

@@ -46,6 +46,7 @@
 
 #include "client_msgs.h"
 #include "cs_notice.h"
+#include "cs_trickle.h"
 #include "scheduler_op.h"
 #include "sandbox.h"
 
@@ -144,7 +145,7 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
     write_platforms(p, mf);
 
     if (strlen(p->code_sign_key)) {
-        fprintf(f, "    <code_sign_key>\n%s</code_sign_key>\n", p->code_sign_key);
+        fprintf(f, "    <code_sign_key>\n%s\n</code_sign_key>\n", p->code_sign_key);
     }
 
     // send working prefs
@@ -220,13 +221,13 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
 
     // copy request values from RSC_WORK_FETCH to COPROC
     //
-    int j = rsc_index("NVIDIA");
+    int j = rsc_index(GPU_TYPE_NVIDIA);
     if (j > 0) {
         coprocs.nvidia.req_secs = rsc_work_fetch[j].req_secs;
         coprocs.nvidia.req_instances = rsc_work_fetch[j].req_instances;
         coprocs.nvidia.estimated_delay = rsc_work_fetch[j].req_secs?rsc_work_fetch[j].busy_time_estimator.get_busy_time():0;
     }
-    j = rsc_index("ATI");
+    j = rsc_index(GPU_TYPE_ATI);
     if (j > 0) {
         coprocs.ati.req_secs = rsc_work_fetch[j].req_secs;
         coprocs.ati.req_instances = rsc_work_fetch[j].req_instances;
@@ -338,9 +339,9 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
             strcpy(buf, "");
             int rt = rp->avp->gpu_usage.rsc_type;
             if (rt) {
-                if (rt == rsc_index("NVIDIA")) {
+                if (rt == rsc_index(GPU_TYPE_NVIDIA)) {
                     sprintf(buf, "        <ncudas>%f</ncudas>\n", rp->avp->gpu_usage.usage);
-                } else if (rt == rsc_index("ATI")) {
+                } else if (rt == rsc_index(GPU_TYPE_ATI)) {
                     sprintf(buf, "        <natis>%f</natis>\n", rp->avp->gpu_usage.usage);
                 }
             }
@@ -1017,6 +1018,8 @@ int CLIENT_STATE::handle_scheduler_reply(PROJECT* project, char* scheduler_url) 
     if (sr.got_rss_feeds) {
         handle_sr_feeds(sr.sr_feeds, project);
     }
+
+    update_trickle_up_urls(project, sr.trickle_up_urls);
 
     // garbage collect in case the project sent us some irrelevant FILE_INFOs;
     // avoid starting transfers for them

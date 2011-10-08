@@ -1,5 +1,9 @@
 // a stripped-down subset of cl.h and cl_platform.h, for BOINC
 
+#ifndef __CL_BOINC_H
+#define __CL_BOINC_H
+
+
 #if (defined (_WIN32) && defined(_MSC_VER))
 
 /* scalar types  */
@@ -101,6 +105,13 @@ typedef cl_bitfield         cl_command_queue_properties;
 #define CL_INVALID_GLOBAL_WORK_SIZE                 -63
 #define CL_INVALID_PROPERTY                         -64
 
+// cl_platform_info
+#define CL_PLATFORM_PROFILE                         0x0900
+#define CL_PLATFORM_VERSION                         0x0901
+#define CL_PLATFORM_NAME                            0x0902
+#define CL_PLATFORM_VENDOR                          0x0903
+#define CL_PLATFORM_EXTENSIONS                      0x0904
+
 /* cl_device_type - bitfield */
 #define CL_DEVICE_TYPE_DEFAULT                      (1 << 0)
 #define CL_DEVICE_TYPE_CPU                          (1 << 1)
@@ -171,3 +182,34 @@ typedef cl_bitfield         cl_command_queue_properties;
 #define CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE        0x103B
 #define CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF          0x103C
 #define CL_DEVICE_OPENCL_C_VERSION                  0x103D
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Platform API */
+extern cl_int 
+clGetPlatformIDs(cl_uint          /* num_entries */,
+                 cl_platform_id * /* platforms */,
+                 cl_uint *        /* num_platforms */);
+
+/* Device APIs */
+extern cl_int 
+clGetDeviceIDs(cl_platform_id   /* platform */,
+               cl_device_type   /* device_type */, 
+               cl_uint          /* num_entries */, 
+               cl_device_id *   /* devices */, 
+               cl_uint *        /* num_devices */);
+
+extern cl_int 
+clGetDeviceInfo(cl_device_id    /* device */,
+                cl_device_info  /* param_name */, 
+                size_t          /* param_value_size */, 
+                void *          /* param_value */,
+                size_t *        /* param_value_size_ret */);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __CL_BOINC_H */

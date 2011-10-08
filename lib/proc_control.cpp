@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2008 University of California
+// Copyright (C) 2011 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -15,294 +15,211 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// Code to run a BOINC application (main or graphics) under Windows
-// Don't include this in applications
-
-#if   defined(_WIN32) && !defined(__STDWX_H__)
-#include "boinc_win.h"
-#elif defined(_WIN32) && defined(__STDWX_H__)
+#include <vector>
+#ifdef _WIN32
+#include "diagnostics.h"
+#ifdef __STDWX_H__
 #include "stdwx.h"
+#else
+#include "boinc_win.h"
+#include "win_util.h"
+#endif
+#else
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#ifdef HAVE_CSIGNAL
+#include <csignal>
+#elif defined(HAVE_SYS_SIGNAL_H)
+#include <sys/signal.h>
+#elif defined(HAVE_SIGNAL_H)
+#include <signal.h>
+#endif
 #endif
 
-#include "win_util.h"
-#include "filesys.h"
-#include "error_numbers.h"
-#include "common_defs.h"
-#include "util.h"
-#include "parse.h"
-#include "base64.h"
+#include "procinfo.h"
 
-HANDLE sandbox_account_interactive_token = NULL;
-HANDLE sandbox_account_service_token = NULL;
+#include "proc_control.h"
 
-void get_sandbox_account_interactive_token() {
-    FILE*       f;
-    char        buf[256];
-    std::string encoded_username_str;
-    std::string encoded_password_str;
-    std::string username_str;
-    std::string domainname_str; 
-    std::string password_str; 
-    int         retval = 0;
-    static bool first = true;
-    PSID        sandbox_account_sid = NULL;
+using std::vector;
 
-    if (!first) return;
-    first = false;
-
-    f = fopen(CLIENT_AUTH_FILENAME, "r");
-    if (!f) return;
-    while (fgets(buf, 256, f)) {
-        if (parse_str(buf, "<username>", encoded_username_str)) continue;
-        if (parse_str(buf, "<password>", encoded_password_str)) continue;
-    }
-    fclose(f);
-
-    password_str = r_base64_decode(encoded_password_str); 
-
-    if (std::string::npos != encoded_username_str.find('\\')) {
-        domainname_str = encoded_username_str.substr(
-            0, encoded_username_str.find('\\')
-        );
-        username_str = encoded_username_str.substr(
-            encoded_username_str.rfind(_T('\\')) + 1,
-            encoded_username_str.length() - encoded_username_str.rfind(_T('\\')) - 1
-        );
-        retval = LogonUserA( 
-            username_str.c_str(),
-            domainname_str.c_str(), 
-            password_str.c_str(), 
-            LOGON32_LOGON_INTERACTIVE, 
-            LOGON32_PROVIDER_DEFAULT, 
-            &sandbox_account_interactive_token
-        );
-        if (retval) {
-            GetAccountSid(domainname_str.c_str(), username_str.c_str(), &sandbox_account_sid);
-        }
-    } else {
-        username_str = encoded_username_str;
-        retval = LogonUserA( 
-            username_str.c_str(),
-            NULL, 
-            password_str.c_str(), 
-            LOGON32_LOGON_INTERACTIVE, 
-            LOGON32_PROVIDER_DEFAULT, 
-            &sandbox_account_interactive_token
-        );
-        if (retval) {
-            GetAccountSid(NULL, username_str.c_str(), &sandbox_account_sid);
-        }
-    }
-
-    if (!retval) {
-        sandbox_account_interactive_token = NULL;
-        sandbox_account_sid = NULL;
-    } else {
-        // Adjust the permissions on the current desktop and window station
-        //   to allow the sandbox user account to create windows and such.
-        //
-        if (!AddAceToWindowStation(GetProcessWindowStation(), sandbox_account_sid)) {
-            fprintf(stderr, "Failed to add ACE to current WindowStation\n");
-        }
-        if (!AddAceToDesktop(GetThreadDesktop(GetCurrentThreadId()), sandbox_account_sid)) {
-            fprintf(stderr, "Failed to add ACE to current Desktop\n");
-        }
+static void get_descendants_aux(PROC_MAP& pm, int pid, vector<int>& pids) {
+    PROC_MAP::iterator i = pm.find(pid);
+    if (i == pm.end()) return;
+    for (unsigned int j=0; j<i->second.children.size(); j++) {
+        int child_pid = i->second.children[j];
+        pids.push_back(child_pid);
+        get_descendants_aux(pm, child_pid, pids);
     }
 }
 
-void get_sandbox_account_service_token() {
-    FILE* f;
-    char buf[256];
-    std::string encoded_username_str;
-    std::string encoded_password_str;
-    std::string username_str;
-    std::string domainname_str; 
-    std::string password_str; 
-    int retval = 0;
-    static bool first=true;
-
-    if (!first) return;
-    first = false;
-
-    f = fopen(CLIENT_AUTH_FILENAME, "r");
-    if (!f) return;
-    while (fgets(buf, 256, f)) {
-        if (parse_str(buf, "<username>", encoded_username_str)) continue;
-        if (parse_str(buf, "<password>", encoded_password_str)) continue;
-    }
-    fclose(f);
-
-    password_str = r_base64_decode(encoded_password_str); 
-
-    if (std::string::npos != encoded_username_str.find('\\')) {
-        domainname_str = encoded_username_str.substr(
-            0, encoded_username_str.find('\\')
-        );
-        username_str = encoded_username_str.substr(
-            encoded_username_str.rfind(_T('\\')) + 1,
-            encoded_username_str.length() - encoded_username_str.rfind(_T('\\')) - 1
-        );
-        retval = LogonUserA( 
-            username_str.c_str(),
-            domainname_str.c_str(), 
-            password_str.c_str(), 
-            LOGON32_LOGON_SERVICE, 
-            LOGON32_PROVIDER_DEFAULT, 
-            &sandbox_account_service_token
-        );
-    } else {
-        username_str = encoded_username_str;
-        retval = LogonUserA( 
-            username_str.c_str(),
-            NULL, 
-            password_str.c_str(), 
-            LOGON32_LOGON_SERVICE, 
-            LOGON32_PROVIDER_DEFAULT, 
-            &sandbox_account_service_token
-        );
-    }
-
-    if (!retval) {
-        sandbox_account_service_token = NULL;
-    }
+// return a list of all descendants of the given process
+//
+void get_descendants(int pid, vector<int>& pids) {
+    int retval;
+    PROC_MAP pm;
+    pids.clear();
+    retval = procinfo_setup(pm);
+    if (retval) return;
+    get_descendants_aux(pm, pid, pids);
 }
 
-// Run application, Windows.
-// chdir into the given directory, and run a program there.
-// argv is set up Unix-style, i.e. argv[0] is the program name
+#ifdef _WIN32
+// signature of OpenThread()
+//
+typedef HANDLE (WINAPI *tOT)(
+    DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId
+);
+
+// Suspend or resume the threads in a given process,
+// but don't suspend 'calling_thread'.
+//
+// The only way to do this on Windows is to enumerate
+// all the threads in the entire system,
+// and find those belonging to the process (ugh!!)
 //
 
-// CreateEnvironmentBlock
-typedef BOOL (WINAPI *tCEB)(LPVOID *lpEnvironment, HANDLE hToken, BOOL bInherit);
-// DestroyEnvironmentBlock
-typedef BOOL (WINAPI *tDEB)(LPVOID lpEnvironment);
-
-
-int run_app_windows(
-    const char* dir, const char* file, int argc, char *const argv[], HANDLE& id
-) {
-    int retval;
-    PROCESS_INFORMATION process_info;
-    STARTUPINFOA startup_info;
-    LPVOID environment_block = NULL;
-    char cmdline[1024];
-    char error_msg[1024];
-
-    memset(&process_info, 0, sizeof(process_info));
-    memset(&startup_info, 0, sizeof(startup_info));
-    startup_info.cb = sizeof(startup_info);
-
-    strcpy(cmdline, "");
-    for (int i=0; i<argc; i++) {
-        strcat(cmdline, argv[i]);
-        if (i<argc-1) {
-            strcat(cmdline, " ");
-        }
+int suspend_or_resume_threads(
+    DWORD pid, DWORD calling_thread_id, bool resume
+) { 
+    HANDLE threads, thread;
+    static HMODULE hKernel32Lib = NULL;
+    THREADENTRY32 te = {0}; 
+    static tOT pOT = NULL;
+ 
+    // Dynamically link to the proper function pointers.
+    if (!hKernel32Lib) {
+        hKernel32Lib = GetModuleHandleA("kernel32.dll");
+    }
+    if (!pOT) {
+        pOT = (tOT) GetProcAddress( hKernel32Lib, "OpenThread" );
     }
 
-    get_sandbox_account_interactive_token();
-    if (sandbox_account_interactive_token != NULL) {
-
-        // Find CreateEnvironmentBlock/DestroyEnvironmentBlock pointers
-        tCEB    pCEB = NULL;
-        tDEB    pDEB = NULL;
-        HMODULE hUserEnvLib = NULL;
-
-        hUserEnvLib = LoadLibraryA("userenv.dll");
-        if (hUserEnvLib) {
-            pCEB = (tCEB) GetProcAddress(hUserEnvLib, "CreateEnvironmentBlock");
-            pDEB = (tDEB) GetProcAddress(hUserEnvLib, "DestroyEnvironmentBlock");
-        }
-
-
-        // Retrieve the current window station and desktop names
-        char szWindowStation[256];
-        memset(szWindowStation, 0, sizeof(szWindowStation));
-        char szDesktop[256];
-        memset(szDesktop, 0, sizeof(szDesktop));
-        char szDesktopName[512];
-        memset(szDesktopName, 0, sizeof(szDesktopName));
-
-        if (!GetUserObjectInformationA(
-                GetProcessWindowStation(),
-                UOI_NAME,
-                &szWindowStation,
-                sizeof(szWindowStation),
-                NULL)
-            ) {
-            windows_error_string(error_msg, sizeof(error_msg));
-            fprintf(stderr, "GetUserObjectInformation failed: %s\n", error_msg);
-        }
-        if (!GetUserObjectInformationA(
-                GetThreadDesktop(GetCurrentThreadId()),
-                UOI_NAME,
-                &szDesktop,
-                sizeof(szDesktop),
-                NULL)
-            ) {
-            windows_error_string(error_msg, sizeof(error_msg));
-            fprintf(stderr, "GetUserObjectInformation failed: %s\n", error_msg);
-        }
-
-        // Construct the destination desktop name
-        strncat(szDesktopName, szWindowStation, sizeof(szDesktopName) - strlen(szDesktopName));
-        strncat(szDesktopName, "\\", sizeof(szDesktopName) - strlen(szDesktopName));
-        strncat(szDesktopName, szDesktop, sizeof(szDesktopName) - strlen(szDesktopName));
-
-        // Tell CreateProcessAsUser which desktop to use explicitly.
-        startup_info.lpDesktop = szDesktopName;
-                 
-        // Construct an environment block that contains environment variables that don't
-        //   describe the current user.
-        if (!pCEB(&environment_block, sandbox_account_interactive_token, FALSE)) {
-            windows_error_string(error_msg, sizeof(error_msg));
-            fprintf(stderr, "CreateEnvironmentBlock failed: %s\n", error_msg);
-        }
-
-        retval = CreateProcessAsUserA( 
-            sandbox_account_interactive_token, 
-            file, 
-            cmdline, 
-            NULL, 
-            NULL, 
-            FALSE, 
-            CREATE_NEW_PROCESS_GROUP|CREATE_UNICODE_ENVIRONMENT, 
-            environment_block, 
-            dir, 
-            &startup_info, 
-            &process_info 
-        );
-
-        if (!pDEB(environment_block)) {
-            windows_error_string(error_msg, sizeof(error_msg));
-            fprintf(stderr, "DestroyEnvironmentBlock failed: %s\n", error_msg);
-        }
-
-        if (hUserEnvLib) {
-            pCEB = NULL;
-            pDEB = NULL;
-            FreeLibrary(hUserEnvLib);
-        }
-    } else {
-        retval = CreateProcessA(
-            file,
-            cmdline,
-            NULL,
-            NULL,
-            FALSE,
-            0,
-            NULL,
-            dir,
-            &startup_info,
-            &process_info
-        );
-    }
-    if (!retval) {
-        windows_error_string(error_msg, sizeof(error_msg));
-        fprintf(stderr, "CreateProcess failed: '%s'\n", error_msg);
-        return -1; // CreateProcess returns 1 if successful, false if it failed.
+    if (!pOT) {
+        return -1;
     }
 
-    id = process_info.hProcess;
+    threads = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0); 
+    if (threads == INVALID_HANDLE_VALUE) return -1;
+ 
+    te.dwSize = sizeof(THREADENTRY32); 
+    if (!Thread32First(threads, &te)) { 
+        CloseHandle(threads); 
+        return -1;
+    }
+
+    do { 
+        if (!diagnostics_is_thread_exempt_suspend(te.th32ThreadID)) continue;
+        if (te.th32ThreadID == calling_thread_id) continue;
+        if (te.th32OwnerProcessID == pid) {
+            thread = pOT(THREAD_SUSPEND_RESUME, FALSE, te.th32ThreadID);
+            resume ?  ResumeThread(thread) : SuspendThread(thread);
+            CloseHandle(thread);
+        } 
+    } while (Thread32Next(threads, &te)); 
+
+    CloseHandle (threads); 
+
     return 0;
+} 
+
+#else
+
+bool any_process_exists(vector<int>& pids) {
+    int status;
+    for (unsigned int i=0; i<pids.size(); i++) {
+        if (waitpid(pids[i], &status, WNOHANG) >= 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+#endif
+
+void kill_all(vector<int>& pids) {
+    for (unsigned int i=0; i<pids.size(); i++) {
+#ifdef _WIN32
+        HANDLE h = OpenProcess(READ_CONTROL | PROCESS_TERMINATE, false, pids[i]);
+        if (h == NULL) continue;
+        TerminateProcess(h, 0);
+        CloseHandle(h);
+#else
+        kill(pids[i], SIGTERM);
+#endif
+    }
+}
+
+// Kill the descendants of the calling process.
+//
+#ifdef _WIN32
+void kill_descendants() {
+    vector<int> descendants;
+    // on Win, kill descendants directly
+    //
+    get_descendants(GetCurrentProcessId(), descendants);
+    kill_all(descendants);
+}
+#else
+// Same, but if child_pid is nonzero, give it a chance to exit gracefully on Unix
+//
+void kill_descendants(int child_pid) {
+    vector<int> descendants;
+    // on Unix, ask main process nicely.
+    // it descendants still exist after 10 sec, use the nuclear option
+    //
+    get_descendants(getpid(), descendants);
+    if (child_pid) {
+        ::kill(child_pid, SIGTERM);
+        for (int i=0; i<10; i++) {
+            if (!any_process_exists(descendants)) {
+                return;
+            }
+            sleep(1);
+        }
+        kill_all(descendants);
+        // kill any processes that might have been created
+        // in the last 10 secs
+        get_descendants(getpid(), descendants);
+    }
+    kill_all(descendants);
+}
+#endif
+
+void suspend_or_resume_all(vector<int>& pids, bool resume) {
+    for (unsigned int i=0; i<pids.size(); i++) {
+#ifdef _WIN32
+        suspend_or_resume_threads(pids[i], 0, resume);
+#else
+        kill(pids[i], resume?SIGCONT:SIGSTOP);
+#endif
+    }
+}
+
+
+
+// suspend/resume the descendants of the given process
+// (or if pid==0, the calling process)
+//
+void suspend_or_resume_descendants(int pid, bool resume) {
+    vector<int> descendants;
+    if (!pid) {
+#ifdef _WIN32
+        pid = GetCurrentProcessId();
+#else
+        pid = getpid();
+#endif
+    }
+    get_descendants(pid, descendants);
+    suspend_or_resume_all(descendants, resume);
+}
+
+void suspend_or_resume_process(int pid, bool resume) {
+#ifdef _WIN32
+    suspend_or_resume_threads(pid, 0, resume);
+#else
+    ::kill(pid, resume?SIGCONT:SIGSTOP);
+#endif
+
 }

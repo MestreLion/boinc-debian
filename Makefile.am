@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 22268 2010-08-18 17:49:13Z romw $
+## $Id: Makefile.am 24052 2011-08-27 02:54:39Z davea $
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -21,10 +21,10 @@ if ENABLE_CLIENT
 endif
 
 if ENABLE_MANAGER
-	CLIENTGUI_SUBDIRS = clientgui clientgui/res locale
-	if BUILD_X11_SCREENSAVER
-		CLIENTGUI_SUBDIRS += clientscr
-	endif 
+   CLIENTGUI_SUBDIRS = clientgui clientgui/res locale
+if BUILD_X11_SCREENSAVER
+   CLIENTGUI_SUBDIRS += clientscr
+endif
 endif
 
 # ORDER MATTERS below.  One must build dependencies FIRST, then things

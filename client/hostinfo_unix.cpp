@@ -123,6 +123,8 @@ extern "C" {
 #include <IOKit/ps/IOPSKeys.h>
 #ifdef __cplusplus
 }    // extern "C"
+
+#include <dlfcn.h>
 #endif
 
 mach_port_t gEventHandle = NULL;
@@ -244,7 +246,7 @@ bool HOST_INFO::host_is_running_on_batteries() {
     }
     if (Detect == method) {
         // try ACPI in ProcFS
-        std::string ac_name;
+        string ac_name;
         FILE* facpi;
 
         DirScanner dir("/proc/acpi/ac_adapter/");
@@ -273,7 +275,7 @@ bool HOST_INFO::host_is_running_on_batteries() {
     if (Detect == method) {
         // try SysFS
         char buf[256];
-        std::string ps_name;
+        string ps_name;
         FILE* fsys;
 
         DirScanner dir("/sys/class/power_supply/");
@@ -1451,12 +1453,12 @@ static const struct dir_dev {
     { NULL, NULL },
 };
 
-std::vector<std::string> get_tty_list() {
+vector<string> get_tty_list() {
     // Create a list of all terminal devices on the system.
     char devname[1024];
     char fullname[1024];
     int done,i=0;
-    std::vector<std::string> tty_list;
+    vector<string> tty_list;
     
     do {
         DIRREF dev=dir_open(tty_patterns[i].dir);
@@ -1473,6 +1475,7 @@ std::vector<std::string> get_tty_list() {
                     }
                 }
             } while (!done);
+            dir_close(dev);
         }
         i++;
     } while (tty_patterns[i].dir != NULL);
@@ -1481,7 +1484,7 @@ std::vector<std::string> get_tty_list() {
        
 
 inline bool all_tty_idle(time_t t) {
-    static std::vector<std::string> tty_list;
+    static vector<string> tty_list;
     struct stat sbuf;
     unsigned int i;
 
@@ -1591,17 +1594,28 @@ bool HOST_INFO::users_idle(
     kern_return_t   kernResult = kIOReturnError; 
     UInt64          params;
     IOByteCount     rcnt = sizeof(UInt64);
-            
+    void            *IOKitlib = NULL;
+    static bool     triedToLoadNXIdleTime = false;
+    static nxIdleTimeProc  myNxIdleTimeProc = NULL;
+    
     if (error_posted) goto bail;
+    
+    if (!triedToLoadNXIdleTime) {
+        triedToLoadNXIdleTime = true;
+        IOKitlib = dlopen ("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_NOW );
+        if (IOKitlib) {
+            myNxIdleTimeProc = (nxIdleTimeProc)dlsym(IOKitlib, "NXIdleTime");
+        }
+    }
 
-    if (NXIdleTime) {   // Use NXIdleTime API in OS 10.5 and earlier
+    if (myNxIdleTimeProc) {   // Use NXIdleTime API in OS 10.5 and earlier
         if (gEventHandle) {
-            idleTime = NXIdleTime(gEventHandle);    
+            idleTime = myNxIdleTimeProc(gEventHandle);    
         } else {
             // Initialize Mac OS X idle time measurement / idle detection
             // Do this here because NXOpenEventStatus() may not be available 
             // immediately on system startup when running as a deaemon.
-            
+
             gEventHandle = NXOpenEventStatus();
             if (!gEventHandle) {
                 if (TickCount() > (120*60)) {        // If system has been up for more than 2 minutes 
@@ -1614,7 +1628,7 @@ bool HOST_INFO::users_idle(
             }
         }
     } else {        // NXIdleTime API does not exist in OS 10.6 and later
-        if (gEventHandle) {
+       if (gEventHandle) {
             kernResult = IOHIDGetParameter( gEventHandle, CFSTR(EVSIOIDLE), sizeof(UInt64), &params, &rcnt );
             if ( kernResult != kIOReturnSuccess ) {
                 msg_printf(NULL, MSG_INFO,

@@ -32,8 +32,6 @@ if (array_key_exists("PATH_INFO", $_SERVER)) {
 
 ini_set("memory_limit", "64M");
 
-date_default_timezone_set("UTC");
-
 if (!defined('SECURE_URL_BASE')) {
     define('SECURE_URL_BASE', URL_BASE);
 }
@@ -107,8 +105,8 @@ function get_logged_in_user($must_be_logged_in=true) {
 function show_login_info($prefix="") {
     $user = get_logged_in_user(false);
     echo "
-        <table width=100% cellpadding=0 cellspacing=0>
-        <td align=right>
+        <table width=\"100%\" cellpadding=0 cellspacing=0>
+        <tr><td align=right>
     ";
     if ($user) {
         $url_tokens = url_tokens($user->authenticator);
@@ -135,7 +133,7 @@ function page_head(
 ) {
     global $caching, $cache_control_extra, $did_page_head;
 
-	$did_page_head = true;
+    $did_page_head = true;
     $stylesheet = URL_BASE.STYLESHEET;
     $rssname = PROJECT . " RSS 2.0";
     $rsslink = URL_BASE."rss_main.php";
@@ -150,15 +148,18 @@ function page_head(
 
     echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
     
-    if (!$title_plain) {
-        echo "<html><head><title>".strip_tags($title)."</title>\n";
-    } else {
-        echo "<html><head><title>".strip_tags($title_plain)."</title>\n";
+    echo "<html><head>\n";
+    if ($head_extra) {
+        echo "\n$head_extra\n";
     }
-    echo "<link rel=stylesheet type=\"text/css\" href=\"".URL_BASE."main.css\" media=\"all\" />
+    if (!$title_plain) {
+        echo "<title>".sanitize_tags($title)."</title>\n";
+    } else {
+        echo "<title>".sanitize_tags($title_plain)."</title>\n";
+    }
+    echo "<link rel=stylesheet type=\"text/css\" href=\"".URL_BASE."main.css\" media=\"all\">
         <link rel=stylesheet type=\"text/css\" href=\"$stylesheet\">
         <link rel=alternate type=\"application/rss+xml\" title=\"$rssname\" href=\"$rsslink\">
-        $head_extra
         </head>
     ";
     if ($java_onload){
@@ -180,6 +181,11 @@ function page_head(
 
 }
 }
+
+// the following must be included in header
+// for Recaptcha to work with some IE browsers
+//
+define('IE_COMPAT_MODE', '<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8" >');
 
 function page_tail_aux($show_return, $show_date, $prefix="") {
     project_footer($show_return, $show_date, $prefix);
@@ -261,6 +267,11 @@ function time_str($x) {
     return gmdate('j M Y | G:i:s', $x) . " UTC";
 }
 
+function local_time_str($x) {
+    if ($x == 0) return "---";
+    return date('j M Y, H:i T', $x);
+}
+
 function pretty_time_str($x) {
     return time_str($x);
 }
@@ -313,7 +324,7 @@ function row1($x, $ncols=2, $class="heading") {
 
 function row2($x, $y, $show_error=false) {
     if ($x=="") $x="<br>";
-    if ($y=="") $y="<br>";
+    if ($y==="") $y="<br>";
     if ($show_error) {
         $class1 = 'fieldname_error';
         $class2 = 'fieldvalue_error';
@@ -696,7 +707,8 @@ function current_url() {
 // @param desc The title of the destination - typically used as a popup
 // @param class The optional CSS class of the button. Defaults to a standard button
 //
-function show_button($url, $text, $desc, $class="button") {
+function show_button($url, $text, $desc=null, $class="button") {
+    if (!$desc) $desc = $text;
     echo "<a href=\"".$url."\" title=\"".addslashes($desc)."\" class=\"".$class."\">".$text."</a>\n";
 }
 
@@ -791,6 +803,7 @@ function get_app_types() {
 // "next_url" arguments (must be local, not full URLs)
 //
 function sanitize_local_url($x) {
+    $x = trim($x, "/");
     if (strstr($x, "/")) return "";
     if (strstr($x, "<")) return "";
     if (strstr($x, "\"")) return "";
@@ -823,7 +836,14 @@ function sanitize_email($x) {
     }
 }
 
+function flops_to_credit($f) {
+    return $f*(200/86400e9);
+}
 
-$cvs_version_tracker[]="\$Id: util.inc 23624 2011-06-01 04:29:43Z boincadm $";  //Generated automatically - do not edit
+function credit_to_gflop_hours($c) {
+    return $c/(200/24);
+}
+
+$cvs_version_tracker[]="\$Id: util.inc 24064 2011-08-29 05:37:52Z davea $";  //Generated automatically - do not edit
 
 ?>

@@ -18,7 +18,7 @@ function lookup_app($name) {
     foreach ($apps as $app) {
         if ($app->name == $name) return $app;
     }
-    return null;
+    die("app not found: $name\n");
 }
 
 function lookup_platform($p) {
@@ -26,13 +26,12 @@ function lookup_platform($p) {
     foreach ($platforms as $platform) {
         if ($platform->name == $p) return $platform;
     }
-    return null;
+    die("platform not found: $p\n");
 }
 
 function readdir_aux($d) {
     while ($f = readdir($d)) {
-        if ($f == ".") continue;
-        if ($f == "..") continue;
+        if (substr($f, 0, 1) == ".") continue;
         return $f;
     }
     return false;
@@ -136,6 +135,9 @@ function stage_file($a, $v, $p, $fd) {
     }
     
     $fd->url = "$download_url/$name";
+    if ($fd->gzip && !file_exists("$dl_path.gz")) {
+        system("gzip $dl_path");
+    }
     return $fd;
 }
 
@@ -184,7 +186,11 @@ function process_file($a, $v, $p, $name, $fds) {
     if (!$fd) {
         $fd = null;
         $fd->physical_name = $name;
+        $fd->logical_name = null;
         $fd->url = array();
+        $fd->main_program = false;
+        $fd->copy_file = false;
+        $fd->gzip = false;
     }
     $path = "apps/$a/$v/$p/$name";
 
@@ -215,19 +221,15 @@ function process_file($a, $v, $p, $name, $fds) {
         $fd->executable = ($perms & 0x0040)?true:false;
     }
 
-    if (!isset($fd->main_program)) {
-        $fd->main_program = false;
-    }
-    if (!isset($fd->copy_file)) {
-        $fd->copy_file = false;
-    }
-
     $fd->present = true;
     $fds = update_file($fds, $fd);
     return $fds;
 }
 
-// scan the directory, and process files
+// scan the directory, and process files.
+// "fds" is the list of files described in version.xml;
+// return this list, augmented with any files not in version.xml
+// 
 //
 function process_files($a, $v, $p, $fds) {
     $d = opendir("apps/$a/$v/$p");
@@ -287,14 +289,11 @@ function check_main_program($fds) {
         if ($fd->main_program) $n++;
     }
     if ($n == 0) {
-        echo "    No file was marked as the main program.\n";
-        return false;
+        die("    No file was marked as the main program.\n");
     }
     if ($n > 1) {
-        echo "    More than one file was marked as the main program.\n";
-        return false;
+        die("    More than one file was marked as the main program.\n");
     }
-    return true;
 }
 
 function confirm($fds) {
@@ -309,6 +308,14 @@ function confirm($fds) {
     echo "    Do you want to add this application version (y/n)? ";
     $x = trim(fgets(STDIN));
     return ($x == "y");
+}
+
+function get_bool($xml_element, $name) {
+    foreach($xml_element->xpath($name) as $x) {
+        $s = trim((string) $x);
+        if ($s == "" || int($s)>0) return true;
+    }
+    return false;
 }
 
 // convert SimpleXMLElement object to a standard object
@@ -327,20 +334,17 @@ function convert_simplexml($x) {
         foreach($fx->xpath('url') as $url) {
             $fd->url[] = trim((string) $url);
         }
-        $fd->main_program = false;
-        foreach($fx->xpath('main_program') as $x) {
-            $s = trim((string) $x);
-            if ($s == "" || int($s)>0) $fd->main_program = true;
-        }
-        foreach($fx->xpath('copy_file') as $x) {
-            $s = trim((string) $x);
-            if ($s == "" || int($s)>0) $fd->copy_file = true;
-        }
+        $fd->main_program = get_bool($fx, "main_program");
+        $fd->copy_file = get_bool($fx, "copy_file");
+        $fd->gzip = get_bool($fx, "gzip");
 
-        //echo "fd: "; print_r($fd);
         $fds[] = $fd;
     }
-    return $fds;
+    $v = null;
+    $v->files = $fds;
+    $v->dont_throttle = get_bool($x, "dont_throttle");
+    $v->file_prefix = (string)$x->file_prefix;
+    return $v;
 }
 
 function process_version($a, $v, $p) {
@@ -357,16 +361,19 @@ function process_version($a, $v, $p) {
         if (!$x) {
             die("Can't load XML file apps/$a/$v/$p.  Check that it exists and is valid.");
         }
-        $fds = convert_simplexml($x);
+        $vers = convert_simplexml($x);
     } else {
-        $fds = array();
+        $vers = null;
+        $vers->files = array();
     }
 
-    $fds = process_files($a, $v, $p, $fds);
+    $fds = process_files($a, $v, $p, $vers->files);
 
     if (missing_files($fds)) return;
-    if (sizeof($fds) == 1) $fds[0]->main_program = true;
-    if (!check_main_program($fds)) return;
+    if (sizeof($fds) == 1) {
+        $fds[0]->main_program = true;
+    }
+    check_main_program($fds);
     $api_version = get_api_version($a, $v, $p, $fds);
 
     if (!confirm($fds)) {
@@ -385,6 +392,12 @@ function process_version($a, $v, $p) {
     ;
     foreach ($fds as $fd) {
         $xml .= file_ref_xml($fd);
+    }
+    if ($vers->dont_throttle) {
+        $xml .= "    <dont_throttle/>\n";
+    }
+    if ($vers->file_prefix != "") {
+        $xml .= "    <file_prefix>$vers->file_prefix</file_prefix>\n";
     }
     $xml .= "</app_version>\n";
 

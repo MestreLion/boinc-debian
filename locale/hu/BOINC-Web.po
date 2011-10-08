@@ -7,8 +7,8 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: BOINC translation team <boinc_loc@ssl.berkeley.edu>\n"
 "POT-Creation-Date: 2011-04-04 22:09 PDT\n"
-"PO-Revision-Date: 2011-05-12 04:46+0200\n"
-"Last-Translator: Robee <roy512@freemail.hu>\n"
+"PO-Revision-Date: 2011-09-05 13:36+0200\n"
+"Last-Translator: Gabor Cseh <csega@mailbox.hu>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -214,11 +214,15 @@ msgid "University of Vienna"
 msgstr "Bécsi Egyetem"
 
 #: projects.inc:114
+#, fuzzy
 msgid ""
 "Calculate similarities between proteins. SIMAP provides a public database of "
 "the resulting data, which plays a key role in many bioinformatics research "
 "projects."
 msgstr ""
+"Fehérjék közötti hasonlóságokat számol. A SIMAP a kapott adatokból egy "
+"nyilvános adatbázist hoz létre, ami jelentős szerepet játszik több "
+"bioinformatikai kutatási projektben."
 
 #: projects.inc:120
 msgid "Earth Sciences"
@@ -328,7 +332,7 @@ msgstr ""
 
 #: projects.inc:174
 msgid "Milkyway@home"
-msgstr ""
+msgstr "Milkyway@home"
 
 #: projects.inc:176
 msgid "Rensselaer Polytechnic Institute"
@@ -361,7 +365,7 @@ msgstr ""
 
 #: projects.inc:190
 msgid "uFluids@home"
-msgstr ""
+msgstr "uFluids@home"
 
 #: projects.inc:192
 msgid "Purdue University"
@@ -381,7 +385,7 @@ msgstr ""
 
 #: projects.inc:198
 msgid "Einstein@home"
-msgstr ""
+msgstr "Einstein@home"
 
 #: projects.inc:200
 msgid "Univ. of Wisconsin - Milwaukee, Max Planck Institute"
@@ -389,7 +393,7 @@ msgstr ""
 
 #: projects.inc:201
 msgid "Astrophysics"
-msgstr ""
+msgstr "Asztrofizika"
 
 #: projects.inc:202
 msgid ""
@@ -401,17 +405,16 @@ msgid ""
 msgstr ""
 
 #: projects.inc:206
-#, fuzzy
 msgid "LHC@home"
-msgstr "Otthon"
+msgstr "LHC@home"
 
 #: projects.inc:208
 msgid "CERN (European Organization for Nuclear Research)"
-msgstr ""
+msgstr "CERN (Nukleáris Kutatások Európai Szervezete)"
 
 #: projects.inc:209
 msgid "Physics"
-msgstr ""
+msgstr "Fizika"
 
 #: projects.inc:210
 msgid ""
@@ -421,19 +424,24 @@ msgid ""
 "investigate on particles proprieties. LHC@home runs simulations to improve "
 "the design of LHC and its detectors."
 msgstr ""
+"A Nagy Hadronütköztető (Large Hadron Collider - LHC) egy részecskegyorsító a "
+"CERNnél, azaz a Nukleáris Kutatások Európai Szervezeténél, mely a világ "
+"legnagyobb részecskefizikai laboratóriuma. Ez a valaha épített legnagyobb "
+"teljesítményű eszköz, melyet a részecskék tulajdonságainak vizsgálata "
+"céljából hoztak létre. Az LHC@home az LHC, és detektorainak tervezését "
+"elősegítő szimulációkat futtat."
 
 #: projects.inc:214
 msgid "SETI@home"
-msgstr ""
+msgstr "SETI@home"
 
 #: projects.inc:216
-#, fuzzy
 msgid "University of California, Berkeley"
-msgstr "A BOINC központja a California egyetemen, Berkeley-ben található"
+msgstr "Californiai Egyetem, Berkeley"
 
 #: projects.inc:217
 msgid "Astrophysics, astrobiology"
-msgstr ""
+msgstr "Asztrofizika, asztrobiológia"
 
 #: projects.inc:218
 msgid ""
@@ -449,8 +457,9 @@ msgid "Quantum Monte Carlo at Home"
 msgstr ""
 
 #: projects.inc:224
+#, fuzzy
 msgid "University of Muenster (Germany)"
-msgstr ""
+msgstr "Karlsruhe-i Egyetem (Németország)"
 
 #: projects.inc:226
 msgid ""

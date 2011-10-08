@@ -235,6 +235,11 @@ CLIENT_APP_VERSION* get_app_version_anonymous(
     return best;
 }
 
+#define ET_RATIO_LIMIT  10.
+    // if the FLOPS estimate based on elapsed time
+    // exceeds project_flops by more than this factor, cap it.
+    // The host may have received a bunch of short jobs recently
+
 // input:
 // cav.host_usage.projected_flops
 //      This is the <flops> specified in app_info.xml
@@ -284,7 +289,24 @@ void estimate_flops_anon_platform() {
             && (havp->et.n > MIN_HOST_SAMPLES)
             && (havp->et.get_avg() > 0)
         ) {
+            // estimate FLOPS based on average elapsed time
+            //
             double new_flops = 1./havp->et.get_avg();
+
+            // cap this at ET_RATIO_LIMIT*projected,
+            // in case we've had a bunch of short jobs recently
+            //
+            if (new_flops > ET_RATIO_LIMIT*cav.host_usage.projected_flops) {
+                if (config.debug_version_select) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[version] (%s) capping new_flops; %.1fG > %.0f*%.1fG\n",
+                        cav.plan_class, new_flops/1e9,
+                        ET_RATIO_LIMIT,
+                        cav.host_usage.projected_flops/1e9
+                    );
+                }
+                new_flops = ET_RATIO_LIMIT*cav.host_usage.projected_flops;
+            }
             cav.rsc_fpops_scale = cav.host_usage.projected_flops/new_flops;
             cav.host_usage.projected_flops = new_flops;
             if (config.debug_version_select) {
@@ -315,7 +337,22 @@ void estimate_flops(HOST_USAGE& hu, APP_VERSION& av) {
     DB_HOST_APP_VERSION* havp = gavid_to_havp(av.id);
     if (havp && havp->et.n > MIN_HOST_SAMPLES) {
         double new_flops = 1./havp->et.get_avg();
+        // cap this at ET_RATIO_LIMIT*projected,
+        // in case we've had a bunch of short jobs recently
+        //
+        if (new_flops > ET_RATIO_LIMIT*hu.projected_flops) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] (%s) capping new_flops; %.1fG > %.0f*%.1fG\n",
+                    av.plan_class, new_flops/1e9,
+                    ET_RATIO_LIMIT,
+                    hu.projected_flops/1e9
+                );
+            }
+            new_flops = ET_RATIO_LIMIT*hu.projected_flops;
+        }
         hu.projected_flops = new_flops;
+
         if (config.debug_version_select) {
             log_messages.printf(MSG_NORMAL,
                 "[version] [AV#%d] (%s) setting projected flops based on host elapsed time avg: %.2fG\n",
@@ -424,7 +461,7 @@ BEST_APP_VERSION* get_app_version(
     unsigned int i;
     int j;
     BEST_APP_VERSION* bavp;
-    char message[256], buf[256];
+    char buf[256];
     bool job_needs_64b = (wu.rsc_memory_bound > max_32b_address_space());
 
     if (config.debug_version_select) {
@@ -591,7 +628,6 @@ BEST_APP_VERSION* get_app_version(
 
     bavp->host_usage.projected_flops = 0;
     bavp->avp = NULL;
-    bool no_version_for_platform = true;
     for (i=0; i<g_request->platforms.list.size(); i++) {
         bool found_feasible_version = false;
         PLATFORM* p = g_request->platforms.list[i];
@@ -603,7 +639,6 @@ BEST_APP_VERSION* get_app_version(
             APP_VERSION& av = ssp->app_versions[j];
             if (av.appid != wu.appid) continue;
             if (av.platformid != p->id) continue;
-            no_version_for_platform = false;
 
             if (g_request->core_client_version < av.min_core_version) {
                 if (config.debug_version_select) {
@@ -693,6 +728,7 @@ BEST_APP_VERSION* get_app_version(
                         "[version] [AV#%d] jobs in progress limit exceeded\n",
                         av.id
                     );
+                    config.max_jobs_in_progress.print_log();
                 }
                 continue;
             }
@@ -751,15 +787,6 @@ BEST_APP_VERSION* get_app_version(
                     p->name
                 );
             }
-        }
-        if (no_version_for_platform) {
-            sprintf(message,
-                "%s %s %s.",
-                app->user_friendly_name,
-                _("is not available for"),
-                g_request->platforms.list[0]->user_friendly_name
-            );
-            add_no_work_message(message);
         }
         g_wreq->best_app_versions.push_back(bavp);
         return NULL;

@@ -72,7 +72,6 @@ extern CFStringRef gPathToBundleResources;
 
 static SaverState saverState = SaverState_Idle;
 // int gQuitCounter = 0;
-static SInt32 gSystemVersion = 0;
 
 
 const char * CantLaunchCCMsg = "Unable to launch BOINC application.";
@@ -201,6 +200,11 @@ void setGGFXChangePeriod(double value) {
 }
 
 
+double getDTime() {
+    return dtime();
+}
+
+
 bool validateNumericString(CFStringRef s) {
     CFIndex i;
     CFRange range, result;
@@ -218,7 +222,6 @@ bool validateNumericString(CFStringRef s) {
 
 CScreensaver::CScreensaver() {
     struct ss_periods periods;
-    OSStatus err;
     
     m_dwBlankScreen = 0;
     m_dwBlankTime = 0;
@@ -241,11 +244,6 @@ CScreensaver::CScreensaver() {
     rpc = 0;
     m_bConnected = false;
     
-    err = Gestalt(gestaltSystemVersion, &gSystemVersion);
-    if (err != noErr) {
-        gSystemVersion = 0;
-    }
-
     // Get project-defined default values for GFXDefaultPeriod, GFXSciencePeriod, GFXChangePeriod
     GetDefaultDisplayPeriods(periods);
     m_bShow_default_ss_first = periods.Show_default_ss_first;
@@ -321,10 +319,13 @@ OSStatus CScreensaver::initBOINCApp() {
     brandId = GetBrandID();
     switch(brandId) {
     case 1:
-        m_BrandText = "GridRepublic";
+        m_BrandText = "GridRepublic Desktop";
          break;
     case 2:
-        m_BrandText = "Progress Thru Processors";
+        m_BrandText = "Progress Thru Processors Desktop";
+         break;
+    case 3:
+        m_BrandText = "Charity Engine Desktop";
          break;
     default:
         m_BrandText = "BOINC";

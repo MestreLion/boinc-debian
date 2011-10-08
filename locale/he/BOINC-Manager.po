@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: BOINC 6.10.x\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-03-07 12:02-0500\n"
-"PO-Revision-Date: 2011-04-06 19:54+0200\n"
+"PO-Revision-Date: 2011-07-19 16:58+0200\n"
 "Last-Translator: Ido Schwartz <dj_legolas1@hotmail.com>\n"
 "Language-Team: IOPanel.net\n"
 "Language: he\n"
@@ -23,6 +23,8 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Poedit-Basepath: C:\\Src\\BOINCSVN\\trunk\\boinc\n"
 "X-BOINC-UTF8-Marker: 简体中文, 日本語\n"
+"X-Poedit-Country: UNITED STATES\n"
+"X-Poedit-Language: English\n"
 
 #: clientgui/AccountInfoPage.cpp:386
 msgid "Identify your account "
@@ -1520,7 +1522,8 @@ msgid "Close"
 msgstr "&סגור"
 
 #: clientgui/DlgEventLog.cpp:307
-#, c-format, fuzzy
+#, c-format
+#, fuzzy, c-format
 msgid "Get help with %s"
 msgstr "קבל עזרה עם %s"
 
@@ -2629,7 +2632,7 @@ msgstr "הצג ממשק גרפי מתקדם."
 #: clientgui/sg_BoincSimpleFrame.cpp:129
 #, fuzzy
 msgid "Manager Settings..."
-msgstr "הגדרות Manager..."
+msgstr "הגדרות מנהל..."
 
 #: clientgui/sg_BoincSimpleFrame.cpp:157
 #: clientgui/sg_BoincSimpleGUI.cpp:147
@@ -3075,7 +3078,7 @@ msgstr "הפרוייקטים שלי:"
 #: clientgui/sg_ProjectPanel.cpp:123
 #, fuzzy
 msgid "Select a project to access with the controls below"
-msgstr "בחר פרוייקט על מנת לגשת לפקדים למטה"
+msgstr "בחר פרוייקט על מנת לגשת אליו עם בקרי השליטה מטה"
 
 #: clientgui/sg_ProjectPanel.cpp:133
 #: clientgui/sg_ProjectPanel.cpp:252
@@ -3093,14 +3096,16 @@ msgid "Project Commands"
 msgstr "פקודות הפרוייקט"
 
 #: clientgui/sg_ProjectPanel.cpp:257
-#, c-format, fuzzy
+#, c-format
+#, fuzzy, c-format
 msgid "Pop up a menu of websites for project %s"
-msgstr "הקפץ תפריט של אתרי אנטרנט עבור פרוייקט %s"
+msgstr "הקפץ תפריט של אתרי אינטרנט עבור הפרוייקט %s"
 
 #: clientgui/sg_ProjectPanel.cpp:259
-#, c-format, fuzzy
+#, c-format
+#, fuzzy, c-format
 msgid "Pop up a menu of commands to apply to project %s"
-msgstr "הקפץ תפריט של פקודות ליישם עבור פרוייקט %s"
+msgstr "הקפץ תפריט של פקודות ליישום על פרוייקט %s"
 
 #: clientgui/sg_ProjectsComponent.cpp:196
 #: clientgui/sg_ProjectsComponent.cpp:207
@@ -3155,7 +3160,6 @@ msgstr "השהה עבודה עבור משימה זו."
 
 #: clientgui/sg_TaskCommandPopup.cpp:240
 #, c-format
-#, c-format
 msgid ""
 "Are you sure you want to abort this task '%s'?\n"
 "(Progress: %.1lf%%, Status: %s)"
@@ -3178,7 +3182,7 @@ msgstr "המשימות שלי:"
 #: clientgui/sg_TaskPanel.cpp:243
 #, fuzzy
 msgid "Select a task to access"
-msgstr "בחר משימה לקבלת גישה"
+msgstr "בחר משימה אליה ברצונך לגשת"
 
 #: clientgui/sg_TaskPanel.cpp:254
 msgid "From Project:"
@@ -3186,12 +3190,12 @@ msgstr "מפרוייקט:"
 
 #: clientgui/sg_TaskPanel.cpp:311
 msgid "This task's progress"
-msgstr "התקדמות משימה זו:"
+msgstr "התקדמות משימה זו"
 
 #: clientgui/sg_TaskPanel.cpp:332
 #, fuzzy
 msgid "Task Commands"
-msgstr "פקודות המשימה"
+msgstr "פקודות משימה"
 
 #: clientgui/sg_TaskPanel.cpp:333
 #, fuzzy
@@ -3199,7 +3203,6 @@ msgid "Pop up a menu of commands to apply to this task"
 msgstr "הקפץ תפריט של פקודות ליישם עבור משימה זו"
 
 #: clientgui/sg_TaskPanel.cpp:448
-#, c-format
 #, c-format
 msgid "Application: %s"
 msgstr "יישום: %s"
@@ -3219,12 +3222,10 @@ msgstr "לא זמין"
 
 #: clientgui/sg_TaskPanel.cpp:603
 #, c-format
-#, c-format
 msgid "Elapsed Time: %s"
 msgstr "זמן שחלף: %s"
 
 #: clientgui/sg_TaskPanel.cpp:617
-#, c-format
 #, c-format
 msgid "Time Remaining: %s"
 msgstr "זמן שנותר: %s"
@@ -3476,17 +3477,18 @@ msgid "Requested by user"
 msgstr "התבקש על ידי המשתמש"
 
 #: clientgui/ViewProjects.cpp:1049
+#, fuzzy
 msgid "To fetch work"
-msgstr ""
+msgstr "להביא ל-"
 
 #: clientgui/ViewProjects.cpp:1050
 msgid "To report completed tasks"
-msgstr ""
+msgstr "לדווח על משימות מוכנות"
 
 #: clientgui/ViewProjects.cpp:1051
 #, fuzzy
 msgid "To send trickle-up message"
-msgstr "הודעת Trickle Up ממתינה"
+msgstr "לשלוח הודעה מהדהדת"
 
 #: clientgui/ViewProjects.cpp:1052
 msgid "Requested by account manager"
@@ -4111,7 +4113,6 @@ msgid "Show All"
 msgstr "הצג הכל"
 
 #: clientgui/mac/Mac_GUI.cpp:181
-#, c-format
 #, c-format
 msgid "Quit %s"
 msgstr "הפסק %s"

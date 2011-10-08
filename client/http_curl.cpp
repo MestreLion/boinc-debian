@@ -323,7 +323,7 @@ int HTTP_OP::init_post(
 // Initialize an HTTP POST operation,
 // where the input is a memory string (r1) followed by an optional file (in)
 // with optional offset,
-// and the output goes to memory (also r1)
+// and the output goes to memory (also r1, limited by r1_len)
 // This is used for file upload (both get_file_size and file_upload)
 //
 int HTTP_OP::init_post2(
@@ -335,6 +335,7 @@ int HTTP_OP::init_post2(
     init();
     req1 = r1;
     req1_len = r1_len;
+    content_length = 0;
     if (in) {
         safe_strcpy(infile, in);
         file_offset = offset;
@@ -422,7 +423,9 @@ int HTTP_OP::libcurl_exec(
     // the following seems to be a no-op
     // curl_easy_setopt(curlEasy, CURLOPT_ERRORBUFFER, error_msg);
 
-    curl_easy_setopt(curlEasy, CURLOPT_URL, m_url);
+    char esc_url[1024];
+    string_substitute(m_url, esc_url, sizeof(esc_url), " ", "%20");
+    curl_easy_setopt(curlEasy, CURLOPT_URL, esc_url);
 
     // This option determines whether curl verifies that the server
     // claims to be who you want it to be.
@@ -738,7 +741,6 @@ int HTTP_OP_SET::remove(HTTP_OP* p) {
         }
         iter++;
     }
-    msg_printf(NULL, MSG_INTERNAL_ERROR, "HTTP operation not found");
     return ERR_NOT_FOUND;
 }
 

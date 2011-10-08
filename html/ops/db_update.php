@@ -751,6 +751,51 @@ create table user_submit_app (
 ) engine = InnoDB");
 }
 
+function update_7_26_2011() {
+    do_query("
+        alter table batch
+        add fraction_done       double          not null,
+        add nerror_jobs         integer         not null,
+        add state               integer         not null,
+        add completion_time     double          not null,
+        add credit_estimate     double          not null,
+        add credit_canonical    double          not null,
+        add credit_total        double          not null,
+        add name                varchar(255)    not null,
+        add app_id              integer         not null
+    ");
+}
+
+function update_9_6_2011() {
+    do_query("
+        alter table user_submit
+        add create_apps tinyint not null,
+        add create_app_versions tinyint not null
+    ");
+}
+
+function update_9_15_2011() {
+    do_query("
+        alter table result
+        add runtime_outlier tinyint not null
+    ");
+}
+
+function update_9_20_2011() {
+    do_query("
+        alter table user_submit
+        drop column all_apps,
+        drop column create_apps,
+        drop column create_app_versions,
+        add submit_all tinyint not null,
+        add manage_all tinyint not null
+    ");
+
+    do_query("
+        alter table user_submit_app
+        add manage tinyint not null
+    ");
+}
 // Updates are done automatically if you use "upgrade".
 //
 // If you need to do updates manually,
@@ -770,6 +815,12 @@ $db_updates = array (
     array(21728, "update_6_10_2010"),
     array(23635, "update_6_3_2011"),
     array(23762, "update_6_20_2011"),
+    array(23881, "update_7_26_2011"),
+    array(24137, "update_9_6_2011"),
+    array(24225, "update_9_15_2011"),
+    array(24248, "update_9_20_2011"),
 );
+
+
 
 ?>

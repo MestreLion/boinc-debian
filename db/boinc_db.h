@@ -31,6 +31,7 @@
 
 #include "db_base.h"
 #include "average.h"
+#include "parse.h"
 
 extern DB_CONN boinc_db;
 
@@ -333,15 +334,15 @@ struct HOST {
         // that fail validation
         // DEPRECATED
 
-    // the following not stored in DB
-    //
+    // the following not in DB
     char p_features[1024];
     char virtualbox_version[256];
 
-    int parse(FILE*);
-    int parse_time_stats(FILE*);
-    int parse_net_stats(FILE*);
-    int parse_disk_usage(FILE*);
+    int parse(XML_PARSER&);
+    int parse_time_stats(XML_PARSER&);
+    int parse_net_stats(XML_PARSER&);
+    int parse_disk_usage(XML_PARSER&);
+
     void fix_nans();
     void clear();
 };
@@ -447,10 +448,12 @@ struct CREDITED_JOB {
     void clear();
 };
 
-// WARNING: be Very careful about changing any values,
+// WARNING: be very careful about changing any values,
 // especially for a project already running -
 // the database will become inconsistent
 
+// values of result.server_state
+//
 //#define RESULT_SERVER_STATE_INACTIVE       1
 #define RESULT_SERVER_STATE_UNSENT         2
 #define RESULT_SERVER_STATE_IN_PROGRESS    4
@@ -458,6 +461,8 @@ struct CREDITED_JOB {
     // we received a reply, timed out, or decided not to send.
     // Note: we could get a reply even after timing out.
 
+// values of result.outcome
+//
 #define RESULT_OUTCOME_INIT             0
 #define RESULT_OUTCOME_SUCCESS          1
 #define RESULT_OUTCOME_COULDNT_SEND     2
@@ -475,6 +480,8 @@ struct CREDITED_JOB {
 #define RESULT_OUTCOME_CLIENT_DETACHED  7
     // we believe that the client detached
 
+// values of result.validate_state
+//
 #define VALIDATE_STATE_INIT         0
 #define VALIDATE_STATE_VALID        1
 #define VALIDATE_STATE_INVALID      2
@@ -526,7 +533,7 @@ struct RESULT {
     int batch;
     int file_delete_state;          // see above; values for file_delete_state
     int validate_state;
-    double claimed_credit;          // CPU time times host credit/sec
+    double claimed_credit;          // deprecated
     double granted_credit;          // == canonical credit of WU
     double opaque;                  // project-specific; usually external ID
     int random;                     // determines send order
@@ -548,14 +555,54 @@ struct RESULT {
         // 0 if unknown (relic of old scheduler)
         // -1 anon platform, unknown resource type (relic)
         // -2/-3/-4 anonymous platform (see variants above)
-
-    // the following used by AQUA; delete when they don't need any more
-    //
-    double fpops_cumulative;
-    double intops_cumulative;
+    bool runtime_outlier;
+        // the validator tagged this as having an unusual elapsed time;
+        // don't include it in PFC or elapsed time statistics.
 
     void clear();
 };
+
+struct BATCH {
+    int id;
+    int user_id;
+        // submitter
+    int create_time;
+    double logical_start_time;
+    double logical_end_time;
+    double est_completion_time;
+        // current estimate of completion time
+    int njobs;
+        // # of workunits
+    double fraction_done;
+        // based on workunits completed
+    int nerror_jobs;
+        // # of workunits with error
+    int state;
+        // see below
+    double completion_time;
+        // when state became >= COMPLETE
+    double credit_estimate;
+        // initial estimate of required credit, counting replicas
+    double credit_canonical;
+        // the sum of credits of canonical results
+    double credit_total;
+        // the sum of credits of all results
+    char name[256];
+        // user-assigned name; need not be unique
+    int app_id;
+};
+
+// values of batch.state
+//
+#define BATCH_STATE_INIT            0
+#define BATCH_STATE_IN_PROGRESS     1
+#define BATCH_STATE_COMPLETE        2
+    // "complete" means all workunits have either
+    // a canonical result or an error
+#define BATCH_STATE_ABORTED         3
+#define BATCH_STATE_CLEANED_UP      4
+    // input/output files can be deleted,
+    // result and workunit records can be purged.
 
 struct MSG_FROM_HOST {
     int id;
@@ -748,6 +795,8 @@ public:
     int get_id();
     int update_diff_sched(HOST&);
     int update_diff_validator(HOST&);
+    int fpops_percentile(double percentile, double& fpops);
+        // return the given percentile of p_fpops
     void db_print(char*);
     void db_parse(MYSQL_ROW &row);
     void operator=(HOST& r) {HOST::operator=(r);}
@@ -916,7 +965,6 @@ struct SCHED_RESULT_ITEM {
     int sent_time;
     int received_time;
     double cpu_time;
-    double claimed_credit;
     char xml_doc_out[BLOB_SIZE];
     char stderr_out[BLOB_SIZE];
     int app_version_num;

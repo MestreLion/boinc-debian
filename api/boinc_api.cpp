@@ -55,6 +55,8 @@
 // Unless otherwise noted, "CPU time" refers to the sum over all episodes
 // (not counting the part after the last checkpoint in an episode).
 
+#include <vector>
+
 #if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
 #include "boinc_win.h"
 #endif
@@ -87,13 +89,15 @@
 #include "filesys.h"
 #include "mem_usage.h"
 #include "parse.h"
-#include "procinfo.h"
+#include "proc_control.h"
 #include "shmem.h"
 #include "str_util.h"
 #include "str_replace.h"
 #include "util.h"
 
 #include "boinc_api.h"
+
+using std::vector;
 
 //#define DEBUG_BOINC_API
 
@@ -656,7 +660,7 @@ void boinc_exit(int status) {
     fflush(NULL);
 
 #if defined(_WIN32)
-    // Halt all the threads and cleans up.
+    // Halt all the threads and clean up.
     TerminateProcess(GetCurrentProcess(), status);
     // note: the above CAN return!
     Sleep(1000);
@@ -738,12 +742,15 @@ int boinc_parse_init_data_file() {
     return 0;
 }
 
-int boinc_report_app_status(
+int boinc_report_app_status_aux(
     double cpu_time,
     double checkpoint_cpu_time,
-    double _fraction_done
+    double _fraction_done,
+    int other_pid,
+    double bytes_sent,
+    double bytes_received
 ) {
-    char msg_buf[MSG_CHANNEL_SIZE];
+    char msg_buf[MSG_CHANNEL_SIZE], buf[256];
     if (standalone) return 0;
 
     sprintf(msg_buf,
@@ -754,8 +761,32 @@ int boinc_report_app_status(
         checkpoint_cpu_time,
         _fraction_done
     );
-    app_client_shm->shm->app_status.send_msg(msg_buf);
-    return 0;
+    if (other_pid) {
+        sprintf(buf, "<other_pid>%d</other_pid>\n", other_pid);
+        strcat(msg_buf, buf);
+    }
+    if (bytes_sent) {
+        sprintf(buf, "<bytes_sent>%f</bytes_sent>\n", bytes_sent);
+        strcat(msg_buf, buf);
+    }
+    if (bytes_received) {
+        sprintf(buf, "<bytes_received>%f</bytes_received>\n", bytes_received);
+        strcat(msg_buf, buf);
+    }
+    if (app_client_shm->shm->app_status.send_msg(msg_buf)) {
+        return 0;
+    }
+    return ERR_WRITE;
+}
+
+int boinc_report_app_status(
+    double cpu_time,
+    double checkpoint_cpu_time,
+    double _fraction_done
+){
+    return boinc_report_app_status_aux(
+        cpu_time, checkpoint_cpu_time, _fraction_done, 0, 0, 0
+    );
 }
 
 int boinc_get_init_data_p(APP_INIT_DATA* app_init_data) {

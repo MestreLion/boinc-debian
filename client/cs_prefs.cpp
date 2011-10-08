@@ -105,7 +105,7 @@ int CLIENT_STATE::check_suspend_processing() {
         return SUSPEND_REASON_OS;
     }
 
-    switch (run_mode.get_current()) {
+    switch (cpu_run_mode.get_current()) {
     case RUN_MODE_ALWAYS: break;
     case RUN_MODE_NEVER:
         return SUSPEND_REASON_USER_REQ;
@@ -156,7 +156,7 @@ int CLIENT_STATE::check_suspend_processing() {
     if (!coprocs.none()) {
         int old_gpu_suspend_reason = gpu_suspend_reason;
         gpu_suspend_reason = 0;
-        switch (gpu_mode.get_current()) {
+        switch (gpu_run_mode.get_current()) {
         case RUN_MODE_ALWAYS:
             break;
         case RUN_MODE_NEVER:
@@ -249,7 +249,7 @@ void CLIENT_STATE::check_suspend_network() {
         ALLOW_NETWORK_IF_RECENT_RPC_PERIOD
     );
 
-    switch(network_mode.get_current()) {
+    switch(network_run_mode.get_current()) {
     case RUN_MODE_ALWAYS: 
         return;
     case RUN_MODE_NEVER:
@@ -357,7 +357,7 @@ int PROJECT::parse_preferences_for_user_files() {
         if (!fip) {
             fip = new FILE_INFO;
             fip->project = this;
-            fip->urls.push_back(url);
+            fip->download_urls.add(url);
             strcpy(fip->name, filename.c_str());
             fip->is_user_file = true;
             gstate.file_infos.push_back(fip);
@@ -431,6 +431,7 @@ void CLIENT_STATE::read_global_prefs(
 
     // read the override file
     //
+    global_prefs.override_file_present = false;
     if (override_fname) {
         f = fopen(override_fname, "r");
         if (f) {
@@ -441,6 +442,7 @@ void CLIENT_STATE::read_global_prefs(
             global_prefs.parse_override(xp, "", found_venue, mask);
             msg_printf(NULL, MSG_INFO, "Reading preferences override file");
             fclose(f);
+            global_prefs.override_file_present = true;
         }
     }
 
@@ -502,6 +504,7 @@ void CLIENT_STATE::read_global_prefs(
     );
     request_schedule_cpus("Prefs update");
     request_work_fetch("Prefs update");
+    active_tasks.request_reread_app_info();
 }
 
 int CLIENT_STATE::save_global_prefs(

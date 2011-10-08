@@ -176,7 +176,7 @@ function show_host($host, $user, $ipprivate) {
     }
 
     if ($user) {
-        row2(tra("Number of times BOINC has contacted server"), $host->rpc_seqno);
+        row2(tra("Number of times client has contacted server"), $host->rpc_seqno);
         row2(tra("Last time contacted server"), sched_log_link($host->rpc_time));
         row2(tra("% of time BOINC is running"), 100*$host->on_frac." %");
         if ($host->connected_frac > 0) {
@@ -196,7 +196,10 @@ function show_host($host, $user, $ipprivate) {
             $x = "";
         }
         row2(tra("Merge duplicate records of this computer"), "<a href=host_edit_form.php?hostid=$host->id>".tra("Merge")."</a> $x");
-    }
+    } else {
+        row2(tra("Number of times client has contacted server"), $host->rpc_seqno);
+        row2(tra("Last contact"), date_str($host->rpc_time));
+	}
     echo "</table>\n";
 
 }
@@ -689,6 +692,6 @@ function anonymize_hosts($user) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: host.inc 23006 2011-02-08 21:38:16Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: host.inc 24060 2011-08-28 00:31:40Z boincadm $";  //Generated automatically - do not edit
 
 ?>

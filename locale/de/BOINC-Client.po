@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-01-26 13:27-0800\n"
-"PO-Revision-Date: 2011-05-13 15:17+0200\n"
+"PO-Revision-Date: 2011-06-20 20:25+0200\n"
 "Last-Translator: Christian <djangofett@gmx.net>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: de\n"
@@ -114,7 +114,7 @@ msgstr "Dieses Projekt unterstützt kein Betriebssystem"
 # Im Quellcode folgt nach diesem Satz die Angabe des erkannten Prozessortyps!
 #: ../sched/handle_request.cpp:942
 msgid "This project doesn't support CPU type"
-msgstr "Dieses Projekt unterstützt keine Prozessortypen"
+msgstr "Dieses Projekt unterstützt nicht den Prozessortyp"
 
 #: ../sched/handle_request.cpp:966
 msgid ""

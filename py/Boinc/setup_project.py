@@ -1,4 +1,4 @@
-## $Id: setup_project.py 23357 2011-04-08 19:36:26Z davea $
+## $Id: setup_project.py 24253 2011-09-22 03:15:21Z davea $
 
 # module for setting up a new project (either a real project or a test project
 # see tools/makeproject, test/testbase.py).
@@ -379,11 +379,12 @@ sys.path.insert(0, os.path.join('%s', 'py'))
           'single_job_assimilator', 
           'assimilator.py', 'pymw_assimilator.py',
           'update_stats', 'db_dump', 'db_purge', 'show_shmem', 'census',
-          'delete_file', 'request_file_list', 'get_file', 'send_file' ])
+          'delete_file', 'request_file_list', 'get_file', 'put_file' ])
     map(lambda (s): install(srcdir('tools',s), dir('bin',s)),
         [ 'appmgr', 'create_work', 'xadd', 'dbcheck_files_exist', 'run_in_ops',
           'update_versions', 'parse_config', 'grep_logs', 'db_query',
           'watch_tcp', 'sign_executable', 'dir_hier_move',
+          'manage_privileges',
           'dir_hier_path', 'boinc_submit', 'demo_submit', 'demo_query' ])
     map(lambda (s): install(srcdir('lib',s), dir('bin',s)),
         [ 'crypt_prog' ])
@@ -469,9 +470,6 @@ class Project:
         os.mkdir(self.logdir())
         os.chmod(self.logdir(), 02770)
 
-    def query_create_keys(self):
-        return query_yesno("Keys don't exist in %s; generate them?"%self.keydir())
-
     def keys_exist(self):
         keys = ['upload_private', 'upload_public',
                 'code_sign_private', 'code_sign_public' ]
@@ -484,18 +482,17 @@ class Project:
         if os.path.exists(self.dir()):
             raise SystemExit('Project directory "%s" already exists; this would clobber it!'%self.dir())
 
-        verbose_echo(1, "Setting up server: creating directories");
+        verbose_echo(1, "Creating directories");
 
         create_project_dirs(self.project_dir);
 
         if not self.web_only:
             if not self.keys_exist():
-                if self.query_create_keys():
-                    verbose_echo(1, "Setting up server files: generating keys");
-                    self.create_keys()
+                verbose_echo(1, "Generating encryption keys");
+                self.create_keys()
 
         # copy the user and administrative PHP files to the project dir,
-        verbose_echo(1, "Setting up server files: copying files")
+        verbose_echo(1, "Copying files")
 
         # Create the project log directory
         self.create_logdir()
@@ -532,7 +529,7 @@ class Project:
                 match = r.search(line)
                 if match:
                     cgi_name = match.group(1)
-                    verbose_echo(2, "Setting up server files: copying " + cgi_name);
+                    verbose_echo(2, "Copying " + cgi_name);
                     install(builddir('sched/cgi'), self.dir('cgi-bin', cgi_name,''))
             f.close()
         else:
@@ -549,12 +546,12 @@ class Project:
             drop_first = options.drop_db_first
             )
 
-        verbose_echo(1, "Setting up server files: writing config files")
+        verbose_echo(1, "Writing config files")
 
         self.config.write()
 
         # create symbolic links to the CGI and HTML directories
-        verbose_echo(1, "Setting up server files: linking cgi programs")
+        verbose_echo(1, "Linking CGI programs")
         if options.__dict__.get('cgi_dir'):
             force_symlink(self.dir('cgi-bin'), os.path.join(options.cgi_dir, self.short_name))
         if options.__dict__.get('html_dir'):

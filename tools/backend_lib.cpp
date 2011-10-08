@@ -45,8 +45,9 @@
 #include "sched_util.h"
 #include "util.h"
 
-#include "backend_lib.h"
+#include "process_input_template.h"
 
+#include "backend_lib.h"
 
 using std::string;
 
@@ -73,376 +74,6 @@ int read_filename(const char* path, char* buf, int len) {
     retval = read_file(f, buf, len);
     fclose(f);
     return retval;
-}
-
-// see checkin notes Dec 30 2004
-//
-static bool got_md5_info(
-    const char *path,
-    char *md5data,
-    double *nbytes
-) {
-    bool retval=false;
-    // look for file named FILENAME.md5 containing md5sum and length.
-    // If found, and newer mod time than file, read md5 sum and file
-    // length from it.
-
-    char md5name[512];
-    struct stat md5stat, filestat;
-    char endline='\0';
-
-    sprintf(md5name, "%s.md5", path);
-    
-    // get mod times for file
-    if (stat(path, &filestat))
-        return retval;
-  
-    // get mod time for md5 cache file
-    if (stat(md5name, &md5stat))
-        return retval;
-    
-    // if cached md5 newer, then open it
-#ifndef _USING_FCGI_
-    FILE *fp=fopen(md5name, "r");
-#else
-    FCGI_FILE *fp=FCGI::fopen(md5name, "r");
-#endif
-    if (!fp)
-        return retval;
-  
-    // read two quantities: md5 sum and length.  If we can't read
-    // these, or there is MORE stuff in the file' it's not an md5
-    // cache file
-    if (3 == fscanf(fp, "%s %lf%c", md5data, nbytes, &endline) &&
-        endline=='\n' &&
-        EOF==fgetc(fp)
-       )
-        retval=true; 
-    fclose(fp);
-
-    // if this is one of our cached md5 files, but it's OLDER than the
-    // data file which it supposedly corresponds to, delete it.
-    if (retval && md5stat.st_mtime<filestat.st_mtime) {
-        unlink(md5name);
-        retval=false;
-    }
-    return retval;
-}
-
-// see checkin notes Dec 30 2004
-//
-static void write_md5_info(
-    const char *path,
-    const char *md5,
-    double nbytes
-) {
-    // Write file FILENAME.md5 containing md5sum and length
-    //
-    char md5name[512];
-    struct stat statbuf;
-    int retval;
-    
-    // if file already exists with this name, don't touch it.
-    //
-    sprintf(md5name, "%s.md5", path);
-    if (!stat(md5name, &statbuf)) {
-        return;
-    }
-
-#ifndef _USING_FCGI_
-    FILE *fp=fopen(md5name, "w");
-#else
-    FCGI_FILE *fp=FCGI::fopen(md5name, "w");
-#endif
-
-    // if can't open the file, give up
-    //
-    if (!fp) {
-        return;
-    }
-  
-    retval = fprintf(fp,"%s %.15e\n", md5, nbytes);
-    fclose(fp);
-
-    // if we didn't write properly to the file, delete it.
-    //
-    if (retval<0) {
-        unlink(md5name);
-    }
-  
-    return;
-}
-
-// fill in the workunit's XML document (wu.xml_doc)
-// by scanning the WU template, macro-substituting the input files,
-// and putting in the command line element and additional XML
-//
-static int process_wu_template(
-    WORKUNIT& wu,
-    char* tmplate,
-    const char** infiles,
-    int ninfiles,
-    SCHED_CONFIG& config_loc,
-    const char* command_line,
-    const char* additional_xml
-) {
-    char buf[BLOB_SIZE], md5[33], path[256], url[256], top_download_path[256];
-    string out, cmdline, md5str, urlstr, tmpstr;
-    int retval, file_number;
-    double nbytes, nbytesdef;
-    char open_name[256];
-    bool found=false;
-    int nfiles_parsed = 0;
-
-    out = "";
-    MIOFILE mf;
-    XML_PARSER xp(&mf);
-    char tag[256];
-    bool is_tag;
-    mf.init_buf_read(tmplate);
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) continue;
-        if (!strcmp(tag, "input_template")) continue;
-        if (!strcmp(tag, "/input_template")) continue;
-        if (!strcmp(tag, "file_info")) {
-            vector<string> urls;
-            bool generated_locally = false;
-            file_number = nbytesdef = -1;
-            md5str = urlstr = "";
-            out += "<file_info>\n";
-            while (!xp.get(tag, sizeof(tag), is_tag)) {
-                if (xp.parse_int(tag, "number", file_number)) {
-                    continue;
-                } else if (xp.parse_bool(tag, "generated_locally", generated_locally)) {
-                    continue;
-                } else if (xp.parse_string(tag, "url", urlstr)) {
-                    urls.push_back(urlstr);
-                    continue;
-                } else if (xp.parse_string(tag, "md5_cksum", md5str)) {
-                    continue;
-                } else if (xp.parse_double(tag, "nbytes", nbytesdef)) {
-                    continue;
-                } else if (!strcmp(tag, "/file_info")) {
-                    if (nbytesdef != -1 || md5str != "" || urlstr != "") {
-                        if (nbytesdef == -1 || md5str == "" || urlstr == "") {
-                            fprintf(stderr, "All file properties must be defined "
-                                "if at least one is defined (url, md5_cksum, nbytes)!\n"
-                            );
-                            return ERR_XML_PARSE;
-                        }
-                    }
-                    if (file_number < 0) {
-                        fprintf(stderr, "No file number found\n");
-                        return ERR_XML_PARSE;
-                    }
-                    if (file_number >= ninfiles) {
-                        fprintf(stderr,
-                            "Too few input files given; need at least %d\n",
-                            file_number+1
-                        );
-                        return ERR_XML_PARSE;
-                    }
-                    nfiles_parsed++;
-                    if (generated_locally) {
-                        sprintf(buf,
-                            "    <name>%s</name>\n"
-                            "    <generated_locally/>\n"
-                            "</file_info>\n",
-                            infiles[file_number]
-                        );
-                    } else if (nbytesdef == -1) {
-                        // here if nybtes was not supplied; stage the file
-                        //
-                        dir_hier_path(
-                            infiles[file_number], config_loc.download_dir,
-                            config_loc.uldl_dir_fanout, path, true
-                        );
-
-                        // if file isn't found in hierarchy,
-                        // look for it at top level and copy
-                        //
-                        if (!boinc_file_exists(path)) {
-                            sprintf(top_download_path,
-                                "%s/%s",config_loc.download_dir,
-                                infiles[file_number]
-                            );
-                            boinc_copy(top_download_path, path);
-                        }
-
-                        if (!config_loc.cache_md5_info || !got_md5_info(path, md5, &nbytes)) {
-                            retval = md5_file(path, md5, nbytes);
-                            if (retval) {
-                                fprintf(stderr, "process_wu_template: md5_file %d\n", retval);
-                                return retval;
-                            } else if (config_loc.cache_md5_info) {
-                                write_md5_info(path, md5, nbytes);
-                            }
-                        }
-
-                        dir_hier_url(
-                            infiles[file_number], config_loc.download_url,
-                            config_loc.uldl_dir_fanout, url
-                        );
-                        sprintf(buf,
-                            "    <name>%s</name>\n"
-                            "    <url>%s</url>\n"
-                            "    <md5_cksum>%s</md5_cksum>\n"
-                            "    <nbytes>%.0f</nbytes>\n"
-                            "</file_info>\n",
-                            infiles[file_number],
-                            url,
-                            md5,
-                            nbytes
-                        );
-                    } else {
-                        // here if nbytes etc. was supplied,
-                        // i.e the file is already staged, possibly remotely
-                        //
-                        urlstr = "";
-                        for (unsigned int i=0; i<urls.size(); i++) {
-                            urlstr += "    <url>" + urls.at(i) + "</url>\n";
-                        }
-                        sprintf(buf,
-                            "    <name>%s</name>\n"
-                            "%s"
-                            "    <md5_cksum>%s</md5_cksum>\n"
-                            "    <nbytes>%.0f</nbytes>\n"
-                            "</file_info>\n",
-                            infiles[file_number],
-                            urlstr.c_str(),
-                            md5str.c_str(),
-                            nbytesdef
-                        );
-                    }
-                    out += buf;
-                    break;
-                } else {
-                    char buf2[1024];
-                    retval = xp.element(tag, buf2, sizeof(buf2));
-                    if (retval) return retval;
-                    out += buf2;
-                    out += "\n";
-                }
-            }
-        } else if (!strcmp(tag, "workunit")) {
-            found = true;
-            out += "<workunit>\n";
-            if (command_line) {
-                //fprintf(stderr, "appending command line: %s\n", command_line);
-                out += "<command_line>\n";
-                out += command_line;
-                out += "\n</command_line>\n";
-            }
-            while (!xp.get(tag, sizeof(tag), is_tag)) {
-                if (!strcmp(tag, "/workunit")) {
-                    if (additional_xml && strlen(additional_xml)) {
-                        out += additional_xml;
-                        out += "\n";
-                    }
-                    out += "</workunit>\n";
-                    break;
-                } else if (!strcmp(tag, "file_ref")) {
-                    out += "<file_ref>\n";
-                    bool found_file_number = false, found_open_name = false;
-                    while (!xp.get(tag, sizeof(tag), is_tag)) {
-                        if (xp.parse_int(tag, "file_number", file_number)) {
-                            sprintf(buf, "    <file_name>%s</file_name>\n",
-                                infiles[file_number]
-                            );
-                            out += buf;
-                            found_file_number = true;
-                            continue;
-                        } else if (xp.parse_str(tag, "open_name", open_name, sizeof(open_name))) {
-                            sprintf(buf, "    <open_name>%s</open_name>\n", open_name);
-                            out += buf;
-                            found_open_name = true;
-                            continue;
-                        } else if (!strcmp(tag, "/file_ref")) {
-                            if (!found_file_number) {
-                                fprintf(stderr, "No file number found\n");
-                                return ERR_XML_PARSE;
-                            }
-                            if (!found_open_name) {
-                                fprintf(stderr, "No open name found\n");
-                                return ERR_XML_PARSE;
-                            }
-                            out += "</file_ref>\n";
-                            break;
-                        } else if (xp.parse_string(tag, "file_name", tmpstr)) {
-                            fprintf(stderr, "<file_name> ignored in <file_ref> element.\n");
-                            continue;
-                        } else {
-                            char buf2[1024];
-                            retval = xp.element(tag, buf2, sizeof(buf2));
-                            if (retval) return retval;
-                            out += buf2;
-                            out += "\n";
-                        }
-                    }
-                } else if (xp.parse_string(tag, "command_line", cmdline)) {
-                    if (command_line) {
-                        fprintf(stderr, "Can't specify command line twice");
-                        return ERR_XML_PARSE;
-                    }
-                    //fprintf(stderr, "parsed command line: %s\n", cmdline.c_str());
-                    out += "<command_line>\n";
-                    out += cmdline;
-                    out += "\n</command_line>\n";
-                } else if (xp.parse_double(tag, "rsc_fpops_est", wu.rsc_fpops_est)) {
-                    continue;
-                } else if (xp.parse_double(tag, "rsc_fpops_bound", wu.rsc_fpops_bound)) {
-                    continue;
-                } else if (xp.parse_double(tag, "rsc_memory_bound", wu.rsc_memory_bound)) {
-                    continue;
-                } else if (xp.parse_double(tag, "rsc_bandwidth_bound", wu.rsc_bandwidth_bound)) {
-                    continue;
-                } else if (xp.parse_double(tag, "rsc_disk_bound", wu.rsc_disk_bound)) {
-                    continue;
-                } else if (xp.parse_int(tag, "batch", wu.batch)) {
-                    continue;
-                } else if (xp.parse_int(tag, "delay_bound", wu.delay_bound)) {
-                    continue;
-                } else if (xp.parse_int(tag, "min_quorum", wu.min_quorum)) {
-                    continue;
-                } else if (xp.parse_int(tag, "target_nresults", wu.target_nresults)) {
-                    continue;
-                } else if (xp.parse_int(tag, "max_error_results", wu.max_error_results)) {
-                    continue;
-                } else if (xp.parse_int(tag, "max_total_results", wu.max_total_results)) {
-                    continue;
-                } else if (xp.parse_int(tag, "max_success_results", wu.max_success_results)) {
-                    continue;
-                } else {
-                    char buf2[1024];
-                    retval = xp.element(tag, buf2, sizeof(buf2));
-                    if (retval) return retval;
-                    out += buf2;
-                    out += "\n";
-                }
-            }
-        }
-    }
-    if (!found) {
-        fprintf(stderr, "process_wu_template: bad WU template - no <workunit>\n");
-        return -1;
-    }
-    if (nfiles_parsed != ninfiles) {
-        fprintf(stderr,
-            "process_wu_template: %d input files listed, but template has %d\n",
-            ninfiles, nfiles_parsed
-        );
-        return -1;
-    }
-    if (out.size() > sizeof(wu.xml_doc)-1) {
-        fprintf(stderr,
-            "create_work: WU XML field is too long (%d bytes; max is %d)\n",
-            (int)out.size(), (int)sizeof(wu.xml_doc)-1
-        );
-        return ERR_BUFFER_OVERFLOW;
-    }
-    //fprintf(stderr, "copying to xml_doc: %s\n", out.c_str());
-    strcpy(wu.xml_doc, out.c_str());
-    return 0;
 }
 
 // initialize an about-to-be-created result, given its WU
@@ -609,11 +240,11 @@ int create_work(
 
     strcpy(wu_template, _wu_template);
     wu.create_time = time(0);
-    retval = process_wu_template(
+    retval = process_input_template(
         wu, wu_template, infiles, ninfiles, config_loc, command_line, additional_xml
     );
     if (retval) {
-        fprintf(stderr, "process_wu_template(): %d\n", retval);
+        fprintf(stderr, "process_input_template(): %d\n", retval);
         return retval;
     }
 
@@ -703,48 +334,17 @@ int create_work(
 
 // STUFF RELATED TO FILE UPLOAD/DOWNLOAD
 
-int create_upload_result(
-    DB_RESULT& result, int host_id, const char * file_name
-) {
-    int retval;
-    char result_xml[BLOB_SIZE];
-
-    result.clear();
-    sprintf(result.name, "get_%s_%d_%ld", file_name, host_id, time(0));
-    result.create_time = time(0);
-    result.server_state = RESULT_SERVER_STATE_IN_PROGRESS;
-    result.hostid = host_id;
-    result.outcome = RESULT_OUTCOME_INIT;
-    result.file_delete_state = ASSIMILATE_DONE;
-    result.validate_state = VALIDATE_STATE_NO_CHECK;
-
-    sprintf(result_xml,
-        "<result>\n"
-        "    <wu_name>%s</wu_name>\n"
-        "    <name>%s</wu_name>\n"
-        "    <file_ref>\n"
-        "      <file_name>%s</file_name>\n"
-        "    </file_ref>\n"
-        "</result>\n",
-        result.name, result.name, file_name
-    );
-    strcpy(result.xml_doc_in, result_xml);
-    result.sent_time = time(0);
-    result.report_deadline = 0;
-    result.hostid = host_id;
-    retval = result.insert();
-    if (retval) {
-        fprintf(stderr, "result.insert(): %s\n", boincerror(retval));
-        return retval;
-    }
-    return 0;
-}
-
-int create_upload_message(
-    DB_RESULT& result, int host_id, const char* file_name
+int get_file(
+    int host_id, const char* file_name, vector<const char*> urls,
+    double max_nbytes,
+    double report_deadline,
+    bool generate_upload_certificate,
+    R_RSA_PRIVATE_KEY& key
 ) {;
+    char buf[8192];
     DB_MSG_TO_HOST mth;
     int retval;
+
     mth.clear();
     mth.create_time = time(0);
     mth.hostid = host_id;
@@ -752,27 +352,47 @@ int create_upload_message(
     mth.handled = false;
     sprintf(mth.xml,
         "<app>\n"
-        "    <name>%s</name>\n"
+        "    <name>file_xfer</name>\n"
         "</app>\n"
         "<app_version>\n"
-        "    <app_name>%s</app_name>\n"
-        "    <version_num>%d00</version_num>\n"
+        "    <app_name>file_xfer</app_name>\n"
+        "    <version_num>0</version_num>\n"
         "</app_version>\n"
         "<file_info>\n"
         "    <name>%s</name>\n"
-        "    <url>%s</url>\n"
-        "    <max_nbytes>%.0f</max_nbytes>\n"
-        "    <upload_when_present/>\n"
-        "</file_info>\n"
-        "%s"
-        "<workunit>\n"
-        "    <name>%s</name>\n"
-        "    <app_name>%s</app_name>\n"
-        "</workunit>",
-        FILE_MOVER, FILE_MOVER, BOINC_MAJOR_VERSION,
-        file_name, config.upload_url,
-        1e10, result.xml_doc_in, result.name, FILE_MOVER
+        "    <max_nbytes>%.0f</max_nbytes>\n",
+        file_name,
+        max_nbytes
     );
+    for (unsigned int i=0; i<urls.size(); i++) {
+        sprintf(buf, "    <url>%s</url>\n", urls[i]);
+        strcat(mth.xml, buf);
+    }
+    sprintf(buf,
+        "</file_info>\n"
+        "<workunit>\n"
+        "    <name>upload_%s</name>\n"
+        "    <app_name>file_xfer</app_name>\n"
+        "</workunit>\n"
+        "<result>\n"
+        "    <wu_name>upload_%s</wu_name>\n"
+        "    <name>upload_%s</name>\n"
+        "    <file_ref>\n"
+        "        <file_name>%s</file_name>\n"
+        "    </file_ref>\n"
+        "    <report_deadline>%f</report_deadline>\n"
+        "</result>\n",
+        file_name,
+        file_name,
+        file_name,
+        file_name,
+        report_deadline
+    );
+    strcat(mth.xml, buf);
+    if (generate_upload_certificate) {
+        add_signatures(mth.xml, key);
+    }
+
     retval = mth.insert();
     if (retval) {
         fprintf(stderr, "msg_to_host.insert(): %s\n", boincerror(retval));
@@ -781,96 +401,61 @@ int create_upload_message(
     return 0;
 }
 
-int get_file(int host_id, const char* file_name) {
-    DB_RESULT result;
-    int retval;
-    retval = create_upload_result(result, host_id, file_name);
-    if (retval) return retval;
-    retval = create_upload_message(result, host_id, file_name);
-    return retval;
-}
-
-int create_download_result(
-    DB_RESULT& result, int host_id, const char* file_name
+int put_file(
+    int host_id, const char* file_name,
+    vector<const char*> urls, const char* md5, double nbytes,
+    double report_deadline
 ) {
-    int retval;
-    char result_xml[BLOB_SIZE];
-
-    result.clear();
-    sprintf(result.name, "put_%s_%d_%ld", file_name, host_id, time(0));
-    result.create_time = time(0);
-    result.server_state = RESULT_SERVER_STATE_IN_PROGRESS;
-    result.hostid = host_id;
-    result.outcome = RESULT_OUTCOME_INIT;
-    result.file_delete_state = ASSIMILATE_DONE;
-    result.validate_state = VALIDATE_STATE_NO_CHECK;
-
-    sprintf(result_xml,
-        "<result>\n"
-        "    <wu_name>%s</wu_name>\n"
-        "    <name>%s</name>\n"
-        "</result>\n",
-        result.name, result.name
-    );
-    strcpy(result.xml_doc_in, result_xml);
-    result.sent_time = time(0);
-    result.report_deadline = 0;
-    result.hostid = host_id;
-    retval = result.insert();
-    if (retval) {
-        fprintf(stderr, "result.insert(): %s\n", boincerror(retval));
-        return retval;
-    }
-    return 0;
-}
-
-int create_download_message(
-    DB_RESULT& result, int host_id, const char* file_name
-) {;
+    char buf[8192];
     DB_MSG_TO_HOST mth;
     int retval;
-    double nbytes;
-    char dirpath[256], urlpath[256], path[256], md5[33];
-    strcpy(dirpath, config.download_dir);
-    strcpy(urlpath, config.download_url);
     mth.clear();
     mth.create_time = time(0);
     mth.hostid = host_id;
     strcpy(mth.variety, "file_xfer");
     mth.handled = false;
-    sprintf(path, "%s/%s", dirpath, file_name);
-    retval = md5_file(path, md5, nbytes);
-    if (retval) {
-        fprintf(stderr, "md5_file() error: %s\n", boincerror(retval));
-        return retval;
-    }
     sprintf(mth.xml,
         "<app>\n"
-        "    <name>%s</name>\n"
+        "    <name>file_xfer</name>\n"
         "</app>\n"
         "<app_version>\n"
-        "    <app_name>%s</app_name>\n"
-        "    <version_num>%d00</version_num>\n"
+        "    <app_name>file_xfer</app_name>\n"
+        "    <version_num>0</version_num>\n"
         "</app_version>\n"
-        "%s"
          "<file_info>\n"
-        "    <name>%s</name>\n"
-        "    <url>%s/%s</url>\n"
+        "    <name>%s</name>\n",
+        file_name
+    );
+    for (unsigned int i=0; i<urls.size(); i++) {
+        sprintf(buf, "    <url>%s</url>\n", urls[i]);
+        strcat(mth.xml, buf);
+    }
+    sprintf(buf,
         "    <md5_cksum>%s</md5_cksum>\n"
         "    <nbytes>%.0f</nbytes>\n"
         "    <sticky/>\n"
         "</file_info>\n"
         "<workunit>\n"
-        "    <name>%s</name>\n"
-        "    <app_name>%s</app_name>\n"
+        "    <name>download_%s</name>\n"
+        "    <app_name>file_xfer</app_name>\n"
         "    <file_ref>\n"
-        "      <file_name>%s</file_name>\n"
+        "        <file_name>%s</file_name>\n"
         "    </file_ref>\n"
-        "</workunit>",
-        FILE_MOVER, FILE_MOVER, BOINC_MAJOR_VERSION, result.xml_doc_in,
-        file_name, urlpath, file_name, md5,
-        nbytes, result.name, FILE_MOVER, file_name
+        "</workunit>\n"
+        "<result>\n"
+        "    <wu_name>download_%s</wu_name>\n"
+        "    <name>download_%s</name>\n"
+        "    <report_deadline>%f</report_deadline>\n"
+        "</result>\n",
+        md5,
+        nbytes,
+        file_name,
+        file_name,
+        file_name,
+        file_name,
+        report_deadline
     );
+    strcat(mth.xml, buf);
     retval = mth.insert();
     if (retval) {
         fprintf(stderr, "msg_to_host.insert(): %s\n", boincerror(retval));
@@ -879,13 +464,4 @@ int create_download_message(
     return 0;
 }
 
-int put_file(int host_id, const char* file_name) {
-    DB_RESULT result;
-    int retval;
-    retval = create_download_result(result, host_id, file_name);
-    if (retval) return retval;
-    retval = create_download_message(result, host_id, file_name);
-    return retval;
-}
-
-const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 23790 2011-07-04 23:51:00Z davea $";
+const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 24107 2011-09-01 19:58:27Z davea $";

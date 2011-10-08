@@ -60,16 +60,12 @@ static void project_feed_list_file_name(PROJ_AM* p, char* buf) {
 
 // parse feed descs from scheduler reply or feed list file
 //
-int parse_rss_feed_descs(MIOFILE& fin, vector<RSS_FEED>& feeds) {
-    char tag[256];
-    bool is_tag;
-    XML_PARSER xp(&fin);
+int parse_rss_feed_descs(XML_PARSER& xp, vector<RSS_FEED>& feeds) {
     int retval;
-
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) continue;
-        if (!strcmp(tag, "/rss_feeds")) return 0;
-        if (!strcmp(tag, "rss_feed")) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) continue;
+        if (xp.match_tag("/rss_feeds")) return 0;
+        if (xp.match_tag("rss_feed")) {
             RSS_FEED rf;
             retval = rf.parse_desc(xp);
             if (retval) {
@@ -205,6 +201,7 @@ static int parse_rss_time(char* buf) {
     return (int)mktime(&tm);
 #else
     struct tm tm;
+    memset(&tm, 0, sizeof(tm));
     strptime(buf, "%a, %d %b %Y %H:%M:%S", &tm);
     return mktime(&tm);
 #endif
@@ -213,18 +210,17 @@ static int parse_rss_time(char* buf) {
 ///////////// NOTICE ////////////////
 
 int NOTICE::parse_rss(XML_PARSER& xp) {
-    char tag[1024], buf[256];
-    bool is_tag;
+    char buf[256];
 
     clear();
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) continue;
-        if (!strcmp(tag, "/item")) return 0;
-        if (xp.parse_str(tag, "title", title, sizeof(title))) continue;
-        if (xp.parse_str(tag, "link", link, sizeof(link))) continue;
-        if (xp.parse_str(tag, "guid", guid, sizeof(guid))) continue;
-        if (xp.parse_string(tag, "description", description)) continue;
-        if (xp.parse_str(tag, "pubDate", buf, sizeof(buf))) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) continue;
+        if (xp.match_tag("/item")) return 0;
+        if (xp.parse_str("title", title, sizeof(title))) continue;
+        if (xp.parse_str("link", link, sizeof(link))) continue;
+        if (xp.parse_str("guid", guid, sizeof(guid))) continue;
+        if (xp.parse_string("description", description)) continue;
+        if (xp.parse_str("pubDate", buf, sizeof(buf))) {
             create_time = parse_rss_time(buf);
             continue;
         }
@@ -257,9 +253,9 @@ void NOTICES::init_rss() {
     // sort by decreasing arrival time, then assign seqnos
     //
     sort(notices.begin(), notices.end(), cmp);
-    unsigned int n = notices.size();
+    size_t n = notices.size();
     for (unsigned int i=0; i<n; i++) {
-        notices[i].seqno = n - i;
+        notices[i].seqno = (int)(n - i);
     }
 }
 
@@ -413,9 +409,6 @@ bool NOTICES::append(NOTICE& n) {
 // insert items in NOTICES
 //
 int NOTICES::read_archive_file(const char* path, RSS_FEED* rfp) {
-    char tag[256];
-    bool is_tag;
-
     FILE* f = fopen(path, "r");
     if (!f) {
         if (log_flags.notice_debug) {
@@ -428,13 +421,13 @@ int NOTICES::read_archive_file(const char* path, RSS_FEED* rfp) {
     MIOFILE fin;
     fin.init_file(f);
     XML_PARSER xp(&fin);
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) continue;
-        if (!strcmp(tag, "/notices")) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) continue;
+        if (xp.match_tag("/notices")) {
             fclose(f);
             return 0;
         }
-        if (!strcmp(tag, "notice")) {
+        if (xp.match_tag("notice")) {
             NOTICE n;
             int retval = n.parse(xp);
             if (retval) {
@@ -512,8 +505,8 @@ void NOTICES::remove_network_msg() {
 // write notices newer than seqno as XML (for GUI RPC).
 // Write them in order of increasing seqno
 //
-void NOTICES::write(int seqno, GUI_RPC_CONN& grpc, MIOFILE& fout, bool public_only) {
-    unsigned int i;
+void NOTICES::write(int seqno, GUI_RPC_CONN& grc, bool public_only) {
+    size_t i;
     MIOFILE mf;
 
     if (!net_status.need_physical_connection) {
@@ -521,16 +514,16 @@ void NOTICES::write(int seqno, GUI_RPC_CONN& grpc, MIOFILE& fout, bool public_on
     }
     if (log_flags.notice_debug) {
         msg_printf(0, MSG_INFO, "NOTICES::write: seqno %d, refresh %s, %d notices",
-            seqno, grpc.get_notice_refresh()?"true":"false", (int)notices.size()
+            seqno, grc.get_notice_refresh()?"true":"false", (int)notices.size()
         );
     }
-    fout.printf("<notices>\n");
-    if (grpc.get_notice_refresh()) {
+    grc.mfout.printf("<notices>\n");
+    if (grc.get_notice_refresh()) {
         NOTICE n;
         n.seqno = -1;
         seqno = -1;
         i = notices.size();
-        n.write(fout, true);
+        n.write(grc.mfout, true);
         if (log_flags.notice_debug) {
             msg_printf(0, MSG_INFO, "NOTICES::write: sending -1 seqno notice");
         }
@@ -546,9 +539,9 @@ void NOTICES::write(int seqno, GUI_RPC_CONN& grpc, MIOFILE& fout, bool public_on
         if (log_flags.notice_debug) {
             msg_printf(0, MSG_INFO, "NOTICES::write: sending notice %d", n.seqno);
         }
-        n.write(fout, true);
+        n.write(grc.mfout, true);
     }
-    fout.printf("</notices>\n");
+    grc.mfout.printf("</notices>\n");
 }
 
 ///////////// RSS_FEED ////////////////
@@ -577,14 +570,12 @@ int RSS_FEED::read_archive_file() {
 // parse a feed descriptor (in scheduler reply or feed list file)
 //
 int RSS_FEED::parse_desc(XML_PARSER& xp) {
-    char tag[256];
-    bool is_tag;
     strcpy(url, "");
     poll_interval = 0;
     next_poll_time = 0;
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) continue;
-        if (!strcmp(tag, "/rss_feed")) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) continue;
+        if (xp.match_tag("/rss_feed")) {
             if (!poll_interval || !strlen(url)) {
                 if (log_flags.notice_debug) {
                     msg_printf(0, MSG_INFO,
@@ -598,21 +589,26 @@ int RSS_FEED::parse_desc(XML_PARSER& xp) {
             if (p) *p = 0;
             return 0;
         }
-        if (xp.parse_str(tag, "url", url, sizeof(url))) continue;
-        if (xp.parse_double(tag, "poll_interval", poll_interval)) continue;
-        if (xp.parse_double(tag, "next_poll_time", next_poll_time)) continue;
+        if (xp.parse_str("url", url, sizeof(url))) {
+            xml_unescape(url);
+        }
+        if (xp.parse_double("poll_interval", poll_interval)) continue;
+        if (xp.parse_double("next_poll_time", next_poll_time)) continue;
     }
     return ERR_XML_PARSE;
 }
 
 void RSS_FEED::write(MIOFILE& fout) {
+    char buf[256];
+    strcpy(buf, url);
+    xml_escape(url, buf, sizeof(buf));
     fout.printf(
         "  <rss_feed>\n"
         "    <url>%s</url>\n"
         "    <poll_interval>%f</poll_interval>\n"
         "    <next_poll_time>%f</next_poll_time>\n"
         "  </rss_feed>\n",
-        url,
+        buf,
         poll_interval,
         next_poll_time
     );
@@ -625,8 +621,6 @@ static inline bool create_time_asc(NOTICE n1, NOTICE n2) {
 // parse the actual RSS feed.
 //
 int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
-    char tag[256];
-    bool is_tag;
     nitems = 0;
     int ntotal = 0, nerror = 0;
     int retval, func_ret = ERR_XML_PARSE;
@@ -634,9 +628,9 @@ int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
 
     notices.clear_keep();
 
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) continue;
-        if (!strcmp(tag, "/rss")) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) continue;
+        if (xp.match_tag("/rss")) {
             if (log_flags.notice_debug) {
                 msg_printf(0, MSG_INFO,
                     "[notice] parsed RSS feed: total %d error %d added %d",
@@ -646,7 +640,7 @@ int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
             func_ret = 0;
             break;
         }
-        if (!strcmp(tag, "item")) {
+        if (xp.match_tag("item")) {
             NOTICE n;
             ntotal++;
             retval = n.parse_rss(xp);
@@ -668,7 +662,7 @@ int RSS_FEED::parse_items(XML_PARSER& xp, int& nitems) {
             }
             continue;
         }
-        if (xp.parse_int(tag, "error_num", retval)) {
+        if (xp.parse_int("error_num", retval)) {
             if (log_flags.notice_debug) {
                 msg_printf(0,MSG_INFO,
                     "[notice] RSS fetch returned error %d (%s)",
@@ -779,7 +773,8 @@ static void init_proj_am(PROJ_AM* p) {
     f = fopen(path, "r");
     if (f) {
         fin.init_file(f);
-        parse_rss_feed_descs(fin, p->proj_feeds);
+        XML_PARSER xp(&fin);
+        parse_rss_feed_descs(xp, p->proj_feeds);
         fclose(f);
     }
 }

@@ -107,7 +107,7 @@ bool CProjectProcessingPage::Create( CBOINCBaseWizard* parent )
     m_pProgressIndicator = NULL;
 ////@end CProjectProcessingPage member initialisation
  
-    m_bProjectCommunitcationsSucceeded = false;
+    m_bProjectCommunicationsSucceeded = false;
     m_bProjectUnavailable = false;
     m_bProjectAccountNotFound = false;
     m_bProjectAccountAlreadyExists = false;
@@ -182,10 +182,10 @@ wxWizardPageEx* CProjectProcessingPage::GetNext() const
     } else if (GetProjectAttachSucceeded()) {
         // We were successful in creating or retrieving an account
         return PAGE_TRANSITION_NEXT(ID_COMPLETIONPAGE);
-    } else if (!GetProjectCommunitcationsSucceeded() && GetProjectAccountAlreadyExists()) {
+    } else if (!GetProjectCommunicationsSucceeded() && GetProjectAccountAlreadyExists()) {
         // The requested account already exists
         return PAGE_TRANSITION_NEXT(ID_ERRALREADYEXISTSPAGE);
-    } else if (!GetProjectCommunitcationsSucceeded() && GetProjectAccountNotFound()) {
+    } else if (!GetProjectCommunicationsSucceeded() && GetProjectAccountNotFound()) {
         // The requested account does not exist or the password is bad
         return PAGE_TRANSITION_NEXT(ID_ERRNOTFOUNDPAGE);
     } else {
@@ -321,7 +321,7 @@ void CProjectProcessingPage::OnPageChanged( wxWizardExEvent& event ) {
         _("Communicating with project.")
     );
 
-    SetProjectCommunitcationsSucceeded(false);
+    SetProjectCommunicationsSucceeded(false);
     SetProjectUnavailable(false);
     SetProjectAccountAlreadyExists(false);
     SetNextState(ATTACHPROJECT_INIT);
@@ -357,7 +357,7 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
     wxDateTime dtCurrentExecutionTime;
     wxTimeSpan tsExecutionTime;
     bool bPostNewEvent = true;
-    int iReturnValue = 0;
+    int retval = 0;
 	bool creating_account = false;
  
     wxASSERT(pDoc);
@@ -395,7 +395,7 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
                 if (!pWA->m_bCredentialsCached || pWA->m_bCredentialsDetected) {
                     ao->authenticator = (const char*)pWA->GetProjectAuthenticator().mb_str();
                 }
-                SetProjectCommunitcationsSucceeded(true);
+                SetProjectCommunicationsSucceeded(true);
             } else {
                 // Setup initial values for both the create and lookup API
 
@@ -418,10 +418,10 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
                     dtStartExecutionTime = wxDateTime::Now();
                     dtCurrentExecutionTime = wxDateTime::Now();
                     tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
-                    iReturnValue = 0;
+                    retval = 0;
                     ao->error_num = ERR_RETRY;
                     while (
-                        !iReturnValue &&
+                        !retval &&
                         ((ERR_IN_PROGRESS == ao->error_num) || (ERR_RETRY == ao->error_num)) && 
                         tsExecutionTime.GetSeconds() <= 60 &&
                         !CHECK_CLOSINGINPROGRESS()
@@ -432,7 +432,7 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
 
                         dtCurrentExecutionTime = wxDateTime::Now();
                         tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
-                        iReturnValue = pDoc->rpc.create_account_poll(*ao);
+                        retval = pDoc->rpc.create_account_poll(*ao);
 
                         IncrementProgress(m_pProgressIndicator);
 
@@ -440,7 +440,7 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
                         ::wxSafeYield(GetParent());
                     }
 
-                    if ((!iReturnValue) && !ao->error_num) {
+                    if ((!retval) && !ao->error_num) {
                         pWA->SetAccountCreatedSuccessfully(true);
                     }
                 } else {
@@ -450,21 +450,24 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
                     dtStartExecutionTime = wxDateTime::Now();
                     dtCurrentExecutionTime = wxDateTime::Now();
                     tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
-                    iReturnValue = 0;
+                    retval = 0;
                     ao->error_num = ERR_RETRY;
                     while (
-                        !iReturnValue &&
+                        !retval &&
                         ((ERR_IN_PROGRESS == ao->error_num) || (ERR_RETRY == ao->error_num)) && 
                         tsExecutionTime.GetSeconds() <= 60 &&
                         !CHECK_CLOSINGINPROGRESS()
                     ) {
                         if (ERR_RETRY == ao->error_num) {
-                            pDoc->rpc.lookup_account(*ai);
+                            retval = pDoc->rpc.lookup_account(*ai);
+                            if (retval) {
+                                // REPORT ERROR
+                            }
                         }
 
                         dtCurrentExecutionTime = wxDateTime::Now();
                         tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
-                        iReturnValue = pDoc->rpc.lookup_account_poll(*ao);
+                        retval = pDoc->rpc.lookup_account_poll(*ao);
 
                         IncrementProgress(m_pProgressIndicator);
 
@@ -473,10 +476,11 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
                     }
                 }
  
-                if ((!iReturnValue) && !ao->error_num) {
-                    SetProjectCommunitcationsSucceeded(true);
+
+                if ((!retval) && !ao->error_num) {
+                    SetProjectCommunicationsSucceeded(true);
                 } else {
-                    SetProjectCommunitcationsSucceeded(false);
+                    SetProjectCommunicationsSucceeded(false);
 
                     if ((ao->error_num == ERR_DB_NOT_UNIQUE)
 						|| (ao->error_num == ERR_NONUNIQUE_EMAIL)
@@ -518,16 +522,16 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
             SetNextState(ATTACHPROJECT_ATTACHPROJECT_EXECUTE);
             break;
         case ATTACHPROJECT_ATTACHPROJECT_EXECUTE:
-            if (GetProjectCommunitcationsSucceeded()) {
+            if (GetProjectCommunicationsSucceeded()) {
      
                 // Wait until we are done processing the request.
                 dtStartExecutionTime = wxDateTime::Now();
                 dtCurrentExecutionTime = wxDateTime::Now();
                 tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
-                iReturnValue = 0;
+                retval = 0;
                 reply.error_num = ERR_RETRY;
                 while (
-                    !iReturnValue &&
+                    !retval &&
                     ((ERR_IN_PROGRESS == reply.error_num) || (ERR_RETRY == reply.error_num)) && 
                     tsExecutionTime.GetSeconds() <= 60 &&
                     !CHECK_CLOSINGINPROGRESS()
@@ -546,7 +550,7 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
 
                     dtCurrentExecutionTime = wxDateTime::Now();
                     tsExecutionTime = dtCurrentExecutionTime - dtStartExecutionTime;
-                    iReturnValue = pDoc->rpc.project_attach_poll(reply);
+                    retval = pDoc->rpc.project_attach_poll(reply);
 
                     IncrementProgress(m_pProgressIndicator);
 
@@ -554,7 +558,7 @@ void CProjectProcessingPage::OnStateChange( CProjectProcessingPageEvent& WXUNUSE
                     ::wxSafeYield(GetParent());
                 }
      
-                if (!iReturnValue && !reply.error_num) {
+                if (!retval && !reply.error_num) {
                     SetProjectAttachSucceeded(true);
                     pWA->SetAttachedToProjectSuccessfully(true);
                     pWA->SetProjectURL(wxString(ai->url.c_str(), wxConvUTF8));
