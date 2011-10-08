@@ -1,3 +1,9 @@
+boinc (6.13.6+dfsg-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 08 Oct 2011 14:27:25 +0200
+
 boinc (6.13.1+dfsg-3) UNRELEASED; urgency=low
 
   * Fixed lintian warning for stripchart.
