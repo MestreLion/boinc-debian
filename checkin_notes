@@ -1496,6 +1496,7 @@ Charlie 10 Mar 2011
                         resume_link_image.xpm
                         preferences_link_image.xpm
                         advanced_link_image.xpm
+                        wizard_bitmap.xpm
                         
         The following files have been modified:
         
@@ -4165,3 +4166,2286 @@ Rom    18 July 2011
     /
         configure.ac
         version.h
+
+David  18 July 2011
+    - web: when listing a user's message-board posts,
+        don't show team message-board posts unless
+        a) the requesting user is a member of the team, and
+        b) if the post is hidden, the requesting user is a team admin
+        This enforces the goal that a team's message board
+        is visible only to the team.
+
+    html/user/
+        forum_user_posts.php
+
+David  19 July 2011
+    - validator: remove spurious messages
+
+    sched/
+        credit.cpp
+
+David  19 July 2011
+    - server: some stuff to prepare for distributed storage
+        - don't create result records for uploads and downloads.
+            Just create a msg_to_client record.
+        - the scheduler handles file-transfer results specially;
+            it makes a vector of them, then calls a project-supplied function
+            handle_file_xfer_results()
+        - change the interface and implementation of put_file and get_file
+    - client write project sched priority in GUI RPC replies,
+        but not to the state file
+
+    sched/
+        delete_file.cpp
+        put_file.cpp
+        get_file.cpp
+        sched_types.cpp,h
+        sched_customize.cpp,h
+        handle_request.cpp
+        credit_test.cpp
+    tools/
+        backend_lib.cpp,h
+    py/Boinc/
+        setup_project.py
+    client/
+        client_state.cpp
+        boinc_cmd.cpp
+        client_types.cpp
+
+David  20 July 2011
+    - client: changes to the client file model to support distributed storage,
+        as described here: http://boinc.berkeley.edu/trac/wiki/ClientDataModel
+        Compatibility:
+            clients that upgrade to this version should see nothing unusual.
+            Clients that downgrade from this version to a previous version
+            should see all projects reset
+            (i.e. tasks disappear and then get re-downloaded).
+    - manager: always show whether a file transfer is upload or download
+    - client: don't scale work requests by resource share
+
+    client/
+        client_types.cpp,h
+        cs_apps.cpp
+        cs_files.cpp
+        cs_prefs.cpp
+        cs_statefile.cpp
+        file_xfer.cpp
+        pers_file_xfer.cpp
+        work_fetch.cpp
+    clientgui/
+        ViewTransfers.cpp
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+
+David  20 July 2011
+    - client/server: change the implementation of upload signatures
+        as described here: http://boinc.berkeley.edu/trac/wiki/ClientDataModel
+        Compatibility: if your project is using upload signatures:
+            - set ignore_upload_certificates
+            - disable job creation
+            - let your job queue drain
+            - upgrade to new server software
+            - clear ignore_upload_certificates
+            - enable job creation
+
+    sched/
+        file_upload_handler.cpp
+    tools/
+        process_result_template.cpp
+    lib/
+        gui_rpc_client_print.cpp
+    client/
+        client_types.cpp,h
+        file_xfer.cpp
+
+David  20 July 2011
+    - server: debug the above
+
+    sched/
+        file_upload_handler.cpp
+
+David  20 July 2011
+    - client: debug the above
+
+    client/
+        file_xfer.cpp
+
+David  20 July 2011
+    - server: debug distributed storage functions
+        - generate upload signatures if needed
+        - assign deadlines to file xfer jobs (default 1 week)
+        - scheduler: ack completed file xfer results
+
+    sched/
+        put_file.cpp
+        get_file.cpp
+        sched_customize.cpp
+    tools/
+        backend_lib.cpp,h
+
+David  20 July 2011
+    - client: debug distributed storage functions
+
+    client/
+        client_types.cpp,h
+        cs_statefile.cpp
+        scheduler_op.cpp
+
+David  22 July 2011
+    - server: some remote job submission code.  Not finished.
+
+    tools/
+        create_work.cpp
+    html/
+        inc/
+            submit.inc
+        user/
+            submit.php
+            submit_example.php
+
+Charlie 25 July 11
+    - Mac: Begin changes for XCode 4.1 and GCC 4.2.
+    
+    client/
+        hostinfo_unix.cpp
+    clientgui/
+        browser.h
+        sqlite3.c
+        mac/
+            MacBitmapComboBox.h
+    lib/
+        hostinfo.h
+
+David  25 July 2011
+    - web: more remote job submission code.  Not finished.
+
+    db/
+        boinc_db.h
+    html/
+        inc/
+            submit.inc
+            boinc_db.inc
+            result.inc
+        user/
+            submit_example.php
+            get_output.php
+            submit.php
+
+David  25 July 2011
+    - user web: internationalization, from Christian Beer
+
+    html/user/
+        show_host_detail.php
+        sample_index.php
+        show_coproc.php
+        show_user.php
+        profile_search_action.php
+        team.php
+
+David  25 July 2011
+    - user web: remote job submission:
+        add the ability to download zipped output files
+
+    html/user/
+        submit_example.php
+        get_output.php
+
+Charlie 26 July 11
+- Mac: Finish changes for XCode 4.1 and GCC 4.2.
+
+    clientgui/
+        sqlite3.c
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    mac_installer/
+        PostInstall.cpp
+        release_boinc.sh
+
+David  26 July 2011
+    - web: remote job submission: implement abort and cleanup functions
+
+    html/
+        inc/
+            forum.inc
+            submit.inc
+            util.inc
+            result.inc
+        user/
+            forum_thread.php
+            submit_example.php
+            submit.php
+
+David  26 July 2011
+    - web: remote job submission:
+        - add fields to batch table, extend APIs accordingly
+        - require that example web interface run on BOINC server
+            (this makes many things easier;
+            an actual remote interface would require a bit more work)
+
+    db/
+        boinc_db.h
+        schema.sql
+    html/
+        ops/
+            db_update.php
+        inc/
+            submit_db.inc
+            submit.inc
+            util.inc
+            result.inc
+        user/
+            submit_example.php
+            submit.php
+
+Charlie 27 July 11
+    - lib: Initialize config_coprocs struct in CONFIG::defaults().
+
+    lib/
+        cc_config.cpp
+
+Charlie 27 July 11
+    - SCR: Fix delay dismissing screensaver under Mac OS10.7.
+
+    clientscr/
+        mac_saver_module.cpp
+        Mac_Saver_Module.h
+        Mac_Saver_ModuleView.m, .h
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 28 July 11
+    - Mac SCR: Fix vertical range of moving logo.
+
+    clientscr/
+        Mac_Saver_ModuleView.m
+
+David  28 July 2011
+    - remote job submission: bug fix and tweaks
+    - client: cc_config.xml: if <devnum> is omitted from a <exclude_gpu>,
+        it means exclude all instances of that GPU type
+    - client: if all instances of a GPU type are excluded for a project,
+        don't ask the project for jobs of that type
+
+    html/
+        ops/
+            submit_permissions.php
+        inc/
+            util.h
+        user/
+            submit_example.php
+    lib/
+        cc_config.cpp,h
+    client/
+        work_fetch.cpp,h
+        client_types.cpp,h
+        client_state.cpp
+        gui_rpc_server_ops.cpp
+        cpu_sched.cpp
+
+David  29 July 2011
+    - client: fix bug in <exclude_gpu> config option
+    - client: extend <exclude_gpu> option so that if <device_num> is omitted,
+        all GPUs of the given type are excluded.
+        
+    client/
+        cpu_sched.cpp
+        work_fetch.cpp
+    lib/
+        cc_config.cpp,h
+
+David  30 July 2011
+    - server: fix typo
+
+    db/
+        boinc_db.h
+
+David  30 July 2011
+    - user web: in instructions for logging in with authenticator,
+        show the actual account file name.
+
+    html/user/
+        get_passwd.php
+
+David  30 July 2011
+    - web: fix typo that prevented users from seeing their own hidden posts
+
+    html/
+        inc/
+            prefs.inc
+        user/
+            forum_user_posts.php
+
+David  31 July 2011
+    - web: fix +/- forum rating, and tweak messages.  Fixes #1123
+
+    html/user/
+        forum_report_post.php
+        forum_rate.php
+
+David  31 July 2011
+    - scheduler: check for negative elapsed time in results
+        reported by client, set to zero
+
+    sched/
+        sched_result.cpp
+        sched_types.cpp
+    html/user/
+        create_account_form.cpp
+
+David  1 Aug 2011
+    - web: fix bug in next_url mechanism
+
+    html/inc/
+        util.inc
+
+David  1 Aug 2011
+    - client: change the way upload signatures are generated
+        in an attempt to make them work with existing servers
+
+    client/
+        file_xfer.cpp
+
+David  1 Aug 2011
+    - client: undo the above.  doesn't work
+
+    client/
+        file_xfer.cpp
+
+David  1 Aug 2011
+    - update_versions: add optional <gzip> element to
+        <file> element in version.xml.
+        If present, update_versions will gzip the file in the download dir.
+        Use this only if you have gzip-encoding enabled in Apache.
+
+    tools/
+        update_versions
+
+Charlie 2 Aug 11
+    - Mac installer: Work around bug in Mac OS 10.7 dscl merge command.
+    
+    mac_installer/
+        PostInstall.cpp
+
+David  2 Aug 2011
+    - update_versions: bug fixes
+
+    tools/
+        update_versions
+
+David  3 Aug 2011
+    - client: fix bug in get_descendants(),
+        which prevented the client from cleaning up
+        subprocesses of misbehaving multiprocess apps.
+    - remote job submission system:
+        assign physical names to input files (based on their MD5)
+        rather than having the user provide physical names
+    - VM apps: eliminate vbox64 plan class.  Only vbox.
+
+    sched/
+        sched_customize.cpp
+    html/
+        ops/
+            manage_app_versions.php
+        inc/
+            submit.inc
+        user/
+            submit_example.php
+            submit.php
+    lib/
+        procinfo.cpp
+    client/
+        app_start.cpp
+        app_control.cpp
+
+David  3 Aug 2011
+    - client: add optional <file_prefix> to APP_VERSION>.
+        If present, "file_prefix/" is prepended to the logical names
+        of input and output files of jobs using that app version.
+        I.e. for Vbox wrapper based app versions, file_prefix is "share",
+        so that I/O files are put in a "share" subdirectory of the slot dir.
+    - update_versions: add support for
+        <dont_throttle>
+        <file_prefix>x</file_prefix>
+        in version.xml
+
+    tools/
+        update_versions
+    client/
+        client_types.cpp,h
+        app.h
+        app_start.cpp
+
+David  3 Aug 2011
+    - client: if an app version has nonempty file_prefix,
+        copy all its input and output files
+
+    client/
+        app.h
+        app_start.cpp
+
+Charlie 3 Aug 11
+    - Mac: Fix warning about potential memory leak.
+
+    clientgui/
+        mac/
+            SystemMenu.m
+
+David  3 Aug 2011
+    - vbox wrapper: fix parsing of job file
+    - vbox wrapper: fix code structure
+        - merge vm and vbox
+        - no global vars
+
+    samples/vboxwrapper/
+        vbox.cpp,h
+        vm.cpp.h (removed)
+        vboxwrapper.cpp
+        Makefile
+
+David  3 Aug 2011
+    - vbox wrapper: hardwire logical name of image file to "vm_image.vdi".
+    - vbox wrapper: on startup, rename image file to "vm_image_SLOT.vdi",
+        where SLOT is the slot number.
+        Vbox requires unique names for VM image files.
+
+    samples/vboxwrapper/
+        vbox.cpp,h
+        vboxwrapper.cpp
+
+David  4 Aug 2011
+    - scheduler: apparently some hosts send GPU parameters that cause
+        the peak_flops to be negative (probably #processors = -1).
+        This leads to negative credit.
+        Fix: if peak flops is negative, set it to 50 GFLOPS
+    - web: fix email validate page
+
+    lib/
+        coproc.h
+    html/user/
+        validate_email_addr.php
+
+Rom    4 Aug 2011
+    - vbox wrapper: initialize xml parser with the correct starting tag.
+    
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+
+David  4 Aug 2011
+    - scheduler: turns out we need separate vbox32 and vbox64
+        plan classes after all.
+        Otherwise (since app_plan() is not passed an app version)
+        there's no way to enforce that 64 bit hosts are sent
+        only the 64 bit version (which is necessary because
+        of the split-registry scheme).
+
+    sched/
+        sched_customize.cpp
+
+David  6 Aug 2011
+    - web: send user a private message when
+        - one of their posts is moderated
+        - a banishment vote starts or completes.
+        This is needed in cases where the user can't or doesn't
+        read email to their account's address.
+        The "from" address of the PM is that of the user, not the moderator.
+
+    html/
+        inc/
+            pm.inc
+            forum_email.inc
+        user/
+            pm.php
+            team_founder_transfer_action.php
+
+David  6 Aug 2011
+    - update_versions: fix bug where files not listed in version.xml
+        are not processed correctly
+    - remote job submission: debug
+    - create_work: --rsc_fpops_est etc. should override the template file
+
+    tools/
+        backend_lib.cpp
+        update_versions.cpp
+    html/user/
+        submit_example.php
+        submit.php
+
+David  7 Aug 2011
+    - remote job submission: bug fixes
+
+    html/
+        inc/
+            submit.inc
+            util.inc
+            result.inc
+        user/
+            submit_example.php
+            submit.php
+
+David  7 Aug 2011
+    - client: projects with zero resource share are always lower priority,
+        for both job sched and work fetch,
+        than projects with positive resource share.
+
+    client/
+        cpu_sched.cpp
+        work_fetch.cpp
+
+David  7 Aug 2011
+    - scheduler: fix nasty bug where SCHED_DB_RESULT::parse()
+        was doing memset(this, 0, sizeof(RESULT)),
+        i.e. it wasn't zeroing out the whole structure.
+        The elapsed_time field (which isn't reported by old clients),
+        is near the end of the struct,
+        and it was getting garbage, e.g. 1e-304, in some cases,
+        which led to zero credit (and maybe other problems)
+    - validator: treat 1e-304 like zero in case of other problems
+        like the above.
+    - remote job submission: tweaks
+
+    sched/
+        credit.cpp
+        sched_types.cpp
+    html/user/
+        submit_example.php
+        submit.php
+
+David  7 Aug 2011
+    - web: when sending emails to other users, don't translate anything
+        (since they don't necessarily speak our language)
+
+    html/
+        ops/
+            index.php
+        inc/
+            pm.inc
+            submit.inc
+
+David  7 Aug 2011
+    - client: make round-robin simulator match what the job scheduler now does:
+        give lowest priority to projects with zero resource share.
+
+    client/
+        rr_sim.cpp
+        client_types.h
+
+Charlie 8 Aug 2011
+    - Changes for Charity Engine Desktop.
+    
+    clientgui/
+        mac/
+            CE_ss_logo.tiff (new)
+        res/
+            CE_Install.icns (new)
+            CharityEngine.icns (new)
+            CE_Uninstall.icns (new)
+            MacCEPkgIcon.zip (new)
+        skins/
+            Charity Engine/ (new)
+                graphics/ (new)
+                    (many new files)
+                skin.xml (new)
+    clientscr/
+        mac_saver_module.cpp
+        res/
+            CE_ss_logo.png (new)
+            CE_ss_logo.jpg (new)
+        ss_app.cpp
+    mac_installer/
+        CE-Branding (new)
+        CE-ReadMe.rtf (new)
+        CharityEngine/ (new)
+            acct_mgr_url.xml (new)
+        GR-ReadMe.rtf
+        make_CharityEngine.sh (new)
+        PostInstall.cpp
+        PTP-ReadMe.rtf
+        ReadMe.rtf
+
+Charlie 8 Aug 2011
+    - Mac Client: Call NSVersionOfRunTimeLibrary("cuda") to set 
+        cc.display_driver_version (from Oliver Bock.)
+        
+    client/
+        coproc_detect.cpp
+
+David  9 Aug 2011
+    - client: rename MODE to RUN_MODE, and rename vars accordingly
+
+    client/various
+
+David  9 Aug 2011
+    - client: pass XML_PARSER& rather than MIOFILE& to parse functions.
+        Preparatory to using new-style XML parsing everywhere.
+
+    client/various
+    lib/various
+
+Rom    10 Aug 2011
+    - Changes for Charity Engine Desktop.
+
+    client/win/res/
+        ce.ico
+    clientctrl/
+        boincsvcctrl.rc
+    clientgui/
+        BOINCGUIApp.rc
+    clientgui/res/
+        ce.ico
+    clientlib/win/
+        boinc_dll.rc
+    clientscr/
+        boinc_ss.rc
+    clientscr/
+        boinc_ss_opengl.rc
+    clientscr/res/
+        ce.bmp
+        ce.ico
+    clienttray/
+        boinc_tray.rc
+    win_build/
+        ce_boinc_cli.vcproj
+        ce_boinc_dll.vcproj
+        ce_boinc_ss.vcproj
+        ce_boinccmd.vcproj
+        ce_boincmgr.vcproj
+        ce_boincsvcctrl.vcproj
+        ce_boinctray.vcproj
+        ce_ss_app.vcproj
+        CharityEngine.sln
+    win_build/installerv2/
+        CharityEngine.ism
+    win_build/installerv2/redist/0409/
+        ce-eula.rtf
+    win_build/installerv2/redist/CharityEngine/
+        acct_mgr_url.xml
+        ce.ico
+        CE_IsDialogBanner.bmp
+        CE_IsDialogBitmap.bmp
+        CE_Splash.bmp
+
+David  10 Aug 2011
+    - Improve interface of XML_PARSER.
+        Add parsed_tag and is_tag to the class,
+        so that parsing functions don't need to declare them
+        and pass them around.
+    - Complete the task of using XML_PARSER as the argument
+        to all parsing functions.
+        (Internally, many of these functions still use the old XML parser;
+        that's the next step.)
+
+    db/
+        boinc_db.cpp,h
+    sched/
+        various
+    tools/
+        backend_lib.cpp
+    lib/
+        various
+    client/
+        various
+
+David  10 Aug 2011
+    - fix compile warnings; msg tweak
+
+    client/
+        cpu_sched.cpp
+    lib/
+        parse.cpp
+
+David  10 Aug 2011
+    - client: use new XML parser pretty much everywhere
+
+    lib/
+        cert_sig.cpp,h
+        parse.h
+    client/
+        pers_file_xfer.cpp
+        cs_account.cpp
+        client_types.cpp
+        cs_statefile.cpp
+        scheduler_op.cpp
+        time_stats.cpp
+        app.cpp
+        current_version.cpp
+
+Charlie 11 Aug 2011
+    - Mac installer: Bug fixes for OS 10.7 Lion: LoginItemAPI.c did not 
+        set hidden properlty for login items, so use AppleScript instead, 
+        to prevent Lion from opening BOINC windows at system startup.
+        - Fix a bug I introduced on 8 August which prevented launching 
+        WaitPermissions.app.
+    - Mac uninstaller: Remove Charity Engine BOINC app if present.
+    
+    mac_installer/
+        AddRemoveUser.cpp
+        PostInstall.cpp
+        Uninstall.cpp
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  11 Aug 2011
+    - client: more XML parsing stuff
+
+    client/
+        app.cpp
+        net_stats.cpp
+
+David  11 Aug 2011
+    - scheduler: update XML parsing
+
+    sched/
+        sched_main.cpp
+        sched_types.cpp
+
+David  11 Aug 2011
+    - client: XML tweak
+
+    client/
+        client_types.cpp
+
+Charlie 12 Aug 2011
+    - Mac installer: Bug fixes for OS 10.7 Lion.
+
+    mac_build/
+        Mac_SA_Secure.sh
+    mac_installer/
+        AddRemoveUser.cpp
+        PostInstall.cpp
+
+Rom    18 Aug 2011
+    - WINSCR: Based on feedback from WCG about the screensaver lock-up
+        problem attempt to provoke Windows into redrawing the primary
+        display.  It turns out that the screensaver image is a ghost
+        image, so create a blank top-most window and close it after
+        the graphics application has been terminated.
+        
+    clientscr/
+        screensaver_win.cpp, .h
+
+David  21 Aug 2011
+    - Vbox wrapper: add --trickle x option; sends a trickle-up message
+        reporting incremental runtime exery x seconds of runtime.
+    - client: more XML parsing cleanup
+    - credit trickle handler: do sanity checks on CPU speed
+
+    sched/
+        trickle_credit.cpp
+        credit.cpp,h
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+    client/
+        acct_setup.cpp,h
+        gui_rpc_server_ops.cpp
+
+David  21 Aug 2011
+    - credit trickle handler: write log messages if sanity checks fail
+
+    sched/
+        trickle_credit.cpp
+
+David  21 Aug 2011
+    - add script to purge trickle message records from DB
+    - fix spelling errors in db_purge
+
+    html/ops/
+        purge_trickles.php (new)
+    sched/
+        db_purge.cpp
+
+Charlie 22 Aug 2011
+    - client: Fix compiler warnings.
+
+    client/
+        app.cpp
+        coproc_detect.cpp
+
+Charlie 22 Aug 2011
+    - client: Correlate OpenCL results with CAL or CUDA results based 
+        on index of devices reported by each.  This assumes that CUDA 
+        and OpenCL and report NVIDIA devices in the same order, and 
+        that CAL and OpenCL report ATI/AMD devices in the same order.
+
+    client/
+        coproc_detect.cpp
+    lib/
+        coproc.h
+
+David  22 Aug 2011
+    - client emulator fixes
+
+    sched/
+        edf_sim.h
+    client/
+        sim.cpp
+        sim_util.cpp
+        cs_statefile.cpp
+
+Charlie 23 Aug 2011
+    - client: If OpenCL is supported, add OpenCL information to 
+        COPROC_ATI::write_xml() and COPROC_NVIDIA::write_xml(), and 
+        parse OpenCL information in COPROC_ATI::parse() and 
+        COPROC_NVIDIA::parse().
+    - client: Add OpenCL platform version number to COPROC struct.
+
+    client/
+        coproc_detect.cpp
+    lib/
+        cl_boinc.h
+        coproc.cpp, .h
+        parse.h
+
+David  23 Aug 2011
+    - example app: change the app version structure to match the new format
+
+    samples/example_app/
+        various
+
+David  23 Aug 2011
+    - fix linux build errors in coproc stuff.
+        I don't think unsigned long long is relevant here.
+
+    lib/
+        parse.h
+        coproc.cpp
+    client/
+        coproc_detect.cpp
+
+David  23 Aug 2011
+    - example app: get it right this time
+    
+    samples/example_app/
+        various
+
+Charlie 24 Aug 2011
+    - lib: fix compile errors on Mac, Ubuntu and Windows.
+
+    lib/
+        parse.h
+
+Charlie 24 Aug 2011
+    - client: fix compile warnings on Mac and Ubuntu.
+
+    client/
+        coproc_detect.cpp
+
+Charlie 24 Aug 2011
+    - lib, client: revert recent changes to restore unsigned long long so 
+        we can determine cause of and try to fix Linux build errors.
+    - lib: On Windows, call _strtoui64() instead of strtoull.
+
+    lib/
+        coproc.cpp
+        parse.h
+    client/
+        coproc_detect.cpp
+
+David  24 Aug 2011
+    - job submission: fix bug where parameters specified in the
+        input template (e.g., delay bound) were ignored
+    - web: fix PHP warning
+
+    tools/
+        backend_lib.cpp
+    html/
+        inc/
+            forum.inc
+        user/
+            forum_forum.php
+
+David  24 Aug 2011
+    - client: pass --gpu_type X (X=nvidia or ati) as well as --device.
+        This lets device-neutral OpenCL apps figure out which GPU to use.
+
+    client/
+        app_start.cpp
+
+Charlie 25 Aug 2011
+    - client: fix Linux compile errors and warnings.
+
+    client/
+        coproc_detect.cpp
+    lib/
+        coproc.cpp
+        parse.h
+
+David  25 Aug 2011
+    - client: fix bug where NVIDIA display driver version wasn't being
+        set correctly for some laptop GPUs
+    - client/server: improve estimation of NVIDIA GPU peak FLOPS
+
+    lib/
+        coproc.h
+    client/
+        coproc_detect.cpp
+
+David  25 Aug 2011
+    - validator: update credit statistics even if credit_from_wu
+        is being used.
+    - web: make almost everything translatable.  From Christian Beer.
+
+    sched/
+        validator.cpp
+    html/user/
+        various
+
+Charlie 26 Aug 2011
+    - lib: use standard implementation of strtoull when available.
+
+    configure.ac
+    clientgui/
+        mac/
+            config.h
+    lib/
+        parse.h
+
+David  26 Aug 2011
+    - web: more fixes from Christian Beer.  Fixes #1129
+
+    html/
+        ops/
+        inc/
+
+Rom    26 Aug 2011
+    - VboxWrapper: Add functions for enable/disable network and throttling
+        the CPU and network activity.
+
+    samples/vboxwrapper/
+        vbox.cpp, .h
+
+David  26 Aug 2011
+    - scheduler: don't send user a message when there is no
+        app version for their platform for a particular app.
+        The may be versions for other apps which don't have jobs right now.
+        TODO: send a message if there are no versions of ANY app
+        for any platform.
+    - fix makefile indentation, caused manager to not be built
+        fixes #1132
+
+    sched/
+        sched_version.cpp
+        sched_send.cpp
+    Makefile.am
+
+David  26 Aug 2011
+    - VirtualBox wrapper:
+        - change names of CPU and network-limiting functions
+            to express their units (always do this).
+        - wrapper monitors status.suspend_network
+            and suspends/resumes network accordingly
+        - wrapper sets CPU and network bandwidth limits on startup
+            (Rom: should this be done before run() rather than after?)
+    Note: App versions using this wrapper should always have
+        <dont_throttle/> in their version.xml,
+        to tell the client that the app throttles itself.
+
+    samples/vboxwrapper/
+        vbox.cpp,h
+        vboxwrapper.cpp
+
+David  26 Aug 2011
+    - fix build error in Linux screensaver (at least on FC14)
+
+    clientscr/
+        screensaver_x11.cpp
+
+David  26 Aug 2011
+    - web: comment out OpenID login - not working yet
+
+    html/user/
+        login_form.php
+
+David  26 Aug 2011
+    - job creation: handling of extra XML in input templates didn't work.
+    - job creation: fix stripping of <output_template> tags
+    - client: fix off-by-1 error in buffer overflow logic for scanning keys.
+
+    tools/
+        backend_lib.cpp
+        process_result_template.cpp
+    lib/
+        crypt.cpp
+        parse.cpp,h
+
+David  26 Aug 2011
+    - manager: Communitcations -> Communications.
+        please, no spelling errors in function/variable names
+    - client: parse deprecated tags in <file_info>
+
+    clientgui/
+        ProjectProcessingPage.cpp,h
+        AccountManagerProcessingPage.cpp,h
+    client/
+        client_types.cpp
+
+David  26 Aug 2011
+    - client: fix bug that caused project attach to fail
+    - clientgui: Rom, we should do error-checking of most GUI RPCs;
+        look for REPORT ERROR in ProjectProcessingPage.cpp
+
+    client/
+        acct_setup.cpp
+        coproc_detect.cpp
+    clientgui/
+        ProjectProcessingPage.cpp
+
+David  26 Aug 2011
+    - web: fix glitch in forum next/prev links
+
+    html/inc/
+        host.inc
+        forum.inc
+    
+David  26 Aug 2011
+    - web: more tra() stuff
+
+    html/user/
+        forum_thread.php
+
+David  27 Aug 2011
+    - web: add a magic header string that supposedly will make
+        Recaptcha work on some IE variants.  WTF??
+
+    html/
+        inc/
+            util.inc
+        user/
+            create_account_form.php
+            create_profile.php
+
+David  28 Aug 2011
+    - web: fix to the above
+    - web: fix forum search
+
+    html/
+        inc/
+            util.inc
+        user/
+            forum_search.php
+            forum_search_action.php
+
+David  28 Aug 2011
+    - web: fix some stuff broken by my checkin [24039].
+    - web: use &amp; instead of & in URLs (not complete)
+
+    html/
+        inc/
+            forum.inc
+            util.inc
+        user/
+            forum_thread.php
+            forum_forum.php
+            edit_forum_preferences_action.php
+
+David  29 Aug 2011
+    - web: fix typo in profile credit/edit
+
+    html/user/
+        create_profile.php
+
+David  29 Aug 2011
+    - web: fix bug in "report post" function
+
+    html/user/
+        delete_profile.php
+        forum_report_post.php
+
+David  29 Aug 2011
+    - Vbox wrapper: deal with checkpointing.
+        Current: wrapper reports frequent checkpointing to client,
+            but actually checkpoints only when the VM is stopped
+        Problem: large amounts of work would be wasted if
+            BOINC stops in an ungraceful way (e.g., power failure)
+        Solution:
+            Don't report frequent checkpointing.
+            Every CPU scheduling period (typically once/hour)
+            stop the VM (creating a checkpoint)
+            and call boinc_temporary_exit(0).
+            If the client wants to keep running this job,
+            it will start us immediately.
+
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+
+David  29 Aug 2011
+    - web: add page showing top GPU models
+
+    html/user/
+        gpu_list.php
+
+Charlie 30 Aug 2011
+    - Mac: Copy BOINC libraries built with XCode 4.1 to locations 
+        where built by earlier versions of XCode so dependent 
+        builds can always find them.
+    - Vbox wrapper: create XCode project.
+    
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    samples/vboxwrapper/
+        vboxwrapper.xcodeproj
+            project.pbxproj
+
+David  30 Aug 2011
+    - client: fix a couple of valgrind warnings
+
+    client/
+        cs_notice.cpp
+        hostinfo_unix.cpp
+
+David  30 Aug 2011
+    - client: send all running jobs a "reread app info" message
+        when global prefs change (in the case of vboxwrapper,
+        it might have to change network or CPU throttling)
+
+    sched/
+        sched_version.cpp
+        sched_send.cpp
+    client/
+        cs_prefs.cpp
+
+David  30 Aug 2011
+    - web: sort GPUs by average elapsed time
+
+    html/user/
+        gpu_list.php
+
+David  30 Aug 2011
+    - vbox wrapper: check for boinc_status.reread_init_data_file,
+        and if set reread the file, set throttles, and clear flag
+
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+
+David  30 Aug 2011
+    - validator: in "credit_from_wu" case, record what the new credit
+        system would have assigned in result.claimed_credit.
+
+    sched/
+        validator.cpp
+
+Charlie 31 Aug 2011
+    - define GPU_TYPE_NVIDIA, GPU_TYPE_ATI, use everywhere instead of 
+        literal strings "NVIDIA" and "ATI" to ensure uniformity.
+        
+    client/
+        acct_mgr.cpp
+        client_state.cpp
+        client_types.cpp
+        coproc_detect.cpp
+        cpu_sched.cpp
+        cs_account.cpp
+        cs_scheduler.cpp
+        log_flags.cpp
+        scheduler_op.cpp
+    lib/
+        coproc.cpp, .h
+        gui_rpc_client_ops.cpp
+
+Charlie 31 Aug 2011
+    - lib: Add OPENCL_REFERENCE boinc_get_opencl_ids(int argc, char** argv) 
+        to be called by OpenCL project applications to get the platform ID 
+        and device ID of the GPU assigned to the task by the scheduler.
+
+    lib/
+        coproc.cpp, .h
+
+David  31 Aug 2011
+    - API: move boinc_get_opencl_ids() from lib/ to api/.
+        lib/ is for code that's used by >1 part of BOINC
+
+    lib/
+        coproc.cpp,h
+    api/
+        boinc_opencl.cpp,h (new)
+        Makefile.am
+
+David  31 Aug 2011
+    - boinc_get_opencl_ids():
+        - change signature to return int error code
+        - no function overloading
+
+    api/
+        boinc_opencl.cpp,h
+
+David  31 Aug 2011
+    - client: fix bugs related to white space around code signing keys
+    - win compile fixes
+
+    api/
+        boinc_opencl.cpp
+    client/
+        client_types.cpp
+        cs_scheduler.cpp
+        scheduler_op.cpp
+    win_build/
+        libboincapi_staticrt.vcproj
+
+David  31 Aug 2011
+    - web: show actual project info on "forget password?" page
+
+    html/user/
+        get_passwd.php
+
+David  31 Aug 2011
+    - API: boinc_get_opencl_ids() doesn't need to link
+        the OpenCL library at runtime.
+        It's used only in OpenCL applications,
+        which already include the library.
+
+    api/
+        boinc_opencl.cpp,h
+        Makefile.am
+
+David  31 Aug 2011
+    - scheduler: make sure there's a \n after </workunit> and </result>.
+        Otherwise older clients won't be able to parse.
+
+    sched/
+        sched_types.cpp
+
+Rom    31 Aug 2011
+    - VboxWrapper: Specify a configuration directory under the slot directory to
+        try and avoid permission errors on multiple platforms when BOINC
+        is installed as a daemon.
+
+    samples/vboxwrapper/
+        vbox.cpp
+
+Charlie 31 Aug 2011
+    - api: Fix compile errors and warnings, add documentation in comments
+    - lib: remove unnecessary #include, add needed function declarations 
+
+    api/
+        boinc_opencl.cpp, .h
+    lib/
+        cl_boinc.h
+        coproc.cpp
+
+David  31 Aug 2011
+    - web: show relative performance on GPU list
+
+    html/user/
+        gpu_list.php
+
+Charlie 1 Sep 2011
+    - api: More fixes to boinc_get_opencl_ids()
+
+    api/
+        boinc_opencl.cpp
+    lib/
+        cl_boinc.h
+
+Charlie 1 Sep 2011
+    - lib: if OS_Darwin use procinfo_mac.cpp isntead of procinfo_unix.cpp.
+    - lib, api: update XCode project to build same source files in each 
+        library as corresponding make files.
+
+    lib/
+        makefile.am
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  1 Sept 2011
+    - server: rename process_wu_template() to process_input_template(),
+        and move it to its own file
+
+    sched/
+        Makefile.am
+    tools/
+        backend_lib.cpp,h
+        process_input_template.cpp,h (new)
+        Makefile.am
+    api/
+        reduce_main.cpp
+
+David  1 Sept 2011
+    - server: factor process_input_template() into smaller pieces
+
+    tools/
+        process_input_template.cpp
+
+David  1 Sept 2011
+    - web: fix bug in "allow beta apps" preferences editing
+
+    html/user/
+        prefs_edit.php
+
+David  1 Sept 2011
+    - wrapper compile fixes
+
+    samples/wrapper/
+        wrapper.cpp
+
+Rom    1 Sept 2011
+    - VboxWrapper: Add a way to extract the VM process id from the VM's
+        log file.
+        
+    samples/vboxwrapper/
+        vbox.cpp, .h
+
+David  2 Sept 2011
+    - client (and API and manager): change the data structure
+        used for system process info
+        Old: vector of PROCINFO.
+            Descendants of a process were found by recursively
+            iterating through the vector.
+            Operations are O(n)
+        New: map of (id, PROCINFO),
+            and each PROCINFO has a vector of its children.
+            Operations are O(log(n))
+        Also combined Mac/Win/Linux variants of code that
+        was essentially the same.
+
+    lib/
+        procinfo.cpp,h
+        procinfo_win.cpp
+        procinfo_unix.cpp
+        procinfo_mac.cpp
+    clientgui/
+        BOINCClientManager.cpp
+        BOINCGUIApp.cpp
+
+David  2 Sept 2011
+    - more code shuffling:
+        proc_control: controlling processes
+        procinfo: enumerating and querying processes
+        run_app_windows: launching apps as other users on Win
+
+    lib/
+        proc_control.cpp,h
+        run_app_windows.cpp
+        procinfo.cpp,h
+        Makefile.am
+    api/
+        boinc_api.cpp
+    client/
+        app_control.cpp
+
+David  2 Sept 2011
+    - client/API/vboxwrapper:
+        add a mechanism so that apps can report sub-processes
+        that are not descendants (e.g., virtual machines)
+        These processes are then counted as part of the app,
+        not as "non-BOINC CPU time".
+        This fixes a bug where processing was incorrectly suspended
+        because CPU usage by VM apps exceeded the "CPU usage limit" pref.
+
+        Implementation:
+        - the PIDs of the processes in question
+            are passed from app to client via shared-memory,
+            in the app_status channel.
+            A new variant of boinc_report_app_status() supports this.
+        - the VBox wrapper queries the PID of the VM,
+            and reports it in this way.
+        - procinfo_app() includes a new argument: a list of PIDs
+            that are part of the app, although not ancestrally
+            related to the main process.
+        - in the client, ACTIVE_TASK now includes a vector "other_pids".
+            If this is nonempty, it's passed to procinfo_app().
+
+    lib/
+        procinfo.cpp,h
+    samples/
+        vboxwrapper/
+            vbox.cpp,h
+            vboxwrapper.cpp
+    api/
+        boinc_api.cpp,h
+    client/
+        app.cpp,h
+        app_control.cpp
+
+David  2 Sept 2011
+    - web: fix bug in add project prefs for a venue
+
+    html/user/
+        add_venue.php
+
+Charlie 2 Sep 2011
+    - lib: Fix compile errors; add app_control.cpp to XCode project.
+
+    client/
+        app_control.cpp
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  2 Sept 2011
+    - lib: minor code shuffle
+
+    lib/
+        proc_control.cpp
+        procinfo_win.cpp
+
+David  2 Sept 2011
+    - web: when displaying a user's posts, limit the query to 1000
+        so the page doesn't exceed CPU limit
+
+    html/user/
+        forum_user_posts.php
+
+David  5 Sept 2011
+    - web: fix warnings in forum pages
+    - scheduler: when using elapsed time stats to predict runtime,
+        cap the estimated FLOPS at twice the peak FLOPS;
+        otherwise, if a host has received a lot of very short jobs
+        recently, it will get a too-high FLOPS estimate and
+        will exceed the rsc_fpops_bound limit.
+
+    db/
+        boinc_db.h
+    sched/
+        sched_types.cpp,h
+        sched_version.cpp
+    html/
+        ops/
+            submit_permissions.php
+        inc/
+            forum.inc
+
+David  5 Sept 2011
+    - scheduler RPC: add <override_file_present> element to
+        the <working_global_preferences> element in
+        scheduler RPC request
+        (tells the server that there's an override file).
+    - account manager RPC: add <working_global_preferences> element,
+        including the override flag.
+    - web: add "no time limit" option for forum search
+    - web: increase show-user-post query limit to 10000
+
+    lib/
+        prefs.cpp,h
+    client/
+        cs_prefs.cpp
+        acct_mgr.cpp
+    html/user/
+        forum_search.php
+        forum_search_action.php
+        forum_user_posts.php
+
+David  6 Sept 2011
+    - scheduler: add a debug message
+
+    sched/
+        sched_send.cpp
+
+David  6 Sept 2011
+    - client: fix bugs with white space around code sign keys
+        and file signatures
+    - client: when describing app versions in scheduler requests,
+        we still must use CUDA instead of NVIDIA;
+        that's what's in the server code.
+
+    client/
+        client_types.cpp
+
+David  6 Sept 2011
+    - scheduler: use new XML parser for most request elements
+    - scheduler: parse NVIDIA as well as CUDA in app version descriptions
+        (workaround for recent clients)
+
+    sched/
+        sched_send.cpp
+        sched_types.cpp
+
+David  6 Sept 2011
+    - preliminary stuff for mechanism where privileged users
+        can create apps and app versions
+    - crontab commands should be preceded by cd to project root
+
+    db/
+        schema.sql
+    tools/
+        make_project
+    html/
+        ops/
+            submit_permissions.php
+            db_update.php
+        user/
+            submit_app.php
+
+David  7 Sept 2011
+    - scheduler: fix crashing bug
+
+    sched/
+        sched_version.cpp
+        sched_assign.cpp
+
+Rom    7 Sept 2011
+    - Tag for 6.13.2 release, all platforms
+      boinc_core_release_6_13_2
+
+    /
+        configure.ac
+        version.h
+
+David  7 Sept 2011
+    - feeder: change the DB query to skip jobs for deprecated apps.
+        Otherwise, if you have a deprecated app with >= 200 jobs
+        (200 is the query's limit)
+        it could always get jobs for that app,
+        and never put anything into the cache.
+
+    db/
+        boinc_db.cpp
+
+David  7 Sept 2011
+    - client: make exit_before_start a cc_config.xml option
+        (as well as a cmdline option)
+    - wrapper: print error messages if stdin/out/err files don't exist
+
+    lib/
+        cc_config.cpp,h
+    samples/wrapper/
+        wrapper.cpp
+    client/
+        client_state.cpp,h
+        app_start.cpp
+        cs_cmdline.cpp
+        app_control.cpp
+
+David  8 Sept 2011
+    - scheduler: in work_needed(), ignore requests for resource
+        types for which we have no app versions
+    - client: if too many <coproc> elements in cc_config.xml,
+        detect it and inform user
+
+    sched/
+        sched_send.cpp
+    lib/
+        coproc.h
+        cc_config.cpp
+    samples/
+        client_state_save.xml
+    client/
+        log_flags.cpp
+
+David  8 Sept 2011
+    - web: fix PHP warning
+
+    html/inc/
+        result.inc
+
+David  8 Sept 2011
+    - validator: old scheduler bugs may cause result.flops_estimate
+        to be negative in some cases.
+        Detect this, and use 1e10 instead
+
+    sched/
+        credit.cpp
+
+David  8 Sept 2011
+    - client: new XML parser had a limit of 8KB for strings.
+        This broke things.  Increase it to 256KB.
+
+    lib/
+        parse.cpp
+
+Charlie 9 Sep 2011
+    - Mac: More fixes for building under XCode 4.1.
+
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    mac_installer/
+        release_boinc.sh
+
+Rom    9 Sept 2011
+    - Tag for 6.13.3 release, all platforms
+      boinc_core_release_6_13_3
+
+    /
+        configure.ac
+        version.h
+
+David  9 Sept 2011
+    - web: suppress warning on cache unlink
+
+    html/inc/
+        cache.inc
+
+David  9 Sept 2011
+    - client: XML-escape the URLs in RSS feed lists
+    - lib: make xml_unescape work for arbitrarily large strings
+
+    lib/
+        parse.cpp
+    client/
+        cs_notice.cpp
+
+David  10 Sept 2011
+    - client: don't pass --gpu_type to GPU apps;
+        this breaks many existing apps.
+        Instead, pass the GPU type (and the device number)
+        in app_init_data.xml
+
+    client/
+        app_start.cpp
+    lib/
+        app_ipc.cpp,h
+
+David  10 Sept 2011
+    - client: fix error in parsing of XML comments
+
+    lib/
+        parse.cpp
+
+David  11 Sept 2011
+    - client: finish next-to-last checkin
+
+    client/
+        app_control.cpp
+        app_start.cpp
+        app.h
+
+David  11 Sept 2011
+    - manager, simple view:
+        - edit label text
+        - increase opacity of main area;
+            otherwise some text is hard to read
+        - change borders from blue to light gray.
+            In general shouldn't use primary colors
+        - display credit as integer
+        - reduce size of project name;
+            otherwise long names don't fit (on Win)
+        - don't use "(in slot x)".
+            "Slot" is not part of the vocabulary here.
+
+    clientgui/
+        sg_PanelBase.cpp
+        sg_ProjectPanel.cpp
+        sg_TaskPanel.cpp
+
+David  11 Sept 2011
+    - API: change boinc_get_opencl_ids() to use APP_INIT_DATA
+        instead of cmdline
+
+    api/
+        boinc_api.cpp,h
+        boinc_opencl.cpp,h
+
+David  11 Sept 2011
+    - API; fix the above fix
+
+    api/
+        boinc_api.cpp,h
+        boinc_opencl.cpp
+        Makefile.am
+
+David  12 Sept 2011
+    - client: make RR simulation more accurate
+        by simulating time-slicing explicitly.
+        Also simulate changes in project REC
+        and hence in scheduling priority.
+    - client: add a log flag "rrsim_detail" that prints
+        time-slice-level info.
+
+    lib/
+        cc_config.cpp,h
+    client/
+        work_fetch.cpp,h
+        client_types.cpp,h
+        rr_sim.cpp,h
+        cpu_sched.cpp
+
+David  12 Sept 2011
+    - client: remove code related to debt-based scheduling
+
+    client/
+        work_fetch.cpp,h
+        client_types.cpp,h
+        sim.cpp
+        cpu_sched.cpp
+
+David  12 Sept 2011
+    - client: make file upload work w/ old handlers
+
+    client/
+        file_xfer.cpp
+
+David  12 Sept 2011
+    - web: add <no_web_account_creation> config option
+
+    html/user/
+        create_account_form.php
+        create_account_action.php
+        sample_index.php
+
+David  12 Sept 2011
+    - validator: add --no_credit option;
+        maintains stats but doesn't grant credit
+
+    sched/
+        validator.cpp
+
+David  12 Sept 2011
+    - client, GUI RPC, Manager:
+        in GUI RPC, change RESULT.gpu_mem_wait to scheduler_wait.
+        It means that the app did a boinc_temporary_exit(),
+        and is waiting to be rescheduled.
+        GPU mem wait is one source of this, not the only one
+
+    clientgui/
+        MainDocument.cpp
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+    client/
+        client_types.cpp
+
+Rom    13 Sept 2011
+    - VBOX: Add more trace messages to the wrapper to help resolve
+        issues.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+
+David  13 Sept 2011
+    - validator: add a --credit_from_runtime option.
+        This assigns credit proportional to runtime*p_fpops.
+        To prevent cheating, p_fpops is capped at the 95th percentile value
+        among active hosts,
+        and runtime is capped at a specified limit.
+        This option supports apps, like LHC's CERNvm app,
+        that run for a certain amount of time and then exit.
+        The CreditNew system doesn't work for such apps.
+    - trickle_credit:
+        To prevent cheating,
+        cap p_fpops at the 95th percentile value among active hosts,
+        and require a limit on runtime.
+    - require that trickle handlers supply an initialization function
+
+    db/
+        boinc_db.cpp,h
+    sched/
+        trickle_handler.cpp,h
+        trickle_credit.cpp
+        trickle_echo.cpp
+        validate_util2.cpp
+        validator.cpp
+
+David  13 Sept 2011
+    - wrapper: don't delete task-level checkpoint file when starting task;
+        that defeats the purpose.  From Uwe Becker.
+
+    samples/wrapper/
+        wrapper.cpp
+
+Rom    13 Sept 2011
+    - VBOX: Properly trap stderr output from vboxmanage by redirecting it to
+        stdout.  Error messages should now be properly detected on Linux and
+        Mac.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+
+Rom    13 Sept 2011
+    - VBOX: Don't attempt to stop a VM that is already shut down.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+
+Rom    13 Sept 2011
+    - VBOX: Make is_running() a bit smarter about detecting the running state
+        of a virtual machine.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+
+David  13 Sept 2011
+    - client: get GPU available RAM at startup (only)
+    - client: fix compile warning
+
+    lib/
+        coproc.cpp
+    client/
+        work_fetch.cpp,h
+        client_state.cpp
+        coproc_detect.cpp
+        cpu_sched.cpp
+
+David  13 Sept 2011
+    - client: fixes to the above
+    - client: prevent infinite recursion (and stack overflow)
+        in procinfo.cpp:add_child_totals().
+        Not sure how this could happen.
+
+    client/
+        coproc_detect.cpp
+    lib/
+        procinfo.cpp
+
+Rom    13 Sept 2011
+    - VBOX: Increase the pipe buffer on Windows from the default to 128k. Despite what
+        the docs say, if the buffer isn't large enough VboxManage hangs attempting to
+        write the VM log file to it.  Luckly the VM log file is only 64k.
+    - VBOX: Fix a couple of parsing errors.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+
+Rom    14 Sept 2011
+    - VBOX: Add a register_only command line argument to help debug VM related issues.
+    - VBOX: Add some suggestions to the source on how to debug VM related issues.
+    - VBOX: Add a quick sanity check when the enable_shared_directory option is
+        enabled.
+
+    samples/vboxwrapper/
+        vbox.cpp, .h
+        vboxwrapper.cpp
+
+David  13 Sept 2011
+    - client: escape URLs for curl, otherwise filenames with spaces don't work
+
+    lib/
+        procinfo.cpp
+    client/
+        http_curl.cpp
+
+David  13 Sept 2011
+    - client: curl_easy_escape() escapes way too much.  Just escape spaces.
+
+    client/
+        http_curl.cpp
+
+David  14 Sept 2011
+    - XML parsing: do XML unescaping in place rather than allocating
+        a buffer on the stack.
+        Fixes a Manager crash on the Mac,
+        where the default thread stack size seems to be 512KB.
+
+    lib/
+        parse.cpp,h
+        app_ipc.cpp
+    client/
+        cs_notice.cpp
+
+Rom    14 Sept 2011
+    - client: Update Windows detection code to support Windows 8.
+        (From: [P3D] Crashtest)
+        
+    client/
+        hostinfo_win.cpp
+
+David  14 Sept 2011
+    - client: change in the use of GPU available RAM:
+        - measure the available RAM of each GPU when BOINC starts up.
+            If this fails, set available = physical.
+            Show available RAM in startup messages.
+        - use available RAM rather than physical RAM in selecting
+            the "best" GPU instance
+        - report available RAM to the scheduler
+    TODO: change the scheduler to use available rather than physical
+        if it's reported
+
+    sched/
+        sample_trivial_validator.cpp
+    lib/
+        coproc.cpp,h
+    client/
+        client_state.cpp
+        coproc_detect.cpp
+        cpu_sched.cpp
+
+David  14 Sept 2011
+    - vboxwrapper: we don't seem to be getting the VM PID.
+        Add some printfs.
+
+    samples/vboxwrapper/
+        vbox.cpp
+
+David  14 Sept 2011
+    - client: report available GPU RAM to scheduler
+
+    lib/
+        coproc.cpp
+
+David  14 Sept 2011
+    - lib: parse <available_ram> in coproc XML
+    - lib: do coproc XML parsing using new XML parser
+
+    lib/
+        parse.cpp,h
+        coproc.cpp,h
+
+David  14 Sept 2011
+    - scheduler: in app_plan functions for GPUs,
+        use available RAM if reported by client;
+        otherwise use physical RAM.
+
+    sched/
+        sched_customize.cpp
+
+David  14 Sept 2011
+    - scheduler: revise [21428] to include non-anonymous-platform,
+        and change the ratio limit from 2 to 10.
+
+    sched/
+        sched_send.cpp
+        sched_version.cpp
+
+Charlie 15 Sep 2011
+    - lib: fix compiler warning.
+    - vboxwrapper: fix compiler warning.
+    - Mac: Change XCode project to build both 32-bit and 64-bit 
+        BOINC libraries for debug as well as for deployment.
+    - vboxwrapper: update XCode project for easier access to built
+        executables and symbol tables under XCode 4.1.
+
+    lib/
+        coproc.cpp
+    samples/
+        vboxwrapper/
+            vbox.cpp
+            vboxwrapper.xcodeproj/
+                project.pbxproj
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  15 Sept 2011
+    - minor code shuffle
+
+    client/
+        rr_sim.cpp
+
+Rom    15 Sept 2011
+    - VBOX: Add a way to track overall network utilization of a VM.
+
+    samples/vboxwrapper/
+        vbox.cpp, .h
+
+David  16 Sept 2011
+    - Validator: allow project-specific code to mark a result
+        is a "runtime outlier", i.e. its runtime does
+        not correspond to the job's rsc_fpops_est.
+        Runtime outliers are not counted in the statistics for
+        elapsed time, turnaround time, and peak FLOPs count.
+
+        The is intended for applications like SETI@home,
+        some of whose jobs finish more or less instantly
+        (this happens if the data contains a lot of interference).
+        If a host happens to get a bunch of these short jobs,
+        its statistics will get skewed: in essence, the server
+        will think that the host is extremely fast,
+        and will send it too many jobs.
+
+    db/
+        boinc_db.cpp,h
+    sched/
+        credit.cpp
+        validator.cpp
+    html/ops/
+        db_update.php
+
+David  16 Sept 2011
+    - vboxwrapper: code cleanup
+        - use double for potentially large quantities
+        - factor out repetitive code, rather than copy and paste
+
+    samples/vboxwrapper/
+        vbox.cpp,h
+
+David  16 Sept 2011
+    - vboxwrapper: report network usage to the client
+    - client: include the above in enforcing network quota preferences
+
+    api/
+        boinc_api.cpp,h
+    samples/vboxwrapper/
+        vbox.cpp,h
+        vboxwrapper.cpp
+    client/
+        app.cpp,h
+        app_control.cpp
+    sched/
+        trickle_handler.cpp
+
+David  16 Sept 2011
+    - transitioner: fix bug related to new runtime_outlier field
+
+    db/
+        boinc_db.cpp
+
+David  16 Sept 2011
+    - validator: add runtime_outlier message
+
+    sched/
+        credit.cpp
+
+David  16 Sept 2011
+    - client: with VBox on Win, the process graph sometimes has cycles.
+        Not sure where this comes from.
+        But avoid infinite recursion when traversing descendants.
+
+    lib/
+        procinfo.cpp,h
+
+Charlie 16 Sep 2011
+    - wrapper: Update Mac build script for XCode 4.1 and OS 10.7.  
+        NOTE: We no longer support PowerPC Macs.
+
+    samples/wrapper/
+        wrapper.cpp
+
+David  18 Sept 2011
+    - client: make the attributes of GUI RPCs (network, authentication)
+        explicit rather than determined by position in a list.
+    - client: add a new "read-only" attribute for GUI RPCs.
+        This is in preparation for handling GUI RPCs in separate threads.
+    - client: remove code to support pre-V6 graphics.
+
+    lib/
+        parse.h
+    client/
+        cs_notice.cpp,h
+        gui_rpc_server.cpp,h
+        gui_rpc_server_ops.cpp
+        app.cpp
+        app_control.cpp
+        Makefile.am
+
+David  18 Sept 2011
+    - Win fixes
+
+    lib/
+        mfile.cpp
+        parse.cpp
+    win_build/
+        boinc_cli.vcproj
+
+David  18 Sept 2011
+    - lib: add generic interfaces for threads and thread synchronization
+
+    lib/
+        thread.cpp,h
+
+David  18 Sept 2011
+    - win fixes
+
+    lib/
+        thread.cpp,h
+    win_build/
+        libboinc.vcproj
+
+Rom    19 Sept 2011
+    - Tag for 6.13.4 release, all platforms
+      boinc_core_release_6_13_4
+
+    /
+        configure.ac
+        version.h
+
+David  19 Sept 2011
+    - client: in handling the acct_mgr GUI RPC,
+        don't start the RPC directly;
+        that might fail if CLIENT_STATE::gui_http is busy.
+        Instead, set a timer field.
+    - client: structure ACCT_MGR_OP the same as other GUI_HTTP_OP variants
+    - client: clarify the comments on GUI_HTTP and GUI_HTTP_OP
+    
+    Note: GUI_HTTP and GUI_HTTP_OP are misnomers; they refer to
+    any HTTP op other than scheduler requests and file transfers.
+    Should change the name, maybe to CLIENT_HTTP*
+
+    client/
+        client_state.cpp
+        gui_rpc_server.cpp
+        gui_rpc_server_ops.cpp
+        gui_http.cpp,h
+        acct_mgr.cpp,h
+        cs_trickle.h
+
+Charlie 20 Sep 2011
+    - Mac: Remove app_graphics.cpp from Client in XCode project, add new 
+        files thread.cpp,.h to libboinc.a in XCode project.  
+        (Checked in to 6.13.4 tag.)
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  20 Sept 2011
+    - client: intermediate checkin for replicated trickle-ups.
+        Not finished yet.
+    - example app: add --trickle_up and --trickle_down options,
+        for testing trickle messages
+
+    client/
+        acct_mgr.cpp
+        client_types.h
+        cs_notice.cpp,h
+        cs_scheduler.cpp
+        cs_trickle.cpp,h
+        gui_http.cpp,h
+        gui_rpc_server.cpp,h
+        http_curl.cpp,h
+        scheduler_op.cpp,h
+    samples/example_app/
+        uc2.php
+
+David  21 Sept 2011
+    - back end: extend the access control system for remote job submission
+        and other operations.
+        You can now designate a user as "manager" for a particular app.
+        They can then:
+        - control job-submit permissions for that app
+        - deprecate/undeprecate versions of the app.
+        - abort jobs for that app
+
+        You can also designate a user as manager for the project.
+        They can then edit permissions and quotas,
+        as well as performing the app-specific functions for all apps.
+
+        This is described here:
+        http://boinc.berkeley.edu/trac/wiki/MultiUser#Accesscontrol
+
+        This required some changes to the DB schema.
+
+    db/
+        schema.sql
+    tools/
+        manage_privileges
+    html/
+        inc/
+            submit.inc
+            submit_util.inc (new)
+            result.inc
+        ops/
+            submit_permissions.php (removed)
+            db_update.php
+        user/
+            manage_project.php (new)
+            submit_example.php
+            manage.php (new)
+            manage_app.php (new)
+            submit.php
+    py/Boinc/
+        setup_project.py
+
+David  21 Sept 2011
+    - client: fix bug in ATI GPU detection, caused zero RAM measurements
+
+    client/
+        coproc_detect.cpp
+
+Rom    21 Sept 2011
+    - client: fix ATI GPU max mem display issue.
+
+    lib/
+        coproc.cpp
+
+David  21 Sept 2011
+    - fix typo in DB schema
+    - msg tweaks in make_project
+
+    db/
+        schema.sql
+    py/Boinc/
+        setup_project.py
+
+David  21 Sept 2011
+    - client: more stuff for replicated trickle ups
+
+    client/
+        cs_trickle.cpp
+        client_types.cpp
+        http_curl.cpp
+
+David  21 Sept 2011
+    - lib: don't include thread.cpp;
+        not needed for server, and causes errors on some 64-bit Linux 
+
+    lib/
+        Makefile.am
+
+Charlie 22 Sep 2011
+    - vboxwrapper: fix code which sets environment variables.
+        - "PATH" must be upper case.
+        - putenv() does not copy its input string, so must use setenv().
+
+    samples/
+        vboxwrapper/
+            vbox.cpp
+
+Rom    22 Sept 2011
+    - VBOX: More environment variable tweaks.
+
+    samples/vboxwrapper/
+        vbox.cpp, .h
+
+David  22 Sept 2011
+	- client: more work on replicated trickles.  Not working yet.
+
+	client/
+		client_state.cpp
+		cs_trickle.cpp,h
+
+David  22 Sept 2011
+	- client: replicated trickles.  Seems to be working now.
+	- client: added <trickle_debug> config option
+
+	client/
+		cs_trickle.cpp
+		gui_http.cpp,h
+		httl_curl.cpp
+	lib/
+		cc_config.cpp,h
+
+Rom    22 Sept 2011
+    - Tag for 6.13.5 release, all platforms
+      boinc_core_release_6_13_5
+
+    /
+        configure.ac
+        version.h
+
+Rom    22 Sept 2011
+    - client: Disable GPU detection of Windows when running as a
+        service to avoid a deadlock condition with the latest ATI
+        drivers.
+        
+    client/
+        client_state.cpp
+        coproc_detect.cpp
+
+Charlie 23 Sep 2011
+    - Mac: fixes for problems with OS 10.4 compatibility.
+        (checked into 6.13.5 and 6.13.6 tags)
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Rom    22 Sept 2011
+    - Tag for 6.13.6 release, all platforms
+      boinc_core_release_6_13_6
+
+    /
+        configure.ac
+        version.h
+
+Charlie 23 Sep 2011
+    - Mac: more fixes for problems with OS 10.4 compatibility.
+        (checked into 6.13.5 and 6.13.6 tags)
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    mac_installer/
+        PostInstall.cpp
+        uninstall.cpp
+
+ Charlie 26 Sep 2011
+     - Mac: update wxMac build script for building with XCode 4.1 
+        under OS 10.7 while maintaining OS 10.4 compatibility.
+        (checked into 6.13.6 tag)
+
+     mac_build/
+        buildWxMac.sh

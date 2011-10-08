@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 18003 2009-05-05 09:16:57Z davea $
+## $Id: Makefile.am 24160 2011-09-12 03:48:16Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -8,8 +8,8 @@ if ENABLE_LIBRARIES
 # stuff linked into both main app and graphics app
 api_files= \
     boinc_api.cpp \
-    reduce_main.cpp \
-    graphics2_util.cpp
+    graphics2_util.cpp \
+    reduce_main.cpp
 
 # stuff linked into graphics app
 graphics2_files = \
@@ -69,7 +69,7 @@ all_local += $(LIBBOINC_GRAPHICS2_STATIC)
 endif
 endif
 
-all-local: $(all_local)
+all-local: $(all_local) boinc_opencl.o
 
 $(LIBBOINC_API_STATIC): libboinc_api.la
 	rm -f $(LIBBOINC_API_STATIC)

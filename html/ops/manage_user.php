@@ -97,7 +97,7 @@ $matches="";
 
 if (isset($_POST['search_submit'])){
     $search_name = post_str('search_text');
-    $search_name = BoincDb::escape_string(strip_tags($search_name));
+    $search_name = BoincDb::escape_string(sanitize_tags($search_name));
 
     if (!empty($search_name)){ 
         $result = mysql_query("SELECT * FROM user WHERE name='$search_name'");
@@ -395,5 +395,5 @@ if ($q) {
 admin_page_tail();
 
 $cvs_version_tracker[]=        //Generated automatically - do not edit
-    "\$Id: manage_user.php 22713 2010-11-18 20:29:30Z davea $"; 
+    "\$Id: manage_user.php 24050 2011-08-26 18:30:13Z davea $"; 
 ?>

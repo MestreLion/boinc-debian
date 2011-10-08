@@ -340,31 +340,14 @@ RESULT* CLIENT_STATE::largest_debt_project_best_result() {
         PROJECT* p = projects[i];
         if (!p->next_runnable_result) continue;
         if (p->non_cpu_intensive) continue;
-        if (use_rec) {
-            if (first || project_priority(p)> best_debt) {
-                first = false;
-                best_project = p;
-                best_debt = project_priority(p);
-            }
-        } else {
-            if (first || p->rsc_pwf[0].anticipated_debt > best_debt) {
-                first = false;
-                best_project = p;
-                best_debt = p->rsc_pwf[0].anticipated_debt;
-            }
+        if (first || project_priority(p)> best_debt) {
+            first = false;
+            best_project = p;
+            best_debt = project_priority(p);
         }
     }
     if (!best_project) return NULL;
 
-    if (!use_rec) {
-        if (log_flags.cpu_sched_debug) {
-            msg_printf(best_project, MSG_INFO,
-                "[cpu_sched_debug] highest debt: %f %s",
-                best_project->rsc_pwf[0].anticipated_debt,
-                best_project->next_runnable_result->name
-            );
-        }
-    }
     RESULT* rp = best_project->next_runnable_result;
     best_project->next_runnable_result = 0;
     return rp;
@@ -392,11 +375,7 @@ RESULT* first_coproc_result(int rsc_type) {
         if (!rp->runnable()) continue;
         if (rp->non_cpu_intensive()) continue;
         if (rp->already_selected) continue;
-        if (use_rec) {
-                std = project_priority(rp->project);
-        } else {
-                std = rp->project->anticipated_debt(rsc_type);
-        }
+        std = project_priority(rp->project);
         if (!best) {
             best = rp;
             best_std = std;
@@ -581,15 +560,18 @@ static double rec_sum;
 // compute resource share and REC fractions
 // among compute-intensive, non-suspended projects
 //
-void project_priority_init() {
+void project_priority_init(bool set_rec_temp) {
     double rs_sum = 0;
     rec_sum = 0;
     for (unsigned int i=0; i<gstate.projects.size(); i++) {
         PROJECT* p = gstate.projects[i];
         if (p->non_cpu_intensive) continue;
         if (p->suspended_via_gui) continue;
+        if (set_rec_temp) {
+            p->pwf.rec_temp = p->pwf.rec;
+        }
         rs_sum += p->resource_share;
-        rec_sum += p->pwf.rec;
+        rec_sum += p->pwf.rec_temp;
     }
     if (rec_sum == 0) {
         rec_sum = 1;
@@ -601,13 +583,19 @@ void project_priority_init() {
             continue;
         }
         p->resource_share_frac = p->resource_share/rs_sum;
-        p->pwf.rec_temp = p->pwf.rec;
 
     }
 }
 
 double project_priority(PROJECT* p) {
     double x = p->resource_share_frac - p->pwf.rec_temp/rec_sum;
+
+    // projects with zero resource share are always lower priority
+    // than those with positive resource share
+    //
+    if (p->resource_share == 0) {
+        x -= 1;
+    }
 #if 0
     msg_printf(p, MSG_INFO,
         "priority: rs frac %.3f rec_temp %.3f rec_sum %.3f prio %f\n",
@@ -619,7 +607,7 @@ double project_priority(PROJECT* p) {
 
 // called from the scheduler's job-selection loop;
 // we plan to run this job;
-// bump the project's temp REC by the amount credit for 1 scheduling period.
+// bump the project's temp REC by the estimated credit for 1 scheduling period.
 // This encourages a mixture jobs from different projects.
 //
 void adjust_rec_sched(RESULT* rp) {
@@ -674,14 +662,7 @@ void CLIENT_STATE::adjust_debts() {
         work_fetch.accumulate_inst_sec(atp, elapsed_time);
     }
 
-    if (use_rec) {
-        update_rec();
-    } else {
-        for (int j=0; j<coprocs.n_rsc; j++) {
-            rsc_work_fetch[j].update_long_term_debts();
-            rsc_work_fetch[j].update_short_term_debts();
-        }
-    }
+    update_rec();
 
     reset_debt_accounting();
 }
@@ -748,21 +729,12 @@ static bool schedule_if_possible(
     if (log_flags.cpu_sched_debug) {
         msg_printf(rp->project, MSG_INFO,
             "[cpu_sched_debug] scheduling %s (%s) (%f)", rp->name, description,
-            use_rec?project_priority(rp->project):0
+            project_priority(rp->project)
         );
     }
     proc_rsc.schedule(rp, atp);
 
-    if (use_rec) {
-        adjust_rec_sched(rp);
-    } else {
-        // project STD at end of time slice
-        //
-        double dt = gstate.global_prefs.cpu_scheduling_period();
-        for (int i=0; i<coprocs.n_rsc; i++) {
-            rp->project->rsc_pwf[i].anticipated_debt -= dt*rp->avp->avg_ncpus/rsc_work_fetch[i].ninstances;
-        }
-    }
+    adjust_rec_sched(rp);
     return true;
 }
 
@@ -884,9 +856,7 @@ void CLIENT_STATE::make_run_list(vector<RESULT*>& run_list) {
 
     // set temporary variables
     //
-    if (use_rec) {
-        project_priority_init();
-    }
+    project_priority_init();
     for (i=0; i<results.size(); i++) {
         rp = results[i];
         rp->already_selected = false;
@@ -895,11 +865,6 @@ void CLIENT_STATE::make_run_list(vector<RESULT*>& run_list) {
     for (i=0; i<projects.size(); i++) {
         p = projects[i];
         p->next_runnable_result = NULL;
-    if (!use_rec) {
-        for (int j=0; j<coprocs.n_rsc; j++) {
-            p->rsc_pwf[j].anticipated_debt = p->rsc_pwf[j].short_term_debt;
-        }
-    }
         for (int j=0; j<coprocs.n_rsc; j++) {
             p->rsc_pwf[j].deadlines_missed_copy = p->rsc_pwf[j].deadlines_missed;
         }
@@ -1123,11 +1088,12 @@ void CLIENT_STATE::append_unfinished_time_slice(vector<RESULT*> &run_list) {
 
 static inline bool excluded(RESULT* rp, COPROC* cp, int ind) {
     PROJECT* p = rp->project;
-    for (unsigned int i=0; i<p->exclude_gpus.size(); i++) {
-        EXCLUDE_GPU& eg = p->exclude_gpus[i];
+    for (unsigned int i=0; i<config.exclude_gpus.size(); i++) {
+        EXCLUDE_GPU& eg = config.exclude_gpus[i];
+        if (strcmp(eg.url.c_str(), p->master_url)) continue;
         if (!eg.type.empty() && (eg.type != cp->type)) continue;
         if (!eg.appname.empty() && (eg.appname != rp->app->name)) continue;
-        if (eg.devnum != cp->device_nums[ind]) continue;
+        if (eg.device_num >= 0 && eg.device_num != cp->device_nums[ind]) continue;
         return true;
     }
     return false;
@@ -1190,7 +1156,7 @@ static inline void confirm_current_assignment(
                 cp->type, j, rp->name
             );
         }
-        cp->available_ram[j] -= rp->avp->gpu_ram;
+        cp->available_ram_temp[j] -= rp->avp->gpu_ram;
     }
 }
 
@@ -1203,22 +1169,19 @@ static inline bool get_fractional_assignment(
     // try to assign an instance that's already fractionally assigned
     //
     for (i=0; i<cp->count; i++) {
-        if (cp->available_ram_unknown[i]) {
-            continue;
-        }
         if (excluded(rp, cp, i)) {
             continue;
         }
         if ((cp->usage[i] || cp->pending_usage[i])
             && (cp->usage[i] + cp->pending_usage[i] + usage <= 1)
         ) {
-            if (rp->avp->gpu_ram > cp->available_ram[i]) {
+            if (rp->avp->gpu_ram > cp->available_ram_temp[i]) {
                 defer_sched = true;
                 continue;
             }
             rp->coproc_indices[0] = i;
             cp->usage[i] += usage;
-            cp->available_ram[i] -= rp->avp->gpu_ram;
+            cp->available_ram_temp[i] -= rp->avp->gpu_ram;
             if (log_flags.coproc_debug) {
                 msg_printf(rp->project, MSG_INFO,
                     "[coproc] Assigning %f of %s instance %d to %s",
@@ -1232,20 +1195,17 @@ static inline bool get_fractional_assignment(
     // failing that, assign an unreserved instance
     //
     for (i=0; i<cp->count; i++) {
-        if (cp->available_ram_unknown[i]) {
-            continue;
-        }
         if (excluded(rp, cp, i)) {
             continue;
         }
         if (!cp->usage[i]) {
-            if (rp->avp->gpu_ram > cp->available_ram[i]) {
+            if (rp->avp->gpu_ram > cp->available_ram_temp[i]) {
                 defer_sched = true;
                 continue;
             }
             rp->coproc_indices[0] = i;
             cp->usage[i] += usage;
-            cp->available_ram[i] -= rp->avp->gpu_ram;
+            cp->available_ram_temp[i] -= rp->avp->gpu_ram;
             if (log_flags.coproc_debug) {
                 msg_printf(rp->project, MSG_INFO,
                     "[coproc] Assigning %f of %s free instance %d to %s",
@@ -1275,14 +1235,11 @@ static inline bool get_integer_assignment(
     //
     int nfree = 0;
     for (i=0; i<cp->count; i++) {
-        if (cp->available_ram_unknown[i]) {
-            continue;
-        }
         if (excluded(rp, cp, i)) {
             continue;
         }
         if (!cp->usage[i]) {
-            if (rp->avp->gpu_ram > cp->available_ram[i]) {
+            if (rp->avp->gpu_ram > cp->available_ram_temp[i]) {
                 defer_sched = true;
                 continue;
             };
@@ -1309,18 +1266,15 @@ static inline bool get_integer_assignment(
     // assign non-pending instances first
 
     for (i=0; i<cp->count; i++) {
-        if (cp->available_ram_unknown[i]) {
-            continue;
-        }
         if (excluded(rp, cp, i)) {
             continue;
         }
         if (!cp->usage[i]
             && !cp->pending_usage[i]
-            && (rp->avp->gpu_ram <= cp->available_ram[i])
+            && (rp->avp->gpu_ram <= cp->available_ram_temp[i])
         ) {
             cp->usage[i] = 1;
-            cp->available_ram[i] -= rp->avp->gpu_ram;
+            cp->available_ram_temp[i] -= rp->avp->gpu_ram;
             rp->coproc_indices[n++] = i;
             if (log_flags.coproc_debug) {
                 msg_printf(rp->project, MSG_INFO,
@@ -1335,17 +1289,14 @@ static inline bool get_integer_assignment(
     // if needed, assign pending instances
 
     for (i=0; i<cp->count; i++) {
-        if (cp->available_ram_unknown[i]) {
-            continue;
-        }
         if (excluded(rp, cp, i)) {
             continue;
         }
         if (!cp->usage[i]
-            && (rp->avp->gpu_ram <= cp->available_ram[i])
+            && (rp->avp->gpu_ram <= cp->available_ram_temp[i])
         ) {
             cp->usage[i] = 1;
-            cp->available_ram[i] -= rp->avp->gpu_ram;
+            cp->available_ram_temp[i] -= rp->avp->gpu_ram;
             rp->coproc_indices[n++] = i;
             if (log_flags.coproc_debug) {
                 msg_printf(rp->project, MSG_INFO,
@@ -1378,8 +1329,7 @@ static void copy_available_ram(COPROC& cp, const char* name) {
     int rt = rsc_index(name);
     if (rt > 0) {
         for (int i=0; i<MAX_COPROC_INSTANCES; i++) {
-            coprocs.coprocs[rt].available_ram[i] = cp.available_ram[i];
-            coprocs.coprocs[rt].available_ram_unknown[i] = cp.available_ram_unknown[i];
+            coprocs.coprocs[rt].available_ram_temp[i] = cp.available_ram;
         }
     }
 }
@@ -1391,18 +1341,10 @@ static inline void assign_coprocs(vector<RESULT*>& jobs) {
 
     coprocs.clear_usage();
     if (coprocs.have_nvidia()) {
-        coprocs.nvidia.get_available_ram();
-        if (log_flags.coproc_debug) {
-            coprocs.nvidia.print_available_ram();
-        }
-        copy_available_ram(coprocs.nvidia, "NVIDIA");
+        copy_available_ram(coprocs.nvidia, GPU_TYPE_NVIDIA);
     }
     if (coprocs.have_ati()) {
-        coprocs.ati.get_available_ram();
-        if (log_flags.coproc_debug) {
-            coprocs.ati.print_available_ram();
-        }
-        copy_available_ram(coprocs.ati, "ATI");
+        copy_available_ram(coprocs.ati, GPU_TYPE_ATI);
     }
 
     // fill in pending usage

@@ -24,13 +24,11 @@ check_get_args(array());
 
 $user = get_logged_in_user(false);
 
-page_head("Questions and answers");
+page_head(tra("Questions and answers"));
 
-echo "<p>
-    Talk live via Skype with a volunteer, in any of several languages.
-    Go to
-    <a href=\"http://boinc.berkeley.edu/help.php\">BOINC Online Help</a>.</p>
-";
+echo "<p>".
+    tra("Talk live via Skype with a volunteer, in any of several languages. Go to %1BOINC Online Help%2.", "<a href=\"http://boinc.berkeley.edu/help.php\">", "</a>").
+    "</p>";
 
 show_forum_header($user);
 
@@ -44,7 +42,7 @@ foreach ($categories as $category) {
         show_mark_as_read_button($user);
         start_forum_table(array(
             tra("Topic"),
-            tra("# Questions"),
+            tra("Questions"),
             tra("Last post")
         ));
     }
@@ -81,5 +79,5 @@ echo "
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_help_desk.php 23018 2011-02-10 22:45:39Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_help_desk.php 24048 2011-08-25 22:12:48Z davea $";  //Generated automatically - do not edit
 ?>

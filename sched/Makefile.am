@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 23431 2011-04-24 21:33:51Z davea $
+## $Id: Makefile.am 24107 2011-09-01 19:58:27Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -18,6 +18,7 @@ libsched_sources = \
     ../db/boinc_db.cpp \
     ../db/db_base.cpp \
     ../tools/process_result_template.cpp \
+    ../tools/process_input_template.cpp \
     ../tools/backend_lib.cpp
 
 lib_LTLIBRARIES = libsched.la

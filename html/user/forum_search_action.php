@@ -87,8 +87,8 @@ function search_post_content(
 
     $search_string="%";
     foreach ($keyword_list as $key => $word){
-        $search_string.=mysql_escape_string($word)."%";
-    }
+        $search_string .= BoincDb::escape_string($word)."%";
+    } 
     $optional_join = "";
     // if looking in a single forum, need to join w/ thread table
     // because that's where the link to forum is
@@ -146,7 +146,12 @@ $search_max_time = post_int("search_max_time");
 $search_forum = post_int("search_forum");
 $search_sort = post_int("search_sort");
 $search_list = explode(" ",$search_keywords);
-$min_timestamp = time() - ($search_max_time*3600*24);
+if ($search_max_time) {
+    $min_timestamp = time() - ($search_max_time*3600*24);
+} else {
+    $min_timestamp = 0;
+}
+
 $limit = 100;
 
 if ($search_forum==-1){
@@ -209,15 +214,15 @@ if (count($posts)){
 }
 
 if (!count($thread) && !count($posts)){
-    echo "<p>Sorry, couldn't find anything matching your search query. You 
-    can try to broaden your search by using less words (or less specific words).</p>
-    <p>You can also 
-    <a href=\"http://www.google.com/search?domains=".URL_BASE."&sitesearch=".URL_BASE."/forum_thread.php&q=".htmlentities($search_keywords)."\">
-    try the same search on Google.</a></p>";
+    echo "<p>".tra("Sorry, couldn't find anything matching your search query. You can try to broaden your search by using less words (or less specific words).")."</p>
+    <p>"
+    .tra("You can also %1try the same search on Google.%2",
+         "<a href=\"http://www.google.com/search?domains=".URL_BASE."&sitesearch=".URL_BASE."/forum_thread.php&q=".htmlentities($search_keywords)."\">",
+         "</a>")
+    ."</p>";
 }
-echo "<p><a href=\"forum_search.php\">Perform another search</a></p>";
+echo "<p><a href=\"forum_search.php\">".tra("Perform another search")."</a></p>";
 page_tail();
-exit;
 
-$cvs_version_tracker[]="\$Id: forum_search_action.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_search_action.php 24129 2011-09-06 04:34:29Z davea $";  //Generated automatically - do not edit
 ?>

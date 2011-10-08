@@ -21,12 +21,14 @@
 #include <cstring>
 #include <vector>
 
+#include "parse.h"
+
 struct IP_RESULT {
     char name[256];
     double computation_deadline;
     double report_deadline;
     double cpu_time_remaining;
-    int parse(FILE*);
+    int parse(XML_PARSER&);
         /// Whether or not the result would have missed its deadline,
         /// independent of any newly scheduled result
         /// Used to determine if late results will complete even later

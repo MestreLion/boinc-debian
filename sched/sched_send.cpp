@@ -995,6 +995,7 @@ bool work_needed(bool locality_sched) {
             log_messages.printf(MSG_NORMAL,
                 "[quota] reached limit on GPU jobs in progress\n"
             );
+            config.max_jobs_in_progress.print_log();
         }
         g_wreq->clear_gpu_req();
         if (g_wreq->effective_ngpus) {
@@ -1011,6 +1012,7 @@ bool work_needed(bool locality_sched) {
             log_messages.printf(MSG_NORMAL,
                 "[quota] reached limit on CPU jobs in progress\n"
             );
+            config.max_jobs_in_progress.print_log();
         }
         g_wreq->clear_cpu_req();
         g_wreq->max_jobs_on_host_cpu_exceeded = true;
@@ -1041,23 +1043,25 @@ bool work_needed(bool locality_sched) {
     }
 
 #if 0
-    log_messages.printf(MSG_NORMAL,
-        "work_needed: spec req %d sec to fill %.2f; CPU (%.2f, %.2f) CUDA (%.2f, %.2f) ATI(%.2f, %.2f)\n",
-        g_wreq->rsc_spec_request,
-        g_wreq->seconds_to_fill,
-        g_wreq->cpu_req_secs, g_wreq->cpu_req_instances,
-        g_wreq->cuda_req_secs, g_wreq->cuda_req_instances,
-        g_wreq->ati_req_secs, g_wreq->ati_req_instances
-    );
+    if (config.debug_send) {
+        log_messages.printf(MSG_NORMAL,
+            "[send] work_needed: spec req %d sec to fill %.2f; CPU (%.2f, %.2f) CUDA (%.2f, %.2f) ATI(%.2f, %.2f)\n",
+            g_wreq->rsc_spec_request,
+            g_wreq->seconds_to_fill,
+            g_wreq->cpu_req_secs, g_wreq->cpu_req_instances,
+            g_wreq->cuda_req_secs, g_wreq->cuda_req_instances,
+            g_wreq->ati_req_secs, g_wreq->ati_req_instances
+        );
+    }
 #endif
     if (g_wreq->rsc_spec_request) {
-        if (g_wreq->need_cpu()) {
+        if (g_wreq->need_cpu() && ssp->have_cpu_apps) {
             return true;
         }
-        if (g_wreq->need_cuda()) {
+        if (g_wreq->need_cuda() && ssp->have_cuda_apps) {
             return true;
         }
-        if (g_wreq->need_ati()) {
+        if (g_wreq->need_ati() && ssp->have_ati_apps) {
             return true;
         }
     } else {
@@ -1430,11 +1434,10 @@ static void send_user_messages() {
             }
         }
 
-        // Tell the user about applications they didn't qualify for
-        //
         for (i=0; i<g_wreq->no_work_messages.size(); i++){
             g_reply->insert_message(g_wreq->no_work_messages.at(i));
         }
+
         if (g_wreq->no_allowed_apps_available) {
             g_reply->insert_message(
                 _("No tasks are available for the applications you have selected."),
@@ -1497,7 +1500,7 @@ static void send_user_messages() {
         }
         DB_HOST_APP_VERSION* havp = quota_exceeded_version();
         if (havp) {
-            sprintf(buf, "This computer has finished a daily quota of %d tasks)",
+            sprintf(buf, "This computer has finished a daily quota of %d tasks",
                 havp->max_jobs_per_day
             );
             g_reply->insert_message(buf, "low");
@@ -1802,4 +1805,4 @@ done:
     send_user_messages();
 }
 
-const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 23789 2011-07-01 02:12:11Z davea $";
+const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 24217 2011-09-15 06:53:01Z davea $";

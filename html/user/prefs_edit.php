@@ -20,8 +20,6 @@ include_once("../inc/db.inc");
 include_once("../inc/util.inc");
 include_once("../inc/prefs.inc");
 
-db_init();
-
 $user = get_logged_in_user();
 
 $action = sanitize_tags(get_str("action", true));
@@ -62,7 +60,6 @@ if ($action) {
 
         $project_error = prefs_project_parse_form($prefs);
         $error = prefs_resource_parse_form($prefs);
-        if (isset($project_has_beta) && $project_has_beta) prefs_beta_parse_form($prefs);
         if ($error != false || $project_error != false) {
             $title = tra("Edit %1 preferences", subset_name($subset));
             if ($venue) $title = tra("%1 for %2", $title, $venue);
@@ -113,5 +110,5 @@ if ($action) {
 echo "<a href=prefs.php?subset=$subset$c>".tra("Back to preferences")."</a>\n";
 page_tail();
 
-$cvs_version_tracker[]="\$Id: prefs_edit.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: prefs_edit.php 24109 2011-09-01 20:54:49Z davea $";  //Generated automatically - do not edit
 ?>

@@ -1232,6 +1232,7 @@ void process_request(char* code_sign_key) {
     update_n_jobs_today();
 
     handle_results();
+    handle_file_xfer_results();
 
     // Do this before resending lost jobs
     //
@@ -1348,7 +1349,10 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
 
     log_messages.set_indent_level(1);
 
-    const char* p = sreq.parse(fin);
+    MIOFILE mf;
+    XML_PARSER xp(&mf);
+    mf.init_file(fin);
+    const char* p = sreq.parse(xp);
     double start_time = dtime();
     if (!p){
         process_request(code_sign_key);
@@ -1376,4 +1380,4 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     }
 }
 
-const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 23281 2011-03-25 22:47:49Z davea $";
+const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 23978 2011-08-10 17:11:08Z davea $";

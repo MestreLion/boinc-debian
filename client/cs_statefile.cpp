@@ -112,23 +112,25 @@ int CLIENT_STATE::parse_state_file() {
 
 int CLIENT_STATE::parse_state_file_aux(const char* fname) {
     PROJECT *project=NULL;
-    char buf[256];
     int retval=0;
     int failnum;
+    bool btemp;
 
     FILE* f = fopen(fname, "r");
+    if (!f) return ERR_FOPEN;
     MIOFILE mf;
+    XML_PARSER xp(&mf);
     mf.init_file(f);
-    while (fgets(buf, 256, f)) {
-        if (match_tag(buf, "</client_state>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/client_state")) {
             break;
         }
-        if (match_tag(buf, "<client_state>")) {
+        if (xp.match_tag("client_state")) {
             continue;
         }
-        if (match_tag(buf, "<project>")) {
+        if (xp.match_tag("project")) {
             PROJECT temp_project;
-            retval = temp_project.parse_state(mf);
+            retval = temp_project.parse_state(xp);
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR, "Can't parse project in state file");
             } else {
@@ -150,9 +152,9 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             }
             continue;
         }
-        if (match_tag(buf, "<app>")) {
+        if (xp.match_tag("app")) {
             APP* app = new APP;
-            retval = app->parse(mf);
+            retval = app->parse(xp);
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Application %s outside project in state file",
@@ -184,9 +186,9 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             apps.push_back(app);
             continue;
         }
-        if (match_tag(buf, "<file_info>")) {
+        if (xp.match_tag("file_info") || xp.match_tag("file")) {
             FILE_INFO* fip = new FILE_INFO;
-            retval = fip->parse(mf, false);
+            retval = fip->parse(xp);
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "File info outside project in state file"
@@ -226,7 +228,7 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
                 }
             }
             if (fip->pers_file_xfer) {
-                retval = fip->pers_file_xfer->init(fip, fip->upload_when_present);
+                retval = fip->pers_file_xfer->init(fip, fip->pers_file_xfer->is_upload);
                 if (retval) {
                     msg_printf(project, MSG_INTERNAL_ERROR,
                         "Can't initialize file transfer for %s",
@@ -244,9 +246,9 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
 #endif
             continue;
         }
-        if (match_tag(buf, "<app_version>")) {
+        if (xp.match_tag("app_version")) {
             APP_VERSION* avp = new APP_VERSION;
-            retval = avp->parse(mf);
+            retval = avp->parse(xp);
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Application version outside project in state file"
@@ -297,9 +299,9 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             app_versions.push_back(avp);
             continue;
         }
-        if (match_tag(buf, "<workunit>")) {
+        if (xp.match_tag("workunit")) {
             WORKUNIT* wup = new WORKUNIT;
-            retval = wup->parse(mf);
+            retval = wup->parse(xp);
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Workunit outside project in state file"
@@ -325,9 +327,9 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             workunits.push_back(wup);
             continue;
         }
-        if (match_tag(buf, "<result>")) {
+        if (xp.match_tag("result")) {
             RESULT* rp = new RESULT;
-            retval = rp->parse_state(mf);
+            retval = rp->parse_state(xp);
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Task %s outside project in state file",
@@ -381,24 +383,24 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             results.push_back(rp);
             continue;
         }
-        if (match_tag(buf, "<project_files>")) {
+        if (xp.match_tag("project_files")) {
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Project files outside project in state file"
                 );
-                skip_unrecognized(buf, mf);
+                xp.skip_unexpected();
                 continue;
             }
-            project->parse_project_files(mf, false);
+            project->parse_project_files(xp, false);
             project->link_project_files(false);
             continue;
         }
-        if (match_tag(buf, "<host_info>")) {
+        if (xp.match_tag("host_info")) {
 #ifdef SIM
-            retval = host_info.parse(mf, false);
+            retval = host_info.parse(xp, false);
             coprocs = host_info._coprocs;
 #else
-            retval = host_info.parse(mf, true);
+            retval = host_info.parse(xp, true);
 #endif
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
@@ -407,8 +409,8 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             }
             continue;
         }
-        if (match_tag(buf, "<time_stats>")) {
-            retval = time_stats.parse(mf);
+        if (xp.match_tag("time_stats")) {
+            retval = time_stats.parse(xp);
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Can't parse time stats in state file"
@@ -416,8 +418,8 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             }
             continue;
         }
-        if (match_tag(buf, "<net_stats>")) {
-            retval = net_stats.parse(mf);
+        if (xp.match_tag("net_stats")) {
+            retval = net_stats.parse(xp);
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Can't parse network stats in state file"
@@ -425,8 +427,8 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             }
             continue;
         }
-        if (match_tag(buf, "<active_task_set>")) {
-            retval = active_tasks.parse(mf);
+        if (xp.match_tag("active_task_set")) {
+            retval = active_tasks.parse(xp);
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Can't parse active tasks in state file"
@@ -434,39 +436,39 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             }
             continue;
         }
-        if (parse_str(buf, "<platform_name>", statefile_platform_name)) {
+        if (xp.parse_string("platform_name", statefile_platform_name)) {
             continue;
         }
-        if (match_tag(buf, "<alt_platform>")) {
+        if (xp.match_tag("alt_platform")) {
             continue;
         }
-        if (parse_int(buf, "<user_run_request>", retval)) {
-            run_mode.set(retval, 0);
+        if (xp.parse_int("user_run_request", retval)) {
+            cpu_run_mode.set(retval, 0);
             continue;
         }
-        if (parse_int(buf, "<user_gpu_request>", retval)) {
-            gpu_mode.set(retval, 0);
+        if (xp.parse_int("user_gpu_request", retval)) {
+            gpu_run_mode.set(retval, 0);
             continue;
         }
-        if (parse_int(buf, "<user_network_request>", retval)) {
-            network_mode.set(retval, 0);
+        if (xp.parse_int("user_network_request", retval)) {
+            network_run_mode.set(retval, 0);
             continue;
         }
-        if (parse_int(buf, "<core_client_major_version>", old_major_version)) {
+        if (xp.parse_int("core_client_major_version", old_major_version)) {
             continue;
         }
-        if (parse_int(buf, "<core_client_minor_version>", old_minor_version)) {
+        if (xp.parse_int("core_client_minor_version", old_minor_version)) {
             continue;
         }
-        if (parse_int(buf, "<core_client_release>", old_release)) {
+        if (xp.parse_int("core_client_release", old_release)) {
             continue;
         }
-        if (match_tag(buf, "<cpu_benchmarks_pending/>")) {
-            run_cpu_benchmarks = true;
+        if (xp.parse_bool("cpu_benchmarks_pending", btemp)) {
+            if (btemp) run_cpu_benchmarks = true;
             continue;
         }
-        if (match_tag(buf, "<proxy_info>")) {
-            retval = gui_proxy_info.parse(mf);
+        if (xp.match_tag("proxy_info")) {
+            retval = gui_proxy_info.parse(xp);
             if (retval) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "Can't parse proxy info in state file"
@@ -474,28 +476,28 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
             }
             continue;
         }
-        if (parse_str(buf, "<host_venue>", main_host_venue, sizeof(main_host_venue))) {
+        if (xp.parse_str("host_venue", main_host_venue, sizeof(main_host_venue))) {
             continue;
         }
-        if (parse_double(buf, "<new_version_check_time>", new_version_check_time)) {
+        if (xp.parse_double("new_version_check_time", new_version_check_time)) {
             continue;
         }
-        if (parse_double(buf, "<all_projects_list_check_time>", all_projects_list_check_time)) {
+        if (xp.parse_double("all_projects_list_check_time", all_projects_list_check_time)) {
             continue;
         }
-        if (parse_str(buf, "<newer_version>", newer_version)) {
+        if (xp.parse_string("newer_version", newer_version)) {
             continue;
         }
 #ifdef ENABLE_AUTO_UPDATE
-        if (match_tag(buf, "<auto_update>")) {
+        if (xp.match_tag("auto_update")) {
             if (!project) {
                 msg_printf(NULL, MSG_INTERNAL_ERROR,
                     "auto update outside project in state file"
                 );
-                skip_unrecognized(buf, mf);
+                xp.skip_unexpected();
                 continue;
             }
-            if (!auto_update.parse(mf) && !auto_update.validate_and_link(project)) {
+            if (!auto_update.parse(xp) && !auto_update.validate_and_link(project)) {
                 auto_update.present = true;
             }
             continue;
@@ -503,10 +505,11 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
 #endif
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] state_file: unrecognized: %s", buf
+                "[unparsed_xml] state_file: unrecognized: %s",
+                xp.parsed_tag
             );
         }
-        skip_unrecognized(buf, mf);
+        xp.skip_unexpected();
     }
     sort_results();
     fclose(f);
@@ -689,9 +692,7 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
             FILE_INFO* fip = file_infos[i];
             // don't write file infos for anonymous platform app files
             //
-            if (p->anonymous_platform && (fip->urls.size()==0)) {
-                continue;
-            }
+            if (fip->anonymous_platform_file) continue;
             retval = fip->write(f, false);
             if (retval) return retval;
         }
@@ -729,9 +730,9 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
         core_client_version.major,
         core_client_version.minor,
         core_client_version.release,
-        run_mode.get_perm(),
-        gpu_mode.get_perm(),
-        network_mode.get_perm(),
+        cpu_run_mode.get_perm(),
+        gpu_run_mode.get_perm(),
+        network_run_mode.get_perm(),
         cpu_benchmarks_pending?"<cpu_benchmarks_pending/>\n":"",
         new_version_check_time,
         all_projects_list_check_time
@@ -807,17 +808,18 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
     char buf[256], path[1024];
     MIOFILE mf;
     mf.init_file(in);
+    XML_PARSER xp(&mf);
 
-    while (fgets(buf, 256, in)) {
-        if (match_tag(buf, "<app_info>")) continue;
-        if (match_tag(buf, "</app_info>")) return 0;
-        if (match_tag(buf, "<file_info>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("app_info")) continue;
+        if (xp.match_tag("/app_info")) return 0;
+        if (xp.match_tag("file_info")) {
             FILE_INFO* fip = new FILE_INFO;
-            if (fip->parse(mf, false)) {
+            if (fip->parse(xp)) {
                 delete fip;
                 continue;
             }
-            if (fip->urls.size()) {
+            if (!fip->download_urls.empty() || !fip->upload_urls.empty()) {
                 msg_printf(p, MSG_INFO,
                     "Can't specify URLs in app_info.xml"
                 );
@@ -841,12 +843,13 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
                 continue;
             }
             fip->status = FILE_PRESENT;
+            fip->anonymous_platform_file = true;
             file_infos.push_back(fip);
             continue;
         }
-        if (match_tag(buf, "<app>")) {
+        if (xp.match_tag("app")) {
             APP* app = new APP;
-            if (app->parse(mf)) {
+            if (app->parse(xp)) {
                 delete app;
                 continue;
             }
@@ -858,9 +861,9 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
             apps.push_back(app);
             continue;
         }
-        if (match_tag(buf, "<app_version>")) {
+        if (xp.match_tag("app_version")) {
             APP_VERSION* avp = new APP_VERSION;
-            if (avp->parse(mf)) {
+            if (avp->parse(xp)) {
                 delete avp;
                 continue;
             }
@@ -877,7 +880,7 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
         if (log_flags.unparsed_xml) {
             msg_printf(p, MSG_INFO,
                 "Unparsed line in app_info.xml: %s",
-                buf
+                xp.parsed_tag
             );
         }
     }
@@ -988,9 +991,7 @@ int CLIENT_STATE::write_file_transfers_gui(MIOFILE& f) {
     f.printf("<file_transfers>\n");
     for (i=0; i<file_infos.size(); i++) {
         FILE_INFO* fip = file_infos[i];
-        if (fip->pers_file_xfer
-           || (fip->upload_when_present && fip->status == FILE_PRESENT && !fip->uploaded)
-        ) {
+        if (fip->pers_file_xfer) {
             fip->write_gui(f);
         }
     }

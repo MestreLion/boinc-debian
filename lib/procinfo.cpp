@@ -35,37 +35,93 @@
 
 using std::vector;
 
-static void get_descendants_aux(vector<PROCINFO>& piv, int pid, vector<int>& pids) {
-    for (unsigned int i=0; i<pids.size(); i++) {
-        PROCINFO& p = piv[i];
-        if (p.parentid == pid) {
-            pids.push_back(p.id);
-            get_descendants_aux(piv, p.id, pids);
+// Scan the process table adding in CPU time and mem usage.
+//
+void add_child_totals(PROCINFO& pi, PROC_MAP& pm, PROC_MAP::iterator i) {
+    PROCINFO parent = i->second;
+    for (unsigned int j=0; j<parent.children.size(); j++) {
+        int child_pid = parent.children[j];
+        PROC_MAP::iterator i2 = pm.find(child_pid);
+        if (i2 == pm.end()) continue;
+        PROCINFO& p = i2->second;
+        if (p.scanned) {
+            return;     // cycle in graph - shouldn't happen
+        }
+        pi.kernel_time += p.kernel_time;
+        pi.user_time += p.user_time;
+        p.scanned = true;
+
+        // only count process with most swap and memory
+        if (p.swap_size > pi.swap_size) {
+            pi.swap_size = p.swap_size;
+        }
+        if (p.working_set_size > pi.working_set_size) {
+            pi.working_set_size = p.working_set_size;
+        }
+
+        p.is_boinc_app = true;
+        add_child_totals(pi, pm, i2); // recursion - woo hoo!
+    }
+}
+
+static inline bool in_vector(int n, vector<int>& v) {
+    for (unsigned int i=0; i<v.size(); i++) {
+        if (n == v[i]) return true;
+    }
+    return false;
+}
+
+// Fill in the given PROCINFO (initially zero except for id)
+// with totals from that process and all its descendants.
+// Set PROCINFO.is_boinc_app for all of them.
+//
+void procinfo_app(
+    PROCINFO& pi, vector<int>* other_pids, PROC_MAP& pm, char* graphics_exec_file
+) {
+    PROC_MAP::iterator i;
+    for (i=pm.begin(); i!=pm.end(); i++) {
+        PROCINFO& p = i->second;
+        if (p.id == pi.id
+            || (other_pids && in_vector(p.id, *other_pids))
+        ) {
+            pi.kernel_time += p.kernel_time;
+            pi.user_time += p.user_time;
+            pi.swap_size += p.swap_size;
+            pi.working_set_size += p.working_set_size;
+            p.is_boinc_app = true;
+            p.scanned = true;
+
+            // look for child processes
+            //
+            add_child_totals(pi, pm, i);
+            return;
+        }
+        if (!strcmp(p.command, graphics_exec_file)) {
+            p.is_boinc_app = true;
         }
     }
 }
 
-// return a list of all descendants of the given process
-//
-void get_descendants(int pid, vector<int>& pids) {
-    int retval;
-    vector<PROCINFO> piv;
-    retval = procinfo_setup(piv);
-    if (retval) return;
-    get_descendants_aux(piv, pid, pids);
+void find_children(PROC_MAP& pm) {
+    PROC_MAP::iterator i;
+    for (i=pm.begin(); i!=pm.end(); i++) {
+        int parentid = i->second.parentid;
+        PROC_MAP::iterator j = pm.find(parentid);
+        if (j == pm.end()) continue;    // should never happen
+        j->second.children.push_back(i->first);
+    }
 }
-
-
-#ifndef _WIN32
 
 // get resource usage of non-BOINC apps
 //
-void procinfo_other(PROCINFO& pi, vector<PROCINFO>& piv) {
-    unsigned int i;
-
-    memset(&pi, 0, sizeof(pi));
-    for (i=0; i<piv.size(); i++) {
-        PROCINFO& p = piv[i];
+void procinfo_non_boinc(PROCINFO& pi, PROC_MAP& pm) {
+    pi.clear();
+    PROC_MAP::iterator i;
+    for (i=pm.begin(); i!=pm.end(); i++) {
+        PROCINFO& p = i->second;
+#ifdef _WIN32
+        if (p.id == 0) continue;    // idle process
+#endif
         if (p.is_boinc_app) continue;
         if (p.is_low_priority) continue;
 
@@ -74,92 +130,4 @@ void procinfo_other(PROCINFO& pi, vector<PROCINFO>& piv) {
         pi.swap_size += p.swap_size;
         pi.working_set_size += p.working_set_size;
     }
-}
-
-bool any_process_exists(vector<int>& pids) {
-    int status;
-    for (unsigned int i=0; i<pids.size(); i++) {
-        if (waitpid(pids[i], &status, WNOHANG) >= 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void kill_all(vector<int>& pids) {
-    for (unsigned int i=0; i<pids.size(); i++) {
-        kill(pids[i], SIGTERM);
-    }
-}
-#endif
-
-// Kill the descendants of the calling process.
-//
-#ifdef _WIN32
-void kill_descendants() {
-    vector<int> descendants;
-    // on Win, kill descendants directly
-    //
-    get_descendants(GetCurrentProcessId(), descendants);
-    kill_all(descendants);
-}
-#else
-// Same, but if child_pid is nonzero, give it a chance to exit gracefully on Unix
-//
-void kill_descendants(int child_pid) {
-    vector<int> descendants;
-    // on Unix, ask main process nicely.
-    // it descendants still exist after 10 sec, use the nuclear option
-    //
-    get_descendants(getpid(), descendants);
-    if (child_pid) {
-        ::kill(child_pid, SIGTERM);
-        for (int i=0; i<10; i++) {
-            if (!any_process_exists(descendants)) {
-                return;
-            }
-            sleep(1);
-        }
-        kill_all(descendants);
-        // kill any processes that might have been created
-        // in the last 10 secs
-        get_descendants(getpid(), descendants);
-    }
-    kill_all(descendants);
-}
-#endif
-
-void suspend_or_resume_all(vector<int>& pids, bool resume) {
-    for (unsigned int i=0; i<pids.size(); i++) {
-#ifdef _WIN32
-        suspend_or_resume_threads(pids[i], 0, resume);
-#else
-        kill(pids[i], resume?SIGCONT:SIGSTOP);
-#endif
-    }
-}
-
-// suspend/resume the descendants of the given process
-// (or if pid==0, the calling process)
-//
-void suspend_or_resume_descendants(int pid, bool resume) {
-    vector<int> descendants;
-    if (!pid) {
-#ifdef _WIN32
-        pid = GetCurrentProcessId();
-#else
-        pid = getpid();
-#endif
-    }
-    get_descendants(pid, descendants);
-    suspend_or_resume_all(descendants, resume);
-}
-
-void suspend_or_resume_process(int pid, bool resume) {
-#ifdef _WIN32
-    suspend_or_resume_threads(pid, 0, resume);
-#else
-    ::kill(pid, resume?SIGCONT:SIGSTOP);
-#endif
-
 }

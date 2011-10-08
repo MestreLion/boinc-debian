@@ -24,6 +24,8 @@
 #include <errno.h>
 
 #include "miofile.h"
+#include "str_util.h"
+#include "cl_boinc.h"
 
 class XML_PARSER {
     bool scan_nonws(int&);
@@ -32,19 +34,35 @@ class XML_PARSER {
     int scan_cdata(char*, int);
     bool copy_until_tag(char*, int);
 public:
+    char parsed_tag[4096];
+    bool is_tag;
     MIOFILE* f;
     XML_PARSER(MIOFILE*);
+    void init(MIOFILE* mf) {
+        f = mf;
+    }
     bool get(char*, int, bool&, char* ab=0, int al=0);
+    inline bool get_tag(char* ab=0, int al=0) {
+        return get(parsed_tag, sizeof(parsed_tag), is_tag, ab, al);
+    }
+    inline bool match_tag(const char* tag) {
+        return !strcmp(parsed_tag, tag);
+    }
     int get_aux(char* buf, int len, char* attr_buf, int attr_len);
     bool parse_start(const char*);
-    bool parse_str(char*, const char*, char*, int);
-    bool parse_string(char*, const char*, std::string&);
-    bool parse_int(char*, const char*, int&);
-    bool parse_double(char*, const char*, double&);
-    bool parse_bool(char*, const char*, bool&);
+    bool parse_str(const char*, char*, int);
+    bool parse_string(const char*, std::string&);
+    bool parse_int(const char*, int&);
+    bool parse_double(const char*, double&);
+    bool parse_ulong(const char*, unsigned long&);
+    bool parse_ulonglong(const char*, unsigned long long&);
+    bool parse_bool(const char*, bool&);
 	int element_contents(const char*, char*, int);
-    int element(const char*, char*, int);
+    int copy_element(std::string&);
     void skip_unexpected(const char*, bool verbose, const char*);
+    void skip_unexpected(bool verbose=false, const char* msg="") {
+        skip_unexpected(parsed_tag, verbose, msg);
+    }
 };
 
 extern bool boinc_is_finite(double);
@@ -65,6 +83,30 @@ inline bool match_tag(const std::string &s, const char* tag) {
     return match_tag(s.c_str(), tag);
 }
 
+#ifdef _WIN32
+#define boinc_strtoull _strtoui64
+#else
+#ifdef HAVE_STRTOULL
+#define boinc_strtoull strtoull
+#else
+inline unsigned long long boinc_strtoull(const char *s, char **, int) {
+    char buf[64];
+    char *p;
+    unsigned long long y;
+    strncpy(buf, s, sizeof(buf)-1);
+    strip_whitespace(buf);
+    p = strstr(buf, "0x");
+    if (!p) p = strstr(buf, "0X");
+    if (p) {
+        sscanf(p, "%llx", &y);
+    } else {
+        sscanf(buf, "%llu", &y);
+    }
+    return y;
+}
+#endif
+#endif
+
 // parse an integer of the form <tag>1234</tag>
 // return true if it's there
 // Note: this doesn't check for the end tag
@@ -72,8 +114,9 @@ inline bool match_tag(const std::string &s, const char* tag) {
 inline bool parse_int(const char* buf, const char* tag, int& x) {
     const char* p = strstr(buf, tag);
     if (!p) return false;
+    errno = 0;
     int y = strtol(p+strlen(tag), 0, 0);        // this parses 0xabcd correctly
-    if (errno == ERANGE) return false;
+    if (errno) return false;
     x = y;
     return true;
 }
@@ -84,13 +127,43 @@ inline bool parse_double(const char* buf, const char* tag, double& x) {
     double y;
     const char* p = strstr(buf, tag);
     if (!p) return false;
-    y = atof(p+strlen(tag));
+    errno = 0;
+    y = strtod(p+strlen(tag), NULL);
+    if (errno) return false;
     if (!boinc_is_finite(y)) {
         return false;
     }
     x = y;
     return true;
 }
+
+#if 0
+// Same, for unsigned long
+//
+inline bool parse_ulong(const char* buf, const char* tag, unsigned long& x) {
+    const char* p = strstr(buf, tag);
+    if (!p) return false;
+    errno = 0;
+    unsigned long y = strtoul(p+strlen(tag), NULL, 0);
+    if (errno) return false;
+    x = y;
+    return true;
+}
+
+// Same, for unsigned long long 
+// 
+inline bool parse_ulonglong(
+    const char* buf, const char* tag, unsigned long long& x
+) { 
+    const char* p = strstr(buf, tag); 
+    if (!p) return false; 
+    errno = 0;
+    unsigned long long y = boinc_strtoull(p+strlen(tag), NULL, 0);
+    if (errno) return false; 
+    x = y;
+    return true; 
+} 
+#endif
 
 extern bool parse(char* , char* );
 extern bool parse_str(const char*, const char*, char*, int);
@@ -115,7 +188,7 @@ extern char* sgets(char* buf, int len, char* &in);
 extern void non_ascii_escape(const char*, char*, int len);
 extern void xml_escape(const char*, char*, int len);
 extern void xml_unescape(std::string&);
-extern void xml_unescape(const char*, char*, int len);
+extern void xml_unescape(char*);
 extern void extract_venue(const char*, const char*, char*);
 extern int skip_unrecognized(char* buf, MIOFILE&);
 

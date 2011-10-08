@@ -20,6 +20,8 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Poedit-Basepath: C:\\Src\\BOINCSVN\\trunk\\boinc\n"
 "X-BOINC-UTF8-Marker: 简体中文, 日本語\n"
+"X-Poedit-Country: UNITED STATES\n"
+"X-Poedit-Language: English\n"
 
 #: clientgui/AccountInfoPage.cpp:386
 msgid "Identify your account "
@@ -3201,7 +3203,6 @@ msgid "Suspend work for this task."
 msgstr "Suspend le calcul de cette unité."
 
 #: clientgui/sg_TaskCommandPopup.cpp:240
-#, c-format
 #, c-format
 msgid ""
 "Are you sure you want to abort this task '%s'?\n"

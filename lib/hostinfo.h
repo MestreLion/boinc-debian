@@ -68,7 +68,7 @@ public:
     COPROCS _coprocs;
 
     HOST_INFO();
-    int parse(MIOFILE&, bool benchmarks_only = false);
+    int parse(XML_PARSER&, bool benchmarks_only = false);
     int write(MIOFILE&, bool include_net_info, bool include_coprocs);
     int parse_cpu_benchmarks(FILE*);
     int write_cpu_benchmarks(FILE*);
@@ -92,17 +92,16 @@ public:
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <mach/port.h>
+
 #include <IOKit/hidsystem/IOHIDLib.h>
 #include <IOKit/hidsystem/IOHIDParameter.h>
+#include <IOKit/hidsystem/event_status_driver.h>
 
-// Apple has removed NxIdleTime() beginning with OS 10.6, so we must use 
-// weak linking to avoid a run-time crash.  For details, please see the 
-// comments in the __APPLE__ version of HOST_INFO::users_idle() in 
+// Apple has removed NxIdleTime() beginning with OS 10.6, so we must try
+// loading it at run time to avoid a link error.  For details, please see 
+// the comments in the __APPLE__ version of HOST_INFO::users_idle() in 
 // client/hostinfo_unix.cpp.
-typedef mach_port_t NXEventHandle;
-NXEventHandle NXOpenEventStatus(void) __attribute__((weak_import));
-extern double NXIdleTime(NXEventHandle handle) __attribute__((weak_import));
+typedef double (*nxIdleTimeProc)(NXEventHandle handle);
 #ifdef __cplusplus
 }	// extern "C"
 #endif

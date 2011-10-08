@@ -23,6 +23,8 @@ msgstr ""
 "X-Poedit-SearchPath-0: clientgui\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Poedit-Basepath: C:\\Src\\BOINCSVN\\trunk\\boinc\n"
+"X-Poedit-Country: UNITED STATES\n"
+"X-Poedit-Language: English\n"
 
 #: clientgui/AccountInfoPage.cpp:386
 msgid "Identify your account "
@@ -3258,7 +3260,6 @@ msgstr "Выбрать проект используя расположенны�
 #: clientgui/sg_ProjectPanel.cpp:133
 #: clientgui/sg_ProjectPanel.cpp:252
 #, c-format
-#, c-format
 msgid "%s: %0.2f"
 msgstr "%s: %0.2f"
 
@@ -3339,7 +3340,7 @@ msgid ""
 "Are you sure you want to abort this task '%s'?\n"
 "(Progress: %.1lf%%, Status: %s)"
 msgstr ""
-"Вы уверены, что хотите прервать обработку выделенного задания '%s'?\n"
+"Вы уверены, что хотите прервать обработку этого задания '%s'?\n"
 "(Прогресс: %.1lf%%, Состояние: %s)"
 
 #: clientgui/sg_TaskCommandPopup.cpp:245

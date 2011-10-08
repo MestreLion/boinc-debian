@@ -50,7 +50,7 @@ function show_forum_summary($forum, $i) {
         $t = $forum->title;
         if (!strlen($t)) $t = $team->name;
         $d = $forum->description;
-        if (!strlen($d)) $d = "Discussion among members of $team->name";
+        if (!strlen($d)) $d = tra("Discussion among members of %1", $team->name);
         break;
     }
     $j = $i % 2;
@@ -120,7 +120,7 @@ end_table();
 if ($user) {
     $subs = BoincSubscription::enum("userid=$user->id");
     if (count($subs)) {
-        echo "<p><span class=title>Subscribed threads</span><p>";
+        echo "<p><span class=title>".tra("Subscribed threads")."</span><p>";
         show_thread_and_context_header();
         $i = 0;
         foreach ($subs as $sub) {
@@ -140,5 +140,5 @@ page_tail();
 flush();
 BoincForumLogging::cleanup();
 
-$cvs_version_tracker[]="\$Id: forum_index.php 23018 2011-02-10 22:45:39Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: forum_index.php 24048 2011-08-25 22:12:48Z davea $";  //Generated automatically - do not edit
 ?>

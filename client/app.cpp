@@ -101,9 +101,9 @@ ACTIVE_TASK::ACTIVE_TASK() {
     run_interval_start_wall_time = gstate.now;
     checkpoint_wall_time = 0;
     elapsed_time = 0;
+    bytes_sent = 0;
+    bytes_received = 0;
     strcpy(slot_dir, "");
-    graphics_mode_acked = MODE_UNSUPPORTED;
-    graphics_mode_ack_timeout = 0;
     have_trickle_down = false;
     send_upload_file_status = false;
     too_large = false;
@@ -254,9 +254,10 @@ void ACTIVE_TASK_SET::free_mem() {
 
 #ifndef SIM
 
-bool app_running(vector<PROCINFO>& piv, const char* p) {
-    for (unsigned int i=0; i<piv.size(); i++) {
-        PROCINFO& pi = piv[i];
+bool app_running(PROC_MAP& pm, const char* p) {
+    PROC_MAP::iterator i;
+    for (i=pm.begin(); i!=pm.end(); i++) {
+        PROCINFO& pi = i->second;
         //msg_printf(0, MSG_INFO, "running: [%s]", pi.command);
         if (!strcasecmp(pi.command, p)) {
             return true;
@@ -266,11 +267,12 @@ bool app_running(vector<PROCINFO>& piv, const char* p) {
 }
 
 #if 0  // debugging
-void procinfo_show(PROCINFO& pi, vector<PROCINFO>& piv) {
+void procinfo_show(PROCINFO& pi, PROC_MAP& pm) {
     unsigned int i;
     memset(&pi, 0, sizeof(pi));
-    for (i=0; i<piv.size(); i++) {
-        PROCINFO& p = piv[i];
+    PROC_MAP::iterator i;
+    for (i=pm.begin(); i!=pm.end(); i++) {
+        PROCINFO& p = i->second;
 
         pi.kernel_time += p.kernel_time;
         pi.user_time += p.user_time;
@@ -299,8 +301,8 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     if (diff < MEMORY_USAGE_PERIOD) return;
 
     last_mem_time = gstate.now;
-    vector<PROCINFO> piv;
-    retval = procinfo_setup(piv);
+    PROC_MAP pm;
+    retval = procinfo_setup(pm);
     if (retval) {
         if (log_flags.mem_usage_debug) {
             msg_printf(NULL, MSG_INTERNAL_ERROR,
@@ -323,9 +325,13 @@ void ACTIVE_TASK_SET::get_memory_usage() {
 
         PROCINFO& pi = atp->procinfo;
         unsigned long last_page_fault_count = pi.page_fault_count;
-        memset(&pi, 0, sizeof(pi));
+        pi.clear();
         pi.id = atp->pid;
-        procinfo_app(pi, piv, atp->app_version->graphics_exec_file);
+        vector<int>* v = NULL;
+        if (atp->other_pids.size()>0) {
+            v = &(atp->other_pids);
+        }
+        procinfo_app(pi, v, pm, atp->app_version->graphics_exec_file);
         pi.working_set_size_smoothed = .5*pi.working_set_size_smoothed + pi.working_set_size;
 
         int pf = pi.page_fault_count - last_page_fault_count;
@@ -344,13 +350,13 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     }
 
     for (i=0; i<config.exclusive_apps.size(); i++) {
-        if (app_running(piv, config.exclusive_apps[i].c_str())) {
+        if (app_running(pm, config.exclusive_apps[i].c_str())) {
             exclusive_app_running = gstate.now;
             break;
         }
     }
     for (i=0; i<config.exclusive_gpu_apps.size(); i++) {
-        if (app_running(piv, config.exclusive_gpu_apps[i].c_str())) {
+        if (app_running(pm, config.exclusive_gpu_apps[i].c_str())) {
             exclusive_gpu_app_running = gstate.now;
             break;
         }
@@ -364,8 +370,8 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     // so they're not useful for detecting paging/thrashing.
     //
     PROCINFO pi;
-    //procinfo_show(pi, piv);
-    procinfo_other(pi, piv);
+    //procinfo_show(pi, pm);
+    procinfo_non_boinc(pi, pm);
     if (log_flags.mem_usage_debug) {
         msg_printf(NULL, MSG_INFO,
             "[mem_usage] All others: RAM %.2fMB, page %.2fMB, user %.3f, kernel %.3f",
@@ -580,21 +586,14 @@ int ACTIVE_TASK::write_gui(MIOFILE& fout) {
             slot_path
         );
     }
-    if (supports_graphics() && !gstate.disable_graphics) {
-        fout.printf(
-            "   <supports_graphics/>\n"
-            "   <graphics_mode_acked>%d</graphics_mode_acked>\n",
-            graphics_mode_acked
-        );
-    }
     fout.printf("</active_task>\n");
     return 0;
 }
 
 #endif
 
-int ACTIVE_TASK::parse(MIOFILE& fin) {
-    char buf[256], result_name[256], project_master_url[256];
+int ACTIVE_TASK::parse(XML_PARSER& xp) {
+    char result_name[256], project_master_url[256];
     int n, dummy;
     unsigned int i;
     PROJECT* project=0;
@@ -603,8 +602,8 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
     strcpy(result_name, "");
     strcpy(project_master_url, "");
 
-    while (fin.fgets(buf, 256)) {
-        if (match_tag(buf, "</active_task>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/active_task")) {
             project = gstate.lookup_project(project_master_url);
             if (!project) {
                 msg_printf(
@@ -679,27 +678,28 @@ int ACTIVE_TASK::parse(MIOFILE& fin) {
             }
             return 0;
         }
-        else if (parse_str(buf, "<result_name>", result_name, sizeof(result_name))) continue;
-        else if (parse_str(buf, "<project_master_url>", project_master_url, sizeof(project_master_url))) continue;
-        else if (parse_int(buf, "<slot>", slot)) continue;
-        else if (parse_int(buf, "<active_task_state>", dummy)) continue;
-        else if (parse_double(buf, "<checkpoint_cpu_time>", checkpoint_cpu_time)) continue;
-        else if (parse_double(buf, "<checkpoint_elapsed_time>", checkpoint_elapsed_time)) continue;
-        else if (parse_double(buf, "<checkpoint_fraction_done>", checkpoint_fraction_done)) continue;
-        else if (parse_double(buf, "<checkpoint_fraction_done_elapsed_time>", checkpoint_fraction_done_elapsed_time)) continue;
-        else if (parse_bool(buf, "once_ran_edf", once_ran_edf)) continue;
-        else if (parse_double(buf, "<fraction_done>", fraction_done)) continue;
+        else if (xp.parse_str("result_name", result_name, sizeof(result_name))) continue;
+        else if (xp.parse_str("project_master_url", project_master_url, sizeof(project_master_url))) continue;
+        else if (xp.parse_int("slot", slot)) continue;
+        else if (xp.parse_int("active_task_state", dummy)) continue;
+        else if (xp.parse_double("checkpoint_cpu_time", checkpoint_cpu_time)) continue;
+        else if (xp.parse_double("checkpoint_elapsed_time", checkpoint_elapsed_time)) continue;
+        else if (xp.parse_double("checkpoint_fraction_done", checkpoint_fraction_done)) continue;
+        else if (xp.parse_double("checkpoint_fraction_done_elapsed_time", checkpoint_fraction_done_elapsed_time)) continue;
+        else if (xp.parse_bool("once_ran_edf", once_ran_edf)) continue;
+        else if (xp.parse_double("fraction_done", fraction_done)) continue;
             // deprecated - for backwards compat
-        else if (parse_int(buf, "<app_version_num>", n)) continue;
-        else if (parse_double(buf, "<swap_size>", procinfo.swap_size)) continue;
-        else if (parse_double(buf, "<working_set_size>", procinfo.working_set_size)) continue;
-        else if (parse_double(buf, "<working_set_size_smoothed>", procinfo.working_set_size_smoothed)) continue;
-        else if (parse_double(buf, "<page_fault_rate>", procinfo.page_fault_rate)) continue;
-        else if (parse_double(buf, "<current_cpu_time>", x)) continue;
+        else if (xp.parse_int("app_version_num", n)) continue;
+        else if (xp.parse_double("swap_size", procinfo.swap_size)) continue;
+        else if (xp.parse_double("working_set_size", procinfo.working_set_size)) continue;
+        else if (xp.parse_double("working_set_size_smoothed", procinfo.working_set_size_smoothed)) continue;
+        else if (xp.parse_double("page_fault_rate", procinfo.page_fault_rate)) continue;
+        else if (xp.parse_double("current_cpu_time", x)) continue;
         else {
             if (log_flags.unparsed_xml) {
                 msg_printf(project, MSG_INFO,
-                    "[unparsed_xml] ACTIVE_TASK::parse(): unrecognized %s\n", buf
+                    "[unparsed_xml] ACTIVE_TASK::parse(): unrecognized %s\n",
+                    xp.parsed_tag
                 );
             }
         }
@@ -720,20 +720,19 @@ int ACTIVE_TASK_SET::write(MIOFILE& fout) {
     return 0;
 }
 
-int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
+int ACTIVE_TASK_SET::parse(XML_PARSER& xp) {
     ACTIVE_TASK* atp;
-    char buf[256];
     int retval;
 
-    while (fin.fgets(buf, 256)) {
-        if (match_tag(buf, "</active_task_set>")) return 0;
-        else if (match_tag(buf, "<active_task>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/active_task_set")) return 0;
+        else if (xp.match_tag("active_task")) {
 #ifdef SIM
             ACTIVE_TASK at;
-            at.parse(fin);
+            at.parse(xp);
 #else
             atp = new ACTIVE_TASK;
-            retval = atp->parse(fin);
+            retval = atp->parse(xp);
             if (!retval) {
                 if (slot_taken(atp->slot)) {
                     msg_printf(atp->result->project, MSG_INTERNAL_ERROR,
@@ -749,7 +748,7 @@ int ACTIVE_TASK_SET::parse(MIOFILE& fin) {
         } else {
             if (log_flags.unparsed_xml) {
                 msg_printf(NULL, MSG_INFO,
-                    "[unparsed_xml] ACTIVE_TASK_SET::parse(): unrecognized %s\n", buf
+                    "[unparsed_xml] ACTIVE_TASK_SET::parse(): unrecognized %s\n", xp.parsed_tag
                 );
             }
         }

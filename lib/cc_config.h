@@ -82,7 +82,9 @@ struct LOG_FLAGS {
         // show what polls are responding
     bool proxy_debug;
     bool rr_simulation;
-        // results of rr simulator
+        // results of RR sim
+    bool rrsim_detail;
+        // details of RR sim
     bool sched_op_debug;
     bool scrsave_debug;
     bool slot_debug;
@@ -99,6 +101,8 @@ struct LOG_FLAGS {
         // task start and control details, and when apps checkpoint
     bool time_debug;
         // changes in on_frac, active_frac, connected_frac
+    bool trickle_debug;
+        // show trickle messages
     bool unparsed_xml;
         // show unparsed XML lines
     bool work_fetch_debug;
@@ -116,7 +120,7 @@ struct EXCLUDE_GPU {
     std::string url;
     std::string type;
     std::string appname;
-    int devnum;
+    int device_num;     // -1 means all
 };
 
 // if you add anything, you must add it to
@@ -138,6 +142,7 @@ struct CONFIG {
     std::vector<std::string> exclusive_apps;
     std::vector<std::string> exclusive_gpu_apps;
     bool exit_after_finish;
+    bool exit_before_start;
     bool exit_when_idle;
     bool fetch_minimal_work;
     std::string force_auth;
@@ -178,7 +183,7 @@ struct CONFIG {
     CONFIG();
     void defaults();
     int parse(FILE*);
-    int parse(MIOFILE&, LOG_FLAGS&);
+    int parse(XML_PARSER&, LOG_FLAGS&);
     int parse_client(FILE*);
     int parse_options(XML_PARSER&);
     int parse_options_client(XML_PARSER&);

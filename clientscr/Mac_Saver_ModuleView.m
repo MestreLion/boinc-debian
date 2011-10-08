@@ -24,6 +24,9 @@
 #include <Carbon/Carbon.h>
 #include <AppKit/AppKit.h>
 #include <QTKit/QTKitDefines.h> // For NSInteger
+#include <IOKit/hidsystem/IOHIDLib.h>
+#include <IOKit/hidsystem/IOHIDParameter.h>
+#include <IOKit/hidsystem/event_status_driver.h>
 
 #ifndef NSInteger
 #if __LP64__ || NS_BUILD_32_LIKE_64
@@ -40,6 +43,10 @@ typedef float CGFloat;
 void print_to_log_file(const char *format, ...);
 void strip_cr(char *buf);
 
+static SInt32 gSystemVersion = 0;
+static double gSS_StartTime = 0.0;
+mach_port_t gEventHandle = 0;
+
 int gGoToBlank;      // True if we are to blank the screen
 int gBlankingTime;   // Delay in minutes before blanking the screen
 NSString *gPathToBundleResources = NULL;
@@ -51,6 +58,7 @@ int gTopWindowListIndex = -1;
 NSRect gMovingRect;
 float gImageXIndent;
 float gTextBoxHeight;
+CGFloat gActualTextBoxHeight;
 NSPoint gCurrentPosition;
 NSPoint gCurrentDelta;
 
@@ -83,6 +91,13 @@ int signof(float x) {
     NSBundle * myBundle;
     int newFrequency;
     int period;
+
+    gEventHandle = NXOpenEventStatus();
+
+    OSStatus err = Gestalt(gestaltSystemVersion, &gSystemVersion);
+    if (err != noErr) {
+        gSystemVersion = 0;
+    }
     
     initBOINCSaver();  
 
@@ -164,6 +179,8 @@ int signof(float x) {
             gCurrentDelta.x = 1.0;
             gCurrentDelta.y = 1.0;
             
+            gActualTextBoxHeight = MINTEXTBOXHEIGHT;
+            
             [ self setAnimationTimeInterval:1/8.0 ];
         }
     }
@@ -178,6 +195,8 @@ int signof(float x) {
     newFrequency = startBOINCSaver();  
     if (newFrequency)
         [ self setAnimationTimeInterval:1.0/newFrequency ];
+
+    gSS_StartTime = getDTime();
 }
 
 // If there are multiple displays, this may get called 
@@ -223,6 +242,10 @@ int signof(float x) {
     char *msg;
     CFStringRef cf_msg;
     AbsoluteTime timeToUnblock, frameStartTime = UpTime();
+    kern_return_t   kernResult = kIOReturnError; 
+    UInt64          params;
+    IOByteCount     rcnt = sizeof(UInt64);
+    double          idleTime = 0;
 
    if ([ self isPreview ]) {
 #if 1   // Currently drawRect just draws our logo in the preview window
@@ -243,6 +266,18 @@ int signof(float x) {
         return;
     }
 
+    // For unkown reasons, OS 10.7 Lion screensaver delays several seconds after 
+    // user activity before calling stopAnimation, so we check user activity here
+    if ((gSystemVersion >= 1070) && ((getDTime() - gSS_StartTime) > 2.0)) {        
+        kernResult = IOHIDGetParameter( gEventHandle, CFSTR(EVSIOIDLE), sizeof(UInt64), &params, &rcnt );
+        if ( kernResult == kIOReturnSuccess ) {
+            idleTime = ((double)params) / 1000.0 / 1000.0 / 1000.0;
+            if (idleTime < 1.5) {
+                [ self stopAnimation ];
+            }
+        }
+    }
+    
    myContext = [[NSGraphicsContext currentContext] graphicsPort];
 //    [myContext retain];
     
@@ -331,7 +366,7 @@ int signof(float x) {
             gCurrentDelta.x = -(float)SSRandomIntBetween(MINDELTA, MAXDELTA) / 16.;
             gCurrentDelta.y = (float)(SSRandomIntBetween(MINDELTA, MAXDELTA) * signof(gCurrentDelta.y)) / 16.;
         }
-        if (currentDrawingRect.origin.y <= SAFETYBORDER) {
+        if (currentDrawingRect.origin.y + gTextBoxHeight - gActualTextBoxHeight <= SAFETYBORDER) {
             gCurrentDelta.y = (float)SSRandomIntBetween(MINDELTA, MAXDELTA) / 16.;
             gCurrentDelta.x = (float)(SSRandomIntBetween(MINDELTA, MAXDELTA) * signof(gCurrentDelta.x)) / 16.;
         }
@@ -401,8 +436,8 @@ int signof(float x) {
 
             CGRect bounds = CGRectMake((float) ((int)gCurrentPosition.x), 
                                  viewBounds.size.height - imagePosition.y + TEXTBOXTOPBORDER,
-                                 bounds.origin.x + gMovingRect.size.width,
-                                 bounds.origin.y + (int)MAXTEXTBOXHEIGHT
+                                 gMovingRect.size.width,
+                                 MAXTEXTBOXHEIGHT
                             );
 
             CGContextSaveGState (myContext);
@@ -431,6 +466,9 @@ int signof(float x) {
                                         };
 #endif
 
+            HIThemeGetTextDimensions(cf_msg, (float)gMovingRect.size.width, &textInfo, NULL, &gActualTextBoxHeight, NULL);
+            gActualTextBoxHeight += TEXTBOXTOPBORDER;
+            
             // Use only APIs available in Mac OS 10.3.9
 //            HIThemeSetTextFill(kThemeTextColorWhite, NULL, myContext, kHIThemeOrientationNormal);
 //            SetThemeTextColor(kThemeTextColorWhite, 32, true);
@@ -465,12 +503,13 @@ int signof(float x) {
         }
     }
     
-    if (newFrequency)
+    if (newFrequency) {
         [ self setAnimationTimeInterval:(1.0/newFrequency) ];
-    // setAnimationTimeInterval does not seem to be working, so we 
-    // throttle the screensaver directly here.
-    timeToUnblock = AddDurationToAbsolute(durationSecond/newFrequency, frameStartTime);
-    MPDelayUntil(&timeToUnblock);
+        // setAnimationTimeInterval does not seem to be working, so we 
+        // throttle the screensaver directly here.
+        timeToUnblock = AddDurationToAbsolute(durationSecond/newFrequency, frameStartTime);
+        MPDelayUntil(&timeToUnblock);
+    }
 }
 
 - (BOOL)hasConfigureSheet {

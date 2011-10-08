@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 23103 2011-02-24 22:18:14Z davea $
+## $Id: Makefile.am 24232 2011-09-18 21:06:49Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -35,7 +35,6 @@ boinc_client_SOURCES = \
     acct_setup.cpp \
     app.cpp \
     app_control.cpp \
-    app_graphics.cpp \
     app_start.cpp \
     check_state.cpp \
     client_msgs.cpp \

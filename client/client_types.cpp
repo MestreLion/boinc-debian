@@ -67,11 +67,11 @@ void PROJECT::init() {
     resource_share = 100;
     for (int i=0; i<MAX_RSC; i++) {
         no_rsc_pref[i] = false;
+        no_rsc_config[i] = false;
         no_rsc_apps[i] = false;
         no_rsc_ams[i] = false;
         rsc_defer_sched[i] = false;
     }
-    exclude_gpus.clear();
     strcpy(host_venue, "");
     using_venue_specific_prefs = false;
     scheduler_urls.clear();
@@ -126,9 +126,6 @@ void PROJECT::init() {
     nuploading_results = 0;
     too_many_uploading_results = false;
 
-    // Initialize scratch variables.
-    rr_sim_status.clear();
-
 #ifdef SIM
     idle_time = 0;
     idle_time_sumsq = 0;
@@ -158,20 +155,20 @@ static void handle_no_rsc_apps(PROJECT* p, const char* name) {
     p->no_rsc_apps[i] = true;
 }
 
-static bool parse_rsc_param(MIOFILE& in, const char* end_tag, int& rsc_type, double& value) {
-    char buf[256], name[256];
+static bool parse_rsc_param(XML_PARSER& xp, const char* end_tag, int& rsc_type, double& value) {
+    char name[256];
     bool val_found = false;
 
     rsc_type = -1;
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, end_tag)) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag(end_tag)) {
             return (rsc_type > 0 && val_found);
         }
-        if (parse_str(buf, "<name>", name, sizeof(name))) {
+        if (xp.parse_str("name", name, sizeof(name))) {
             rsc_type = rsc_index(name);
             continue;
         }
-        if (parse_double(buf, "<rsc_type>", value)) {
+        if (xp.parse_double("rsc_type", value)) {
             val_found = true;
         }
     }
@@ -179,163 +176,149 @@ static bool parse_rsc_param(MIOFILE& in, const char* end_tag, int& rsc_type, dou
 }
 // parse project fields from client_state.xml
 //
-int PROJECT::parse_state(MIOFILE& in) {
+int PROJECT::parse_state(XML_PARSER& xp) {
     char buf[256];
-    std::string sched_url;
+    std::string sched_url, stemp;
     string str1, str2;
     int retval, rt;
     double x;
     bool btemp;
 
     init();
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</project>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/project")) {
             if (cpid_time == 0) {
                 cpid_time = user_create_time;
             }
             return 0;
         }
-        if (parse_str(buf, "<scheduler_url>", sched_url)) {
+        if (xp.parse_string("scheduler_url", sched_url)) {
             scheduler_urls.push_back(sched_url);
             continue;
         }
-        if (parse_str(buf, "<master_url>", master_url, sizeof(master_url))) continue;
-        if (parse_str(buf, "<project_name>", project_name, sizeof(project_name))) continue;
-        if (parse_str(buf, "<symstore>", symstore, sizeof(symstore))) continue;
-        if (parse_str(buf, "<user_name>", user_name, sizeof(user_name))) continue;
-        if (parse_str(buf, "<team_name>", team_name, sizeof(team_name))) continue;
-        if (parse_str(buf, "<host_venue>", host_venue, sizeof(host_venue))) continue;
-        if (parse_str(buf, "<email_hash>", email_hash, sizeof(email_hash))) continue;
-        if (parse_str(buf, "<cross_project_id>", cross_project_id, sizeof(cross_project_id))) continue;
-        if (parse_double(buf, "<cpid_time>", cpid_time)) continue;
-        if (parse_double(buf, "<user_total_credit>", user_total_credit)) continue;
-        if (parse_double(buf, "<user_expavg_credit>", user_expavg_credit)) continue;
-        if (parse_double(buf, "<user_create_time>", user_create_time)) continue;
-        if (parse_int(buf, "<rpc_seqno>", rpc_seqno)) continue;
-        if (parse_int(buf, "<userid>", userid)) continue;
-        if (parse_int(buf, "<teamid>", teamid)) continue;
-        if (parse_int(buf, "<hostid>", hostid)) continue;
-        if (parse_double(buf, "<host_total_credit>", host_total_credit)) continue;
-        if (parse_double(buf, "<host_expavg_credit>", host_expavg_credit)) continue;
-        if (parse_double(buf, "<host_create_time>", host_create_time)) continue;
-        if (match_tag(buf, "<code_sign_key>")) {
+        if (xp.parse_str("master_url", master_url, sizeof(master_url))) continue;
+        if (xp.parse_str("project_name", project_name, sizeof(project_name))) continue;
+        if (xp.parse_str("symstore", symstore, sizeof(symstore))) continue;
+        if (xp.parse_str("user_name", user_name, sizeof(user_name))) continue;
+        if (xp.parse_str("team_name", team_name, sizeof(team_name))) continue;
+        if (xp.parse_str("host_venue", host_venue, sizeof(host_venue))) continue;
+        if (xp.parse_str("email_hash", email_hash, sizeof(email_hash))) continue;
+        if (xp.parse_str("cross_project_id", cross_project_id, sizeof(cross_project_id))) continue;
+        if (xp.parse_double("cpid_time", cpid_time)) continue;
+        if (xp.parse_double("user_total_credit", user_total_credit)) continue;
+        if (xp.parse_double("user_expavg_credit", user_expavg_credit)) continue;
+        if (xp.parse_double("user_create_time", user_create_time)) continue;
+        if (xp.parse_int("rpc_seqno", rpc_seqno)) continue;
+        if (xp.parse_int("userid", userid)) continue;
+        if (xp.parse_int("teamid", teamid)) continue;
+        if (xp.parse_int("hostid", hostid)) continue;
+        if (xp.parse_double("host_total_credit", host_total_credit)) continue;
+        if (xp.parse_double("host_expavg_credit", host_expavg_credit)) continue;
+        if (xp.parse_double("host_create_time", host_create_time)) continue;
+        if (xp.match_tag("code_sign_key")) {
             retval = copy_element_contents(
-                in,
+                xp.f->f,
                 "</code_sign_key>",
                 code_sign_key,
                 sizeof(code_sign_key)
             );
             if (retval) return retval;
+            strip_whitespace(code_sign_key);
             continue;
         }
-        if (parse_int(buf, "<nrpc_failures>", nrpc_failures)) continue;
-        if (parse_int(buf, "<master_fetch_failures>", master_fetch_failures)) continue;
-        if (parse_double(buf, "<min_rpc_time>", min_rpc_time)) continue;
-        if (parse_bool(buf, "master_url_fetch_pending", master_url_fetch_pending)) continue;
-        if (parse_int(buf, "<sched_rpc_pending>", sched_rpc_pending)) continue;
-        if (parse_double(buf, "<next_rpc_time>", next_rpc_time)) continue;
-        if (parse_bool(buf, "trickle_up_pending", trickle_up_pending)) continue;
-        if (parse_int(buf, "<send_time_stats_log>", send_time_stats_log)) continue;
-        if (parse_int(buf, "<send_job_log>", send_job_log)) continue;
-        if (parse_bool(buf, "send_full_workload", send_full_workload)) continue;
-        if (parse_bool(buf, "non_cpu_intensive", non_cpu_intensive)) continue;
-        if (parse_bool(buf, "verify_files_on_app_start", verify_files_on_app_start)) continue;
-        if (parse_bool(buf, "suspended_via_gui", suspended_via_gui)) continue;
-        if (parse_bool(buf, "dont_request_more_work", dont_request_more_work)) continue;
-        if (parse_bool(buf, "detach_when_done", detach_when_done)) continue;
-        if (parse_bool(buf, "ended", ended)) continue;
-//#ifdef USE_REC
-        if (parse_double(buf, "<rec>", pwf.rec)) continue;
-        if (parse_double(buf, "<rec_time>", pwf.rec_time)) continue;
-//#else
-        if (parse_double(buf, "<short_term_debt>", rsc_pwf[0].short_term_debt)) continue;
-        if (parse_double(buf, "<long_term_debt>", rsc_pwf[0].long_term_debt)) continue;
-//#endif
-        if (parse_double(buf, "<cpu_backoff_interval>", rsc_pwf[0].backoff_interval)) continue;
-        if (parse_double(buf, "<cpu_backoff_time>", rsc_pwf[0].backoff_time)) {
+        if (xp.parse_int("nrpc_failures", nrpc_failures)) continue;
+        if (xp.parse_int("master_fetch_failures", master_fetch_failures)) continue;
+        if (xp.parse_double("min_rpc_time", min_rpc_time)) continue;
+        if (xp.parse_bool("master_url_fetch_pending", master_url_fetch_pending)) continue;
+        if (xp.parse_int("sched_rpc_pending", sched_rpc_pending)) continue;
+        if (xp.parse_double("next_rpc_time", next_rpc_time)) continue;
+        if (xp.parse_bool("trickle_up_pending", trickle_up_pending)) continue;
+        if (xp.parse_int("send_time_stats_log", send_time_stats_log)) continue;
+        if (xp.parse_int("send_job_log", send_job_log)) continue;
+        if (xp.parse_bool("send_full_workload", send_full_workload)) continue;
+        if (xp.parse_bool("non_cpu_intensive", non_cpu_intensive)) continue;
+        if (xp.parse_bool("verify_files_on_app_start", verify_files_on_app_start)) continue;
+        if (xp.parse_bool("suspended_via_gui", suspended_via_gui)) continue;
+        if (xp.parse_bool("dont_request_more_work", dont_request_more_work)) continue;
+        if (xp.parse_bool("detach_when_done", detach_when_done)) continue;
+        if (xp.parse_bool("ended", ended)) continue;
+        if (xp.parse_double("rec", pwf.rec)) continue;
+        if (xp.parse_double("rec_time", pwf.rec_time)) continue;
+        if (xp.parse_double("cpu_backoff_interval", rsc_pwf[0].backoff_interval)) continue;
+        if (xp.parse_double("cpu_backoff_time", rsc_pwf[0].backoff_time)) {
             if (rsc_pwf[0].backoff_time > gstate.now + 28*SECONDS_PER_DAY) {
                 rsc_pwf[0].backoff_time = gstate.now + 28*SECONDS_PER_DAY;
             }
             continue;
         }
-//#ifndef USE_REC
-        if (match_tag(buf, "<rsc_short_term_debt>")) {
-            if (parse_rsc_param(in, "</rsc_short_term_debt>", rt, x)) {
-                rsc_pwf[rt].short_term_debt = x;
-            }
-            continue;
-        }
-        if (match_tag(buf, "<rsc_long_term_debt>")) {
-            if (parse_rsc_param(in, "</rsc_long_term_debt>", rt, x)) {
-                rsc_pwf[rt].long_term_debt = x;
-            }
-            continue;
-        }
-//#endif
-        if (match_tag(buf, "<rsc_backoff_interval>")) {
-            if (parse_rsc_param(in, "</rsc_backoff_interval>", rt, x)) {
+        if (xp.match_tag("rsc_backoff_interval")) {
+            if (parse_rsc_param(xp, "/rsc_backoff_interval", rt, x)) {
                 rsc_pwf[rt].backoff_interval = x;
             }
             continue;
         }
-        if (match_tag(buf, "<rsc_backoff_time>")) {
-            if (parse_rsc_param(in, "</rsc_backoff_time>", rt, x)) {
+        if (xp.match_tag("rsc_backoff_time")) {
+            if (parse_rsc_param(xp, "/rsc_backoff_time", rt, x)) {
                 rsc_pwf[rt].backoff_time = x;
             }
             continue;
         }
-        if (parse_double(buf, "<resource_share>", resource_share)) continue;
+        if (xp.parse_double("resource_share", resource_share)) continue;
             // not authoritative
-        if (parse_double(buf, "<duration_correction_factor>", duration_correction_factor)) continue;
-        if (parse_bool(buf, "attached_via_acct_mgr", attached_via_acct_mgr)) continue;
-        if (parse_bool(buf, "no_cpu_apps", btemp)) {
+        if (xp.parse_double("duration_correction_factor", duration_correction_factor)) continue;
+        if (xp.parse_bool("attached_via_acct_mgr", attached_via_acct_mgr)) continue;
+        if (xp.parse_bool("no_cpu_apps", btemp)) {
             if (btemp) handle_no_rsc_apps(this, "CPU");
             continue;
         }
-        if (parse_bool(buf, "no_cuda_apps", btemp)) {
-            if (btemp) handle_no_rsc_apps(this, "NVIDIA");
+        if (xp.parse_bool("no_cuda_apps", btemp)) {
+            if (btemp) handle_no_rsc_apps(this, GPU_TYPE_NVIDIA);
             continue;
         }
-        if (parse_bool(buf, "no_ati_apps", btemp)) {
-            if (btemp) handle_no_rsc_apps(this, "ATI");
+        if (xp.parse_bool("no_ati_apps", btemp)) {
+            if (btemp) handle_no_rsc_apps(this, GPU_TYPE_ATI);
             continue;
         }
-        if (parse_str(buf, "<no_rsc_apps>", buf, sizeof(buf))) {
+        if (xp.parse_str("no_rsc_apps", buf, sizeof(buf))) {
             handle_no_rsc_apps(this, buf);
             continue;
         }
-        if (parse_bool(buf, "no_cpu_ams", btemp)) {
+        if (xp.parse_bool("no_cpu_ams", btemp)) {
             if (btemp) handle_no_rsc_ams(this, "CPU");
             continue;
         }
-        if (parse_bool(buf, "no_cuda_ams", btemp)) {
-            if (btemp) handle_no_rsc_ams(this, "NVIDIA");
+        if (xp.parse_bool("no_cuda_ams", btemp)) {
+            if (btemp) handle_no_rsc_ams(this, GPU_TYPE_NVIDIA);
             continue;
         }
-        if (parse_bool(buf, "no_ati_ams", btemp)) {
-            if (btemp) handle_no_rsc_ams(this, "ATI");
+        if (xp.parse_bool("no_ati_ams", btemp)) {
+            if (btemp) handle_no_rsc_ams(this, GPU_TYPE_ATI);
             continue;
         }
-        if (parse_str(buf, "<no_rsc_ams>", buf, sizeof(buf))) {
+        if (xp.parse_str("no_rsc_ams", buf, sizeof(buf))) {
             handle_no_rsc_ams(this, buf);
             continue;
         }
-        if (parse_str(buf, "<no_rsc_pref>", buf, sizeof(buf))) {
+        if (xp.parse_str("no_rsc_pref", buf, sizeof(buf))) {
             handle_no_rsc_pref(this, buf);
         }
 
             // backwards compat - old state files had ams_resource_share = 0
-        if (parse_double(buf, "<ams_resource_share_new>", ams_resource_share)) continue;
-        if (parse_double(buf, "<ams_resource_share>", x)) {
+        if (xp.parse_double("ams_resource_share_new", ams_resource_share)) continue;
+        if (xp.parse_double("ams_resource_share", x)) {
             if (x > 0) ams_resource_share = x;
             continue;
         }
-        if (parse_bool(buf, "scheduler_rpc_in_progress", btemp)) continue;
-        if (parse_bool(buf, "use_symlinks", use_symlinks)) continue;
-        if (parse_bool(buf, "anonymous_platform", btemp)) continue;
+        if (xp.parse_bool("scheduler_rpc_in_progress", btemp)) continue;
+        if (xp.parse_bool("use_symlinks", use_symlinks)) continue;
+        if (xp.parse_bool("anonymous_platform", btemp)) continue;
+        if (xp.parse_string("trickle_up_url", stemp)) {
+            trickle_up_ops.push_back(new TRICKLE_UP_OP(stemp));
+        }
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] PROJECT::parse_state(): unrecognized: %s", buf
+                "[unparsed_xml] PROJECT::parse_state(): unrecognized: %s",
+                xp.parsed_tag
             );
         }
     }
@@ -378,17 +361,14 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         "    <master_fetch_failures>%d</master_fetch_failures>\n"
         "    <min_rpc_time>%f</min_rpc_time>\n"
         "    <next_rpc_time>%f</next_rpc_time>\n"
-//#ifdef USE_REC
         "    <rec>%f</rec>\n"
         "    <rec_time>%f</rec_time>\n"
-//#endif
 
         "    <resource_share>%f</resource_share>\n"
         "    <duration_correction_factor>%f</duration_correction_factor>\n"
         "    <sched_rpc_pending>%d</sched_rpc_pending>\n"
         "    <send_time_stats_log>%d</send_time_stats_log>\n"
         "    <send_job_log>%d</send_job_log>\n"
-        "    <sched_priority>%f</sched_priority>\n"
         "%s%s%s%s%s%s%s%s%s%s%s%s%s",
         master_url,
         project_name,
@@ -413,16 +393,13 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         master_fetch_failures,
         min_rpc_time,
         next_rpc_time,
-//#ifdef USE_REC
         pwf.rec,
         pwf.rec_time,
-//#else
         resource_share,
         duration_correction_factor,
         sched_rpc_pending,
         send_time_stats_log,
         send_job_log,
-        project_priority(this),
         anonymous_platform?"    <anonymous_platform/>\n":"",
         master_url_fetch_pending?"    <master_url_fetch_pending/>\n":"",
         trickle_up_pending?"    <trickle_up_pending/>\n":"",
@@ -439,16 +416,6 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
     );
     for (int j=0; j<coprocs.n_rsc; j++) {
         out.printf(
-//#ifndef USE_REC
-            "    <rsc_short_term_debt>\n"
-            "        <name>%s</name>\n"
-            "        <value>%f</value>\n"
-            "    </rsc_short_term_debt>\n"
-            "    <rsc_long_term_debt>\n"
-            "        <name>%s</name>\n"
-            "        <value>%f</value>\n"
-            "    </rsc_long_term_debt>\n"
-//#endif
             "    <rsc_backoff_time>\n"
             "        <name>%s</name>\n"
             "        <value>%f</value>\n"
@@ -457,10 +424,6 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
             "        <name>%s</name>\n"
             "        <value>%f</value>\n"
             "    </rsc_backoff_interval>\n",
-//#ifndef USE_REC
-            rsc_name(j), rsc_pwf[j].short_term_debt,
-            rsc_name(j), rsc_pwf[j].long_term_debt,
-//#endif
             rsc_name(j), rsc_pwf[j].backoff_interval,
             rsc_name(j), rsc_pwf[j].backoff_time
         );
@@ -480,10 +443,13 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         );
     }
     if (gui_rpc) {
-        out.printf("%s", gui_urls.c_str());
         out.printf(
+            "%s"
+            "    <sched_priority>%f</sched_priority>\n"
             "    <last_rpc_time>%f</last_rpc_time>\n"
             "    <project_files_downloaded_time>%f</project_files_downloaded_time>\n",
+            gui_urls.c_str(),
+            project_priority(this),
             last_rpc_time,
             project_files_downloaded_time
         );
@@ -511,7 +477,14 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
         }
         if (strlen(code_sign_key)) {
             out.printf(
-                "    <code_sign_key>\n%s</code_sign_key>\n", code_sign_key
+                "    <code_sign_key>\n%s\n</code_sign_key>\n", code_sign_key
+            );
+        }
+        for (i=0; i<trickle_up_ops.size(); i++) {
+            TRICKLE_UP_OP* t = trickle_up_ops[i];
+            out.printf(
+                "    <trickle_up_url>%s</trickle_up_url>\n",
+                t->url.c_str()
             );
         }
     }
@@ -687,8 +660,7 @@ void FILE_XFER_BACKOFF::file_xfer_succeeded() {
     next_xfer_time  = 0;
 }
 
-int PROJECT::parse_project_files(MIOFILE& in, bool delete_existing_symlinks) {
-    char buf[256];
+int PROJECT::parse_project_files(XML_PARSER& xp, bool delete_existing_symlinks) {
     unsigned int i;
     char project_dir[256], path[256];
 
@@ -707,16 +679,17 @@ int PROJECT::parse_project_files(MIOFILE& in, bool delete_existing_symlinks) {
     }
 
     project_files.clear();
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</project_files>")) return 0;
-        if (match_tag(buf, "<file_ref>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/project_files")) return 0;
+        if (xp.match_tag("file_ref")) {
             FILE_REF file_ref;
-            file_ref.parse(in);
+            file_ref.parse(xp);
             project_files.push_back(file_ref);
         } else {
             if (log_flags.unparsed_xml) {
                 msg_printf(0, MSG_INFO,
-                    "[unparsed_xml] parse_project_files(): unrecognized: %s\n", buf
+                    "[unparsed_xml] parse_project_files(): unrecognized: %s\n",
+                    xp.parsed_tag
                 );
             }
         }
@@ -800,43 +773,41 @@ void PROJECT::update_project_files_downloaded_time() {
     project_files_downloaded_time = gstate.now;
 }
 
-int APP::parse(MIOFILE& in) {
-    char buf[256];
+int APP::parse(XML_PARSER& xp) {
 
     strcpy(name, "");
     strcpy(user_friendly_name, "");
     project = NULL;
     non_cpu_intensive = false;
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</app>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/app")) {
             if (!strlen(user_friendly_name)) {
                 strcpy(user_friendly_name, name);
             }
             return 0;
         }
-        if (parse_str(buf, "<name>", name, sizeof(name))) continue;
-        if (parse_str(buf, "<user_friendly_name>", user_friendly_name, sizeof(user_friendly_name))) continue;
+        if (xp.parse_str("name", name, sizeof(name))) continue;
+        if (xp.parse_str("user_friendly_name", user_friendly_name, sizeof(user_friendly_name))) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] APP::parse(): unrecognized: %s\n", buf
+                "[unparsed_xml] APP::parse(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
 #ifdef SIM
-        if (parse_double(buf, "<latency_bound>", latency_bound)) continue;
-        if (parse_double(buf, "<fpops_est>", fpops_est)) continue;
-        if (parse_double(buf, "<weight>", weight)) continue;
-        if (parse_double(buf, "<working_set>", working_set)) continue;
-        if (match_tag(buf, "<fpops>")) {
-            XML_PARSER xp(&in);
+        if (xp.parse_double("latency_bound", latency_bound)) continue;
+        if (xp.parse_double("fpops_est", fpops_est)) continue;
+        if (xp.parse_double("weight", weight)) continue;
+        if (xp.parse_double("working_set", working_set)) continue;
+        if (xp.match_tag("fpops")) {
             fpops.parse(xp, "/fpops");
             continue;
         }
-        if (match_tag(buf, "<checkpoint_period>")) {
-            XML_PARSER xp(&in);
+        if (xp.match_tag("checkpoint_period")) {
             checkpoint_period.parse(xp, "/checkpoint_period");
             continue;
         }
-        if (parse_bool(buf, "non_cpu_intensive", non_cpu_intensive)) continue;
+        if (xp.parse_bool("non_cpu_intensive", non_cpu_intensive)) continue;
 #endif
     }
     return ERR_XML_PARSE;
@@ -859,24 +830,21 @@ FILE_INFO::FILE_INFO() {
     max_nbytes = 0;
     nbytes = 0;
     upload_offset = -1;
-    generated_locally = false;
     status = FILE_NOT_PRESENT;
     executable = false;
     uploaded = false;
-    upload_when_present = false;
     sticky = false;
     gzip_when_done = false;
     signature_required = false;
     is_user_file = false;
     is_project_file = false;
     is_auto_update_file = false;
+    anonymous_platform_file = false;
     pers_file_xfer = NULL;
     result = NULL;
     project = NULL;
-    urls.clear();
-    start_url = -1;
-    current_url = -1;
-    strcpy(signed_xml, "");
+    download_urls.clear();
+    upload_urls.clear();
     strcpy(xml_signature, "");
     strcpy(file_signature, "");
     cert_sigs = 0;
@@ -938,25 +906,23 @@ int FILE_INFO::set_permissions() {
 #endif
 }
 
-// If from server, make an exact copy of everything
-// except the start/end tags and the <xml_signature> element.
-//
-int FILE_INFO::parse(MIOFILE& in, bool from_server) {
-    char buf[256], buf2[1024];
+int FILE_INFO::parse(XML_PARSER& xp) {
+    char buf2[1024];
     std::string url;
     PERS_FILE_XFER *pfxp;
     int retval;
+    bool btemp;
 
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</file_info>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/file_info") || xp.match_tag("/file")) {
             if (!strlen(name)) return ERR_BAD_FILENAME;
             if (strstr(name, "..")) return ERR_BAD_FILENAME;
             if (strstr(name, "%")) return ERR_BAD_FILENAME;
             return 0;
         }
-        if (match_tag(buf, "<xml_signature>")) {
+        if (xp.match_tag("xml_signature")) {
             retval = copy_element_contents(
-                in,
+                xp.f->f,
                 "</xml_signature>",
                 xml_signature,
                 sizeof(xml_signature)
@@ -964,52 +930,58 @@ int FILE_INFO::parse(MIOFILE& in, bool from_server) {
             if (retval) return retval;
             continue;
         }
-        if (match_tag(buf, "<file_signature>")) {
+        if (xp.match_tag("file_signature")) {
             retval = copy_element_contents(
-                in,
+                xp.f->f,
                 "</file_signature>",
                 file_signature,
                 sizeof(file_signature)
             );
             if (retval) return retval;
-            if (from_server) {
-                strcat(signed_xml, "<file_signature>\n");
-                strcat(signed_xml, file_signature);
-                strcat(signed_xml, "</file_signature>\n");
-            }
+            strip_whitespace(file_signature);
             continue;
         }
-        if (match_tag(buf, "<signatures>")) {
-            if (!cert_sigs->parse_miofile_embed(in)) {
+        if (xp.match_tag("signatures")) {
+            if (!cert_sigs->parse(xp)) {
                 msg_printf(0, MSG_INTERNAL_ERROR,
-                    "FILE_INFO::parse(): cannot parse <signatures>\n");
+                    "FILE_INFO::parse(): cannot parse <signatures>\n"
+                );
                 return ERR_XML_PARSE;
             }
             continue;
         }
 
-        safe_strcat(signed_xml, buf);
-        if (parse_str(buf, "<name>", name, sizeof(name))) continue;
-        if (parse_str(buf, "<url>", url)) {
-            urls.push_back(url);
+        if (xp.parse_str("name", name, sizeof(name))) continue;
+        if (xp.parse_string("url", url)) {
+            if (strstr(url.c_str(), "file_upload_handler")) {
+                upload_urls.urls.push_back(url);
+            } else {
+                download_urls.urls.push_back(url);
+            }
             continue;
         }
-        if (parse_str(buf, "<md5_cksum>", md5_cksum, sizeof(md5_cksum))) continue;
-        if (parse_double(buf, "<nbytes>", nbytes)) continue;
-        if (parse_double(buf, "<max_nbytes>", max_nbytes)) continue;
-        if (parse_bool(buf, "generated_locally", generated_locally)) continue;
-        if (parse_int(buf, "<status>", status)) continue;
-        if (parse_bool(buf, "executable", executable)) continue;
-        if (parse_bool(buf, "uploaded", uploaded)) continue;
-        if (parse_bool(buf, "upload_when_present", upload_when_present)) continue;
-        if (parse_bool(buf, "sticky", sticky)) continue;
-        if (parse_bool(buf, "gzip_when_done", gzip_when_done)) continue;
-        if (parse_bool(buf, "signature_required", signature_required)) continue;
-        if (parse_bool(buf, "is_project_file", is_project_file)) continue;
-        if (match_tag(buf, "<no_delete")) continue;
-        if (match_tag(buf, "<persistent_file_xfer>")) {
+        if (xp.parse_string("download_url", url)) {
+            download_urls.urls.push_back(url);
+            continue;
+        }
+        if (xp.parse_string("upload_url", url)) {
+            upload_urls.urls.push_back(url);
+            continue;
+        }
+        if (xp.parse_str("md5_cksum", md5_cksum, sizeof(md5_cksum))) continue;
+        if (xp.parse_double("nbytes", nbytes)) continue;
+        if (xp.parse_double("max_nbytes", max_nbytes)) continue;
+        if (xp.parse_int("status", status)) continue;
+        if (xp.parse_bool("executable", executable)) continue;
+        if (xp.parse_bool("uploaded", uploaded)) continue;
+        if (xp.parse_bool("sticky", sticky)) continue;
+        if (xp.parse_bool("gzip_when_done", gzip_when_done)) continue;
+        if (xp.parse_bool("signature_required", signature_required)) continue;
+        if (xp.parse_bool("is_project_file", is_project_file)) continue;
+        if (xp.parse_bool("no_delete", btemp)) continue;
+        if (xp.match_tag("persistent_file_xfer")) {
             pfxp = new PERS_FILE_XFER;
-            retval = pfxp->parse(in);
+            retval = pfxp->parse(xp);
 #ifdef SIM
             delete pfxp;
             continue;
@@ -1021,33 +993,28 @@ int FILE_INFO::parse(MIOFILE& in, bool from_server) {
             }
             continue;
         }
-        if (!from_server && match_tag(buf, "<signed_xml>")) {
-            retval = copy_element_contents(
-                in,
-                "</signed_xml>",
-                signed_xml,
-                sizeof(signed_xml)
-            );
-            if (retval) return retval;
-            continue;
-        }
-        if (match_tag(buf, "<file_xfer>")) {
-            while (in.fgets(buf, 256)) {
-                if (match_tag(buf, "</file_xfer>")) break;
+        if (xp.match_tag("file_xfer")) {
+            while (!xp.get_tag()) {
+                if (xp.match_tag("/file_xfer")) break;
             }
             continue;
         }
-        if (match_tag(buf, "<error_msg>")) {
+        if (xp.match_tag("error_msg")) {
             retval = copy_element_contents(
-                in, "</error_msg>", buf2, sizeof(buf2)
+                xp.f->f,
+                "</error_msg>", buf2, sizeof(buf2)
             );
             if (retval) return retval;
             error_msg = buf2;
             continue;
         }
+        // deprecated tags
+        if (xp.parse_bool("generated_locally", btemp)) continue;
+        if (xp.parse_bool("upload_when_present", btemp)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] FILE_INFO::parse(): unrecognized: %s\n", buf
+                "[unparsed_xml] FILE_INFO::parse(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
     }
@@ -1059,8 +1026,12 @@ int FILE_INFO::write(MIOFILE& out, bool to_server) {
     int retval;
     char buf[1024];
 
+    if (to_server) {
+        out.printf("<file_info>\n");
+    } else {
+        out.printf("<file>\n");
+    }
     out.printf(
-        "<file_info>\n"
         "    <name>%s</name>\n"
         "    <nbytes>%f</nbytes>\n"
         "    <max_nbytes>%f</max_nbytes>\n",
@@ -1073,31 +1044,32 @@ int FILE_INFO::write(MIOFILE& out, bool to_server) {
         );
     }
     if (!to_server) {
-        if (generated_locally) out.printf("    <generated_locally/>\n");
         out.printf("    <status>%d</status>\n", status);
         if (executable) out.printf("    <executable/>\n");
         if (uploaded) out.printf("    <uploaded/>\n");
-        if (upload_when_present) out.printf("    <upload_when_present/>\n");
         if (sticky) out.printf("    <sticky/>\n");
         if (gzip_when_done) out.printf("    <gzip_when_done/>\n");
         if (signature_required) out.printf("    <signature_required/>\n");
         if (is_user_file) out.printf("    <is_user_file/>\n");
-        if (strlen(file_signature)) out.printf("    <file_signature>\n%s</file_signature>\n", file_signature);
+        if (strlen(file_signature)) out.printf("    <file_signature>\n%s\n</file_signature>\n", file_signature);
     }
-    for (i=0; i<urls.size(); i++) {
-        xml_escape(urls[i].c_str(), buf, sizeof(buf));
-        out.printf("    <url>%s</url>\n", buf);
+    for (i=0; i<download_urls.urls.size(); i++) {
+        xml_escape(download_urls.urls[i].c_str(), buf, sizeof(buf));
+        out.printf("    <download_url>%s</download_url>\n", buf);
+    }
+    for (i=0; i<upload_urls.urls.size(); i++) {
+        xml_escape(upload_urls.urls[i].c_str(), buf, sizeof(buf));
+        out.printf("    <upload_url>%s</upload_url>\n", buf);
     }
     if (!to_server && pers_file_xfer) {
         retval = pers_file_xfer->write(out);
         if (retval) return retval;
     }
     if (!to_server) {
-        if (strlen(signed_xml) && strlen(xml_signature)) {
+        if (strlen(xml_signature)) {
             out.printf(
-                "    <signed_xml>\n%s    </signed_xml>\n"
                 "    <xml_signature>\n%s    </xml_signature>\n",
-                signed_xml, xml_signature
+                xml_signature
             );
         }
     }
@@ -1105,10 +1077,16 @@ int FILE_INFO::write(MIOFILE& out, bool to_server) {
         strip_whitespace(error_msg);
         out.printf("    <error_msg>\n%s\n</error_msg>\n", error_msg.c_str());
     }
-    out.printf("</file_info>\n");
+    if (to_server) {
+        out.printf("</file_info>\n");
+    } else {
+        out.printf("</file>\n");
+    }
     return 0;
 }
 
+// called only for files with a PERS_FILE_XFER
+//
 int FILE_INFO::write_gui(MIOFILE& out) {
     out.printf(
         "<file_transfer>\n"
@@ -1125,20 +1103,14 @@ int FILE_INFO::write_gui(MIOFILE& out) {
         max_nbytes,
         status
     );
-    if (generated_locally) out.printf("    <generated_locally/>\n");
-    if (uploaded) out.printf("    <uploaded/>\n");
-    if (upload_when_present) out.printf("    <upload_when_present/>\n");
-    if (sticky) out.printf("    <sticky/>\n");
 
-    if (pers_file_xfer) {
-        pers_file_xfer->write(out);
+    pers_file_xfer->write(out);
 
-        FILE_XFER_BACKOFF& fxb = project->file_xfer_backoff(pers_file_xfer->is_upload);
-        if (fxb.next_xfer_time > gstate.now) {
-            out.printf("    <project_backoff>%f</project_backoff>\n",
-                fxb.next_xfer_time - gstate.now
-            );
-        }
+    FILE_XFER_BACKOFF& fxb = project->file_xfer_backoff(pers_file_xfer->is_upload);
+    if (fxb.next_xfer_time > gstate.now) {
+        out.printf("    <project_backoff>%f</project_backoff>\n",
+            fxb.next_xfer_time - gstate.now
+        );
     }
     out.printf("</file_transfer>\n");
     return 0;
@@ -1158,12 +1130,7 @@ int FILE_INFO::delete_file() {
     return retval;
 }
 
-// Files may have URLs for both upload and download.
-// Call this to get the initial url,
-// The is_upload arg says which kind you want.
-// NULL return means there is no URL of the requested type
-//
-const char* FILE_INFO::get_init_url() {
+const char* URL_LIST::get_init_url() {
     if (!urls.size()) {
         return NULL;
     }
@@ -1171,65 +1138,62 @@ const char* FILE_INFO::get_init_url() {
 // if a project supplies multiple URLs, try them in order
 // (e.g. in Einstein@home they're ordered by proximity to client).
 //
-    current_url = 0;
-    start_url = current_url;
-    return urls[current_url].c_str();
+    current_index = 0;
+    start_index = current_index;
+    return urls[current_index].c_str();
 }
 
 // Call this to get the next URL.
 // NULL return means you've tried them all.
 //
-const char* FILE_INFO::get_next_url() {
+const char* URL_LIST::get_next_url() {
     if (!urls.size()) return NULL;
     while(1) {
-        current_url = (current_url + 1)%((int)urls.size());
-        if (current_url == start_url) {
+        current_index = (current_index + 1)%((int)urls.size());
+        if (current_index == start_index) {
             return NULL;
         }
-        return urls[current_url].c_str();
+        return urls[current_index].c_str();
     }
 }
 
-const char* FILE_INFO::get_current_url() {
-    if (current_url < 0) {
+const char* URL_LIST::get_current_url(FILE_INFO& fi) {
+    if (current_index < 0) {
         return get_init_url();
     }
-    if (current_url >= (int)urls.size()) {
-        msg_printf(project, MSG_INTERNAL_ERROR,
-            "File %s has no URL", name
+    if (current_index >= (int)urls.size()) {
+        msg_printf(fi.project, MSG_INTERNAL_ERROR,
+            "File %s has no URL", fi.name
         );
         return NULL;
     }
-    return urls[current_url].c_str();
+    return urls[current_index].c_str();
 }
 
 // merges information from a new FILE_INFO that has the same name as one
 // that is already present in the client state file.
-// Potentially changes upload_when_present, max_nbytes, and signed_xml
 //
 int FILE_INFO::merge_info(FILE_INFO& new_info) {
     char buf[256];
-    unsigned int i;
-
-    upload_when_present = new_info.upload_when_present;
 
     if (max_nbytes <= 0 && new_info.max_nbytes) {
         max_nbytes = new_info.max_nbytes;
         sprintf(buf, "    <max_nbytes>%.0f</max_nbytes>\n", new_info.max_nbytes);
-        strcat(signed_xml, buf);
     }
 
     // replace existing URLs with new ones
     //
-    urls.clear();
-    for (i=0; i<new_info.urls.size(); i++) {
-        urls.push_back(new_info.urls[i]);
-    }
 
-    // replace signature
+    download_urls.replace(new_info.download_urls);
+    upload_urls.replace(new_info.upload_urls);
+
+    // replace signatures
     //
     if (strlen(new_info.file_signature)) {
         strcpy(file_signature, new_info.file_signature);
+    }
+    if (strlen(new_info.xml_signature)) {
+        strcpy(xml_signature, new_info.xml_signature);
     }
 
     return 0;
@@ -1294,8 +1258,7 @@ int FILE_INFO::gzip() {
     return 0;
 }
 
-int APP_VERSION::parse(MIOFILE& in) {
-    char buf[256];
+int APP_VERSION::parse(XML_PARSER& xp) {
     FILE_REF file_ref;
 
     strcpy(app_name, "");
@@ -1304,6 +1267,7 @@ int APP_VERSION::parse(MIOFILE& in) {
     strcpy(platform, "");
     strcpy(plan_class, "");
     strcpy(cmdline, "");
+    strcpy(file_prefix, "");
     avg_ncpus = 1;
     max_ncpus = 1;
     gpu_usage.rsc_type = 0;
@@ -1316,26 +1280,27 @@ int APP_VERSION::parse(MIOFILE& in) {
     strcpy(missing_coproc_name, "");
     dont_throttle = false;
 
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</app_version>")) return 0;
-        if (parse_str(buf, "<app_name>", app_name, sizeof(app_name))) continue;
-        if (match_tag(buf, "<file_ref>")) {
-            file_ref.parse(in);
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/app_version")) return 0;
+        if (xp.parse_str("app_name", app_name, sizeof(app_name))) continue;
+        if (xp.match_tag("file_ref")) {
+            file_ref.parse(xp);
             app_files.push_back(file_ref);
             continue;
         }
-        if (parse_int(buf, "<version_num>", version_num)) continue;
-        if (parse_str(buf, "<api_version>", api_version, sizeof(api_version))) continue;
-        if (parse_str(buf, "<platform>", platform, sizeof(platform))) continue;
-        if (parse_str(buf, "<plan_class>", plan_class, sizeof(plan_class))) continue;
-        if (parse_double(buf, "<avg_ncpus>", avg_ncpus)) continue;
-        if (parse_double(buf, "<max_ncpus>", max_ncpus)) continue;
-        if (parse_double(buf, "<flops>", flops)) continue;
-        if (parse_str(buf, "<cmdline>", cmdline, sizeof(cmdline))) continue;
-        if (parse_double(buf, "<gpu_ram>", gpu_ram)) continue;
-        if (match_tag(buf, "<coproc>")) {
+        if (xp.parse_int("version_num", version_num)) continue;
+        if (xp.parse_str("api_version", api_version, sizeof(api_version))) continue;
+        if (xp.parse_str("platform", platform, sizeof(platform))) continue;
+        if (xp.parse_str("plan_class", plan_class, sizeof(plan_class))) continue;
+        if (xp.parse_double("avg_ncpus", avg_ncpus)) continue;
+        if (xp.parse_double("max_ncpus", max_ncpus)) continue;
+        if (xp.parse_double("flops", flops)) continue;
+        if (xp.parse_str("cmdline", cmdline, sizeof(cmdline))) continue;
+        if (xp.parse_str("file_prefix", file_prefix, sizeof(file_prefix))) continue;
+        if (xp.parse_double("gpu_ram", gpu_ram)) continue;
+        if (xp.match_tag("coproc")) {
             COPROC_REQ cp;
-            int retval = cp.parse(in);
+            int retval = cp.parse(xp);
             if (!retval) {
                 int rt = rsc_index(cp.type);
                 if (rt > 0) {
@@ -1351,10 +1316,11 @@ int APP_VERSION::parse(MIOFILE& in) {
             }
             continue;
         }
-        if (parse_bool(buf, "dont_throttle", dont_throttle)) continue;
+        if (xp.parse_bool("dont_throttle", dont_throttle)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] APP_VERSION::parse(): unrecognized: %s\n", buf
+                "[unparsed_xml] APP_VERSION::parse(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
     }
@@ -1389,6 +1355,9 @@ int APP_VERSION::write(MIOFILE& out, bool write_file_info) {
     if (strlen(cmdline)) {
         out.printf("    <cmdline>%s</cmdline>\n", cmdline);
     }
+    if (strlen(file_prefix)) {
+        out.printf("    <file_prefix>%s</file_prefix>\n", file_prefix);
+    }
     if (write_file_info) {
         for (i=0; i<app_files.size(); i++) {
             retval = app_files[i].write(out);
@@ -1396,12 +1365,14 @@ int APP_VERSION::write(MIOFILE& out, bool write_file_info) {
         }
     }
     if (gpu_usage.rsc_type) {
+        const char* p = rsc_name(gpu_usage.rsc_type);
+        if (!strcmp(p, "NVIDIA")) p = "CUDA";
         out.printf(
             "    <coproc>\n"
             "        <type>%s</type>\n"
             "        <count>%f</count>\n"
             "    </coproc>\n",
-            rsc_name(gpu_usage.rsc_type),
+            p,
             gpu_usage.usage
         );
     }
@@ -1478,8 +1449,7 @@ int APP_VERSION::api_major_version() {
     return v;
 }
 
-int FILE_REF::parse(MIOFILE& in) {
-    char buf[256];
+int FILE_REF::parse(XML_PARSER& xp) {
     bool temp;
 
     strcpy(file_name, "");
@@ -1487,17 +1457,18 @@ int FILE_REF::parse(MIOFILE& in) {
     main_program = false;
     copy_file = false;
     optional = false;
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</file_ref>")) return 0;
-        if (parse_str(buf, "<file_name>", file_name, sizeof(file_name))) continue;
-        if (parse_str(buf, "<open_name>", open_name, sizeof(open_name))) continue;
-        if (parse_bool(buf, "main_program", main_program)) continue;
-        if (parse_bool(buf, "copy_file", copy_file)) continue;
-        if (parse_bool(buf, "optional", optional)) continue;
-        if (parse_bool(buf, "no_validate", temp)) continue;
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/file_ref")) return 0;
+        if (xp.parse_str("file_name", file_name, sizeof(file_name))) continue;
+        if (xp.parse_str("open_name", open_name, sizeof(open_name))) continue;
+        if (xp.parse_bool("main_program", main_program)) continue;
+        if (xp.parse_bool("copy_file", copy_file)) continue;
+        if (xp.parse_bool("optional", optional)) continue;
+        if (xp.parse_bool("no_validate", temp)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] FILE_REF::parse(): unrecognized: %s\n", buf
+                "[unparsed_xml] FILE_REF::parse(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
     }
@@ -1527,8 +1498,7 @@ int FILE_REF::write(MIOFILE& out) {
     return 0;
 }
 
-int WORKUNIT::parse(MIOFILE& in) {
-    char buf[4096];
+int WORKUNIT::parse(XML_PARSER& xp) {
     FILE_REF file_ref;
     double dtemp;
 
@@ -1545,51 +1515,33 @@ int WORKUNIT::parse(MIOFILE& in) {
     rsc_fpops_bound = 4e9*SECONDS_PER_DAY*7;
     rsc_memory_bound = 1e8;
     rsc_disk_bound = 1e9;
-    while (in.fgets(buf, sizeof(buf))) {
-        if (match_tag(buf, "</workunit>")) return 0;
-        if (parse_str(buf, "<name>", name, sizeof(name))) continue;
-        if (parse_str(buf, "<app_name>", app_name, sizeof(app_name))) continue;
-        if (parse_int(buf, "<version_num>", version_num)) continue;
-        if (match_tag(buf, "<command_line>")) {
-            if (strstr(buf, "</command_line>")) {
-                parse_str(buf, "<command_line>", command_line);
-            } else {
-                bool found=false;
-                while (in.fgets(buf, sizeof(buf))) {
-                    if (strstr(buf, "</command_line")) {
-                        found = true;
-                        break;
-                    }
-                    command_line += buf;
-                }
-                if (!found) {
-                    msg_printf(NULL, MSG_INTERNAL_ERROR,
-                        "Task %s: bad command line",
-                        name
-                    );
-                    return ERR_XML_PARSE;
-                }
-            }
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/workunit")) return 0;
+        if (xp.parse_str("name", name, sizeof(name))) continue;
+        if (xp.parse_str("app_name", app_name, sizeof(app_name))) continue;
+        if (xp.parse_int("version_num", version_num)) continue;
+        if (xp.parse_string("command_line", command_line)) {
             strip_whitespace(command_line);
             continue;
         }
-        //if (parse_str(buf, "<env_vars>", env_vars, sizeof(env_vars))) continue;
-        if (parse_double(buf, "<rsc_fpops_est>", rsc_fpops_est)) continue;
-        if (parse_double(buf, "<rsc_fpops_bound>", rsc_fpops_bound)) continue;
-        if (parse_double(buf, "<rsc_memory_bound>", rsc_memory_bound)) continue;
-        if (parse_double(buf, "<rsc_disk_bound>", rsc_disk_bound)) continue;
-        if (match_tag(buf, "<file_ref>")) {
-            file_ref.parse(in);
+        //if (xp.parse_str("env_vars", env_vars, sizeof(env_vars))) continue;
+        if (xp.parse_double("rsc_fpops_est", rsc_fpops_est)) continue;
+        if (xp.parse_double("rsc_fpops_bound", rsc_fpops_bound)) continue;
+        if (xp.parse_double("rsc_memory_bound", rsc_memory_bound)) continue;
+        if (xp.parse_double("rsc_disk_bound", rsc_disk_bound)) continue;
+        if (xp.match_tag("file_ref")) {
+            file_ref.parse(xp);
 #ifndef SIM
             input_files.push_back(file_ref);
 #endif
             continue;
         }
         // unused stuff
-        if (parse_double(buf, "<credit>", dtemp)) continue;
+        if (xp.parse_double("credit", dtemp)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] WORKUNIT::parse(): unrecognized: %s\n", buf
+                "[unparsed_xml] WORKUNIT::parse(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
     }
@@ -1674,16 +1626,15 @@ void WORKUNIT::clear_errors() {
     }
 }
 
-int RESULT::parse_name(FILE* in, const char* end_tag) {
-    char buf[256];
-
+int RESULT::parse_name(XML_PARSER& xp, const char* end_tag) {
     strcpy(name, "");
-    while (fgets(buf, 256, in)) {
-        if (match_tag(buf, end_tag)) return 0;
-        if (parse_str(buf, "<name>", name, sizeof(name))) continue;
+    while (!xp.get_tag()) {
+        if (xp.match_tag(end_tag)) return 0;
+        if (xp.parse_str("name", name, sizeof(name))) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] RESULT::parse_name(): unrecognized: %s\n", buf
+                "[unparsed_xml] RESULT::parse_name(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
     }
@@ -1727,28 +1678,28 @@ void RESULT::clear() {
 
 // parse a <result> element from scheduling server.
 //
-int RESULT::parse_server(MIOFILE& in) {
-    char buf[256];
+int RESULT::parse_server(XML_PARSER& xp) {
     FILE_REF file_ref;
 
     clear();
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</result>")) return 0;
-        if (parse_str(buf, "<name>", name, sizeof(name))) continue;
-        if (parse_str(buf, "<wu_name>", wu_name, sizeof(wu_name))) continue;
-        if (parse_double(buf, "<report_deadline>", report_deadline)) continue;
-        if (parse_str(buf, "<platform>", platform, sizeof(platform))) continue;
-        if (parse_str(buf, "<plan_class>", plan_class, sizeof(plan_class))) continue;
-        if (parse_int(buf, "<version_num>", version_num)) continue;
-        if (match_tag(buf, "<file_ref>")) {
-            file_ref.parse(in);
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/result")) return 0;
+        if (xp.parse_str("name", name, sizeof(name))) continue;
+        if (xp.parse_str("wu_name", wu_name, sizeof(wu_name))) continue;
+        if (xp.parse_double("report_deadline", report_deadline)) continue;
+        if (xp.parse_str("platform", platform, sizeof(platform))) continue;
+        if (xp.parse_str("plan_class", plan_class, sizeof(plan_class))) continue;
+        if (xp.parse_int("version_num", version_num)) continue;
+        if (xp.match_tag("file_ref")) {
+            file_ref.parse(xp);
             output_files.push_back(file_ref);
             continue;
         }
-        if (parse_bool(buf, "report_immediately", report_immediately)) continue;
+        if (xp.parse_bool("report_immediately", report_immediately)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] RESULT::parse(): unrecognized: %s\n", buf
+                "[unparsed_xml] RESULT::parse(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
     }
@@ -1757,13 +1708,12 @@ int RESULT::parse_server(MIOFILE& in) {
 
 // parse a <result> element from state file
 //
-int RESULT::parse_state(MIOFILE& in) {
-    char buf[256];
+int RESULT::parse_state(XML_PARSER& xp) {
     FILE_REF file_ref;
 
     clear();
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</result>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/result")) {
             // set state to something reasonable in case of bad state file
             //
             if (got_server_ack || ready_to_report) {
@@ -1778,47 +1728,40 @@ int RESULT::parse_state(MIOFILE& in) {
             }
             return 0;
         }
-        if (parse_str(buf, "<name>", name, sizeof(name))) continue;
-        if (parse_str(buf, "<wu_name>", wu_name, sizeof(wu_name))) continue;
-        if (parse_double(buf, "<received_time>", received_time)) continue;
-        if (parse_double(buf, "<report_deadline>", report_deadline)) {
+        if (xp.parse_str("name", name, sizeof(name))) continue;
+        if (xp.parse_str("wu_name", wu_name, sizeof(wu_name))) continue;
+        if (xp.parse_double("received_time", received_time)) continue;
+        if (xp.parse_double("report_deadline", report_deadline)) {
             continue;
         }
-        if (match_tag(buf, "<file_ref>")) {
-            file_ref.parse(in);
+        if (xp.match_tag("file_ref")) {
+            file_ref.parse(xp);
 #ifndef SIM
             output_files.push_back(file_ref);
 #endif
             continue;
         }
-        if (parse_double(buf, "<final_cpu_time>", final_cpu_time)) continue;
-        if (parse_double(buf, "<final_elapsed_time>", final_elapsed_time)) continue;
-        if (parse_int(buf, "<exit_status>", exit_status)) continue;
-        if (parse_bool(buf, "got_server_ack", got_server_ack)) continue;
-        if (parse_bool(buf, "ready_to_report", ready_to_report)) continue;
-        if (parse_double(buf, "<completed_time>", completed_time)) continue;
-        if (parse_bool(buf, "suspended_via_gui", suspended_via_gui)) continue;
-        if (parse_bool(buf, "report_immediately", report_immediately)) continue;
-        if (parse_int(buf, "<state>", _state)) continue;
-        if (match_tag(buf, "<stderr_out>")) {
-            while (in.fgets(buf, 256)) {
-                if (match_tag(buf, "</stderr_out>")) break;
-                if (strstr(buf, "<![CDATA[")) continue;
-                if (strstr(buf, "]]>")) continue;
-                stderr_out.append(buf);
-            }
-            continue;
-        }
-        if (parse_double(buf, "<fpops_per_cpu_sec>", fpops_per_cpu_sec)) continue;
-        if (parse_double(buf, "<fpops_cumulative>", fpops_cumulative)) continue;
-        if (parse_double(buf, "<intops_per_cpu_sec>", intops_per_cpu_sec)) continue;
-        if (parse_double(buf, "<intops_cumulative>", intops_cumulative)) continue;
-        if (parse_str(buf, "<platform>", platform, sizeof(platform))) continue;
-        if (parse_str(buf, "<plan_class>", plan_class, sizeof(plan_class))) continue;
-        if (parse_int(buf, "<version_num>", version_num)) continue;
+        if (xp.parse_double("final_cpu_time", final_cpu_time)) continue;
+        if (xp.parse_double("final_elapsed_time", final_elapsed_time)) continue;
+        if (xp.parse_int("exit_status", exit_status)) continue;
+        if (xp.parse_bool("got_server_ack", got_server_ack)) continue;
+        if (xp.parse_bool("ready_to_report", ready_to_report)) continue;
+        if (xp.parse_double("completed_time", completed_time)) continue;
+        if (xp.parse_bool("suspended_via_gui", suspended_via_gui)) continue;
+        if (xp.parse_bool("report_immediately", report_immediately)) continue;
+        if (xp.parse_int("state", _state)) continue;
+        if (xp.parse_string("stderr_out", stderr_out)) continue;
+        if (xp.parse_double("fpops_per_cpu_sec", fpops_per_cpu_sec)) continue;
+        if (xp.parse_double("fpops_cumulative", fpops_cumulative)) continue;
+        if (xp.parse_double("intops_per_cpu_sec", intops_per_cpu_sec)) continue;
+        if (xp.parse_double("intops_cumulative", intops_cumulative)) continue;
+        if (xp.parse_str("platform", platform, sizeof(platform))) continue;
+        if (xp.parse_str("plan_class", plan_class, sizeof(plan_class))) continue;
+        if (xp.parse_int("version_num", version_num)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] RESULT::parse(): unrecognized: %s\n", buf
+                "[unparsed_xml] RESULT::parse(): unrecognized: %s\n",
+                xp.parsed_tag
             );
         }
     }
@@ -1962,7 +1905,7 @@ int RESULT::write_gui(MIOFILE& out) {
     if (report_immediately) out.printf("    <report_immediately/>\n");
     if (edf_scheduled) out.printf("    <edf_scheduled/>\n");
     if (coproc_missing) out.printf("    <coproc_missing/>\n");
-    if (schedule_backoff > gstate.now) out.printf("    <gpu_mem_wait/>\n");
+    if (schedule_backoff > gstate.now) out.printf("    <scheduler_wait/>\n");
     ACTIVE_TASK* atp = gstate.active_tasks.lookup_result(this);
     if (atp) {
         atp->write_gui(out);
@@ -2018,7 +1961,7 @@ bool RESULT::is_upload_done() {
 
     for (i=0; i<output_files.size(); i++) {
         fip = output_files[i].file_info;
-        if (fip->upload_when_present) {
+        if (fip->uploadable()) {
             if (fip->had_failure(retval)) continue;
             if (!fip->uploaded) {
                 return false;
@@ -2037,9 +1980,7 @@ void RESULT::clear_uploaded_flags() {
 
     for (i=0; i<output_files.size(); i++) {
         fip = output_files[i].file_info;
-        if (fip->upload_when_present) {
-            fip->uploaded = false;
-        }
+        fip->uploaded = false;
     }
 }
 
@@ -2131,13 +2072,13 @@ void RESULT::abort_inactive(int status) {
     exit_status = status;
 }
 
-MODE::MODE() {
+RUN_MODE::RUN_MODE() {
     perm_mode = 0;
     temp_mode = 0;
     temp_timeout = 0;
 }
 
-void MODE::set(int mode, double duration) {
+void RUN_MODE::set(int mode, double duration) {
     if (mode == RUN_MODE_RESTORE) {
         temp_timeout = 0;
         temp_mode = perm_mode;
@@ -2154,11 +2095,11 @@ void MODE::set(int mode, double duration) {
     }
 }
 
-int MODE::get_perm() {
+int RUN_MODE::get_perm() {
     return perm_mode;
 }
 
-int MODE::get_current() {
+int RUN_MODE::get_current() {
     if (temp_timeout > gstate.now) {
         return temp_mode;
     } else {
@@ -2166,7 +2107,7 @@ int MODE::get_current() {
     }
 }
 
-double MODE::delay() {
+double RUN_MODE::delay() {
     if (temp_timeout > gstate.now) {
         return temp_timeout - gstate.now;
     } else {

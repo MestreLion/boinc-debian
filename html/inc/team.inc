@@ -536,10 +536,10 @@ function transfer_ok($team, $now) {
 function make_team(
     $userid, $name, $url, $type, $name_html, $description, $country
 ) {
-    $name = BoincDb::escape_string(strip_tags($name));
+    $name = BoincDb::escape_string(sanitize_tags($name));
     if (strlen($name) == 0) return null;
     $name_lc = strtolower($name);
-    $url = BoincDb::escape_string(strip_tags($url));
+    $url = BoincDb::escape_string(sanitize_tags($url));
     if (strstr($url, "http://")) {
         $url = substr($url, 7);
     }
@@ -571,6 +571,6 @@ function make_team(
     }
 }
 
-$cvs_version_tracker[]="\$Id: team.inc 23230 2011-03-13 20:05:25Z Rytis $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: team.inc 24050 2011-08-26 18:30:13Z davea $";  //Generated automatically - do not edit
 
 ?>

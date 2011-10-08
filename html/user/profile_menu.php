@@ -50,7 +50,7 @@ echo "<tr><td>";
         $user = lookup_user_id($profile->userid);
         echo uotd_thumbnail($profile, $user);
         echo user_links($user)."<br>";
-        echo sub_sentence(output_transform(strip_tags($profile->response1)), ' ', 150, true);
+        echo sub_sentence(output_transform(sanitize_tags($profile->response1)), ' ', 150, true);
     }
 
 echo "</td></tr>";
@@ -108,5 +108,5 @@ function select_profile($cmd) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile_menu.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: profile_menu.php 24048 2011-08-25 22:12:48Z davea $";  //Generated automatically - do not edit
 ?>

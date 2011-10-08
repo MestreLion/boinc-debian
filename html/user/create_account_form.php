@@ -35,7 +35,7 @@ if (defined('SECURE_URL_BASE')
 
 }
 
-page_head(tra("Create an account"));
+page_head(tra("Create an account"), null, null, null, IE_COMPAT_MODE);
 
 $config = get_config();
 if (parse_bool($config, "disable_account_creation")) {
@@ -47,11 +47,13 @@ if (parse_bool($config, "disable_account_creation")) {
     exit();
 }
 
-$wac = parse_bool($config, "web_account_creation");
-if (!$wac) {
+$nwac = parse_bool($config, "no_web_account_creation");
+if ($nwac) {
     echo "<p>
-        <b>".tra("NOTE: If you use the BOINC Manager, don't use this form. Just run BOINC, select Add Project, and enter an email address and password.")."</b></p>
+        <b>".tra("Don't use this form. Just run BOINC, select Add Project, and enter an email address and password.")."</b></p>
     ";
+    page_tail();
+    exit();
 }
 
 echo "
@@ -117,11 +119,10 @@ row2(
 $publickey = parse_config($config, "<recaptcha_public_key>");
 
 if ($publickey) {
-
-        row2(
-            tra("Please enter the words shown in the image"),
-            recaptcha_get_html($publickey)
-        );
+    row2(
+        tra("Please enter the words shown in the image"),
+        recaptcha_get_html($publickey)
+    );
 }
 
 row2("",
@@ -132,6 +133,6 @@ echo "
     </form>
 ";
 
-$cvs_version_tracker[]="\$Id: create_account_form.php 23755 2011-06-20 17:17:56Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: create_account_form.php 24174 2011-09-13 04:53:13Z davea $";  //Generated automatically - do not edit
 page_tail();
 ?>

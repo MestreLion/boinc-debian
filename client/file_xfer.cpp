@@ -62,7 +62,7 @@ int FILE_XFER::init_download(FILE_INFO& file_info) {
     }
     bytes_xferred = starting_size;
 
-    const char* url = fip->get_current_url();
+    const char* url = fip->download_urls.get_current_url(file_info);
     if (!url) return ERR_INVALID_URL;
     return HTTP_OP::init_get(
         url, pathname, false, (int)starting_size
@@ -106,7 +106,7 @@ int FILE_XFER::init_upload(FILE_INFO& file_info) {
             file_info.name
         );
         file_size_query = true;
-        const char* url = fip->get_current_url();
+        const char* url = fip->upload_urls.get_current_url(file_info);
         if (!url) return ERR_INVALID_URL;
         return HTTP_OP::init_post2(url, header, sizeof(header), NULL, 0);
     } else {
@@ -118,24 +118,26 @@ int FILE_XFER::init_upload(FILE_INFO& file_info) {
             "    <core_client_release>%d</core_client_release>\n"
             "<file_upload>\n"
             "<file_info>\n"
-            "%s"
+            "<name>%s</name>\n"
             "<xml_signature>\n"
             "%s"
             "</xml_signature>\n"
+            "<max_nbytes>%.0f</max_nbytes>\n"
             "</file_info>\n"
             "<nbytes>%.0f</nbytes>\n"
             "<md5_cksum>%s</md5_cksum>\n"
             "<offset>%.0f</offset>\n"
             "<data>\n",
             BOINC_MAJOR_VERSION, BOINC_MINOR_VERSION, BOINC_RELEASE,
-            file_info.signed_xml,
+            file_info.name,
             file_info.xml_signature,
+            file_info.max_nbytes,
             file_info.nbytes,
             file_info.md5_cksum,
             file_info.upload_offset
         );
         file_size_query = false;
-        const char* url = fip->get_current_url();
+        const char* url = fip->upload_urls.get_current_url(file_info);
         if (!url) return ERR_INVALID_URL;
         return HTTP_OP::init_post2(
             url, header, sizeof(header), pathname, fip->upload_offset

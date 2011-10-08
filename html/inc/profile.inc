@@ -177,7 +177,7 @@ function get_profile_summary($profile) {
 
     if (strlen($profile->response1) != 0) {
         $temp = $profile->response1;
-        $description = "(\"" . sub_sentence(strip_tags($temp), ' ', MAX_DESC_LENGTH, true) . "\")";
+        $description = "(\"" . sub_sentence(sanitize_tags($temp), ' ', MAX_DESC_LENGTH, true) . "\")";
 
     }
 
@@ -270,6 +270,6 @@ function show_profile($user, $logged_in_user, $screen_mode = false) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile.inc 23359 2011-04-10 15:23:42Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: profile.inc 24050 2011-08-26 18:30:13Z davea $";  //Generated automatically - do not edit
 
 ?>

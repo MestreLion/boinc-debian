@@ -100,21 +100,20 @@ int NET_STATS::write(MIOFILE& out) {
     return 0;
 }
 
-int NET_STATS::parse(MIOFILE& in) {
-    char buf[256];
-
+int NET_STATS::parse(XML_PARSER& xp) {
     memset(this, 0, sizeof(NET_STATS));
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</net_stats>")) return 0;
-        if (parse_double(buf, "<bwup>", up.max_rate)) continue;
-        if (parse_double(buf, "<avg_up>", up.avg_rate)) continue;
-        if (parse_double(buf, "<avg_time_up>", up.avg_time)) continue;
-        if (parse_double(buf, "<bwdown>", down.max_rate)) continue;
-        if (parse_double(buf, "<avg_down>", down.avg_rate)) continue;
-        if (parse_double(buf, "<avg_time_down>", down.avg_time)) continue;
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/net_stats")) return 0;
+        if (xp.parse_double("bwup", up.max_rate)) continue;
+        if (xp.parse_double("avg_up", up.avg_rate)) continue;
+        if (xp.parse_double("avg_time_up", up.avg_time)) continue;
+        if (xp.parse_double("bwdown", down.max_rate)) continue;
+        if (xp.parse_double("avg_down", down.avg_rate)) continue;
+        if (xp.parse_double("avg_time_down", down.avg_time)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(NULL, MSG_INFO,
-                "[unparsed_xml] Unrecognized network statistics line: %s", buf
+                "[unparsed_xml] Unrecognized network statistics line: %s",
+                xp.parsed_tag
             );
         }
     }
@@ -287,14 +286,11 @@ void NET_STATUS::poll() {
 }
 
 int DAILY_XFER::parse(XML_PARSER& xp) {
-    char tag[1024];
-    bool is_tag;
-
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!strcmp(tag, "/dx")) return 0;
-        if (xp.parse_int(tag, "when", when)) continue;
-        if (xp.parse_double(tag, "up", up)) continue;
-        if (xp.parse_double(tag, "down", down)) continue;
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/dx")) return 0;
+        if (xp.parse_int("when", when)) continue;
+        if (xp.parse_double("up", up)) continue;
+        if (xp.parse_double("down", down)) continue;
     }
     return ERR_XML_PARSE;
 }
@@ -345,8 +341,6 @@ void DAILY_XFER_HISTORY::init() {
     MIOFILE mf;
     XML_PARSER xp(&mf);
     mf.init_file(f);
-    bool is_tag;
-    char tag[256];
 
     int d = current_day();
 
@@ -354,9 +348,9 @@ void DAILY_XFER_HISTORY::init() {
         fclose(f);
         return;
     }
-    while (!xp.get(tag, sizeof(tag), is_tag)) {
-        if (!is_tag) continue;
-        if (!strcmp(tag, "dx")) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) continue;
+        if (xp.match_tag("dx")) {
             DAILY_XFER dx;
             int retval = dx.parse(xp);
             if (!retval && d - dx.when < 365) {

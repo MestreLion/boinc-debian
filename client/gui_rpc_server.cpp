@@ -54,12 +54,13 @@
 #endif
 #endif
 
-#include "str_util.h"
-#include "util.h"
 #include "error_numbers.h"
-#include "network.h"
 #include "filesys.h"
 #include "md5_file.h"
+#include "network.h"
+#include "str_util.h"
+#include "thread.h"
+#include "util.h"
 
 #include "file_names.h"
 #include "client_msgs.h"
@@ -69,12 +70,14 @@
 using std::string;
 using std::vector;
 
-GUI_RPC_CONN::GUI_RPC_CONN(int s):
+GUI_RPC_CONN::GUI_RPC_CONN(int s) :
+    xp(&mfin),
     get_project_config_op(&gui_http),
     lookup_account_op(&gui_http),
     create_account_op(&gui_http)
 {
     sock = s;
+    mfout.init_mfile(&mout);
     auth_needed = false;
     au_ss_state = AU_SS_INIT;
     au_mgr_state = AU_MGR_INIT;
@@ -506,3 +509,16 @@ bool GUI_RPC_CONN_SET::quits_sent() {
     return true;
 }
 
+void* gui_rpc_handler(void* p) {
+    THREAD& thread = *((THREAD*)p);
+    GUI_RPC_CONN& grc = *((GUI_RPC_CONN*)thread.arg);
+    while (1) {
+        if(grc.handle_rpc()){
+            break;
+        }
+        if (grc.quit_flag) {
+            break;
+        }
+    }
+    return NULL;
+}

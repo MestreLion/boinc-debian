@@ -15,12 +15,14 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+// upload a file from a host
+//
 // get_file [options]
 // --host_id N              ID of host to upload from
-// --file_name name         name of specific file, dominates workunit
-//
-// Create a result entries, initialized to sent, and corresponding
-// messages to the host that is assumed to have the file.
+// --file_name name         file name
+// [ --url x ]              URL of upload server (can specify several)
+// [ --max_latency x ]      max latency, seconds (default 1 week)
+// [ --max_nbytes x ]       max file size (default 1 GB)
 //
 // Run from the project root dir.
 
@@ -40,12 +42,11 @@
 #include "svn_version.h"
 
 void usage() {
-    fprintf(stderr, "Gets a file from a specific host.\n"
+    fprintf(stderr, "Gets a file from a host.\n"
         "Usage: get_file [options]\n\n"
-        "Retrieve a file from a host.\n"
-        "Options:\n"
-        "  --host_id id           Host to get file from\n"
-        "  --file_name name       Name of filE\n"
+        "  --host_id id           host DB ID\n"
+        "  --file_name name       Name of file\n"
+        "  [-- url X]             URL of upload server\n"
         "  [ -v | --version ]     Show version\n"
         "  [ -h | --help ]        Show help\n"
     );
@@ -55,6 +56,9 @@ int main(int argc, char** argv) {
     int i, retval;
     char file_name[256];
     int host_id;
+    vector<const char*> urls;
+    double max_latency = 7*86400;
+    double max_nbytes = 1e9;
 
     strcpy(file_name, "");
     host_id = 0;
@@ -80,6 +84,12 @@ int main(int argc, char** argv) {
         } else if (is_arg(argv[i], "v") || is_arg(argv[i], "version")) {
             printf("%s\n", SVN_VERSION);
             exit(0);
+        } else if (is_arg(argv[i], "url")) {
+            urls.push_back(argv[++i]);
+        } else if (is_arg(argv[i], "max_latency")) {
+            max_latency = atof(argv[++i]);
+        } else if (is_arg(argv[i], "max_nbytes")) {
+            max_nbytes = atof(argv[++i]);
         } else {
             usage();
             exit(1);
@@ -105,9 +115,32 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    retval = get_file(host_id, file_name);
+    if (urls.size() == 0) {
+        urls.push_back(config.upload_url);
+    }
+
+    R_RSA_PRIVATE_KEY key;
+    bool generate_upload_certificate = !config.dont_generate_upload_certificates;
+    if (generate_upload_certificate) {
+        char keypath[256];
+        sprintf(keypath, "%s/upload_private", config.key_dir);
+        retval = read_key_file(keypath, key);
+        if (retval) {
+            fprintf(stderr, "can't read key\n");
+            exit(1);
+        }
+    }
+
+    retval = get_file(
+        host_id, file_name, urls, max_nbytes,
+        dtime() + max_latency,
+        generate_upload_certificate, key
+    );
+
+    if (retval) {
+        fprintf(stderr, "get_file() failed: %s\n", boincerror(retval));
+    }
     boinc_db.close();
-    return retval;
 }
 
-const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 23425 2011-04-24 02:00:27Z davea $";
+const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 23866 2011-07-20 22:27:01Z davea $";

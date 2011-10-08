@@ -106,6 +106,9 @@ struct ACTIVE_TASK {
         // wall time at the last checkpoint
     double elapsed_time;
         // current total elapsed (running) time
+    double bytes_sent;
+        // reported by the app if it does network I/O
+    double bytes_received;
     char slot_dir[256];
         // directory where process runs (relative)
     char slot_path[512];
@@ -142,19 +145,16 @@ struct ACTIVE_TASK {
         // core/app shared mem segment
     MSG_QUEUE graphics_request_queue;
     MSG_QUEUE process_control_queue;
+    std::vector<int> other_pids;
+        // IDs of processes that are part of this task
+        // but not descendants of the main process
+        // (e.g. VMs created by vboxwrapper)
+        // These are communicated via the app_status message channel
 
     void set_task_state(int, const char*);
     inline int task_state() {
         return _task_state;
     }
-
-    // info related to app's graphics mode (win, screensaver, etc.)
-    //
-    int graphics_mode_acked;
-        // mode acked by app
-    int graphics_mode_before_ss;
-        // mode before last screensaver request
-    double graphics_mode_ack_timeout;
 
 #ifdef SIM
     double flops_left;
@@ -165,11 +165,8 @@ struct ACTIVE_TASK {
     int powerpc_emulated_on_i386;
     int is_native_i386_app(char*);
 #endif
-    GRAPHICS_MSG graphics_msg;
-    void request_graphics_mode(GRAPHICS_MSG&);
     int request_reread_prefs();
     int request_reread_app_info();
-    void check_graphics_mode_ack();
     int link_user_files();
     int get_shmem_seg_name();
     bool runnable() {
@@ -250,18 +247,20 @@ struct ACTIVE_TASK {
     bool read_stderr_file();
     bool finish_file_present();
     bool temporary_exit_file_present(double&);
-    bool supports_graphics();
-    int write_app_init_file();
+    void init_app_init_data(APP_INIT_DATA&);
+    int write_app_init_file(APP_INIT_DATA&);
     int move_trickle_file();
     int handle_upload_files();
     void upload_notify_app(const FILE_INFO*, const FILE_REF*);
     int copy_output_files();
+    int setup_file(FILE_INFO*, FILE_REF&, char*, bool, bool);
+	bool must_copy_file(FILE_REF&, bool);
     void write_task_state_file();
     void read_task_state_file();
 
     int write(MIOFILE&);
     int write_gui(MIOFILE&);
-    int parse(MIOFILE&);
+    int parse(XML_PARSER&);
 };
 
 // Represents the set of all jobs in progress
@@ -299,14 +298,12 @@ public:
     bool slot_taken(int);
     void get_memory_usage();
 
-    // graphics-related functions
-    void graphics_poll();
     void process_control_poll();
     void request_reread_prefs(PROJECT*);
     void request_reread_app_info();
 
     int write(MIOFILE&);
-    int parse(MIOFILE&);
+    int parse(XML_PARSER&);
 };
 
 extern double exclusive_app_running;    // last time an exclusive app was running

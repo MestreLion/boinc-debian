@@ -62,7 +62,6 @@ if ($action) {
 
         $project_error = prefs_project_parse_form($new_prefs);
         $error = prefs_resource_parse_form($new_prefs);
-        if (isset($project_has_beta) && $project_has_beta) prefs_beta_parse_form($new_prefs);
 
         if ($error != false || $project_error != false) {
             $title = tra("Edit %1 preferences", subset_name($subset));
@@ -94,5 +93,5 @@ if ($action) {
     print_prefs_form("add", $subset, $venue, $user, $prefs, $columns);
 }
 page_tail();
-$cvs_version_tracker[]="\$Id: add_venue.php 23030 2011-02-14 19:49:30Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: add_venue.php 24124 2011-09-02 21:45:13Z davea $";  //Generated automatically - do not edit
 ?>

@@ -17,7 +17,10 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once("../inc/translation.inc");
+require_once("../inc/dir_hier.inc");
 
+// used by app_version_string(), see below
+//
 $apps = array();
 $app_versions = array();
 
@@ -413,7 +416,7 @@ function exit_status_string($result) {
     return sprintf("%d (0x%x)", $x, $x);
 }
 
-function show_result($result) {
+function show_result($result, $show_outfile_links=false) {
     start_table();
     row2(tra("Name"), $result->name);
     row2(tra("Workunit"), "<a href=\"workunit.php?wuid=$result->workunitid\">$result->workunitid</a>");
@@ -431,6 +434,20 @@ function show_result($result) {
     row2(tra("Validate state"), validate_state_str($result));
     row2(tra("Credit"), number_format($result->granted_credit, 2));
     row2(tra("Application version"), app_version_string($result));
+    if ($show_outfile_links && $result->outcome == 1) {
+        $fanout = parse_config(get_config(), "<uldl_dir_fanout>");
+        $names = get_outfile_names($result);
+        $i = 0;
+        $x = "";
+        foreach ($names as $name) {
+            if ($i) $x .= " | ";
+            $url = dir_hier_url($name, "upload", $fanout);
+            echo $name;
+            $x .= " <a href=$url>$i</a> ";
+            $i++;
+        }
+        row2(tra("Output files"), $x);
+    }
     end_table();
     echo "<h3>".tra("Stderr output")."</h3> <pre>".htmlspecialchars($result->stderr_out)."</pre>";
 }
@@ -524,6 +541,6 @@ function result_navigation($info, $where_clause) {
 	return $x;
 }
 
-$cvs_version_tracker[]="\$Id: result.inc 23627 2011-06-01 05:08:14Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: result.inc 24250 2011-09-21 21:26:00Z davea $";  //Generated automatically - do not edit
 
 ?>

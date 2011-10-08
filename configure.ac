@@ -1,12 +1,12 @@
 dnl -*- autoconf -*-
 
-dnl $Id: configure.ac 23851 2011-07-18 17:44:30Z romw $
+dnl $Id: configure.ac 24270 2011-09-23 15:19:22Z romw $
 
 dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.58)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 6.13.1)
+AC_INIT(BOINC, 6.13.6)
 AC_CONFIG_MACRO_DIR([m4])
 LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
 AC_SUBST([LIBBOINC_VERSION])
@@ -19,8 +19,8 @@ AM_INIT_AUTOMAKE(dist-zip)
 
 AC_CONFIG_SRCDIR(lib/shmem.cpp)
 
-AC_REVISION([$Revision: 23851 $]) 
-REV=`echo '$Revision: 23851 $' | awk "{print $2}"`
+AC_REVISION([$Revision: 24270 $]) 
+REV=`echo '$Revision: 24270 $' | awk "{print $2}"`
 RDATE=`date '+%Y.%m.%d'`
 if test -d .svn ; then
   REV=`svn info | grep Revision | awk '{print $2}'`
@@ -655,7 +655,7 @@ AC_FUNC_ALLOCA
 if test "${ac_cv_func_alloca_works}" = "yes" ; then
   ac_cv_func_alloca="yes"
 fi
-AC_CHECK_FUNCS(alloca _alloca __builtin_alloca ether_ntoa setpriority sched_setscheduler strlcpy strlcat strcasestr strcasecmp sigaction getutent setutent getisax strdup strdupa daemon stat64 putenv setenv unsetenv res_init)
+AC_CHECK_FUNCS(alloca _alloca __builtin_alloca ether_ntoa setpriority sched_setscheduler strlcpy strlcat strcasestr strcasecmp sigaction getutent setutent getisax strdup strdupa daemon stat64 putenv setenv unsetenv res_init strtoull)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

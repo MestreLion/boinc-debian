@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-03-07 12:02-0500\n"
-"PO-Revision-Date: 2011-04-13 14:52+0200\n"
+"PO-Revision-Date: 2011-08-10 18:53+0200\n"
 "Last-Translator: Sami Nordlund <sami.nordlund@kolumbus.fi>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: fi\n"
@@ -23,6 +23,8 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Poedit-Basepath: C:\\Src\\BOINCSVN\\trunk\\boinc\n"
 "X-BOINC-UTF8-Marker: 简体中文, 日本語\n"
+"X-Poedit-Country: UNITED STATES\n"
+"X-Poedit-Language: English\n"
 
 #: clientgui/AccountInfoPage.cpp:386
 msgid "Identify your account "
@@ -802,6 +804,14 @@ msgid ""
 "  - contact your administrator to add you to the 'boinc_master'\n"
 "     user group."
 msgstr ""
+"Sinulla ei ole oikeuksia hallinnoida ohjelmaa.\n"
+"\n"
+"Käyttääksesi BOINCia tällä käyttäjällä:\n"
+"  - asenna BOINC uudelleen ja vastaa \"Kyllä\" kysymykseen\n"
+"     ei-ylläpitäjäkäyttäjistä\n"
+" tai\n"
+"  - ota yhteyttä ylläpitoon joka lisää sinut 'boinc_master-'\n"
+"     käyttäjäryhmään."
 
 #: clientgui/BOINCGUIApp.cpp:326
 #, c-format
@@ -858,7 +868,7 @@ msgstr "Käynnistä BOINC näillä lisäoptioilla"
 
 #: clientgui/BOINCGUIApp.cpp:534
 msgid "disable BOINC security users and permissions"
-msgstr ""
+msgstr "poista käytöstä BOINCin turvakäyttäjät ja käyttöoikeudet"
 
 #: clientgui/BOINCGUIApp.cpp:535
 msgid "set skin debugging mode to enable skin manager error messages"
@@ -995,7 +1005,7 @@ msgid ""
 "When you click Finish, your web browser will go to a page where\n"
 "you can set your account name and preferences."
 msgstr ""
-"Kun napsautat Lopeta, selaimesi siirtyy sivulle, jossa\n"
+"Kun napsautat Valmis, selaimesi siirtyy sivulle, jossa\n"
 "voit muuttaa tilisi nimen ja asetuksia."
 
 #: clientgui/CompletionPage.cpp:232
@@ -1447,7 +1457,7 @@ msgstr "Paketin tarkistuspiste levylle joka"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:620
 msgid "seconds"
-msgstr "sekuntia"
+msgstr "sekuntti"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:630
 #, no-c-format
@@ -1870,7 +1880,7 @@ msgstr "Prosessin tunniste"
 
 #: clientgui/DlgItemProperties.cpp:407
 msgid "Local: "
-msgstr ""
+msgstr "Paikallinen:"
 
 #: clientgui/DlgOptions.cpp:118
 #, c-format
@@ -3078,7 +3088,7 @@ msgstr "Synkronisoi"
 
 #: clientgui/sg_ProjectPanel.cpp:72
 msgid "My total work done this Project"
-msgstr ""
+msgstr "Tälle projektille tekemäni kokonaistyö"
 
 #: clientgui/sg_ProjectPanel.cpp:75
 #: clientgui/sg_ProjectsComponent.cpp:123
@@ -3134,7 +3144,7 @@ msgstr "Vaihda BOINCin laajennettuun näkymään"
 #: clientgui/sg_StatImageLoader.cpp:101
 #, c-format
 msgid "%s. Work done by %s: %0.2f"
-msgstr ""
+msgstr "%s. %s:n tekemä työ: %0.2f"
 
 #: clientgui/sg_TaskCommandPopup.cpp:60
 #: clientgui/sg_ViewTabPage.cpp:424
@@ -4010,6 +4020,8 @@ msgstr "Ympyräkaavion hallinta"
 #: clientgui/mac/MacAccessiblity.cpp:257
 msgid "for accessibility support, please select advanced from the view menu or type command shift a"
 msgstr ""
+"paremman tuen saamiseksi valitse laajennettu näkymä näytä-valikosta tai "
+"käytä näppäinyhdistelmää command shift a"
 
 #: clientgui/mac/MacAccessiblity.cpp:302
 msgid "This panel contains graphs showing user totals for projects"

@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: BOINC translation team <boinc_loc@ssl.berkeley.edu>\n"
 "POT-Creation-Date: 2011-04-04 22:09 PDT\n"
-"PO-Revision-Date: 2010-08-12 22:55+0900\n"
+"PO-Revision-Date: 2011-08-28 21:28+0900\n"
 "Last-Translator: je2bwm <je2bwm@jarl.com>\n"
 "Language-Team: Japanese <nobody@example.com>\n"
 "MIME-Version: 1.0\n"
@@ -15,28 +15,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Translate Toolkit 1.2.1\n"
 "X-Poedit-SearchPath-0: doc\n"
+"X-BOINC-UTF8-Marker: 日本語\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Poedit-Basepath: D:\\_Trans\\BTS\\20090509\n"
-"X-BOINC-UTF8-Marker: 日本語\n"
 "X-Poedit-Country: JAPAN\n"
 "X-Poedit-Language: English\n"
 "X-Poedit-KeywordsList: tra\n"
 
 #: projects.inc:14
 msgid "Cognitive science and artifical intelligence"
-msgstr ""
+msgstr "認知科学と人工知能"
 
 #: projects.inc:17
 msgid "FreeHAL"
-msgstr ""
+msgstr "FreeHAL"
 
 #: projects.inc:19 projects.inc:254 projects.inc:290 projects.inc:297
 msgid "private"
-msgstr ""
+msgstr "非公開"
 
 #: projects.inc:20
 msgid "Artificial intelligence"
-msgstr ""
+msgstr "人工知能"
 
 #: projects.inc:21
 msgid ""
@@ -45,22 +45,24 @@ msgid ""
 "databases, and part of speech taggers in order to imitate human behavior in "
 "conversations."
 msgstr ""
+"FreeHALで使うセマンティックネットを構文解析し変換すること。FreeHALは人工知能のひとつであり、セマンティックネットや語幹処理機能、音声データ"
+"ベースの一部、品詞タグ付け機能を使って人間の会話を模擬しようとするものです。"
 
 #: projects.inc:27
 msgid "Biology and Medicine"
-msgstr ""
+msgstr "生物学と医療"
 
 #: projects.inc:30
 msgid "POEM@HOME"
-msgstr ""
+msgstr "POEM@HOME"
 
 #: projects.inc:32
 msgid "University of Karlsruhe (Germany)"
-msgstr ""
+msgstr "カールスルーエ大学(ドイツ)"
 
 #: projects.inc:33
 msgid "Protein structure prediction"
-msgstr ""
+msgstr "蛋白質構造の予測"
 
 #: projects.inc:34
 msgid ""
@@ -70,18 +72,21 @@ msgid ""
 "protein malfunction or aggregation, and to develop new drugs on the basis of "
 "the three-dimensions structure of biologically important proteins."
 msgstr ""
+"POEM@HOME は、生物学的に活性をもつ種々の蛋白質の構造を予測するために、計算指向のアプローチを使います。POEM@HOME はこれによって、蛋白"
+"質どうしの間で信号処理が起こる場合の機構を理解したり、蛋白質の誤動作や凝集に関係する疾病を理解する、あるいは、生物学的に重要な蛋白質の三次元構造を基礎に"
+"新薬を開発します。"
 
 #: projects.inc:38
 msgid "Docking@Home"
-msgstr ""
+msgstr "Docking@Home"
 
 #: projects.inc:40
 msgid "University of Delaware"
-msgstr ""
+msgstr "デラウェア大学"
 
 #: projects.inc:41
 msgid "Study of protein - ligand interactions"
-msgstr ""
+msgstr "蛋白質-リガンド間の相互作用の研究"
 
 #: projects.inc:42
 msgid ""
@@ -90,18 +95,20 @@ msgid ""
 "interactions and, by doing so, will search for insights into the discovery "
 "of novel pharmaceuticals."
 msgstr ""
+"Docking@Home は、生物化学と計算機科学の両方の目標を持つプロジェクトです。蛋白質とリガンド間の相互作用の原子的な詳細知識を深めることを目標と"
+"すると同時に、その中で、革新的な薬品発見のための知見を探していきます。"
 
 #: projects.inc:46
 msgid "GPUGrid.net"
-msgstr ""
+msgstr "GPUGrid.net"
 
 #: projects.inc:48
 msgid "Barcelona Biomedical Research Park (PRBB)"
-msgstr ""
+msgstr "バルセロナ生体医学研究パーク(PRBB)"
 
 #: projects.inc:49
 msgid "Molecular simulations of proteins"
-msgstr ""
+msgstr "蛋白質の分子シミュレーション"
 
 #: projects.inc:50
 msgid ""
@@ -110,18 +117,21 @@ msgid ""
 "New biomedical applications suddenly become possible giving a new role to "
 "computational biology for biomedical research."
 msgstr ""
+"NVIDAI GPU の上で走らせるように特に最適化した、全原子を対象粒子として扱う初めての分子動力学のプログラムコード(CellMD)を使うことにやり"
+"、GPUGrid.netは、革新的な計算シナリオを開拓します。新しい生体医学的応用が突然可能になり、生体医学を研究するにあたり計算生物学に新しい役割を与"
+"えます。"
 
 #: projects.inc:54
 msgid "Superlink@Technion"
-msgstr ""
+msgstr "Superlink@Technion"
 
 #: projects.inc:56
 msgid "Technion, Israel"
-msgstr ""
+msgstr "Technion, Israel"
 
 #: projects.inc:57
 msgid "Genetic linkage analysis"
-msgstr ""
+msgstr "遺伝的連鎖解析"
 
 #: projects.inc:58
 msgid ""
@@ -129,20 +139,21 @@ msgid ""
 "provoking genes causing some types of diabetes, hypertension (high blood "
 "pressure), cancer, schizophrenia and many others."
 msgstr ""
+"Superlink@Technion "
+"は世界中の遺伝学者に、ある種の代謝異常や高血圧、ガン、統合失調症など起こして疾病を誘発する遺伝子を探しやすくします。"
 
 #: projects.inc:70
-#, fuzzy
 msgid "The Lattice Project"
-msgstr " BOINC プロジェクト"
+msgstr "The Lattice Project"
 
 #: projects.inc:72
 msgid ""
 "University of Maryland Center for Bioinformatics and Computational Biology"
-msgstr ""
+msgstr "メリーランド大学 バイオインフォマティックスと計算生物学のためのセンター"
 
 #: projects.inc:73
 msgid "Life science research"
-msgstr ""
+msgstr "生命科学の研究"
 
 #: projects.inc:74
 msgid ""
@@ -415,16 +426,15 @@ msgstr ""
 
 #: projects.inc:214
 msgid "SETI@home"
-msgstr ""
+msgstr "SETI@home"
 
 #: projects.inc:216
-#, fuzzy
 msgid "University of California, Berkeley"
-msgstr "BOINC の本拠地は、カリフォルニア大学バークレー校にあります"
+msgstr "カリフォルニア大学バークレー校"
 
 #: projects.inc:217
 msgid "Astrophysics, astrobiology"
-msgstr ""
+msgstr "宇宙物理、宇宙生物学"
 
 #: projects.inc:218
 msgid ""
@@ -434,14 +444,19 @@ msgid ""
 "signals from space. Such signals are not known to occur naturally, so a "
 "detection would provide evidence of extraterrestrial technology."
 msgstr ""
+"SETI (Search for Extraterrestrial Intelligence) "
+"とは、地球外の知的生命を検出することを目的とする科学研究領域です。Radio SETI として知られているその1つのアプローチでは、電波望遠鏡を使って宇"
+"宙からの狭帯域の電波信号に耳を傾けます。探している信号は自然に発生すると知られている種類のものではありません。したがって、そのような信号を検出すれば、地"
+"球外生命が持つ技術の証拠となります。"
 
 #: projects.inc:222
 msgid "Quantum Monte Carlo at Home"
 msgstr ""
 
 #: projects.inc:224
+#, fuzzy
 msgid "University of Muenster (Germany)"
-msgstr ""
+msgstr "カールスルーエ大学(ドイツ)"
 
 #: projects.inc:226
 msgid ""
@@ -514,9 +529,8 @@ msgid "MTA-SZTAKI Laboratory of Parallel and Distributed Systems (Hungary)"
 msgstr ""
 
 #: projects.inc:262
-#, fuzzy
 msgid "European research projects"
-msgstr "研究プロジェクト"
+msgstr "European research projects"
 
 #: projects.inc:263
 msgid ""
@@ -535,9 +549,8 @@ msgid "Spanish universities and research centers"
 msgstr ""
 
 #: projects.inc:270
-#, fuzzy
 msgid "Various Spanish research projects"
-msgstr "研究プロジェクト"
+msgstr "スペインにおける種々の研究プロジェクト"
 
 #: projects.inc:271
 msgid "Research in physics, material science, and biomedicine"
@@ -625,9 +638,8 @@ msgid ""
 msgstr ""
 
 #: projects.inc:313
-#, fuzzy
 msgid "Software testing"
-msgstr "ソフトウェアの更新"
+msgstr "ソフトウェアのテスト"
 
 #: projects.inc:314
 msgid ""
@@ -683,8 +695,9 @@ msgid "PrimeGrid"
 msgstr ""
 
 #: projects.inc:344
+#, fuzzy
 msgid "Private"
-msgstr ""
+msgstr "非公開"
 
 #: projects.inc:346
 msgid ""

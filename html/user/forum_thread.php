@@ -44,7 +44,7 @@ if ($logged_in_user) {
 }
 
 if ($threadid < 1) {
-    error_page(tra("Invalid thread ID!"));
+    error_page("Invalid thread ID!");
 }
 
 $thread = BoincThread::lookup_id($threadid);
@@ -66,9 +66,7 @@ if ($thread->hidden) {
         if ($logged_in_user) {
             remove_subscriptions_forum($logged_in_user->id, $thread->id);
         }
-        error_page(
-            tra("This thread has been hidden by moderators")
-        );
+        error_page(tra("This thread has been hidden by moderators."));
     }
 }
 
@@ -99,8 +97,6 @@ if ($logged_in_user && $logged_in_user->prefs->jump_to_unread){
 } else {
     page_head($title);
 }
-
-echo "<link href=\"forum_forum.php?id=".$forum->id."\" rel=\"up\" title=\"".$forum->title."\">";
 
 $is_subscribed = $logged_in_user && BoincSubscription::lookup($logged_in_user->id, $thread->id);
 
@@ -135,7 +131,6 @@ if ($forum->parent_type == 0) {
                 echo "<p>";
                 show_button(
                     "forum_thread_vote.php?id=$thread->id",
-                    tra("I've also got this question"),
                     tra("I've also got this question")
                 );
             }
@@ -166,14 +161,14 @@ if ($is_subscribed) {
     BoincNotify::delete_aux(
         "userid=$logged_in_user->id and type=$type and opaque=$thread->id"
     );
-    $url = "forum_subscribe.php?action=unsubscribe&thread=".$thread->id."$tokens";
+    $url = "forum_subscribe.php?action=unsubscribe&amp;thread=".$thread->id."$tokens";
     show_button(
         $url,
         tra("Unsubscribe"),
         tra("You are subscribed to this thread.  Click here to unsubscribe.")
     );
 } else {
-    $url = "forum_subscribe.php?action=subscribe&thread=".$thread->id."$tokens";
+    $url = "forum_subscribe.php?action=subscribe&amp;thread=".$thread->id."$tokens";
     show_button(
         $url,
         tra("Subscribe"),
@@ -186,26 +181,26 @@ if ($is_subscribed) {
 if (is_moderator($logged_in_user, $forum)) {
     if ($thread->hidden){
         show_button(
-            "forum_moderate_thread_action.php?action=unhide&thread=".$thread->id."$tokens",
+            "forum_moderate_thread_action.php?action=unhide&amp;thread=".$thread->id."$tokens",
             tra("Unhide"),
             tra("Unhide this thread")
         );
     } else {
         show_button(
-            "forum_moderate_thread.php?action=hide&thread=".$thread->id,
+            "forum_moderate_thread.php?action=hide&amp;thread=".$thread->id,
             tra("Hide"),
             tra("Hide this thread")
         );
     }
     if ($thread->sticky){
         show_button(
-            "forum_moderate_thread_action.php?action=desticky&thread=".$thread->id."$tokens",
+            "forum_moderate_thread_action.php?action=desticky&amp;thread=".$thread->id."$tokens",
             tra("Make unsticky"),
             tra("Make this thread not sticky")
         );
     } else {
         show_button(
-            "forum_moderate_thread_action.php?action=sticky&thread=".$thread->id."$tokens",
+            "forum_moderate_thread_action.php?action=sticky&amp;thread=".$thread->id."$tokens",
             tra("Make sticky"),
             tra("Make this thread sticky")
         );
@@ -218,20 +213,20 @@ if (is_moderator($logged_in_user, $forum)) {
         );
     } else {
         show_button(
-            "forum_moderate_thread.php?action=lock&thread=".$thread->id."$tokens",
+            "forum_moderate_thread.php?action=lock&amp;thread=".$thread->id."$tokens",
             tra("Lock"),
             tra("Lock this thread")
         );
     }
     if ($forum->parent_type == 0) {
         show_button(
-            "forum_moderate_thread.php?action=move&thread=".$thread->id."$tokens",
+            "forum_moderate_thread.php?action=move&amp;thread=".$thread->id."$tokens",
             tra("Move"),
             tra("Move this thread to a different forum")
         );
     }
     show_button(
-        "forum_moderate_thread.php?action=title&thread=".$thread->id."$tokens",
+        "forum_moderate_thread.php?action=title&amp;thread=".$thread->id."$tokens",
         tra("Edit title"),
         tra("Edit thread title")
     );
@@ -242,15 +237,15 @@ if (is_moderator($logged_in_user, $forum)) {
 if (is_news_forum($forum) && $logged_in_user && ($logged_in_user->id == $thread->owner)) {
     if ($thread->status) {
         show_button(
-            "forum_thread_status.php?action=clear&id=$thread->id",
-            "Export",
-            "Export this news item as a Notice"
+            "forum_thread_status.php?action=clear&amp;id=$thread->id",
+            tra("Export"),
+            tra("Export this news item as a Notice")
         );
     } else {
         show_button(
-            "forum_thread_status.php?action=set&id=$thread->id",
-            "Don't export",
-            "Don't export this news item as a Notice"
+            "forum_thread_status.php?action=set&amp;id=$thread->id",
+            tra("Don't export"),
+            tra("Don't export this news item as a Notice")
         );
     }
 }
@@ -260,7 +255,7 @@ echo "</td><td align=\"right\">
     <input type=\"hidden\" name=\"id\" value=\"", $thread->id, "\">" .
     tra("Sort");
 echo select_from_array("sort", $thread_sort_styles, $sort_style);
-echo "<input type=\"submit\" value=\"Sort\">
+echo "<input type=\"submit\" value=\"".tra('Sort')."\">
     </td></tr></table></form>
 ";
 
@@ -294,5 +289,5 @@ case 1:
 $thread->update("views=views+1");
 
 page_tail();
-$cvs_version_tracker[]="\$Id: forum_thread.php 23235 2011-03-14 23:56:14Z davea $";
+$cvs_version_tracker[]="\$Id: forum_thread.php 24064 2011-08-29 05:37:52Z davea $";
 ?>

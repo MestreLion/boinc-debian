@@ -598,9 +598,9 @@ void usage(char* name) {
         "Usage: %s [options]\n"
         "    [-d N | --debug_level N]      Set verbosity level (1 to 4)\n"
         "    [--min_age_days N]            Purge Wus w/ mod time at least N days ago\n"
-        "    [--max N]                     Purge at more N WUs\n"
-        "    [--zip]                       Compuress output files using zip\n"
-        "    [--gzip]                      uress output files using gzip\n"
+        "    [--max N]                     Purge at most N WUs\n"
+        "    [--zip]                       Compress output files using zip\n"
+        "    [--gzip]                      Compress output files using gzip\n"
         "    [--no_archive]                Don't write output files, just purge\n"
         "    [--daily_dir]                 Write archives in a new directory each day\n"
         "    [--max_wu_per_file N]         Write at most N WUs per output file\n"
@@ -737,4 +737,4 @@ int main(int argc, char** argv) {
     exit(0);
 }
 
-const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 23789 2011-07-01 02:12:11Z davea $";
+const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 24019 2011-08-21 13:26:46Z davea $";

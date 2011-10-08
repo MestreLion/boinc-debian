@@ -39,8 +39,8 @@ double fpops_to_credit(double fpops) {
     return fpops*COBBLESTONE_SCALE;
 }
 
-double cpu_time_to_credit(double cpu_time, HOST& host) {
-    return fpops_to_credit(cpu_time*host.p_fpops);
+double cpu_time_to_credit(double cpu_time, double cpu_flops_sec) {
+    return fpops_to_credit(cpu_time*cpu_flops_sec);
 }
 
 // Grant the host (and associated user and team)
@@ -363,6 +363,13 @@ int get_pfc(
 
     mode = PFC_MODE_APPROX;
 
+    if (r.runtime_outlier && config.debug_credit) {
+        log_messages.printf(MSG_NORMAL,
+            "[credit] [RESULT#%d] runtime outlier, not updating stats\n",
+            r.id
+        );
+    }
+
     // is result from old scheduler that didn't set r.app_version_id correctly?
     // if so, use WU estimate (this is a transient condition)
     //
@@ -406,17 +413,21 @@ int get_pfc(
     // old clients report CPU time but not elapsed time.
     // Use HOST_APP_VERSION.et to track statistics of CPU time.
     //
-    if (!r.elapsed_time) {
+    if (r.elapsed_time < 1e-6) {
+        // in case buggy client reports elapsed time like 1e-304
+
         if (config.debug_credit) {
             log_messages.printf(MSG_NORMAL,
                 "[credit] [RESULT#%d] old client (elapsed time not reported)\n",
                 r.id
             );
         }
-        hav.et.update_var(
-            r.cpu_time/wu.rsc_fpops_est,
-            HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
-        );
+        if (!r.runtime_outlier) {
+            hav.et.update_var(
+                r.cpu_time/wu.rsc_fpops_est,
+                HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
+            );
+        }
         pfc = wu_estimated_pfc(wu, app);
         if (config.debug_credit) {
             log_messages.printf(MSG_NORMAL,
@@ -465,11 +476,11 @@ int get_pfc(
         return 0;
     }
 
-    // r.flops_estimate shouldn't be zero,
-    // but (because of scheduler bug) it can be.
+    // r.flops_estimate should be positive
+    // but (because of scheduler bug) it may not be.
     // At this point we don't have much to go on, so use 1e10.
     //
-    if (!r.flops_estimate) {
+    if (r.flops_estimate <= 0) {
         r.flops_estimate = 1e10;
     }
 
@@ -649,7 +660,7 @@ int get_pfc(
             );
         }
         double x = raw_pfc / wu.rsc_fpops_est;
-        if (is_pfc_sane(x, wu, app)) {
+        if (!r.runtime_outlier && is_pfc_sane(x, wu, app)) {
             avp->pfc_samples.push_back(x);
         }
     }
@@ -664,17 +675,19 @@ int get_pfc(
     }
 
     double x = raw_pfc / wu.rsc_fpops_est;
-    if (is_pfc_sane(x, wu, app)) {
+    if (!r.runtime_outlier && is_pfc_sane(x, wu, app)) {
         hav.pfc.update(x, HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT);
     }
-    hav.et.update_var(
-        r.elapsed_time / wu.rsc_fpops_est,
-        HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
-    );
-    hav.turnaround.update_var(
-        (r.received_time - r.sent_time),
-        HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
-    );
+    if (!r.runtime_outlier) {
+        hav.et.update_var(
+            r.elapsed_time / wu.rsc_fpops_est,
+            HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
+        );
+        hav.turnaround.update_var(
+            (r.received_time - r.sent_time),
+            HAV_AVG_THRESH, HAV_AVG_WEIGHT, HAV_AVG_LIMIT
+        );
+    }
 
     // keep track of credit per app version
     //
@@ -716,7 +729,8 @@ double vec_min(vector<double>& v) {
 }
 
 // Called by validator when canonical result has been selected.
-// Compute credit for valid instances
+// Compute credit for valid instances.
+// This is called exactly once for each valid result.
 //
 int assign_credit_set(
     WORKUNIT& wu, vector<RESULT>& results,
@@ -820,19 +834,9 @@ int write_modified_app_versions(vector<DB_APP_VERSION>& app_versions) {
     int retval = 0;
     double now = dtime();
 
-    if (config.debug_credit && app_versions.size()) {
-        log_messages.printf(MSG_NORMAL,
-            "[credit] start write_modified_app_versions()\n"
-        );
-    }
     for (i=0; i<app_versions.size(); i++) {
         DB_APP_VERSION& av = app_versions[i];
         if (av.pfc_samples.empty() && av.credit_samples.empty()) {
-            if (config.debug_credit) {
-                log_messages.printf(MSG_NORMAL,
-                    "[credit] skipping app version %d - no change\n", av.id
-                );
-            }
             continue;
         }
         for (int k=0; k<10; k++) {

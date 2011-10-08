@@ -473,6 +473,7 @@ int main(int argc, char** argv) {
         send_message("Server can't find key file", 3600);
         exit(0);
     }
+    strip_whitespace(code_sign_key);
 
 
     g_pid = getpid();
@@ -643,4 +644,4 @@ void JOB_LIMITS::print_log() {
     }
 }
 
-const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 23710 2011-06-12 20:58:43Z davea $";
+const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 23994 2011-08-11 21:15:42Z davea $";

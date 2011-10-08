@@ -766,6 +766,22 @@ int DB_HOST::update_diff_sched(HOST& h) {
     return db->do_query(query);
 }
 
+int DB_HOST::fpops_percentile(double percentile, double& fpops) {
+    char query[256];
+    int n, retval;
+
+    sprintf(query, "where expavg_credit>10");
+    retval = count(n, query);
+    if (retval) return retval;
+    if (n==0) return ERR_NULL;
+    int m = (int)(n*percentile/100.);
+    sprintf(query,
+        "select p_fpops from host where expavg_credit>10 order by p_fpops limit %d,1",
+        m
+    );
+    return get_double(query, fpops);
+}
+
 void DB_WORKUNIT::db_print(char* buf){
     sprintf(buf,
         "create_time=%d, appid=%d, "
@@ -870,7 +886,7 @@ void DB_RESULT::db_print(char* buf){
         "claimed_credit=%.15e, granted_credit=%.15e, opaque=%.15e, random=%d, "
         "app_version_num=%d, appid=%d, exit_status=%d, teamid=%d, "
         "priority=%d, mod_time=null, elapsed_time=%.15e, flops_estimate=%.15e, "
-        "app_version_id=%d",
+        "app_version_id=%d, runtime_outlier=%d",
         create_time, workunitid,
         server_state, outcome, client_state,
         hostid, userid,
@@ -880,7 +896,9 @@ void DB_RESULT::db_print(char* buf){
         batch, file_delete_state, validate_state,
         claimed_credit, granted_credit, opaque, random,
         app_version_num, appid, exit_status, teamid,
-        priority, elapsed_time, flops_estimate, app_version_id
+        priority, elapsed_time, flops_estimate,
+        app_version_id,
+        runtime_outlier?1:0
     );
     UNESCAPE(xml_doc_out);
     UNESCAPE(stderr_out);
@@ -901,7 +919,7 @@ void DB_RESULT::db_print_values(char* buf){
         "'%s', '%s', '%s', "
         "%d, %d, %d, "
         "%.15e, %.15e, %.15e, %d, "
-        "%d, %d, %d, %d, %d, null, 0, 0, 0)",
+        "%d, %d, %d, %d, %d, null, 0, 0, 0, 0)",
         create_time, workunitid,
         server_state, outcome, client_state,
         hostid, userid,
@@ -977,6 +995,7 @@ void DB_RESULT::db_parse(MYSQL_ROW &r) {
     elapsed_time = atof(r[i++]);
     flops_estimate = atof(r[i++]);
     app_version_id = atoi(r[i++]);
+    runtime_outlier = (atoi(r[i++]) != 0);
 }
 
 void DB_MSG_FROM_HOST::db_print(char* buf) {
@@ -1465,7 +1484,6 @@ void VALIDATOR_ITEM::parse(MYSQL_ROW& r) {
     res.validate_state = atoi(r[i++]);
     res.server_state = atoi(r[i++]);
     res.outcome = atoi(r[i++]);
-    res.claimed_credit = atof(r[i++]);
     res.granted_credit = atof(r[i++]);
     strcpy2(res.xml_doc_in, r[i++]);
     strcpy2(res.xml_doc_out, r[i++]);
@@ -1483,6 +1501,7 @@ void VALIDATOR_ITEM::parse(MYSQL_ROW& r) {
     res.elapsed_time = atof(r[i++]);
     res.flops_estimate = atof(r[i++]);
     res.app_version_id = atoi(r[i++]);
+    res.runtime_outlier = (atoi(r[i++]) != 0);
 }
 
 int DB_VALIDATOR_ITEM_SET::enumerate(
@@ -1526,7 +1545,6 @@ int DB_VALIDATOR_ITEM_SET::enumerate(
             "   res.validate_state, "
             "   res.server_state, "
             "   res.outcome, "
-            "   res.claimed_credit, "
             "   res.granted_credit, "
             "   res.xml_doc_in, "
             "   res.xml_doc_out, "
@@ -1543,7 +1561,8 @@ int DB_VALIDATOR_ITEM_SET::enumerate(
             "   res.appid, "
             "   res.elapsed_time, "
             "   res.flops_estimate, "
-            "   res.app_version_id "
+            "   res.app_version_id, "
+            "   res.runtime_outlier "
             "FROM "
             "   workunit AS wu, result AS res where wu.id = res.workunitid "
             "   and wu.appid = %d and wu.need_validate > 0 %s "
@@ -1605,7 +1624,7 @@ int DB_VALIDATOR_ITEM_SET::update_result(RESULT& res) {
 
     sprintf(query,
         "update result set validate_state=%d, granted_credit=%.15e, "
-        "server_state=%d, outcome=%d, opaque=%lf, random=%d "
+        "server_state=%d, outcome=%d, opaque=%lf, random=%d, runtime_outlier=%d "
         "where id=%d",
         res.validate_state,
         res.granted_credit,
@@ -1613,6 +1632,7 @@ int DB_VALIDATOR_ITEM_SET::update_result(RESULT& res) {
         res.outcome,
         res.opaque,
         res.random,
+        res.runtime_outlier?1:0,
         res.id
     );
     int retval = db->do_query(query);
@@ -1694,8 +1714,9 @@ int DB_WORK_ITEM::enumerate(
         // (historical reasons)
         //
         sprintf(query,
-            "select high_priority r1.id, r1.priority, r1.server_state, r1.report_deadline, workunit.* from result r1 force index(ind_res_st), workunit "
+            "select high_priority r1.id, r1.priority, r1.server_state, r1.report_deadline, workunit.* from result r1 force index(ind_res_st), workunit, app "
             " where r1.server_state=%d and r1.workunitid=workunit.id "
+            " and workunit.appid=app.id and app.deprecated=0 "
             " %s "
             " %s "
             "limit %d",
@@ -1734,8 +1755,9 @@ int DB_WORK_ITEM::enumerate_all(
         // (historical reasons)
         //
         sprintf(query,
-            "select high_priority r1.id, r1.priority, r1.server_state, r1.report_deadline, workunit.* from result r1 force index(ind_res_st), workunit force index(primary)"
+            "select high_priority r1.id, r1.priority, r1.server_state, r1.report_deadline, workunit.* from result r1 force index(ind_res_st), workunit force index(primary), app"
             " where r1.server_state=%d and r1.workunitid=workunit.id and r1.id>%d "
+            " and workunit.appid=app.id and app.deprecated=0 "
             " %s "
             "limit %d",
             RESULT_SERVER_STATE_UNSENT,
@@ -1937,7 +1959,6 @@ int DB_SCHED_RESULT_ITEM_SET::update_result(SCHED_RESULT_ITEM& ri) {
         "    cpu_time=%.15e, "
         "    exit_status=%d, "
         "    app_version_num=%d, "
-        "    claimed_credit=%.15e, "
         "    server_state=%d, "
         "    outcome=%d, "
         "    stderr_out='%s', "
@@ -1953,7 +1974,6 @@ int DB_SCHED_RESULT_ITEM_SET::update_result(SCHED_RESULT_ITEM& ri) {
         ri.cpu_time,
         ri.exit_status,
         ri.app_version_num,
-        ri.claimed_credit,
         ri.server_state,
         ri.outcome,
         ri.stderr_out,
@@ -2028,11 +2048,11 @@ void DB_FILESET::db_parse(MYSQL_ROW &r) {
     strcpy2(name, r[i++]);
 }
 
-int DB_FILESET::select_by_name(const char* name) {
+int DB_FILESET::select_by_name(const char* _name) {
     char where_clause[MAX_QUERY_LEN] = {0};
 
     // construct where clause and select single record
-    snprintf(where_clause, MAX_QUERY_LEN, "WHERE name = '%s'", name);
+    snprintf(where_clause, MAX_QUERY_LEN, "WHERE name = '%s'", _name);
     return lookup(where_clause);
 }
 
@@ -2071,7 +2091,7 @@ void DB_SCHED_TRIGGER::db_parse(MYSQL_ROW &r) {
 int DB_SCHED_TRIGGER::select_unique_by_fileset_name(const char* fileset_name) {
     char query[MAX_QUERY_LEN];
     int retval;
-    int count = 0;
+    int nrows = 0;
     MYSQL_RES* recordset;
     MYSQL_ROW row;
 
@@ -2101,10 +2121,10 @@ int DB_SCHED_TRIGGER::select_unique_by_fileset_name(const char* fileset_name) {
     //}
 
     // determine number of records, fetch first
-    count = mysql_num_rows(recordset);
+    nrows = mysql_num_rows(recordset);
     row = mysql_fetch_row(recordset);
 
-    if (!row || count != 1) {
+    if (!row || nrows != 1) {
         // something bad happened
         if (!row) {
             // no row returned, due to an error?
@@ -2284,4 +2304,4 @@ int DB_FILESET_SCHED_TRIGGER_ITEM_SET::contains_trigger(const char* fileset_name
     return 0;
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 23648 2011-06-07 04:12:49Z davea $";
+const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 24228 2011-09-16 20:42:45Z davea $";

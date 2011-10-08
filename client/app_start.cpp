@@ -84,7 +84,7 @@ using std::string;
 
 
 #ifdef _WIN32
-#include "proc_control.h"
+#include "run_app_windows.h"
 #endif
 
 #include "cs_proxy.h"
@@ -115,19 +115,23 @@ static void debug_print_argv(char** argv) {
 #endif
 
 // For apps that use coprocessors, append "--device x" to the command line.
+// NOTE: this is deprecated.  Use app_init_data instead.
 //
 static void coproc_cmdline(
     int rsc_type, RESULT* rp, double ninstances, char* cmdline
 ) {
+    char buf[256];
     COPROC* coproc = &coprocs.coprocs[rsc_type];
     for (int j=0; j<ninstances; j++) {
         int k = rp->coproc_indices[j];
         // sanity check
         //
         if (k < 0 || k >= coproc->count) {
-            *(int*)1 = 0;
+            msg_printf(0, MSG_INTERNAL_ERROR,
+                "coproc_cmdline: coproc index %d out of range", k
+            );
+            k = 0;
         }
-        char buf[256];
         sprintf(buf, " --device %d", coproc->device_nums[k]);
         strcat(cmdline, buf);
     }
@@ -187,15 +191,8 @@ int ACTIVE_TASK::get_shmem_seg_name() {
     return 0;
 }
 
-// write the app init file.
-// This is done before starting the app,
-// and when project prefs have changed during app execution
-//
-int ACTIVE_TASK::write_app_init_file() {
-    APP_INIT_DATA aid;
-    FILE *f;
-    char init_data_path[256], project_dir[256], project_path[256];
-    int retval;
+void ACTIVE_TASK::init_app_init_data(APP_INIT_DATA& aid) {
+    char project_dir[256], project_path[256];
 
     aid.major_version = BOINC_MAJOR_VERSION;
     aid.minor_version = BOINC_MINOR_VERSION;
@@ -205,7 +202,9 @@ int ACTIVE_TASK::write_app_init_file() {
     safe_strcpy(aid.symstore, wup->project->symstore);
     safe_strcpy(aid.acct_mgr_url, gstate.acct_mgr_info.master_url);
     if (wup->project->project_specific_prefs.length()) {
-        aid.project_preferences = strdup(wup->project->project_specific_prefs.c_str());
+        aid.project_preferences = strdup(
+            wup->project->project_specific_prefs.c_str()
+        );
     }
     aid.userid = wup->project->userid;
     aid.teamid = wup->project->teamid;
@@ -230,11 +229,31 @@ int ACTIVE_TASK::write_app_init_file() {
     } else {
         aid.resource_share_fraction = 1;
     }
+    aid.host_info = gstate.host_info;
+    aid.proxy_info = working_proxy_info;
+    aid.global_prefs = gstate.global_prefs;
+    aid.starting_elapsed_time = checkpoint_elapsed_time;
     aid.rsc_fpops_est = wup->rsc_fpops_est;
     aid.rsc_fpops_bound = wup->rsc_fpops_bound;
     aid.rsc_memory_bound = wup->rsc_memory_bound;
     aid.rsc_disk_bound = wup->rsc_disk_bound;
     aid.computation_deadline = result->computation_deadline();
+    int rt = app_version->gpu_usage.rsc_type;
+    if (rt) {
+        COPROC& cp = coprocs.coprocs[rt];
+        strcpy(aid.gpu_type, cp.type);
+        int k = result->coproc_indices[0];
+        if (k<0 || k>=cp.count) {
+            msg_printf(0, MSG_INTERNAL_ERROR,
+                "coproc_cmdline: coproc index %d out of range", k
+            );
+            k = 0;
+        }
+        aid.gpu_device_num = cp.device_nums[k];
+    } else {
+        strcpy(aid.gpu_type, "");
+        aid.gpu_device_num = -1;
+    }
     aid.checkpoint_period = gstate.global_prefs.disk_interval;
     aid.fraction_done_start = 0;
     aid.fraction_done_end = 1;
@@ -244,7 +263,15 @@ int ACTIVE_TASK::write_app_init_file() {
     aid.shmem_seg_name = shmem_seg_name;
 #endif
     aid.wu_cpu_time = checkpoint_cpu_time;
-    aid.starting_elapsed_time = checkpoint_elapsed_time;
+}
+
+// write the app init file.
+// This is done before starting the app,
+// and when project prefs have changed during app execution
+//
+int ACTIVE_TASK::write_app_init_file(APP_INIT_DATA& aid) {
+    FILE *f;
+    char init_data_path[256];
 
     sprintf(init_data_path, "%s/%s", slot_dir, INIT_DATA_FILE);
 
@@ -261,10 +288,7 @@ int ACTIVE_TASK::write_app_init_file() {
         return ERR_FOPEN;
     }
 
-    aid.host_info = gstate.host_info;
-    aid.global_prefs = gstate.global_prefs;
-    aid.proxy_info = working_proxy_info;
-    retval = write_init_data_file(f, aid);
+    int retval = write_init_data_file(f, aid);
     fclose(f);
     return retval;
 }
@@ -295,21 +319,45 @@ static int create_dirs_for_logical_name(
     return 0;
 }
 
+static void prepend_prefix(APP_VERSION* avp, char* in, char* out) {
+    if (strlen(avp->file_prefix)) {
+        sprintf(out, "%s/%s", avp->file_prefix, in);
+    } else {
+        strcpy(out, in);
+    }
+}
+
+// an input/output file must be copied if either
+// - the FILE_REFERENCE says so or
+// - the APP_VERSION has a non-empty file_prefix
+//
+bool ACTIVE_TASK::must_copy_file(FILE_REF& fref, bool is_io_file) {
+	if (fref.copy_file) return true;
+	if (is_io_file && strlen(app_version->file_prefix)) return true;
+	return false;
+}
+
 // set up a file reference, given a slot dir and project dir.
 // This means:
 // 1) copy the file to slot dir, if reference is by copy
 // 2) else make a soft link
 //
-static int setup_file(
-    PROJECT* project, FILE_INFO* fip, FILE_REF& fref,
-    char* file_path, char* slot_dir, bool input
+int ACTIVE_TASK::setup_file(
+    FILE_INFO* fip, FILE_REF& fref, char* file_path, bool input, bool is_io_file
 ) {
-    char link_path[256], rel_file_path[256];
+    char link_path[256], rel_file_path[256], open_name[256];
     int retval;
+    PROJECT* project = result->project;
 
     if (strlen(fref.open_name)) {
-        create_dirs_for_logical_name(fref.open_name, slot_dir);
-        sprintf(link_path, "%s/%s", slot_dir, fref.open_name);
+		if (is_io_file) {
+			prepend_prefix(app_version, fref.open_name, open_name);
+		} else {
+			strcpy(open_name, fref.open_name);
+		}
+        retval = create_dirs_for_logical_name(open_name, slot_dir);
+        if (retval) return retval;
+        sprintf(link_path, "%s/%s", slot_dir, open_name);
     } else {
         sprintf(link_path, "%s/%s", slot_dir, fip->name);
     }
@@ -323,7 +371,7 @@ static int setup_file(
         return 0;
     }
 
-    if (fref.copy_file) {
+    if (must_copy_file(fref, is_io_file)) {
         if (input) {
             retval = boinc_copy(file_path, link_path);
             if (retval) {
@@ -369,19 +417,20 @@ int ACTIVE_TASK::link_user_files() {
         fip = fref.file_info;
         if (fip->status != FILE_PRESENT) continue;
         get_pathname(fip, file_path, sizeof(file_path));
-        setup_file(project, fip, fref, file_path, slot_dir, true);
+        setup_file(fip, fref, file_path, true, false);
     }
     return 0;
 }
 
 int ACTIVE_TASK::copy_output_files() {
-    char slotfile[256], projfile[256];
+    char slotfile[256], projfile[256], open_name[256];
     unsigned int i;
     for (i=0; i<result->output_files.size(); i++) {
         FILE_REF& fref = result->output_files[i];
-        if (!fref.copy_file) continue;
+        if (!must_copy_file(fref, true)) continue;
         FILE_INFO* fip = fref.file_info;
-        sprintf(slotfile, "%s/%s", slot_dir, fref.open_name);
+        prepend_prefix(app_version, fref.open_name, open_name);
+        sprintf(slotfile, "%s/%s", slot_dir, open_name);
         get_pathname(fip, projfile, sizeof(projfile));
 #if 1
         boinc_rename(slotfile, projfile);
@@ -422,6 +471,7 @@ int ACTIVE_TASK::start(bool first_time) {
     FILE_REF fref;
     FILE_INFO* fip;
     int retval, rt;
+    APP_INIT_DATA aid;
 
     // if this job less than one CPU, run it at above idle priority
     //
@@ -462,7 +512,8 @@ int ACTIVE_TASK::start(bool first_time) {
     // this must go AFTER creating shmem name,
     // since the shmem name is part of the file
     //
-    retval = write_app_init_file();
+    init_app_init_data(aid);
+    retval = write_app_init_file(aid);
     if (retval) {
         sprintf(buf, "Can't write init file: %d", retval);
         goto error;
@@ -493,9 +544,9 @@ int ACTIVE_TASK::start(bool first_time) {
         // when the result was started, so link files even if not first time
         //
         if (first_time || wup->project->anonymous_platform) {
-            retval = setup_file(result->project, fip, fref, file_path, slot_dir, true);
+            retval = setup_file(fip, fref, file_path, true, false);
             if (retval) {
-                strcpy(buf, "Can't link input file");
+                strcpy(buf, "Can't link app version file");
                 goto error;
             }
         }
@@ -513,7 +564,7 @@ int ACTIVE_TASK::start(bool first_time) {
             fref = wup->input_files[i];
             fip = fref.file_info;
             get_pathname(fref.file_info, file_path, sizeof(file_path));
-            retval = setup_file(result->project, fip, fref, file_path, slot_dir, true);
+            retval = setup_file(fip, fref, file_path, true, true);
             if (retval) {
                 strcpy(buf, "Can't link input file");
                 goto error;
@@ -521,10 +572,10 @@ int ACTIVE_TASK::start(bool first_time) {
         }
         for (i=0; i<result->output_files.size(); i++) {
             fref = result->output_files[i];
-            if (fref.copy_file) continue;
+            if (must_copy_file(fref, true)) continue;
             fip = fref.file_info;
             get_pathname(fref.file_info, file_path, sizeof(file_path));
-            retval = setup_file(result->project, fip, fref, file_path, slot_dir, false);
+            retval = setup_file(fip, fref, file_path, false, true);
             if (retval) {
                 strcpy(buf, "Can't link output file");
                 goto error;
@@ -533,13 +584,15 @@ int ACTIVE_TASK::start(bool first_time) {
     }
 
     link_user_files();
+        // don't check retval here
 
     // make sure temporary exit file isn't there
     //
     sprintf(file_path, "%s/%s", slot_dir, TEMPORARY_EXIT_FILE);
     delete_project_owned_file(file_path, true);
 
-    if (gstate.exit_before_start) {
+    if (config.exit_before_start) {
+        msg_printf(0, MSG_INFO, "about to start a job; exiting");
         exit(0);
     }
 

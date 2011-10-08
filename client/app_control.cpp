@@ -69,7 +69,7 @@ using std::vector;
 #include "client_msgs.h"
 #include "client_state.h"
 #include "file_names.h"
-#include "procinfo.h"
+#include "proc_control.h"
 #include "sandbox.h"
 
 #include "app.h"
@@ -89,7 +89,6 @@ bool ACTIVE_TASK_SET::poll() {
     action = check_app_exited();
     send_heartbeats();
     send_trickle_downs();
-    graphics_poll();
     process_control_poll();
     action |= check_rsc_limits_exceeded();
     get_msgs();
@@ -156,7 +155,6 @@ int ACTIVE_TASK::request_exit() {
     );
     set_task_state(PROCESS_QUIT_PENDING, "request_exit()");
     quit_time = gstate.now;
-    descendants.clear();
     get_descendants(pid, descendants);
     return 0;
 }
@@ -757,7 +755,6 @@ int ACTIVE_TASK::abort_task(int exit_status, const char* msg) {
         set_task_state(PROCESS_ABORT_PENDING, "abort_task");
         abort_time = gstate.now;
         request_abort();
-        descendants.clear();
         get_descendants(pid, descendants);
     } else {
         set_task_state(PROCESS_ABORTED, "abort_task");
@@ -797,10 +794,12 @@ bool ACTIVE_TASK::read_stderr_file() {
 //
 int ACTIVE_TASK::request_reread_prefs() {
     int retval;
+    APP_INIT_DATA aid;
 
     link_user_files();
 
-    retval = write_app_init_file();
+    init_app_init_data(aid);
+    retval = write_app_init_file(aid);
     if (retval) return retval;
     graphics_request_queue.msg_queue_send(
         xml_graphics_modes[MODE_REREAD_PREFS],
@@ -813,7 +812,9 @@ int ACTIVE_TASK::request_reread_prefs() {
 // (e.g. because proxy settings have changed: this is for F@h)
 //
 int ACTIVE_TASK::request_reread_app_info() {
-    int retval = write_app_init_file();
+    APP_INIT_DATA aid;
+    init_app_init_data(aid);
+    int retval = write_app_init_file(aid);
     if (retval) return retval;
     process_control_queue.msg_queue_send(
         "<reread_app_info/>",
@@ -1102,6 +1103,8 @@ void ACTIVE_TASK::send_network_available() {
 bool ACTIVE_TASK::get_app_status_msg() {
     char msg_buf[MSG_CHANNEL_SIZE];
     double fd;
+    int other_pid;
+    double dtemp;
 
     if (!app_client_shm.shm) {
         msg_printf(result->project, MSG_INFO,
@@ -1135,7 +1138,24 @@ bool ACTIVE_TASK::get_app_status_msg() {
     parse_double(msg_buf, "<fpops_cumulative>", result->fpops_cumulative);
     parse_double(msg_buf, "<intops_per_cpu_sec>", result->intops_per_cpu_sec);
     parse_double(msg_buf, "<intops_cumulative>", result->intops_cumulative);
+    if (parse_double(msg_buf, "<bytes_sent>", dtemp)) {
+        if (dtemp > bytes_sent) {
+            daily_xfer_history.add(dtemp - bytes_sent, true);
+        }
+        bytes_sent = dtemp;
+    }
+    if (parse_double(msg_buf, "<bytes_received>", dtemp)) {
+        if (dtemp > bytes_received) {
+            daily_xfer_history.add(dtemp - bytes_received, false);
+        }
+        bytes_received = dtemp;
+    }
     parse_int(msg_buf, "<want_network>", want_network);
+    if (parse_int(msg_buf, "<other_pid>", other_pid)) {
+        // for now, we handle only one of these
+        other_pids.clear();
+        other_pids.push_back(other_pid);
+    }
     if (current_cpu_time < 0) {
         msg_printf(result->project, MSG_INFO,
             "app reporting negative CPU: %f", current_cpu_time
