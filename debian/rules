@@ -284,6 +284,10 @@ install: install-stamp
 install-stamp: build update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 	dh install
+	for i in $(CURDIR)/debian/*/usr/bin ; \
+	do \
+		egrep -l "^#!.*env..*python" $$i/* | xargs -r sed -i '1s%#!.*%#!/usr/bin/python%'
+	done
 	touch $@
 
 override_dh_strip:
