@@ -1,6 +1,5 @@
 stripchart_debian.patch
 upstream_sztaki_configureEval.patch
-pythonPath.patch
 generate_less.patch
 texfont_removal.patch
 Makefile_subdirs.patch

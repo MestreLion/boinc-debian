@@ -1,8 +1,8 @@
 Index: boinc/sched/file_upload_handler.cpp
 ===================================================================
---- boinc.orig/sched/file_upload_handler.cpp	2011-07-24 22:59:07.000000000 +0200
-+++ boinc/sched/file_upload_handler.cpp	2011-07-24 23:05:51.000000000 +0200
-@@ -209,17 +209,17 @@
+--- boinc.orig/sched/file_upload_handler.cpp	2011-10-08 14:32:58.000000000 +0200
++++ boinc/sched/file_upload_handler.cpp	2011-10-08 14:33:04.000000000 +0200
+@@ -169,17 +169,17 @@
  
      while (bytes_left > 0) {
  
@@ -23,7 +23,7 @@ Index: boinc/sched/file_upload_handler.cpp
          while (to_write > 0) {
              ssize_t ret = write(fd, buf+n-to_write, to_write);
              if (ret < 0) {
-@@ -273,7 +273,7 @@
+@@ -233,7 +233,7 @@
      unsigned char buf[BLOCK_SIZE];
  
      while (1) {
