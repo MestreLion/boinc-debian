@@ -1,3 +1,10 @@
+boinc (6.13.6+dfsg-2) unstable; urgency=low
+
+  * Fixing FTBFS (Closes: #644796).
+  * substituted install target with override_dh_auto_install
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 09 Oct 2011 15:50:33 +0200
+
 boinc (6.13.6+dfsg-1) unstable; urgency=low
 
   * New upstream version.

@@ -279,14 +279,12 @@ override_dh_auto_clean:
 	  packages/solaris/CSW/boincmanager/Makefile
 	debconf-updatepo
 
-install: install-stamp
-
-install-stamp: build update-boinc-applinks.1
+override_dh_auto_install: update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 	dh install
 	for i in $(CURDIR)/debian/*/usr/bin ; \
 	do \
-		egrep -l "^#!.*env..*python" $$i/* | xargs -r sed -i '1s%#!.*%#!/usr/bin/python%'
+		egrep -l "^#!.*env..*python" $$i/* | xargs -r sed -i '1s%#!.*%#!/usr/bin/python%' ; \
 	done
 	touch $@
 
