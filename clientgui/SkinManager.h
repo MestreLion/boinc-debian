@@ -102,6 +102,11 @@ private:
 };
 
 
+// Default opacity for Simple View white panels 
+// is 60% (153 on a scale of 0 - 255).
+#define MAX_OPACITY 255
+#define DEFAULT_OPACITY 153
+
 class CSkinSimple : public CSkinItem
 {
     DECLARE_DYNAMIC_CLASS( CSkinSimple )
@@ -116,21 +121,25 @@ public:
     bool InitializeDelayedValidation();
 
     CSkinImage*         GetBackgroundImage() { return &m_BackgroundImage; }
-    wxColour            GetStaticLineColor() { return m_StaticLineColor; }
-
-    CSkinImage*         GetWorkunitAnimationImage() { return &m_WorkunitAnimationImage; }
-    CSkinImage*         GetProjectImage() { return &m_ProjectImage; }
-
     CSkinImage*         GetDialogBackgroundImage() { return &m_DialogBackgroundImage; }
+    CSkinImage*         GetProjectImage() { return &m_ProjectImage; }
+    wxColour            GetStaticLineColor() { return m_StaticLineColor; }
+    CSkinImage*         GetWorkunitAnimationImage() { return &m_WorkunitAnimationImage; }
+    CSkinImage*         GetWorkunitRunningImage() { return &m_WorkunitRunningImage; }
+    CSkinImage*         GetWorkunitSuspendedImage() { return &m_WorkunitSuspendedImage; }
+    CSkinImage*         GetWorkunitWaitingImage() { return &m_WorkunitWaitingImage; }
+    int                 GetPanelOpacity() { return m_iPanelOpacity; }
 
 private:
 	CSkinImage          m_BackgroundImage;
-	wxColour            m_StaticLineColor;
-
-    CSkinImage          m_WorkunitAnimationImage;
-    CSkinImage          m_ProjectImage;
-
     CSkinImage          m_DialogBackgroundImage;
+    CSkinImage          m_ProjectImage;
+	wxColour            m_StaticLineColor;
+    CSkinImage          m_WorkunitAnimationImage;
+    CSkinImage          m_WorkunitRunningImage;
+    CSkinImage          m_WorkunitSuspendedImage;
+    CSkinImage          m_WorkunitWaitingImage;
+    int                 m_iPanelOpacity;
 };
 
 
@@ -254,7 +263,6 @@ public:
 
     wxArrayString&      GetCurrentSkins();
     wxString            GetDefaultSkinName();
-    wxString            GetDefaultBOINCSkinName();
     wxString            GetSelectedSkin() { return m_strSelectedSkin; }
 
     wxString            ConstructSkinFileName();

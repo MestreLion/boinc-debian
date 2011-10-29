@@ -167,11 +167,7 @@ static bool ati_check(COPROC_ATI& c, HOST_USAGE& hu,
     if (c.version_num < min_driver_version) {
         return false;
     }
-    double avail_ram = c.available_ram;
-    if (avail_ram < 0) {
-        avail_ram = c.attribs.localRAM*MEGA;
-    }
-    if (avail_ram < min_ram) {
+    if (c.available_ram < min_ram) {
         return false;
     }
 
@@ -180,14 +176,13 @@ static bool ati_check(COPROC_ATI& c, HOST_USAGE& hu,
 
     coproc_perf(
         g_request->host.p_fpops,
-        hu.natis*c.peak_flops,
+        flops_scale * hu.natis*c.peak_flops,
         cpu_frac,
         hu.projected_flops,
         hu.avg_ncpus
     );
     hu.peak_flops = hu.natis*c.peak_flops + hu.avg_ncpus*g_request->host.p_fpops;
     hu.max_ncpus = hu.avg_ncpus;
-    hu.projected_flops *= flops_scale;
     return true;
 }
 
@@ -205,8 +200,9 @@ static inline bool app_plan_ati(
             1000000,
             true,
             ATI_MIN_RAM,
-            1, .01,
-            1
+            1,
+            .01,
+            .20
         )) {
             return false;
         }
@@ -218,7 +214,7 @@ static inline bool app_plan_ati(
             true,
             ATI_MIN_RAM,
             1, .01,
-            1.01
+            .21
         )) {
             return false;
         }
@@ -230,7 +226,7 @@ static inline bool app_plan_ati(
             false,
             ATI_MIN_RAM,
             1, .01,
-            1.02
+            .22
         )) {
             return false;
         }
@@ -242,7 +238,7 @@ static inline bool app_plan_ati(
             false,
             ATI_MIN_RAM,
             1, .01,
-            1.03
+            .23
         )) {
             return false;
         }
@@ -300,11 +296,7 @@ static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
             return false;
         }
     }
-    double avail_ram = c.available_ram;
-    if (avail_ram < 0) {
-        avail_ram = c.prop.dtotalGlobalMem;
-    }
-    if (avail_ram < min_ram) {
+    if (c.available_ram < min_ram) {
         return false;
     }
 
@@ -313,14 +305,13 @@ static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
 
     coproc_perf(
         g_request->host.p_fpops,
-        hu.ncudas*c.peak_flops,
+        flops_scale * hu.ncudas*c.peak_flops,
         cpu_frac,
         hu.projected_flops,
         hu.avg_ncpus
     );
     hu.peak_flops = hu.ncudas*c.peak_flops + hu.avg_ncpus*g_request->host.p_fpops;
     hu.max_ncpus = hu.avg_ncpus;
-    hu.projected_flops *= flops_scale;
     return true;
 }
 
@@ -349,7 +340,9 @@ static inline bool app_plan_cuda(
             200, 0,
             CUDA3_MIN_CUDA_VERSION, CUDA3_MIN_DRIVER_VERSION,
             384*MEGA,
-            1, .01, 1.02
+            1,
+            .01,
+            .22
         )) {
             return false;
         }
@@ -359,16 +352,9 @@ static inline bool app_plan_cuda(
             200,    // change to zero if app is compiled to byte code
             CUDA23_MIN_CUDA_VERSION, CUDA23_MIN_DRIVER_VERSION,
             384*MEGA,
-            1, .01, 1.01
-        )) {
-            return false;
-        }
-    } else if (!strcmp(plan_class, "cuda_opencl")) {
-        if (!cuda_check(c, hu,
-            100, 0,
-            0, CUDA_OPENCL_MIN_DRIVER_VERSION,
-            384*MEGA,
-            1, .01, 1
+            1,
+            .01,
+            .21
         )) {
             return false;
         }
@@ -378,7 +364,9 @@ static inline bool app_plan_cuda(
             200,    // change to zero if app is compiled to byte code
             0, CUDA_MIN_DRIVER_VERSION,
             254*MEGA,
-            1, .01, 1
+            1,
+            .01,
+            .20
         )) {
             return false;
         }
@@ -439,16 +427,87 @@ static inline bool app_plan_sse3(
     return true;
 }
 
-static inline bool app_plan_opencl_nvidia(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+static inline bool opencl_check(
+    COPROC& cp, HOST_USAGE& hu,
+    int min_opencl_device_version,
+    double min_global_mem_size,
+    double ndevs,
+    double cpu_frac,
+    double flops_scale
 ) {
-    return false;
+    if (cp.opencl_prop.opencl_device_version_int < min_opencl_device_version) {
+        return false;
+    }
+    if (cp.opencl_prop.global_mem_size < min_global_mem_size) {
+        return false;
+    }
+
+    hu.gpu_ram = min_global_mem_size;
+    if (!strcmp(cp.type, "NVIDIA")) {
+        hu.ncudas = ndevs;
+    } else if (!strcmp(cp.type, "ATI")) {
+        hu.natis = ndevs;
+    }
+
+    coproc_perf(
+        g_request->host.p_fpops,
+        flops_scale * ndevs * cp.peak_flops,
+        cpu_frac,
+        hu.projected_flops,
+        hu.avg_ncpus
+    );
+    hu.peak_flops = ndevs*cp.peak_flops + hu.avg_ncpus*g_request->host.p_fpops;
+    hu.max_ncpus = hu.avg_ncpus;
+    return true;
 }
 
-static inline bool app_plan_opencl_ati(
-    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+static inline bool app_plan_opencl(
+    SCHEDULER_REQUEST& sreq, const char* plan_class, HOST_USAGE& hu
 ) {
-    return false;
+    if (strstr(plan_class, "nvidia")) {
+        COPROC_NVIDIA& c = sreq.coprocs.nvidia;
+        if (!c.count) return false;
+        if (!c.have_opencl) return false;
+        if (!strcmp(plan_class, "opencl_nvidia_101")) {
+            return opencl_check(
+                c, hu,
+                101,
+                256*MEGA,
+                1,
+                .1,
+                .2
+            );
+        } else {
+            log_messages.printf(MSG_CRITICAL,
+                "Unknown plan class: %s\n", plan_class
+            );
+            return false;
+        }
+    } else if (strstr(plan_class, "ati")) {
+        COPROC_ATI& c = sreq.coprocs.ati;
+        if (!c.count) return false;
+        if (!c.have_opencl) return false;
+        if (!strcmp(plan_class, "opencl_ati_101")) {
+            return opencl_check(
+                c, hu,
+                101,
+                256*MEGA,
+                1,
+                .1,
+                .2
+            );
+        } else {
+            log_messages.printf(MSG_CRITICAL,
+                "Unknown plan class: %s\n", plan_class
+            );
+            return false;
+        }
+    } else {
+        log_messages.printf(MSG_CRITICAL,
+            "Unknown plan class: %s\n", plan_class
+        );
+        return false;
+    }
 }
 
 static inline bool app_plan_vbox(
@@ -497,6 +556,8 @@ bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu) {
         return app_plan_vbox(sreq, hu, false);
     } else if (!strcmp(plan_class, "vbox64")) {
         return app_plan_vbox(sreq, hu, true);
+    } else if (strstr(plan_class, "opencl")) {
+        return app_plan_opencl(sreq, plan_class, hu);
     }
     log_messages.printf(MSG_CRITICAL,
         "Unknown plan class: %s\n", plan_class

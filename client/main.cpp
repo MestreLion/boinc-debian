@@ -31,7 +31,7 @@
 
 #else
 #include "config.h"
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
@@ -273,14 +273,14 @@ static int finalize() {
     if (finalized) return 0;
     finalized = true;
     gstate.quit_activities();
-    daily_xfer_history.write_state();
+    daily_xfer_history.write_file();
 
 #ifdef _WIN32
     shutdown_idle_monitor();
 
 #ifdef USE_WINSOCK
     if (WinsockCleanup()) {
-        log_message_error("Failed to cleanup the Windows Sockets interface");
+        log_message_error("WinSockCleanup() failed");
         return ERR_IO;
     }
 #endif
@@ -291,7 +291,9 @@ static int finalize() {
 
     curl_cleanup();
 
+#ifdef _DEBUG
     gstate.free_mem();
+#endif
 
     diagnostics_finish();
     gstate.cleanup_completed = true;

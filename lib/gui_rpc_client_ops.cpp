@@ -75,8 +75,28 @@ using std::string;
 using std::vector;
 using std::sort;
 
-DISPLAY_INFO::DISPLAY_INFO() {
-    memset(this, 0, sizeof(DISPLAY_INFO));
+int DAILY_XFER::parse(XML_PARSER& xp) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/dx")) return 0;
+        if (xp.parse_int("when", when)) continue;
+        if (xp.parse_double("up", up)) continue;
+        if (xp.parse_double("down", down)) continue;
+    }
+    return ERR_XML_PARSE;
+}
+
+int DAILY_XFER_HISTORY::parse(XML_PARSER& xp) {
+    while (!xp.get_tag()) {
+        if (!xp.is_tag) continue;
+        if (xp.match_tag("dx")) {
+            DAILY_XFER dx;
+            int retval = dx.parse(xp);
+            if (!retval) {
+                daily_xfers.push_back(dx);
+            }
+        }
+    }
+    return 0;
 }
 
 int GUI_URL::parse(XML_PARSER& xp) {
@@ -1595,55 +1615,6 @@ int RPC_CLIENT::network_available() {
     return retval;
 }
 
-void DISPLAY_INFO::print_str(char* p) {
-    char buf[768];
-    if (strlen(window_station)) {
-        sprintf(buf,
-            "   <window_station>%s</window_station>\n", window_station
-        );
-        strcat(p, buf);
-    }
-    if (strlen(desktop)) {
-        sprintf(buf,
-            "   <desktop>%s</desktop>\n", desktop
-        );
-        strcat(p, buf);
-    }
-    if (strlen(display)) {
-        sprintf(buf,
-            "   <display>%s</display>\n", display
-        );
-        strcat(p, buf);
-    }
-}
-
-int RPC_CLIENT::show_graphics(
-    const char* project_url, const char* result_name, int graphics_mode,
-    DISPLAY_INFO& di
-) {
-    int retval;
-    SET_LOCALE sl;
-    char buf[1536];
-    RPC rpc(this);
-
-    sprintf(buf, 
-        "<result_show_graphics>\n"
-        "   <project_url>%s</project_url>\n"
-        "   <result_name>%s</result_name>\n"
-        "%s%s%s",
-        project_url,
-        result_name,
-        graphics_mode == MODE_HIDE_GRAPHICS?"   <hide/>\n":"",
-        graphics_mode == MODE_WINDOW       ?"   <window/>\n":"",
-        graphics_mode == MODE_FULLSCREEN   ?"   <full_screen/>\n":""
-    );
-    di.print_str(buf);
-    strcat(buf, "</result_show_graphics>\n");
-
-    retval = rpc.do_rpc(buf);
-    return retval;
-}
-
 int RPC_CLIENT::project_op(PROJECT& project, const char* op) {
     int retval;
     SET_LOCALE sl;
@@ -2483,3 +2454,12 @@ int RPC_CLIENT::get_notices_public(int seqno, NOTICES& notices) {
     return parse_notices(rpc.xp, notices);
 }
 
+int RPC_CLIENT::get_daily_xfer_history(DAILY_XFER_HISTORY& dxh) {
+    SET_LOCALE sl;
+    RPC rpc(this);
+    int retval;
+
+    retval = rpc.do_rpc("<get_daily_xfer_history/>\n");
+    if (retval) return retval;
+    return dxh.parse(rpc.xp);
+}

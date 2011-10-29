@@ -256,19 +256,25 @@ int DB_BASE::delete_from_db() {
     return db->do_query(query);
 }
 
-int DB_BASE::get_field_int(const char* field, int& val) {
+int DB_BASE::get_field_ints(const char* fields, int nfields, int* vals) {
     char query[MAX_QUERY_LEN];
     int retval;
     MYSQL_ROW row;
     MYSQL_RES* rp;
 
-    sprintf(query, "select %s from %s where id=%d", field, table_name, get_id());
+    sprintf(query,
+        "select %s from %s where id=%d", fields, table_name, get_id()
+    );
     retval = db->do_query(query);
     if (retval) return retval;
     rp = mysql_store_result(db->mysql);
     if (!rp) return -1;
     row = mysql_fetch_row(rp);
-    if (row) val = atoi(row[0]);
+    if (row) {
+        for (int i=0; i<nfields; i++) {
+            vals[i] = atoi(row[i]);
+        }
+    }
     mysql_free_result(rp);
     if (row == 0) return ERR_DB_NOT_FOUND;
     return 0;
@@ -280,7 +286,9 @@ int DB_BASE::get_field_str(const char* field, char* buf, int buflen) {
     MYSQL_ROW row;
     MYSQL_RES* rp;
 
-    sprintf(query, "select %s from %s where id=%d", field, table_name, get_id());
+    sprintf(query,
+        "select %s from %s where id=%d", field, table_name, get_id()
+    );
     retval = db->do_query(query);
     if (retval) return retval;
     rp = mysql_store_result(db->mysql);
@@ -329,7 +337,6 @@ int DB_BASE::update_fields_noid(char* set_clause, char* where_clause) {
     );
     int retval = db->do_query(query);
     if (retval) return retval;
-    if (db->affected_rows() != 1) return ERR_DB_NOT_FOUND;
     return 0;
 }
 
@@ -497,4 +504,4 @@ void escape_mysql_like_pattern(const char* in, char* out) {
     }
 }
 
-const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 21109 2010-04-05 23:12:02Z boincadm $";
+const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 24484 2011-10-26 07:15:22Z davea $";

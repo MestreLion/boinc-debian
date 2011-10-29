@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 24256 2011-09-22 06:09:26Z davea $
+## $Id: Makefile.am 24325 2011-10-03 21:43:34Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -8,7 +8,7 @@ bin_PROGRAMS =
 # Stuff needed for server builds goes here.
 if ENABLE_SERVER
 
-bin_PROGRAMS += crypt_prog
+bin_PROGRAMS += crypt_prog parse_test
 
 endif
 # end of "if ENABLE_SERVER"
@@ -148,13 +148,13 @@ lib_LTLIBRARIES = libboinc.la libboinc_crypt.la
 libboinc_la_SOURCES = $(generic_sources) $(mac_sources)
 libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
 libboinc_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
-libboinc_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -version-number $(LIBBOINC_VERSION)
+libboinc_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -static -version-number $(LIBBOINC_VERSION)
 libboinc_la_LIBADD =
 
 libboinc_crypt_la_SOURCES = crypt.cpp
 libboinc_crypt_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
 libboinc_crypt_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
-libboinc_crypt_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -version-number $(LIBBOINC_VERSION)
+libboinc_crypt_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -static -version-number $(LIBBOINC_VERSION)
 libboinc_crypt_la_LIBADD = 
 
 
@@ -221,4 +221,6 @@ msg_test_LDADD = $(LIBBOINC)
 crypt_prog_SOURCES = crypt_prog.cpp 
 crypt_prog_CXXFLAGS = $(PTHREAD_CFLAGS)
 crypt_prog_LDADD = $(LIBBOINC_CRYPT_STATIC) $(LIBBOINC) $(SSL_LIBS) 
-
+parse_test_SOURCES = parse_test.cpp 
+parse_test_CXXFLAGS = $(PTHREAD_CFLAGS)
+parse_test_LDADD = $(LIBBOINC)

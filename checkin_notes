@@ -755,8 +755,9 @@ Charlie 15 Feb 2011
     Mac: Make backtrace compile properly with OS 10.5 and OS 10.6 SDKs.
     
     lib/
-        QBacktrace.c
-        QCrashReport.c
+        mac/
+            QBacktrace.c
+            QCrashReport.c
 
 Charlie 15 Feb 2011
     Mac Installer: Fix the code which deletes installer receipts to use  
@@ -4239,9 +4240,9 @@ David  20 July 2011
         gui_rpc_client_ops.cpp
 
 David  20 July 2011
-    - client/server: change the implementation of upload signatures
+    - client/server: change the implementation of upload certificates
         as described here: http://boinc.berkeley.edu/trac/wiki/ClientDataModel
-        Compatibility: if your project is using upload signatures:
+        Compatibility: if your project is using upload certificates:
             - set ignore_upload_certificates
             - disable job creation
             - let your job queue drain
@@ -4874,7 +4875,7 @@ David  10 Aug 2011
 
 Charlie 11 Aug 2011
     - Mac installer: Bug fixes for OS 10.7 Lion: LoginItemAPI.c did not 
-        set hidden properlty for login items, so use AppleScript instead, 
+        set hidden property for login items, so use AppleScript instead, 
         to prevent Lion from opening BOINC windows at system startup.
         - Fix a bug I introduced on 8 August which prevented launching 
         WaitPermissions.app.
@@ -6381,22 +6382,22 @@ Rom    22 Sept 2011
         vbox.cpp, .h
 
 David  22 Sept 2011
-	- client: more work on replicated trickles.  Not working yet.
+    - client: more work on replicated trickles.  Not working yet.
 
-	client/
-		client_state.cpp
-		cs_trickle.cpp,h
+    client/
+        client_state.cpp
+        cs_trickle.cpp,h
 
 David  22 Sept 2011
-	- client: replicated trickles.  Seems to be working now.
-	- client: added <trickle_debug> config option
+    - client: replicated trickles.  Seems to be working now.
+    - client: added <trickle_debug> config option
 
-	client/
-		cs_trickle.cpp
-		gui_http.cpp,h
-		httl_curl.cpp
-	lib/
-		cc_config.cpp,h
+    client/
+        cs_trickle.cpp
+        gui_http.cpp,h
+        httl_curl.cpp
+    lib/
+        cc_config.cpp,h
 
 Rom    22 Sept 2011
     - Tag for 6.13.5 release, all platforms
@@ -6431,7 +6432,39 @@ Rom    22 Sept 2011
         configure.ac
         version.h
 
-Charlie 23 Sep 2011
+David  23 Sept 2011
+    - fix typo in manage_privileges
+
+    tools/
+        manage_privileges
+
+David  23 Sept 2011
+    - web: don't addslashes() for button titles; this was left over
+        from when buttons were implemented in Javascript
+
+    html/inc/
+        util.inc
+
+David  23 Sept 2011
+    - web: message tweak
+
+    html/inc/
+        forum.inc
+
+David  23 Sept 2011
+    - client: fix spurious error message about trickle-up URLs
+
+    client/
+        client_types.cpp
+
+David  23 Sept 2011
+    - client: don't call CLIENT_STATE::free_mem() on shutdown.
+        This is for debugging only, and it can cause crashes.
+
+    client/
+        main.cpp
+
+Charlie 24 Sep 2011
     - Mac: more fixes for problems with OS 10.4 compatibility.
         (checked into 6.13.5 and 6.13.6 tags)
 
@@ -6442,10 +6475,1464 @@ Charlie 23 Sep 2011
         PostInstall.cpp
         uninstall.cpp
 
- Charlie 26 Sep 2011
+David  26 Sept 2011
+    - client simulator: add --existing_jobs_only option.
+        This simulates just the jobs in the state file,
+        rather than simulating an infinite stream of jobs
+        modeled after the ones in the state file.
+
+    client/
+        sim.cpp,h
+        cs_prefs.cpp
+ 
+Charlie 26 Sep 2011
      - Mac: update wxMac build script for building with XCode 4.1 
         under OS 10.7 while maintaining OS 10.4 compatibility.
         (checked into 6.13.6 tag)
 
      mac_build/
         buildWxMac.sh
+
+David  26 Sept 2011
+    - client simulator: fixes
+    - client: message tweaks
+
+    client/
+        client_state.cpp,h
+        sim.cpp
+        cs_prefs.cpp
+        cs_apps.cpp
+        log_flags.cpp
+        cpu_sched.cpp
+    lib/
+        cc_config.h
+
+David  26 Sept 2011
+    - web: when showing a user's posts, don't show the ones
+        in hidden threads
+    - web: in showing the context of a post, link the thread also.
+
+    html/
+        user/
+            forum_user_posts.php
+        inc/
+            forum.inc
+
+Charlie 27 Sep 2011
+    - client: Fix compile break on Mac.
+    
+    client/
+        cpu_sched.cpp
+
+Rom    27 Sept 2011
+    - web: The create_account RPC supports taking an invite_code parameter
+        but we currently do not expose a way in get_project_config to determine
+        that a UI should prompt for one.  Add a <invite_code_required/> tag
+        if the project is only accepting new accounts by invitation.
+        
+    html/user/
+        get_project_config.php
+
+Rom    27 Sept 2011
+    lib: only build the static version of libboinc.
+
+    lib/
+        Makefile.am
+
+David  27 Sept 2011
+    - fix comment
+    client/
+        app_control.cpp
+
+David  27 Sept 2011
+    - Updates Linux notifications to use current libnotify.
+    - Fix build problems on Mac OS X using autotools
+    - Consistently use #if HAVE_X for platform checks,
+        rather than #ifdef HAVE_X or #if defined(HAVE_X)
+    - In Unix build, make lots of compiler checks standard
+    - Fix some compile warnings
+
+    From Matt Arsenault.
+
+    Note: there are now lots of compile warnings in clientgui/ on Unix,
+    mostly in WxWidgets code
+
+    configure.ac
+    Makefile.incl
+    clientgui/gtk
+        taskbarex.cpp
+    db/
+        boinc_db.cpp
+    clientscr/
+        gfxswitcher.cpp
+    sched/
+        file_deleter.cpp
+        hr.h
+    lib/
+        various
+    win_build/
+        win-config.h
+    api/
+        various
+    client/
+        various
+
+Charlie 27 Sep 2011
+    - client: Fix compiler warnings on Mac.
+    - client: Fix compile break on Mac.
+    
+    client/
+        client_state.cpp
+        cs_cmdline.cpp
+        mac/
+            config.h
+
+David  28 Sept 2011
+    - manager: fix build break on Linux
+        Undoes part of yesterday's checkin.
+    - more changes from #ifdef HAVE_X to #if HAVE_X
+
+    clientgui/gtk/
+        taskbarex.cpp
+    lib/
+        proc_control.cpp
+        mac_address.cpp
+        diagnostics.cpp
+        parse.h
+
+Rom    30 Sept 2011
+    - WINSETUP: Add more logging to the create group and add user to group
+        functions in an attempt to figure out what is going on with Windows 8.
+        
+    win_build/installerv2/redist/Windows/src/boinccas/
+        CACreateBOINCGroups.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+David  1 Oct 2011
+    - client: fix a bug reported by Jacob Klein,
+        where work fetch didn't work right in the presence of
+        multiple GPUs and <exclude_gpu> config options.
+        For example: suppose:
+            - you have 2 GPUs and 2 projects
+            - Project A is excluded from GPU 1
+            - you have lots of jobs for project A
+        Then the client won't try to fetch jobs from project B.
+
+        The problem had 2 parts:
+        a) round-robin simulation wasn't taking GPU exclusions into account.
+            In the above example, it would think that both GPUs had jobs.
+            I fixed this by computing the # of GPUs from each project
+            is excluded, and using this in the RR simulation.
+        b) Once this was done, I needed to make the client
+            request GPU jobs from project B rather than project A.
+            I did this with following policy:
+            If a project has excluded GPUs of a given type,
+            and has a runnable job of that type,
+            don't ask it for more work of that type.
+
+        Notes:
+        - the policy in b) is crude, and it means that work-buffer
+            preferences are ignored in some cases.
+        - neither a) nor b) takes into account app-level exclusions.
+
+        I could fix both of these with a lot of work,
+        but I'd rather move to a model in which dissimilar GPUs
+        are modeled as different resources,
+        which would remove the need for the <exclude_gpu> mechanism
+        in the first place.
+
+        Other note: I figured out this problem using the client simulator,
+        based on the client state file that Jacob sent me.
+
+    - web: remove extraneous ) at end of button tooltips
+
+    html/inc/
+        util.inc
+    client/
+        client_types.h
+        client_state.cpp
+        sim.cpp
+        work_fetch.cpp
+        rr_sim.cpp
+        gui_rpc_serever_ops.cpp
+        log_flags.cpp,h
+
+David  1 Oct 2011
+    - client: specify the project in "Some tasks need more memory
+        than allowed by your preferences" messages
+
+    client
+        cs_trickle.cpp
+        client_state.cpp
+
+David  1 Oct 2011
+    - team import script: don't exit if fail to create user.
+        The failure may be because the email is banned
+        (as happened w/ SETI@home)
+
+    html/ops/
+        team_import.php
+    
+David  2 Oct 2011
+    - client: fix bug that could cause GPU idleness
+        in the presence of GPU exclusions.
+        The problem was in the job-selection phase,
+        which picks enough jobs to use all devices.
+        It was ignoring GPU exclusions, so for example on
+        a 2 GPU system it could pick 2 jobs from a project
+        for which 1 GPU is excluded,
+        and as a result 1 GPU would be idle.
+
+        Solution: during job selection,
+        keep track of GPU usage on a per-instance basis.
+        Select a job only if it can run on a non-excluded GPU.
+
+    - client: in computing ncprocs_excluded (which is used in
+        work fetch policy) don't count exclusions of non-existent devices
+
+    html/ops/
+        team_export.php
+    lib/
+        coproc.h
+    client/
+        log_flags.cpp
+        cpu_sched.cpp
+
+David  2 Oct 2011
+    - client: compute project scheduling priority more efficiently
+    - client: if an app version can't be used because the GPUs it needs
+        are all excluded, mark it and all its results as "coproc missing"
+        so that they won't be looked at in scheduling logic.
+
+    client/
+        client_state.cpp
+        client_types.cpp,h
+        cpu_sched.cpp
+        gui_rpc_server_ops.cpp
+        log_flags.cpp,h
+        rr_sim.cpp
+        sim.cpp
+        work_fetch.cpp
+
+Charlie 3 Oct 2011
+    - client: Fix compiler warnings.
+    
+    client/
+        cpu_sched.cpp
+
+David  3 Oct 2011
+    - web: fix error in profile listings.
+        From Uwe Becker.
+
+    html/user/
+        profile_menu.php
+
+David  3 Oct 2011
+    - lib: move XML parse test program to its own file.
+
+    Note: XML_PARSER::parse_str() doesn't currently work right
+        for something like <foo><a>xx</a></foo>.
+        It should return "<a>xx</a>".
+        TODO.
+
+    lib/
+        parse.cpp,h
+        parse_test.cpp (new)
+        Makefile.am
+
+David  3 Oct 2011
+    - scheduler: fix bugs that broke work fetch for anonymous platform;
+        don't send irrelevant messages to anon platform clients
+
+    sched/
+        sched_types.h
+        sched_send.cpp
+
+David  3 Oct 2011
+    - scheduler: record VirtualBox version # in the host table
+
+    sched/
+        handle_request.cpp
+    lib/
+        coproc.cpp,h
+
+David  4 Oct 2011
+    - client: don't generate notice if lookup of host
+        in remote_hosts.cfg fails.
+
+    client/
+        gui_rpc_server.cpp
+
+David  4 Oct 2011
+    - client: don't show "(device N)" if there's only 1 device
+
+    client/
+        client_types.cpp
+
+David  4 Oct 2011
+    - client: win compile fixes
+
+    client/
+        cpu_sched.cpp
+
+Rom    4 Oct 2011
+    - WINSCR: Before shutting down the screensaver, quickly reinitialize the OpenGL device
+        on the primary display.  Some of the issues being reported with the screensaver
+        is a left over ghost image of the OpenGL display before the graphics application
+        was terminated because keyboard/mouse activity was detected.
+
+    clientscr/
+        screensaver_win.cpp
+    win_build/
+        boinc_os_ss.vcproj
+
+David  4 Oct 2011
+    - client: in the function that sorts jobs by arrival time,
+        don't use name as a tiebreaker.
+        The will typically group jobs of the same application,
+        and (it is believed that) things run faster when
+        applications are mixed.
+    - scheduler: bug: if a client gets host-specific prefs
+        (e.g. from an account manager)
+        it will send only the working prefs to the scheduler.
+        The scheduler then always sends back the DB prefs,
+        overwriting the host-specific prefs.
+        Fix: note the mod time in the working prefs,
+        and only send the DB prefs if they're more recent.
+
+    client/
+        cs_statefile.cpp
+    sched/
+        handle_request.cpp
+
+David  5 Oct 2011
+    - client: fix a memory leak; would lose ~120 bytes each time a job is started
+
+    lib/
+        filesys.cpp
+
+Rom    5 Oct 2011
+    - Lib: Re-enable boinc lib mem snapshots for BOINC based applications (boinc,
+        boincmgr, boinc.scr) on Windows.
+        
+    lib/
+        diagnostics.cpp
+
+David  5 Oct
+    - client: fix memory leak when reading stderr of completed job.
+        This caused 128KB + size of stderr loss for each job.
+    - client: print error message if reading stderr fails
+        (e.g. because of malloc failure)
+
+    client/
+        app.h
+        app_control.cpp
+
+David  5 Oct
+    - client: free vectors in NOTICES, RSS_FEEDS, and DAILY_XFER_HISTORY
+        in free_mem() (for mem leak checking)
+
+    client
+        cs_notice.h
+        check_state.cpp
+        net_stats.h
+
+David  5 Oct
+    - scheduler: fix bug that caused scheduler to not send GPU jobs
+
+    sched/
+        sched_customize.cpp
+    lib/
+        coproc.cpp
+
+David  5 Oct
+    - client: problem: suppose a project has 2 data servers,
+        and one of them is down.
+        If several downloads from the broken one fail,
+        we go into "project-level backoff"
+        and don't start downloads from either server.
+        (Same applies to uploads).
+
+        Solution: make project-level backoff apply only to
+        transfers that have already failed at least once
+
+    client/
+        pers_file_xfer.cpp
+
+David  6 Oct
+    - GUI RPC: add get_daily_xfer_history() RPC for getting
+        the daily records of #bytes uploaded and downloaded
+
+    lib/
+        gui_rpc_client_print.cpp
+        gui_rpc_client_ops.cpp
+        gui_rpc_client.h
+    client/
+        boinc_cmd.cpp
+        gui_rpc_server_ops.cpp
+        net_stats.cpp,h
+        main.cpp
+
+David  6 Oct
+    - client: fix bug in writing daily xfer history file
+
+    client/
+        main.cpp
+        net_stats.cpp
+
+Charlie 7 Oct 2011
+    - client: write descriptions of OpenCL devices to stdout 
+        (and display in manager's Event log).
+    - client: work around a bug where OpenCL reports global RAM of ATI 
+        GPUs incorrectly (1/2 of actual value.)
+    
+    client/
+        coproc_detect.cpp
+    lib/
+        coproc.cpp, .h
+
+David  7 Oct 2011
+    - client/server: change field names in OPENCL_DEVICE_PROP
+        to match those in the clGetDeviceInfo() calls.
+        Principles:
+        - if there's already a name for something, use it.
+        - follow case conventions
+
+    lib/
+        coproc.cpp,h
+    client/
+        coproc_detect.cpp
+    sched/
+        sched_customize.cpp,h
+
+David  7 Oct 2011
+    - scheduler add app_plan() support for plan classes
+        opencl_nvidia_101 and opencl_ati_101
+
+    sched/
+        sched_customize.cpp
+
+David  7 Oct 2011
+    - client and scheduler: estimate peak FLOPS for GPUs that
+        are detected by OpenCL but not by native APIs (CUDA/CAL).
+        This is limited by the fact that OpenCL doesn't give
+        us the necessary hardware info
+        (ATI; wavefrontSize; NVIDIA: compute capability).
+        We use the minimum values for these,
+        so in most cases we'll be underestimating the peak FLOPS.
+
+    lib/
+        coproc.cpp,h
+
+David  7 Oct 2011
+    - client (Mac): there was no error check of the creation
+         of a memory-mapped file used for communication with an app.
+         Add a check, and don't start the job if it fails.
+
+    client/
+        app_start.cpp
+
+David  7 Oct 2011
+    - client: don't do scheduler-requested RPCs if
+        - project is set to No New Work, and
+        - project has no jobs on the client
+
+    client/
+        client_types.h
+        work_fetch.cpp
+        cs_scheduler.cpp
+
+David  7 Oct 2011
+    - client/scheduler: the code for estimating peak FLOPS of ATI GPUs
+        (from Crunch3r) has a multiplier of 2.5 for cores/processor.
+        This is possibly because give a double-precision estimate.
+        But actually we want single-precision.  Change it to 5. See
+        http://golubev.com/about_cpu_and_gpu_2_en.htm
+
+    lib/
+        coproc.cpp
+
+Charlie 7 Oct 2011
+    - client: improve code which writes OpenCL descriptions. 
+    
+    client/
+        coproc_detect.cpp
+
+Charlie 7 Oct 2011
+    - client: Compare openCL-only devices by estimated peak flops. 
+    
+    client/
+        coproc_detect.cpp
+    lib/
+        coproc.cpp,h
+
+David  7 Oct 2011
+    - scheduler: problem: in the daily quota mechanism,
+        the boundary between days is 00:00 in server local time.
+        This creates a spike of jobs being dispatched
+        (and files being downloaded) after that time.
+
+        Solution: distribute the boundary uniformly,
+        using a random number determined by the host ID.
+        (Make sure to save/restore the seed around this,
+        so we don't destroy the randomness of other things)
+
+    sched/
+        handle_request.cpp
+
+David  7 Oct 2011
+    - client: compare OpenCL-only devices the same as other devices
+    - code cleanup
+
+    lib/
+        coproc.cpp,h
+    client/
+        coproc_detect.cpp
+    sched/
+        sched_customize.cpp
+
+David  8 Oct 2011
+    - scheduler: fix crashing bug when using HR.  From Kevin Reed.
+
+    sched/
+        sched_version.cpp
+
+Charlie 8 Oct 2011
+    - client: Fill in peak flops for each OpenCL GPU before compare; 
+        else there is nothing to ompare with.
+
+    client/
+        coproc_detect.cpp
+
+David  8 Oct 2011
+    - API: don't crash if send trickle msg running standalone.
+        From Christian Ries.
+
+    api/
+        boinc_api.cpp
+
+David  8 Oct 2011
+    - client: fix bugs in acct manager attach/detach
+
+    client/
+        gui_rpc_server_ops.cpp
+
+Charlie 10 Oct 2011
+    - code cleanup
+
+    lib/
+        coproc.cpp,h
+    client/
+        coproc_detect.cpp
+
+Rom    10 Oct 2011
+    - client: Fix crashing bug in OpenCL detection on Windows.
+    - lib: Fix crashing bug for debug builds of the BOINC client software
+    
+    client/
+        coproc_detect.cpp
+    lib/
+        diagnostics.cpp
+
+Charlie 10 Oct 2011
+    - code optimization
+
+    client/
+        coproc_detect.cpp
+
+Charlie 11 Oct 2011
+    - Mac installer: follow recommendations of Apple Developer Technical
+        Support: create users and groups boinc_master and boinc_project 
+        at first available UserIDs and GroupIDs starting at 501 instead 
+        of 25 to avoid conflicts with UserIDs and groupIDs which may be 
+        added in the future; use Directory Services to find the user 
+        names of all human users instead of stepping through the entries 
+        in the /Users directory.
+    - Mac installer: revert to using LoginItemAPI.c under OS 10.7.1, 
+        because it once again sets hidden property for login items, but 
+        the AppleScript seems not to work under OS 10.7.1.
+        
+    mac_installer/
+        PostInstall.cpp
+
+Rom    11 Oct 2011
+    - Tag for 6.13.7 release, all platforms
+      boinc_core_release_6_13_7
+
+    /
+        configure.ac
+        version.h
+
+David  11 Oct 2011
+    - client/server: add a new result state RESULT_UPLOAD_FAILED
+        for when the job completed successfully but
+        one or more output files had permanent upload failures.
+        Show this state in web interfaces.
+    - sample_work_generator: check return value of count_unsent_results(),
+        so that we don't generate infinite work if there's a DB problem
+    - web: RSS feed shows news items from last 90 days, rather than 14
+
+    sched/
+        sample_work_generator.cpp
+    html/
+        inc/
+            result.inc
+        user/
+            rss_main.php
+    lib/
+        coproc.cpp,h
+        error_numbers.h
+        common_defs.h
+    client/
+        client_types.cpp,h
+        client_state.cpp
+        coproc_detect.cpp
+
+David  11 Oct 2011
+    - client and user web: show NVIDIA driver version and CUDA version
+        as, e.g., 275.33 instead of 27533
+
+    html/inc/
+        host.inc
+    lib/
+        coproc.cpp
+
+Rom    11 Oct 2011
+    - vbox: Move the destination of the VBOX_USER_HOME environment variable to
+        <boinc_data_dir>/projects/virtualbox so that the virtualbox configuration
+        can remain consistent across one or more projects.
+
+    samples/vboxwrapper/
+        vbox.cpp
+
+Charlie 11 Oct 2011
+    - client: fix NVIDIA driver version and CUDA version display for Mac.
+
+    lib/
+        coproc.cpp
+
+Rom    11 Oct 2011
+    - Tag for 6.13.8 release, all platforms
+      boinc_core_release_6_13_8
+
+    /
+        configure.ac
+        version.h
+
+David  11 Oct 2011
+    - scheduler: fix a bug that would choose app versions erroneously.
+        The problem: the choice of app version was based on
+        the "projected FLOPS" return by estimate_flops(av).
+        If usage stats exist for the host / app version,
+        this returns a number X such that
+        WU.rsc_fpops_est/X approximates the runtime of a job
+        using the given app version..
+        (If WU.rsc_fpops_est is way off, this will be correspondingly way off
+        from the actual FLOPS the app version will get.)
+        However, if there are no usage stats,
+        it return an estimate based on host hardware speed,
+        which might be 100X less.
+        Hence, in some cases a new app version would never get used.
+
+        Solution: choose app versions based on the values
+        returned by the app plan functions.
+        Use estimate_flops() AFTER choosing the version.
+    - scheduler: improve the accuracy of FLOPS estimation for GPU apps.
+        The "flops_scale" argument to coproc_perf
+        (which expresses the difference between peak GPU FLOPS
+        and actual FLOPS) should be used to scale GPU FLOPS
+        prior to calling coproc_perf(),
+        rather than scaling the estimate returned by coproc_perf().
+    - show_shmem: show have_X_apps flags
+
+    sched/
+        sched_customize.cpp
+        sched_version.cpp
+        sched_shmem.cpp
+
+Charlie 12 Oct 2011
+    - client: fix honoring of cc_config ignore GPU options.
+
+    client/
+        coproc_detect.cpp
+
+Charlie 13 Oct 2011
+    - atiopencl sample: call boinc_get_opencl_ids() if not stand-alone; 
+        improve error messages.
+        
+    samples/
+        atiopencl/
+            atiopencl.cpp
+
+Rom    13 Oct 2011
+    - WINSCR: Move the reset display call to the end of the full screensaver
+        section.  We do not need to perform a display reset in the various
+        test modes.
+        
+    clientscr/
+        screensaver_win.cpp
+
+David  13 Oct 2011
+    - client: fix bug where network suspend got ignored when
+        OS suspends (e.g. sleep or hibernate)
+
+    client/
+        cs_prefs.cpp
+
+David  13 Oct 2011
+    - client: create and destroy PERS_FILE_XFERs even if network suspended.
+        This will show pending uploads in the Transfers tab.
+    - file_upload_handler: fix message to client when can't acquire lock
+    - client: parse <alt_platform> in state file correctly
+
+    client/
+        client_stte.cpp
+        sim.cpp
+        cs_statefile.cpp
+        cs_files.cpp
+    sched/
+        file_upload_handler.cpp
+
+David  13 Oct 2011
+    - web: fix bug in user search when enter empty name prefix
+
+    html/user/
+        user_search.php
+
+Rom    13 Oct 2011
+    - MGR: Support both the old and new libnotify at runtime on Linux
+    
+    clientgui/gtk/
+        taskbarex.cpp
+
+David  13 Oct 2011
+    - manager: don't show slot number in simple view task list
+
+    clientgui/
+        sg_TaskPanel.cpp,h
+
+Rom    13 Oct 2011
+    - MGR: Remove code that blocks the switch to simple view when an
+        accessibility aid is running.
+        
+    clientgui/
+        BOINCGUIApp.cpp
+        AdvancedFrame.cpp
+
+Rom    14 Oct 2011
+    - Remove dead code related to v5 graphics applications from the 
+      client software.
+    
+    client/
+        boinc_cmd.cpp
+    clientgui/
+        AsyncRPC.cpp, .h
+        BOINCGUIApp.cpp, .h
+        MainDocument.cpp
+    clientgui/gtk/
+        taskbarex.cpp
+    clientscr/
+        screensaver.cpp
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+    win_build/
+        win-config.h
+
+Rom    14 Oct 2011
+    - MGR: Remove the triangle in the lower right-hand corner of the
+        default project image for the simple GUI
+
+    clientgui/res/skins/default/graphic/
+        project_image.xpm
+
+Rom    14 Oct 2011
+    - MGR: Persist Simple GUI notification dialog size and position
+        information.
+    - MGR: Remove context menu help buttons from dialog.
+    
+    clientgui/
+        sg_DlgMessages.cpp
+
+David  14 Oct 2011
+    - client: show OpenCL version correctly on Win
+    lib/
+        coproc.cpp
+
+David  14 Oct 2011
+    - client: improvements to job scheduling and work fetch policies.
+        - Job scheduling: the baseline policy is to schedule based on "project priority",
+            which is how much processing P should receive based on resource share
+            minus how much it actually has received recently.
+            This policy tends to run jobs from the same project together,
+            so we modified it by adding a priority adjustment as jobs are scheduled.
+            The idea is that if 2 projects have about the same priority
+            they should split the processors.
+
+            The problem: the adjustment was too large on hosts that are on
+            only a small fraction of the time,
+            thus tending to run 1 job from each project, regardless of priority.
+
+            Solution: make an adjustment that reflects the host's actual throughput.
+            See adjust_rec_sched() for details.
+
+        - Work fetch: similar situation.
+            We were making an adjustment based on how much work the project currently has queued,
+            but the adjustment drowned out the project priority,
+            so we'd tend to always get work from the project that has least work queued.
+            Solution: make a smaller adjustment (-.3 ... .3)
+
+    - client: in message announcing app start, show the plan class
+
+    - client: don't show "unrecognized XML" messages for account files.
+        It's typically project-specific prefs that the client doesn't know about.
+
+    client/
+        app_start.cpp
+        client_state.cpp
+        cpu_sched.cpp
+        cs_account.cpp
+        work_fetch.cpp
+
+David  14 Oct 2011
+    - client: bug fix for the above
+    client/
+        work_fetch.cpp
+
+David  14 Oct 2011
+    - scheduler: in cuda_check(), ati_check() and opencl_check()
+        (in sched_customize.cpp)
+        the flops_scale argument is intended to express the
+        GPU efficiency (actual/peak).
+        Pass appropriate values.
+
+    sched/
+        sched_customize.cpp
+        sched_version.cpp
+    html/
+        ops/
+            index.php
+        inc/
+            db_ops.inc
+
+David  16 Oct 2011
+    - client simulator: make the output more graphical
+
+    html/
+        inc/
+            util.inc
+    client/
+        sim.cpp
+
+David  17 Oct 2011
+    - add boinc_opencl.h to set of installed headers
+    - emulator tweaks
+    lib/
+        Makefile.am
+    client/
+        sim.cpp
+        sim_util.cpp
+
+David  17 Oct 2011
+    - client: call xp.skip_unexpected() if get unexpected tag,
+        to avoid showing multiple error messages
+    - client simulator: bug fixes and tweaks
+
+    client/
+        client_types.cpp,h
+        app.h
+        sim.cpp,h
+        work_fetch.cpp
+        sim_util.cpp
+
+David  17 Oct 2011
+    - client: associate a PROJECT with HTTP_OP where applicable,
+        so that if you use <http_debug> and filter by project
+        you don't see other projects' HTTP stuff
+    - client simulator: cc_config.xml is part of the scenario;
+        log flags are part of the simulation
+
+    client/
+        http_curl.cpp,h
+        sim.cpp
+        work_fetch.cpp
+        file_xfer.cpp
+        gui_http.cpp
+        scheduler_op.cpp
+
+Rom    17 Oct 2011
+    - MGR: Make the Default skin loadable from the file system.
+    - MGR: Change the in-memory defaults for the skin to be a light-gray
+        background.
+    - MGR: Change the dots used in the simple gui.
+    - MGR: Make the dots used in the simple gui skinable.
+    - MGR: Change the 'Project Web Sites' button text to 'Project Web Pages'.
+    - MGR: Add a basic 'Default' skin to be included by the various
+        installers
+    - MGR: Remove a bunch of files that are not used by the default skin
+        anymore.
+
+    clientgui/res/skins/default/graphic/
+        <various files>
+    clientgui/res/templates/
+        dotgreen.gif
+        dotred.gif
+        dotyellow.gif
+    clientgui/
+        sg_DlgPreferences.cpp
+        sg_ProjectPanel.cpp
+        sg_TaskPanel.cpp, .h
+        SkinManager.cpp, .h
+    clientgui/skins/Default/
+        background_image.png
+    clientgui/skins/Default/
+        skin.xml
+
+David  18 Oct 2011
+    - backend API: added function cancel_jobs(minid, maxid)
+        for canceling jobs
+    - added program cancel_jobs for canceling jobs
+    - DB interface: it's not an error if update_fields_noid()
+        affects != 1 rows
+
+    db/
+        db_base.cpp
+    tools/
+        backend_lib.cpp,h
+        cancel_jobs.cpp (new)
+        poll_wu.cpp
+        Makefile.am
+    lib/
+        parse.cpp
+    py/Boinc/
+        setup_project.py
+
+Charlie 18 Oct 2011
+    - Mac: Update Mac build scripts, XCode project and source files 
+        to allow automated builds under OS 10.7 Lion and XCode 4.2.
+    - Mac: Build and link jpeglib from boinc/samples/jpeglib instead 
+        of requiring a separate jpeglib-6b directory.
+    
+    api/
+        gutil.cpp
+        gutil_text.cpp
+    lib/
+        mac/
+            QBackTrace.c
+            QCrashReport.c
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+        buildc-ares.sh
+        buildcurl.sh
+        BuildMacBOINC.sh
+        buildWxMac.sh
+        setupForBOINC.sh
+    mac_installer/
+        Installer.cpp
+        PostInstall.cpp
+    samples/
+        jpeglib/
+            jconfig.h
+
+Rom    18 Oct 2011
+    - MGR: More simple GUI text changes
+    - MHR: Reduce clutter in log file
+    
+    clientgui/
+        sg_BoincSimpleFrame.cpp
+        sg_ProjectPanel.cpp, .h
+
+David  18 Oct 2011
+    - client: change the way project priorities are computed,
+        so that they do what they're supposed to
+        (i.e. enforce resource shares)
+    - client: change log flag <debt_debug> to <priority_debug>
+    - client simulator: update REC even with large delta-t.
+    - client simulator: handle "no new work" apps correctly
+
+    api/
+        Makefile.am
+    client/
+        work_fetch.cpp,h
+        client_types.h
+        client_state.cpp
+        sim.cpp
+        rr_sim.cpp
+        sim_util.cpp
+        cpu_sched.cpp
+
+David  18 Oct 2011
+    - client: fix bug that caused extra "<" to get written at
+        end of global_prefs_override.xml and cc_config.xml
+        when they are modified via GUI RPCs
+
+    client/
+        gui_rpc_server_ops.cpp
+
+David  19 Oct 2011
+    - client: fix crashing bug when there's a cycle in the process graph.
+        I had fixed this in one place but not another.
+    - client: don't memset(0,) a PROCINFO; use clear() instead
+
+    lib/
+        proc_control.cpp
+        procinfo_mac.cpp
+        procinfo_unix.cpp
+        procinfo_win.cpp
+
+Charlie 19 Oct 2011
+    - Mac: Update XCode project and Mac build scripts to build 
+        libboinc_opencl.a library and to work both with XCode 3.2 on 
+        OS 10.6.8 and with XCode 4.2 on OS 10.7.2.
+        
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+        BuildMacBOINC.sh
+
+Charlie 19 Oct 2011
+    - MGR: Replace backup images RedDot16.xpm, YellowDot16.xpm and 
+        GreenDot16.xpm with XPM files created from Rom's new files 
+        dotred.gif, dotyellow.gif and dotgreen.gif.  These need to
+        be cmpiled into the source code as backups in case the GIFs 
+        are missing, because these images are essential resources. 
+
+    clientgui/
+        res/
+            RedDot16.xpm
+            YellowDot16.xpm
+            GreenDot16.xpm
+
+Charlie 19 Oct 2011
+    - MGR: Simple View bug fix.
+     
+    clientgui/
+        sg_TaskPanel.cpp
+
+Rom    19 Oct 2011
+    - MGR: Fix dot images
+    
+    clientgui/res/skins/default/graphic/
+        workunit_running_image.xpm
+        workunit_suspended_image.xpm
+        workunit_waiting_image.xpm
+    clientgui/res/templates/
+        dotgreen.gif
+        dotred.gif
+        dotyellow.gif
+
+David  19 Oct 2011
+    - client simulator: bug fix
+
+    client/
+        sim.cpp
+    lib/
+        parse.cpp
+
+Charlie 20 Oct 2011
+    - MGR: Replace colored dot GIF files with new PNG files which do 
+        the anti-aliasing in the alpha channel, so they look correct 
+        when highlighted on the Mac.  Generate new XPM files from 
+        these PNG files.
+
+    clientgui/res/skins/default/
+        graphic/
+            workunit_running_image.xpm
+            workunit_suspended_image.xpm
+            workunit_waiting_image.xpm
+        skin.xml (added)
+    clientgui/res/templates/
+        dotgreen.gif (deleted)
+        dotred.gif (deleted)
+        dotyellow.gif (deleted)
+        Green_dot.png (added)
+        Red_dot.png (added)
+        Yellow_dot.png (added)
+
+Charlie 20 Oct 2011
+    - MGR: Force update of Task Selection List on reskin interface.
+    
+    clientgui/
+        sg_TaskPanel.cpp,h
+
+Charlie 20 Oct 2011
+    - MGR: Move skin file to correct place, set background image's 
+        background color to black for this background_image.png.
+        
+    clientgui/
+        res/skins/default/
+            skin.xml (deleted)
+        skins/Default/
+            skin.xml
+
+David  21 Oct 2011
+    - client/API: pass bool using_sandbox in APP_INIT_DATA;
+        says whether the client is using account-based sandboxing.
+        Needed by vboxwrapper.
+    - web: don't show authenticator in Your Account page.
+        The problem with authenticators is that if a bad guys gets yours,
+        they can log in to your account even if you change your password.
+        Eventually we should not use them at all
+        (i.e. in cookies and sent to client).
+    - make_project: copy python stuff (e.g. bin/start) for web-only projects;
+        generate appropriate project.readme file for web-only projects.
+
+    html/inc/
+        user.inc
+    lib/
+        app_ipc.cpp,h
+    client/
+        app_start.cpp
+        cs_scheduler.cpp
+    tools/
+        make_project
+    py/Boinc/
+        setup_project.py
+
+Charlie 21 Oct 2011
+    - MGR: Adjust preference dialog titles, improve Simple View menus 
+        and other text, make Simple Preferences dialog more like 
+        Advanced Preferences dialog.
+        
+        clientgui/
+            AdvancedFrame.cpp
+            DlgAdvPreferencesBase.cpp
+            DlgOptions.cpp
+            Events.h
+            sg_BoincSimpleFrame.cpp,.h
+            sg_DlgMessages.cpp,.h
+            sg_DlgPreferences.cpp,.h
+
+Rom    21 Oct 2011
+    - VBOX: Don't redirect VirtualBox to a different directory structure for
+        the root configuration file when the client is NOT in sandbox mode.
+        Doing so could cause confusion if the volunteer uses VirtualBox for
+        any of their own work.  If BOINC started up first it would have appeared
+        that their own VM's no longer existed.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+
+Rom    21 Oct 2011
+    - MGR: Make the simple gui rounded edges seem smoother by increasing the
+        radius.
+    - MGR: Fix project name font in the tasks area, normal size.  Increase
+        its weight to BOLD.
+    - MGR: Make sure the dot is red if the project has been suspended for
+        the given task.
+        
+    clientgui/
+        sg_PanelBase.cpp
+        sg_TaskPanel.cpp
+
+David  21 Oct 2011
+    - scheduler: fix calculation of ATI peak FLOPS;
+        older clients don't report have_cal.
+
+    lib/
+        coproc.cpp
+
+Rom    21 Oct 2011
+    - MGR: Scale background skin so that it now fits in the new simple gui
+        NOTE: We are in the process of trying to get new artwork so that we
+          can handle the localization issues better.
+        
+    clientgui/skins/Default/
+        background_image.png
+
+David  21 Oct 2011
+    - fix NVIDIA peak FLOPS
+
+    lib/
+        coproc.cpp
+
+David  21 Oct 2011
+    - update_versions: touch trigger file so that feeder rereads DB
+
+    tools/
+        update_versions
+
+Charlie 21 Oct 2011
+    - MGR: Fix crash bug.
+    
+    clientgui/
+        sg_BoincSimpleFrame.cpp,.h
+
+Charlie 21 Oct 2011
+    - MGR: Fix project name font on Mac, which uses Lucinda Grande font 
+        not Arial.  SetFont for the parent window does not propogate to 
+        the text controls because CTransparentStaticText uses OnPaint() 
+        to draw. 
+    
+    clientgui/
+        sg_TaskPanel.cpp
+
+Charlie 22 Oct 2011
+    - MGR: Bug fix: when the task currently selected in Simple View 
+        is deleted, change selection to a different task.
+        
+    clientgui/
+        sg_TaskPanel.cpp    
+
+Charlie 23 Oct 2011
+    - MGR: Sort Simple View task selection control alphabetically. 
+        
+    clientgui/
+        mac/
+            MacBitmapComboBox.cpp,.h
+        sg_TaskPanel.cpp    
+
+Charlie 23 Oct 2011
+    - MGR: Reverted the above change because wxBitmapComboBox on Windows 
+        loses existing items' clientData when we Insert() a new item.
+
+    clientgui/
+        sg_TaskPanel.cpp    
+
+David  23 Oct 2011
+    - web: forum RSS shouldn't filter sticky threads.
+        Not sure why that was in there.
+    html/inc/
+        forum_rss.inc
+
+Charlie 24 Oct 2011
+    - Mac installer: Fix a very old bug.
+
+    mac_build/
+        Mac_SA_Secure.sh
+
+David  24 Oct 2011
+    - client: reimplement the round-robin simulator to
+        reduce its runtime from O(N^2) to O(N),
+        where N is the number of runnable jobs
+        (which can be in the thousands).
+        This will make the client emulator run a lot faster,
+        and will reduce the client CPU overhead a bit.
+    - API: change boinc_get_opencl_ids() so that it returns
+        a BOINC error code (< -100) if the app_init.xml is
+        missing or bad (i.e. we're running standalone),
+        and an OpenCL error code (> -100) if an OpenCL call failed.
+
+    client/
+        work_fetch.cpp,h
+        client_types.h
+        sim.cpp
+        rr_sim.cpp
+
+Rom    24 Oct 2011
+    - MGR Skins: Fix numerious issues related to bad entries in the Skin XML
+        file.
+
+    clientgui/
+        SkinManager.cpp
+    clientgui/skins/GridRepublic/
+        skin.xml
+    clientgui/skins/Progress Thru Processors/
+        skin.xml
+
+David  24 Oct 2011
+    - API: compile fixes for MinGW.  From Oliver Bock.
+
+    lib/
+        win_util.h
+        boinc_win.h
+        proc_control.h
+        Makefile.mingw
+        parse.h
+
+Charlie 25 Oct 2011
+    - MGR: Sort Simple View task selection control alphabetically.
+        Subclassed CBOINCBitmapComboBox from wxBitmapComboBox to work 
+        around clientData bug in wxBitmapComboBox::Insert().
+        
+    clientgui/
+        mac/
+            MacBitmapComboBox.cpp,.h
+        sg_PanelBase.h
+        sg_ProjectPanel.cpp
+        sg_TaskPanel.cpp,.h
+    win_build/
+        boincmgr.vcproj
+
+Charlie 25 Oct 2011
+    - MGR: Allow skin to specify the (simulated) opacity of Simple View 
+        task and project panels on a scale of 0 (clear) to 255 (opaque).
+
+    clientgui/
+        sg_PanelBase.cpp
+        SkinManager.cpp,.h
+
+Rom    25 Oct 2011
+    - Tag for 6.13.9 release, all platforms
+      boinc_core_release_6_13_9
+
+    /
+        configure.ac
+        version.h
+
+David  25 Oct 2011
+    - web: typo in forum RSS from Daniel L G; fixes #1147
+    - client: message tweak
+
+    html/inc/
+        forum_rss.inc
+    client/
+        cpu_sched.cpp
+
+David  25 Oct 2011
+    - scheduler: fix bug in the "homogeneous app version" (HAV) feature
+        (reported by Kevin Reed).
+        The problem: cache inconsistency.
+        If there are 2 results for the same WU in shared mem,
+        and 2 scheduler instances get them around the same time,
+        they can send them with different app versions.
+        We already fixed this problem for HR by
+        1) rereading the relevant WU fields while deciding
+            whether to send the result
+        2) doing a "careful update" of the WU field using a where clause
+            to make sure it wasn't modified in the (short) interval
+            since rereading it.
+        I fixed the HAV problem in the same way,
+        and merged the two mechanisms to combine the DB queries.
+
+        Also:
+        - The rereads are done in slow_check() (see below).
+        - The careful updates are done in update_wu_on_send(),
+            and this is called *before* doing careful updates on result fields.
+            That way, if the WU updates fail, we don't have orphaned results.
+        - already_sent_to_different_platform_careful() (sic)
+            no longer does DB stuff, so it's merged with
+            already_send_to_different_hr_class() (better name)
+
+        NOTE: slow_check() is used in array scheduling only.
+            Score-based scheduling uses other code,
+            in which this bug is not yet fixed.
+            Locality scheduling doesn't support HR or HAV at all.
+            This should be unified.
+
+    db/
+        db_base.cpp,h
+    sched/
+        sched_hr.cpp,h
+        sched_array.cpp
+        sched_send.cpp
+        sched_score.cpp
+
+Charlie 26 Oct 2011
+    - Mac: Modify XCode project to link with libcrypto.0.9.7.dylib and 
+        libssl.0.9.7.dylib if OS 10.5 SDK is present, to allow running 
+        BOINC on OS 10.4 and later. If OS 10.5 SDK is not present then 
+        it will link with libcrypto.0.9.8.dylib and libssl.0.9.87.dylib 
+        and product will require OS 10.6 or later.
+        (Checked into 6.13.9 tag.)
+        
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 26 Oct 2011
+    - Mac: Update build instructions for client and libraries.
+    - Mac installer: fix bugs when installing under OS 10.5.
+    - Mac installer: Update release script to include Default skin.
+    (All checked into 6.13.9 tag.)
+    
+    mac_build/
+        HowToBuildBOINC_XCode.rtf
+    mac_installer/
+        postInstall
+        PostInstall.cpp
+        release_boinc.sh
+
+David  26 Oct 2011
+    - scheduler: tweaks to last night's checkin.
+        In the inner loop of scan_work_array() there are two WORKUNITs:
+        - the one that's part of wu_result (in the shared-mem array)
+        - a temp copy.
+            quick_check() may modify this in host-specific ways
+            (e.g., adjusting rsc_fpops_est or delay_bound).
+            This is the one we pass to add_result_to_reply().
+        When we reread hr_class and app_version_id from the DB,
+        update both structs.
+
+    sched/
+        sched_array.cpp
+        sched_send.cpp
+
+David  26 Oct 2011
+    - client: fix typo in project parse code
+
+    client/
+        client_types.cpp
+
+David  26 Oct 2011
+    - scheduler: typo in a SQL query
+
+    sched/
+        sched_send.cpp
+
+David  26 Oct 2011
+    - web: fix typo that failed to show ATI GPUs in top-GPU page
+
+    html/user/
+        gpu_list.php
+
+David  26 Oct 2011
+    - client: smoothed working-set size wasn't being computed correctly.
+        It was always just the most recent size.
+
+    sched/
+        sched_util.cpp
+        sample_work_generator.cpp
+    lib/
+        procinfo.h
+    client/
+        app.cpp
+
+David  26 Oct 2011
+    - scheduler: bug fix from Kevin
+
+    sched/
+        sched_send.cpp
+
+Charlie 27 Oct 2011
+    - Mac installer: Update release script to create projects/virtualbox/ 
+        directory, to ensure it has the correct owner and permissions 
+        because vboxwrapper does not have sufficient privileges to do so.
+    
+    mac_installer/
+        release_boinc.sh
+
+Rom    25 Oct 2011
+    - Tag for 6.13.10 release, all platforms
+      boinc_core_release_6_13_10
+
+    /
+        configure.ac
+        version.h
+
+Charlie 28 Oct 2011
+    - Mgr: Exit manager as soon as quit rpc to client succeeds, instead 
+        of waiting for client to exit.
+        (Checked in to 6.13.10 for Mac build only.)
+        
+        The problem: if suspended tasks are kept in memory, some project 
+        applications don't respond to exit request from client, but client 
+        needs to allow 20 seconds before killing them in case they are 
+        writing a large checkpoint file.  But if the manager waits that 
+        long to exit, it seems unresponsive to users, so it was killing 
+        the client after only 10 seconds. This left orphan project apps 
+        in RAM.
+        
+        The solution: assume that if the quit rpc to the client succeeds, 
+        the client will exit properly, so kill client only if RPC fails 
+        or is not completed in 10 seconds.
+    
+    clientgui/
+        BOINCClientManager.cpp
+        BOINCGUIApp.cpp,.h

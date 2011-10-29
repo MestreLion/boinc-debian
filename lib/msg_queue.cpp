@@ -21,7 +21,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -93,4 +93,4 @@ int destroy_message_queue(key_t key) {
 }
 
 
-const char *BOINC_RCSID_7b5e8a534b = "$Id: msg_queue.cpp 17388 2009-02-26 00:23:23Z korpela $";
+const char *BOINC_RCSID_7b5e8a534b = "$Id: msg_queue.cpp 24303 2011-09-27 19:45:27Z davea $";

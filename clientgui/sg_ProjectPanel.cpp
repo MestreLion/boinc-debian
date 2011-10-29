@@ -117,7 +117,7 @@ CSimpleProjectPanel::CSimpleProjectPanel( wxWindow* parent ) :
 //    m_ProjectSelectionCtrl->SetStringSelection(tempArray[1]);
     m_ProjectSelectionCtrl->SetSelection(1);
 #else
-	m_ProjectSelectionCtrl = new CBOINCBitmapComboBox( this, ID_SGPROJECTSELECTOR, wxT(""), wxDefaultPosition, wxSize(-1, 42), 0, NULL, wxCB_READONLY ); 
+	m_ProjectSelectionCtrl = new CBOINCBitmapComboBox( this, ID_SGPROJECTSELECTOR, wxT(""), wxDefaultPosition, wxSize(-1, 42), 0, NULL, wxCB_READONLY); 
 #endif
     // TODO: Might want better wording for Project Selection Combo Box tooltip
     str = _("Select a project to access with the controls below");
@@ -141,7 +141,7 @@ CSimpleProjectPanel::CSimpleProjectPanel( wxWindow* parent ) :
 	wxBoxSizer* bSizer3;
 	bSizer3 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_ProjectWebSitesButton = new CSimpleProjectWebSitesPopupButton( this, ID_PROJECTWEBSITESBUTTON, _("Project Web Sites"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ProjectWebSitesButton = new CSimpleProjectWebSitesPopupButton( this, ID_PROJECTWEBSITESBUTTON, _("Project Web Pages"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer3->Add( m_ProjectWebSitesButton, 0, wxEXPAND | wxALIGN_LEFT, 0 );
     bSizer3->AddStretchSpacer();
 
@@ -162,6 +162,14 @@ CSimpleProjectPanel::CSimpleProjectPanel( wxWindow* parent ) :
 
 CSimpleProjectPanel::~CSimpleProjectPanel()
 {
+    ProjectSelectionData *selData;
+    int count = m_ProjectSelectionCtrl->GetCount();
+	for(int j = count-1; j >=0; --j) {
+        selData = (ProjectSelectionData*)m_ProjectSelectionCtrl->GetClientData(j);
+        delete selData;
+        m_ProjectSelectionCtrl->SetClientData(j, NULL);
+	}
+    m_ProjectSelectionCtrl->Clear();
 }
 
 
@@ -460,9 +468,12 @@ wxBitmap* CSimpleProjectPanel::GetProjectSpecificBitmap(char* project_url) {
 	// Only update if it is project specific is found
 	if(boinc_resolve_filename(GetProjectIconLoc(project_url).c_str(), defaultIcnPath, sizeof(defaultIcnPath)) == 0) {
 		wxBitmap* projectBM = new wxBitmap();
-		if ( projectBM->LoadFile(wxString(defaultIcnPath,wxConvUTF8), wxBITMAP_TYPE_ANY) ) {
-			return projectBM;
-		}
+        wxString strIconPath = wxString(defaultIcnPath,wxConvUTF8);
+        if (wxFile::Exists(strIconPath)) {
+		    if ( projectBM->LoadFile(strIconPath, wxBITMAP_TYPE_ANY) ) {
+			    return projectBM;
+		    }
+        }
 	}
     return pSkinSimple->GetProjectImage()->GetBitmap();
 }

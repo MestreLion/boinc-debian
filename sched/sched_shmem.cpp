@@ -174,6 +174,8 @@ int SCHED_SHMEM::scan_tables() {
         APP_VERSION& av = app_versions[i];
         if (strstr(av.plan_class, "cuda")) {
             have_cuda_apps = true;
+        } else if (strstr(av.plan_class, "nvidia")) {
+            have_cuda_apps = true;
         } else if (strstr(av.plan_class, "ati")) {
             have_ati_apps = true;
         } else {
@@ -268,6 +270,14 @@ void SCHED_SHMEM::show(FILE* f) {
         );
     }
     fprintf(f,
+        "have CPU: %s\n"
+        "have NVIDIA: %s\n"
+        "have ATI: %s\n",
+        have_cpu_apps?"yes":"no",
+        have_cuda_apps?"yes":"no",
+        have_ati_apps?"yes":"no"
+    );
+    fprintf(f,
         "Jobs; key:\n"
         "ap: app ID\n"
         "ic: infeasible count\n"
@@ -297,4 +307,4 @@ void SCHED_SHMEM::show(FILE* f) {
     }
 }
 
-const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 21812 2010-06-25 18:54:37Z davea $";
+const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 24385 2011-10-12 23:59:38Z davea $";

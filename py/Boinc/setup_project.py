@@ -1,4 +1,4 @@
-## $Id: setup_project.py 24253 2011-09-22 03:15:21Z davea $
+## $Id: setup_project.py 24447 2011-10-21 06:58:35Z davea $
 
 # module for setting up a new project (either a real project or a test project
 # see tools/makeproject, test/testbase.py).
@@ -338,9 +338,6 @@ def install_boinc_files(dest_dir, install_web_files, install_server_files):
         os.system("rm -f "+dir('html/languages/translations/*'))
         install_glob(srcdir('html/languages/translations/*.po'), dir('html/languages/translations/'))
 
-    if not install_server_files:
-        return
-
     # copy Python stuff
     map(lambda (s): install(srcdir('sched',s), dir('bin',s)),
         [ 'start' ])
@@ -356,6 +353,9 @@ def install_boinc_files(dest_dir, install_web_files, install_server_files):
 import sys, os
 sys.path.insert(0, os.path.join('%s', 'py'))
 ''' % dest_dir
+
+    if not install_server_files:
+        return
 
     # copy backend (C++) programs;
     # rename current web daemons in case they're in use
@@ -384,7 +384,7 @@ sys.path.insert(0, os.path.join('%s', 'py'))
         [ 'appmgr', 'create_work', 'xadd', 'dbcheck_files_exist', 'run_in_ops',
           'update_versions', 'parse_config', 'grep_logs', 'db_query',
           'watch_tcp', 'sign_executable', 'dir_hier_move',
-          'manage_privileges',
+          'manage_privileges', 'cancel_jobs',
           'dir_hier_path', 'boinc_submit', 'demo_submit', 'demo_query' ])
     map(lambda (s): install(srcdir('lib',s), dir('bin',s)),
         [ 'crypt_prog' ])

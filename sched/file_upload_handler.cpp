@@ -131,12 +131,16 @@ int copy_socket_to_file(FILE* in, char* path, double offset, double nbytes) {
     // This will prevent OTHER instances of file_upload_handler
     // from being able to write to the file.
     //
-    if ((pid=mylockf(fd))) {
+    pid = mylockf(fd);
+    if (pid>0) {
         close(fd);
         return return_error(ERR_TRANSIENT,
             "can't lock file %s: %s locked by PID=%d\n",
             path, strerror(errno), pid
         );
+    } else if (pid < 0) {
+        close(fd);
+        return return_error(ERR_TRANSIENT, "can't lock file %s\n", path);
     }
 
     // check that file length corresponds to offset
@@ -697,4 +701,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 23864 2011-07-20 20:48:25Z davea $";
+const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 24391 2011-10-13 19:05:18Z davea $";

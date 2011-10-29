@@ -402,12 +402,6 @@ bool CAdvancedFrame::CreateMenu() {
         menuView->Enable(ID_CHANGEGUI, false);
     }
 
-    // Is an accessibility aid running?
-    if (wxGetApp().IsAccessibilityEnabled()) {
-        menuView->Enable(ID_CHANGEGUI, false);
-    }
-
-
     // Tools menu
     wxMenu *menuTools = new wxMenu;
 
@@ -448,7 +442,7 @@ bool CAdvancedFrame::CreateMenu() {
     }
     menuTools->Append(
         ID_OPTIONS, 
-        _("Display and network &options..."),
+        _("&Options..."),
         _("Configure display options and proxy settings")
     );
     menuTools->Append(

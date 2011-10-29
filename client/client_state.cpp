@@ -26,7 +26,7 @@
 #include <ctime>
 #include <cstdarg>
 #include <cstring>
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 #endif
@@ -228,19 +228,23 @@ static void check_no_apps(PROJECT* p) {
 // alert user if any jobs need more RAM than available
 //
 static void check_too_large_jobs() {
+    unsigned int i, j;
     double m = gstate.max_available_ram();
-    bool found = false;
-    for (unsigned int i=0; i<gstate.results.size(); i++) {
-        RESULT* rp = gstate.results[i];
-        if (rp->wup->rsc_memory_bound > m) {
-            found = true;
-            break;
+    for (i=0; i<gstate.projects.size(); i++) {
+        PROJECT* p = gstate.projects[i];
+        bool found = false;
+        for (j=0; j<gstate.results.size(); j++) {
+            RESULT* rp = gstate.results[j];
+            if (rp->project == p && rp->wup->rsc_memory_bound > m) {
+                found = true;
+                break;
+            }
         }
-    }
-    if (found) {
-        msg_printf(0, MSG_USER_ALERT,
-            _("Some tasks need more memory than allowed by your preferences.  Please check the preferences.")
-        );
+        if (found) {
+            msg_printf(p, MSG_USER_ALERT,
+                _("Some tasks need more memory than allowed by your preferences.  Please check the preferences.")
+            );
+        }
     }
 }
 
@@ -366,16 +370,16 @@ int CLIENT_STATE::init() {
             config.ignore_nvidia_dev, config.ignore_ati_dev
         );
         for (i=0; i<descs.size(); i++) {
-            msg_printf(NULL, MSG_INFO, descs[i].c_str());
+            msg_printf(NULL, MSG_INFO, "%s", descs[i].c_str());
         }
         if (log_flags.coproc_debug) {
             for (i=0; i<warnings.size(); i++) {
-                msg_printf(NULL, MSG_INFO, warnings[i].c_str());
+                msg_printf(NULL, MSG_INFO, "%s", warnings[i].c_str());
             }
         }
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an NVIDIA GPU");
-        coprocs.nvidia.fake(18000, 256*MEGA, 192*MEGA, 2);
+        coprocs.nvidia.fake(18000, 512*MEGA, 490*MEGA, 1);
 #endif
 #if 0
         msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
@@ -466,6 +470,8 @@ int CLIENT_STATE::init() {
         }
     }
 
+    process_gpu_exclusions();
+
     check_clock_reset();
 
     // Check to see if we can write the state file.
@@ -528,24 +534,7 @@ int CLIENT_STATE::init() {
         }
     }
 
-
-    // show projects
-    //
-    for (i=0; i<projects.size(); i++) {
-        p = projects[i];
-        if (p->hostid) {
-            sprintf(buf, "%d", p->hostid);
-        } else {
-            strcpy(buf, "not assigned yet");
-        }
-        msg_printf(p, MSG_INFO,
-            "URL %s; Computer ID %s; resource share %.0f",
-            p->master_url, buf, p->resource_share
-        );
-        if (p->ended) {
-            msg_printf(p, MSG_INFO, "Project has ended - OK to detach");
-        }
-    }
+    log_show_projects();
 
     read_global_prefs();
 
@@ -621,8 +610,6 @@ int CLIENT_STATE::init() {
     // warn user if some jobs need more memory than available
     //
     check_too_large_jobs();
-
-    project_priority_init();
 
     initialized = true;
     return 0;
@@ -826,7 +813,7 @@ bool CLIENT_STATE::poll_slow_events() {
                     suspend_reason_string(network_suspend_reason)
                 );
             }
-            msg_printf(NULL, MSG_INFO, buf);
+            msg_printf(NULL, MSG_INFO, "%s", buf);
             pers_file_xfers->suspend();
         }
     } else {
@@ -868,6 +855,7 @@ bool CLIENT_STATE::poll_slow_events() {
     POLL_ACTION(gui_http               , gui_http.poll          );
     POLL_ACTION(gui_rpc_http           , gui_rpcs.poll          );
     POLL_ACTION(trickle_up_ops,        trickle_up_poll);
+    POLL_ACTION(handle_pers_file_xfers , handle_pers_file_xfers );
     if (!network_suspended && suspend_reason != SUSPEND_REASON_BENCHMARKS) {
         // don't initiate network activity if we're doing CPU benchmarks
         net_status.poll();
@@ -875,7 +863,6 @@ bool CLIENT_STATE::poll_slow_events() {
         POLL_ACTION(acct_mgr               , acct_mgr_info.poll     );
         POLL_ACTION(file_xfers             , file_xfers->poll       );
         POLL_ACTION(pers_file_xfers        , pers_file_xfers->poll  );
-        POLL_ACTION(handle_pers_file_xfers , handle_pers_file_xfers );
         if (!config.no_info_fetch) {
             POLL_ACTION(rss_feed_op            , rss_feed_op.poll );
         }
@@ -1689,6 +1676,7 @@ int CLIENT_STATE::report_result_error(RESULT& res, const char* format, ...) {
         if (!res.exit_status) {
             res.exit_status = ERR_RESULT_UPLOAD;
         }
+        res.set_state(RESULT_UPLOAD_FAILED, "CS::report_result_error");
         break;
     case RESULT_FILES_UPLOADED:
         msg_printf(res.project, MSG_INTERNAL_ERROR,
@@ -1896,7 +1884,7 @@ int CLIENT_STATE::detach_project(PROJECT* project) {
     delete project;
     write_state_file();
 
-    adjust_debts();
+    adjust_rec();
     request_schedule_cpus("Detach");
     request_work_fetch("Detach");
     return 0;
@@ -1910,7 +1898,7 @@ int CLIENT_STATE::detach_project(PROJECT* project) {
 int CLIENT_STATE::quit_activities() {
     // calculate long-term debts (for state file)
     //
-    adjust_debts();
+    adjust_rec();
 
     int retval = active_tasks.exit_tasks();
     if (retval) {
@@ -1981,6 +1969,25 @@ void CLIENT_STATE::clear_absolute_times() {
     for (i=0; i<results.size(); i++) {
         RESULT* rp = results[i];
         rp->schedule_backoff = 0;
+    }
+}
+
+void CLIENT_STATE::log_show_projects() {
+    char buf[256];
+    for (unsigned int i=0; i<projects.size(); i++) {
+        PROJECT* p = projects[i];
+        if (p->hostid) {
+            sprintf(buf, "%d", p->hostid);
+        } else {
+            strcpy(buf, "not assigned yet");
+        }
+        msg_printf(p, MSG_INFO,
+            "URL %s; Computer ID %s; resource share %.0f",
+            p->master_url, buf, p->resource_share
+        );
+        if (p->ended) {
+            msg_printf(p, MSG_INFO, "Project has ended - OK to detach");
+        }
     }
 }
 

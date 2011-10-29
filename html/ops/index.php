@@ -166,7 +166,7 @@ echo "
     </table>
 ";
 
-// Application Result Summaries:
+// Result Summaries:
 
 $show_deprecated = get_str("show_deprecated", true);
 $show_only = array("all"); // Add all appids you want to display, or "all"
@@ -219,5 +219,5 @@ echo "<h3>Periodic or special tasks</h3>
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: index.php 23948 2011-08-08 06:12:17Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: index.php 24405 2011-10-16 06:04:13Z davea $";  //Generated automatically - do not edit
 ?>

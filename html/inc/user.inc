@@ -213,7 +213,6 @@ function show_user_info_private($user) {
     );
     row2(tra("User ID")."<br/><span class=\"note\">".tra("Used in community functions")."</span>", $user->id);
     if (!no_computing()) {
-        row2(tra("Account key")."<br/><span class=\"note\">".tra("Provides full access to your account")."</span>", $user->authenticator);
         row2(tra("Weak account key")."<br/><span class=\"note\">".tra("Provides %1limited access%2 to your account", "<a href=\"weak_auth.php\">", "</a> ")."</span>", weak_auth($user));
     }
 
@@ -468,6 +467,6 @@ function make_user(
     }
 }
 
-$cvs_version_tracker[]="\$Id: user.inc 24050 2011-08-26 18:30:13Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: user.inc 24447 2011-10-21 06:58:35Z davea $";  //Generated automatically - do not edit
 
 ?>

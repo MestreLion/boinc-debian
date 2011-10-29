@@ -31,7 +31,7 @@
 #include <sys/stat.h>
 #include <cerrno>
 #include <unistd.h>
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 #endif
@@ -188,7 +188,7 @@ void libcurl_logdebug(
     p = strtok(buf, "\n");
     while(p) {
         if (log_flags.http_debug) {
-            msg_printf(0, MSG_INFO,
+            msg_printf(phop->project, MSG_INFO,
                 "[http] %s %s\n", hdr, p
             );
         }
@@ -217,10 +217,11 @@ int libcurl_debugfunction(
     return 0;
 }
 
-void HTTP_OP::init() {
+void HTTP_OP::init(PROJECT* p) {
     reset();
     start_time = gstate.now;
     start_bytes_xferred = 0;
+    project = p;
 }
 
 void HTTP_OP::reset() {
@@ -237,6 +238,7 @@ void HTTP_OP::reset() {
     connect_error = 0;
     bytes_xferred = 0;
     bSentHeader = false;
+    project = 0;
     close_socket();
 }
 
@@ -271,14 +273,14 @@ HTTP_OP::~HTTP_OP() {
 // output goes to the given file, starting at given offset
 //
 int HTTP_OP::init_get(
-    const char* url, const char* out, bool del_old_file, double off
+    PROJECT* p, const char* url, const char* out, bool del_old_file, double off
 ) {
     if (del_old_file) {
         unlink(out);
     }
     req1 = NULL;  // not using req1, but init_post2 uses it
     file_offset = off;
-    HTTP_OP::init();
+    HTTP_OP::init(p);
     // usually have an outfile on a get
     if (off != 0) {
         bytes_xferred = off;
@@ -287,7 +289,7 @@ int HTTP_OP::init_get(
     http_op_type = HTTP_OP_GET;
     http_op_state = HTTP_STATE_CONNECTING;
     if (log_flags.http_debug) {
-        msg_printf(0, MSG_INFO, "[http] HTTP_OP::init_get(): %s", url);
+        msg_printf(project, MSG_INFO, "[http] HTTP_OP::init_get(): %s", url);
     }
     return HTTP_OP::libcurl_exec(url, NULL, out, off, false);
 }
@@ -298,7 +300,7 @@ int HTTP_OP::init_get(
 // This is used for scheduler requests and account mgr RPCs.
 //
 int HTTP_OP::init_post(
-    const char* url, const char* in, const char* out
+    PROJECT* p, const char* url, const char* in, const char* out
 ) {
     int retval;
     double size;
@@ -311,11 +313,11 @@ int HTTP_OP::init_post(
         if (retval) return retval;  // this will return 0 or ERR_NOT_FOUND
         content_length = (int)size;
     }
-    HTTP_OP::init();
+    HTTP_OP::init(p);
     http_op_type = HTTP_OP_POST;
     http_op_state = HTTP_STATE_CONNECTING;
     if (log_flags.http_debug) {
-        msg_printf(0, MSG_INFO, "[http] HTTP_OP::init_post(): %s", url);
+        msg_printf(project, MSG_INFO, "[http] HTTP_OP::init_post(): %s", url);
     }
     return HTTP_OP::libcurl_exec(url, in, out, 0.0, true);
 }
@@ -327,12 +329,12 @@ int HTTP_OP::init_post(
 // This is used for file upload (both get_file_size and file_upload)
 //
 int HTTP_OP::init_post2(
-    const char* url, char* r1, int r1_len, const char* in, double offset
+    PROJECT* p, const char* url, char* r1, int r1_len, const char* in, double offset
 ) {
     int retval;
     double size;
 
-    init();
+    init(p);
     req1 = r1;
     req1_len = r1_len;
     content_length = 0;
@@ -415,7 +417,7 @@ int HTTP_OP::libcurl_exec(
     curlEasy = curl_easy_init(); // get a curl_easy handle to use
     if (!curlEasy) {
         if (log_flags.http_debug) {
-            msg_printf(0, MSG_INFO, "Couldn't create curlEasy handle");
+            msg_printf(project, MSG_INFO, "Couldn't create curlEasy handle");
         }
         return ERR_HTTP_ERROR; // returns 0 (CURLM_OK) on successful handle creation
     }
@@ -481,7 +483,7 @@ int HTTP_OP::libcurl_exec(
 
             if (log_flags.http_debug) {
                 msg_printf(
-                    0,
+                    project,
                     MSG_INFO,
                     "[http] HTTP_OP::libcurl_exec(): ca-bundle '%s'",
                     m_curl_ca_bundle_location
@@ -496,7 +498,7 @@ int HTTP_OP::libcurl_exec(
         curl_easy_setopt(curlEasy, CURLOPT_CAINFO, m_curl_ca_bundle_location);
         if (log_flags.http_debug) {
             msg_printf(
-                0,
+                project,
                 MSG_INFO,
                 "[http] HTTP_OP::libcurl_exec(): ca-bundle set"
             );
@@ -1001,7 +1003,7 @@ void HTTP_OP::handle_messages(CURLMsg *pcurlMsg) {
             net_status.got_http_error();
         }
         if (log_flags.http_debug) {
-            msg_printf(NULL, MSG_INFO,
+            msg_printf(project, MSG_INFO,
                 "[http] HTTP error: %s", error_msg
             );
         }
@@ -1028,7 +1030,7 @@ void HTTP_OP::handle_messages(CURLMsg *pcurlMsg) {
             size_t nread = fread(req1, 1, dSize, fileOut);
             if (nread != dSize) {
                 if (log_flags.http_debug) {
-                    msg_printf(NULL, MSG_INFO,
+                    msg_printf(project, MSG_INFO,
                         "[http] post output file read failed %d",
                         (int)nread
                     );
@@ -1114,7 +1116,7 @@ void HTTP_OP::set_speed_limit(bool is_upload, double bytes_sec) {
         cc = curl_easy_setopt(curlEasy, CURLOPT_MAX_RECV_SPEED_LARGE, bs);
     }
     if (cc && log_flags.http_debug) {
-        msg_printf(NULL, MSG_INFO,
+        msg_printf(project, MSG_INFO,
             "[http] Curl error in set_speed_limit(): %s",
             curl_easy_strerror(cc)
         );

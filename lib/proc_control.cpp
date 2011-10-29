@@ -25,15 +25,16 @@
 #include "win_util.h"
 #endif
 #else
+#include "config.h"
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#ifdef HAVE_CSIGNAL
+#if HAVE_CSIGNAL
 #include <csignal>
-#elif defined(HAVE_SYS_SIGNAL_H)
+#elif HAVE_SYS_SIGNAL_H
 #include <sys/signal.h>
-#elif defined(HAVE_SIGNAL_H)
+#elif HAVE_SIGNAL_H
 #include <signal.h>
 #endif
 #endif
@@ -47,8 +48,11 @@ using std::vector;
 static void get_descendants_aux(PROC_MAP& pm, int pid, vector<int>& pids) {
     PROC_MAP::iterator i = pm.find(pid);
     if (i == pm.end()) return;
-    for (unsigned int j=0; j<i->second.children.size(); j++) {
-        int child_pid = i->second.children[j];
+    PROCINFO& p = i->second;
+    if (p.scanned) return;  // avoid infinite recursion
+    p.scanned = true;
+    for (unsigned int j=0; j<p.children.size(); j++) {
+        int child_pid = p.children[j];
         pids.push_back(child_pid);
         get_descendants_aux(pm, child_pid, pids);
     }

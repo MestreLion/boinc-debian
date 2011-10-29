@@ -46,7 +46,7 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_STRINGS_H
+#if HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
@@ -800,4 +800,4 @@ int main(int argc, char** argv) {
     }
 }
 
-const char *BOINC_RCSID_bd0d4938a6 = "$Id: file_deleter.cpp 22647 2010-11-08 17:51:57Z davea $";
+const char *BOINC_RCSID_bd0d4938a6 = "$Id: file_deleter.cpp 24303 2011-09-27 19:45:27Z davea $";

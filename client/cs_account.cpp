@@ -26,7 +26,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
-#ifdef HAVE_SYS_STAT_H
+#if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
 #endif
@@ -246,12 +246,9 @@ int PROJECT::parse_account_file_venue() {
             continue;
         }
         else {
-            if (log_flags.unparsed_xml) {
-                msg_printf(0, MSG_INFO,
-                    "[unparsed_xml] parse_account_file_venue(): unrecognized: %s\n",
-                    xp.parsed_tag
-                );
-            }
+            // skip project preferences the client doesn't know about
+            //
+            xp.skip_unexpected();
         }
     }
     fclose(in);

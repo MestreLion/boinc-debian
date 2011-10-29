@@ -25,31 +25,31 @@
 #else
 #include "config.h"
 #include <cstdio>
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #include <cerrno>
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_SYS_STAT_H
+#if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#ifdef HAVE_SYS_UN_H
+#if HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
 #include <vector>
 #include <cstring>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET_TCP_H
+#if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_FCNTL_H
+#if HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
 #endif
@@ -188,10 +188,8 @@ int GUI_RPC_CONN_SET::get_allowed_hosts() {
             if (!(buf[0] =='#' || buf[0] == ';') && strlen(buf) > 0 ) {
                 retval = resolve_hostname_or_ip_addr(buf, ip_addr);
                 if (retval) {
-                    msg_printf_notice(0, false,
-                        "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=remote_hosts",
-                        "%s: %s",
-                        _("Can't resolve hostname in remote_hosts.cfg"),
+                    msg_printf(NULL, MSG_INFO,
+                        "Can't resolve hostname in remote_hosts.cfg: %s",
                         buf
                     );
                 } else {

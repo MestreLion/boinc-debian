@@ -1,5 +1,5 @@
 ## -*-Makefile -*-
-## $Id: Makefile.incl 23315 2011-04-04 11:45:44Z davea $
+## $Id: Makefile.incl 24303 2011-09-27 19:45:27Z davea $
 
 # Note: MYSQL_CFLAGS and MYSQL_LIBS set by configure from mysql_config
 
@@ -27,9 +27,9 @@ AM_CPPFLAGS =					\
         -I$(top_srcdir)/lib/mac			\
 	$(PTHREAD_CFLAGS)
 
-AM_CFLAGS =
+AM_CFLAGS = -Wall -Wextra -Wshadow -Wredundant-decls -Wdisabled-optimization -Wpointer-arith -Wstrict-aliasing
 
-AM_CXXFLAGS =
+AM_CXXFLAGS = $(AM_CFLAGS)
 
 AM_LDFLAGS =
 

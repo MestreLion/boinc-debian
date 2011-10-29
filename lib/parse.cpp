@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <string>
 #include <math.h>
+#include <ctype.h>
 #include <errno.h>
 #if HAVE_IEEEFP_H
 #include <ieeefp.h>
@@ -412,6 +413,7 @@ void xml_unescape(string& in) {
 void xml_unescape(char* buf) {
     char* out = buf;
     char* in = buf;
+    char* p;
     while (*in) {
         if (*in != '&') {       // avoid strncmp's if possible
             *out++ = *in++;
@@ -434,8 +436,12 @@ void xml_unescape(char* buf) {
             in += 2;
             char c = atoi(in);
             *out++ = c;
-            in = strchr(in, ';');
-            if (in) in++;
+            p = strchr(in, ';');
+            if (p) {
+                in = p+1; 
+            } else {
+                while (isdigit(*in)) in++;
+            }
         } else {
             *out++ = *in++;
         }
@@ -649,7 +655,9 @@ int XML_PARSER::get_aux(char* buf, int len, char* attr_buf, int attr_len) {
     }
 }
 
-bool XML_PARSER::get(char* buf, int len, bool& _is_tag, char* attr_buf, int attr_len) {
+bool XML_PARSER::get(
+    char* buf, int len, bool& _is_tag, char* attr_buf, int attr_len
+) {
     switch (get_aux(buf, len, attr_buf, attr_len)) {
     case XML_PARSE_EOF: return true;
     case XML_PARSE_TAG:
@@ -976,7 +984,7 @@ void XML_PARSER::skip_unexpected(
         }
         if (!is_tag) continue;
         if (!strcmp(tag, end_tag)) return;
-        skip_unexpected(tag, verbose, where);
+        skip_unexpected(tag, false, where);
     }
 }
 
@@ -1006,66 +1014,3 @@ int XML_PARSER::copy_element(string& out) {
     out += end_tag;
     return 0;
 }
-
-// sample use is shown below
-
-#if 0
-void parse(FILE* f) {
-    bool flag;
-    MIOFILE mf;
-    XML_PARSER xp(&mf);
-    char name[256];
-    int val;
-    double x;
-
-    mf.init_file(f);
-    if (!xp.parse_start("blah")) {
-        printf("missing start tag\n");
-        return;
-    }
-    while (!xp.get_tag()) {
-        if (!xp.is_tag) {
-            printf("unexpected text: %s\n", tag);
-            continue;
-        }
-        if (xp.match_tag("/blah")) {
-            printf("success\n");
-            return;
-        } else if (xp.parse_str("str", name, sizeof(name))) {
-            printf("got str: %s\n", name);
-        } else if (xp.parse_int("int", val)) {
-            printf("got int: %d\n", val);
-        } else if (xp.parse_double("double", x)) {
-            printf("got double: %f\n", x);
-        } else if (xp.parse_bool("bool", flag)) {
-            printf("got bool: %d\n", flag);
-        } else {
-            printf("unparsed tag: %s\n", xp.parsed_tag);
-            xp.skip_unexpected(true, "xml test");
-        }
-    }
-    printf("unexpected EOF\n");
-}
-
-int main() {
-    FILE* f = fopen("foo.xml", "r");
-    parse(f);
-}
-
-... and run it against, e.g.:
-
-<?xml version="1.0" encoding="ISO-8859-1" ?>
-<blah>
-    <x>
-    asdlfkj
-      <x> fj</x>
-    </x>
-    <str>blah</str>
-    <int>  6
-    </int>
-    <double>6.555</double>
-    <bool>0</bool>
-</blah>
-
-#endif
-
