@@ -116,6 +116,7 @@ bool CBOINCGUIApp::OnInit() {
 #endif
 
     s_bSkipExitConfirmation = false;
+    m_bShuttingDownManagerAndClient = false;
 
     // Initialize class variables
     m_pLocale = NULL;
@@ -134,13 +135,9 @@ bool CBOINCGUIApp::OnInit() {
     m_strPasswordArg = wxEmptyString;
     m_iRPCPortArg = GUI_RPC_PORT;
     m_strBOINCArguments = wxEmptyString;
-    m_bAccessibilityEnabled = false;
     m_bGUIVisible = true;
     m_bDebugSkins = false;
     m_bMultipleInstancesOK = false;
-    m_strDefaultWindowStation = wxEmptyString;
-    m_strDefaultDesktop = wxEmptyString;
-    m_strDefaultDisplay = wxEmptyString;
     m_bBOINCMGRAutoStarted = false;
     m_iBOINCMGRDisableAutoStart = 0;
     m_iShutdownCoreClient = 0;
@@ -216,9 +213,6 @@ bool CBOINCGUIApp::OnInit() {
     if (m_bBOINCMGRAutoStarted && m_iBOINCMGRDisableAutoStart) {
         return false;
     }
-
-    // Detect if a program that is defined as an accessibility aid is running
-    DetectAccessibilityEnabled();
 
     // Detect where BOINC Manager executable name.
     DetectExecutableName();
@@ -392,14 +386,8 @@ bool CBOINCGUIApp::OnInit() {
 
     // Is there a condition in which the Simple GUI should not be used?
     if (BOINC_SIMPLEGUI == m_iGUISelected) {
-
         // Screen too small?
         if (wxGetDisplaySize().GetHeight() < 600) {
-            m_iGUISelected = BOINC_ADVANCEDGUI;
-        }
-
-        // Screen reader in use?
-        if (IsAccessibilityEnabled()) {
             m_iGUISelected = BOINC_ADVANCEDGUI;
         }
     }
@@ -422,10 +410,6 @@ bool CBOINCGUIApp::OnInit() {
     );
     wxASSERT(m_pMacSystemMenu);
 #endif
-
-
-    // Detect the display info and store for later use.
-    DetectDisplayInfo();
 
 
     // Startup the System Idle Detection code
@@ -609,56 +593,6 @@ bool CBOINCGUIApp::OnCmdLineParsed(wxCmdLineParser &parser) {
         m_bMultipleInstancesOK = true;
     }
     return true;
-}
-
-
-///
-/// Detect the desktop that BOINC Manager is running in.
-///
-void CBOINCGUIApp::DetectDisplayInfo() {
-#ifdef __WXMSW__
-    wxChar szWindowStation[256];
-    memset(szWindowStation, 0, sizeof(szWindowStation)/sizeof(wxChar));
-    wxChar szDesktop[256];
-    memset(szDesktop, 0, sizeof(szDesktop)/sizeof(wxChar));
-
-    if (wxWIN95 != wxGetOsVersion(NULL, NULL)) {
-        // Retrieve the current window station and desktop names
-        GetUserObjectInformation(
-            GetProcessWindowStation(), 
-            UOI_NAME, 
-            szWindowStation,
-            (sizeof(szWindowStation) / sizeof(wxChar)),
-            NULL
-        );
-        GetUserObjectInformation(
-            GetThreadDesktop(GetCurrentThreadId()), 
-            UOI_NAME, 
-            szDesktop,
-            (sizeof(szDesktop) / sizeof(wxChar)),
-            NULL
-        );
-        m_strDefaultWindowStation = szWindowStation;
-        m_strDefaultDesktop = szDesktop;
-    }
-
-#else
-    wxString p = wxString(getenv("DISPLAY"), wxConvUTF8);
-    if (p) m_strDefaultDisplay = p;
-#endif
-
-}
-
-
-///
-/// Detect if an acessibility aid is running on the system.
-///
-void CBOINCGUIApp::DetectAccessibilityEnabled() {
-#ifdef __WXMSW__
-    BOOL bScreenReaderEnabled = false;
-    SystemParametersInfo(SPI_GETSCREENREADER, NULL, &bScreenReaderEnabled, NULL);
-    m_bAccessibilityEnabled = (bScreenReaderEnabled == TRUE);
-#endif
 }
 
 
@@ -1287,7 +1221,13 @@ void CBOINCGUIApp::DeleteMacSystemMenu() {
 
 // Prevent recursive entry of CMainDocument::RequestRPC()
 int CBOINCGUIApp::FilterEvent(wxEvent &event) {
+    int theEventType;
+    wxDialog* theRPCWaitDialog;
+    wxObject* theObject;
+
     if (!m_pDocument) return -1;
+    if (m_bShuttingDownManagerAndClient) goto doFiltering;
+
     if (!m_pDocument->WaitingForRPC()) return -1;
 
     // If in RPC Please Wait dialog, reject all command 
@@ -1295,20 +1235,21 @@ int CBOINCGUIApp::FilterEvent(wxEvent &event) {
     //  - RPC Finished
     //  - those for that dialog or its children
     //  - Open Manager menu item from system tray icon
-    int theEventType = event.GetEventType();
+    theEventType = event.GetEventType();
 
     if ((theEventType == wxEVT_COMMAND_MENU_SELECTED) && (event.GetId() == wxID_OPEN)) {
         return -1;        
     }
 
-    wxDialog* theRPCWaitDialog = m_pDocument->GetRPCWaitDialog();
-    wxObject* theObject = event.GetEventObject();
+    theRPCWaitDialog = m_pDocument->GetRPCWaitDialog();
+    theObject = event.GetEventObject();
     while (theObject) {
         if (!theObject->IsKindOf(CLASSINFO(wxWindow))) break;
         if (theObject == theRPCWaitDialog) return -1;
         theObject = ((wxWindow*)theObject)->GetParent();
     }
-    
+
+doFiltering:    
     // Allow all except Command, Timer and Mouse Moved events
     if (event.IsCommandEvent()) {
         return false;

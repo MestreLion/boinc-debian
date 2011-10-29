@@ -261,7 +261,10 @@ function gpu_desc($x) {
         $str .= " (".$d[3].")";
         if (array_key_exists(4, $d)) {
             if ($d[4] != "" && $d[4] != 0) {
-                $str .= " driver: ".$d[4];
+                $i = (int)$d[4];
+                $maj = (int)($i/100);
+                $min = $i%100;
+                $str .= " driver: $maj.$min";
             }
         }
 
@@ -692,6 +695,6 @@ function anonymize_hosts($user) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: host.inc 24060 2011-08-28 00:31:40Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: host.inc 24378 2011-10-11 18:57:49Z davea $";  //Generated automatically - do not edit
 
 ?>

@@ -590,22 +590,25 @@ function post_int($name, $optional=false) {
 }
 
 function get_str($name, $optional=false) {
-    if (!isset($_GET[$name])) {
+    if (isset($_GET[$name])) {
+        $x = $_GET[$name];
+    } else {
         if (!$optional) {
             error_page("missing or bad parameter: $name");
         }
         $x = null;
-    } else {
-        $x = $_GET[$name];
     }
     return undo_magic_quotes($x);
 }
 
 function post_str($name, $optional=false) {
-    $x = null;
-    if (isset($_POST[$name])) $x = $_POST[$name];
-    if (!$x && !$optional) {
-        error_page("missing or bad parameter: $name");
+    if (isset($_POST[$name])) {
+        $x = $_POST[$name];
+    } else {
+        if (!$optional) {
+            error_page("missing or bad parameter: $name");
+        }
+        $x = null;
     }
     return undo_magic_quotes($x);
 }
@@ -709,7 +712,7 @@ function current_url() {
 //
 function show_button($url, $text, $desc=null, $class="button") {
     if (!$desc) $desc = $text;
-    echo "<a href=\"".$url."\" title=\"".addslashes($desc)."\" class=\"".$class."\">".$text."</a>\n";
+    echo "<a href=\"".$url."\" title=\"$desc\" class=\"".$class."\">".$text."</a>\n";
 }
 
 // When multiple buttons (or actions) are presented in a list you can
@@ -844,6 +847,6 @@ function credit_to_gflop_hours($c) {
     return $c/(200/24);
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 24064 2011-08-29 05:37:52Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util.inc 24406 2011-10-17 06:13:51Z davea $";  //Generated automatically - do not edit
 
 ?>

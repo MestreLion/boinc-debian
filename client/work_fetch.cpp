@@ -182,7 +182,6 @@ void RSC_WORK_FETCH::rr_init() {
     total_fetchable_share = 0;
     deadline_missed_instances = 0;
     saturated_time = 0;
-    pending.clear();
     busy_time_estimator.reset();
 }
 
@@ -222,10 +221,25 @@ PROJECT* RSC_WORK_FETCH::choose_project_hyst() {
         PROJECT* p = gstate.projects[i];
         if (!p->pwf.can_fetch_work) continue;
         if (!project_state(p).may_have_work) continue;
+
+        // if project has excluded GPUs of this type,
+        // and it has runnable jobs for this type,
+        // don't fetch work for it.
+        // TODO: THIS IS CRUDE. Making it smarter would require
+        // computing shortfall etc. on a per-project basis
+        //
+        if (rsc_type) {
+            if (p->ncoprocs_excluded[rsc_type]
+                && p->rsc_pwf[rsc_type].has_runnable_jobs
+            ){
+                continue;
+            }
+        }
+
         RSC_PROJECT_WORK_FETCH& rpwf = project_state(p);
         if (rpwf.anon_skip) continue;
         if (pbest) {
-            if (project_priority(pbest) > project_priority(p)) {
+            if (pbest->sched_priority > p->sched_priority) {
                 continue;
             }
         }
@@ -274,7 +288,7 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
             if (!p->resource_share) continue;
             break;
         case FETCH_IF_PROJECT_STARVED:
-            if (project_priority(p) < 0) continue;
+            if (p->sched_priority < 0) continue;
             if (rpwf.nused_total >= ninstances) continue;
             if (!p->resource_share) continue;
             break;
@@ -284,7 +298,7 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
             if (!p->resource_share) {
                 continue;
             }
-            if (project_priority(pbest) > project_priority(p)) {
+            if (pbest->sched_priority > p->sched_priority) {
                 continue;
             }
         }
@@ -306,7 +320,7 @@ PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
     case FETCH_IF_MINOR_SHORTFALL:
         // in this case, potentially request work for all resources
         //
-        if (project_priority(pbest) < 0) {
+        if (pbest->sched_priority < 0) {
             set_request(pbest);
         } else {
             work_fetch.set_all_requests(pbest);
@@ -368,16 +382,16 @@ void RSC_WORK_FETCH::set_request(PROJECT* p) {
         }
     }
 
-    // the number of additional instances needed to have our share
-    //
-    double x1;
-    x1 = ninstances - w.nused_total;
-
     // our share of the idle instances
     //
-    double x2 = nidle_now * w.fetchable_share;
+    req_instances = nidle_now * w.fetchable_share;
 
-    req_instances = std::max(x1, x2);
+    if (log_flags.work_fetch_debug) {
+        msg_printf(0, MSG_INFO,
+            "[wfd] ninst %d nused_total %f nidle_now %f fetch share %f req_inst %f",
+            ninstances, w.nused_total, nidle_now, w.fetchable_share, req_instances
+        );
+    }
     if (req_instances && !req_secs) {
         req_secs = 1;
     }
@@ -402,7 +416,7 @@ void RSC_WORK_FETCH::print_state(const char* name) {
         msg_printf(p, MSG_INFO,
             "[work_fetch] %s: fetch share %.2f rec %.5f prio %.5f backoff dt %.2f int %.2f%s%s%s%s%s%s%s%s%s",
             name,
-            pwf.fetchable_share, p->pwf.rec, project_priority(p), bt, pwf.backoff_interval,
+            pwf.fetchable_share, p->pwf.rec, p->sched_priority, bt, pwf.backoff_interval,
             p->suspended_via_gui?" (susp via GUI)":"",
             p->master_url_fetch_pending?" (master fetch pending)":"",
             p->min_rpc_time > gstate.now?" (comm deferred)":"",
@@ -461,7 +475,7 @@ void WORK_FETCH::rr_init() {
 // eligible for the resource, set request fields
 //
 void RSC_WORK_FETCH::supplement(PROJECT* pp) {
-    double x = project_priority(pp);
+    double x = pp->sched_priority;
     for (unsigned i=0; i<gstate.projects.size(); i++) {
         PROJECT* p = gstate.projects[i];
         if (p == pp) continue;
@@ -469,7 +483,7 @@ void RSC_WORK_FETCH::supplement(PROJECT* pp) {
         if (!project_state(p).may_have_work) continue;
         RSC_PROJECT_WORK_FETCH& rpwf = project_state(p);
         if (rpwf.anon_skip) continue;
-        if (project_priority(p) > x) {
+        if (p->sched_priority > x) {
             return;
         }
     }
@@ -580,7 +594,7 @@ PROJECT* WORK_FETCH::non_cpu_intensive_project_needing_work() {
 // and set the request fields of resource objects
 //
 PROJECT* WORK_FETCH::choose_project() {
-    PROJECT* p = 0;
+    PROJECT* p;
 
     if (log_flags.work_fetch_debug) {
         msg_printf(0, MSG_INFO, "[work_fetch] work fetch start");
@@ -593,12 +607,29 @@ PROJECT* WORK_FETCH::choose_project() {
 
     rr_simulation();
     compute_shares();
-    project_priority_init();
+    project_priority_init(true);
+
+    // adjust project priorities according to how much work they currently have queued
+    //
+    double total_flops_remaining = 0;
     for (unsigned int i=0; i<gstate.results.size(); i++) {
         RESULT* rp = gstate.results[i];
-        adjust_rec_work_fetch(rp);
+        total_flops_remaining += rp->estimated_flops_remaining();
+    }
+#define CURRENT_QUEUE_WEIGHT 1.
+    if (total_flops_remaining) {
+        for (unsigned int i=0; i<gstate.projects.size(); i++) {
+            p = gstate.projects[i];
+            p->sched_priority += CURRENT_QUEUE_WEIGHT * p->resource_share_frac;
+        }
+        for (unsigned int i=0; i<gstate.results.size(); i++) {
+            RESULT* rp = gstate.results[i];
+            p = rp->project;
+            p->sched_priority -= CURRENT_QUEUE_WEIGHT * rp->estimated_flops_remaining()/total_flops_remaining;
+        }
     }
 
+    p = 0;
 if (use_hyst_fetch) {
     if (gpus_usable) {
         for (int i=1; i<coprocs.n_rsc; i++) {
@@ -900,13 +931,21 @@ bool PROJECT::downloading() {
     return false;
 }
 
+bool PROJECT::has_results() {
+    for (unsigned i=0; i<gstate.results.size(); i++) {
+        RESULT *rp = gstate.results[i];
+        if (rp->project == this) return true;
+    }
+    return false;
+}
+
 bool PROJECT::some_result_suspended() {
     unsigned int i;
     for (i=0; i<gstate.results.size(); i++) {
-         RESULT *rp = gstate.results[i];
-         if (rp->project != this) continue;
-         if (rp->suspended_via_gui) return true;
-     }
+        RESULT *rp = gstate.results[i];
+        if (rp->project != this) continue;
+        if (rp->suspended_via_gui) return true;
+    }
     return false;
 }
 
@@ -989,7 +1028,11 @@ double RESULT::estimated_time_remaining() {
     if (computing_done()) return 0;
     ACTIVE_TASK* atp = gstate.lookup_active_task_by_result(this);
     if (atp) {
+#ifdef SIM
+        return sim_flops_left/avp->flops;
+#else
         return atp->est_dur() - atp->elapsed_time;
+#endif
     }
     return estimated_duration();
 }

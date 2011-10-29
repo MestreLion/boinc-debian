@@ -28,24 +28,24 @@
 #else
 #include "config.h"
 #include <cstdio>
-#ifdef HAVE_UNISTD_H
+#if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_SYS_SOCKET_H
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_SYS_UN_H
+#if HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
 #include <vector>
 #include <cstring>
-#ifdef HAVE_NETINET_IN_H
+#if HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_NETINET_TCP_H
+#if HAVE_NETINET_TCP_H
 #include <netinet/tcp.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
 #endif
@@ -865,15 +865,25 @@ static void handle_acct_mgr_rpc(GUI_RPC_CONN& grc) {
     string password_hash, name_lc;
     bool use_config_file = false;
     bool bad_arg = false;
+    bool url_found=false, name_found=false, password_found = false;
 
     while (!grc.xp.get_tag()) {
-        if (grc.xp.parse_string("url", url)) continue;
-        if (grc.xp.parse_string("name", name)) continue;
-        if (grc.xp.parse_string("password", password)) continue;
+        if (grc.xp.parse_string("url", url)) {
+            url_found = true;
+            continue;
+        }
+        if (grc.xp.parse_string("name", name)) {
+            name_found = true;
+            continue;
+        }
+        if (grc.xp.parse_string("password", password)) {
+            password_found = true;
+            continue;
+        }
         if (grc.xp.parse_bool("use_config_file", use_config_file)) continue;
     }
-    if (use_config_file) {
-        bad_arg = url.empty() || name.empty() || password.empty();
+    if (!use_config_file) {
+        bad_arg = !url_found || !name_found || !password_found;
         if (!bad_arg) {
             name_lc = name;
             downcase_string(name_lc);
@@ -899,7 +909,7 @@ static void handle_acct_mgr_rpc(GUI_RPC_CONN& grc) {
     if (bad_arg) {
         grc.mfout.printf("<error>bad arg</error>\n");
     } else {
-        gstate.acct_mgr_info.next_rpc_time = gstate.now;
+        gstate.acct_mgr_op.do_rpc(url, name, password_hash, true);
         grc.mfout.printf("<success/>\n");
     }
 }
@@ -964,7 +974,7 @@ static void handle_set_global_prefs_override(GUI_RPC_CONN& grc) {
     int retval;
     char buf[65536];
 
-    retval = grc.xp.element_contents("/set_global_prefs_override", buf, sizeof(buf));
+    retval = grc.xp.element_contents("</set_global_prefs_override>", buf, sizeof(buf));
     if (!retval) {
         if (strlen(buf)) {
             FILE* f = boinc_fopen(GLOBAL_PREFS_OVERRIDE_FILE, "w");
@@ -1013,7 +1023,7 @@ static void handle_set_cc_config(GUI_RPC_CONN& grc) {
     int retval;
     char buf[65536];
 
-    retval = grc.xp.element_contents("/set_cc_config", buf, sizeof(buf));
+    retval = grc.xp.element_contents("</set_cc_config>", buf, sizeof(buf));
 
     if (!retval) {
         if (strlen(buf)) {
@@ -1084,9 +1094,14 @@ static void handle_read_cc_config(GUI_RPC_CONN& grc) {
     config.show();
     log_flags.show();
     gstate.set_ncpus();
+    process_gpu_exclusions();
     gstate.request_schedule_cpus("Core client configuration");
     gstate.request_work_fetch("Core client configuration");
     set_no_rsc_config();
+}
+
+static void handle_get_daily_xfer_history(GUI_RPC_CONN& grc) {
+    daily_xfer_history.write_xml(grc.mfout);
 }
 
 static bool complete_post_request(char* buf) {
@@ -1143,6 +1158,8 @@ GUI_RPC gui_rpcs[] = {
     GUI_RPC("get_all_projects_list", handle_get_all_projects_list,  false,  false,  true),
     GUI_RPC("get_cc_status", handle_get_cc_status,                  false,  false,  true),
     GUI_RPC("get_disk_usage", handle_get_disk_usage,                false,  false,  true),
+    GUI_RPC("get_daily_xfer_history", handle_get_daily_xfer_history,
+                                                                    false,  false,  true),
     GUI_RPC("get_file_transfers", handle_get_file_transfers,        false,  false,  true),
     GUI_RPC("get_host_info", handle_get_host_info,                  false,  false,  true),
     GUI_RPC("get_messages", handle_get_messages,                    false,  false,  true),

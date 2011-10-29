@@ -123,7 +123,7 @@ struct DAILY_XFER {
         up = down = 0;
     }
     int parse(XML_PARSER&);
-    void write(FILE*);
+    void write(MIOFILE&);
 };
 
 struct DAILY_XFER_HISTORY {
@@ -135,10 +135,14 @@ struct DAILY_XFER_HISTORY {
     void init();
     void poll();
     void totals(int ndays, double& up, double& down);
-    void write_state();
+    int write_xml(MIOFILE&);
+    void write_file();
     void write_scheduler_request(MIOFILE&, int ndays);
     DAILY_XFER_HISTORY() {
         dirty = false;
+    }
+    void clear() {
+        daily_xfers.clear();
     }
 };
 

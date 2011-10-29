@@ -67,8 +67,8 @@ struct LOG_FLAGS {
         // show what's running
     bool dcf_debug;
         // show changes to duration correction factors
-    bool debt_debug;
-        // changes to long-term debt
+    bool priority_debug;
+        // info related to REC and scheduling priority
     bool file_xfer_debug;
         // show completion of FILE_XFER
     bool gui_rpc_debug;
@@ -118,9 +118,9 @@ struct LOG_FLAGS {
 
 struct EXCLUDE_GPU {
     std::string url;
-    std::string type;
-    std::string appname;
-    int device_num;     // -1 means all
+    std::string type;       // empty means all types
+    std::string appname;    // empty means all apps
+    int device_num;         // -1 means all instances
 };
 
 // if you add anything, you must add it to

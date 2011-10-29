@@ -231,6 +231,7 @@ void CLIENT_STATE::check_suspend_network() {
 
     if (os_requested_suspend) {
         network_suspend_reason = SUSPEND_REASON_OS;
+        network_suspended = true;
         return;
     }
 
@@ -405,11 +406,11 @@ void CLIENT_STATE::read_global_prefs(
     if (retval) {
         if (retval == ERR_FOPEN) {
             msg_printf(NULL, MSG_INFO,
-                "No general preferences found - using BOINC defaults"
+                "No general preferences found - using defaults"
             );
         } else {
             msg_printf(NULL, MSG_INFO,
-                "Couldn't parse preferences file - using BOINC defaults"
+                "Couldn't parse preferences file - using defaults"
             );
             boinc_delete_file(fname);
         }
@@ -504,7 +505,9 @@ void CLIENT_STATE::read_global_prefs(
     );
     request_schedule_cpus("Prefs update");
     request_work_fetch("Prefs update");
+#ifndef SIM
     active_tasks.request_reread_app_info();
+#endif
 }
 
 int CLIENT_STATE::save_global_prefs(

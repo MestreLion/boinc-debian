@@ -85,6 +85,13 @@
 #define GPU_TYPE_NVIDIA "NVIDIA"
 #define GPU_TYPE_ATI "ATI"
 
+enum COPROC_USAGE {
+    COPROC_IGNORED,
+    COPROC_UNUSED,
+    COPROC_USED
+};
+    
+
 // represents a requirement for a coproc.
 // This is a parsed version of the <coproc> elements in an <app_version>
 // (used in client only)
@@ -95,7 +102,7 @@ struct COPROC_REQ {
     int parse(XML_PARSER&);
 };
 
-// For now, there will be some duplication between the values in 
+// there's some duplication between the values in 
 // the OPENCL_DEVICE_PROP struct and the NVIDIA/ATI structs
 //
 struct OPENCL_DEVICE_PROP {
@@ -104,20 +111,32 @@ struct OPENCL_DEVICE_PROP {
     char vendor[256];                   // Device vendor (NVIDIA, ATI, AMD, etc.)
     cl_uint vendor_id;                  // OpenCL ID of device vendor
     cl_bool available;                  // Is this device available?
-    cl_device_fp_config hp_fp_config;   // Half precision floating point capabilities
-    cl_device_fp_config sp_fp_config;   // Single precision floating point capabilities
-    cl_device_fp_config dp_fp_config;   // Double precision floating point capabilities
-    cl_bool little_endian;              // TRUE if little-endian
-    cl_device_exec_capabilities exec_capab; // Execution capabilities
+    cl_device_fp_config half_fp_config; // Half precision capabilities
+    cl_device_fp_config single_fp_config;   // Single precision
+    cl_device_fp_config double_fp_config;   // Double precision
+    cl_bool endian_little;              // TRUE if little-endian
+    cl_device_exec_capabilities execution_capabilities;
     char extensions[1024];              // List of device extensions
-    cl_ulong global_RAM;                // Size of global memory
-    cl_ulong local_RAM;                 // Size of local memory
-    cl_uint max_clock_freq;             // Max configured clock frequencin in MHz
-    cl_uint max_cores;                  // Max number of parallel computer cores
-    char openCL_platform_version[64];   // Version of OpenCL platform for this device
-    char openCL_device_version[64];     // OpenCL version supported by device; example: "OpenCL 1.1 beta"
-    char openCL_driver_version[32];     // For example: "CLH 1.0"
+    cl_ulong global_mem_size;           // in bytes
+    cl_ulong local_mem_size;
+    cl_uint max_clock_frequency;        // in MHz
+    cl_uint max_compute_units;
+    char opencl_platform_version[64];   // Version of OpenCL supported
+                                        // the device's platform
+    char opencl_device_version[64];     // OpenCL version supported by device;
+                                        // example: "OpenCL 1.1 beta"
+    int opencl_device_version_int;      // same, encoded as e.g. 101
+    int get_device_version_int();       // call this to encode
+    char opencl_driver_version[32];     // For example: "CLH 1.0"
     int device_num;                     // temp used in scan process
+    double peak_flops;                  // temp used in scan process
+    COPROC_USAGE is_used;               // temp used in scan process
+
+#ifndef _USING_FCGI_
+    void write_xml(MIOFILE&);
+#endif
+    int parse(XML_PARSER&);
+void description(char* buf, const char* type);
 };
 
 
@@ -171,10 +190,8 @@ struct COPROC {
 #ifndef _USING_FCGI_
     void write_xml(MIOFILE&);
     void write_request(MIOFILE&);
-    int parse(XML_PARSER&);
-    void opencl_write_xml(MIOFILE&);
 #endif
-    int parse_opencl(XML_PARSER&);
+    int parse(XML_PARSER&);
 
     inline void clear() {
         // can't just memcpy() - trashes vtable
@@ -211,6 +228,21 @@ struct COPROC {
     COPROC() {
         clear();
     }
+    bool device_num_exists(int n) {
+        for (int i=0; i<count; i++) {
+            if (device_nums[i] == n) return true;
+        }
+        return false;
+    }
+    void merge_opencl(
+        std::vector<OPENCL_DEVICE_PROP> &opencls, 
+        std::vector<int>& ignore_dev
+    );
+    void find_best_opencls(
+        bool use_all,
+        std::vector<OPENCL_DEVICE_PROP> &opencls, 
+        std::vector<int>& ignore_dev
+    );
 };
 
 // based on cudaDeviceProp from /usr/local/cuda/include/driver_types.h
@@ -253,36 +285,12 @@ struct COPROC_NVIDIA : public COPROC {
         std::vector<std::string>&, std::vector<std::string>&,
         std::vector<int>& ignore_devs
     );
-	void description(char*);
+    void description(char*);
     void clear();
     int parse(XML_PARSER&);
     void get_available_ram();
-	void set_peak_flops() {
-        int flops_per_clock=0, cores_per_proc=0;
-        switch (prop.major) {
-        case 1:
-            flops_per_clock = 3;
-            cores_per_proc = 8;
-            break;
-        case 2:
-            flops_per_clock = 2;
-            switch (prop.minor) {
-            case 0:
-                cores_per_proc = 32;
-                break;
-            default:
-                cores_per_proc = 48;
-                break;
-            }
-        }
-        // clock rate is scaled down by 1000
-        //
-        double x = (1000.*prop.clockRate) * prop.multiProcessorCount * cores_per_proc * flops_per_clock;
-        peak_flops =  (x>0)?x:5e10;
-	}
-
+    void set_peak_flops();
     bool check_running_graphics_app();
-    bool matches(OPENCL_DEVICE_PROP& OpenCLprop);
     void fake(int driver_version, double ram, double avail_ram, int count);
 
 };
@@ -310,12 +318,7 @@ struct COPROC_ATI : public COPROC {
     void clear();
     int parse(XML_PARSER&);
     void get_available_ram();
-    bool matches(OPENCL_DEVICE_PROP& OpenCLprop);
-	void set_peak_flops() {
-        double x = attribs.numberOfSIMD * attribs.wavefrontSize * 2.5 * attribs.engineClock * 1.e6;
-        // clock is in MHz
-        peak_flops = (x>0)?x:5e10;
-	}
+    void set_peak_flops();
     void fake(double ram, double avail_ram, int);
 };
 
@@ -327,22 +330,26 @@ struct COPROCS {
 
     void write_xml(MIOFILE& out, bool include_request);
     void get(
-        bool use_all, std::vector<std::string> &descs,
+        bool use_all, 
+        std::vector<std::string> &descs,
         std::vector<std::string> &warnings,
         std::vector<int>& ignore_nvidia_dev,
         std::vector<int>& ignore_ati_dev
     );
-    void get_opencl(bool use_all, std::vector<std::string> &warnings,
+    void get_opencl(
+        bool use_all, 
+        std::vector<std::string>& descs, 
+        std::vector<std::string> &warnings,
         std::vector<int>& ignore_nvidia_dev, 
         std::vector<int>& ignore_ati_dev
     );
     cl_int get_opencl_info(
         OPENCL_DEVICE_PROP& prop, 
         cl_uint device_index, 
-        std::vector<std::string> &warnings
+        std::vector<std::string>& warnings
     );
     int parse(XML_PARSER&);
-    void summary_string(char*, int);
+    void summary_string(char* buf, int len);
 
     // Copy a coproc set, possibly setting usage to zero.
     // used in round-robin simulator and CPU scheduler,

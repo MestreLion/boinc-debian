@@ -58,8 +58,6 @@ protected:
     void                OnInitCmdLine(wxCmdLineParser &parser);
     bool                OnCmdLineParsed(wxCmdLineParser &parser);
 
-    void                DetectDisplayInfo();
-    void                DetectAccessibilityEnabled();
     bool                DetectDuplicateInstance();
     void                DetectExecutableName();
     void                DetectRootDirectory();
@@ -91,8 +89,6 @@ protected:
     wxString            m_strBOINCArguments;
     int                 m_iRPCPortArg;
 
-    bool                m_bAccessibilityEnabled;
-
     bool                m_bBOINCMGRAutoStarted;
     int                 m_iBOINCMGRDisableAutoStart;
     int                 m_iShutdownCoreClient;
@@ -103,6 +99,7 @@ protected:
     int                 m_iGUISelected;
     bool                m_bDebugSkins;
     bool                m_bMultipleInstancesOK;
+    bool                m_bShuttingDownManagerAndClient;
 
 #ifdef __WXMSW__
     HINSTANCE           m_hClientLibraryDll;
@@ -119,10 +116,6 @@ protected:
     int                 m_bSafeMessageBoxDisplayed;
 
 public:
-
-    wxString            m_strDefaultWindowStation;
-    wxString            m_strDefaultDesktop;
-    wxString            m_strDefaultDisplay;
 
     bool                OnInit();
 
@@ -141,7 +134,6 @@ public:
     CTaskBarIcon*       GetTaskBarIcon()            { return m_pTaskBarIcon; }
     void                DeleteTaskBarIcon();
 
-    bool                IsAccessibilityEnabled()    { return m_bAccessibilityEnabled; }
     bool                IsMgrMultipleInstance()     { return m_bMultipleInstancesOK; }
 
 #ifdef __WXMAC__
@@ -202,6 +194,8 @@ public:
 
 
     int                 UpdateSystemIdleDetection();
+    
+    void                SetShuttingDownClientAndManager() { m_bShuttingDownManagerAndClient = true; }
 
 DECLARE_EVENT_TABLE()
 };

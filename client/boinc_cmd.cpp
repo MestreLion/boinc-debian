@@ -60,6 +60,7 @@ Commands:\n\
  --file_transfer URL filename op    file transfer operation\n\
    op = retry | abort\n\
  --get_cc_status\n\
+ --get_daily_xfer_history           show network traffic history\n\
  --get_disk_usage                   show disk usage\n\
  --get_file_transfers               show file transfers\n\
  --get_host_info\n\
@@ -91,27 +92,11 @@ Commands:\n\
  --set_run_mode mode duration       set run mode for given duration\n\
    mode = always | auto | never\n\
  --task url task_name op            task operation\n\
-   op = suspend | resume | abort | graphics_window | graphics_fullscreen\n\
+   op = suspend | resume | abort\n\
  --version, -V                      show core client version\n\
 "
 );
     exit(1);
-}
-
-void parse_display_args(char** argv, int& i, DISPLAY_INFO& di) {
-    strcpy(di.window_station, "winsta0");
-    strcpy(di.desktop, "default");
-    strcpy(di.display, "");
-    while (argv[i]) {
-        if (!strcmp(argv[i], "--window_station")) {
-            strlcpy(di.window_station, argv[++i], sizeof(di.window_station));
-        } else if (!strcpy(argv[i], "--desktop")) {
-            strlcpy(di.desktop, argv[++i], sizeof(di.desktop));
-        } else if (!strcpy(argv[i], "--display")) {
-            strlcpy(di.display, argv[++i], sizeof(di.display));
-        }
-        i++;
-    }
 }
 
 void show_error(int retval) {
@@ -227,6 +212,10 @@ int main(int argc, char** argv) {
         FILE_TRANSFERS ft;
         retval = rpc.get_file_transfers(ft);
         if (!retval) ft.print();
+    } else if (!strcmp(cmd, "--get_daily_xfer_history")) {
+        DAILY_XFER_HISTORY dxh;
+        retval = rpc.get_daily_xfer_history(dxh);
+        if (!retval) dxh.print();
     } else if (!strcmp(cmd, "--get_project_status")) {
         PROJECTS ps;
         retval = rpc.get_project_status(ps);
@@ -252,14 +241,6 @@ int main(int argc, char** argv) {
             retval = rpc.result_op(result, "resume");
         } else if (!strcmp(op, "abort")) {
             retval = rpc.result_op(result, "abort");
-        } else if (!strcmp(op, "graphics_window")) {
-            DISPLAY_INFO di;
-            parse_display_args(argv, i, di);
-            retval = rpc.show_graphics(project_url, name, MODE_WINDOW, di);
-        } else if (!strcmp(op, "graphics_fullscreen")) {
-            DISPLAY_INFO di;
-            parse_display_args(argv, i, di);
-            retval = rpc.show_graphics(project_url, name, MODE_FULLSCREEN, di);
         } else {
             fprintf(stderr, "Unknown op %s\n", op);
         }

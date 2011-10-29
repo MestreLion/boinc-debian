@@ -75,54 +75,48 @@ function show_scenario_summary($f) {
 function show_scenarios() {
     page_head("The BOINC Client Emulator");
     echo "
-        Welcome to the BOINC Client Emulator (BCE).
-        BCE <b>emulates</b> a BOINC client attached to one or more projects.
+        The BOINC Client Emulator (BCE)
+        <b>emulates</b> a BOINC client attached to one or more projects.
         It predicts, in a few seconds,
-        what the BOINC client will do over a period of day or months.
-        This lets you predict how future versions of BOINC
-        will perform on your computers.
+        what the latest BOINC client will do over a period of day or months.
         By reporting problem situations to BOINC developers,
         you can help us fix bugs and improve performance.
         <h3>Scenarios</h3>
         The inputs to BCE, called <b>scenarios</b>,
         describe a particular computer and the project to which it's attached.
-        A scenario consists of 4 files:
+        A scenario consists of:
         <ul>
         <li> <b>client_state.xml</b>: describes the host and projects.
           Any projects that don't currently have tasks are ignored.
         <li> <b>global_prefs.xml</b> and <b>global_prefs_override.xml</b>:
             computing preferences (optional).
+        <li> <b>cc_config.xml</b>: options such as GPU exclusions
         </ul>
+        You create a scenario by uploading these files
+        using the <b>Create a scenario</b> button below.
         You can use the files from a running BOINC client
         to emulate that client.
-        You can modify these files, or create new ones, to study hypothetical scenarios
+        <p>
+        You can modify these files, or create new ones,
+        to study hypothetical scenarios
         (e.g. hosts with a large number of CPUs,
         hosts attached to a large number of projects,
         projects with very short or long jobs, and so on).
         See <a href=http://boinc.berkeley.edu/trac/wiki/ClientSim>The
         BCE documentation</a> for details.
-        <p>
-        You create a scenario by uploading these files to the BOINC server.
         <h3>Simulations</h3>
         You can run <b>simulations</b> based on existing scenarios
         (including scenarios created by other people).
         The parameters of a simulation include
         <ul>
         <li> The duration and time resolution of the simulation.
-        <li> Choices for various client policy alternatives, including:
-            <ul>
-            <li>Whether to use Recent Estimated Credit scheduling
-                (the proposed policy for the 6.14 client)
-            <li>Whether to use Hysteresis-based work fetch
-                (the proposed policy for the 6.14 client)
-            </ul>
-        <li> <b>cc_config.xml</b>: client configuration (optional).
+        <li> Log flags
         </ul>
         The outputs of a simulation include
         <ul>
         <li> A 'time line' showing CPU and GPU usage.
         <li> The client's message log
-        <li> graphs of scheduling-related data (debt, REC).
+        <li> graphs of scheduling-related data (REC).
         <li> A summary of several <b>figures of merit</b>, including
             <ul>
             <li>idle fraction: the fraction of processing power that was unused
@@ -140,14 +134,17 @@ function show_scenarios() {
         made bad scheduling or work-fetch decisions.
         Or you find may places where the simulator doesn't
         seem to be working correctly.
-        <p>
         In such cases, please add a <b>comment</b> to the simulation,
         indicating the nature of the problem
         and the simulation time when it occurred.
         <p>
-        Also, please post to the <a href=http://lists.ssl.berkeley.edu/mailman/listinfo/boinc_dev>boinc_dev</a> email list
-        if you have problems using BCE,
-        or if you have suggestions for new features.
+        Please post to the <a href=http://lists.ssl.berkeley.edu/mailman/listinfo/boinc_dev>boinc_dev</a> email list if
+        <ul>
+        <li> a simulation reveals a bug or bad scheduling decision
+        <li> you have problems using BCE
+        <li> BCE doesn't do more or less the same thing as your client
+        <li> you have suggestions for new features.
+        </ul>
         <hr>
     ";
     show_button(
@@ -192,8 +189,9 @@ function create_scenario_form() {
         <table>
     ";
     row2("* client_state.xml", "<input name=client_state type=file>");
-    row2("global_prefs.xml", "<input name=prefs type=file>");
-    row2("global_prefs_override.xml", "<input name=prefs_override type=file>");
+    row2("global_prefs.xml", "<input name=global_prefs type=file>");
+    row2("global_prefs_override.xml", "<input name=global_prefs_override type=file>");
+    row2("cc_config.xml", "<input name=cc_config type=file>");
     row2("* Description", "<textarea name=description cols=40></textarea>");
     row2("", "<input type=submit value=OK>");
     echo "
@@ -250,6 +248,10 @@ function create_scenario() {
     if (is_uploaded_file($gpo)) {
         move_uploaded_file($gpo, "$d/global_prefs_override.xml");
     }
+    $ccc = $_FILES['cc_config']['tmp_name'];
+    if (is_uploaded_file($ccc)) {
+        move_uploaded_file($ccc, "$d/cc_config.xml");
+    }
     file_put_contents("$d/userid", "$user->id");
     file_put_contents("$d/description", $desc);
     mkdir("$d/simulations");
@@ -305,7 +307,7 @@ function show_scenario() {
     }
     row2("Input files", $x);
     end_table();
-    show_button("sim_web.php?action=simulation_form&scen=$name",
+    show_button("sim_web.php?action=simulation_form_short&scen=$name",
         "Do new simulation",
         "Do new simulation"
     );
@@ -330,25 +332,56 @@ function show_scenario() {
     page_tail();
 }
 
-// form for simulation parameters:
-// duration, time step, policy options
-//
+function log_flag_boxes() {
+    return "
+        <input type=checkbox name=cpu_sched_debug> CPU scheduling debug
+        <br> <input type=checkbox name=rr_simulation> Round-robin simulation info
+        <br> <input type=checkbox name=work_fetch_debug> Work fetch debug
+    ";
+}
+
+function simulation_form_short() {
+    $scen = get_str("scen");
+    page_head("Do simulation");
+    start_table();
+    echo "
+        <form action=sim_web.php method=post enctype=\"multipart/form-data\">
+        <input type=hidden name=action value=simulation_action>
+        <input type=hidden name=scen value=$scen>
+        <input type=hidden name=rec_half_life_days value=10>
+        <input type=hidden name=existing_jobs_only value=0>
+        <input type=hidden name=use_hyst_fetch value=1>
+        <input type=hidden name=cpu_sched_rr_only value=0>
+        <input type=hidden name=server_uses_workload value=0>
+    ";
+    row2("Duration", "<input name=duration value=86400> seconds");
+    row2("Time step", "<input name=delta value=60> seconds");
+    row2("Log flags", log_flag_boxes());
+    row2("", "<input type=submit value=OK>");
+    echo "</form>\n";
+    end_table();
+    page_tail();
+}
+
 function simulation_form() {
     $scen = get_str("scen");
     page_head("Do simulation");
-    echo "<form action=sim_web.php>
+    start_table();
+    echo "
+        <form action=sim_web.php method=post enctype=\"multipart/form-data\">
         <input type=hidden name=action value=simulation_action>
         <input type=hidden name=scen value=$scen>
     ";
-    start_table();
     row2("Duration", "<input name=duration value=86400> seconds");
     row2("Time step", "<input name=delta value=60> seconds");
-    row2("cc_config.xml", "<input name=cc_config type=file>");
-    row2("Use Recent Estimated Credit
-        <br><span class=note>If checked, use 6.14 scheduling policies
-        based on Recent Estimated Credit (REC)
-        rather than short- and long-term debt.</span>",
-        "<input type=checkbox name=use_rec checked>"
+    row2("Half life of average-credit decay", "<input name=rec_half_life_days value=10> days");
+    row2("cc_config.xml", "<input type=file name=cc_config>");
+    row2("Existing jobs only?
+        <br><span class=note>If checked, simulate only the
+        jobs in the client state file.
+        Otherwise, simulate an infinite stream of jobs
+        modeled after those in the state file.",
+        "<input type=checkbox name=existing_jobs_only>"
     );
     row2("Use hysteresis work fetch?
         <br><span class=note>If checked, use 6.14 work fetch policies.
@@ -369,6 +402,7 @@ function simulation_form() {
         "<input type=checkbox name=cpu_sched_rr_only>"
     );
     row2("", "<input type=submit value=OK>");
+    echo "</form>\n";
     end_table();
     page_tail();
 }
@@ -379,7 +413,7 @@ function simulation_form() {
 //
 function simulation_action() {
     $user = get_logged_in_user();
-    $scen = get_str("scen");
+    $scen = post_str("scen");
     if (!is_dir("scenarios/$scen")) {
         error_page("no such scenario");
     }
@@ -387,17 +421,29 @@ function simulation_action() {
     $sim_name = create_dir_seqno($sim_dir);
     $sim_path = "$sim_dir/$sim_name";
     $policy = new POLICY("");
-    $policy->use_rec = get_str("use_rec", true);
-    $policy->use_hyst_fetch = get_str("use_hyst_fetch", true);
-    $policy->cpu_sched_rr_only = get_str("cpu_sched_rr_only", true);
-    $policy->server_uses_workload = get_str("server_uses_workload", true);
+    $policy->duration = (double)post_str("duration");
+    $policy->delta = (double)post_str("delta");
+    $policy->rec_half_life = (double)post_str("rec_half_life_days")*86400;
+    $policy->existing_jobs_only = post_str("existing_jobs_only", true);
+    $policy->use_hyst_fetch = post_str("use_hyst_fetch", true);
+    $policy->cpu_sched_rr_only = post_str("cpu_sched_rr_only", true);
+    $policy->server_uses_workload = post_str("server_uses_workload", true);
     file_put_contents("$sim_path/userid", "$user->id");
-    $cc = $_FILES['cc_config']['tmp_name'];
-    if (is_uploaded_file($cc)) {
-        move_uploaded_file($cc, "$sim_path/cc_config.xml");
-    }
 
-    do_sim("scenarios/$scen", $sim_path, $policy, $sim_path);
+    $x = "<log_flags>\n";
+    if (post_str("cpu_sched_debug", true)) {
+        $x .= "<cpu_sched_debug/>\n";
+    }
+    if (post_str("rr_simulation", true)) {
+        $x .= "<rr_simulation/>\n";
+    }
+    if (post_str("work_fetch_debug", true)) {
+        $x .= "<work_fetch_debug/>\n";
+    }
+    $x .= "</log_flags>\n";
+    file_put_contents("$sim_path/log_flags.xml", $x);
+
+    do_sim("scenarios/$scen", $sim_path, $policy);
     header("Location: sim_web.php?action=show_simulation&scen=$scen&sim=$sim_name");
 }
 
@@ -476,6 +522,9 @@ case "show_scenario":
     break;
 case "simulation_form":
     simulation_form();
+    break;
+case "simulation_form_short":
+    simulation_form_short();
     break;
 case "simulation_action":
     simulation_action();

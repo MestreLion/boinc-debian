@@ -90,10 +90,11 @@ struct URL_LIST {
     }
 };
 
+// Values of FILE_INFO::status.
 // If the status is neither of these two,
-// it will be an error code defined in error_numbers.h,
-// indicating an unrecoverable error in the upload or download of the file,
-// or that the file was too big and was deleted
+// it's an error code indicating an unrecoverable error
+// in the transfer of the file,
+// or that the file was too big and was deleted.
 //
 #define FILE_NOT_PRESENT    0
 #define FILE_PRESENT        1
@@ -104,7 +105,7 @@ struct FILE_INFO {
     double max_nbytes;
     double nbytes;
     double upload_offset;
-    int status;
+    int status;             // see above
     bool executable;        // change file protections to make executable
     bool uploaded;          // file has been uploaded
     bool sticky;            // don't delete unless instructed to do so
@@ -422,6 +423,7 @@ struct PROJECT : PROJ_AM {
         // don't request work from a project if an upload started
         // in last X minutes and is still active
     bool uploading();
+    bool has_results();
 
     struct RESULT *next_runnable_result;
         // the next result to run for this project
@@ -430,10 +432,20 @@ struct PROJECT : PROJ_AM {
         // Don't start new results if these exceeds 2*ncpus.
     bool too_many_uploading_results;
 
+    // scheduling (work fetch and job scheduling)
+    //
+    double sched_priority;
+    void compute_sched_priority();
+
     // stuff for RR sim
     //
     double rr_sim_cpu_share;
     bool rr_sim_active;
+    int ncoprocs_excluded[MAX_RSC];
+        // number of excluded instances per processor type
+    bool operator<(const PROJECT& p) {
+        return sched_priority > p.sched_priority;
+    }
 
     // stuff related to work fetch
     //
@@ -506,6 +518,7 @@ struct PROJECT : PROJ_AM {
     double idle_time_sumsq;
     bool idle;
     int max_infeasible_count;
+    bool no_apps;
     // for DCF variants:
     int completed_task_count;
     double completions_ratio_mean;
@@ -646,6 +659,7 @@ struct RESULT {
     double final_elapsed_time;
 #ifdef SIM
     double peak_flop_count;
+    double sim_flops_left;
 #endif
 
     // the following are nonzero if reported by app
@@ -709,7 +723,11 @@ struct RESULT {
     double estimated_duration_uncorrected();
     double estimated_time_remaining();
     inline double estimated_flops_remaining() {
+#ifdef SIM
+        return sim_flops_left;
+#else
         return estimated_time_remaining()*avp->flops;
+#endif
     }
 
     inline bool computing_done() {

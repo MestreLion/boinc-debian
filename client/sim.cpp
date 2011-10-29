@@ -17,7 +17,7 @@
 
 // BOINC client simulator.
 //
-// usage: sim options
+// usage: directory options
 //
 //  [--infile_prefix dir/]
 //      Prefix of input filenames; default is blank.
@@ -25,8 +25,6 @@
 //          client_state.xml
 //          global_prefs.xml
 //          global_prefs_override.xml
-//  [--config_prefix dir/]
-//      Prefix of cc_config.xml
 //  [--outfile_prefix X]
 //      Prefix of output filenames; default is blank.
 //      Output files are:
@@ -37,18 +35,13 @@
 //          results.txt (simulation results, human-readable)
 //          inputs.txt (sim parameters)
 //          summary.txt (summary of inputs; detailed outputs)
-//          if using REC:
-//              rec.png
-//          if not using REC:
-//              debt.dat
-//              debt_overall.png
-//              debt_cpu_std.png
-//              debt_cpu_ltd.png
-//              debt_nvidia_std.png
-//              debt_nvidia_ltd.png
-//              ...
+//          rec.png
 //
 //  Simulation params:
+//  [--existing_jobs_only]
+//      If set, simulate the specific set of jobs in the state file.
+//      Otherwise simulate an infinite stream of jobs
+//      modeled after those found in the state file.
 //  [--duration x]
 //      simulation duration (default 86400)
 //  [--delta x]
@@ -78,7 +71,6 @@
 #define SCHED_RETRY_DELAY_MAX    (60*60*4)         // 4 hours
 
 const char* infile_prefix = "./";
-const char* config_prefix = "./";
 const char* outfile_prefix = "./";
 
 #define TIMELINE_FNAME "timeline.html"
@@ -102,7 +94,8 @@ string html_msg;
 double active_time = 0;
 double gpu_active_time = 0;
 bool server_uses_workload = false;
-bool cpu_sched_rr_only;
+bool cpu_sched_rr_only = false;
+bool existing_jobs_only = false;
 
 RANDOM_PROCESS on_proc;
 RANDOM_PROCESS active_proc;
@@ -113,14 +106,16 @@ bool active;
 bool gpu_active;
 bool connected;
 
+extern double debt_adjust_period;
+
 SIM_RESULTS sim_results;
 int njobs;
 
 void usage(char* prog) {
     fprintf(stderr, "usage: %s\n"
         "[--infile_prefix F]\n"
-        "[--config_prefix F]\n"
         "[--outfile_prefix F]\n"
+        "[--existing_jobs_only]\n"
         "[--duration X]\n"
         "[--delta X]\n"
         "[--server_uses_workload]\n"
@@ -240,6 +235,7 @@ void make_job(
     sprintf(rp->name, "%s_%d", p->project_name, p->result_index++);
     wup->project = p;
     wup->rsc_fpops_est = app->fpops_est;
+    rp->sim_flops_left = rp->wup->rsc_fpops_est;
     strcpy(wup->name, rp->name);
     strcpy(wup->app_name, app->name);
     wup->app = app;
@@ -362,7 +358,7 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
     }
 
     if (!server_uses_workload) {
-        for (int i=1; i<coprocs.n_rsc; i++) {
+        for (int i=0; i<coprocs.n_rsc; i++) {
             rsc_work_fetch[i].estimated_delay = rsc_work_fetch[i].busy_time_estimator.get_busy_time();
         }
     }
@@ -384,7 +380,7 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
     }
 
     bool sent_something = false;
-    while (1) {
+    while (!existing_jobs_only) {
         vector<APP*> apps;
         get_apps_needing_work(p, apps);
         if (apps.empty()) break;
@@ -398,7 +394,7 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
             if (check_candidate(c, ncpus, ip_results)) {
                 ip_results.push_back(c);
             } else {
-                //printf("%d: %s misses deadline\n", (int)gstate.now, p->project_name);
+                msg_printf(p, MSG_INFO, "job for %s misses deadline sim\n", rp->app->name);
                 APP_VERSION* avp = rp->avp;
                 delete rp;
                 delete wup;
@@ -406,8 +402,13 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
                 continue;
             }
         } else {
-            if (get_estimated_delay(rp) + et > wup->app->latency_bound) {
-                //printf("%d: %s misses deadline\n", (int)gstate.now, p->project_name);
+            double est_delay = get_estimated_delay(rp);
+            if (est_delay + et > wup->app->latency_bound) {
+                msg_printf(p, MSG_INFO,
+                    "job for %s misses deadline approx: del %f + et %f > %f\n",
+                    rp->app->name,
+                    est_delay, et, wup->app->latency_bound
+                );
                 APP_VERSION* avp = rp->avp;
                 delete rp;
                 delete wup;
@@ -433,6 +434,26 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
     msg_printf(0, MSG_INFO, "Got %d tasks", new_results.size());
     sprintf(buf, "got %d tasks<br>", new_results.size());
     html_msg += buf;
+
+    if (new_results.size() == 0) {
+        for (int i=0; i<coprocs.n_rsc; i++) {
+            if (rsc_work_fetch[i].req_secs) {
+                p->rsc_pwf[i].backoff(p, rsc_name(i));
+            }
+        }
+    } else {
+        bool got_rsc[MAX_RSC];
+        for (int i=0; i<coprocs.n_rsc; i++) {
+            got_rsc[i] = false;
+        }
+        for (unsigned int i=0; i<new_results.size(); i++) {
+            RESULT* rp = new_results[i];
+            got_rsc[rp->avp->gpu_usage.rsc_type] = true;
+        }
+        for (int i=0; i<coprocs.n_rsc; i++) {
+            if (got_rsc[i]) p->rsc_pwf[i].clear_backoff();
+        }
+    }
 
     SCHEDULER_REPLY sr;
     rsc_work_fetch[0].req_secs = save_cpu_req_secs;
@@ -593,12 +614,12 @@ bool ACTIVE_TASK_SET::poll() {
             flops *= cpu_scale;
         }
 
-        atp->flops_left -= diff*flops;
+        rp->sim_flops_left -= diff*flops;
 
-        atp->fraction_done = 1 - (atp->flops_left / rp->wup->rsc_fpops_est);
+        atp->fraction_done = 1 - rp->sim_flops_left / rp->wup->rsc_fpops_est;
         atp->checkpoint_wall_time = gstate.now;
 
-        if (atp->flops_left <= 0) {
+        if (rp->sim_flops_left <= 0) {
             atp->set_task_state(PROCESS_EXITED, "poll");
             rp->exit_status = 0;
             rp->ready_to_report = true;
@@ -687,10 +708,11 @@ double CLIENT_STATE::monotony() {
 
 // the CPU totals are there; compute the other fields
 //
-void SIM_RESULTS::compute() {
+void SIM_RESULTS::compute_figures_of_merit() {
     double flops_total = cpu_peak_flops()*active_time
         + gpu_peak_flops()*gpu_active_time;
     double flops_idle = flops_total - flops_used;
+    if (flops_idle<0) flops_idle=0;
     wasted_frac = flops_wasted/flops_total;
     idle_frac = flops_idle/flops_total;
     share_violation = gstate.share_violation();
@@ -698,7 +720,7 @@ void SIM_RESULTS::compute() {
 }
 
 void SIM_RESULTS::print(FILE* f, bool human_readable) {
-    double r = ((double)nrpcs)/(njobs*2);
+    double r = njobs?((double)nrpcs)/(njobs*2):0;
     if (human_readable) {
         fprintf(f,
             "wasted fraction %f\n"
@@ -767,18 +789,32 @@ const char* colors[] = {
     "#aa00aa",
     "#aaaa00",
     "#00aaaa",
-    "#0000cc",
-    "#00cc00",
-    "#cc0000",
-    "#cc00cc",
-    "#cccc00",
-    "#00cccc",
+    "#8800aa",
+    "#aa0088",
+    "#88aa00",
+    "#aa8800",
+    "#00aa88",
+    "#0088aa",
 };
 
-#define NCOLORS 12
+#define NCOLORS 18
 #define WIDTH1  100
 #define WIDTH2  400
 
+void show_project_colors() {
+    fprintf(html_out,
+        "<table>\n"
+        "  <tr><th>Project</th><th>Resource share</th></tr>\n"
+    );
+    for (unsigned int i=0; i<gstate.projects.size(); i++) {
+        PROJECT* p = gstate.projects[i];
+        fprintf(html_out,
+            "<tr><td bgcolor=%s><font color=ffffff>%s</font></td><td>%.0f</td></tr>\n",
+            colors[p->index%NCOLORS], p->project_name, p->resource_share
+        );
+    }
+    fprintf(html_out, "</table>\n");
+}
 
 void job_count(PROJECT* p, int rsc_type, int& in_progress, int& done) {
     in_progress = done = 0;
@@ -797,6 +833,7 @@ void job_count(PROJECT* p, int rsc_type, int& in_progress, int& done) {
 
 void show_resource(int rsc_type) {
     unsigned int i;
+    char buf[256];
 
     fprintf(html_out, "<td width=%d valign=top>", WIDTH2);
     bool found = false;
@@ -813,31 +850,51 @@ void show_resource(int rsc_type) {
         }
 
         PROJECT* p = rp->project;
-        fprintf(html_out, "%.2f: <font color=%s>%s%s: %.2fG</font><br>",
+        if (!found) {
+            found = true;
+            fprintf(html_out,
+                "<table>\n"
+                "<tr><th>#devs</th><th>Job name</th><th>GFLOPs left</th>%s</tr>\n",
+                rsc_type?"<th>GPU</th>":""
+            );
+        }
+        if (rsc_type) {
+            sprintf(buf, "<td>%d</td>", rp->coproc_indices[0]);
+        } else {
+            strcpy(buf, "");
+        }
+        fprintf(html_out, "<tr><td>%.2f</td><td bgcolor=%s><font color=#ffffff>%s%s</font></td><td>%.0f</td>%s</tr>\n",
             ninst,
             colors[p->index%NCOLORS],
-            atp->result->rr_sim_misses_deadline?"*":"",
-            atp->result->name,
-            atp->flops_left/1e9
+            rp->rr_sim_misses_deadline?"*":"",
+            rp->name,
+            rp->sim_flops_left/1e9,
+            buf
         );
-        found = true;
     }
-    if (!found) fprintf(html_out, "IDLE");
-    fprintf(html_out, "<br>Jobs");
+    if (found) {
+        fprintf(html_out, "</table>\n");
+    } else {
+        fprintf(html_out, "IDLE\n");
+    }
+    fprintf(html_out,
+        "<table><tr><td>Project</td><td>In progress</td><td>done</td><td>REC</td></tr>\n"
+    );
     found = false;
     for (i=0; i<gstate.projects.size(); i++) {
         PROJECT* p = gstate.projects[i];
         int in_progress, done;
         job_count(p, rsc_type, in_progress, done);
         if (in_progress || done) {
-            fprintf(html_out, "<br>%s: %d in prog, %d done\n",
-                p->project_name, in_progress, done
+            fprintf(html_out, "<td bgcolor=%s><font color=#ffffff>%s</font></td><td>%d</td><td>%d</td><td>%.3f</td></tr>\n",
+                colors[p->index%NCOLORS], p->project_name, in_progress, done,
+                p->pwf.rec
             );
             found = true;
         }
     }
-    if (!found) fprintf(html_out, " ---\n");
-    fprintf(html_out, "</td>");
+    //if (!found) fprintf(html_out, " ---\n");
+    fprintf(html_out, "</table></td>");
 }
 
 int nproc_types = 1;
@@ -853,12 +910,16 @@ void html_start() {
     }
     setbuf(html_out, 0);
     fprintf(index_file, "<br><a href=%s>Timeline</a>\n", TIMELINE_FNAME);
-    fprintf(html_out, "<h2>BOINC client simulator</h2>\n");
+    fprintf(html_out,
+        "<head><style> body, td, th { font-family: Verdana; font-size: 12px;} th {white-space: nowrap;}</style></head>\n"
+        "<h2>BOINC client emulator results</h2>\n"
+    );
+    show_project_colors();
     fprintf(html_out,
         "<table border=0 cellpadding=4><tr><th width=%d>Time</th>\n", WIDTH1
     );
     fprintf(html_out,
-        "<th width=%d>CPU<br><font size=-2>Job name and estimated time left<br>color denotes project<br>* means EDF mode</font></th>", WIDTH2
+        "<th width=%d>CPU</th>", WIDTH2
     );
     if (coprocs.have_nvidia()) {
         fprintf(html_out, "<th width=%d>NVIDIA GPU</th>", WIDTH2);
@@ -874,8 +935,8 @@ void html_start() {
 void html_rec() {
     if (html_msg.size()) {
         fprintf(html_out,
-            "<table border=0 cellpadding=4><tr><td width=%d valign=top>%.0f</td>",
-            WIDTH1, gstate.now
+            "<table border=0 cellpadding=4><tr><td width=%d valign=top>%s</td>",
+            WIDTH1, sim_time_string(gstate.now)
         );
         fprintf(html_out,
             "<td width=%d valign=top><font size=-2>%s</font></td></tr></table>\n",
@@ -884,7 +945,7 @@ void html_rec() {
         );
         html_msg = "";
     }
-    fprintf(html_out, "<table border=0 cellpadding=4><tr><td width=%d valign=top>%.0f</td>", WIDTH1, gstate.now);
+    fprintf(html_out, "<table border=0 cellpadding=4><tr><td width=%d valign=top>%s</td>", WIDTH1, sim_time_string(gstate.now));
 
     if (active) {
         show_resource(0);
@@ -909,7 +970,7 @@ void html_rec() {
 
 void html_end() {
     fprintf(html_out, "<pre>\n");
-    sim_results.compute();
+    sim_results.compute_figures_of_merit();
     sim_results.print(html_out);
     print_project_results(html_out);
     fprintf(html_out, "</pre>\n");
@@ -969,9 +1030,11 @@ static void write_inputs() {
     sprintf(buf, "%s/%s", outfile_prefix, INPUTS_FNAME);
     FILE* f = fopen(buf, "w");
     fprintf(f,
+        "Existing jobs only: %s\n"
         "Round-robin only: %s\n"
         "scheduler EDF sim: %s\n"
         "hysteresis work fetch: %s\n",
+        existing_jobs_only?"yes":"no",
         cpu_sched_rr_only?"yes":"no",
         server_uses_workload?"yes":"no",
         use_hyst_fetch?"yes":"no"
@@ -1120,9 +1183,13 @@ void get_app_params() {
     for (i=0; i<gstate.results.size(); i++) {
         RESULT* rp = gstate.results[i];
         app = rp->app;
+        double latency_bound = rp->report_deadline - rp->received_time;
         if (!app->latency_bound) {
-            app->latency_bound = rp->report_deadline - rp->received_time;
+            app->latency_bound = latency_bound;
         }
+        rp->received_time = START_TIME;
+        rp->report_deadline = START_TIME + latency_bound;
+        rp->sim_flops_left = rp->wup->rsc_fpops_est;
     }
     for (i=0; i<gstate.workunits.size(); i++) {
         WORKUNIT* wup = gstate.workunits[i];
@@ -1137,6 +1204,7 @@ void get_app_params() {
     }
     for (i=0; i<gstate.app_versions.size(); i++) {
         APP_VERSION* avp = gstate.app_versions[i];
+        if (avp->missing_coproc) continue;
         avp->app->ignore = false;
     }
     fprintf(summary_file, "Applications and version\n");
@@ -1146,6 +1214,24 @@ void get_app_params() {
         for (i=0; i<gstate.apps.size(); i++) {
             app = gstate.apps[i];
             if (app->project != p) continue;
+
+            if (app->ignore) {
+                fprintf(summary_file,
+                    "   app %s: ignoring - no usable app versions\n",
+                    app->name
+                );
+                continue;
+            }
+
+            // if missing app params, fill in defaults
+            //
+            if (!app->fpops_est) {
+                app->fpops_est = 3600e9;
+            }
+            if (!app->latency_bound) {
+                app->latency_bound = 86400;
+            }
+
             if (!app->fpops_est || !app->latency_bound) {
                 app->ignore = true;
                 fprintf(summary_file,
@@ -1199,7 +1285,7 @@ void cull_projects() {
 
     for (i=0; i<gstate.projects.size(); i++) {
         p = gstate.projects[i];
-        p->dont_request_more_work = true;
+        p->no_apps = true;
         for (int j=0; j<coprocs.n_rsc; j++) {
             p->no_rsc_apps[j] = true;
         }
@@ -1213,16 +1299,22 @@ void cull_projects() {
     for (i=0; i<gstate.apps.size(); i++) {
         APP* app = gstate.apps[i];
         if (!app->ignore) {
-            app->project->dont_request_more_work = false;
+            app->project->no_apps = false;
         }
     }
     vector<PROJECT*>::iterator iter;
     iter = gstate.projects.begin();
     while (iter != gstate.projects.end()) {
         p = *iter;
-        if (p->dont_request_more_work) {
+        if (p->no_apps) {
             fprintf(summary_file,
                 "%s: Removing from simulation - no apps\n",
+                p->project_name
+            );
+            iter = gstate.projects.erase(iter);
+        } else if (p->non_cpu_intensive) {
+            fprintf(summary_file,
+                "%s: Removing from simulation - non CPU intensive\n",
                 p->project_name
             );
             iter = gstate.projects.erase(iter);
@@ -1235,10 +1327,23 @@ void cull_projects() {
 void do_client_simulation() {
     char buf[256], buf2[256];
     int retval;
+    FILE* f;
 
-    sprintf(buf, "%s%s", config_prefix, CONFIG_FILE);
+    sprintf(buf, "%s%s", infile_prefix, CONFIG_FILE);
+    config.defaults();
     read_config_file(true, buf);
-    config.show();
+
+    log_flags.init();
+    sprintf(buf, "%s%s", outfile_prefix, "log_flags.xml");
+    f = fopen(buf, "r");
+    if (f) {
+        MIOFILE mf;
+        mf.init_file(f);
+        XML_PARSER xp(&mf);
+        xp.get_tag();   // skip open tag
+        log_flags.parse(xp);
+        fclose(f);
+    }
 
     gstate.add_platform("client simulator");
     sprintf(buf, "%s%s", infile_prefix, STATE_FILE_NAME);
@@ -1251,6 +1356,10 @@ void do_client_simulation() {
         fprintf(stderr, "state file parse error %d\n", retval);
         exit(1);
     }
+
+    config.show();
+    log_flags.show();
+
     sprintf(buf, "%s%s", infile_prefix, GLOBAL_PREFS_FILE_NAME);
     sprintf(buf2, "%s%s", infile_prefix, GLOBAL_PREFS_OVERRIDE_FILE);
     gstate.read_global_prefs(buf, buf2);
@@ -1260,6 +1369,16 @@ void do_client_simulation() {
         "<br><a href=%s>Log file</a>\n",
         SUMMARY_FNAME, LOG_FNAME
     );
+
+    // fill in GPU device nums
+    //
+    for (int i=0; i<coprocs.n_rsc; i++) {
+        COPROC& cp = coprocs.coprocs[i];
+        for (int j=0; j<cp.count; j++) {
+            cp.device_nums[j] = j;
+        }
+    }
+    process_gpu_exclusions();
 
     get_app_params();
     cull_projects();
@@ -1271,21 +1390,22 @@ void do_client_simulation() {
     }
 
     clear_backoff();
-    gstate.workunits.clear();
-    gstate.results.clear();
 
+    gstate.log_show_projects();
     gstate.set_ncpus();
     work_fetch.init();
 
-    set_initial_rec();
+    //set_initial_rec();
+
+    debt_adjust_period = delta;
 
     gstate.request_work_fetch("init");
     simulate();
 
-    sim_results.compute();
+    sim_results.compute_figures_of_merit();
 
     sprintf(buf, "%s%s", outfile_prefix, RESULTS_DAT_FNAME);
-    FILE* f = fopen(buf, "w");
+    f = fopen(buf, "w");
     sim_results.print(f);
     fclose(f);
     sprintf(buf, "%s%s", outfile_prefix, RESULTS_TXT_FNAME);
@@ -1329,10 +1449,10 @@ int main(int argc, char** argv) {
         char* opt = argv[i++];
         if (!strcmp(opt, "--infile_prefix")) {
             infile_prefix = argv[i++];
-        } else if (!strcmp(opt, "--config_prefix")) {
-            config_prefix = argv[i++];
         } else if (!strcmp(opt, "--outfile_prefix")) {
             outfile_prefix = argv[i++];
+        } else if (!strcmp(opt, "--existing_jobs_only")) {
+            existing_jobs_only = true;
         } else if (!strcmp(opt, "--duration")) {
             duration = atof(next_arg(argc, argv, i));
         } else if (!strcmp(opt, "--delta")) {
@@ -1376,5 +1496,6 @@ int main(int argc, char** argv) {
     sprintf(buf, "%s%s", outfile_prefix, SUMMARY_FNAME);
     summary_file = fopen(buf, "w");
 
+    srand(1);       // make it deterministic
     do_client_simulation();
 }

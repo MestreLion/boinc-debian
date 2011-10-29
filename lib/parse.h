@@ -27,6 +27,8 @@
 #include "str_util.h"
 #include "cl_boinc.h"
 
+// see parse_test.cpp for example usage of XML_PARSER
+
 class XML_PARSER {
     bool scan_nonws(int&);
     int scan_comment();
@@ -83,10 +85,10 @@ inline bool match_tag(const std::string &s, const char* tag) {
     return match_tag(s.c_str(), tag);
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 #define boinc_strtoull _strtoui64
 #else
-#ifdef HAVE_STRTOULL
+#if defined(HAVE_STRTOULL) || defined(__MINGW32__)
 #define boinc_strtoull strtoull
 #else
 inline unsigned long long boinc_strtoull(const char *s, char **, int) {

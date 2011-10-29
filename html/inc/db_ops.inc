@@ -474,6 +474,11 @@ function result_error_mask_str($x){
     case -228: return "ERR_CHILD_FAILED";
     case -229: return "ERR_SYMLINK";
     case -230: return "ERR_DB_CONN_LOST";
+    case -231: return "ERR_CRYPTO";
+    case -232: return "ERR_ABORTED_ON_EXIT";
+    case -233: return "ERR_UNSTARTED_LATE";
+    case -234: return "ERR_MISSING_COPROC";
+    case -235: return "ERR_PROC_PARSE";
     default: return "Unknown error number";
     }
 }
@@ -1499,5 +1504,5 @@ function host_name_by_id($hostid) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: db_ops.inc 22623 2010-11-04 18:20:57Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: db_ops.inc 24405 2011-10-16 06:04:13Z davea $";  //Generated automatically - do not edit
 ?>

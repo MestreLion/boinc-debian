@@ -18,7 +18,8 @@
 #ifndef __sg_TaskPanel__
 #define __sg_TaskPanel__
 
-
+// Comment???
+//
 #define SELECTBYRESULTNAME 0
 
 #include "sg_PanelBase.h"
@@ -97,7 +98,7 @@ class CSimpleTaskPanel : public CSimplePanelBase
         wxString GetStatusString(RESULT* result);
         wxString FormatTime(float fBuffer);
         void FindSlideShowFiles(TaskSelectionData *selData);
-        void UpdateTaskSelectionList();
+        void UpdateTaskSelectionList(bool reskin);
         bool isRunning(RESULT* result);
 		bool DownloadingResults();
 		bool Suspended();
@@ -110,27 +111,24 @@ class CSimpleTaskPanel : public CSimplePanelBase
         void OnEraseBackground(wxEraseEvent& event);
 #endif
         wxRect*                     m_progressBarRect;
-		CTransparentStaticText*     			m_myTasksLabel;
+		CTransparentStaticText*     m_myTasksLabel;
 		CBOINCBitmapComboBox*       m_TaskSelectionCtrl;
-		CTransparentStaticText*     			m_TaskProjectLabel;
-		CTransparentStaticText*     			m_TaskProjectName;
+		CTransparentStaticText*     m_TaskProjectLabel;
+		CTransparentStaticText*     m_TaskProjectName;
 #if SELECTBYRESULTNAME
-		CTransparentStaticText*     			m_TaskApplicationName;
+		CTransparentStaticText*     m_TaskApplicationName;
 #endif
         CSlideShowPanel*            m_SlideShowArea;
-		CTransparentStaticText*     			m_ElapsedTimeValue;
-		CTransparentStaticText*     			m_TimeRemainingValue;
+		CTransparentStaticText*     m_ElapsedTimeValue;
+		CTransparentStaticText*     m_TimeRemainingValue;
 		wxGauge*                    m_ProgressBar;
-		CTransparentStaticText*     			m_ProgressValueText;
-		CTransparentStaticText*     			m_StatusValueText;
+		CTransparentStaticText*     m_ProgressValueText;
+		CTransparentStaticText*     m_StatusValueText;
 		wxButton*                   m_TaskCommandsButton;
         wxRect                      m_ProgressRect;
         int                         m_oldWorkCount;
         int                         m_iPctDoneX10;
 		time_t                      error_time;
-        wxBitmap                    m_GreenDot;
-        wxBitmap                    m_YellowDot;
-        wxBitmap                    m_RedDot;
         wxTimer*                    m_pulseTimer;
         bool                        m_bStableTaskInfoChanged;
         int                         m_CurrentTaskSelection;

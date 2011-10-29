@@ -499,6 +499,10 @@ static int modify_host_struct(HOST& host) {
     g_request->coprocs.summary_string(buf2, sizeof(buf2));
     strlcpy(host.serialnum, buf, sizeof(host.serialnum));
     strlcat(host.serialnum, buf2, sizeof(host.serialnum));
+    if (strlen(host.virtualbox_version)) {
+        sprintf(buf2, "[vbox|%s]", host.virtualbox_version);
+        strlcat(host.serialnum, buf2, sizeof(host.serialnum));
+    }
     if (strcmp(host.last_ip_addr, g_request->host.last_ip_addr)) {
         strncpy(host.last_ip_addr, g_request->host.last_ip_addr, sizeof(host.last_ip_addr));
     } else {
@@ -689,14 +693,19 @@ int handle_global_prefs() {
     g_reply->send_global_prefs = false;
     bool have_working_prefs = (strlen(g_request->working_global_prefs_xml)>0);
     bool have_master_prefs = (strlen(g_request->global_prefs_xml)>0);
+        // absent if the host has host-specific prefs
     bool have_db_prefs = (strlen(g_reply->user.global_prefs)>0);
     bool same_account = !strcmp(
         g_request->global_prefs_source_email_hash, g_reply->email_hash
     );
-    double master_mod_time=0, db_mod_time=0;
+    double master_mod_time=0, db_mod_time=0, working_mod_time=0;
     if (have_master_prefs) {
         parse_double(g_request->global_prefs_xml, "<mod_time>", master_mod_time);
         if (master_mod_time > dtime()) master_mod_time = dtime();
+    }
+    if (have_working_prefs) {
+        parse_double(g_request->working_global_prefs_xml, "<mod_time>", working_mod_time);
+        if (working_mod_time > dtime()) working_mod_time = dtime();
     }
     if (have_db_prefs) {
         parse_double(g_reply->user.global_prefs, "<mod_time>", db_mod_time);
@@ -784,14 +793,14 @@ int handle_global_prefs() {
     //
     if (config.debug_prefs) {
         log_messages.printf(MSG_NORMAL,
-            "[prefs] have db %d; dbmod %f; global mod %f\n",
-            have_db_prefs, db_mod_time, g_request->global_prefs.mod_time
+            "[prefs] have DB prefs: %d; dbmod %f; global mod %f; working mod %f\n",
+            have_db_prefs, db_mod_time, g_request->global_prefs.mod_time, working_mod_time
         );
     }
-    if (have_db_prefs && db_mod_time > master_mod_time) {
+    if (have_db_prefs && db_mod_time > master_mod_time && db_mod_time > working_mod_time) {
         if (config.debug_prefs) {
             log_messages.printf(MSG_DEBUG,
-                "[prefs] sending db prefs in reply\n"
+                "[prefs] sending DB prefs in reply\n"
             );
         }
         g_reply->send_global_prefs = true;
@@ -1066,7 +1075,7 @@ static inline bool requesting_work() {
 void process_request(char* code_sign_key) {
     PLATFORM* platform;
     int retval;
-    double last_rpc_time;
+    double last_rpc_time, x;
     struct tm *rpc_time_tm;
     bool ok_to_send_work = !config.dont_send_jobs;
     bool have_no_work = false;
@@ -1186,13 +1195,22 @@ void process_request(char* code_sign_key) {
         }
     }
 
+    // in deciding whether it's a new day,
+    // add a random factor (based on host ID)
+    // to smooth out network traffic over the day
+    //
+    retval = rand();
+    srand(g_reply->host.id);
+    x = drand()*86400;
+    srand(retval);
     last_rpc_time = g_reply->host.rpc_time;
-    t = g_reply->host.rpc_time;
+    t = g_reply->host.rpc_time + x;
     rpc_time_tm = localtime(&t);
     g_request->last_rpc_dayofyear = rpc_time_tm->tm_yday;
 
     t = time(0);
     g_reply->host.rpc_time = t;
+    t += x;
     rpc_time_tm = localtime(&t);
     g_request->current_rpc_dayofyear = rpc_time_tm->tm_yday;
 
@@ -1380,4 +1398,4 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     }
 }
 
-const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 23978 2011-08-10 17:11:08Z davea $";
+const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 24353 2011-10-08 05:17:44Z davea $";

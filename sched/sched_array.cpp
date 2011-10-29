@@ -42,7 +42,10 @@
 // if any check fails, return false
 //
 static bool quick_check(
-    WU_RESULT& wu_result, WORKUNIT& wu, BEST_APP_VERSION* &bavp,
+    WU_RESULT& wu_result,
+    WORKUNIT& wu,       // a mutable copy of wu_result.workunit.
+        // We may modify its delay_bound and rsc_fpops_est
+    BEST_APP_VERSION* &bavp,
     APP* &app, int& last_retval
 ) {
     int retval;
@@ -128,7 +131,8 @@ static bool quick_check(
         }
     }
 
-    // don't send job if host can't handle it
+    // Check whether we can send this job.
+    // This may modify wu.delay_bound and wu.rsc_fpops_est
     //
     retval = wu_is_infeasible_fast(
         wu,
@@ -152,19 +156,25 @@ static bool quick_check(
     return true;
 }
 
-// do slow checks (ones that require DB access)
+// Do checks that require DB access for whether we can send this job,
+// and return true if OK to send
 //
-static bool slow_check(WU_RESULT& wu_result, WORKUNIT& wu, APP* app) {
+static bool slow_check(
+    WU_RESULT& wu_result,       // the job cache entry.
+        // We may refresh its hr_class and app_version_id fields.
+    APP* app,
+    BEST_APP_VERSION* bavp      // the app version to be used
+) {
     int n, retval;
     DB_RESULT result;
     char buf[256];
+    WORKUNIT& wu = wu_result.workunit;
 
     // Don't send if we've already sent a result of this WU to this user.
     //
     if (config.one_result_per_user_per_wu) {
         sprintf(buf,
-            "where workunitid=%d and userid=%d",
-            wu_result.workunit.id, g_reply->user.id
+            "where workunitid=%d and userid=%d", wu.id, g_reply->user.id
         );
         retval = result.count(n, buf);
         if (retval) {
@@ -177,21 +187,18 @@ static bool slow_check(WU_RESULT& wu_result, WORKUNIT& wu, APP* app) {
                 if (config.debug_send) {
                     log_messages.printf(MSG_NORMAL,
                         "[send] [USER#%d] already has %d result(s) for [WU#%d]\n",
-                        g_reply->user.id, n, wu_result.workunit.id
+                        g_reply->user.id, n, wu.id
                     );
                 }
                 return false;
             }
         }
     } else if (config.one_result_per_host_per_wu) {
-        // Don't send if we've already sent a result
-        // of this WU to this host.
-        // We only have to check this
-        // if we don't send one result per user.
+        // Don't send if we've already sent a result of this WU to this host.
+        // We only have to check this if we don't send one result per user.
         //
         sprintf(buf,
-            "where workunitid=%d and hostid=%d",
-            wu_result.workunit.id, g_reply->host.id
+            "where workunitid=%d and hostid=%d", wu.id, g_reply->host.id
         );
         retval = result.count(n, buf);
         if (retval) {
@@ -204,7 +211,7 @@ static bool slow_check(WU_RESULT& wu_result, WORKUNIT& wu, APP* app) {
                 if (config.debug_send) {
                     log_messages.printf(MSG_NORMAL,
                         "[send] [HOST#%d] already has %d result(s) for [WU#%d]\n",
-                        g_reply->host.id, n, wu_result.workunit.id
+                        g_reply->host.id, n, wu.id
                     );
                 }
                 return false;
@@ -212,22 +219,50 @@ static bool slow_check(WU_RESULT& wu_result, WORKUNIT& wu, APP* app) {
         }
     }
 
-    if (app_hr_type(*app)) {
-        if (already_sent_to_different_platform_careful(
-            wu_result.workunit, *app
-        )) {
-            if (config.debug_send) {
-                log_messages.printf(MSG_NORMAL,
-                    "[send] [HOST#%d] [WU#%d %s] is assigned to different platform\n",
-                    g_reply->host.id, wu.id, wu.name
-                );
-            }
-            // Mark the workunit as infeasible.
-            // This ensures that jobs already assigned to a platform
-            // are processed first.
-            //
-            wu_result.infeasible_count++;
+    // Checks that require looking up the WU.
+    // Lump these together so we only do 1 lookup
+    //
+    if (app_hr_type(*app) || app->homogeneous_app_version) {
+        DB_WORKUNIT db_wu;
+        db_wu.id = wu.id;
+        int vals[2];
+        retval = db_wu.get_field_ints("hr_class, app_version_id", 2, vals);
+        if (retval) {
+            log_messages.printf(MSG_CRITICAL,
+                "can't get fields for [WU#%d]: %s\n", db_wu.id, boincerror(retval)
+            );
             return false;
+        }
+        if (app_hr_type(*app)) {
+            wu.hr_class = vals[0];
+            if (already_sent_to_different_hr_class(wu, *app)) {
+                if (config.debug_send) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[send] [HOST#%d] [WU#%d %s] is assigned to different HR class\n",
+                        g_reply->host.id, wu.id, wu.name
+                    );
+                }
+                // Mark the workunit as infeasible.
+                // This ensures that jobs already assigned to an HR class
+                // are processed first.
+                //
+                wu_result.infeasible_count++;
+                return false;
+            }
+        }
+        if (app->homogeneous_app_version) {
+            int wu_avid = vals[1];
+            wu.app_version_id = wu_avid;
+            if (wu_avid && wu_avid != bavp->avp->id) {
+                if (config.debug_send) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[send] [HOST#%d] [WU#%d %s] is assigned to different app version\n",
+                        g_reply->host.id, wu.id, wu.name
+                    );
+                }
+                wu_result.infeasible_count++;
+                return false;
+            }
         }
     }
     return true;
@@ -289,9 +324,14 @@ static bool scan_work_array() {
         i = (j+rnd_off) % ssp->max_wu_results;
 
         WU_RESULT& wu_result = ssp->wu_results[i];
+
+        // make a copy of the WORKUNIT part,
+        // which we can modify without affecting the cache
+        //
         WORKUNIT wu = wu_result.workunit;
 
-        // do fast (non-DB) checks
+        // do fast (non-DB) checks.
+        // This may modify wu.rsc_fpops_est
         //
         if (!quick_check(wu_result, wu, bavp, app, last_retval)) {
             continue;
@@ -308,13 +348,17 @@ static bool scan_work_array() {
         wu_result.state = g_pid;
         unlock_sema();
 
-        if (!slow_check(wu_result, wu, app)) {
+        if (!slow_check(wu_result, app, bavp)) {
             // if we couldn't send the result to this host,
             // set its state back to PRESENT
             //
             wu_result.state = WR_STATE_PRESENT;
         } else {
-            result.id = wu_result.resultid;
+            // slow_check() refreshes fields of wu_result.workunit;
+            // update our copy too
+            //
+            wu.hr_class = wu_result.workunit.hr_class;
+            wu.app_version_id = wu_result.workunit.app_version_id;
 
             // mark slot as empty AFTER we've copied out of it
             // (since otherwise feeder might overwrite it)
@@ -325,6 +369,7 @@ static bool scan_work_array() {
             // TODO: from here to end of add_result_to_reply()
             // (which updates the DB record) should be a transaction
             //
+            result.id = wu_result.resultid;
             if (result_still_sendable(result, wu)) {
                 retval = add_result_to_reply(result, wu, bavp, false);
 
@@ -406,4 +451,4 @@ void send_work_old() {
     }
 }
 
-const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 23636 2011-06-06 03:40:42Z davea $";
+const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 24493 2011-10-26 16:51:10Z davea $";

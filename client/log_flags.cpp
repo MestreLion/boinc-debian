@@ -77,7 +77,7 @@ void LOG_FLAGS::show() {
     show_flag(buf, cpu_sched_debug, "cpu_sched_debug");
     show_flag(buf, cpu_sched_status, "cpu_sched_status");
     show_flag(buf, dcf_debug, "dcf_debug");
-    show_flag(buf, debt_debug, "debt_debug");
+    show_flag(buf, priority_debug, "priority_debug");
     show_flag(buf, file_xfer_debug, "file_xfer_debug");
     show_flag(buf, gui_rpc_debug, "gui_rpc_debug");
     show_flag(buf, heartbeat_debug, "heartbeat_debug");
@@ -111,6 +111,31 @@ static void show_gpu_ignore(vector<int>& devs, const char* name) {
     }
 }
 
+static void show_exclude_gpu(EXCLUDE_GPU& e) {
+    char t[256], app[256], dev[256];
+    PROJECT *p = gstate.lookup_project(e.url.c_str());
+    if (!p) return;
+    if (e.type.empty()) {
+        strcpy(t, "all");
+    } else {
+        strcpy(t, e.type.c_str());
+    }
+    if (e.appname.empty()) {
+        strcpy(app, "all");
+    } else {
+        strcpy(app, e.appname.c_str());
+    }
+    if (e.device_num < 0) {
+        strcpy(dev, "all");
+    } else {
+        sprintf(dev, "%d", e.device_num);
+    }
+    msg_printf(p, MSG_INFO,
+        "Config: excluded GPU.  Type: %s.  App: %s.  Device: %s",
+        t, app, dev
+    );
+}
+
 // TODO: show other config options
 //
 void CONFIG::show() {
@@ -141,6 +166,9 @@ void CONFIG::show() {
     }
     show_gpu_ignore(ignore_nvidia_dev, GPU_TYPE_NVIDIA);
     show_gpu_ignore(ignore_ati_dev, GPU_TYPE_ATI);
+    for (i=0; i<exclude_gpus.size(); i++) {
+        show_exclude_gpu(exclude_gpus[i]);
+    }
     for (i=0; i<exclusive_apps.size(); i++) {
         msg_printf(NULL, MSG_INFO,
             "Config: don't compute while %s is running",
@@ -399,7 +427,10 @@ int read_config_file(bool init, const char* fname) {
         log_flags.init();
     }
     FILE* f = boinc_fopen(fname, "r");
-    if (!f) return ERR_FOPEN;
+    if (!f) {
+        msg_printf(NULL, MSG_INFO, "No config file found - using defaults");
+        return ERR_FOPEN;
+    }
     int retval = config.parse(f);
     fclose(f);
     if (retval) return retval;
@@ -422,3 +453,80 @@ int read_config_file(bool init, const char* fname) {
     return 0;
 }
 
+// Do stuff involving GPU exclusions.
+// - Count excluded GPUS per project.
+//   NOTE: this is currently done just on the project level.
+//   Could do it at the app level also.
+// - Flag app versions and results for which all GPUs are excluded
+//
+void process_gpu_exclusions() {
+    unsigned int i, j;
+    PROJECT *p;
+
+    for (i=0; i<gstate.projects.size(); i++) {
+        p = gstate.projects[i];
+        for (int k=1; k<coprocs.n_rsc; k++) {
+            int n=0;
+            COPROC& cp = coprocs.coprocs[k];
+            for (j=0; j<config.exclude_gpus.size(); j++) {
+                EXCLUDE_GPU& eg = config.exclude_gpus[j];
+                if (strcmp(eg.url.c_str(), p->master_url)) continue;
+                if (!eg.appname.empty()) continue;
+                if (!eg.type.empty() && (eg.type != cp.type)) continue;
+                if (eg.device_num >= 0) {
+                    // exclusion may refer to nonexistent GPU
+                    //
+                    if (cp.device_num_exists(eg.device_num)) {
+                        n++;
+                    }
+                } else {
+                    n = cp.count;
+                }
+            }
+            p->ncoprocs_excluded[k] = n;
+        }
+    }
+
+    for (i=0; i<gstate.app_versions.size(); i++) {
+        APP_VERSION* avp = gstate.app_versions[i];
+        if (avp->missing_coproc) continue;
+        int rt = avp->gpu_usage.rsc_type;
+        if (!rt) continue;
+        COPROC& cp = coprocs.coprocs[rt];
+        bool found = false;
+        for (int k=0; k<cp.count; k++) {
+            if (!gpu_excluded(avp->app, cp, k)) {
+                found = true;
+                break;
+            }
+        }
+        if (found) continue;
+        avp->missing_coproc = true;
+        msg_printf(avp->project, MSG_INFO,
+            "All GPUs excluded for %s %d (%s)",
+            avp->app->name, avp->version_num, avp->plan_class
+        );
+        for (j=0; j<gstate.results.size(); j++) {
+            RESULT* rp = gstate.results[j];
+            if (rp->avp != avp) continue;
+            rp->coproc_missing = true;
+            msg_printf(avp->project, MSG_INFO,
+                "marking %s as coproc missing",
+                rp->name
+            );
+        }
+    }
+}
+
+bool gpu_excluded(APP* app, COPROC& cp, int ind) {
+    PROJECT* p = app->project;
+    for (unsigned int i=0; i<config.exclude_gpus.size(); i++) {
+        EXCLUDE_GPU& eg = config.exclude_gpus[i];
+        if (strcmp(eg.url.c_str(), p->master_url)) continue;
+        if (!eg.type.empty() && (eg.type != cp.type)) continue;
+        if (!eg.appname.empty() && (eg.appname != app->name)) continue;
+        if (eg.device_num >= 0 && eg.device_num != cp.device_nums[ind]) continue;
+        return true;
+    }
+    return false;
+}

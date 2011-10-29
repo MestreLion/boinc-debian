@@ -183,6 +183,7 @@ function state_string($result) {
             case 3: return tra("Error while computing");
             case 4: return tra("Error while uploading");
             case 6: return tra("Aborted by user");
+            case 7: return tra("Upload failed");
             }
             return tra("Error");
         case 4: return tra("Timed out - no response");
@@ -235,7 +236,9 @@ function result_client_state_string($result) {
             return tra("Cancelled by server");
         }
         return tra("Aborted by user");
+    case 7: return tra("Upload failed");
     }
+    return tra("Unknown");
 }
 
 function validate_state_str($result) {
@@ -541,6 +544,6 @@ function result_navigation($info, $where_clause) {
 	return $x;
 }
 
-$cvs_version_tracker[]="\$Id: result.inc 24250 2011-09-21 21:26:00Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: result.inc 24379 2011-10-11 18:58:54Z davea $";  //Generated automatically - do not edit
 
 ?>

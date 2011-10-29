@@ -134,6 +134,7 @@ void PROJECT::init() {
     completions_ratio_s = 0.0;
     completions_ratio_stdev = 0.1;  // for the first couple of completions - guess.
     completions_required_stdevs = 3.0;
+    result_index = 0;
 #endif
 }
 
@@ -301,6 +302,7 @@ int PROJECT::parse_state(XML_PARSER& xp) {
         }
         if (xp.parse_str("no_rsc_pref", buf, sizeof(buf))) {
             handle_no_rsc_pref(this, buf);
+            continue;
         }
 
             // backwards compat - old state files had ams_resource_share = 0
@@ -314,6 +316,7 @@ int PROJECT::parse_state(XML_PARSER& xp) {
         if (xp.parse_bool("anonymous_platform", btemp)) continue;
         if (xp.parse_string("trickle_up_url", stemp)) {
             trickle_up_ops.push_back(new TRICKLE_UP_OP(stemp));
+            continue;
         }
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
@@ -321,6 +324,7 @@ int PROJECT::parse_state(XML_PARSER& xp) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -449,7 +453,7 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
             "    <last_rpc_time>%f</last_rpc_time>\n"
             "    <project_files_downloaded_time>%f</project_files_downloaded_time>\n",
             gui_urls.c_str(),
-            project_priority(this),
+            sched_priority,
             last_rpc_time,
             project_files_downloaded_time
         );
@@ -692,6 +696,7 @@ int PROJECT::parse_project_files(XML_PARSER& xp, bool delete_existing_symlinks) 
                     xp.parsed_tag
                 );
             }
+            xp.skip_unexpected();
         }
     }
     return ERR_XML_PARSE;
@@ -788,12 +793,6 @@ int APP::parse(XML_PARSER& xp) {
         }
         if (xp.parse_str("name", name, sizeof(name))) continue;
         if (xp.parse_str("user_friendly_name", user_friendly_name, sizeof(user_friendly_name))) continue;
-        if (log_flags.unparsed_xml) {
-            msg_printf(0, MSG_INFO,
-                "[unparsed_xml] APP::parse(): unrecognized: %s\n",
-                xp.parsed_tag
-            );
-        }
 #ifdef SIM
         if (xp.parse_double("latency_bound", latency_bound)) continue;
         if (xp.parse_double("fpops_est", fpops_est)) continue;
@@ -809,6 +808,13 @@ int APP::parse(XML_PARSER& xp) {
         }
         if (xp.parse_bool("non_cpu_intensive", non_cpu_intensive)) continue;
 #endif
+        if (log_flags.unparsed_xml) {
+            msg_printf(0, MSG_INFO,
+                "[unparsed_xml] APP::parse(): unrecognized: %s\n",
+                xp.parsed_tag
+            );
+        }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -928,6 +934,7 @@ int FILE_INFO::parse(XML_PARSER& xp) {
                 sizeof(xml_signature)
             );
             if (retval) return retval;
+            strip_whitespace(xml_signature);
             continue;
         }
         if (xp.match_tag("file_signature")) {
@@ -1017,6 +1024,7 @@ int FILE_INFO::parse(XML_PARSER& xp) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -1323,6 +1331,7 @@ int APP_VERSION::parse(XML_PARSER& xp) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -1471,6 +1480,7 @@ int FILE_REF::parse(XML_PARSER& xp) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -1544,6 +1554,7 @@ int WORKUNIT::parse(XML_PARSER& xp) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -1637,6 +1648,7 @@ int RESULT::parse_name(XML_PARSER& xp, const char* end_tag) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -1702,6 +1714,7 @@ int RESULT::parse_server(XML_PARSER& xp) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -1764,6 +1777,7 @@ int RESULT::parse_state(XML_PARSER& xp) {
                 xp.parsed_tag
             );
         }
+        xp.skip_unexpected();
     }
     return ERR_XML_PARSE;
 }
@@ -1936,9 +1950,11 @@ int RESULT::write_gui(MIOFILE& out) {
         if (atp && atp->task_state() == PROCESS_EXECUTING) {
             if (avp->gpu_usage.rsc_type) {
                 COPROC& cp = coprocs.coprocs[avp->gpu_usage.rsc_type];
-                sprintf(buf, " (device %d)",
-                    cp.device_nums[coproc_indices[0]]
-                );
+                if (cp.count > 1) {
+                    sprintf(buf, " (device %d)",
+                        cp.device_nums[coproc_indices[0]]
+                    );
+                }
             }
         }
         out.printf(
@@ -1972,7 +1988,6 @@ bool RESULT::is_upload_done() {
 }
 
 // resets all FILE_INFO's in result to uploaded = false
-// if upload_when_present is true.
 //
 void RESULT::clear_uploaded_flags() {
     unsigned int i;

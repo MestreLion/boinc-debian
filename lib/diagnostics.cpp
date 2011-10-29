@@ -400,18 +400,17 @@ int diagnostics_finish() {
         if (flags & BOINC_DIAG_MEMORYLEAKCHECKENABLED) {
             _CrtMemCheckpoint(&finish_snapshot);
             if (_CrtMemDifference(&difference_snapshot, &start_snapshot, &finish_snapshot)) {
-
-                fprintf( stderr, "\n\n");
-                fprintf( stderr, "**********\n");
-                fprintf( stderr, "**********\n");
-                fprintf( stderr, "\n");
-                fprintf( stderr, "Memory Leaks Detected!!!\n");
-                fprintf( stderr, "\n");
-                fprintf( stderr, "Memory Statistics:\n");
+                fprintf(stdout, "\n\n");
+                fprintf(stdout, "**********\n");
+                fprintf(stdout, "**********\n");
+                fprintf(stdout, "\n");
+                fprintf(stdout, "Memory Leaks Detected!!!\n");
+                fprintf(stdout, "\n");
+                fprintf(stdout, "Memory Statistics:\n");
                 _CrtMemDumpStatistics(&difference_snapshot);
-                fprintf( stderr, "\n");
+                fprintf(stdout, "\n");
                 _CrtMemDumpAllObjectsSince(&difference_snapshot);
-                fprintf( stderr, "\n");
+                fprintf(stdout, "\n");
             }
         }
     }
@@ -552,13 +551,13 @@ int diagnostics_cycle_logs() {
 // Diagnostics for POSIX Compatible systems.
 //
 
-#ifdef HAVE_SIGNAL_H
+#if HAVE_SIGNAL_H
 
 
 // Set a signal handler only if it is not currently ignored
 //
 extern "C" void boinc_set_signal_handler(int sig, void(*handler)(int)) {
-#ifdef HAVE_SIGACTION
+#if HAVE_SIGACTION
     struct sigaction temp;
     sigaction(sig, NULL, &temp);
     if (temp.sa_handler != SIG_IGN) {
@@ -579,7 +578,7 @@ extern "C" void boinc_set_signal_handler(int sig, void(*handler)(int)) {
 // Set a signal handler even if it is currently ignored
 //
 void boinc_set_signal_handler_force(int sig, void(*handler)(int)) {
-#ifdef HAVE_SIGACTION
+#if HAVE_SIGACTION
     struct sigaction temp;
     sigaction(sig, NULL, &temp);
     temp.sa_handler = handler;

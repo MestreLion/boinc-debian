@@ -17,6 +17,8 @@
 
 #define TESTBIGICONPOPUP 0
 
+#define SORTTASKLIST 1  /* TRUE to sort task selection control alphabetically */
+
 #include "stdwx.h"
 #include "miofile.h"
 #include "Events.h"
@@ -27,9 +29,6 @@
 #include "sg_TaskPanel.h"
 #include "boinc_api.h"
 #include "filesys.h"
-#include "res/GreenDot16.xpm"
-#include "res/YellowDot16.xpm"
-#include "res/RedDot16.xpm"
 
 
 enum { redDot, yellowDot, greenDot };
@@ -85,7 +84,7 @@ void CSlideShowPanel::AdvanceSlideShow(bool changeSlide) {
     TaskSelectionData* selData = ((CSimpleTaskPanel*)GetParent())->GetTaskSelectionData();
     if (selData == NULL) return;
 
-    int numSlides = selData->slideShowFileNames.size();
+    int numSlides = (int)selData->slideShowFileNames.size();
 
     if (numSlides <= 0) {
         if (m_bCurrentSlideIsDefault) return;
@@ -204,9 +203,6 @@ CSimpleTaskPanel::CSimpleTaskPanel( wxWindow* parent ) :
 	m_pulseTimer = new wxTimer(this, ID_SIMPLE_PROGRESSPULSETIMER);
     m_oldWorkCount = -1;
     error_time = 0;
-    m_GreenDot = wxBitmap((const char**)GreenDot16_xpm);
-    m_YellowDot = wxBitmap((const char**)YellowDot16_xpm);
-    m_RedDot = wxBitmap((const char**)RedDot16_xpm);
     m_GotBGBitMap = false; // Can't be made until parent has been laid out.
     m_bStableTaskInfoChanged = false;
     m_CurrentTaskSelection = -1;
@@ -214,7 +210,6 @@ CSimpleTaskPanel::CSimpleTaskPanel( wxWindow* parent ) :
     m_sNotAvailableString = _("Not available");
     m_progressBarRect = NULL;
 
-    SetFont(wxFont(SMALL_FONT,wxSWISS,wxNORMAL,wxNORMAL,false,wxT("Arial")));
 	SetForegroundColour(*wxBLACK);
     
 	wxBoxSizer* bSizer1;
@@ -255,7 +250,9 @@ CSimpleTaskPanel::CSimpleTaskPanel( wxWindow* parent ) :
 	
 	m_TaskProjectName = new CTransparentStaticText( this, wxID_ANY, wxT("SETI@home"), wxDefaultPosition, wxDefaultSize, wxST_NO_AUTORESIZE );
 	m_TaskProjectName->Wrap( -1 );
-	m_TaskProjectName->SetFont(wxFont(MEDIUM_FONT,wxSWISS,wxNORMAL,wxNORMAL,false,wxT("Arial"))); 
+    wxFont theFont = m_TaskProjectName->GetFont();
+    theFont.SetWeight(wxFONTWEIGHT_BOLD);
+    m_TaskProjectName->SetFont(theFont); 
 	bSizer3->Add( m_TaskProjectName, 1, 0, 0 );
 	
 	bSizer1->Add( bSizer3, 0, wxLEFT | wxRIGHT | wxEXPAND, SIDEMARGINS );
@@ -424,7 +421,7 @@ void CSimpleTaskPanel::Update(bool delayShow) {
             this->Layout();
         }
 
-        UpdateTaskSelectionList();
+        UpdateTaskSelectionList(false);
         
         // We now have valid result pointers, so extract our data
         int count = m_TaskSelectionCtrl->GetCount();
@@ -500,6 +497,7 @@ void CSimpleTaskPanel::Update(bool delayShow) {
 void CSimpleTaskPanel::ReskinInterface() {
     CSimplePanelBase::ReskinInterface();
     m_SlideShowArea->AdvanceSlideShow(false);
+    UpdateTaskSelectionList(true);
 }
 
 
@@ -558,26 +556,14 @@ void CSimpleTaskPanel::GetApplicationAndProjectNames(RESULT* result, wxString* a
             );
         }
 
-#if SELECTBYRESULTNAME
         appName->Printf(
-            wxT("%d. %s%s %d.%02d %s"),
-            state_result->slot+1,
+            wxT("%s%s %d.%02d %s"),
             state_result->project->anonymous_platform?_("Local: "):wxT(""),
             strAppBuffer.c_str(),
             state_result->avp->version_num / 100,
             state_result->avp->version_num % 100,
             strClassBuffer.c_str()
         );
-#else
-        appName->Printf(wxT("%d. %s%s %d.%02d %s"),
-            state_result->slot+1,
-            state_result->project->anonymous_platform?_("Local: "):wxT(""),
-            strAppBuffer.c_str(),
-            state_result->avp->version_num / 100,
-            state_result->avp->version_num % 100,
-            strClassBuffer.c_str()
-        );
-#endif
     }
     
     if (projName != NULL) {
@@ -650,7 +636,6 @@ wxString CSimpleTaskPanel::FormatTime(float fBuffer) {
 
         strBuffer = ts.Format();
     }
-
     return strBuffer;
 }
 
@@ -701,18 +686,23 @@ void CSimpleTaskPanel::FindSlideShowFiles(TaskSelectionData *selData) {
 }
 
 
-void CSimpleTaskPanel::UpdateTaskSelectionList() {
+void CSimpleTaskPanel::UpdateTaskSelectionList(bool reskin) {
     int i, j, count, newColor;
     TaskSelectionData *selData;
 	RESULT* result;
 	RESULT* ctrlResult;
     PROJECT* project;
     std::vector<bool>is_alive;
+    bool needRefresh = false;
+    wxString resname;
     CMainDocument*      pDoc = wxGetApp().GetDocument();
+    CSkinSimple* pSkinSimple = wxGetApp().GetSkinManager()->GetSimple();
+
     wxASSERT(pDoc);
+    wxASSERT(pSkinSimple);
+    wxASSERT(wxDynamicCast(pSkinSimple, CSkinSimple));
     
     count = m_TaskSelectionCtrl->GetCount();
-
 	// Mark all inactive (this lets us loop only once)
     for (i=0; i<count; ++i) {
         is_alive.push_back(false);
@@ -728,8 +718,15 @@ void CSimpleTaskPanel::UpdateTaskSelectionList() {
 			continue;
 		}
 
-
+        resname = wxEmptyString;
+#if SELECTBYRESULTNAME
+        resname = FromUTF8(result->name);
+#else
+        GetApplicationAndProjectNames(result, &resname, NULL);
+#endif
+        
 		// loop through the items already in Task Selection Control to find this result
+        count = m_TaskSelectionCtrl->GetCount();
 		for(j = 0; j < count; ++j) {
             selData = (TaskSelectionData*)m_TaskSelectionCtrl->GetClientData(j);
 			if (!strcmp(result->name, selData->result_name) && 
@@ -740,16 +737,15 @@ void CSimpleTaskPanel::UpdateTaskSelectionList() {
 				is_alive.at(j) = true;
 				break; // skip out of this loop
 			}
+#if SORTTASKLIST
+            if ((m_TaskSelectionCtrl->GetString(j)).Cmp(resname) > 0) {
+                break;  // Insert the new item here (sorted by item label)
+            }
+#endif
 		}
         
-        // if it isn't currently one of the tabs then we have a new one!  lets add it
+        // if it isn't currently in the list then we have a new one!  lets add it
         if (!found) {
-#if SELECTBYRESULTNAME
-            wxString resname(result->name, wxConvUTF8);
-#else
-            wxString resname = wxEmptyString;
-            GetApplicationAndProjectNames(result, &resname, NULL);
-#endif
             selData = new TaskSelectionData;
             selData->result = result;
             strncpy(selData->result_name, result->name, sizeof(selData->result_name));
@@ -762,8 +758,24 @@ void CSimpleTaskPanel::UpdateTaskSelectionList() {
             } else {
                 selData->project_files_downloaded_time = 0.0;
             }
-            m_TaskSelectionCtrl->Append(resname, wxNullBitmap, (void*)selData);
-        }
+
+#if SORTTASKLIST
+            if (j < count) {
+                std::vector<bool>::iterator iter = is_alive.begin();
+                m_TaskSelectionCtrl->Insert(resname, wxNullBitmap, j, (void*)selData);
+                is_alive.insert(iter+j, true);
+                if (j <= m_CurrentTaskSelection) {
+                    ++m_CurrentTaskSelection;
+                    m_TaskSelectionCtrl->SetSelection(m_CurrentTaskSelection);
+                }
+            } else 
+#endif
+            {
+                m_TaskSelectionCtrl->Append(resname, wxNullBitmap, (void*)selData);
+                is_alive.push_back(true);
+            }
+         ++count;
+       }
     }
 
     // Check items in descending order so deletion won't change indexes of items yet to be checked
@@ -774,7 +786,20 @@ void CSimpleTaskPanel::UpdateTaskSelectionList() {
             delete selData;
 			m_TaskSelectionCtrl->Delete(j);
             if (j == m_CurrentTaskSelection) {
+                int newCount = m_TaskSelectionCtrl->GetCount();
+                if (m_CurrentTaskSelection < newCount) {
+                    // Select the next item if one exists
+                    m_TaskSelectionCtrl->SetSelection(m_CurrentTaskSelection);
+                } else if (newCount > 0) {
+                    // Select the previous item if one exists
+                    m_CurrentTaskSelection = newCount-1;
+                    m_TaskSelectionCtrl->SetSelection(m_CurrentTaskSelection);
+                } else {
+                    m_CurrentTaskSelection = -1;
+                    m_TaskSelectionCtrl->SetSelection(wxNOT_FOUND);
+                }
                 m_bStableTaskInfoChanged = true;
+                needRefresh = true;
             }
 		}
 	}
@@ -792,7 +817,7 @@ void CSimpleTaskPanel::UpdateTaskSelectionList() {
     for(j = 0; j < count; ++j) {
         selData = (TaskSelectionData*)m_TaskSelectionCtrl->GetClientData(j);
         ctrlResult = selData->result;
-		if (Suspended() || (ctrlResult->suspended_via_gui)) {
+        if (Suspended() || ctrlResult->suspended_via_gui || ctrlResult->project_suspended_via_gui) {
             newColor = redDot;
         } else if (isRunning(ctrlResult)) {
             newColor = greenDot;
@@ -802,21 +827,24 @@ void CSimpleTaskPanel::UpdateTaskSelectionList() {
             newColor = redDot;
         }
 
-        if (newColor != selData->dotColor) {
+        if (reskin || (newColor != selData->dotColor)) {
             switch (newColor) {
             case greenDot:
-            m_TaskSelectionCtrl->SetItemBitmap(j, m_GreenDot);
+                m_TaskSelectionCtrl->SetItemBitmap(j, *pSkinSimple->GetWorkunitRunningImage()->GetBitmap());
                 break;
             case yellowDot:
-            m_TaskSelectionCtrl->SetItemBitmap(j, m_YellowDot);
+                m_TaskSelectionCtrl->SetItemBitmap(j, *pSkinSimple->GetWorkunitWaitingImage()->GetBitmap());
                 break;
             case redDot:
-            m_TaskSelectionCtrl->SetItemBitmap(j, m_RedDot);
+                m_TaskSelectionCtrl->SetItemBitmap(j, *pSkinSimple->GetWorkunitSuspendedImage()->GetBitmap());
                 break;
             }
             selData->dotColor = newColor;
-            m_TaskSelectionCtrl->Refresh();
+            needRefresh = true;
         }
+    }
+    if (needRefresh) {
+        m_TaskSelectionCtrl->Refresh();
     }
 }
 

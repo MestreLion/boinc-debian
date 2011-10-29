@@ -671,7 +671,7 @@ function show_post_and_context($post, $thread, $forum, $options, $n) {
     switch ($forum->parent_type) {
     case 0:
         $category = BoincCategory::lookup_id($forum->category);
-        show_forum_title($category, $forum, $thread);
+        show_forum_title($category, $forum, $thread, true);
         break;
     case 1:
         show_team_forum_title($forum);
@@ -1201,7 +1201,10 @@ function show_mark_as_read_button($user) {
         $return = urlencode(current_url());
         $tokens = url_tokens($user->authenticator);
         $url = "forum_index.php?read=1$tokens&amp;return=$return";
-        show_button($url, tra("Mark all threads as read"), tra("Mark all threads in all message boards as 'read'."));
+        show_button($url,
+            tra("Mark all threads as read"),
+            tra("Mark all threads in all message boards as read.")
+        );
     }
 }
 

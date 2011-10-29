@@ -22,7 +22,7 @@ require_once("../inc/util.inc");
 require_once("../inc/profile.inc");
 require_once("../inc/uotd.inc");
 
-check_get_args(array("cmd"));
+check_get_args(array("cmd", "pic"));
 
 db_init();
 
@@ -108,5 +108,5 @@ function select_profile($cmd) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile_menu.php 24048 2011-08-25 22:12:48Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: profile_menu.php 24324 2011-10-03 17:11:45Z davea $";  //Generated automatically - do not edit
 ?>

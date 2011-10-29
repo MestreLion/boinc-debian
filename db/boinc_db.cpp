@@ -25,7 +25,7 @@
 #include <math.h>
 
 // For machines with finite() defined in ieeefp.h
-#ifdef HAVE_IEEEFP_H
+#if HAVE_IEEEFP_H
 #include <ieeefp.h>
 #endif
 
@@ -2304,4 +2304,4 @@ int DB_FILESET_SCHED_TRIGGER_ITEM_SET::contains_trigger(const char* fileset_name
     return 0;
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 24228 2011-09-16 20:42:45Z davea $";
+const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 24303 2011-09-27 19:45:27Z davea $";

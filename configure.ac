@@ -1,12 +1,12 @@
 dnl -*- autoconf -*-
 
-dnl $Id: configure.ac 24270 2011-09-23 15:19:22Z romw $
+dnl $Id: configure.ac 24505 2011-10-27 16:01:51Z romw $
 
 dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.58)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 6.13.6)
+AC_INIT(BOINC, 6.13.10)
 AC_CONFIG_MACRO_DIR([m4])
 LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
 AC_SUBST([LIBBOINC_VERSION])
@@ -19,8 +19,8 @@ AM_INIT_AUTOMAKE(dist-zip)
 
 AC_CONFIG_SRCDIR(lib/shmem.cpp)
 
-AC_REVISION([$Revision: 24270 $]) 
-REV=`echo '$Revision: 24270 $' | awk "{print $2}"`
+AC_REVISION([$Revision: 24505 $]) 
+REV=`echo '$Revision: 24505 $' | awk "{print $2}"`
 RDATE=`date '+%Y.%m.%d'`
 if test -d .svn ; then
   REV=`svn info | grep Revision | awk '{print $2}'`
@@ -525,7 +525,7 @@ else
    echo "DEBUG: GLUT_CFLAGS = $GLUT_CFLAGS" >&5
    echo "DEBUG: GLUT_LIBS = $GLUT_LIBS" >&5
 
-   AC_CHECK_HEADERS([gl.h glu.h glut.h glaux.h GL/gl.h GL/glu.h GL/glut.h GL/glaux.h OpenGL/gl.h OpenGL/glu.h OpenGL/glut.h OpenGL/glaux.h GLUT/glut.h MesaGL/gl.h MesaGL/glu.h MesaGL/glut.h MesaGL/glaux.h])
+   AC_CHECK_HEADERS([gl.h glu.h glut.h glaux.h GL/gl.h GL/glu.h GL/glut.h GL/glaux.h OpenGL/gl.h OpenGL/glu.h OpenGL/glut.h OpenGL/glaux.h GLUT/glut.h MesaGL/gl.h MesaGL/glu.h MesaGL/glut.h MesaGL/glaux.h libnotify/notify.h] gtk/gtk.h)
 
    AC_CHECK_LIB([jpeg], [jpeg_start_compress],[have_jpeg=1],[have_jpeg=0])
    AC_CHECK_HEADER([jpeglib.h],[have_jpeg=1],[have_jpeg=0])
@@ -564,7 +564,7 @@ AH_TOP([
 #define BOINC_CONFIG_H
 
 /* Version defines are now in version.h */
-#include "version.h"  
+#include "version.h"
 
 ])
 AH_BOTTOM([
