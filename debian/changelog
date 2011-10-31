@@ -1,3 +1,9 @@
+boinc (6.13.10+dfsg-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 30 Oct 2011 00:32:49 +0200
+
 boinc (6.13.6+dfsg-2) unstable; urgency=low
 
   * Fixing FTBFS (Closes: #644796).

@@ -2,7 +2,7 @@ stripchart_debian.patch
 upstream_sztaki_configureEval.patch
 generate_less.patch
 texfont_removal.patch
-Makefile_subdirs.patch
+#Makefile_subdirs.patch
 csh2tcsh.patch
 file_upload_handler_permission.patch
 possible_size_type_error.patch

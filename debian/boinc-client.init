@@ -179,7 +179,11 @@ schedule()
       log_progress_msg "chrt failed"
     fi
     for BPID in ${pid} ${children}; do
-      echo ${BOINC_OOM_AD} > /proc/${BPID}/oom_adj 2>/dev/null || true
+      if [ -w /proc/${BPID}/oom_adj ]; then
+        echo ${BOINC_OOM_AD} > /proc/${BPID}/oom_adj 2>/dev/null || true
+      else
+        echo "Could not write to /proc/${BPID}/oom_adj"
+      fi
     done
   fi
   log_end_msg 0
@@ -203,7 +207,29 @@ status()
       fi
     fi
     log_success_msg "OOM killer status for $DESC:"
-    for BPID in ${pid} ${children}; do echo PID ${BPID}: adj `cat /proc/${BPID}/oom_adj`, score `cat /proc/${BPID}/oom_score`; done
+    for BPID in ${pid} ${children}; do
+      echo -n "PID ${BPID}: "
+      if [ ! -d "/proc/${BPID}" ]; then
+        echo "/proc/${BPID} not found"
+        continue
+      fi
+
+      echo -n "adj "
+      if [  -r "/proc/${BPID}/oom_adj" ]; then
+        cat /proc/${BPID}/oom_adj
+      else 
+        echo "?"
+      fi
+      echo ", score "
+
+      if [  -r "/proc/${BPID}/oom_adj" ]; then
+        cat /proc/${BPID}/oom_score
+      else
+        echo -n "?"
+      fi
+
+      echo
+    done
 
     # Display $BOINC_USER's cpu_share:
     uid=`id -u $BOINC_USER`

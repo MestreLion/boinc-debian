@@ -52,21 +52,3 @@ Index: boinc/configure.ac
  
  if test "${enable_client_release}" = "yes" ; then
     if test "x${WX_LIBS_STATIC}" = "x" ; then
-Index: boinc/clientgui/gtk/taskbarex.cpp
-===================================================================
---- boinc.orig/clientgui/gtk/taskbarex.cpp	2011-03-17 18:51:03.000000000 +0100
-+++ boinc/clientgui/gtk/taskbarex.cpp	2011-08-08 01:44:54.000000000 +0200
-@@ -227,11 +227,10 @@
-     if (!g_pNotification)
-     {
-         g_pNotification = 
--            notify_notification_new_with_status_icon(
-+            notify_notification_new(
-                 title.mb_str(),
-                 message.mb_str(),
--                desired_icon,
--                g_pStatusIcon
-+                desired_icon
-         );
- 
-         g_signal_connect(
