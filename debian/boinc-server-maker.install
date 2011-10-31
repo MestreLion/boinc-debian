@@ -92,11 +92,13 @@ sched/single_job_assimilator	    usr/lib/boinc-server/bin
 sched/assimilator.py		    usr/lib/boinc-server/bin
 sched/pymw_assimilator.py	    usr/lib/boinc-server/bin
 
-#usr/bin/crypt_prog		     usr/lib/boinc-server/bin
+# works again
+usr/bin/crypt_prog		     usr/lib/boinc-server/bin
 # In lib/crypt_prog is just a wrapper for the real binary
 # (presumed to be executing just as fine) in lib/.libs/crypt_prog
 #lib/crypt_prog		     usr/lib/boinc-server/bin
-lib/.libs/crypt_prog		     usr/lib/boinc-server/bin
+#lib/.libs/crypt_prog		     usr/lib/boinc-server/bin
+
 #usr/bin/switcher		     usr/lib/boinc-server/bin	# also in client
 #usr/bin/wu_check		     usr/lib/boinc-server/bin
 
