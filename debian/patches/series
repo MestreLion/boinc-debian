@@ -10,3 +10,4 @@ upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
 debian_debian_AdjustBoincTopdirPython.patch
 libnotify-0.7.patch
 stripchart_security.patch
+FixForBoinc61310ftbfs.patch
