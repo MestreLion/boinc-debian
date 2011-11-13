@@ -770,7 +770,7 @@ BOOL CScreensaver::SetError(BOOL bErrorMode, HRESULT hrError) {
 VOID CScreensaver::UpdateErrorBoxText() {
     // Load error string
     GetTextForError(m_hrError, m_szError, sizeof(m_szError) / sizeof(TCHAR));
-    BOINCTRACE(_T("CScreensaver::UpdateErrorBoxText - Updated Text '%s'\n"), m_szError);
+    BOINCTRACE(_T("CScreensaver::UpdateErrorBoxText - HRESULT '%d' Updated Text '%s'\n"), m_hrError, m_szError);
 }
 
 
@@ -796,6 +796,7 @@ BOOL CScreensaver::GetTextForError(
 		SCRAPPERR_BOINCSHUTDOWNEVENT, IDS_ERR_BOINCSHUTDOWNEVENT,
 		SCRAPPERR_BOINCAPPFOUNDGRAPHICSLOADING, IDS_ERR_BOINCAPPFOUNDGRAPHICSLOADING,
         SCRAPPERR_BOINCNOTDETECTED, IDS_ERR_BOINCNOTDETECTED,
+        SCRAPPERR_BOINCNOGRAPHICSAPPSEXECUTING, IDS_ERR_BOINCSCREENSAVERLOADING
     };
     const DWORD dwErrorMapSize = sizeof(dwErrorMap) / sizeof(DWORD[2]);
 
@@ -1335,7 +1336,7 @@ HRESULT CScreensaver::ResetPrimaryDisplay() {
     glLightfv(GL_LIGHT0, GL_POSITION, position);
     glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, dir);
 
-	SetTimer(pMonitorInfo->hWnd, 2, 250, NULL);
+	SetTimer(pMonitorInfo->hWnd, 1, 250, NULL);
 
     if (m_hWnd == NULL) {
         return E_FAIL;
@@ -1734,7 +1735,7 @@ LRESULT CScreensaver::ResetProc(
 			switch (wParam) { 
 				case 1: 
 					KillTimer(hWnd, 1);
-                    CloseWindow(hWnd);
+                    DestroyWindow(hWnd);
                     return 0;
                     break;
             }
@@ -1743,14 +1744,6 @@ LRESULT CScreensaver::ResetProc(
             BOINCTRACE(_T("CScreensaver::ResetProc Received WM_CLOSE\n"));
             break;
     }
-
-    if (WM_SETTIMER == uMsg) {
-        BOINCTRACE(_T("CScreensaver::ResetProc Received WM_SETTIMER\n"));
-        // All initialization messages have gone through.  Allow
-        // 500ms of idle time, then proceed with initialization.
-        SetTimer(hWnd, 1, 250, NULL);
-    }
-
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 

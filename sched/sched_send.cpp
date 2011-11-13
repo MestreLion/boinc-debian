@@ -267,6 +267,8 @@ double estimate_duration(WORKUNIT& wu, BEST_APP_VERSION& bav) {
     return ed;
 }
 
+// TODO: use XML_PARSER
+//
 static void get_prefs_info() {
     char buf[8096];
     std::string str;
@@ -923,13 +925,12 @@ static int insert_deadline_tag(RESULT& result) {
 // update workunit fields when send an instance of it:
 // - transition time
 // - app_version_id, if app uses homogeneous app version
-//      and WU.app_version_id was originally zero
 // - hr_class, if we're using HR
-//      and WU.hr_class was originally zero.
 //
-// In the latter two cases, the update is conditional on those
-// fields still being zero (some other scheduler instance might
-// have updated them since we read the WU)
+// In the latter two cases, the update is conditional on the field
+// fields either being zero or the desired value.
+// Some other scheduler instance might have updated it since we read the WU,
+// and the transitioner might have set it to zero.
 //
 int update_wu_on_send(WORKUNIT wu, time_t x, APP& app, BEST_APP_VERSION& bav) {
     DB_WORKUNIT dbwu;
@@ -945,19 +946,22 @@ int update_wu_on_send(WORKUNIT wu, time_t x, APP& app, BEST_APP_VERSION& bav) {
         (int)x, (int)x
     );
     strcpy(where_clause, "");
-    if (app.homogeneous_app_version && wu.app_version_id==0) {
+    if (app.homogeneous_app_version) {
         sprintf(buf2, ", app_version_id=%d", bav.avp->id);
         strcat(buf, buf2);
-        strcpy(where_clause, "app_version_id=0");
+        sprintf(where_clause,
+            "(app_version_id=0 or app_version_id=%d)", bav.avp->id
+        );
     }
-    if (app_hr_type(app) && wu.hr_class==0) {
+    if (app_hr_type(app)) {
         int host_hr_class = hr_class(g_request->host, app_hr_type(app));
         sprintf(buf2, ", hr_class=%d", host_hr_class);
         strcat(buf, buf2);
         if (strlen(where_clause)) {
             strcat(where_clause, " and ");
         }
-        strcat(where_clause, "hr_class=0");
+        sprintf(buf2, "(hr_class=0 or hr_class=%d)", host_hr_class);
+        strcat(where_clause, buf2);
     }
     retval = dbwu.update_field(buf, strlen(where_clause)?where_clause:NULL);
     if (retval) return retval;
@@ -1142,6 +1146,13 @@ int add_result_to_reply(
     bool resent_result = false;
     APP* app = ssp->lookup_app(wu.appid);
 
+    result.hostid = g_reply->host.id;
+    result.userid = g_reply->user.id;
+    result.sent_time = time(0);
+    result.report_deadline = result.sent_time + wu.delay_bound;
+    result.flops_estimate = bavp->host_usage.peak_flops;
+    result.app_version_id = get_app_version_id(bavp);
+
     // update WU DB record.
     // This can fail in normal operation
     // (other scheduler already updated hr_class or app_version_id)
@@ -1169,12 +1180,6 @@ int add_result_to_reply(
     // the changes we just made to the WU (or use a transaction)
     // but I don't think it actually matters.
     //
-    result.hostid = g_reply->host.id;
-    result.userid = g_reply->user.id;
-    result.sent_time = time(0);
-    result.report_deadline = result.sent_time + wu.delay_bound;
-    result.flops_estimate = bavp->host_usage.peak_flops;
-    result.app_version_id = get_app_version_id(bavp);
     int old_server_state = result.server_state;
 
     if (result.server_state != RESULT_SERVER_STATE_IN_PROGRESS) {
@@ -1894,4 +1899,4 @@ done:
     send_user_messages();
 }
 
-const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 24503 2011-10-27 03:55:18Z davea $";
+const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 24567 2011-11-09 23:50:09Z davea $";

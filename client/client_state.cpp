@@ -323,7 +323,6 @@ int CLIENT_STATE::init() {
         );
     }
 
-    config.show();
     log_flags.show();
 
     msg_printf(NULL, MSG_INFO, "Libraries: %s", curl_version());
@@ -432,6 +431,11 @@ int CLIENT_STATE::init() {
     // for projects with no account file
     //
     parse_state_file();
+
+    // this needs to go after parse_state_file because
+    // GPU exclusions refer to projects
+    //
+    config.show();
 
     // inform the user if there's a newer version of client
     //
@@ -852,21 +856,35 @@ bool CLIENT_STATE::poll_slow_events() {
 #endif
     POLL_ACTION(active_tasks           , active_tasks.poll      );
     POLL_ACTION(garbage_collect        , garbage_collect        );
+        // remove PERS_FILE_XFERs (and associated FILE_XFERs and HTTP_OPs)
+        // for unreferenced files
     POLL_ACTION(gui_http               , gui_http.poll          );
     POLL_ACTION(gui_rpc_http           , gui_rpcs.poll          );
     POLL_ACTION(trickle_up_ops,        trickle_up_poll);
-    POLL_ACTION(handle_pers_file_xfers , handle_pers_file_xfers );
+        // scan FILE_INFOS and create PERS_FILE_XFERs
+        // for PERS_FILE_XFERS that are done, delete them
+
     if (!network_suspended && suspend_reason != SUSPEND_REASON_BENCHMARKS) {
         // don't initiate network activity if we're doing CPU benchmarks
         net_status.poll();
         daily_xfer_history.poll();
         POLL_ACTION(acct_mgr               , acct_mgr_info.poll     );
         POLL_ACTION(file_xfers             , file_xfers->poll       );
+            // check for file xfer completion; don't delete anything
         POLL_ACTION(pers_file_xfers        , pers_file_xfers->poll  );
+            // poll PERS_FILE_XFERS
+            // if we need to start xfer, creat FILE_XFER and init
+            // if FILE_XFER is complete
+            //      handle transient and permanent failures
+            //      delete the FILE_XFER
+
         if (!config.no_info_fetch) {
             POLL_ACTION(rss_feed_op            , rss_feed_op.poll );
         }
     }
+    POLL_ACTION(create_and_delete_pers_file_xfers ,
+        create_and_delete_pers_file_xfers
+    );
     POLL_ACTION(handle_finished_apps   , handle_finished_apps   );
     POLL_ACTION(update_results         , update_results         );
     if (!tasks_suspended) {
@@ -1174,7 +1192,7 @@ bool CLIENT_STATE::abort_unstarted_late_jobs() {
     if (now < 1235668593) return false; // skip if user reset system clock
     for (unsigned int i=0; i<results.size(); i++) {
         RESULT* rp = results[i];
-        if (!rp->not_started()) continue;
+        if (!rp->is_not_started()) continue;
         if (rp->report_deadline > now) continue;
         msg_printf(rp->project, MSG_INFO,
             "Aborting task %s; not started and deadline has passed",

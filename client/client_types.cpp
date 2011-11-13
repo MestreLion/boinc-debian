@@ -601,7 +601,7 @@ void PROJECT::abort_not_started() {
     for (unsigned int i=0; i<gstate.results.size(); i++) {
         RESULT* rp = gstate.results[i];
         if (rp->project != this) continue;
-        if (rp->not_started()) {
+        if (rp->is_not_started()) {
             rp->abort_inactive(ERR_ABORTED_VIA_GUI);
         }
     }
@@ -614,7 +614,7 @@ void PROJECT::get_task_durs(double& not_started_dur, double& in_progress_dur) {
         RESULT* rp = gstate.results[i];
         if (rp->project != this) continue;
         double d = rp->estimated_time_remaining();
-        if (rp->not_started()) {
+        if (rp->is_not_started()) {
             not_started_dur += d;
         } else {
             in_progress_dur += d;
@@ -667,6 +667,7 @@ void FILE_XFER_BACKOFF::file_xfer_succeeded() {
 int PROJECT::parse_project_files(XML_PARSER& xp, bool delete_existing_symlinks) {
     unsigned int i;
     char project_dir[256], path[256];
+    int retval;
 
     if (delete_existing_symlinks) {
         // delete current sym links.
@@ -687,8 +688,10 @@ int PROJECT::parse_project_files(XML_PARSER& xp, bool delete_existing_symlinks) 
         if (xp.match_tag("/project_files")) return 0;
         if (xp.match_tag("file_ref")) {
             FILE_REF file_ref;
-            file_ref.parse(xp);
-            project_files.push_back(file_ref);
+            retval = file_ref.parse(xp);
+            if (!retval) {
+                project_files.push_back(file_ref);
+            }
         } else {
             if (log_flags.unparsed_xml) {
                 msg_printf(0, MSG_INFO,
@@ -1268,6 +1271,7 @@ int FILE_INFO::gzip() {
 
 int APP_VERSION::parse(XML_PARSER& xp) {
     FILE_REF file_ref;
+    double dtemp;
 
     strcpy(app_name, "");
     strcpy(api_version, "");
@@ -1302,7 +1306,16 @@ int APP_VERSION::parse(XML_PARSER& xp) {
         if (xp.parse_str("plan_class", plan_class, sizeof(plan_class))) continue;
         if (xp.parse_double("avg_ncpus", avg_ncpus)) continue;
         if (xp.parse_double("max_ncpus", max_ncpus)) continue;
-        if (xp.parse_double("flops", flops)) continue;
+        if (xp.parse_double("flops", dtemp)) {
+            if (dtemp <= 0) {
+                msg_printf(0, MSG_INTERNAL_ERROR,
+                    "non-positive FLOPS in app version"
+                );
+            } else {
+                flops = dtemp;
+            }
+            continue;
+        }
         if (xp.parse_str("cmdline", cmdline, sizeof(cmdline))) continue;
         if (xp.parse_str("file_prefix", file_prefix, sizeof(file_prefix))) continue;
         if (xp.parse_double("gpu_ram", gpu_ram)) continue;
@@ -1385,7 +1398,7 @@ int APP_VERSION::write(MIOFILE& out, bool write_file_info) {
             gpu_usage.usage
         );
     }
-    if (missing_coproc) {
+    if (missing_coproc && strlen(missing_coproc_name)) {
         out.printf(
             "    <coproc>\n"
             "        <type>%s</type>\n"
@@ -1476,7 +1489,7 @@ int FILE_REF::parse(XML_PARSER& xp) {
         if (xp.parse_bool("no_validate", temp)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
-                "[unparsed_xml] FILE_REF::parse(): unrecognized: %s\n",
+                "[unparsed_xml] FILE_REF::parse(): unrecognized: '%s'\n",
                 xp.parsed_tag
             );
         }
@@ -1997,6 +2010,12 @@ void RESULT::clear_uploaded_flags() {
         fip = output_files[i].file_info;
         fip->uploaded = false;
     }
+}
+
+bool RESULT::is_not_started() {
+    if (computing_done()) return false;
+    if (gstate.active_tasks.lookup_result(this)) return false;
+    return true;
 }
 
 bool PROJECT::some_download_stalled() {

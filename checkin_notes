@@ -7908,7 +7908,7 @@ Charlie 27 Oct 2011
     mac_installer/
         release_boinc.sh
 
-Rom    25 Oct 2011
+Rom    27 Oct 2011
     - Tag for 6.13.10 release, all platforms
       boinc_core_release_6_13_10
 
@@ -7936,3 +7936,480 @@ Charlie 28 Oct 2011
     clientgui/
         BOINCClientManager.cpp
         BOINCGUIApp.cpp,.h
+
+David  28 Oct 2011
+    - GUI RPC client: parse the reply of quit(),
+        so that it returns an error if no response
+
+    lib/
+        gui_rpc_client_ops.cpp
+
+David  28 Oct 2011
+    - web: Display AMD GPU info correctly.  From Teemu Mannermaa.
+
+    html/inc/
+        host.inc
+
+Charlie 29 Oct 2011
+    - Mgr: Code cleanup.
+    
+    clientgui/
+        BOINCClientManager.cpp,.h
+        BOINCGUIApp.cpp,.h
+        MainDocument.cpp
+
+David  29 Oct 2011
+    - lib: fix a "strcpy(p, p+1)" instance
+
+    lib/
+        url.cpp
+
+Charlie 31 Oct 2011
+    - api: Update comments, remove unused includes for boinc_opencl.a.
+    
+    api/
+        boinc_opencl.cpp
+
+David  2 Nov 2011
+    - API: fix bug in boinc_get_opencl_ids()
+    - add simulator for distributed storage (not finished)
+
+    api/
+        boinc_opencl.cpp
+    client/
+        app_start.cpp
+    ssim/
+        des.h
+        ssimp.cpp
+        makefile
+
+David  2 Nov 2011
+    - server: plan class names containing 'nvidia' or 'cuda'
+        are assumed to be for NVIDIA GPU apps;
+        plan class names containing 'ati' are assumed to be for AMD GPU apps.
+        Clauses for 'nvidia' were missing in a couple of places.
+
+    sched/
+        sched_customize.cpp
+        sched_version.cpp
+    html/inc/
+        util.inc
+    lib/
+        gui_rpc_client_ops.cpp
+
+David  2 Nov 2011
+    - scheduler: in update_wu_on_send(), always try to update
+        the hr_class and app_version_id fields,
+        with the where clause that they be either zero or the target value.
+        This handles the cases where
+        1) because of the failure of a results, the transitioner set
+            the field back to zero;
+        2) another scheduler set the field to the target value
+        (from Kevin Reed)
+
+    sched/
+        sched_send.cpp
+    client/
+        makefile_sim
+
+David  2 Nov 2011
+    - feeder: fix logic error in the way app_version.pfc_scale is updated
+        (from Kevin Reed)
+
+    sched/
+        credit.cpp
+
+Charlie 3 Nov 2011
+    - api: Restore lost checkin of 31 October 2011.
+    - Mac installer: update ReadMe files for BOINC 6.13.x.
+    
+    api/
+        boinc_opencl.cpp
+    mac_installer/
+        CE-ReadMe.rtf
+        GR-ReadMe.rtf
+        PTP-ReadMe.rtf
+        ReadMe.rtf
+
+David  3 Nov 2011
+    - client: fix bugs when writing/parsing cc_config.xml via GUI RPCs
+        (e.g. when editing it via the Manager).
+        Include only the GPUs that were specified in the original cc_config.xml,
+        not those detected by the client.
+    - client: fix bug that failed to require authorization for
+        GUI RPCs that are supposed to be authorized
+    - client: report parse errors in acct_mgr_url.xml and acct_mgr_login.xml
+    - fix compile warnings
+    - user web: in sample project_specific_prefs.inc,
+        get app names from the DB instead of listing them in the PHP code.
+
+    html/project.sample/
+        project_specific_prefs.inc
+    lib/
+        coproc.h
+        cc_config.cpp
+    client/
+        switcher.cpp
+        coproc_detect.cpp
+        gui_rpc_server_ops.cpp
+        acct_mgr.cpp
+        app.cpp
+        cpu_sched.cpp
+
+David  3 Nov 2011
+    - wrapper: handle Windows .bat files as main programs
+
+    samples/wrapper/
+        wrapper.cpp
+
+David  3 Nov 2011
+	- client: show GPU exclusions at startup
+		(need to do this after reading the state file,
+		since GPU exclusions refer to projects).
+	- client: fix bug that added garbage <coproc> element
+		to <app_version> in state file when using GPU exclusions
+
+	client/
+		client_types.cpp
+		client_state.cpp
+		log_flags.cpp
+
+David  4 Nov 2011
+    - client: fix work fetch bug.
+        If we're contacting a project to report results,
+        only piggyback work requests for resources for which
+        that project is the highest priority that may have work.
+    - client: compute result.not_started more efficiently
+
+    TODO: continue efficiency work.  There's still some quadratic stuff
+
+    client/
+        client_types.cpp,h
+        client_state.cpp
+        sim.cpp
+        work_fetch.cpp
+        cpu_sched.cpp
+
+Charlie 5 Nov 2011
+    - client: Fix compile error.
+    
+    client/
+        cs_scheduler.cpp
+
+Charlie 5 Nov 2011
+    - Mac: add -Wno-format-security compiler flag to suppress warning 
+        that format string is not a string literal in code to show 
+        messages from server in CLIENT_STATE::handle_scheduler_reply().
+    
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 5 Nov 2011
+    - client: fix errors in (currently unused) get_max_cpu_temperature() 
+        code for Macintosh.
+
+    client/
+        hostinfo_unix.cpp
+
+David  4 Nov 2011
+    - client: fix compile warning
+    client/
+        cs_scheduler.cpp
+
+David  4 Nov 2011
+    - client: attempt to fix bug reported by John McLeod,
+        where the client crashes after giving up (90 day timeout) on an upload.
+        I'm guessing this was caused by [24391],
+        which changed the order in the poll loop from
+            garbage_collect
+            file_xfers->poll
+            pers_file_xfers->poll
+            handle_pers_file_xfers
+        to
+            garbage_collect
+            handle_pers_file_xfers
+            file_xfers->poll
+            pers_file_xfers->poll
+        I don't understand why this would have caused a crash,
+        but so be it.
+        I restored the original order, but with handle_pers_file_xfers
+        not inside the if (!network_suspended).
+    - client renamed handle_pers_file_xfers() to
+        create_and_delete_pers_file_xfers()
+    - client simulator: show simulator CPU time
+
+    client/
+        client_state.cpp
+        sim.cpp
+        client_state.h
+        pers_file_xfer.cpp
+        cs_files.cpp
+
+Charlie 5 Nov 2011
+    - Mac: remove -Wno-format-security compiler flag (no longer needed).
+    
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  5 Nov 2011
+    - scheduler: fix bug in HR code (from Kevin)
+
+    sched/
+        sched_send.cpp
+
+David  5 Nov 2011
+    - client: don't crash if trickle up exceeds 64KB
+        (this bug was introduced Sept 20)
+    - scheduler: truncate long trickle-ups to 256KB; don't crash
+
+    db/
+        db_base.cpp,h
+    client/
+        cs_trickle.cpp
+
+David  6 Nov 2011
+	- client: actually do the checking described above
+
+	client/
+		cs_trickle.cpp
+
+David  6 Nov 2011
+	- client: don't crash if a project sends app_version.flops = 0.
+
+	client/
+		client_types.cpp
+		rr_sim.cpp
+
+Charlie 7 Nov 2011
+    - Mgr: Bug fix.
+    
+    clientgui/
+        BOINCGUIApp.cpp
+
+David  7 Nov 2011
+	- manager: apparently WxWidget's combo box has problems (bugs)
+		if multiple items have the same string.
+		So, in simple view task combo box:
+		- show % done (unique in most cases)
+		- remove version number
+		- instead of showing plan class, show "NVIDIA GPU" or "ATI GPU"
+		TODO: update the fraction done
+
+	clientgui/
+		sg_TaskPanel.cpp
+
+David  7 Nov 2011
+    - client: condition RR sim negative FLOPs message on rr_simulation.
+
+    client/
+        rr_sim.cpp
+
+Rom    7 Nov 2011
+    - client: reduce complexity, possibly get rid of a crash condition
+        on 64-bit Windows.
+        
+    client/
+        cs_prefs.cpp
+
+Rom    7 Nov 2011
+    - MGR: Change default skin to the one Jacob Klein purposed.
+    
+    clientgui/res/templates/
+        <various files>
+    clientgui/skins/Default/
+        background_image.png
+        skin.xml
+        workunit_running_image.png
+        workunit_suspended_image.png
+        workunit_waiting_image.png
+
+David  7 Nov 2011
+	- client: on transient upload failure, don't do start_xfer()
+		within PERS_FILE_XFER::transient_failure();
+		we're about to delete and free the FILE_XFER.
+		The transfer will be restarted in the next poll.
+
+	client/
+		pers_file_xfer.cpp
+
+Charlie 8 Nov 2011
+    - Mgr: Fix Simple View layout to fit 3 decimal places for % done.
+
+	clientgui/
+		sg_TaskPanel.cpp
+
+Charlie 8 Nov 2011
+    - Mac installer: fixes for OS 10.4 compatibility.
+
+    mac_installer/
+        PostInstall.cpp
+
+Rom    8 Nov 2011
+    - API: Remove exception trapping stuff from the 
+        boinc_get_opencl_ids.
+        
+    api/
+        boinc_opencl.cpp
+
+David  8 Nov 2011
+    - DB: use %u when writing result IDs in SQL queries;
+        this is to support SETI@home, which ran out of result IDs
+        and changed the DB field type to int unsigned.
+        Note: eventually I'll make this change official
+        and change the .h types as well.
+    - web: put <apps_selected> tags around <app_id> elements
+        in project-specific prefs.
+
+    db/
+        boinc_db.cpp
+        db_base.cpp
+    sched/
+        sched_send.cpp
+    html/project.sample/
+        project_specific_prefs.inc
+
+Charlie 9 Nov 2011
+    - Mgr: to fix Windows combo box problem when multiple items have 
+        the same string, add spaces to identical application names in
+        Task Selection control as needed to make each entry unique.  
+        Don't append % done to Task Selection control entries, as that  
+        varies over time, causing significant complications.
+
+	clientgui/
+		sg_TaskPanel.cpp
+
+Rom    9 Nov 2011
+    - WINSCR: Add a reference to SCRAPPERR_BOINCNOGRAPHICSAPPSEXECUTING
+       in the message lookup table.
+       
+    clientscr/
+        screensaver_win.cpp
+
+Rom    9 Nov 2011
+    - WINSCR: In the ResetProc message pump, change the call for CloseWindow()
+        to DestroyWindow().
+       
+    clientscr/
+        screensaver_win.cpp
+
+Rom    9 Nov 2011
+    - WINSCR: Sync up the timer IDs.
+       
+    clientscr/
+        screensaver_win.cpp
+
+David  9 Nov 2011
+    - server: more fixes to DB to handle unsigned result IDs
+
+    db/
+        boinc_db.cpp
+
+Jeff    9 Nov 2011
+    - server: more fixes to DB to handle unsigned result IDs
+
+    sched/
+        feeder.cpp
+        sched_shmem.cpp
+        db_purge.cpp
+        sched_assign.cpp
+    lib/
+        parse.cpp
+
+David  9 Nov 2011
+    - OpenCL API: fix logic error
+
+    api/
+        boinc_opencl.cpp
+
+David  9 Nov 2011
+    - OpenCL API: check return value from clGetDeviceIDs()
+
+    api/
+        boinc_opencl.cpp
+
+David  9 Nov 2011
+    - scheduler: compute result.report_deadline BEFORE passing it
+        as an arg to update_wu_on_send()
+
+    sched/
+        sched_send.cpp
+
+Charlie 9 Nov 2011
+    - WINSCR: Fix compile error.
+       
+    clientscr/
+        screensaver_win.cpp
+
+Rom    10 Nov 2011
+    - WINSCR: Attempt to gracefully shutdown a graphics application first
+    
+    clientscr/
+        screensaver.cpp
+
+Rom    10 Nov 2011
+    - client & lib: Update the OpenCL header to include calling conventions
+        and weak link information for Mac machines.
+
+    lib/
+        cl_boinc.h
+
+Rom    10 Nov 2011
+    - Tag for 6.13.11 release, all platforms
+      boinc_core_release_6_13_11
+
+    /
+        configure.ac
+        version.h
+
+Charlie 9 Nov 2011
+    - MGR: On Mac, work around bug in XCode 4.2 by accepting and ignoring 
+        command line argument "-NSDocumentRevisionsDebugMode=YES"
+    - client: On Mac, work around bug in XCode 4.2 by accepting and ignoring 
+        command line argument "-NSDocumentRevisionsDebugMode=YES"
+    (checked into 6.13.11 tag)
+
+    client/
+        cs_cmdline.cpp
+    clientgui/
+        BOINCGUIApp.cpp
+
+Charlie 11 Nov 2011
+    - Mgr: fix a bug deleting entries from Task Selection control which I 
+        introduced on 9 November.  Deleting an entry cvan create a gap in 
+        the alphabetically sorted sequence, so we can't use my earlier 
+        shortcut in checking for existing entries. 
+    - Mgr: If a slide show has only one slide, load it only once.
+    
+	clientgui/
+		sg_TaskPanel.cpp
+
+David  11 Nov 2011
+    - client: check return value of FILE_REF when parse project file.
+        Fixes crashing bug.
+
+    client/
+        client_types.cpp
+    ssim/
+        ssim.cpp
+
+Rom    11 Nov 2011
+    - MGR: Update default skin to v4.
+    
+    clientgui/res/templates/
+        <various files>
+    clientgui/skins/Default/
+        background_image.png
+        skin.xml
+        workunit_running_image.png
+        workunit_suspended_image.png
+        workunit_waiting_image.png
+
+Rom    11 Nov 2011
+    - Tag for 6.13.12 release, all platforms
+      boinc_core_release_6_13_12
+
+    /
+        configure.ac
+        version.h

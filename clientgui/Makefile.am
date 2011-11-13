@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 23365 2011-04-14 01:04:10Z davea $
+## $Id: Makefile.am 24510 2011-11-03 02:35:04Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -47,6 +47,7 @@ boincmgr_SOURCES = \
     BOINCBaseFrame.cpp \
     BOINCBaseView.cpp \
     BOINCBaseWizard.cpp \
+    BOINCBitmapComboBox.cpp \
     BOINCClientManager.cpp \
     BOINCDialupManager.cpp \
     BOINCGUIApp.cpp \

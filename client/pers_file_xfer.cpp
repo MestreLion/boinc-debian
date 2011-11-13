@@ -161,7 +161,9 @@ int PERS_FILE_XFER::create_xfer() {
 
 // Poll the status of this persistent file transfer.
 // If it's time to start it, then attempt to start it.
-// If it has finished or failed, then deal with it appropriately
+// If it has finished or failed:
+//      handle the success or failure
+//      remove the FILE_XFER from gstate.file_xfers and delete it
 //
 bool PERS_FILE_XFER::poll() {
     int retval;
@@ -333,9 +335,7 @@ void PERS_FILE_XFER::transient_failure(int retval) {
     //
 
     URL_LIST& ul = fip->get_url_list(is_upload);
-    if (ul.get_next_url()) {
-        start_xfer();
-    } else {
+    if (!ul.get_next_url()) {
         do_backoff();
     }
 }

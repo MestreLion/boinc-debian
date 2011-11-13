@@ -198,7 +198,9 @@ static void trickle_up_request_message(
 void send_replicated_trickles(
     PROJECT* p, const char* msg, char* result_name, int now
 ) {
-    char buf[65536];
+    if (!p->trickle_up_ops.size()) return;
+    char *buf = (char*)malloc(strlen(msg) + 4096);
+    if (!buf) return;
     trickle_up_request_message(p, msg, result_name, now, buf);
     for (unsigned int i=0; i<p->trickle_up_ops.size(); i++) {
         TRICKLE_UP_OP *t = p->trickle_up_ops[i];
@@ -208,7 +210,7 @@ void send_replicated_trickles(
                     "[trickle] Trickle channel to %s is busy", t->url.c_str()
                 );
             }
-            return;
+            continue;
         }
         if (log_flags.trickle_debug) {
             msg_printf(p, MSG_INFO,
@@ -217,6 +219,7 @@ void send_replicated_trickles(
         }
         t->do_rpc(buf);
     }
+    free(buf);
 }
 
 // A scheduler reply gave us a list of trickle handler URLs.
@@ -267,8 +270,8 @@ void update_trickle_up_urls(PROJECT* p, vector<string> &urls) {
 }
 
 int TRICKLE_UP_OP::do_rpc(const char* msg) {
-    int n = strlen(msg)+1;
-    if (n<65536) n = 65536;
+    int n = (int)strlen(msg)+1;
+    if (n<65536) n = 65536;     // make it big enough to handle the reply
     req_buf = (char*)malloc(n);
     strcpy(req_buf, msg);
     int retval = gui_http->do_rpc_post_str(

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# $Id: test_authentication.pl 23083 2011-02-22 21:28:13Z tonig $
+# $Id: test_authentication.pl 24510 2011-11-03 02:35:04Z romw $
 
 # An authentication test script
 

@@ -371,7 +371,7 @@ int archive_wu(DB_WORKUNIT& wu) {
         "  <rsc_memory_bound>%.15e</rsc_memory_bound>\n"
         "  <rsc_disk_bound>%.15e</rsc_disk_bound>\n"
         "  <need_validate>%d</need_validate>\n"
-        "  <canonical_resultid>%d</canonical_resultid>\n"
+        "  <canonical_resultid>%u</canonical_resultid>\n"
         "  <canonical_credit>%.15e</canonical_credit>\n"
         "  <transition_time>%d</transition_time>\n"
         "  <delay_bound>%d</delay_bound>\n"
@@ -737,4 +737,4 @@ int main(int argc, char** argv) {
     exit(0);
 }
 
-const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 24019 2011-08-21 13:26:46Z davea $";
+const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 24564 2011-11-09 20:24:48Z jeffc $";
