@@ -41,7 +41,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3), adduser,
  ca-certificates
 Recommends: ia32-libs [amd64]
-Suggests: boinc-app-seti, boinc-manager, x11-xserver-utils
+Suggests: boinc-app-seti, boinc-manager, x11-xserver-utils, libcuda1, libcuda1-ia32 [amd64]
 Breaks: udev (<< 136-1)
 Description: core client for the BOINC distributed computing infrastructure
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
