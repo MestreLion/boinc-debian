@@ -49,16 +49,17 @@ define("MAX_GFX_CPU_PCT_DESC", tra("Maximum CPU % for graphics%10 ... 100%2", "<
 define('APP_SELECT_DESC', tra('Run only the selected applications'));
 define('ACCEPT_ANY_DESC', tra('If no work for selected applications is available, accept work from other applications?'));
 
-// The following array is for app filtering; uncomment if you want it.
+// stuff related to app filtering.
 // Note: in this implementation, if a user selects all apps,
 // no <app_id> elements are included in their prefs,
 // which means that if the project adds a new app such users will run it also.
 //
 if (APP_SELECT_PREFS) {
-    $app_array = array(
-        array(1, "Application one"),
-        array(2, "Application two"),
-    );
+    $app_array = array();
+    $apps = BoincApp::enum("deprecated=0");
+    foreach($apps as $app) {
+        $app_array[] = array($app->id, $app->user_friendly_name);
+    }
 } else {
     $app_array = null;
 }
@@ -142,7 +143,7 @@ function project_specific_prefs_parse_form(&$error) {
     }
 
     if (APP_SELECT_PREFS) {
-        $y = "";
+        $y = "<apps_selected>\n";
         $some_unchecked = false;
         foreach ($app_array as $app) {
             $app_id = $app[0];
@@ -153,6 +154,8 @@ function project_specific_prefs_parse_form(&$error) {
                 $some_unchecked = true;
             }
         }
+        $y .= "</apps_selected>\n";
+
         if ($some_unchecked) {
             $x .= $y;
         }
@@ -216,6 +219,6 @@ function project_specific_prefs_parse($prefs_xml) {
     return $prefs;
 }
 
-$cvs_version_tracker[]="\$Id: project_specific_prefs.inc 22315 2010-09-04 22:13:27Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: project_specific_prefs.inc 24555 2011-11-09 07:41:49Z davea $";  //Generated automatically - do not edit
 
 ?>

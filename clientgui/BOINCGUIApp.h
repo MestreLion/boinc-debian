@@ -99,7 +99,7 @@ protected:
     int                 m_iGUISelected;
     bool                m_bDebugSkins;
     bool                m_bMultipleInstancesOK;
-    bool                m_bShuttingDownManagerAndClient;
+    bool                m_bFilterEvents;
 
 #ifdef __WXMSW__
     HINSTANCE           m_hClientLibraryDll;
@@ -195,7 +195,7 @@ public:
 
     int                 UpdateSystemIdleDetection();
     
-    void                SetShuttingDownClientAndManager() { m_bShuttingDownManagerAndClient = true; }
+    void                SetEventFiltering(bool set) { m_bFilterEvents = set; }
 
 DECLARE_EVENT_TABLE()
 };

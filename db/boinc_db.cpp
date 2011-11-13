@@ -789,7 +789,7 @@ void DB_WORKUNIT::db_print(char* buf){
         "rsc_fpops_est=%.15e, rsc_fpops_bound=%.15e, "
         "rsc_memory_bound=%.15e, rsc_disk_bound=%.15e, "
         "need_validate=%d, "
-        "canonical_resultid=%d, canonical_credit=%.15e, "
+        "canonical_resultid=%u, canonical_credit=%.15e, "
         "transition_time=%d, delay_bound=%d, "
         "error_mask=%d, file_delete_state=%d, assimilate_state=%d, "
         "hr_class=%d, opaque=%.15e, "
@@ -943,7 +943,7 @@ int DB_RESULT::mark_as_sent(int old_server_state, int report_grace_period) {
     int retval;
 
     sprintf(query,
-        "update result set server_state=%d, hostid=%d, userid=%d, sent_time=%d, report_deadline=%d, flops_estimate=%.15e, app_version_id=%d  where id=%d and server_state=%d",
+        "update result set server_state=%d, hostid=%d, userid=%d, sent_time=%d, report_deadline=%d, flops_estimate=%.15e, app_version_id=%d  where id=%u and server_state=%d",
         server_state,
         hostid,
         userid,
@@ -1055,7 +1055,7 @@ void DB_ASSIGNMENT::db_print(char* buf) {
         "target_type=%d, "
         "multi=%d, "
         "workunitid=%d, "
-        "resultid=%d",
+        "resultid=%u",
         create_time,
         target_id,
         target_type,
@@ -1401,7 +1401,7 @@ int DB_TRANSITIONER_ITEM_SET::update_result(TRANSITIONER_ITEM& ti) {
 
     sprintf(query,
         "update result set server_state=%d, outcome=%d, "
-        "validate_state=%d, file_delete_state=%d where id=%d",
+        "validate_state=%d, file_delete_state=%d where id=%u",
         ti.res_server_state,
         ti.res_outcome,
         ti.res_validate_state,
@@ -1625,7 +1625,7 @@ int DB_VALIDATOR_ITEM_SET::update_result(RESULT& res) {
     sprintf(query,
         "update result set validate_state=%d, granted_credit=%.15e, "
         "server_state=%d, outcome=%d, opaque=%lf, random=%d, runtime_outlier=%d "
-        "where id=%d",
+        "where id=%u",
         res.validate_state,
         res.granted_credit,
         res.server_state,
@@ -1648,7 +1648,7 @@ int DB_VALIDATOR_ITEM_SET::update_workunit(WORKUNIT& wu) {
         "update workunit set need_validate=0, error_mask=%d, "
         "assimilate_state=%d, transition_time=%d, "
         "target_nresults=%d, "
-        "canonical_resultid=%d, canonical_credit=%.15e "
+        "canonical_resultid=%u, canonical_credit=%.15e "
         "where id=%d",
         wu.error_mask,
         wu.assimilate_state,
@@ -1967,7 +1967,7 @@ int DB_SCHED_RESULT_ITEM_SET::update_result(SCHED_RESULT_ITEM& ri) {
         "    teamid=%d, "
         "    elapsed_time=%.15e "
         "WHERE "
-        "    id=%d",
+        "    id=%u",
         ri.hostid,
         ri.received_time,
         ri.client_state,
@@ -2304,4 +2304,4 @@ int DB_FILESET_SCHED_TRIGGER_ITEM_SET::contains_trigger(const char* fileset_name
     return 0;
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 24303 2011-09-27 19:45:27Z davea $";
+const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 24563 2011-11-09 17:27:50Z davea $";

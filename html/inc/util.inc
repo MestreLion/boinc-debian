@@ -793,6 +793,9 @@ function get_app_types() {
         } else if (strstr($av->plan_class, "cuda")) {
             $t->cuda = true;
             $t->count++;
+        } else if (strstr($av->plan_class, "nvidia")) {
+            $t->cuda = true;
+            $t->count++;
         } else {
             $t->cpu = true;
             $t->count++;
@@ -847,6 +850,6 @@ function credit_to_gflop_hours($c) {
     return $c/(200/24);
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 24406 2011-10-17 06:13:51Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util.inc 24512 2011-11-03 05:26:19Z davea $";  //Generated automatically - do not edit
 
 ?>

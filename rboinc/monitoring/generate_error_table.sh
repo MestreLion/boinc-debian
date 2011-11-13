@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $Id: generate_error_table.sh 23083 2011-02-22 21:28:13Z tonig $
+# $Id: generate_error_table.sh 24510 2011-11-03 02:35:04Z romw $
 # Regenerate the error table hash. To be run upon BOINC update
 
 table=monitoring_errors_table.pm

@@ -99,24 +99,30 @@ void CSlideShowPanel::AdvanceSlideShow(bool changeSlide) {
         }
     } else {
         // TODO: Should we allow slide show to advance if task is not running?
+        int newSlide = selData->lastSlideShown;
+        
         if (selData->dotColor == greenDot) {    // Advance only if running
             if (changeSlide) {
-                if (++(selData->lastSlideShown) >= numSlides) {
-                    selData->lastSlideShown = 0;
+                if (++newSlide >= numSlides) {
+                    newSlide = 0;
                 }
             }
         }
-        if (selData->lastSlideShown < 0) {
-            selData->lastSlideShown = 0;
+        if (newSlide < 0) {
+            newSlide = 0;
         }
         
-        wxBitmap *bm = new wxBitmap();
-        bm->LoadFile(selData->slideShowFileNames[selData->lastSlideShown], wxBITMAP_TYPE_ANY);
-        m_SlideBitmap = *bm;
-        delete bm;
+        if (selData->lastSlideShown != newSlide) {  // Don't update if only one slide
+        
+            selData->lastSlideShown = newSlide;
 
-        if (m_SlideBitmap.Ok()) {
-            m_bCurrentSlideIsDefault = false;
+            wxBitmap *bm = new wxBitmap();
+            bm->LoadFile(selData->slideShowFileNames[newSlide], wxBITMAP_TYPE_ANY);
+            if (bm->Ok()) {
+                m_SlideBitmap = *bm;
+                delete bm;
+                m_bCurrentSlideIsDefault = false;
+            }
         }
     }
     if (m_SlideBitmap.Ok()) {
@@ -301,7 +307,7 @@ CSimpleTaskPanel::CSimpleTaskPanel( wxWindow* parent ) :
     m_ProgressBar->SetToolTip(_("This task's progress"));
 	bSizer4->Add( m_ProgressBar, 0, wxRIGHT, 5 );
 	
-	m_ProgressValueText = new CTransparentStaticText( this, wxID_ANY, wxT("100.0%"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT | wxST_NO_AUTORESIZE );
+	m_ProgressValueText = new CTransparentStaticText( this, wxID_ANY, wxT("100.000%"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT | wxST_NO_AUTORESIZE );
 	m_ProgressValueText->Wrap( -1 );
 	bSizer4->Add( m_ProgressValueText, 0, wxALIGN_RIGHT, 0 );
 	
@@ -464,7 +470,7 @@ void CSimpleTaskPanel::Update(bool delayShow) {
                     if (pctDone != (m_iPctDoneX10 / 10)) {
                         m_ProgressBar->SetValue(pctDone);
                     }
-                    s.Printf(_("%d.%d%%"), pctDoneX10 / 10, pctDoneX10 % 10 );
+                    s.Printf(_("%.3f%%"), result->fraction_done*100);
                     m_iPctDoneX10 = pctDoneX10;
                     UpdateStaticText(&m_ProgressValueText, s);
                 }
@@ -522,7 +528,8 @@ void CSimpleTaskPanel::GetApplicationAndProjectNames(RESULT* result, wxString* a
     CMainDocument* pDoc = wxGetApp().GetDocument();
     RESULT*        state_result = NULL;
     wxString       strAppBuffer = wxEmptyString;
-    wxString       strClassBuffer = wxEmptyString;
+    wxString       strGPUBuffer = wxEmptyString;
+    wxString pct_done_str = wxEmptyString;
 
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
@@ -549,20 +556,18 @@ void CSimpleTaskPanel::GetApplicationAndProjectNames(RESULT* result, wxString* a
             strAppBuffer = wxString(state_result->avp->app_name, wxConvUTF8);
         }
         
-        if (strlen(avp->plan_class)) {
-            strClassBuffer.Printf(
-                wxT(" (%s)"),
-                wxString(avp->plan_class, wxConvUTF8).c_str()
-            );
+        if (avp->ncudas) {
+            strGPUBuffer = wxString(" (NVIDIA GPU)", wxConvUTF8);
+        }
+        if (avp->natis) {
+            strGPUBuffer = wxString(" (ATI GPU)", wxConvUTF8);
         }
 
         appName->Printf(
-            wxT("%s%s %d.%02d %s"),
+            wxT("%s%s%s"),
             state_result->project->anonymous_platform?_("Local: "):wxT(""),
             strAppBuffer.c_str(),
-            state_result->avp->version_num / 100,
-            state_result->avp->version_num % 100,
-            strClassBuffer.c_str()
+            strGPUBuffer.c_str()
         );
     }
     
@@ -687,7 +692,7 @@ void CSimpleTaskPanel::FindSlideShowFiles(TaskSelectionData *selData) {
 
 
 void CSimpleTaskPanel::UpdateTaskSelectionList(bool reskin) {
-    int i, j, count, newColor;
+    int i, j, count, newColor, alphaOrder;;
     TaskSelectionData *selData;
 	RESULT* result;
 	RESULT* ctrlResult;
@@ -720,7 +725,7 @@ void CSimpleTaskPanel::UpdateTaskSelectionList(bool reskin) {
 
         resname = wxEmptyString;
 #if SELECTBYRESULTNAME
-        resname = FromUTF8(result->name);
+        resname = wxString::FromUTF8(result->name);
 #else
         GetApplicationAndProjectNames(result, &resname, NULL);
 #endif
@@ -737,15 +742,28 @@ void CSimpleTaskPanel::UpdateTaskSelectionList(bool reskin) {
 				is_alive.at(j) = true;
 				break; // skip out of this loop
 			}
-#if SORTTASKLIST
-            if ((m_TaskSelectionCtrl->GetString(j)).Cmp(resname) > 0) {
-                break;  // Insert the new item here (sorted by item label)
-            }
-#endif
 		}
         
         // if it isn't currently in the list then we have a new one!  lets add it
         if (!found) {
+		    for(j = 0; j < count; ++j) {
+                alphaOrder = (m_TaskSelectionCtrl->GetString(j)).Cmp(resname);
+#if SORTTASKLIST
+                if (alphaOrder > 0) {
+                    break;  // Insert the new item here (sorted by item label)
+                }
+#endif
+                // wxComboBox and wxBitmapComboBox have bugs on Windows when multiple 
+                // entries have identical text, so add enough spaces to make each 
+                // entry's text unique.
+                if (alphaOrder == 0) {
+                    resname.Append((const wxChar *)wxT(" "));
+#if !SORTTASKLIST
+                    j = -1;  // If not sorted, check new name from start for duplicate 
+#endif
+                }
+            }
+            
             selData = new TaskSelectionData;
             selData->result = result;
             strncpy(selData->result_name, result->name, sizeof(selData->result_name));
@@ -775,8 +793,8 @@ void CSimpleTaskPanel::UpdateTaskSelectionList(bool reskin) {
                 is_alive.push_back(true);
             }
          ++count;
-       }
-    }
+       }    // End if (!found)
+    }       // End for (i) loop
 
     // Check items in descending order so deletion won't change indexes of items yet to be checked
 	for(j = count-1; j >=0; --j) {

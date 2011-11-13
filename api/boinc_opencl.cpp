@@ -16,49 +16,23 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // BOINC API for OpenCL
-
-// The BOINC client calls the project application with the arguments:
-//   --gpu_type TYPE --device N
-// where TYPE is ATI or NVIDIA, and N is the GPU number of that type
-// For example, for ATI GPU number 0, the arguments will be:
-//   --gpu_type ATI --device 0
 //
 // To get the cl_device_id and cl_platform_id for the OpenCL GPU 
-// asigned to your application call this function:
+// assigned to your application call this function:
 // int boinc_get_opencl_ids(int argc, char** argv, cl_device_id*, cl_platform_id*);
 //
-// NOTE: You should compile and link this function as part of your 
-// application; it is not included in the standard BOINC libraries.
+// To use this function, link your application with libboinc_opencl.a
 //
 
 #ifdef _WIN32
 #include "win_util.h"
-#else
-#ifdef __APPLE__
-// Suppress obsolete warning when building for OS 10.3.9
-#define DLOPEN_NO_WARN
-#include <mach-o/dyld.h>
-#endif
-#include "config.h"
-#include <dlfcn.h>
-#include <setjmp.h>
-#include <signal.h>
 #endif
 #include <string>
 
 #include "error_numbers.h"
 #include "boinc_api.h"
-
 #include "coproc.h"
-
 #include "boinc_opencl.h"
-
-#ifndef _WIN32
-static jmp_buf resume;
-static void segv_handler(int) {
-    longjmp(resume, 1);
-}
-#endif
 
 // returns an OpenCL error num or zero
 //
@@ -70,25 +44,27 @@ int boinc_get_opencl_ids_aux(
     cl_device_id devices[MAX_COPROC_INSTANCES];
     char vendor[256];                 // Device vendor (NVIDIA, ATI, AMD, etc.)
     int retval = 0;
+    bool found = false;
 
     retval = clGetPlatformIDs(MAX_OPENCL_PLATFORMS, platforms, &num_platforms);
     if (num_platforms == 0) return CL_DEVICE_NOT_FOUND;
-    if (retval) return retval;
+    if (retval != CL_SUCCESS) return retval;
     
     for (platform_index=0; platform_index<num_platforms; ++platform_index) {
         retval = clGetDeviceIDs(
             platforms[platform_index], CL_DEVICE_TYPE_GPU,
             MAX_COPROC_INSTANCES, devices, &num_devices
         );
+        if (retval != CL_SUCCESS) continue;
 
-        if (num_devices > (cl_uint)(device_num + 1)) continue;
+        if (device_num >= (int)num_devices) continue;
     
         cl_device_id device_id = devices[device_num];
 
         retval = clGetDeviceInfo(
             device_id, CL_DEVICE_VENDOR, sizeof(vendor), vendor, NULL
         );
-        if (retval || strlen(vendor)==0) continue;
+        if ((retval != CL_SUCCESS) || (strlen(vendor)==0)) continue;
             
         if ((strstr(vendor, "AMD")) ||  
             (strstr(vendor, "Advanced Micro Devices, Inc."))
@@ -99,11 +75,12 @@ int boinc_get_opencl_ids_aux(
         if (!strcmp(vendor, type)) {
             *device = device_id;
             *platform = platforms[platform_index];
+            found = true;
             break;
         }
     }
 
-    if (device == NULL) return CL_DEVICE_NOT_FOUND;
+    if (!found) return CL_DEVICE_NOT_FOUND;
     return 0;
 }
 
@@ -132,27 +109,9 @@ int boinc_get_opencl_ids(cl_device_id* device, cl_platform_id* platform) {
         return ERR_NOT_FOUND;
     }
 
-#ifdef _WIN32
-    try {
-        retval = boinc_get_opencl_ids_aux(
-            aid.gpu_type, aid.gpu_device_num, device, platform
-        );
-    }
-    catch (...) {
-        return ERR_SIGNAL_CATCH;
-    }
-#else
-    void (*old_sig)(int) = signal(SIGSEGV, segv_handler);
-    if (setjmp(resume)) {
-        return ERR_SIGNAL_CATCH;
-    } else {
-        retval = boinc_get_opencl_ids_aux(
-            aid.gpu_type, aid.gpu_device_num, device, platform
-        );
-    }
+    retval = boinc_get_opencl_ids_aux(
+        aid.gpu_type, aid.gpu_device_num, device, platform
+    );
 
-    signal(SIGSEGV, old_sig);
-#endif
-    
     return retval;
 }

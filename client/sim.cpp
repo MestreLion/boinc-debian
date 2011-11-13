@@ -371,7 +371,7 @@ bool CLIENT_STATE::simulate_rpc(PROJECT* p) {
     sprintf(buf, "RPC to %s: %s<br>", p->project_name, buf2);
     html_msg += buf;
 
-    msg_printf(0, MSG_INFO, buf);
+    msg_printf(p, MSG_INFO, "RPC: %s", buf2);
 
     handle_completed_results(p);
 
@@ -527,6 +527,7 @@ bool CLIENT_STATE::scheduler_rpc_poll() {
         last_work_fetch_time = now;
 
         p = work_fetch.choose_project();
+
         if (p) {
             action = simulate_rpc(p);
             break;
@@ -623,8 +624,8 @@ bool ACTIVE_TASK_SET::poll() {
             atp->set_task_state(PROCESS_EXITED, "poll");
             rp->exit_status = 0;
             rp->ready_to_report = true;
-            gstate.request_schedule_cpus("ATP poll");
-            gstate.request_work_fetch("ATP poll");
+            gstate.request_schedule_cpus("job finished");
+            gstate.request_work_fetch("job finished");
             sprintf(buf, "result %s finished<br>", rp->name);
             html_msg += buf;
             action = true;
@@ -1421,9 +1422,14 @@ void do_client_simulation() {
 
     sim_results.print(summary_file, true);
 
+    double cpu_time;
+    boinc_calling_thread_cpu_time(cpu_time);
     fprintf(summary_file,
         "-------------------------\n"
+        "Simulator CPU time: %f secs\n"
+        "-------------------------\n"
         "Peak FLOPS: CPU %.2fG GPU %.2fG\n",
+        cpu_time,
         cpu_peak_flops()/1e9,
         gpu_peak_flops()/1e9
     );

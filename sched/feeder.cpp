@@ -301,7 +301,7 @@ static bool get_job_from_db(
             if (!ssp->lookup_app(wi.wu.appid)) {
 #if 0
                 log_messages.printf(MSG_CRITICAL,
-                    "result [RESULT#%d] has bad appid %d; clean up your DB!\n",
+                    "result [RESULT#%u] has bad appid %d; clean up your DB!\n",
                     wi.res_id, wi.wu.appid
                 );
 #endif
@@ -326,7 +326,7 @@ static bool get_job_from_db(
                     ncollisions++;
                     collision = true;
                     log_messages.printf(MSG_DEBUG,
-                        "result [RESULT#%d] already in array\n", wi.res_id
+                        "result [RESULT#%u] already in array\n", wi.res_id
                     );
                     break;
                 }
@@ -340,7 +340,7 @@ static bool get_job_from_db(
             if (hrt) {
                 if (!hr_info.accept(hrt, wi.wu.hr_class)) {
                     log_messages.printf(MSG_DEBUG,
-                        "rejecting [RESULT#%d] because HR class %d/%d over quota\n",
+                        "rejecting [RESULT#%u] because HR class %d/%d over quota\n",
                         wi.res_id, hrt, wi.wu.hr_class
                     );
                     continue;
@@ -459,7 +459,7 @@ static bool scan_work_array(vector<DB_WORK_ITEM> &work_items) {
             );
             if (found) {
                 log_messages.printf(MSG_NORMAL,
-                    "adding result [RESULT#%d] in slot %d\n",
+                    "adding result [RESULT#%u] in slot %d\n",
                     wi.res_id, i
                 );
                 wu_result.resultid = wi.res_id;
@@ -885,4 +885,4 @@ int main(int argc, char** argv) {
     feeder_loop();
 }
 
-const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 22674 2010-11-10 18:17:20Z davea $";
+const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 24564 2011-11-09 20:24:48Z jeffc $";

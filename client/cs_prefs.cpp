@@ -187,14 +187,11 @@ int CLIENT_STATE::check_suspend_processing() {
     return 0;
 }
 
+
 void print_suspend_tasks_message(int reason) {
-    char buf[256];
-    sprintf(buf,
-        "Suspending computation - %s",
-        suspend_reason_string(reason)
-    );
-    msg_printf(NULL, MSG_INFO, buf);
+    msg_printf(NULL, MSG_INFO, "Suspending computation - %s", suspend_reason_string(reason));
 }
+
 
 int CLIENT_STATE::suspend_tasks(int reason) {
     if (reason == SUSPEND_REASON_CPU_THROTTLE) {

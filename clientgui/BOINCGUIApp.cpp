@@ -116,7 +116,7 @@ bool CBOINCGUIApp::OnInit() {
 #endif
 
     s_bSkipExitConfirmation = false;
-    m_bShuttingDownManagerAndClient = false;
+    m_bFilterEvents = false;
 
     // Initialize class variables
     m_pLocale = NULL;
@@ -515,6 +515,9 @@ void CBOINCGUIApp::OnInitCmdLine(wxCmdLineParser &parser) {
         { wxCMD_LINE_SWITCH, wxT("i"), wxT("insecure"), _("disable BOINC security users and permissions")},
         { wxCMD_LINE_SWITCH, wxT("c"), wxT("checkskins"), _("set skin debugging mode to enable skin manager error messages")},
         { wxCMD_LINE_SWITCH, wxT("m"), wxT("multiple"), _("multiple instances of BOINC Manager allowed")},
+#ifdef __WXMAC__
+        { wxCMD_LINE_OPTION, wxT("NSDocumentRevisionsDebugMode"), NULL, _("Not used: workaround for bug in XCode 4.2")},
+#endif
         { wxCMD_LINE_NONE}  //DON'T forget this line!!
     };
     parser.SetDesc(cmdLineDesc);
@@ -1226,30 +1229,34 @@ int CBOINCGUIApp::FilterEvent(wxEvent &event) {
     wxObject* theObject;
 
     if (!m_pDocument) return -1;
-    if (m_bShuttingDownManagerAndClient) goto doFiltering;
 
-    if (!m_pDocument->WaitingForRPC()) return -1;
-
-    // If in RPC Please Wait dialog, reject all command 
-    // and timer events except: 
-    //  - RPC Finished
-    //  - those for that dialog or its children
-    //  - Open Manager menu item from system tray icon
     theEventType = event.GetEventType();
 
-    if ((theEventType == wxEVT_COMMAND_MENU_SELECTED) && (event.GetId() == wxID_OPEN)) {
-        return -1;        
+    if (m_pDocument->WaitingForRPC()) {
+        // If in RPC Please Wait dialog, reject all command 
+        // and timer events except: 
+        //  - RPC Finished
+        //  - those for that dialog or its children
+        //  - Open Manager menu item from system tray icon
+
+        if ((theEventType == wxEVT_COMMAND_MENU_SELECTED) && (event.GetId() == wxID_OPEN)) {
+            return -1;        
+        }
+
+        theRPCWaitDialog = m_pDocument->GetRPCWaitDialog();
+        theObject = event.GetEventObject();
+        while (theObject) {
+            if (!theObject->IsKindOf(CLASSINFO(wxWindow))) break;
+            if (theObject == theRPCWaitDialog) return -1;
+            theObject = ((wxWindow*)theObject)->GetParent();
+        }
+        // Continue with rest of filtering below
+    } else {
+        // Do limited filtering if shutting down to allow RPC 
+        // completion events but not events which start new RPCs
+        if (!m_bFilterEvents) return -1;
     }
 
-    theRPCWaitDialog = m_pDocument->GetRPCWaitDialog();
-    theObject = event.GetEventObject();
-    while (theObject) {
-        if (!theObject->IsKindOf(CLASSINFO(wxWindow))) break;
-        if (theObject == theRPCWaitDialog) return -1;
-        theObject = ((wxWindow*)theObject)->GetParent();
-    }
-
-doFiltering:    
     // Allow all except Command, Timer and Mouse Moved events
     if (event.IsCommandEvent()) {
         return false;
