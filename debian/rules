@@ -140,6 +140,7 @@ clean:
 	find . -name "Makefile" | grep -v samples | xargs -r rm
 	rm -f configure
 	rm -rf py/lib.linux-*-2.*
+	rm -f override_dh_auto_install
 
 # Commands not to execute - empty overrides
 override_dh_auto_test:
