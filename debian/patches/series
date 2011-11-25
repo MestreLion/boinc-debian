@@ -11,3 +11,5 @@ debian_debian_AdjustBoincTopdirPython.patch
 libnotify-0.7.patch
 stripchart_security.patch
 annoying_warning_const_image.patch
+AddSomeConstToMakeClearMemoryIsNotAllocated.patch
+AddingMoreConst.patch
