@@ -38,6 +38,38 @@ typedef struct {
 
 
 ///////////////////////////////////////////////////////////////////////////
+/// Class CScrolledTextBox
+///////////////////////////////////////////////////////////////////////////////
+class CScrolledTextBox : public wxScrolledWindow 
+{
+    DECLARE_DYNAMIC_CLASS( CScrolledTextBox )
+    DECLARE_EVENT_TABLE()
+	public:
+        CScrolledTextBox();
+		CScrolledTextBox( wxWindow* parent);
+        ~CScrolledTextBox();
+		
+        void SetValue(const wxString& s);
+        virtual void OnEraseBackground(wxEraseEvent& event);
+    
+    private:
+        int Wrap(const wxString& text, int widthMax, int *lineHeight);
+        bool IsStartOfNewLine();
+        void OnOutputLine(const wxString& line);
+
+        wxBoxSizer*                 m_TextSizer;
+        int                         m_iAvailableWidth;
+        int                         m_iAvailableHeight;
+        bool                        m_eol;
+        wxString                    m_text;
+        int                         m_hLine;
+};
+
+
+
+///////////////////////////////////////////////////////////////////////////
+/// Class CSlideShowPanel
+///////////////////////////////////////////////////////////////////////////////
 
 class CSlideShowPanel : public wxPanel 
 {
@@ -50,14 +82,19 @@ class CSlideShowPanel : public wxPanel
 		~CSlideShowPanel();
 
         void OnSlideShowTimer(wxTimerEvent& WXUNUSED(event));
-        void AdvanceSlideShow(bool changeSlide);
+        void AdvanceSlideShow(bool changeSlide, bool reload);
         void OnPaint(wxPaintEvent& WXUNUSED(event));
+        void OnEraseBackground(wxEraseEvent& event);
                 
     private:
+        CTransparentStaticText*     m_institution;
+        CTransparentStaticText*     m_scienceArea;
+        CScrolledTextBox*           m_description;
         wxTimer*                    m_ChangeSlideTimer;
         wxBitmap                    m_SlideBitmap;
         bool                        m_bCurrentSlideIsDefault;
-        
+        bool                        m_bGotAllProjectsList;
+        ALL_PROJECTS_LIST           m_AllProjectsList;
 };
 
 
@@ -86,7 +123,7 @@ class CSimpleTaskPanel : public CSimplePanelBase
 
         TaskSelectionData* GetTaskSelectionData();
         wxString GetSelectedTaskString() { return m_TaskSelectionCtrl->GetValue(); }
-        void Update(bool delayShow=false);
+        void UpdatePanel(bool delayShow=false);
         wxRect GetProgressRect() { return m_ProgressRect; }
         void ReskinInterface();
 

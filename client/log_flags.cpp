@@ -112,7 +112,7 @@ static void show_gpu_ignore(vector<int>& devs, const char* name) {
 }
 
 static void show_exclude_gpu(EXCLUDE_GPU& e) {
-    char t[256], app[256], dev[256];
+    char t[256], app_name[256], dev[256];
     PROJECT *p = gstate.lookup_project(e.url.c_str());
     if (!p) return;
     if (e.type.empty()) {
@@ -121,9 +121,9 @@ static void show_exclude_gpu(EXCLUDE_GPU& e) {
         strcpy(t, e.type.c_str());
     }
     if (e.appname.empty()) {
-        strcpy(app, "all");
+        strcpy(app_name, "all");
     } else {
-        strcpy(app, e.appname.c_str());
+        strcpy(app_name, e.appname.c_str());
     }
     if (e.device_num < 0) {
         strcpy(dev, "all");
@@ -132,10 +132,35 @@ static void show_exclude_gpu(EXCLUDE_GPU& e) {
     }
     msg_printf(p, MSG_INFO,
         "Config: excluded GPU.  Type: %s.  App: %s.  Device: %s",
-        t, app, dev
+        t, app_name, dev
     );
+    if (!e.appname.empty()) {
+        APP* app = gstate.lookup_app(p, e.appname.c_str());
+        if (!app) {
+            string app_list;
+            for (unsigned int i=0; i<gstate.apps.size(); i++) {
+                app = gstate.apps[i];
+                if (app->project != p) continue;
+				if (!app_list.empty()) {
+					app_list += ", ";
+				}
+                app_list += "'";
+                app_list += app->name;
+                app_list += "'";
+            }
+            msg_printf(p, MSG_USER_ALERT,
+                "A GPU exclusion in your cc_config.xml file specifies a non-existent application '%s'.  Existing applications: %s",
+                e.appname.c_str(),
+                app_list.c_str()
+            );
+        }
+    }
 }
 
+// Print config info.
+// This is called during startup (after client_state.xml has been read)
+// and also from the handle_read_cc_config GUI RPC.
+//
 // TODO: show other config options
 //
 void CONFIG::show() {
@@ -204,6 +229,9 @@ void CONFIG::show() {
     }
 }
 
+// This is used by the BOINC client.
+// KEEP IN SYNCH WITH CONFIG::parse_options()!!
+
 int CONFIG::parse_options_client(XML_PARSER& xp) {
     char path[256];
     string s;
@@ -252,14 +280,14 @@ int CONFIG::parse_options_client(XML_PARSER& xp) {
             COPROC c;
             retval = c.parse(xp);
             if (retval) {
-                msg_printf(0, MSG_USER_ALERT,
-                    "Can't parse <coproc> in cc_config.xml"
+                msg_printf_notice(NULL, false, NULL,
+                    "Can't parse <coproc> element in cc_config.xml"
                 );
             }
             retval = coprocs.add(c);
             if (retval) {
-                msg_printf(0, MSG_USER_ALERT,
-                    "Duplicate <coproc> in cc_config.xml"
+                msg_printf_notice(NULL, false, NULL,
+                    "Duplicate <coproc> element in cc_config.xml"
                 );
             }
             continue;
@@ -274,6 +302,18 @@ int CONFIG::parse_options_client(XML_PARSER& xp) {
         if (xp.parse_bool("disallow_attach", disallow_attach)) continue;
         if (xp.parse_bool("dont_check_file_sizes", dont_check_file_sizes)) continue;
         if (xp.parse_bool("dont_contact_ref_site", dont_contact_ref_site)) continue;
+        if (xp.match_tag("exclude_gpu")) {
+            EXCLUDE_GPU eg;
+            retval = eg.parse(xp);
+            if (retval) {
+                msg_printf_notice(NULL, false, NULL,
+                    "Can't parse <exclude_gpu> element in cc_config.xml"
+                );
+            } else {
+                exclude_gpus.push_back(eg);
+            }
+            continue;
+        }
         if (xp.parse_string("exclusive_app", s)) {
             if (!strstr(s.c_str(), "boinc")) {
                 exclusive_apps.push_back(s);
@@ -287,6 +327,7 @@ int CONFIG::parse_options_client(XML_PARSER& xp) {
             continue;
         }
         if (xp.parse_bool("exit_after_finish", exit_after_finish)) continue;
+        if (xp.parse_bool("exit_before_start", exit_before_start)) continue;
         if (xp.parse_bool("exit_when_idle", exit_when_idle)) {
             if (exit_when_idle) {
                 report_results_immediately = true;
@@ -299,6 +340,8 @@ int CONFIG::parse_options_client(XML_PARSER& xp) {
             continue;
         }
         if (xp.parse_bool("http_1_0", http_1_0)) continue;
+        if (xp.parse_int("http_transfer_timeout", http_transfer_timeout)) continue;
+        if (xp.parse_int("http_transfer_timeout_bps", http_transfer_timeout_bps)) continue;
         if (xp.parse_int("ignore_cuda_dev", n)||xp.parse_int("ignore_nvidia_dev", n)) {
             ignore_nvidia_dev.push_back(n);
             continue;
@@ -325,10 +368,19 @@ int CONFIG::parse_options_client(XML_PARSER& xp) {
 #ifndef SIM
         if (xp.match_tag("proxy_info")) {
             retval = config_proxy_info.parse_config(xp);
-            if (retval) return retval;
+            if (retval) {
+                msg_printf_notice(NULL, false, NULL,
+                    "Can't parse <proxy_info> element in cc_config.xml"
+                );
+            }
             continue;
         }
 #endif
+        if (xp.parse_double("rec_half_life_days", rec_half_life)) {
+            if (rec_half_life <= 0) rec_half_life = 10;
+            rec_half_life *= 86400;
+            continue;
+        }
         if (xp.parse_bool("report_results_immediately", report_results_immediately)) continue;
         if (xp.parse_bool("run_apps_manually", run_apps_manually)) continue;
         if (xp.parse_int("save_stats_days", save_stats_days)) continue;
@@ -383,13 +435,12 @@ int CONFIG::parse_client(FILE* f) {
             continue;
         }
         if (xp.match_tag("options")) {
-            int retval = parse_options(xp);
+            int retval = parse_options_client(xp);
             if (retval) {
                 msg_printf_notice(NULL, false,
                     "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
-                    "%s: %s",
-                    _("Error in cc_config.xml options"),
-                    boincerror(retval)
+                    "%s",
+                    _("Error in cc_config.xml options")
                 );
             }
             continue;
@@ -431,9 +482,8 @@ int read_config_file(bool init, const char* fname) {
         msg_printf(NULL, MSG_INFO, "No config file found - using defaults");
         return ERR_FOPEN;
     }
-    int retval = config.parse(f);
+    config.parse_client(f);
     fclose(f);
-    if (retval) return retval;
 #ifndef SIM
     diagnostics_set_max_file_sizes(
         config.max_stdout_file_size, config.max_stderr_file_size

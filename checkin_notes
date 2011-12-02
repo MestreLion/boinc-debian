@@ -7057,6 +7057,9 @@ Charlie 11 Oct 2011
         because it once again sets hidden property for login items, but 
         the AppleScript seems not to work under OS 10.7.1.
         
+    clientgui/
+        mac/
+            SetupSecurity.cpp
     mac_installer/
         PostInstall.cpp
 
@@ -7752,6 +7755,7 @@ Charlie 25 Oct 2011
         around clientData bug in wxBitmapComboBox::Insert().
         
     clientgui/
+        BOINCBitmapComboBox.cpp,.h (added)
         mac/
             MacBitmapComboBox.cpp,.h
         sg_PanelBase.h
@@ -8063,16 +8067,16 @@ David  3 Nov 2011
         wrapper.cpp
 
 David  3 Nov 2011
-	- client: show GPU exclusions at startup
-		(need to do this after reading the state file,
-		since GPU exclusions refer to projects).
-	- client: fix bug that added garbage <coproc> element
-		to <app_version> in state file when using GPU exclusions
+    - client: show GPU exclusions at startup
+        (need to do this after reading the state file,
+        since GPU exclusions refer to projects).
+    - client: fix bug that added garbage <coproc> element
+        to <app_version> in state file when using GPU exclusions
 
-	client/
-		client_types.cpp
-		client_state.cpp
-		log_flags.cpp
+    client/
+        client_types.cpp
+        client_state.cpp
+        log_flags.cpp
 
 David  4 Nov 2011
     - client: fix work fetch bug.
@@ -8170,17 +8174,17 @@ David  5 Nov 2011
         cs_trickle.cpp
 
 David  6 Nov 2011
-	- client: actually do the checking described above
+    - client: actually do the checking described above
 
-	client/
-		cs_trickle.cpp
+    client/
+        cs_trickle.cpp
 
 David  6 Nov 2011
-	- client: don't crash if a project sends app_version.flops = 0.
+    - client: don't crash if a project sends app_version.flops = 0.
 
-	client/
-		client_types.cpp
-		rr_sim.cpp
+    client/
+        client_types.cpp
+        rr_sim.cpp
 
 Charlie 7 Nov 2011
     - Mgr: Bug fix.
@@ -8189,16 +8193,16 @@ Charlie 7 Nov 2011
         BOINCGUIApp.cpp
 
 David  7 Nov 2011
-	- manager: apparently WxWidget's combo box has problems (bugs)
-		if multiple items have the same string.
-		So, in simple view task combo box:
-		- show % done (unique in most cases)
-		- remove version number
-		- instead of showing plan class, show "NVIDIA GPU" or "ATI GPU"
-		TODO: update the fraction done
+    - manager: apparently WxWidget's combo box has problems (bugs)
+        if multiple items have the same string.
+        So, in simple view task combo box:
+        - show % done (unique in most cases)
+        - remove version number
+        - instead of showing plan class, show "NVIDIA GPU" or "ATI GPU"
+        TODO: update the fraction done
 
-	clientgui/
-		sg_TaskPanel.cpp
+    clientgui/
+        sg_TaskPanel.cpp
 
 David  7 Nov 2011
     - client: condition RR sim negative FLOPs message on rr_simulation.
@@ -8226,19 +8230,19 @@ Rom    7 Nov 2011
         workunit_waiting_image.png
 
 David  7 Nov 2011
-	- client: on transient upload failure, don't do start_xfer()
-		within PERS_FILE_XFER::transient_failure();
-		we're about to delete and free the FILE_XFER.
-		The transfer will be restarted in the next poll.
+    - client: on transient upload failure, don't do start_xfer()
+        within PERS_FILE_XFER::transient_failure();
+        we're about to delete and free the FILE_XFER.
+        The transfer will be restarted in the next poll.
 
-	client/
-		pers_file_xfer.cpp
+    client/
+        pers_file_xfer.cpp
 
 Charlie 8 Nov 2011
     - Mgr: Fix Simple View layout to fit 3 decimal places for % done.
 
-	clientgui/
-		sg_TaskPanel.cpp
+    clientgui/
+        sg_TaskPanel.cpp
 
 Charlie 8 Nov 2011
     - Mac installer: fixes for OS 10.4 compatibility.
@@ -8277,8 +8281,8 @@ Charlie 9 Nov 2011
         Don't append % done to Task Selection control entries, as that  
         varies over time, causing significant complications.
 
-	clientgui/
-		sg_TaskPanel.cpp
+    clientgui/
+        sg_TaskPanel.cpp
 
 Rom    9 Nov 2011
     - WINSCR: Add a reference to SCRAPPERR_BOINCNOGRAPHICSAPPSEXECUTING
@@ -8382,8 +8386,8 @@ Charlie 11 Nov 2011
         shortcut in checking for existing entries. 
     - Mgr: If a slide show has only one slide, load it only once.
     
-	clientgui/
-		sg_TaskPanel.cpp
+    clientgui/
+        sg_TaskPanel.cpp
 
 David  11 Nov 2011
     - client: check return value of FILE_REF when parse project file.
@@ -8409,6 +8413,270 @@ Rom    11 Nov 2011
 Rom    11 Nov 2011
     - Tag for 6.13.12 release, all platforms
       boinc_core_release_6_13_12
+
+    /
+        configure.ac
+        version.h
+
+Charlie 11 Nov 2011
+    - Mac installer: There can now be multiple instances of the Manager 
+        running, so shut them all down.
+
+    mac_installer/
+        PostInstall.cpp
+
+David  13 Nov 2011
+    - client/scheduler:
+        If the file "client_opaque.txt" exists on the client,
+        include its contents in scheduler request messages.
+        On the scheduler, parse this into SCHEDULER_REQUEST::client_opaque,
+        where it can be used by the customizable scheduler functions.
+
+    sched/
+        sched_types.cpp,h
+    client/
+        file_names.h
+        cs_scheduler.cpp
+
+Charlie 14 Nov 2011
+    - Mgr: Don't call Simple View specific periodic RPCs when BOINC is 
+        hidden or minimized.
+        
+    clientgui/
+        MainDocument.cpp
+
+David  14 Nov 2011
+    - client: show error messages (as notices) when get an error
+        parsing cc_config.xml
+    - client: if an <exclude_cpu> element in cc_config.xml
+        specifies a nonexistent app, show an error msg with
+        a list of existing app names
+    - web: increase the default mem limit from 64MB to 256MB
+        TODO: change user_hosts.php to show N at a time
+
+    html/inc/
+        util.inc
+    lib/
+        cc_config.cpp,h
+    client/
+        log_flags.cpp
+
+David  14 Nov 2011
+    - client: improve messages for the above
+
+    client/
+        log_flags.cpp
+
+David  14 Nov 2011
+    - scheduler: increase buffer for global prefs from 8K to 64K
+    - lay the groundwork for changing it to std::string
+
+    sched/
+        sched_types.cpp
+    lib/
+        parse.cpp,h
+
+Charlie 14 Nov 2011
+    - Mgr: In CSimpleTaskPanel, change name of Update() to UpdatePanel() 
+        to fix compiler warning about overloading wxWindow::Update().
+    
+    clientgui/
+        sg_BoincSimpleFrame.cpp
+        sg_TaskPanel.cpp,.h
+
+Charlie 14 Nov 2011
+    - MGR: Limit change of 9 November to only Debug builds: accept and 
+        ignore command line argument "-NSDocumentRevisionsDebugMode=YES"
+
+    clientgui/
+        BOINCGUIApp.cpp
+
+David  14 Nov 2011
+	- client: add some missing items to CONFIG::parse_options_client().
+
+	client/
+		log_flags.cpp
+		pers_file_xfer.cpp
+
+Charlie 16 Nov 2011
+    - MGR: use wxBitmapComboBox insert() and append() calls without 
+        client data argument instead of passing NULL.
+        
+    clientgui/
+        BOINCBitmapComboBox.cpp
+
+Charlie 17 Nov 2011
+    Remove include of boinc_cl.h from parse.h; it is no longer needed.
+    Remove Mac Availability Macro and weak-link support from cl_boin.ch 
+        as it prevented building BOINC libraries under OS 10.5.
+        
+    lib/
+        cl_boinc.h
+        parse.h
+
+Charlie 19 Nov 2011
+    - MGR: Fix button font sizes in Simple View Projects panel.
+    
+    clientgui/
+        sg_ProjectPanel.cpp
+
+David  20 Nov 2011
+    - client: on network_available() GUI RPC,
+        clear project-level upload and download backoffs,
+        as well as RPC and individual xfer backoffs.
+        This was an oversight.
+
+    client/
+        client_types.h
+        net_stats.cpp
+
+Charlie 20 Nov 2011
+    - MGR: Hide slideshow subpanel if no slides for current task.
+    
+    clientgui/
+        sg_TaskPanel.cpp
+
+Charlie 21 Nov 2011
+    - MGR: In Simple View, draw Mac progress bar on white background for 
+        better visibility; adjust red New Notices ring for new button
+        shapes if on Mac OS 10.7.
+
+    clientgui/
+        sg_BoincSimpleFrame.cpp,.h
+        sg_PanelBase.cpp
+        sg_TaskPanel.cpp
+
+Rom    21 Nov 2011
+    - MGR: const fixes for platform bitmaps.
+      (From: Steffen Möller)
+    - MGR: Add trace statements to help track down RemoveAt bug
+    - MGR: Remove static var guard, may not be needed with the SetDlgOpen()
+        routines blocking timer based updates.  If there is a buffer overrun
+        hopefully it'll manifest itself in a detectable way.
+
+    clientgui/res/
+        linuxicon.xpm
+        macosicon.xpm
+        windowsicon.xpm
+    clientgui/
+        sg_BoincSimpleFrame.cpp
+        sg_TaskPanel.cpp
+
+Rom    21 Nov 2011
+    - MGR: Prevent crash, check returned pointer of menu entry.
+
+    clientgui/
+        sg_BoincSimpleFrame.cpp
+
+Rom    21 Nov 2011
+    - MGR: Fix bad asserts.
+    
+    clientgui/
+        BOINCBitmapComboBox.cpp
+
+Charlie 21 Nov 2011
+    - MGR: Fix bad transparency in default project icon.
+    
+    clientgui/res/skins/default/graphic/
+        project_image.xpm
+
+Charlie 21 Nov 2011
+    - MGR: The asserts were correct; fix minor errors in calling code.
+    
+    clientgui/
+        BOINCBitmapComboBox.cpp
+        sg_ProjectPanel.cpp
+        sg_TaskPanel.cpp
+
+Charlie 23 Nov 2011
+    - MGR: In Simple View, if deleting a task above the current selection, 
+        decrement the index of the current selection.
+    - MGR: In Simple View, reload slide show when task selection changed.
+    
+    clientgui/
+        sg_TaskPanel.cpp,.h
+
+Charlie 23 Nov 2011
+    - MGR: In Simple View, sort Project Selection Control; make sorting of 
+        Project and Task Selection controls case-insensitive, fix bugs in 
+        MacBitmapComboBox.cpp.
+    
+    clientgui/
+        mac/
+            MacBitmapComboBox.cpp
+        MacBitmapComboBox.cpp
+        sg_ProjectPanel.cpp
+        sg_TaskPanel.cpp
+
+David  24 Nov 2011
+    - GUI RPC client lib: change setsockopt() for receive timeout
+        to work on Windows.  From Fred.
+
+    lib/
+        gui_rpc_client.cpp
+
+David  24 Nov 2011
+    - default screensaver: fix divide-by-zero; code cleanup
+
+    clientsrc/
+        ss_app.cpp
+
+David  25 Nov 2011
+    - client: fix errors in transferring RAM info between CAL and OpenCL.
+        (bytes vs MB units, local/global terminology issue).
+        From Oliver Bock>
+
+    client/
+        coproc_detect.cpp
+
+Charlie 26 Nov 2011
+    - default screensaver: fix build breaks caused by code cleanup above.
+
+    clientsrc/
+        ss_app.cpp
+
+Charlie 28 Nov 2011
+    - MGR: In Simple View, if task has no slide show, then display the 
+        institution, science area and description. 
+        This is in progress: not yet finished.
+
+    clientgui/
+        Events.h
+        sg_PanelBase.cpp,.h
+        sg_TaskPanel.cpp,.h
+
+Charlie 29 Nov 2011
+    - MGR: Continue work on Simple View to display the description if 
+        task has no slide show.  
+        Change all occurrences of "<sup>n</sup>" to "^n"
+        
+    clientgui/
+        sg_TaskPanel.cpp,.h
+
+Charlie 30 Nov 2011
+    - MGR: Complete work on Simple View to display the description if 
+        task has no slide show.  
+        
+    clientgui/
+        sg_TaskPanel.cpp,.h
+
+Rom    30 Nov 2011
+    - Tag for 7.0.1 release, all platforms
+      boinc_core_release_7_0_1
+
+    /
+        configure.ac
+        version.h
+
+Charlie 30 Nov 2011
+    - MGR: Better sizing of Simple View description text box.
+        
+    clientgui/
+        sg_TaskPanel.cpp,.h
+
+Rom    1 Dec 2011
+    - Tag for 7.0.2 release, all platforms
+      boinc_core_release_7_0_2
 
     /
         configure.ac
