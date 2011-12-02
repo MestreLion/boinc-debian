@@ -38,7 +38,7 @@ Description: metapackage for the BOINC client and the manager
  BOINC core client.
 
 
-Package: boinc-cuda
+Package: boinc-nvidia-cuda
 Architecture: amd64 i386
 Section: contrib/net
 Depends: ${misc:Depends}, boinc, libcuda1, libcuda1-ia32 [amd64], ia32-libs [amd64]
@@ -57,7 +57,7 @@ Description: metapackage for CUDA-savvy BOINC client and manager
  to be redistributed in the contrib section of Debian.
 
 
-Package: boinc-amdopencl
+Package: boinc-amd-opencl
 Architecture: amd64 i386
 Section: contrib/net
 Depends: ${misc:Depends}, boinc, fglrx-driver, amd-libopencl1
