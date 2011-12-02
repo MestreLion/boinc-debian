@@ -30,7 +30,7 @@ if (array_key_exists("PATH_INFO", $_SERVER)) {
     die("bad URL");
 }
 
-ini_set("memory_limit", "64M");
+ini_set("memory_limit", "256M");
 
 if (!defined('SECURE_URL_BASE')) {
     define('SECURE_URL_BASE', URL_BASE);
@@ -850,6 +850,6 @@ function credit_to_gflop_hours($c) {
     return $c/(200/24);
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 24512 2011-11-03 05:26:19Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util.inc 24593 2011-11-14 23:31:12Z davea $";  //Generated automatically - do not edit
 
 ?>

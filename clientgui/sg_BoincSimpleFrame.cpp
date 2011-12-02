@@ -429,7 +429,9 @@ void CSimpleFrame::OnSelectSkin( wxCommandEvent& event ){
         oldSkinID = m_pSubmenuSkins->FindItem(oldSkinName);
     }
     oldItem = m_pSubmenuSkins->FindItem(oldSkinID);
-    oldItem->Check(false);
+    if (oldItem) {
+        oldItem->Check(false);
+    }
 
     selectedItem->Check(true);
     pSkinManager->ReloadSkin(newSkinName);
@@ -550,11 +552,6 @@ void CSimpleFrame::OnNotification(CFrameEvent& WXUNUSED(event)) {
 void CSimpleFrame::OnRefreshView(CFrameEvent& WXUNUSED(event)) {
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnRefreshView - Function Start"));
     
-    static bool bAlreadyRunning = false;
-    
-    if (bAlreadyRunning) return;
-    bAlreadyRunning = true;
-    
     m_pBackgroundPanel->OnFrameRender();
     
     if (dlgMsgsPtr) {
@@ -565,8 +562,6 @@ void CSimpleFrame::OnRefreshView(CFrameEvent& WXUNUSED(event)) {
     // We disabled tooltips on Mac while menus were popped up because they cover menus
     wxToolTip::Enable(true);
 #endif
-
-    bAlreadyRunning = false;
 
     wxLogTrace(wxT("Function Start/End"), wxT("CSimpleFrame::OnRefreshView - Function End"));
 }
@@ -768,6 +763,14 @@ CSimpleGUIPanel::CSimpleGUIPanel(wxWindow* parent) :
 #ifdef __WXMAC__
     // Tell accessibility aids to ignore this panel (but not its contents)
     HIObjectSetAccessibilityIgnored((HIObjectRef)GetHandle(), true);
+    
+    SInt32 response;
+    OSStatus err = Gestalt(gestaltSystemVersion, &response);
+    if ((err == noErr) && (response >= 0x1070)) {
+        m_iRedRingRadius = 4;
+    } else {
+        m_iRedRingRadius = 12;
+    }
 #endif    
 
     m_SuspendResumeButton->Disable();
@@ -858,8 +861,8 @@ void CSimpleGUIPanel::OnFrameRender() {
     // Workaround for Linux refresh problem
     if (m_irefreshCount < REFRESH_WAIT) {
         ++m_irefreshCount;
-        m_taskPanel->Update(true);
-	return;
+        m_taskPanel->UpdatePanel(true);
+        return;
     }
 	
     if (workCount != m_oldWorkCount) {
@@ -908,8 +911,7 @@ void CSimpleGUIPanel::OnFrameRender() {
         
         m_oldWorkCount = workCount;
         
-	m_taskPanel->Update(false);
-
+        m_taskPanel->UpdatePanel(false);
     }
 }
 
@@ -1011,7 +1013,6 @@ void CSimpleGUIPanel::OnPaint(wxPaintEvent& WXUNUSED(event)) {
 
     if (m_bNewNoticeAlert) {
         wxRect r = m_NoticesButton->GetRect();
-        r.Inflate(3, 3);
         if (m_bNoticesButtonIsRed) {
             wxPen oldPen = myDC.GetPen();
             wxBrush oldBrush = myDC.GetBrush();
@@ -1021,10 +1022,13 @@ void CSimpleGUIPanel::OnPaint(wxPaintEvent& WXUNUSED(event)) {
             myDC.SetPen(bgPen);
             myDC.SetBrush(*wxTRANSPARENT_BRUSH);
 #ifdef __WXMAC__
-            myDC.DrawRoundedRectangle(r.x, r.y, r.width, r.height, 12);
+            r.Inflate(2, 2);
+            myDC.DrawRoundedRectangle(r.x, r.y, r.width, r.height+1, m_iRedRingRadius);
 #elif defined(__WXMSW__)
+            r.Inflate(3, 3);
             myDC.DrawRectangle(r.x, r.y, r.width, r.height);
 #else
+            r.Inflate(3, 3);
             myDC.DrawRoundedRectangle(r.x, r.y, r.width, r.height, 6);
 #endif
             // Restore Mode, Pen and Brush 

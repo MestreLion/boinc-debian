@@ -280,7 +280,7 @@ const char* SCHEDULER_REQUEST::parse(XML_PARSER& xp) {
         if (xp.parse_double("duration_correction_factor", host.duration_correction_factor)) continue;
         if (xp.match_tag("global_preferences")) {
             strcpy(global_prefs_xml, "<global_preferences>\n");
-            char buf[8192];
+            char buf[BLOB_SIZE];
             retval = xp.element_contents(
                 "</global_preferences>", buf, sizeof(buf)
             );
@@ -412,6 +412,7 @@ const char* SCHEDULER_REQUEST::parse(XML_PARSER& xp) {
         if (xp.parse_bool("client_cap_plan_class", client_cap_plan_class)) continue;
         if (xp.parse_int("sandbox", sandbox)) continue;
         if (xp.parse_int("allow_multiple_clients", allow_multiple_clients)) continue;
+        if (xp.parse_string("client_opaque", client_opaque)) continue;
 
         if (xp.match_tag("active_task_set")) continue;
         if (xp.match_tag("app")) continue;
@@ -1384,4 +1385,4 @@ DB_HOST_APP_VERSION* quota_exceeded_version() {
     return NULL;
 }
 
-const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 24136 2011-09-06 22:53:48Z davea $";
+const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 24595 2011-11-15 00:11:12Z davea $";

@@ -25,7 +25,6 @@
 
 #include "miofile.h"
 #include "str_util.h"
-#include "cl_boinc.h"
 
 // see parse_test.cpp for example usage of XML_PARSER
 
@@ -60,6 +59,7 @@ public:
     bool parse_ulonglong(const char*, unsigned long long&);
     bool parse_bool(const char*, bool&);
 	int element_contents(const char*, char*, int);
+	int element_contents(const char*, std::string&);
     int copy_element(std::string&);
     void skip_unexpected(const char*, bool verbose, const char*);
     void skip_unexpected(bool verbose=false, const char* msg="") {

@@ -239,28 +239,32 @@ void CONFIG::defaults() {
     zero_debts = false;
 }
 
-static bool parse_exclude_gpu(XML_PARSER& xp, EXCLUDE_GPU& eg) {
+int EXCLUDE_GPU::parse(XML_PARSER& xp) {
     bool found_url = false;
-    eg.type = "";
-    eg.appname = "";
-    eg.device_num = -1;
+    type = "";
+    appname = "";
+    device_num = -1;
     while (!xp.get_tag()) {
         if (!xp.is_tag) continue;
         if (xp.match_tag("/exclude_gpu")) {
-            return found_url;
+            if (!found_url) return ERR_XML_PARSE;
+			return 0;
         }
-        if (xp.parse_string("url", eg.url)) {
-            canonicalize_master_url(eg.url);
+        if (xp.parse_string("url", url)) {
+            canonicalize_master_url(url);
             found_url = true;
             continue;
         }
-        if (xp.parse_int("device_num", eg.device_num)) continue;
-        if (xp.parse_string("type", eg.type)) continue;
-        if (xp.parse_string("app", eg.appname)) continue;
+        if (xp.parse_int("device_num", device_num)) continue;
+        if (xp.parse_string("type", type)) continue;
+        if (xp.parse_string("app", appname)) continue;
     }
-    return false;
+    return ERR_XML_PARSE;
 }
 
+// This is used by GUI RPC clients, NOT by the BOINC client
+// KEEP IN SYNCH WITH CONFIG::parse_options_client()!!
+//
 int CONFIG::parse_options(XML_PARSER& xp) {
     string s;
     int n, retval;
@@ -302,11 +306,10 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.match_tag("coproc")) {
             COPROC c;
             retval = c.parse(xp);
+            if (retval) return retval;
             c.specified_in_config = true;
-            if (retval) return retval;
             if (!strcmp(c.type, "CPU")) continue;
-            retval = config_coprocs.add(c);
-            if (retval) return retval;
+            config_coprocs.add(c);
             continue;
         }
         if (xp.parse_str("data_dir", data_dir, sizeof(data_dir))) {
@@ -317,9 +320,9 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_bool("dont_contact_ref_site", dont_contact_ref_site)) continue;
         if (xp.match_tag("exclude_gpu")) {
             EXCLUDE_GPU eg;
-            if (parse_exclude_gpu(xp, eg)) {
-                exclude_gpus.push_back(eg);
-            }
+            retval = eg.parse(xp);
+            if (retval) return retval;
+            exclude_gpus.push_back(eg);
             continue;
         }
         if (xp.parse_string("exclusive_app", s)) {
@@ -375,8 +378,7 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_bool("os_random_only", os_random_only)) continue;
 #ifndef SIM
         if (xp.match_tag("proxy_info")) {
-            retval = proxy_info.parse_config(xp);
-            if (retval) return retval;
+            proxy_info.parse_config(xp);
             continue;
         }
 #endif
