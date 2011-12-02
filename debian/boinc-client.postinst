@@ -39,6 +39,11 @@ case "$1" in
              --gecos "BOINC core client" boinc
         fi
 
+	# Assign boinc user to group video if not already the case
+	if ! getent group video | grep -q boinc; then
+	    usermod -a -G video boinc || echo "Could not assign boinc user to group 'video'."
+	fi
+
         # Make sure the /var/lib/boinc-client directory exists and
         # is owned by the boinc user.
         mkdir $BOINC_DIR 2>/dev/null || true

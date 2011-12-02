@@ -1,6 +1,7 @@
 boinc (7.0.2+dfsg-1) unstable; urgency=low
 
   * New upstream version.
+  * Adding boinc user to group video (Closes: #557871)
 
  -- Steffen Moeller <moeller@debian.org>  Fri, 02 Dec 2011 03:10:11 +0100
 
@@ -8,7 +9,7 @@ boinc (6.13.12+dfsg-2) UNRELEASED; urgency=low
 
   * Added explicit dependencies on x11-common and network-manager
     for boot sequence, as indicated by
-    http://wiki.debian.org/LSBInitScripts
+    http://wiki.debian.org/LSBInitScripts (lp: #820246)
   * Added boinc-nvidia-cuda and boinc-amd-opencl packages in contrib.
 
  -- Steffen Moeller <moeller@debian.org>  Tue, 15 Nov 2011 22:06:19 +0100

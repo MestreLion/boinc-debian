@@ -1,8 +1,8 @@
 Index: boinc/clientgui/Makefile.am
 ===================================================================
---- boinc.orig/clientgui/Makefile.am	2011-08-08 01:43:01.000000000 +0200
-+++ boinc/clientgui/Makefile.am	2011-08-08 01:44:54.000000000 +0200
-@@ -117,9 +117,13 @@
+--- boinc.orig/clientgui/Makefile.am	2011-12-02 02:55:57.000000000 +0100
++++ boinc/clientgui/Makefile.am	2011-12-03 00:16:43.000000000 +0100
+@@ -118,9 +118,13 @@
      ../lib/error_numbers.h \
      locale $(mac_headers)
  
@@ -21,8 +21,8 @@ Index: boinc/clientgui/Makefile.am
  	grep '#define.*BOINC.*VERSION' $^ > $@
 Index: boinc/configure.ac
 ===================================================================
---- boinc.orig/configure.ac	2011-08-08 01:44:54.000000000 +0200
-+++ boinc/configure.ac	2011-08-08 01:44:54.000000000 +0200
+--- boinc.orig/configure.ac	2011-12-03 00:16:37.000000000 +0100
++++ boinc/configure.ac	2011-12-03 00:16:43.000000000 +0100
 @@ -709,14 +709,12 @@
  
  dnl ---------- libNotify --------------------------------------------------

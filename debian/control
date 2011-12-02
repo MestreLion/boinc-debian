@@ -51,10 +51,10 @@ Description: metapackage for CUDA-savvy BOINC client and manager
  projects.
  .
  Regular users (rightously) often find it an unbearable nuissance to
- care for the configuration of BOINC for CUDA-savvy graphics cards.
- This package adds a series of dependencies from the non-free section
- to the regular boinc package. This also meant this binary package
- to be redistributed in the contrib section of Debian.
+ care for the exact configuration of BOINC for CUDA-savvy graphics
+ cards. This package adds a series of dependencies from the non-free
+ section to the regular boinc package. This also meant this binary
+ package to be redistributed in the contrib section of Debian.
 
 
 Package: boinc-amd-opencl
