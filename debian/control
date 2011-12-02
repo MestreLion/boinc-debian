@@ -19,6 +19,7 @@ Homepage: http://boinc.berkeley.edu/
 Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git
 Vcs-Browser: http://git.debian.org/?p=pkg-boinc/boinc.git
 
+
 Package: boinc
 Architecture: all
 Depends: ${misc:Depends},
@@ -35,6 +36,50 @@ Description: metapackage for the BOINC client and the manager
  required to participate in any project that uses BOINC, and the
  BOINC Manager, a graphical monitor and control utility for the
  BOINC core client.
+
+
+Package: boinc-cuda
+Architecture: amd64 i386
+Section: contrib/net
+Depends: ${misc:Depends}, boinc, libcuda1, libcuda1-ia32 [amd64], ia32-libs [amd64]
+Description: metapackage for CUDA-savvy BOINC client and manager
+ The Berkeley Open Infrastructure for Network Computing (BOINC) is a
+ software platform for distributed computing: several initiatives of
+ various scientific disciplines all compete for the idle time of
+ desktop computers. The developers' web site at the University of
+ Berkeley serves as a common portal to the otherwise independently run
+ projects.
+ .
+ Regular users (rightously) often find it an unbearable nuissance to
+ care for the configuration of BOINC for CUDA-savvy graphics cards.
+ This package adds a series of dependencies from the non-free section
+ to the regular boinc package. This also meant this binary package
+ to be redistributed in the contrib section of Debian.
+
+
+Package: boinc-amdopencl
+Architecture: amd64 i386
+Section: contrib/net
+Depends: ${misc:Depends}, boinc, fglrx-driver, amd-libopencl1
+Description: metapackage for CUDA-savvy BOINC client and manager
+ The Berkeley Open Infrastructure for Network Computing (BOINC) is a
+ software platform for distributed computing: several initiatives of
+ various scientific disciplines all compete for the idle time of
+ desktop computers. The developers' web site at the University of
+ Berkeley serves as a common portal to the otherwise independently run
+ projects.
+ .
+ Regular users (rightously) often find it an unbearable nuissance to
+ care for the configuration of BOINC for the OpenCL-savvy AMD/ATI
+ graphics cards.  This package adds a series of dependencies from the
+ non-free section to the regular boinc package. This also meant this
+ binary package to be redistributed in the contrib section of Debian.
+ .
+ This package is not perfect, yet. A major problem for the moment
+ is the availability of the OpenCL driver for 32bit binaries for
+ amd64. If this is planned, install the amd-app package provided
+ through the AMD developer forum.
+
 
 Package: boinc-client
 Architecture: any
@@ -57,6 +102,7 @@ Description: core client for the BOINC distributed computing infrastructure
  attaching a local machine to a project, this client will also
  dynamically download the projects application's program to be then
  wrapped by the BOINC core client.
+
 
 Package: boinc-manager
 Section: x11
@@ -83,6 +129,7 @@ Description: GUI to control and monitor the BOINC core client
  boinc-client package, not the boinc-manager, is required for every
  machine contributing.
 
+
 Package: boinc-dev
 Section: devel
 Architecture: any
@@ -96,6 +143,7 @@ Description: development files to build applications for BOINC projects
  This package contains header files and static libraries that are
  needed to develop and compile applications which utilizes the BOINC
  infrastructure.
+
 
 Package: boinc-server-maker
 Section: net
@@ -120,6 +168,7 @@ Description: BOINC server applications and data files
  This package contains the daemons and tools to create and run BOINC
  projects.
 
+
 Package: boinc-app-examples
 Section: net
 Architecture: any
@@ -142,6 +191,7 @@ Description: example binaries for BOINC servers
  The package also features the wrapper application, which is likely
  to find its audience also in real projects.
 
+
 Package: boinc-dbg
 Section: debug
 Priority: extra
@@ -157,6 +207,7 @@ Description: debugging symbols for BOINC binaries
  the BOINC packages. It is provided primarily to provide a backtrace
  with names in a debugger, this makes it somewhat easier to interpret
  core dumps.
+
 
 Package: boinc-cgi-stripchart
 Section: libs
