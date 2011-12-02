@@ -51,3 +51,4 @@ ltmain.sh
 m4/*.m4
 missing
 debian/patches/debian-changes-*
+version.log
