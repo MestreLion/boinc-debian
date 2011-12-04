@@ -90,7 +90,7 @@ start()
   if is_running; then
     log_progress_msg "already running"
   else
-    if [ -x /usr/bin/xhost ]; then
+    if [ -n "$DISPLAY" -a -x /usr/bin/xhost ]; then
        # grant the boinc client to perform GPU computing
        xhost local:boinc || echo -n "xhost error ignored, GPU computing may not be possible"
     fi

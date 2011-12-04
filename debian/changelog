@@ -2,6 +2,10 @@ boinc (7.0.2+dfsg-1) unstable; urgency=low
 
   * New upstream version.
   * Adding boinc user to group video (Closes: #557871)
+  * Testing on $DISPLAY set before executing xhost (Closes: #644388),
+    thanks to John Feuerstein for the idea and the patch.
+  * Fixed documentation issue with browser setting (Closes: #537695),
+    sorry for not having addressed that earlier.
 
  -- Steffen Moeller <moeller@debian.org>  Fri, 02 Dec 2011 03:10:11 +0100
 
