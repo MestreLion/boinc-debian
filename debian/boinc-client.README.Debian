@@ -29,7 +29,9 @@ directory.
 Edit the file '/etc/default/boinc-client' to configure the init
 script, to change the BOINC data directory or the user used to execute
 the core client or to disable the automatic start of the BOINC core
-client at boot time.
+client at boot time. The further behaviour of the client, e.g. the
+debug level of log files, is specified in files collected in
+'/etc/boinc-client/'.
 
 To configure a running core client (e.g. attaching a project to it)
 the 'boinccmd' console program or the graphical BOINC Manager

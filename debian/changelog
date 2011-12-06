@@ -1,6 +1,12 @@
-boinc (7.0.2+dfsg-2) unstable; urgency=low
+boinc (7.0.2+dfsg-2) UNRELEASED; urgency=low
 
+  [Contributed by Daniel Hahler]
   * Adjusted CUDA dependencies for Ubuntu (lp: #410809).
+  * New window renders bug invalid (lp: #511654)
+
+  [Contributed by Oliver Bock]
+  * Client configuration fall (mostly) back to defaults.
+  * Typos in description.
 
  -- Steffen Moeller <moeller@debian.org>  Tue, 06 Dec 2011 22:32:48 +0100
 
