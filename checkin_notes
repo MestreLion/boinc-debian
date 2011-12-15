@@ -8492,11 +8492,11 @@ Charlie 14 Nov 2011
         BOINCGUIApp.cpp
 
 David  14 Nov 2011
-	- client: add some missing items to CONFIG::parse_options_client().
+    - client: add some missing items to CONFIG::parse_options_client().
 
-	client/
-		log_flags.cpp
-		pers_file_xfer.cpp
+    client/
+        log_flags.cpp
+        pers_file_xfer.cpp
 
 Charlie 16 Nov 2011
     - MGR: use wxBitmapComboBox insert() and append() calls without 
@@ -8677,6 +8677,185 @@ Charlie 30 Nov 2011
 Rom    1 Dec 2011
     - Tag for 7.0.2 release, all platforms
       boinc_core_release_7_0_2
+
+    /
+        configure.ac
+        version.h
+
+Charlie 2 Dec 2011
+    - Mac installer: revert to using a wrapper application around installer 
+        package to require a system restart if creating users and groups.
+        (checked into 7.0.2 tag)
+        
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    mac_installer/
+        Installer.cpp
+        PostInstall.cpp
+        release_boinc.sh
+
+Charlie 2 Dec 2011
+    - Mac installer: for files in projects and slots directories, if the 
+        executable-by-owner permission is set, ensure that the 
+        executable-by-group bit is also set.
+        (checked into 7.0.2 tag)
+        
+    clientgui/
+        mac/
+            SetupSecurity.cpp
+
+Rom    5 Dec 2011
+    - MGR: Increase the opacity of the panels to make the black text more
+        readable.
+        
+    clientgui/skins/Default/
+        skin.xml
+
+Charlie 6 Dec 2011
+    - MGR: eliminate "ghost" Notices window when running on Windows OS.
+    
+    clientgui/
+        sg_DlgMessages.cpp
+
+Charlie 6 Dec 2011
+    - MGR: don't show "indeterminate" progress bar in Simple View.
+
+    clientgui/
+        Events.h
+        sg_PanelBase.cpp,.h
+        sg_TaskPanel.cpp,.h
+
+Charlie 7 Dec 2011
+    - Mac installer: eliminate use of WaitPermissions.app. 
+    - Mac installer: revert branded build scripts for wrapper application 
+        around installer package.
+        
+    mac_installer/
+        make_CharityEngine.sh
+        make_GridRepublic.sh
+        make_ProgThruProc.sh
+        PostInstall.cpp
+        release_boinc.sh
+
+Charlie 12 Dec 2011
+    - MGR: If CSkinIcon PNG file has an alpha channel, use it as mask and 
+        ignore any <transparency_mask> tag.
+        
+    clientgui/
+        SkinManager.cpp
+
+Charlie 14 Dec 2011
+    - Mac installer: update build scripts for naming consistency with other platforms.
+
+    mac_installer/
+        make_CharityEngine.sh
+        make_ProgThruProc.sh
+
+David  1 Dec 2011
+    - API and client: add "ncpus" field to APP_INIT_DATA.
+        Tells multicore apps how many cores to use.
+        The --nthreads command line arg to the app is now deprecated
+        though we'll keep it around for the time being.
+
+    lib/
+        app_ipc.cpp,h
+    client/
+        app_start.cpp
+
+David  4 Dec 2011
+    - client: isdigit() asserts if its arg is negative (which it can be).
+        Call isascii() first.
+    - GUI RPC lib: add some consts
+
+    client/
+        cs_notice.cpp
+
+David  5 Dec 2011
+    - client: when contacting a project for reasons other than
+        work fetch (e.g. to report completed jobs)
+        only request work if it's the project we would have chosen
+        if we were fetching work.
+    - client: the way in which project priorities were adjusted
+        in work fetch to reflected currently queued work was wrong.
+    - client: fix bug in the way project priorities are adjusted
+        in RR simulator
+    - client emulator: if there are results in the state file
+        with states DOWNLOADING or UPLOADING,
+        change them to DOWNLOADED or UPLOADED.
+        Otherwise they're stuck.
+
+    client/
+        work_fetch.cpp,h
+        sim.cpp
+        rr_sim.cpp
+        cs_scheduler.cpp
+        cpu_sched.cpp
+
+David  6 Dec 2011
+    - client: compile fix; remove redundant total_peak_flops()
+
+    client/
+        work_fetch.cpp,h
+        cpu_sched.cpp
+
+David  6 Dec 2011
+    - client: if a file download was in progress at the time of
+        an upgrade from 6.12 to 6.13+,
+        it could get erroneously marked as an upload and get stuck forever.
+        Problem: uninitialized member.
+
+    client/
+        pers_file_xfer.cpp
+
+Rom    6 Dec 2011
+    - MGR: Scale the task pane in the advanced view to encompass the largest button.
+    
+    clientgui/
+        BOINCBaseView.cpp, .h
+        BOINCTaskCtrl.cpp
+        stdwx.h
+        ViewNotices.cpp
+        ViewResources.cpp
+        ViewStatistics.cpp
+
+David  6 Dec 2011
+    - lib: encode CAL version numbers in a way that handles
+        release #s > 1000
+
+    lib/
+        coproc.cpp,h
+
+David  12 Dec 2011
+    - client: tweak parameters of file xfer backoff to
+        reduce backoff intervals somewhat
+
+    client/
+        pers_file_xfer.h
+
+Rom    12 Dec 2011
+    - MGR: Add IE8-10 support for browser cookies when UAC is enabled.  Use the
+        supported API.  It appears MS changed the cookie file format in their
+        latest browsers which broke our hack.  I have to leave the hack in
+        for now because IE7 on Vista didn't expose the IEGetProtectedModeCookie
+        API.
+    - WINSETUP: Start BOINCMgr as a restricted process on Windows Vista+.
+    
+    clientgui/
+        browser.cpp
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.vcproj
+        CALaunchBOINCManager.cpp, .h
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+Rom    1 Dec 2011
+    - Tag for 7.0.3 release, all platforms
+      boinc_core_release_7_0_3
 
     /
         configure.ac
