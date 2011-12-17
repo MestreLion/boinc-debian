@@ -1,3 +1,16 @@
+boinc (7.0.3+dfsg-2) UNRELEASED; urgency=low
+
+  * Now libxss-dev truly added (Closes: #651953).
+
+ -- Steffen Moeller <moeller@debian.org>  Thu, 15 Dec 2011 20:55:11 +0100
+
+boinc (7.0.3+dfsg-1) unstable; urgency=low
+
+  * Also adding libxss-dev as build dependency (Closes: #651953).
+    Credits go to Dmitry Baryshev.
+
+ -- Steffen Moeller <moeller@debian.org>  Thu, 15 Dec 2011 20:55:11 +0100
+
 boinc (7.0.2+dfsg-2) UNRELEASED; urgency=low
 
   [Contributed by Daniel Hahler]
