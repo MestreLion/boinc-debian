@@ -1,3 +1,10 @@
+boinc (7.0.7+dfsg-1) unstable; urgency=low
+
+  * New upstream version.
+  * Fixed get-orig-source omitted "fi"
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 01 Jan 2012 16:54:26 +0100
+
 boinc (7.0.3+dfsg-2) UNRELEASED; urgency=low
 
   * Now libxss-dev truly added (Closes: #651953).
