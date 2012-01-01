@@ -580,6 +580,7 @@ struct APP_VERSION {
     char file_prefix[256];
         // prepend this to input/output file logical names
         // (e.g. "share" for VM apps)
+    bool needs_network;
 
     APP* app;
     PROJECT* project;

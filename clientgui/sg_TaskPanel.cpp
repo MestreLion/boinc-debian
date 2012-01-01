@@ -32,6 +32,7 @@
 #define DESCRIPTIONSPACER 4
 #define HIDEDEFAULTSLIDE 1
 #define TESTALLDESCRIPTIONS 0
+#define SCROLLBARWIDTH 18
 
 enum { suspendedIcon, waitingIcon, runningIcon };
 
@@ -49,8 +50,6 @@ CScrolledTextBox::CScrolledTextBox() {
 CScrolledTextBox::CScrolledTextBox( wxWindow* parent) :
     wxScrolledWindow( parent, ID_SGPROJECTDESCRIPTION, wxDefaultPosition, wxDefaultSize, wxVSCROLL)
 {
-    m_iAvailableWidth = 296;    // This will be overwritten
-
 	SetForegroundColour(*wxBLACK);
 
 	m_TextSizer = new wxBoxSizer( wxVERTICAL );
@@ -68,7 +67,7 @@ CScrolledTextBox::~CScrolledTextBox() {
 
 
 void CScrolledTextBox::SetValue(const wxString& s) {
-    int lineHeight, totalLines;
+    int lineHeight, totalLines, availableWidth;
     wxString t = s;
 
     // Delete sizer & its children (CTransparentStaticText objects)
@@ -77,17 +76,10 @@ void CScrolledTextBox::SetValue(const wxString& s) {
     // Change all occurrences of "<sup>n</sup>" to "^n"
     t.Replace(wxT("<sup>"), wxT("^"), true);
     t.Replace(wxT("</sup>"), wxT(""), true);
-    wxString tt = t;
-    
-    // First, determine if scroll bars needed so sizer can recompute
-    totalLines = Wrap(tt, m_iAvailableWidth, &lineHeight);
-    m_TextSizer->FitInside(this);
 
-    // Now get the actual client size with or without scroll bars
-    GetClientSize(&m_iAvailableWidth, &lineHeight);
-    m_TextSizer->Clear(true);   // Delete sizer & its children
-    
-    totalLines = Wrap(t, m_iAvailableWidth - 3, &lineHeight);
+    wxSize taskPanelSize = GetGrandParent()->GetSize();
+    availableWidth = taskPanelSize.GetWidth() - (2*SIDEMARGINS);
+    totalLines = Wrap(t, availableWidth - SCROLLBARWIDTH, &lineHeight);
     
     m_TextSizer->FitInside(this);
     SetScrollRate(1, lineHeight);
@@ -243,6 +235,7 @@ void CSlideShowPanel::OnSlideShowTimer(wxTimerEvent& WXUNUSED(event)) {
 void CSlideShowPanel::AdvanceSlideShow(bool changeSlide, bool reload) {
 	double xRatio, yRatio, ratio;
     unsigned int i;
+    wxString s;
     TaskSelectionData* selData = ((CSimpleTaskPanel*)GetParent())->GetTaskSelectionData();
     if (selData == NULL) return;
 
@@ -281,9 +274,12 @@ numSlides = 0;
         
         for (i=0; i<m_AllProjectsList.projects.size(); i++) {
             if (!strcmp(m_AllProjectsList.projects[i]->url.c_str(), selData->project_url)) {
-                m_institution->SetLabel(wxString(m_AllProjectsList.projects[i]->home.c_str(), wxConvUTF8));
-                m_scienceArea->SetLabel(wxString(m_AllProjectsList.projects[i]->specific_area.c_str(), wxConvUTF8));
-                m_description->SetValue(wxString(m_AllProjectsList.projects[i]->description.c_str(), wxConvUTF8));
+                s = wxString(m_AllProjectsList.projects[i]->home.c_str(), wxConvUTF8);
+                m_institution->SetLabel(wxGetTranslation(s));
+                s = wxString(m_AllProjectsList.projects[i]->specific_area.c_str(), wxConvUTF8);
+                m_scienceArea->SetLabel(wxGetTranslation(s));
+                s = wxString(m_AllProjectsList.projects[i]->description.c_str(), wxConvUTF8);
+                m_description->SetValue(wxGetTranslation(s));
 
                 m_institution->Show(true);
                 m_scienceArea->Show(true);
