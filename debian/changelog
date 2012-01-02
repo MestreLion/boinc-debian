@@ -1,3 +1,9 @@
+boinc (7.0.7+dfsg-2) UNRELEASED; urgency=low
+
+  * boinc-server-maker: Fixing missing files for make_project.
+
+ -- Steffen Moeller <moeller@debian.org>  Mon, 02 Jan 2012 01:56:18 +0100
+
 boinc (7.0.7+dfsg-1) unstable; urgency=low
 
   * New upstream version.
