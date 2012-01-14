@@ -1,3 +1,10 @@
+boinc (7.0.8+dfsg-1) unstable; urgency=low
+
+  * New upstream version.
+  * Added disk space check to get-orig-source.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 14 Jan 2012 13:04:18 +0100
+
 boinc (7.0.7+dfsg-2) UNRELEASED; urgency=low
 
   * boinc-server-maker: Fixing missing files for make_project.
