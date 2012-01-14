@@ -1,5 +1,6 @@
 usr/lib/boinc-server/bin
 usr/lib/boinc-server/tools
+usr/lib/boinc-server/sched
 usr/share/boinc-server/bin
 usr/share/boinc-server/lib
 usr/share/boinc-server/tools

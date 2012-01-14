@@ -21,14 +21,15 @@ usr/lib/boinc-server/bin/update_stats		usr/share/boinc-server/sched/update_stats
 usr/lib/boinc-server/bin/wu_check		usr/share/boinc-server/sched/wu_check
 usr/lib/boinc-server/bin/file_upload_handler	    usr/share/boinc-server/sched/file_upload_handler
 usr/lib/boinc-server/bin/transitioner		    usr/share/boinc-server/sched/transitioner
-usr/lib/boinc-server/bin/sample_bitwise_validator	    usr/share/boinc-server/sched/sample_bitwise_validator
-usr/lib/boinc-server/bin/sample_trivial_validator	    usr/share/boinc-server/sched/sample_trivial_validator
-usr/lib/boinc-server/bin/sample_dummy_assimilator	    usr/share/boinc-server/sched/sample_dummy_assimilator
+usr/lib/boinc-server/bin/sample_bitwise_validator   usr/share/boinc-server/sched/sample_bitwise_validator
+usr/lib/boinc-server/bin/sample_trivial_validator   usr/share/boinc-server/sched/sample_trivial_validator
+usr/lib/boinc-server/bin/sample_dummy_assimilator   usr/share/boinc-server/sched/sample_dummy_assimilator
 usr/lib/boinc-server/bin/sample_assimilator	    usr/share/boinc-server/sched/sample_assimilator
 usr/lib/boinc-server/bin/sample_work_generator	    usr/share/boinc-server/sched/sample_work_generator
 usr/lib/boinc-server/bin/single_job_assimilator	    usr/share/boinc-server/sched/single_job_assimilator
 usr/lib/boinc-server/bin/assimilator.py		    usr/share/boinc-server/sched/assimilator.py
 usr/lib/boinc-server/bin/pymw_assimilator.py	    usr/share/boinc-server/sched/pymw_assimilator.py
+usr/lib/boinc-server/sched/put_file                 usr/share/boinc-server/sched/put_file
 
 
 
@@ -56,5 +57,5 @@ usr/lib/boinc-server/tools/makelog.sh          usr/share/boinc-server/tools/make
 usr/share/boinc-server/html/user/server_status.php usr/share/boinc-server/html/ops/sample_server_status.php
 
 # annoying weakness of make_project
-# since we are shipping the apps diffrent, no need to use this.
+# we are shipping the apps separately, no need to use this.
 #usr/share/boinc-server/apps/uc2              usr/share/boinc-server/samples/example_app/uc2

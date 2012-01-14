@@ -12,7 +12,7 @@ sched/db_dump_spec.xml               usr/share/boinc-server/sched
 sched/transitioner_catchup.php	     usr/share/boinc-server/sched
 #where is this?
 #sched/request_file_list 	     usr/share/boinc-server/sched 
-sched/put_file 			     usr/share/boinc-server/sched
+sched/put_file 			     usr/lib/boinc-server/sched
 
 #test/uc_result                      usr/share/boinc-server/test
 #test/uc_wu_nodelete                 usr/share/boinc-server/test
@@ -29,7 +29,7 @@ tools/appmgr		             usr/lib/boinc-server/tools
 tools/run_in_ops                     usr/lib/boinc-server/tools
 
 tools/manage_privileges		     usr/share/boinc-server/tools
-tools/cancel_jobs 		     usr/share/boinc-server/tools
+tools/cancel_jobs 		     usr/lib/boinc-server/tools
 tools/boinc_submit 		     usr/share/boinc-server/tools
 tools/demo_submit 		     usr/share/boinc-server/tools
 tools/demo_query 		     usr/share/boinc-server/tools
