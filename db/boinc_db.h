@@ -337,6 +337,7 @@ struct HOST {
     // the following not in DB
     char p_features[1024];
     char virtualbox_version[256];
+    bool p_vm_extensions_disabled;
 
     int parse(XML_PARSER&);
     int parse_time_stats(XML_PARSER&);
@@ -547,9 +548,7 @@ struct RESULT {
     double elapsed_time;
         // AKA runtime; returned by 6.10+ clients
     double flops_estimate;
-        // misnomer: actually the peak device FLOPS,
-        // returned by app_plan()
-        // An adjusted version of this is sent to clients.
+        // misnomer: actually the peak device FLOPS, returned by app_plan().
     int app_version_id;
         // ID of app version used to compute this
         // 0 if unknown (relic of old scheduler)
@@ -627,11 +626,11 @@ struct MSG_TO_HOST {
 struct ASSIGNMENT {
     int id;
     int create_time;
-    int target_id;
-    int target_type;
-    int multi;
+    int target_id;              // ID of target host, user, or team
+    int target_type;            // none/host/user/team
+    int multi;                  // 0 = single host, 1 = all hosts in set
     int workunitid;
-    int resultid;
+    int resultid;               // if not multi, the result ID
     void clear();
 };
 
@@ -797,6 +796,8 @@ public:
     int update_diff_validator(HOST&);
     int fpops_percentile(double percentile, double& fpops);
         // return the given percentile of p_fpops
+    int fpops_mean(double& mean);
+    int fpops_stddev(double& stddev);
     void db_print(char*);
     void db_parse(MYSQL_ROW &row);
     void operator=(HOST& r) {HOST::operator=(r);}

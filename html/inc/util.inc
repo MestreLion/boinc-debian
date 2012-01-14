@@ -536,7 +536,7 @@ function close_output_buffer($filename) {
 }
 
 function html_info() {
-    return "<br><a href=\"bbcode.php\" target=\"_new\"><span class=\"smalltext\">".tra("Use BBCode tags to format your text")."</span></a>\n";
+    return "<br><a href=\"bbcode.php\"><span class=\"smalltext\">".tra("Use BBCode tags to format your text")."</span></a>\n";
 }
 
 // strip slashes if magic quotes in effect
@@ -714,6 +714,10 @@ function show_button($url, $text, $desc=null, $class="button") {
     if (!$desc) $desc = $text;
     echo "<a href=\"".$url."\" title=\"$desc\" class=\"".$class."\">".$text."</a>\n";
 }
+function button_text($url, $text, $desc=null, $class="button") {
+    if (!$desc) $desc = $text;
+    return "<a href=\"".$url."\" title=\"$desc\" class=\"".$class."\">".$text."</a>\n";
+}
 
 // When multiple buttons (or actions) are presented in a list you can
 // use this convenience method to avoid having to wrap each button in <li></li> elements
@@ -850,6 +854,6 @@ function credit_to_gflop_hours($c) {
     return $c/(200/24);
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 24593 2011-11-14 23:31:12Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util.inc 24968 2012-01-02 05:53:42Z davea $";  //Generated automatically - do not edit
 
 ?>

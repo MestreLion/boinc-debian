@@ -157,7 +157,7 @@ int handle_wu(
     TRANSITIONER_ITEM& wu_item = items[0];
     TRANSITIONER_ITEM wu_item_original = wu_item;
 
-    // "assigned" WUs aren't supposed to pass through the transitioner.
+    // "assigned" WUs aren't supposed to be handled by the transitioner.
     // If we get one, it's an error
     //
     if (config.enable_assignment && strstr(wu_item.name, ASSIGNED_WU_STR)) {
@@ -834,4 +834,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 23636 2011-06-06 03:40:42Z davea $";
+const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 24614 2011-11-16 19:47:40Z davea $";

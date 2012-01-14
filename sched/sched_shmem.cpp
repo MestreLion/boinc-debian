@@ -236,6 +236,19 @@ APP_VERSION* SCHED_SHMEM::lookup_app_version(int id) {
     return NULL;
 }
 
+APP_VERSION* SCHED_SHMEM::lookup_app_version_platform_plan_class(
+    int platformid, char* plan_class
+) {
+    APP_VERSION* avp;
+    for (int i=0; i<napp_versions; i++) {
+        avp = &app_versions[i];
+        if (avp->platformid == platformid && !strcmp(avp->plan_class, plan_class)) {
+            return avp;
+        }
+    }
+    return NULL;
+}
+
 // see if there's any work.
 // If there is, reserve it for this process
 // (if we don't do this, there's a race condition where lots
@@ -286,6 +299,14 @@ void SCHED_SHMEM::show(FILE* f) {
         "hr: HR class\n"
         "nr: need reliable\n"
     );
+    fprintf(f,
+        "host fpops mean %f stddev %f\n",
+        perf_info.host_fpops_mean, perf_info.host_fpops_stddev
+    );
+    fprintf(f,
+        "host fpops 50th pctile %f 95th pctile %f\n",
+        perf_info.host_fpops_50_percentile, perf_info.host_fpops_95_percentile
+    );
     fprintf(f, "ready: %d\n", ready);
     fprintf(f, "max_wu_results: %d\n", max_wu_results);
     for (int i=0; i<max_wu_results; i++) {
@@ -307,4 +328,4 @@ void SCHED_SHMEM::show(FILE* f) {
     }
 }
 
-const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 24564 2011-11-09 20:24:48Z jeffc $";
+const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 25017 2012-01-09 17:35:48Z davea $";

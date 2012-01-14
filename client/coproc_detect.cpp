@@ -293,15 +293,21 @@ void COPROCS::get_opencl(
                 (strstr(prop.vendor, "Advanced Micro Devices, Inc."))
             ) {
                 prop.device_num = (int)(ati_opencls.size());
+#ifdef __APPLE__
                 // Work around a bug in OpenCL which returns only 
                 // 1/2 of total global RAM size. 
                 // This bug applies only to ATI GPUs, not to NVIDIA
+                // This has already been fixed on latest Catalyst 
+                // drivers, but Mac does not use Catalyst drivers.
                 // Assume this will be fixed in openCL 1.2.
+                // See also further workaround code for systems with 
+                // CAL support.
                 if ((!strstr("1.0", prop.opencl_platform_version))
                     || (!strstr("1.1", prop.opencl_platform_version))
                 ){
                     prop.global_mem_size *= 2;
                 }
+#endif
                 if (!ati.have_cal) {
                     COPROC_ATI c;
                     c.opencl_prop = prop;
@@ -323,6 +329,7 @@ void COPROCS::get_opencl(
     } else {
         nvidia.find_best_opencls(use_all, nvidia_opencls, ignore_nvidia_dev);
         nvidia.prop.totalGlobalMem = nvidia.opencl_prop.global_mem_size;
+        nvidia.available_ram = nvidia.opencl_prop.global_mem_size;
         nvidia.prop.clockRate = nvidia.opencl_prop.max_clock_frequency * 1000;
     }
 
@@ -338,11 +345,13 @@ void COPROCS::get_opencl(
         // Work around a bug in OpenCL which returns only 
         // 1/2 of total global RAM size: use the value from CAL. 
         // This bug applies only to ATI GPUs, not to NVIDIA
+        // See also further workaround code for Macs.
         //
         ati.opencl_prop.global_mem_size = ati.attribs.localRAM * MEGA;
     } else {
         ati.find_best_opencls(use_all, ati_opencls, ignore_ati_dev);
         ati.attribs.localRAM = ati.opencl_prop.global_mem_size/MEGA;
+        ati.available_ram = ati.opencl_prop.global_mem_size/MEGA;
         ati.attribs.engineClock = ati.opencl_prop.max_clock_frequency;
     }           // End if (! ati.have_cal)
 

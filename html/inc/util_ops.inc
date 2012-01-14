@@ -104,19 +104,18 @@ function db_init_cli() {
         $host = "localhost";
     }
     $in = fopen("php://stdin","r");
-    print "Database username for $db_name@$host: ";
+    print "Database username (if not current user): ";
     $user = rtrim(fgets($in, 80));
-    print "Database password for $db_name@host: ";
+    print "Database password (if any): ";
     $pass = rtrim(fgets($in, 80));
 
     $retval = mysql_pconnect($host, $user, $pass);
     if (!$retval) {
-        return 1;
+        die("Can't connect to DB\n");
     }
     if (!mysql_select_db($db_name)) {
-        return 2;
+        die("Can't select DB\n");
     }
-    return 0;
 }
 
 function print_login_form_ops($next_url='') {
@@ -243,5 +242,5 @@ if (!isset($skip_auth_ops) && array_key_exists("SERVER_PORT", $_SERVER)) {
     auth_ops();
 }
 
-$cvs_version_tracker[]="\$Id: util_ops.inc 23840 2011-07-13 21:50:48Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util_ops.inc 24969 2012-01-02 07:33:08Z davea $";  //Generated automatically - do not edit
 ?>

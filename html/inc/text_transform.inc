@@ -114,6 +114,7 @@ function bb2html($text, $export=false) {
         "@\[b\](.*?)\[/b\]@is",
         "@\[i\](.*?)\[/i\]@is",
         "@\[u\](.*?)\[/u\]@is",
+        "@\[sup\](.*?)\[/sup\]@is",
         "@\[url=$httpsregex\](.*?)\[/url\]@is",
         "@\[url\]$httpsregex\[/url\]@is",
         "@\[link=$urlregex\](.*?)\[/link\]@is",
@@ -146,6 +147,7 @@ function bb2html($text, $export=false) {
             "<b>\\1</b>",
             "<i>\\1</i>",
             "<u>\\1</u>",
+            "<sup>\\1</sup>",
             "<a href=\"https://\\1\" rel=\"nofollow\">\\2</a>",
             "<a href=\"https://\\1\" rel=\"nofollow\">https://\\1</a>",
             "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
@@ -173,6 +175,7 @@ function bb2html($text, $export=false) {
             "<b>\\1</b>",
             "<i>\\1</i>",
             "<u>\\1</u>",
+            "<sup>\\1</sup>",
             "<a href=\"https://\\1\" rel=\"nofollow\">\\2</a>",
             "<a href=\"https://\\1\" rel=\"nofollow\">https://\\1</a>",
             "<a href=\"http://\\2\" rel=\"nofollow\">\\3</a>",
@@ -265,5 +268,5 @@ function highlight_terms($text, $terms) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: text_transform.inc 23029 2011-02-14 19:06:42Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: text_transform.inc 24622 2011-11-20 17:26:32Z davea $";  //Generated automatically - do not edit
 ?>

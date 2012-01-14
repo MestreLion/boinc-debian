@@ -214,6 +214,25 @@ void compute_avg_turnaround(HOST& host, double turnaround) {
     host.avg_turnaround = new_avg;
 }
 
+int PERF_INFO::get_from_db() {
+    int retval, n;
+    DB_HOST host;
+
+    host_fpops_mean = 2.2e9;
+    host_fpops_stddev = .7e9;
+    host_fpops_50_percentile = 3.3e9;
+    host_fpops_95_percentile = 3.3e9;
+
+    retval = host.count(n);
+    if (retval) return retval;
+    if (n < 10) return 0;
+    retval = host.fpops_mean(host_fpops_mean);
+    retval = host.fpops_stddev(host_fpops_stddev);
+    retval = host.fpops_percentile(50, host_fpops_50_percentile);
+    retval = host.fpops_percentile(95, host_fpops_95_percentile);
+    return 0;
+}
+
 // Request lock on the given file with given fd.  Returns:
 // 0 if we get lock
 // PID (>0) if another process has lock
@@ -266,6 +285,24 @@ bool is_arg(const char* x, const char* y) {
     return false;
 }
 
+// the following is used, among other things,
+// to enforce limits on in-progress jobs
+// for GPUs and CPUs (see handle_request.cpp)
+//
+bool app_plan_uses_gpu(const char* plan_class) {
+    if (strstr(plan_class, "cuda")) {
+        return true;
+    }
+    if (strstr(plan_class, "nvidia")) {
+        return true;
+    }
+    if (strstr(plan_class, "ati")) {
+        return true;
+    }
+    return false;
+}
+
+
 #ifdef GCL_SIMULATOR
 
 void simulator_signal_handler(int signum) {
@@ -304,4 +341,4 @@ void continue_simulation(const char *daemonname){
 
 #endif
 
-const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 24500 2011-10-26 23:23:01Z davea $";
+const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 25017 2012-01-09 17:35:48Z davea $";

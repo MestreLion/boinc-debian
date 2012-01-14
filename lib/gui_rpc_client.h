@@ -209,7 +209,7 @@ public:
     ~APP_VERSION();
 
     int parse(XML_PARSER&);
-    int parse_coproc(MIOFILE&);
+    int parse_coproc(XML_PARSER&);
     void print();
     void clear();
 };
@@ -277,6 +277,7 @@ public:
     bool edf_scheduled;
     char graphics_exec_path[512];
     char web_graphics_url[256];
+    char remote_desktop_addr[256];
     char slot_path[512];
         // only present if graphics_exec_path is
     char resources[256];

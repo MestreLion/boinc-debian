@@ -30,6 +30,7 @@ $q->process_form_items();
 $main_query = "
 SELECT
     app_version_num AS App_Version,
+    app_version.plan_class AS Plan_Class,
     case
         when INSTR(host.os_name, 'Darwin') then 'Darwin'
         when INSTR(host.os_name, 'Linux') then 'Linux'
@@ -43,8 +44,9 @@ SELECT
     COUNT(*) AS error_count
 FROM   result
         left join host on result.hostid = host.id
+        left join app_version on result.app_version_id = app_version.id
 WHERE
-    appid = '$query_appid' and
+    result.appid = '$query_appid' and
     server_state = '5' and
     outcome = '3' and
     received_time > '$query_received_time'
@@ -58,17 +60,21 @@ $urlquery = $q->urlquery;
 $result = mysql_query($main_query);
 
 echo "<table>\n";
-echo "<tr><th>App Version</th><th>OS</th><th>Exit Status</th><th>Error Count</th></tr>\n";
+echo "<tr><th>App Version</th><th>Plan Class</th><th>OS</th><th>Exit Status</th><th>Error Count</th></tr>\n";
 
 while ($res = mysql_fetch_object($result)) {
 
     echo "<tr>";
 
-    echo "<td align=\"left\" valign=\"top\">";
-    echo $res->App_Version;
-    echo "</td>";
+	echo "<td align=\"left\" valign=\"top\">";
+	echo $res->App_Version;
+	echo "</td>";
 
-    echo "<td align=\"left\" valign=\"top\">";
+	echo "<td align=\"left\" valign=\"top\">";
+	echo $res->Plan_Class;
+	echo "</td>";
+
+	echo "<td align=\"left\" valign=\"top\">";
     echo $res->OS_Name;
     echo "</td>";
 
@@ -90,5 +96,5 @@ echo "</table>\n";
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: failure_result_summary_by_platform.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: failure_result_summary_by_platform.php 24963 2012-01-01 23:44:48Z romw $";  //Generated automatically - do not edit
 ?>

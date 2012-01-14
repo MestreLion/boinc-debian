@@ -1205,7 +1205,14 @@ void ACTIVE_TASK::get_graphics_msg() {
 
     if (!app_client_shm.shm) return;
     if (app_client_shm.shm->graphics_reply.get_msg(msg_buf)) {
+        if (log_flags.app_msg_receive) {
+            msg_printf(this->wup->project, MSG_INFO,
+                "[app_msg_receive] got msg from slot %d: %s", slot, msg_buf
+            );
+        }
+
         parse_str(msg_buf, "<web_graphics_url>", web_graphics_url, sizeof(web_graphics_url));
+        parse_str(msg_buf, "<remote_desktop_addr>", remote_desktop_addr, sizeof(remote_desktop_addr));
     }
 }
 

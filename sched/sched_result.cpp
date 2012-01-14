@@ -96,7 +96,6 @@ int handle_results() {
     unsigned int i;
     int retval;
     RESULT* rp;
-    bool changed_host=false;
 
     if (g_request->results.size() == 0) return 0;
 
@@ -283,7 +282,6 @@ int handle_results() {
                     "[HOST#%d] [RESULT#%d] [WU#%d] Allowing result because same USER#%d\n",
                     g_reply->host.id, srip->id, srip->workunitid, g_reply->host.userid
                 );
-                changed_host = true;
             }
         } // hostids do not match
 
@@ -297,6 +295,20 @@ int handle_results() {
         srip->client_state = rp->client_state;
         srip->cpu_time = rp->cpu_time;
         srip->elapsed_time = rp->elapsed_time;
+
+        // Some buggy clients sporadically report very low elapsed time
+        // but actual CPU time.
+        // Try to fix the elapsed time, since it's critical to credit
+        //
+        if (srip->elapsed_time < srip->cpu_time) {
+            int avid = srip->app_version_id;
+            if (avid > 0) {
+                APP_VERSION* avp = ssp->lookup_app_version(avid);
+                if (avp && !avp->is_multithread()) {
+                    srip->elapsed_time = srip->cpu_time;
+                }
+            }
+        }
 
         // check for impossible elapsed time
         //
@@ -322,20 +334,6 @@ int handle_results() {
                     srip->elapsed_time, turnaround_time
                 );
                 srip->elapsed_time = turnaround_time;
-            }
-        }
-
-        // Some buggy clients sporadically report very low elapsed time
-        // but actual CPU time.
-        // Try to fix the elapsed time, since it's critical to credit
-        //
-        if (srip->elapsed_time < srip->cpu_time) {
-            int avid = srip->app_version_id;
-            if (avid > 0) {
-                APP_VERSION* avp = ssp->lookup_app_version(avid);
-                if (avp && !avp->is_multithread()) {
-                    srip->elapsed_time = srip->cpu_time;
-                }
             }
         }
 

@@ -499,8 +499,8 @@ static int modify_host_struct(HOST& host) {
     g_request->coprocs.summary_string(buf2, sizeof(buf2));
     strlcpy(host.serialnum, buf, sizeof(host.serialnum));
     strlcat(host.serialnum, buf2, sizeof(host.serialnum));
-    if (strlen(host.virtualbox_version)) {
-        sprintf(buf2, "[vbox|%s]", host.virtualbox_version);
+    if (strlen(g_request->host.virtualbox_version)) {
+        sprintf(buf2, "[vbox|%s]", g_request->host.virtualbox_version);
         strlcat(host.serialnum, buf2, sizeof(host.serialnum));
     }
     if (strcmp(host.last_ip_addr, g_request->host.last_ip_addr)) {
@@ -1362,7 +1362,6 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     g_reply = &sreply;
     g_wreq = &sreply.wreq;
 
-    memset(&sreq, 0, sizeof(sreq));
     sreply.nucleus_only = true;
 
     log_messages.set_indent_level(1);
@@ -1398,4 +1397,4 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     }
 }
 
-const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 24353 2011-10-08 05:17:44Z davea $";
+const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 24937 2011-12-29 06:30:18Z davea $";

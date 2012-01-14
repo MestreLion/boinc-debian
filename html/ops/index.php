@@ -151,7 +151,7 @@ echo "
     <ul>
         <li><a href=\"profile_screen_form.php\">Screen user profiles </a></li>
         <li><a href=\"manage_special_users.php\">User privileges</a></li>
-        <li><a href=submit_permissions.php>User job submission privileges</a></li>
+        <li><a href=".URL_BASE."/manage_project.php>User job submission privileges</a></li>
         <li><a href=\"mass_email.php\">Send mass email to a selected set of users</a></li>
         <li><a href=\"problem_host.php\">Email user with misconfigured host</a></li>
         <li><form action=\"manage_user.php\">
@@ -219,5 +219,5 @@ echo "<h3>Periodic or special tasks</h3>
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: index.php 24405 2011-10-16 06:04:13Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: index.php 24965 2012-01-02 02:31:12Z davea $";  //Generated automatically - do not edit
 ?>
