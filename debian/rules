@@ -342,6 +342,11 @@ binary:
 origDir ?= .
 
 get-orig-source:
+	diskfree=`df -k . | awk '{print $$4}' | tail -n +2` ; \
+	if [ -z "$$diskfree" -o "$$diskfree" -lt $$((250*1024)) ]; then \
+ 	  echo "Not enough disk space for download. Have 250MB available if not more."; \
+	  exit 1; \
+	fi
 	LATEST_VERSION=`svn list http://boinc.berkeley.edu/svn/tags/ | \
 	  sed 's/boinc_core_release_\(.*\)\//\1/' | \
 	  sort -g -t_ -k1 -k2 -k3 | sed 's/_/./g' | tail -n 1 | tr -d '\n'`; \
