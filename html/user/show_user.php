@@ -23,7 +23,7 @@
 // Object-caching and full-file caching is used to speed up queries
 // for data from this page.
 
-$cvs_version_tracker[]="\$Id: show_user.php 23872 2011-07-25 22:05:49Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: show_user.php 24708 2011-12-01 18:44:19Z davea $";  //Generated automatically - do not edit
 
 require_once("../inc/cache.inc");
 require_once("../inc/util.inc");
@@ -33,7 +33,7 @@ require_once("../inc/user.inc");
 require_once("../inc/forum.inc");
 require_once("../project/project.inc");
 
-check_get_args(array("auth", "userid", "format"));
+//check_get_args(array("auth", "userid", "format"));
 
 $auth = get_str("auth", true);
 if (!$auth) {

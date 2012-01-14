@@ -238,7 +238,7 @@ if (is_news_forum($forum) && $logged_in_user && ($logged_in_user->id == $thread-
     if ($thread->status) {
         show_button(
             "forum_thread_status.php?action=clear&amp;id=$thread->id",
-            tra("Export"),
+            tra("Export as Notice"),
             tra("Export this news item as a Notice")
         );
     } else {
@@ -289,5 +289,5 @@ case 1:
 $thread->update("views=views+1");
 
 page_tail();
-$cvs_version_tracker[]="\$Id: forum_thread.php 24064 2011-08-29 05:37:52Z davea $";
+$cvs_version_tracker[]="\$Id: forum_thread.php 25006 2012-01-06 22:22:02Z davea $";
 ?>

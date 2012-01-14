@@ -1,31 +1,5 @@
 <?php
 
-function show_linux_info() {
-    echo "
-        <p>
-        ".tra("The current release is known to work with these Linux versions:")."
-        <ul>
-        <li> Ubuntu 10.04+
-        </ul>
-        <p>
-        ".tra("For other Linux versions, check if a BOINC package is offered by your Linux distribution.")."
-        <ul>
-        <li> Fedora 7+: type
-          <pre>yum install boinc-client boinc-manager</pre> as root.
-        <li> Debian and Ubuntu: package names <b>boinc-client</b>,
-            <b>boinc-manager</b>
-            (more info <a href=\"http://wiki.debian.org/BOINC\">here</a>).
-            Also <b>boinc-dev</b> (for project developers).
-        <li> Gentoo: package name <b>sci-misc/boinc</b>
-        </ul>
-        <p>
-        ".tra("Alternatively, download the %1BOINC client for older Linux versions%2. This doesn't have a graphical interface, but it should work on all Linux systems, both x86 and x64.",
-            "<a href=http://boinc.berkeley.edu/download_all.php>",
-            "</a>"
-        )
-    ;
-}
-
 function type_text($type) {
     global $xml;
     if ($xml) {
@@ -57,11 +31,11 @@ function type_text($type) {
     }
 }
 
-$w613 = array(
-	"num"=>"6.13.12",
+$w70 = array(
+	"num"=>"7.0.3",
 	"status"=>"Development version",
-	"file"=>"boinc_6.13.12_windows_intelx86.exe",
-	"date"=>"14 Nov 2011",
+	"file"=>"boinc_7.0.3_windows_intelx86.exe",
+	"date"=>"16 Dec 2011",
 	"type"=>"win_new",
 );
 
@@ -97,11 +71,11 @@ $w5816 = array(
     "type"=>"win_new",
 );
 
-$w613x64 = array(
-	"num"=>"6.13.12",
+$w70x64 = array(
+	"num"=>"7.0.3",
 	"status"=>"Development version",
-	"file"=>"boinc_6.13.12_windows_x86_64.exe",
-	"date"=>"14 Nov 2011",
+	"file"=>"boinc_7.0.3_windows_x86_64.exe",
+	"date"=>"16 Dec 2011",
 	"type"=>"win_new",
 );
 
@@ -121,11 +95,11 @@ $w610x64 = array(
 	"type"=>"win_new",
 );
 
-$m613 = array(
-	"num"=>"6.13.12",
+$m70 = array(
+	"num"=>"7.0.3",
 	"status"=>"Development version (standard GUI)",
-	"file"=>"boinc_6.13.12_macOSX_i686.zip",
-	"date"=>"14 Nov 2011",
+	"file"=>"boinc_7.0.3_macOSX_i686.zip",
+	"date"=>"7 Dec 2011",
 	"type"=>"mac_advanced",
 );
 
@@ -153,11 +127,11 @@ $m66 = array(
     "type"=>"mac_advanced",
 );
 
-$m613c = array(
-	"num"=>"6.13.12",
+$m70c = array(
+	"num"=>"7.0.3",
 	"status"=>"Development version (Unix command-line version)",
-	"file"=>"boinc_6.13.12_i686-apple-darwin.zip",
-	"date"=>"14 Nov 2011",
+	"file"=>"boinc_7.0.3_i686-apple-darwin.zip",
+	"date"=>"16 Dec 2011",
 	"type"=>"bare_core",
 );
 
@@ -201,11 +175,11 @@ $l66 = array(
 	"type"=>"sea",
 	);
 
-$l613ubuntu = array(
-	"num"=>"6.13.12",
+$l70ubuntu = array(
+	"num"=>"7.0.2",
 	"status"=>"Development version",
-	"file"=>"boinc_6.13.12_i686-pc-linux-gnu.sh",
-	"date"=>"14 Nov 2011",
+	"file"=>"boinc_7.0.2_i686-pc-linux-gnu.sh",
+	"date"=>"5 Dec 2011",
 	"type"=>"sea",
 );
 
@@ -225,11 +199,11 @@ $l610ubuntu = array(
 	"type"=>"sea",
 );
 
-$l613ubuntux64 = array(
-	"num"=>"6.13.12",
+$l70ubuntux64 = array(
+	"num"=>"7.0.2",
 	"status"=>"Development version",
-	"file"=>"boinc_6.13.12_x86_64-pc-linux-gnu.sh",
-	"date"=>"14 Nov 2011",
+	"file"=>"boinc_7.0.2_x86_64-pc-linux-gnu.sh",
+	"date"=>"5 Dec 2011",
 	"type"=>"sea",
 );
 
@@ -258,7 +232,7 @@ $windows = array(
     "description"=>"2000/XP/Vista/7",
     "dbname" => "windows_intelx86",
     "versions"=>array(
-		$w613,
+		$w70,
 		$w612,
 		$w610,
 		$w66,
@@ -271,7 +245,7 @@ $windowsx64 = array(
     "description"=>"XP/Vista/7",
     "dbname" => "windows_x86_64",
     "versions"=>array(
-		$w613x64,
+		$w70x64,
 		$w612x64,
 		$w610x64,
     )
@@ -282,8 +256,8 @@ $mac = array(
     "description"=>"Version 10.4.0+",
     "dbname" => "powerpc-apple-darwin",
     "versions"=>array(
-		$m613,
-		$m613c,
+		$m70,
+		$m70c,
 		$m612,
 		$m612c,
 		$m610,
@@ -305,10 +279,15 @@ $linuxcompat = array(
 
 $linux = array(
     "name"=>"Linux x86",
-    "description"=>"For most current Linux/x86 versions; graphical and command-line interfaces",
+    "description"=>"Tested on the current Ubuntu release; may work on others.
+    <br>If available, we recommend that you install a
+    <a href=http://boinc.berkeley.edu/wiki/Installing_BOINC#Linux>
+    distribution-specific package</a>
+    instead.
+    ",
     "dbname" => "i686-pc-linux-gnu",
     "versions"=>array(
-		$l613ubuntu,
+		$l70ubuntu,
 		$l612ubuntu,
 		$l610ubuntu,
     )
@@ -316,10 +295,14 @@ $linux = array(
 
 $linuxx64 = array(
     "name"=>"Linux x64",
-    "description"=>"For most current Linux/x64 versions; graphical and command-line interfaces",
-    "dbname" => "x86_64-pc-linux-gnu",
+    "description"=>"Tested on the current Ubuntu release; may work on others.
+    <br>If available, we recommend that you install a
+    <a href=http://boinc.berkeley.edu/wiki/Installing_BOINC#Linux>
+    distribution-specific package</a>
+    instead.
+    ",
     "versions"=>array(
-		$l613ubuntux64,
+		$l70ubuntux64,
 		$l612ubuntux64,
 		$l610ubuntux64,
     )

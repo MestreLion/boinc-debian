@@ -25,7 +25,7 @@
  * Some of the fields can be changed.
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_apps.php 23835 2011-07-12 05:19:15Z davea $
+ * @(#) $Id: manage_apps.php 24980 2012-01-03 03:51:43Z davea $
 \***********************************************************************/
 
 // TODO - code cleanup and use new DB interface
@@ -140,13 +140,13 @@ $self=$_SERVER['PHP_SELF'];
 echo "<form action='$self' method='POST'>\n";
 
 
-start_table("align='center'");
+start_table();
 echo "<TR><TH>ID #</TH>
       <TH>Name and description<br><span class=note>Click for details</span></TH>
       <TH>Created</TH>
-      <TH>minimum<br>client<br>version</TH>
+      <TH>minimum app version for HR</th>
       <TH>weight</TH>
-      <TH>homogeneous<br>redundancy<br>type (0=none)</TH>
+      <TH>homogeneous redundancy type (0=none)</TH>
       <TH>deprecated?</TH>
        </TR>\n";
 
@@ -245,5 +245,5 @@ echo "</form><p>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_apps.php 23835 2011-07-12 05:19:15Z davea $";
+$cvs_version_tracker[]="\$Id: manage_apps.php 24980 2012-01-03 03:51:43Z davea $";
 ?>

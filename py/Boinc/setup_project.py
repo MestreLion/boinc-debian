@@ -1,4 +1,4 @@
-## $Id: setup_project.py 24447 2011-10-21 06:58:35Z davea $
+## $Id: setup_project.py 24884 2011-12-24 05:07:20Z davea $
 
 # module for setting up a new project (either a real project or a test project
 # see tools/makeproject, test/testbase.py).
@@ -379,7 +379,7 @@ sys.path.insert(0, os.path.join('%s', 'py'))
           'single_job_assimilator', 
           'assimilator.py', 'pymw_assimilator.py',
           'update_stats', 'db_dump', 'db_purge', 'show_shmem', 'census',
-          'delete_file', 'request_file_list', 'get_file', 'put_file' ])
+          'delete_file', 'get_file', 'put_file' ])
     map(lambda (s): install(srcdir('tools',s), dir('bin',s)),
         [ 'appmgr', 'create_work', 'xadd', 'dbcheck_files_exist', 'run_in_ops',
           'update_versions', 'parse_config', 'grep_logs', 'db_query',

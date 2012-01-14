@@ -782,6 +782,22 @@ int DB_HOST::fpops_percentile(double percentile, double& fpops) {
     return get_double(query, fpops);
 }
 
+int DB_HOST::fpops_mean(double& mean) {
+    char query[256];
+    sprintf(query,
+        "select avg(p_fpops) from host where expavg_credit>10"
+    );
+    return get_double(query, mean);
+}
+
+int DB_HOST::fpops_stddev(double& stddev) {
+    char query[256];
+    sprintf(query,
+        "select stddev(p_fpops) from host where expavg_credit>10"
+    );
+    return get_double(query, stddev);
+}
+
 void DB_WORKUNIT::db_print(char* buf){
     sprintf(buf,
         "create_time=%d, appid=%d, "
@@ -2304,4 +2320,4 @@ int DB_FILESET_SCHED_TRIGGER_ITEM_SET::contains_trigger(const char* fileset_name
     return 0;
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 24563 2011-11-09 17:27:50Z davea $";
+const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 25017 2012-01-09 17:35:48Z davea $";
