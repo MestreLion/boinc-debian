@@ -1,7 +1,7 @@
 Index: boinc/lib/gui_rpc_client_ops.cpp
 ===================================================================
---- boinc.orig/lib/gui_rpc_client_ops.cpp	2012-01-14 23:16:05.000000000 +0100
-+++ boinc/lib/gui_rpc_client_ops.cpp	2012-01-15 00:56:00.000000000 +0100
+--- boinc.orig/lib/gui_rpc_client_ops.cpp	2012-01-15 01:31:59.000000000 +0100
++++ boinc/lib/gui_rpc_client_ops.cpp	2012-01-15 01:45:07.000000000 +0100
 @@ -1871,19 +1871,19 @@
  
      retval = rpc.do_rpc(buf);
@@ -30,8 +30,8 @@ Index: boinc/lib/gui_rpc_client_ops.cpp
      return retval;
 Index: boinc/lib/parse.cpp
 ===================================================================
---- boinc.orig/lib/parse.cpp	2012-01-14 23:16:05.000000000 +0100
-+++ boinc/lib/parse.cpp	2012-01-15 00:51:23.000000000 +0100
+--- boinc.orig/lib/parse.cpp	2012-01-15 01:31:59.000000000 +0100
++++ boinc/lib/parse.cpp	2012-01-15 01:45:07.000000000 +0100
 @@ -90,7 +90,6 @@
  // Use "<tag", not "<tag>", if there might be attributes
  //
@@ -42,21 +42,21 @@ Index: boinc/lib/parse.cpp
  
 Index: boinc/lib/str_util.cpp
 ===================================================================
---- boinc.orig/lib/str_util.cpp	2012-01-14 23:16:05.000000000 +0100
-+++ boinc/lib/str_util.cpp	2012-01-15 00:51:23.000000000 +0100
-@@ -312,37 +312,40 @@
+--- boinc.orig/lib/str_util.cpp	2012-01-15 01:31:59.000000000 +0100
++++ boinc/lib/str_util.cpp	2012-01-16 22:47:39.000000000 +0100
+@@ -312,37 +312,39 @@
  // remove whitespace from start and end of a string
  //
  void strip_whitespace(char *str) {
 -    int n;
-+
-+    char *s=str;
-     while (1) {
+-    while (1) {
 -        if (!str[0]) break;
 -        if (!isascii(str[0])) break;
 -        if (!isspace(str[0])) break;
 -        strcpy_overlap(str, str+1);
-+        if (! *s) break;
++
++    char *s=str;
++    while (*s) {
 +        if (!isascii(*s)) break;
 +        if (!isspace(*s)) break;
 +	s++;
@@ -89,15 +89,13 @@ Index: boinc/lib/str_util.cpp
 -    while (1) {
 -        n = (int)str.length();
 -        if (n == 0) break;
--        if (!isascii(str[n-1])) break;
--        if (!isspace(str[n-1])) break;
--        str.erase(n-1, 1);
 +
 +    int n = (int) str.length();
 +    while (n>0) {
+         if (!isascii(str[n-1])) break;
+         if (!isspace(str[n-1])) break;
+-        str.erase(n-1, 1);
 +	n--;
-+        if (!isascii(str[n])) break;
-+        if (!isspace(str[n])) break;
      }
 +    str.erase(n, str.length()-n);
  }

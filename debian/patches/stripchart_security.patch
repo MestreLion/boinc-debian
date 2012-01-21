@@ -1,7 +1,7 @@
 Index: boinc/stripchart/samples/get_load
 ===================================================================
---- boinc.orig/stripchart/samples/get_load	2011-09-10 17:52:40.000000000 +0200
-+++ boinc/stripchart/samples/get_load	2011-09-11 11:20:51.000000000 +0200
+--- boinc.orig/stripchart/samples/get_load	2012-01-15 01:31:59.000000000 +0100
++++ boinc/stripchart/samples/get_load	2012-01-15 02:02:05.000000000 +0100
 @@ -1,11 +1,11 @@
 -#! /bin/csh 
 +#!/bin/sh 
@@ -23,8 +23,8 @@ Index: boinc/stripchart/samples/get_load
  echo $CIVDATE $UNIXDATE $UPTIME
 Index: boinc/stripchart/samples/parse_config
 ===================================================================
---- boinc.orig/stripchart/samples/parse_config	2011-09-10 17:52:41.000000000 +0200
-+++ boinc/stripchart/samples/parse_config	2011-09-11 11:20:51.000000000 +0200
+--- boinc.orig/stripchart/samples/parse_config	2012-01-15 01:31:59.000000000 +0100
++++ boinc/stripchart/samples/parse_config	2012-01-15 02:02:05.000000000 +0100
 @@ -1,4 +1,4 @@
 -#!/usr/bin/env python
 +#!/usr/bin/python
@@ -33,8 +33,8 @@ Index: boinc/stripchart/samples/parse_config
  
 Index: boinc/stripchart/samples/dir_size
 ===================================================================
---- boinc.orig/stripchart/samples/dir_size	2011-09-10 17:52:41.000000000 +0200
-+++ boinc/stripchart/samples/dir_size	2011-09-11 11:20:51.000000000 +0200
+--- boinc.orig/stripchart/samples/dir_size	2012-01-15 01:31:59.000000000 +0100
++++ boinc/stripchart/samples/dir_size	2012-01-15 02:02:05.000000000 +0100
 @@ -1,8 +1,8 @@
 -#! /bin/csh 
 +#!/bin/sh 
@@ -50,8 +50,8 @@ Index: boinc/stripchart/samples/dir_size
  echo $CIVDATE $UNIXDATE $SIZE
 Index: boinc/stripchart/stripchart.cnf
 ===================================================================
---- boinc.orig/stripchart/stripchart.cnf	2011-09-11 11:59:01.000000000 +0200
-+++ boinc/stripchart/stripchart.cnf	2011-09-11 11:59:57.000000000 +0200
+--- boinc.orig/stripchart/stripchart.cnf	2012-01-15 02:02:04.000000000 +0100
++++ boinc/stripchart/stripchart.cnf	2012-01-15 02:02:05.000000000 +0100
 @@ -1,4 +1,5 @@
 -#! /usr/bin/env perl
 +

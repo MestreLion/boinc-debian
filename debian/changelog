@@ -1,3 +1,9 @@
+boinc (7.0.8+dfsg-2) unstable; urgency=low
+
+  * Fixed patch for whitespace removal.
+
+ -- Steffen Moeller <moeller@debian.org>  Mon, 16 Jan 2012 23:00:02 +0100
+
 boinc (7.0.8+dfsg-1) unstable; urgency=low
 
   * New upstream version.
