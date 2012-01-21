@@ -1,0 +1,117 @@
+Index: boinc/lib/filesys.cpp
+===================================================================
+--- boinc.orig/lib/filesys.cpp	2011-12-02 02:55:55.000000000 +0100
++++ boinc/lib/filesys.cpp	2012-01-15 23:46:23.000000000 +0100
+@@ -168,17 +168,13 @@
+         }
+     }
+ #else
+-    while (1) {
+-        dirent* dp = readdir(dirp);
+-        if (dp) {
+-            if (!strcmp(dp->d_name, ".")) continue;
+-            if (!strcmp(dp->d_name, "..")) continue;
+-            if (p) strlcpy(p, dp->d_name, p_len);
+-            return 0;
+-        } else {
+-            return ERR_READDIR;
+-        }
++    for (dirent* dp = readdir(dirp); dp; dp = readdir(dirp)) {
++        if (!strcmp(dp->d_name, ".")) continue;
++        if (!strcmp(dp->d_name, "..")) continue;
++        strlcpy(p, dp->d_name, p_len);
++        return 0;
+     }
++    return ERR_READDIR;
+ #endif
+ }
+ 
+@@ -253,16 +249,12 @@
+ #else
+     if (!dirp) return false;
+ 
+-    while (1) {
+-        dirent* dp = readdir(dirp);
+-        if (dp) {
+-            if (dp->d_name[0] == '.') continue;
+-            s = dp->d_name;
+-            return true;
+-        } else {
+-            return false;
+-        }
++    for(dirent* dp = readdir(dirp); dp; dp = readdir(dirp)) {
++        if (dp->d_name[0] == '.') continue;
++        s = dp->d_name;
++        return true;
+     }
++    return false;
+ #endif
+ }
+ 
+@@ -354,20 +346,18 @@
+ 
+     dirp = dir_open(dirpath);
+     if (!dirp) return 0;    // if dir doesn't exist, it's empty
+-    while (1) {
+-        strcpy(filename, "");
+-        retval = dir_scan(filename, dirp, sizeof(filename));
+-        if (retval) break;
+-        sprintf(path, "%s/%s", dirpath,  filename);
+-        clean_out_dir(path);
+-        boinc_rmdir(path);
+-        retval = boinc_delete_file(path);
+-        if (retval) {
+-            dir_close(dirp);
+-            return retval;
+-        }
+-    }
++
++    strcpy(filename, "");
++    retval = dir_scan(filename, dirp, sizeof(filename));
+     dir_close(dirp);
++    if (retval) return retval;
++
++    sprintf(path, "%s/%s", dirpath,  filename);
++    clean_out_dir(path); // recursion
++    boinc_rmdir(path);
++    retval = boinc_delete_file(path);
++    if (retval)  return retval;
++
+     return 0;
+ }
+ 
+@@ -540,7 +530,7 @@
+     // ownership or permissions when called from the BOINC Client 
+     // under sandbox security, so we copy the file directly.
+     FILE *src, *dst;
+-    int m, n;
++    size_t m, n;
+     int retval = 0;
+     struct stat sbuf;
+     unsigned char buf[65536];
+@@ -551,17 +541,18 @@
+         fclose(src);
+         return ERR_FOPEN;
+     }
+-    while (1) {
++
++    do {
+         n = fread(buf, 1, sizeof(buf), src);
+-        if (n <= 0) break;
+         m = fwrite(buf, 1, n, dst);
+-        if (m != n) {
+-            retval = ERR_FWRITE;
+-            break;
+-        }
+-    }
++    } while(n>0 && m==n);
++
++    if (!feof(src)) retval = ERR_FREAD;
++    else if (m != n) retval = ERR_FWRITE;
++
+     fclose(src);
+     fclose(dst);
++
+     // Copy file's ownership, permissions to the extent we are allowed
+     lstat(orig, &sbuf);             // Get source file's info
+     chown(newf, sbuf.st_uid, sbuf.st_gid);
