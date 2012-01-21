@@ -514,7 +514,7 @@ Charlie 13 Jan 2012
     clientgui/
         MainDocument.cpp
 
-Rom    13 Dec 2012
+Rom    13 Jan 2012
     NOTE: Some previously experimental features in the client software are
       now important to have for the 7.0 release.  The existing 7.0 branch
       will no longer be maintained, we'll create a new branch for the 7.0
@@ -526,3 +526,172 @@ Rom    13 Dec 2012
     /
         configure.ac
         version.h
+
+David  13 Jan 2012
+    - The zip library was moved to a directory (project_depends)
+        outside of BOINC, but the build files weren't made to work.
+        Move the library back where it was before.
+
+    configure.ac
+    Makefile.am
+    zip/*
+
+David  13 Jan 2012
+	- GUI RPC: add <xml> tag to the start of HTTP replies.
+	
+	client/
+		gui_rpc_server_ops.cpp
+
+David  14 Jan 2012
+    - client: identify ATI 97x0 GPUs (from Jord)
+
+    client/
+        coproc_detect.cpp
+
+David  14 Jan 2012
+	- GUI RPC client: don't write spurious messages to stderr
+
+	lib/
+		gui_rpc_client_ops.cpp
+
+Rom    14 Jan 2012
+    - VBOX: Fix regression where the vm_name wasn't reset back to the
+        current wu name after deregistering a stale VM.
+
+    samples/vboxwrapper
+        vbox.cpp, .h
+        vboxwrapper.cpp
+
+Rom    15 Jan 2012
+    - VBOX: Add User ID and Host ID to the CERN data format.
+
+    samples/vboxwrapper
+        vboxwrapper.cpp
+
+Rom    15 Jan 2012
+    - MGR: Use rdesktop-vrdp on Linux, it is included with VirtualBox
+        and meant for what we are trying to do.
+    - MGR: Remove the fullscreen flag on Windows.  It might only be
+        my machine which has refresh problems when launching in
+        windowed mode.
+        
+    clientgui/
+        MainDocument.cpp
+
+David  15 Jan 2012
+    - optimize strip_whitespace(); from Steffen Moller
+    - storage simulator: generalize so you can use different
+        coding parameters at different levels
+
+    lib/
+        str_util.cpp
+    ssim/
+        ssim.cpp
+
+David  15 Jan 2012
+    - storage simulator: compute fault tolerance correctly
+
+    ssim/
+        ssim.cpp
+
+Charlie 16 Jan 2012
+    - client, lib: Improve available GPU RAM detection, include it in 
+        display of GPU description.
+        
+    client/
+        coproc_detect.cpp
+    lib/
+        coproc.cpp,.h
+
+Charlie 16 Jan 2012
+    - client: Add logging message for insufficient GPU RAM details to 
+        coproc_debug flag.
+
+    client/
+        cpu_sched.cpp
+
+Rom    16 Jan 2012
+    - Tag for 7.0.9 release, all platforms
+      boinc_core_release_7_0_9
+
+    /
+        configure.ac
+        version.h
+
+Charlie 17 Jan 2012
+    - Mac: In permissions error alert: show branded name; if permissions 
+        error is in a subdirectory, show path to bad file or subdirectory.
+
+    client/
+        check_security.cpp
+        sandbox.h
+    clientgui/
+        BOINCGUIApp.cpp
+    mac_installer/
+        PosInstall.cpp
+
+Charlie 17 Jan 2012
+    - client: Save all CUDA and CAL GPU info until done with OpenCL detection 
+        so we have available GPU RAM for all OpenCL GPU descriptions.
+        
+    client/
+        coproc_detect.cpp
+
+Charlie 17 Jan 2012
+    - Tag for 7.0.10 release, all platforms
+      boinc_core_release_7_0_10
+
+    /
+        configure.ac
+        version.h
+
+Rom    17 Jan 2012
+    - VBOX: Fix a regression I introduced on Saturday, is_vm_registered shouldn't
+        be called when vm_name is empty.  Change it so that is references
+        vm_master_name instead to get the correct name of the VM.
+    - VBOX: Fix the logic that scan for the CR character and removes it.  Also fix
+        the partial line inclusion when the various log files are greater than 16k.
+        string.erase returns what the iterator value should be.
+ 
+     samples/vboxwrapper
+        vbox.cpp
+
+David  17 Jan 2012
+    - storage simulator work
+    - lib: recent checkin broke strip_whitespace(string&).
+
+    ssim/
+        ssim.cpp
+        plot
+        ssim.php
+    lib/
+        str_util.cpp
+
+David  18 Jan 2012
+    - web: link between LAMMPS job submission page and file sandbox page
+
+    html/user/
+        lammps.php
+        sandbox.php
+
+Charlie 18 Jan 2012
+    - client: add debugging aids to coproc_detect logic.
+        
+    client/
+        coproc_detect.cpp
+
+Charlie 18 Jan 2012
+    - Tag for 7.0.11 release, all platforms
+      boinc_core_release_7_0_11
+
+    /
+        configure.ac
+        version.h
+
+Charlie 18 Jan 2012
+    - client: ATI available RAM is in bytes, not MB; if no CAL, don't divide 
+        OpenCL global_mem_size by MEGA to fill in ATI available RAM.
+        (Checked in to 7.0.11 tag.)
+        
+    client/
+        coproc_detect.cpp

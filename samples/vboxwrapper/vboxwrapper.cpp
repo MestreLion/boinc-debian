@@ -197,14 +197,19 @@ void set_floppy_image(APP_INIT_DATA& aid, VBOX_VM& vm) {
             // Use %.17g to represent doubles
             //
             scratch  = "BOINC_USERNAME=" + std::string(aid.user_name) + "\n";
+            scratch += "BOINC_AUTHENTICATOR=" + std::string(aid.authenticator) + "\n";
+
+            sprintf(buf, "%d", aid.userid);
+            scratch += "BOINC_USERID=" + std::string(buf) + "\n";
+
+            sprintf(buf, "%d", aid.hostid);
+            scratch += "BOINC_HOSTID=" + std::string(buf) + "\n";
 
             sprintf(buf, "%.17g", aid.user_total_credit);
             scratch += "BOINC_USER_TOTAL_CREDIT=" + std::string(buf) + "\n";
 
             sprintf(buf, "%.17g", aid.host_total_credit);
             scratch += "BOINC_HOST_TOTAL_CREDIT=" + std::string(buf) + "\n";
-
-            scratch += "BOINC_AUTHENTICATOR=" + std::string(aid.authenticator) + "\n";
         }
         vm.write_floppy(scratch);
     }
@@ -362,16 +367,16 @@ int main(int argc, char** argv) {
     }
 
     boinc_get_init_data_p(&aid);
-    vm.vm_name = "boinc_";
+    vm.vm_master_name = "boinc_";
     if (boinc_is_standalone()) {
-        vm.vm_name += "standalone";
+        vm.vm_master_name += "standalone";
         vm.image_filename = IMAGE_FILENAME_COMPLETE;
         if (vm.enable_floppyio) {
             sprintf(buf, "%s.%s", FLOPPY_IMAGE_FILENAME, FLOPPY_IMAGE_FILENAME_EXTENSION);
             vm.floppy_image_filename = buf;
         }
     } else {
-        vm.vm_name += aid.result_name;
+        vm.vm_master_name += aid.result_name;
         sprintf(buf, "%s_%d.%s", IMAGE_FILENAME, aid.slot, IMAGE_FILENAME_EXTENSION);
         vm.image_filename = buf;
         boinc_rename(IMAGE_FILENAME_COMPLETE, buf);

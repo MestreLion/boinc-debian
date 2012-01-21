@@ -57,12 +57,13 @@ using std::string;
 
 VBOX_VM::VBOX_VM() {
     pFloppy = NULL;
+    vm_master_name.clear();
+    vm_name.clear();
+    vm_cpu_count.clear();
     os_name.clear();
     memory_size_mb.clear();
     image_filename.clear();
     floppy_image_filename.clear();
-    vm_name.clear();
-    vm_cpu_count.clear();
     job_duration = 0.0;
     suspended = false;
     network_suspended = false;
@@ -71,6 +72,7 @@ VBOX_VM::VBOX_VM() {
     enable_cern_dataformat = false;
     enable_shared_directory = false;
     enable_floppyio = false;
+    enable_remotedesktop = false;
     register_only = false;
     enable_network = false;
     pf_guest_port = 0;
@@ -170,9 +172,12 @@ int VBOX_VM::vbm_popen(string& arguments, string& output, const char* item, bool
 
 #ifdef _WIN32
     // Remove \r from the log spew
-    for (string::iterator iter = output.begin(); iter != output.end(); ++iter) {
+    string::iterator iter = output.begin();
+    while (iter != output.end()) {
         if (*iter == '\r') {
-            output.erase(iter);
+            iter = output.erase(iter);
+        } else {
+            ++iter;
         }
     }
 #endif
@@ -387,7 +392,7 @@ bool VBOX_VM::is_registered() {
     string command;
     string output;
 
-    command  = "showvminfo \"" + vm_name + "\" ";
+    command  = "showvminfo \"" + vm_master_name + "\" ";
     command += "--machinereadable ";
 
     if (vbm_popen(command, output, "registration", false, false) == 0) {
@@ -702,6 +707,12 @@ int VBOX_VM::register_vm() {
 
     boinc_get_init_data_p(&aid);
     get_slot_directory(virtual_machine_slot_directory);
+
+
+    // Reset VM name in case it was changed while deregistering a stale VM
+    //
+    vm_name = vm_master_name;
+
 
     fprintf(
         stderr,
@@ -1400,6 +1411,7 @@ int VBOX_VM::get_system_log(string& log) {
     string slot_directory;
     string virtualbox_system_log_src;
     string virtualbox_system_log_dst;
+    string::iterator iter;
     char buf[256];
     int retval = 0;
 
@@ -1434,27 +1446,31 @@ int VBOX_VM::get_system_log(string& log) {
 
 #ifdef _WIN32
         // Remove \r from the log spew
-        for (string::iterator iter = log.begin(); iter != log.end(); ++iter) {
+        iter = log.begin();
+        while (iter != log.end()) {
             if (*iter == '\r') {
-                log.erase(iter);
+                iter = log.erase(iter);
+            } else {
+                ++iter;
             }
         }
 #endif
 
         if (log.size() >= 16384) {
             // Look for the next whole line of text.
-            for (string::iterator iter = log.begin(); iter != log.end(); ++iter) {
+            iter = log.begin();
+            while (iter != log.end()) {
                 if (*iter == '\n') {
                     log.erase(iter);
                     break;
                 }
-                log.erase(iter);
+                iter = log.erase(iter);
             }
         }
     } else {
         fprintf(
             stderr,
-            "%s Could not find the system log at '%s'.\n",
+            "%s Could not find the Hypervisor System Log at '%s'.\n",
             boinc_msg_prefix(buf, sizeof(buf)),
             virtualbox_system_log_src.c_str()
         );
@@ -1467,6 +1483,7 @@ int VBOX_VM::get_system_log(string& log) {
 int VBOX_VM::get_vm_log(string& log) {
     string command;
     string output;
+    string::iterator iter;
     int retval;
 
     command  = "showvminfo \"" + vm_name + "\" ";
@@ -1482,21 +1499,25 @@ int VBOX_VM::get_vm_log(string& log) {
 
 #ifdef _WIN32
         // Remove \r from the log spew
-        for (string::iterator iter = log.begin(); iter != log.end(); ++iter) {
+        iter = log.begin();
+        while (iter != log.end()) {
             if (*iter == '\r') {
-                log.erase(iter);
+                iter = log.erase(iter);
+            } else {
+                ++iter;
             }
         }
 #endif
 
         if (log.size() >= 16384) {
             // Look for the next whole line of text.
-            for (string::iterator iter = log.begin(); iter != log.end(); ++iter) {
+            iter = log.begin();
+            while (iter != log.end()) {
                 if (*iter == '\n') {
                     log.erase(iter);
                     break;
                 }
-                log.erase(iter);
+                iter = log.erase(iter);
             }
         }
     } else {
