@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 24395 2011-10-13 21:59:40Z romw $
+## $Id: Makefile.am 25056 2012-01-14 05:48:01Z davea $
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -9,7 +9,7 @@ include Makefile.incl
 ACLOCAL_AMFLAGS = -I m4
 
 if ENABLE_LIBRARIES
-   API_SUBDIRS = api lib
+   API_SUBDIRS = api lib zip
 endif
 
 if ENABLE_SERVER
