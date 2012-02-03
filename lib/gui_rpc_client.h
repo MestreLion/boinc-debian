@@ -300,7 +300,7 @@ public:
     std::string name;
     std::string project_url;
     std::string project_name;
-    double nbytes;
+    double nbytes;              // total # of bytes to be transferred
     bool uploaded;
     bool is_upload;
     bool generated_locally;     // deprecated; for compatibility w/ old clients
@@ -308,8 +308,8 @@ public:
     bool pers_xfer_active;
     bool xfer_active;
     int num_retries;
-    int first_request_time;
-    int next_request_time;
+    double first_request_time;
+    double next_request_time;
     int status;
     double time_so_far;
     double bytes_xferred;

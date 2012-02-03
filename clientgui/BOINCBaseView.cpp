@@ -733,22 +733,6 @@ void CBOINCBaseView::UpdateSelection(){
 void CBOINCBaseView::PostUpdateSelection(){
     wxASSERT(m_pTaskPane);
     m_pTaskPane->UpdateControls();
- 
-    // Adjust the width of the task pane so that it can be fully displayed.
-    //
-    wxSize sz = m_pTaskPane->GetVirtualSize();
-    if (sz.GetHeight() > m_pTaskPane->GetSize().GetHeight()) {
-        // Account for vertical scrollbar
-        if (m_pTaskPane->GetSize().GetWidth() != (sz.GetWidth() + wxSystemSettings::GetMetric(wxSYS_VSCROLL_X, NULL))) {
-            m_pTaskPane->SetSize(
-                sz.GetWidth() + wxSystemSettings::GetMetric(wxSYS_VSCROLL_X, NULL),
-                m_pTaskPane->GetSize().GetHeight()
-            );
-        }
-    } else {
-        m_pTaskPane->SetSize(sz.GetWidth(), m_pTaskPane->GetSize().GetHeight());
-    }
-
     Layout();
 }
 
@@ -787,13 +771,13 @@ void CBOINCBaseView::UpdateWebsiteSelection(long lControlGroup, PROJECT* project
         if (m_pListPane->GetSelectedItemCount()) {
             if (project) {
                 // Create the web sites task group
-                pGroup = new CTaskItemGroup( _("Web sites") );
+                pGroup = new CTaskItemGroup( _("Project web pages") );
                 m_TaskGroups.push_back( pGroup );
 
                 // Default project url
                 pItem = new CTaskItem(
-                    wxString(project->project_name.c_str(), wxConvUTF8), 
-                    wxT(""), 
+                    wxString("Home page", wxConvUTF8), 
+                    wxString(project->project_name.c_str(), wxConvUTF8) + wxT(" web site"), 
                     wxString(project->master_url, wxConvUTF8),
                     ID_TASK_PROJECT_WEB_PROJDEF_MIN
                 );

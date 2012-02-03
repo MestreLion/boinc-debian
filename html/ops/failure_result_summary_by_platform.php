@@ -19,7 +19,7 @@
 require_once("../inc/util_ops.inc");
 
 db_init();
-admin_page_head("Result Failure Summary by Platform");
+admin_page_head("Failure summary by (app version, error)");
 
 $query_appid = $_GET['appid'];
 $query_received_time = time() - $_GET['nsecs'];
@@ -29,8 +29,8 @@ $q->process_form_items();
 
 $main_query = "
 SELECT
-    app_version_num AS App_Version,
-    app_version.plan_class AS Plan_Class,
+    app_version_id,
+    app_version.plan_class,
     case
         when INSTR(host.os_name, 'Darwin') then 'Darwin'
         when INSTR(host.os_name, 'Linux') then 'Linux'
@@ -51,50 +51,36 @@ WHERE
     outcome = '3' and
     received_time > '$query_received_time'
 GROUP BY
-    app_version_num DESC,
-    OS_Name,
+    app_version_id,
     exit_status
+order by error_count desc
 ";
 
 $urlquery = $q->urlquery;
 $result = mysql_query($main_query);
 
-echo "<table>\n";
-echo "<tr><th>App Version</th><th>Plan Class</th><th>OS</th><th>Exit Status</th><th>Error Count</th></tr>\n";
+start_table();
+table_header(
+    "App version", "Exit Status", "Error Count"
+);
 
 while ($res = mysql_fetch_object($result)) {
-
-    echo "<tr>";
-
-	echo "<td align=\"left\" valign=\"top\">";
-	echo $res->App_Version;
-	echo "</td>";
-
-	echo "<td align=\"left\" valign=\"top\">";
-	echo $res->Plan_Class;
-	echo "</td>";
-
-	echo "<td align=\"left\" valign=\"top\">";
-    echo $res->OS_Name;
-    echo "</td>";
-
-    echo "<td align=\"left\" valign=\"top\">";
     $exit_status_condition = "exit_status=$res->exit_status";
-    echo link_results(exit_status_string($res), $urlquery, "$exit_status_condition", "");
-    echo "</td>";
-
-    echo "<td align=\"left\" valign=\"top\">";
-    echo $res->error_count;
-    echo "</td>";
-
-    echo "</tr>\n";
-
+    $av = BoincAppVersion::lookup_id($res->app_version_id);
+    $p = BoincPlatform::lookup_id($av->platformid);
+    table_row(
+        sprintf("%.2f", $av->version_num/100)." $p->name [$av->plan_class]",
+        link_results(
+            exit_status_string($res), $urlquery, "$exit_status_condition", ""
+        ),
+        $res->error_count
+    );
 }
 mysql_free_result($result);
 
-echo "</table>\n";
+end_table();
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: failure_result_summary_by_platform.php 24963 2012-01-01 23:44:48Z romw $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: failure_result_summary_by_platform.php 25171 2012-01-31 07:21:42Z davea $";  //Generated automatically - do not edit
 ?>
