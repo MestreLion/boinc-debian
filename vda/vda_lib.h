@@ -1,7 +1,6 @@
-<?PHP
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2008 University of California
+// Copyright (C) 2012 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -16,23 +15,26 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// BOINC WAP functions
+// APIs for volunteer data archival (VDA)
 
-function wap_begin() {
-    header("Content-type: text/vnd.wap.wml");
-    header("Expires: Thu, 01 Jan 1970 00:00:00 GMT");
+// parameters of 1 level of coding
+//
+struct CODING {
+    int n;
+    int k;
+    int m;  // n + k
+    int n_upload;
+};
 
-    echo "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>"
-     . "<!DOCTYPE wml PUBLIC \"-//WAPFORUM//DTD WML 1.2//EN\" "
-     . "\"http://www.wapforum.org/DTD/wml_1.2.xml\">"
-     . "<wml><card id=\"cd1\"><p>";
-}
+// description of overall coding
+// (possibly w/ multiple coding levels and replication)
+//
+struct POLICY {
+    int replication;
+    int coding_levels;
+    CODING codings[10];
 
-function wap_end() {
-    echo "</p></card></wml>";
-}
+    char description[256];  // derived from the above
 
-function wap_timestamp() {
-  return gmdate('j M Y G:i:s', time()) . " UTC";
-}
-?>
+    int parse(const char*);
+};

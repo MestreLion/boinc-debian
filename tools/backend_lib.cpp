@@ -309,7 +309,7 @@ int create_work(
         fprintf(stderr, "target_nresults > max_success_results; can't create job\n");
         return ERR_INVALID_PARAM;
     }
-    if (strstr(wu.name, ASSIGNED_WU_STR)) {
+    if (wu.transitioner_flags & TRANSITION_NONE) {
         wu.transition_time = INT_MAX;
     } else {
         wu.transition_time = time(0);
@@ -488,4 +488,4 @@ int cancel_jobs(int min_id, int max_id) {
     return 0;
 }
 
-const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 24413 2011-10-18 07:15:04Z davea $";
+const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 25169 2012-01-30 22:39:13Z davea $";

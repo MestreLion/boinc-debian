@@ -624,8 +624,8 @@ int FILE_TRANSFER::parse(XML_PARSER& xp) {
             is_upload = generated_locally;
         }
         if (xp.parse_int("num_retries", num_retries)) continue;
-        if (xp.parse_int("first_request_time", first_request_time)) continue;
-        if (xp.parse_int("next_request_time", next_request_time)) continue;
+        if (xp.parse_double("first_request_time", first_request_time)) continue;
+        if (xp.parse_double("next_request_time", next_request_time)) continue;
         if (xp.parse_int("status", status)) continue;
         if (xp.parse_double("time_so_far", time_so_far)) continue;
         if (xp.parse_double("last_bytes_xferred", bytes_xferred)) continue;
@@ -1512,15 +1512,13 @@ int RPC_CLIENT::get_disk_usage(DISK_USAGE& du) {
 }
 
 int DAILY_STATS::parse(XML_PARSER& xp) {
-    char buf[256];
-    MIOFILE& in = *(xp.f);
-    while (in.fgets(buf, 256)) {
-        if (match_tag(buf, "</daily_statistics>")) return 0;
-        if (parse_double(buf, "<day>", day)) continue;
-        if (parse_double(buf, "<user_total_credit>", user_total_credit)) continue;
-        if (parse_double(buf, "<user_expavg_credit>", user_expavg_credit)) continue;
-        if (parse_double(buf, "<host_total_credit>", host_total_credit)) continue;
-        if (parse_double(buf, "<host_expavg_credit>", host_expavg_credit)) continue;
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/daily_statistics")) return 0;
+        if (xp.parse_double("day", day)) continue;
+        if (xp.parse_double("user_total_credit", user_total_credit)) continue;
+        if (xp.parse_double("user_expavg_credit", user_expavg_credit)) continue;
+        if (xp.parse_double("host_total_credit", host_total_credit)) continue;
+        if (xp.parse_double("host_expavg_credit", host_expavg_credit)) continue;
     }
     return ERR_XML_PARSE;
 }

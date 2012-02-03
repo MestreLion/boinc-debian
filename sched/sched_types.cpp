@@ -1240,6 +1240,7 @@ int HOST::parse_disk_usage(XML_PARSER& xp) {
         if (xp.match_tag("/disk_usage")) return 0;
         if (xp.parse_double("d_boinc_used_total", d_boinc_used_total)) continue;
         if (xp.parse_double("d_boinc_used_project", d_boinc_used_project)) continue;
+        if (xp.parse_double("d_project_share", d_project_share)) continue;
         log_messages.printf(MSG_NORMAL,
             "HOST::parse_disk_usage(): unrecognized: %s\n",
             xp.parsed_tag
@@ -1398,4 +1399,4 @@ double capped_host_fpops() {
     return x;
 }
 
-const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 25017 2012-01-09 17:35:48Z davea $";
+const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 25176 2012-02-01 03:30:14Z davea $";

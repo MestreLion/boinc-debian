@@ -56,6 +56,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <math.h>
 #include <string>
 #include <unistd.h>
 #endif
@@ -286,10 +287,11 @@ int main(int argc, char** argv) {
     double sleep_time = 0.0;
     double bytes_sent = 0.0;
     double bytes_received = 0.0;
+    double ncpus = 0.0;
     bool report_vm_pid = false;
     bool report_net_usage = false;
-    int vm_pid=0;
-    int vm_max_cpus=0;
+    int vm_pid = 0;
+    unsigned long vm_exit_code = 0;
     std::string vm_log;
     std::string system_log;
     char buf[256];
@@ -305,7 +307,7 @@ int main(int argc, char** argv) {
             trickle_period = atof(argv[++i]);
         }
         if (!strcmp(argv[i], "--nthreads")) {
-            vm_max_cpus = atoi(argv[++i]);
+            ncpus = atof(argv[++i]);
         }
         if (!strcmp(argv[i], "--register_only")) {
             vm.register_only = true;
@@ -385,11 +387,11 @@ int main(int argc, char** argv) {
             vm.floppy_image_filename = buf;
         }
     }
-    if (aid.ncpus > 1.0 || vm_max_cpus > 1) {
-        if (vm_max_cpus) {
-            sprintf(buf, "%d", vm_max_cpus);
+    if (aid.ncpus > 1.0 || ncpus > 1.0) {
+        if (ncpus) {
+            sprintf(buf, "%d", (int)ceil(ncpus));
         } else {
-            sprintf(buf, "%d", (int)aid.ncpus);
+            sprintf(buf, "%d", (int)ceil(aid.ncpus));
         }
         vm.vm_cpu_count = buf;
     } else {
@@ -494,6 +496,7 @@ int main(int argc, char** argv) {
             if (vm.crashed || (elapsed_time < vm.job_duration)) {
                 vm.get_system_log(system_log);
                 vm.get_vm_log(vm_log);
+                vm.get_vm_exit_code(vm_exit_code);
             }
             vm.cleanup();
             write_checkpoint(elapsed_time, vm);
@@ -505,12 +508,19 @@ int main(int argc, char** argv) {
                     "    Hypervisor System Log:\n\n"
                     "%s\n"
                     "    VM Execution Log:\n\n"
-                    "%s\n",
+                    "%s\n"
+                    "    VM Exit Code: %d (0x%x)\n\n",
                     boinc_msg_prefix(buf, sizeof(buf)),
                     system_log.c_str(),
-                    vm_log.c_str()
+                    vm_log.c_str(),
+                    (unsigned int)vm_exit_code,
+                    (unsigned int)vm_exit_code
                 );
-                boinc_finish(EXIT_ABORTED_BY_CLIENT);
+                if (vm_exit_code) {
+                    boinc_finish(vm_exit_code);
+                } else {
+                    boinc_finish(EXIT_ABORTED_BY_CLIENT);
+                }
             } else {
                 fprintf(
                     stderr,
@@ -532,8 +542,11 @@ int main(int argc, char** argv) {
             elapsed_time += POLL_PERIOD;
 
             if (!vm_pid) {
-                vm.get_process_id(vm_pid);
-                report_vm_pid = true;
+                vm.get_vm_process_id(vm_pid);
+                if (vm_pid) {
+                    vm.reset_vm_process_priority();
+                    report_vm_pid = true;
+                }
             }
 
             if (boinc_time_to_checkpoint()) {

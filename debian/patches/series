@@ -1,3 +1,4 @@
+termios_is_everywhere.patch
 mac_addresses_cores_in_kfreebsd.patch
 stripchart_debian.patch
 upstream_sztaki_configureEval.patch

@@ -1,0 +1,20 @@
+Index: boinc/zip/unzip/ttyio.c
+===================================================================
+--- boinc.orig/zip/unzip/ttyio.c	2012-02-04 18:57:37.000000000 +0100
++++ boinc/zip/unzip/ttyio.c	2012-02-05 00:17:10.000000000 +0100
+@@ -26,6 +26,7 @@
+ 
+ #define __TTYIO_C       /* identifies this source module */
+ 
++
+ #include "zip.h"
+ //#include "crypt.h"
+ 
+@@ -54,6 +55,7 @@
+ #  define HAVE_TERMIOS_H
+ #endif
+ 
++#include <unistd.h>	/* defines _POSIX_VERSION */
+ #ifdef _POSIX_VERSION
+ #  ifndef USE_POSIX_TERMIOS
+ #    define USE_POSIX_TERMIOS  /* use POSIX style termio (termios) */

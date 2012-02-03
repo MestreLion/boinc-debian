@@ -1737,7 +1737,7 @@ void send_work_setup() {
         );
         if (g_wreq->anonymous_platform) {
             log_messages.printf(MSG_NORMAL,
-                "Anonymous platform app versions:\n"
+                "[send] Anonymous platform app versions:\n"
             );
             for (i=0; i<g_request->client_app_versions.size(); i++) {
                 CLIENT_APP_VERSION& cav = g_request->client_app_versions[i];
@@ -1752,6 +1752,13 @@ void send_work_setup() {
                 );
             }
         }
+        log_messages.printf(MSG_NORMAL,
+            "[send] p_vm_extensions_disabled: %s\n",
+            g_request->host.p_vm_extensions_disabled?"yes":"no"
+        );
+        log_messages.printf(MSG_NORMAL,
+            "[send] CPU features: %s\n", g_request->host.p_features
+        );
     }
 }
 
@@ -1846,6 +1853,17 @@ void send_work() {
         }
     }
 
+    if (config.enable_assignment_multi) {
+        if (send_assigned_jobs_multi()) {
+            if (config.debug_assignment) {
+                log_messages.printf(MSG_NORMAL,
+                    "[assign] [HOST#%d] sent assigned jobs\n", g_reply->host.id
+                );
+            }
+            goto done;
+        }
+    }
+
     if (config.workload_sim && g_request->have_other_results_list) {
         init_ip_results(
             g_request->global_prefs.work_buf_min(),
@@ -1899,4 +1917,4 @@ done:
     send_user_messages();
 }
 
-const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 24567 2011-11-09 23:50:09Z davea $";
+const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 25183 2012-02-02 00:18:42Z davea $";

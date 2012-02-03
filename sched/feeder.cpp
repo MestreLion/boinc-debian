@@ -178,6 +178,7 @@ int check_reread_trigger() {
         );
         ssp->init(num_work_items);
         ssp->scan_tables();
+        ssp->perf_info.get_from_db();
         int retval = unlink(config.project_path(REREAD_DB_FILENAME));
         if (retval) {
             // if we can't remove trigger file, exit to avoid infinite loop
@@ -870,4 +871,4 @@ int main(int argc, char** argv) {
     feeder_loop();
 }
 
-const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 25017 2012-01-09 17:35:48Z davea $";
+const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 25114 2012-01-20 23:48:07Z davea $";

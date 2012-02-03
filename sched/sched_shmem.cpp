@@ -184,7 +184,7 @@ int SCHED_SHMEM::scan_tables() {
     }
 
     n = 0;
-    while (!assignment.enumerate()) {
+    while (!assignment.enumerate("multi <> 0")) {
         assignments[n++] = assignment;
         if (n == MAX_ASSIGNMENTS) {
             overflow("assignments", "MAX_ASSIGNMENTS");
@@ -328,4 +328,4 @@ void SCHED_SHMEM::show(FILE* f) {
     }
 }
 
-const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 25017 2012-01-09 17:35:48Z davea $";
+const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 25169 2012-01-30 22:39:13Z davea $";

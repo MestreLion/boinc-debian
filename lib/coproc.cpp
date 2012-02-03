@@ -301,18 +301,16 @@ void COPROCS::summary_string(char* buf, int len) {
 }
 
 int COPROCS::parse(XML_PARSER& xp) {
-    char buf[1024];
     int retval;
 
     clear();
     n_rsc = 1;
     strcpy(coprocs[0].type, "CPU");
-    MIOFILE& in = *(xp.f);
-    while (in.fgets(buf, sizeof(buf))) {
-        if (match_tag(buf, "</coprocs>")) {
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/coprocs")) {
             return 0;
         }
-        if (match_tag(buf, "<coproc_cuda>")) {
+        if (xp.match_tag("coproc_cuda")) {
             retval = nvidia.parse(xp);
             if (retval) {
                 nvidia.clear();
@@ -321,7 +319,7 @@ int COPROCS::parse(XML_PARSER& xp) {
             }
             continue;
         }
-        if (match_tag(buf, "<coproc_ati>")) {
+        if (xp.match_tag("coproc_ati")) {
             retval = ati.parse(xp);
             if (retval) {
                 ati.clear();
@@ -668,6 +666,7 @@ void COPROC_ATI::clear() {
     amdrt_detected = false;
     memset(&attribs, 0, sizeof(attribs));
     memset(&info, 0, sizeof(info));
+    version_num = 0;
 }
 
 int COPROC_ATI::parse(XML_PARSER& xp) {
@@ -677,9 +676,13 @@ int COPROC_ATI::parse(XML_PARSER& xp) {
 
     while (!xp.get_tag()) {
         if (xp.match_tag("/coproc_ati")) {
-            int major, minor, release;
-            sscanf(version, "%d.%d.%d", &major, &minor, &release);
-            version_num = ati_version_int(major, minor, release);
+            if (strlen(version)) {
+                int major, minor, release;
+                n = sscanf(version, "%d.%d.%d", &major, &minor, &release);
+                if (n ==3) {
+                    version_num = ati_version_int(major, minor, release);
+                }
+            }
 
             if (!peak_flops) {
 				set_peak_flops();
