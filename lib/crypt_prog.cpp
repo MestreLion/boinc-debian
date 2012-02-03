@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
         signature.len = 256;
         retval = scan_hex_data(f, signature);
         if (retval) die("scan_hex_data");
-        retval = verify_file(argv[2], public_key, signature, is_valid);
+        retval = verify_file(argv[2], NULL, public_key, signature, is_valid);
         if (retval) die("verify_file");
         if (is_valid) {
             printf("file is valid\n");
@@ -393,4 +393,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_6633b596b9 = "$Id: crypt_prog.cpp 22448 2010-10-05 23:06:20Z davea $";
+const char *BOINC_RCSID_6633b596b9 = "$Id: crypt_prog.cpp 25157 2012-01-26 23:13:00Z davea $";

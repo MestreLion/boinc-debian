@@ -338,6 +338,7 @@ struct HOST {
     char p_features[1024];
     char virtualbox_version[256];
     bool p_vm_extensions_disabled;
+    double d_project_share; // this project's share of available disk space
 
     int parse(XML_PARSER&);
     int parse_time_stats(XML_PARSER&);
@@ -367,12 +368,20 @@ struct HOST {
 // (file delete, assimilate, and states of results, error flags)
 
 // bit fields of error_mask
+//
 #define WU_ERROR_COULDNT_SEND_RESULT            1
 #define WU_ERROR_TOO_MANY_ERROR_RESULTS         2
 #define WU_ERROR_TOO_MANY_SUCCESS_RESULTS       4
 #define WU_ERROR_TOO_MANY_TOTAL_RESULTS         8
 #define WU_ERROR_CANCELLED                      16
 #define WU_ERROR_NO_CANONICAL_RESULT            32
+
+// bit fields of transition_flags
+//
+#define TRANSITION_NONE             1
+    // don't transition
+#define TRANSITION_NO_NEW_RESULTS   2
+    // transition, but don't create results
 
 struct WORKUNIT {
     int id;
@@ -435,6 +444,8 @@ struct WORKUNIT {
     int app_version_id;
         // if app uses homogeneous_app_version,
         // which version this job is committed to (0 if none)
+    int transitioner_flags;
+        // bitmask; see values above
 
     // the following not used in the DB
     char app_name[256];
@@ -630,7 +641,8 @@ struct ASSIGNMENT {
     int target_type;            // none/host/user/team
     int multi;                  // 0 = single host, 1 = all hosts in set
     int workunitid;
-    int resultid;               // if not multi, the result ID
+    int _resultid;              // if not multi, the result ID
+        // deprecated
     void clear();
 };
 
@@ -654,6 +666,7 @@ struct TRANSITIONER_ITEM {
     int hr_class;
     int batch;
     int app_version_id;
+    int transitioner_flags;
     int res_id; // This is the RESULT ID
     char res_name[256];
     int res_report_deadline;
@@ -1115,6 +1128,42 @@ public:
 
     // storage vector
     std::vector<DB_FILESET_SCHED_TRIGGER_ITEM> items;
+};
+
+struct VDA_FILE {
+    int id;
+    char dir[256];
+    char name[256];
+    double size;
+    double chunk_size;
+    double created;
+    bool need_update;
+    bool inited;
+    void clear();
+};
+
+struct VDA_CHUNK_HOST {
+    int vda_file_id;
+    int host_id;        // zero if we're waiting for a host
+    char name[256];
+    bool present_on_host;
+    bool transfer_in_progress;
+    bool transfer_wait;
+    double transition_time;
+    void clear();
+};
+
+struct DB_VDA_FILE : public DB_BASE, public VDA_FILE {
+    DB_VDA_FILE(DB_CONN* p=0);
+    int get_id();
+    void db_print(char*);
+    void db_parse(MYSQL_ROW &row);
+};
+
+struct DB_VDA_CHUNK_HOST : public DB_BASE, public VDA_CHUNK_HOST {
+    DB_VDA_CHUNK_HOST(DB_CONN* p=0);
+    void db_print(char*);
+    void db_parse(MYSQL_ROW &row);
 };
 
 #endif

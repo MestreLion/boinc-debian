@@ -113,10 +113,10 @@ David  3 Jan 2012
         lammps.php
 
 David  3 Jan 2012
-	- client: calculate disk share for zero-priority projects correctly
+    - client: calculate disk share for zero-priority projects correctly
 
-	client/
-		cs_prefs.cpp
+    client/
+        cs_prefs.cpp
 
 Rom    3 Jan 2012
     - client: Remove scaling factor for AMD OpenCL devices.  Latest
@@ -245,10 +245,10 @@ Rom    6 Jan 2012
         vbox.cpp
 
 David  6 Jan 2012
-	- manager: parse message contents with XML_PARSER::element_content().
+    - manager: parse message contents with XML_PARSER::element_content().
 
-	lib/
-		gui_rpc_client_ops.cpp
+    lib/
+        gui_rpc_client_ops.cpp
 
 David  6 Jan 2012
     - validator: for credit_from_runtime,
@@ -537,10 +537,10 @@ David  13 Jan 2012
     zip/*
 
 David  13 Jan 2012
-	- GUI RPC: add <xml> tag to the start of HTTP replies.
-	
-	client/
-		gui_rpc_server_ops.cpp
+    - GUI RPC: add <xml> tag to the start of HTTP replies.
+    
+    client/
+        gui_rpc_server_ops.cpp
 
 David  14 Jan 2012
     - client: identify ATI 97x0 GPUs (from Jord)
@@ -549,10 +549,10 @@ David  14 Jan 2012
         coproc_detect.cpp
 
 David  14 Jan 2012
-	- GUI RPC client: don't write spurious messages to stderr
+    - GUI RPC client: don't write spurious messages to stderr
 
-	lib/
-		gui_rpc_client_ops.cpp
+    lib/
+        gui_rpc_client_ops.cpp
 
 Rom    14 Jan 2012
     - VBOX: Fix regression where the vm_name wasn't reset back to the
@@ -695,3 +695,599 @@ Charlie 18 Jan 2012
         
     client/
         coproc_detect.cpp
+
+Rom    18 Jan 2012
+    - VBOX: Fix another issue that was a result of Saturdays commit.  Make
+        sure that the vm_name variable is populated with something useful if
+        resuming from a previous execution of the wrapper.
+ 
+     samples/vboxwrapper
+        vbox.cpp
+
+David  18 Jan 2012
+    - WAP interface to credit info: return correct timestamp,
+        and don't bother with caching.
+
+    html/
+        inc/
+            wap.inc
+        user/
+            userw.php
+
+Rom    18 Jan 2012
+    - VBOX: Use the documented way to reset the UUID of a virtual hard
+        disk.  Thanks Daniel.
+        
+     samples/vboxwrapper
+        vbox.cpp
+
+David  18 Jan 2012
+    - Manager: in project web links, use "Home Page" instead of the
+        project name (which could be very long)
+
+    clientgui/
+        BOINCBaseView.cpp
+
+David  19 Jan 2012
+    - client: parse HOST_INFO::p_vm_extensions_disabled correctly
+
+    lib/
+        hostinfo.cpp
+        proxy_info.cpp
+        gui_rpc_client_ops.cpp
+        coproc.cpp
+    version.h
+    ssim/
+        ssim.php
+
+Charlie 19 Jan 2012
+    - Mac installer: If installing under OS 10.4, create users and groups 
+        boinc_master and boinc_project at first available UserIDs and 
+        GroupIDs starting at 25 instead of 501 to prevent problems with 
+        Accounts pane of System Preferences.
+
+    clientgui/
+        mac/
+            SetupSecurity.cpp
+
+David  19 Jan 2012
+    - storage simulator work
+
+    ssim/
+        ssim.cpp
+        ssim.php
+
+Charlie 20 Jan 2012
+    - client: Show GPU number in "GPU is OpenCL-capable" message.
+    
+    client/
+        client_state.cpp
+
+Charlie 20 Jan 2012
+    - OpenCL: 
+        Problem: Mac OpenCL does not recognize all NVIDIA GPUs returned 
+        by CUDA.  Since there is no CAL for Mac, this is not an issue 
+        for ATI / AMD GPUs.  On other platforms, the CUDA and CAL drivers 
+        also provide OpenCL support, so we don't expect the problem there.
+        
+        Solution: I believe that CUDA and OpenCL return identical GPU 
+        model names for the same GPU, and that both return the GPUs in the 
+        same order (but with some possibly omitted from the OpenCL sequence.)
+        We use that information to correlate the OpenCL data with CUDA data. 
+        We use our internal CUDA device_num for the corresponding OpenCL 
+        device, but add a new field opencl_device_index; the two fields are 
+        equal unless we have CUDA devices not recognized by OpenCL.  We 
+        add a new array opencl_device_indexes[] to the COPROC struct, 
+        corresponding to the entries in device_nums[].
+        
+        The init_data.xml file now has a new field gpu_opencl_device_index.  
+        If this field exists, the boinc_get_opencl_ids() API uses this to 
+        find the cl_device_id and cl_platform_id, otherwise it continues 
+        to use the value in gpu_device_num.
+        
+    api/
+        boinc_opencl.cpp
+    client/
+        app_start.cpp
+        coproc_detect.cpp
+    lib/
+        app_ipc.cpp,.h
+        coproc.h
+
+David  20 Jan 2012
+    - volunteer data archival stuff
+
+    ssim/
+        vda.cpp,h (new)
+        ssim.cpp
+        makefile
+
+David  20 Jan 2012
+    - client: add a mechanism for restartable download of compressed files.
+        (It turns out that the compression schemes supported by
+        Apache and libcurl, suprisingly, aren't restartable.)
+
+        if a <file_info> from the server contains <gzipped_url> tags,
+        use those instead of the <url> tags,
+        and flag the file as "download_gzipped".
+        If this is the case, download NAME.gz and save it as NAME.gzt.
+        When the download is complete, rename NAME.gzt to NAME.gz,
+        and uncompress it to NAME.
+        (this ensures that if NAME.gz is present, it's complete).
+        Also do the uncompression, if needed, in verify_file().
+        This ensures that the uncompression will eventually get done
+        even if the client quits are crashes in the middle.
+
+    - update_versions: if <gzip> is present in a <file_info>,
+        add a gzipped copy in the download directory
+        and add a <gzipped_url> elements to the app version's xml_doc.
+
+    client/
+        client_types.cpp,h
+        file_xfer.cpp
+        cs_files.cpp
+    tools/
+        update_versions
+
+David  20 Jan 2012
+    - feeder: if we're rereading the DB because of trigger file,
+        do PERF_INFO::get_from_db() also.
+        From Teemu Mannermaa.
+
+    sched/
+        feeder.cpp
+
+David  20 Jan 2012
+    - admin web: if change app or app version params,
+        advise user to stop/restart the project
+
+    html/ops/
+        manage_apps.php
+        manage_app_versions.php
+
+Rom    21 Jan 2012
+    - VBOX: Enable the wrapper to handle fractional CPU usage.  If
+        the server specifies 1.1 CPUs used, allocate 2 CPUs to be used
+        in VirtualBox.
+        
+    samples/vboxwrapper
+        vboxwrapper.cpp
+
+Rom    21 Jan 2012
+    - sched: adjust the vbox??_mt plan classes to use 1.5 CPUs instead
+        of the full 2 CPUs. Vboxwrapper uses ceil() to allocate enough
+        whole CPUs for Virtualbox.  Ideally this will cause the BOINC
+        client-side scheduler to use the remaining fraction of the CPU
+        for GPU data transfer which will then free up one whole CPU for
+        another job.  All without over-commiting anything.
+        
+    sched/
+        sched_customize.cpp
+
+David  22 Jan 2012
+    - GUI RPC: switching to the new XML parser
+        (which won't parse a double as an int)
+        revealed a type mismatch in FILE_TRANSFER::next_request_time
+        between client and server.
+
+    db/
+        boinc_db.cpp,h
+        schema_vda.sql (new)
+    lib/
+        gui_rpc_client_ops.cpp
+        gui_rpc_client.h
+    ssim/
+        vda.cpp
+        vda_lib.cpp,h
+        vda_transitioner.cpp
+        makefile
+    client/
+        net_stats.cpp
+
+David  22 Jan 2012
+    - client: fix divide-by-zero bug in calculation of priority
+        of projects with zero resource share
+
+    client/
+        cpu_sched.cpp
+
+Rom    23 Jan 2012
+    - MGR: Tweak the z-order of BOINC Manager owned windows a little bit.
+        Image a case where BOINC Manager and the BOINC Manager event log
+        live side-by-side or only slightly overlapped, and the user wants
+        to use a full screen/maximized window.  If the bring the BOINC
+        manager window back into focus while that app is still running
+        make sure the event log comes forward as well.  The event log
+        should appear behind the main window in the case they are
+        overlapped.
+        
+    clientgui/
+        BOINCGUIApp.cpp, .h
+
+Rom    23 Jan 2012
+    - client - Remove Mac OSX 10.3.9 hack, it is no longer needed.
+    
+    client/
+        http_curl.cpp
+
+David  23 Jan 2012
+    - scheduler: initialize COPROC_ATI::version to zero;
+        avoid sending spurious "update driver" messages
+
+    lib/
+        coproc.cpp
+    db/
+        boinc_db.cpp,h
+        schema_vda.sql
+    vda/
+        vdad.cpp
+        makefile
+
+Charlie 23 Jan 2012
+    - Mac: If permissions error because unable to opendir() a subdirectory, 
+        show path to that subdirectory.
+
+    client/
+        check_security.cpp
+
+Rom    23 Jan 2012
+    - VBOX: Demote the priority level of the VM process to try and prevent
+        latency issues for volunteers.
+    - VBOX: If the port forwarding preferred port isn't usable, try asking
+        the OS for one.
+    - VBOX: On a failure, get the VM process exit code and report it with
+        the rest of the stderr spew.
+
+    samples/vboxwrapper/
+        vbox.cpp, .h
+        vboxwrapper.cpp
+
+David  23 Jan 2012
+    - web: use et_n instead of pfc_n for #jobs completed
+        in host app details page
+        (pfc_n is not populated for hosts running old clients)
+
+    html/user/
+        host_app_versions.php
+
+Rom    24 Jan 2012
+    - client: treat the gzt file extension like we do for the gz file extension.
+        Disable libcurls ability to decompress on-the-fly and let the CC decompress
+        it after it has been fully downloaded.
+        
+    client/
+        http_curl.cpp
+
+David  24 Jan 2012
+    - client: when deleting a file, check for .gzt and .gz variants as well
+
+    client/
+        client_types.cpp
+
+David  24 Jan 2012
+    - client: bug fixes in gzipped download code
+
+    client/
+        client_types.cpp
+        cs_files.cpp
+
+Rom    24 Jan 2012
+    - client: undo my previous commit.  We request .gz from the server and write
+        the contents to a .gzt file.
+ 
+    client/
+        http_curl.cpp
+
+Rom    24 Jan 2012
+    - VBOX: Fix build breaks for Linux and Mac.
+    
+    samples/vboxwrapper/
+        vbox.cpp
+
+Rom    24 Jan 2012
+    - client: Fix long standing issue with the .gz extension automatically being
+        decompressed on-the-fly when it wasn't supposed to be.
+
+    client/
+        http_curl.cpp
+
+David  24 Jan 2012
+    - volunteer storage
+    client/
+        client_types.h
+    vda/
+        vdad.cpp
+
+Charlie 25 Jan 2012
+    - VBOX: Fix compiler warnings on Mac.
+    
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+
+Charlie 25 Jan 2012
+    - MGR: Make the task pane in the advanced view and its buttons fixed sizes; 
+        ellipse the button contents if needed; show full button text plus 
+        description in button tooltips; don't set button labels if unchanged.
+
+    clientgui/
+        BOINCBaseView.cpp, .h
+        BOINCTaskCtrl.cpp, .h
+        stdwx.h
+
+David  26 Jan 2012
+    - update_versions: for gzipped files,
+        send the size of the compressed file as well.
+    - client: parse and write the compressed size (FILE_INFO::gzipped_nbytes).
+        For get_transfer GUI RPCs, if it's a compressed download send
+        the compressed size.
+        That way the manager will show the fraction done correctly.
+
+    tools/
+        update_versions
+    lib/
+        gui_rpc_client.h
+    vda/
+        vdad.cpp
+    client/
+        client_types.cpp,h
+        acct_setup.cpp
+
+Charlie 26 Jan 2012
+    - client: disable temporary debugging aids in coproc_detect logic.
+        
+    client/
+        coproc_detect.cpp
+
+David  26 Jan 2012
+    - client: fix write of gzipped_nbytes
+
+    client/
+        client_types.cpp
+
+Rom    26 Jan 2012
+    - Tag for 7.0.12 release, all platforms
+      boinc_core_release_7_0_12
+
+    /
+        configure.ac
+        version.h
+
+Rom    26 Jan 2012
+    - client: after a gzipped file is downloaded,
+        we uncompress it and then verify it.
+        The latter involves computing its MD5, which reads the entire file.
+        Combine these 2 steps so that the MD5 is computed
+        as the file is uncompressed,
+        eliminating the need to read the file again.
+
+    lib/
+        crypt.cpp,h
+        crypt_prog.cpp
+    client/
+        client_types.cpp,h
+        cs_files.cpp
+
+Charlie 26 Jan 2012
+    - Mac: Update the build instructions with the current URL for c-ares-1.7.4.
+    
+    mac_build/
+        HowToBuildBOINC_XCode.rtf
+
+Charlie 27 Jan 2012
+    - MGR: If CPU or GPU is suspended from Activity Menu, change "Snooze" items 
+        to "Resume" in system tray menu.
+    - client: Always remember previous CPU and GPU activity settings.
+    
+    client/
+        client_types.cpp,h
+        cs_statefile.cpp
+    clientgui/
+        BOINCTaskBar.cpp,.h
+        mac/
+            macSysMenu.cpp
+
+David  27 Jan 2012
+    - manager: in Disk View, try to make colors more distinct.
+        In addition to varying the hue,
+        cycle through 3 different luminance values (.5, .7, .9)
+    - web: update the wording of buffer-size preferences
+
+    clientgui/
+        ViewResources.cpp
+    html/inc/
+        prefs.inc
+
+David  27 Jan 2012
+    - manager: in tooltips for Project/Task buttons,
+        don't prepend "button name: ";
+        add a tooltip for Home Page button.
+
+    clientgui/
+        BOINCBaseView.cpp
+        BOINCTaskCtrl.cpp
+
+Charlie 27 Jan 2012
+    - MGR: Disable new "Resume" items in system tray menu if modal dialog is open.
+
+    clientgui/
+        BOINCTaskBar.cpp
+
+David  28 Jan 2012
+    - web: msg tweak
+    - screensaver coordinator: use new XML parser
+
+    clientscr/
+        screensaver.cpp
+    html/user/
+        forum_report_post.php
+
+Charlie 30 Jan 2012
+    - client: because available GPU RAM value is unreliable, don't defer 
+        scheduling a task based on insufficient GPU RAM.  For now, the 
+        relevant code is guarded by a "#define DEFER_ON_GPU_AVAIL_RAM 0" 
+        so we can easily restore it if we find a reliable way to get the 
+        value of available GPU RAM periodically. 
+        
+        NOTE: we are still sending this unreliable value to project 
+        servers in the sched_request file.  Does it make sense to do so?
+        
+    client/
+        cpu_sched.cpp
+    lib/
+        coproc.h
+
+David  30 Jan 2012
+    - manager: change text for buffer-size fields in advanced prefs dialog
+
+    clientgui/
+        DlgAdvPreferencesBase.cpp
+
+David  30 Jan 2012
+    - server: revamp the "assigned job" mechanism.
+        This now supports two main use cases:
+        1) there's a job that you want to run once on all hosts,
+            present and future
+            (or all hosts belonging to a user, or to a team).
+            The job is never transitioned, validated, or assimilated.
+        2) There's a normal job for which you want to use only
+            hosts belonging to a specific user (e.g. cluster or cloud hosts).
+            This restriction can be made either when the job is created,
+            or on the fly,
+            e.g. as part of a scheme for accelerating batch completion.
+            For the latter purposes we now provide a function
+                restrict_wu_to_user(DB_WORKUNIT&, int userid);
+
+            The job goes through the standard
+            transitioner/validator/assimilator path.
+
+        These cases are enabled by config flags
+            <enable_assignment_multi/>
+            <enable_assignment/>
+        respectively.
+
+        Assignment of type 2) are no longer stored in shared mem,
+        so there is no limit on their number.
+
+        There is no longer a rule that assigned job names must contain "asgn".
+
+        NOTE: this requires a database update.
+
+    db/
+        boinc_db.cpp,h
+        constraints.sql
+        schema.sql
+    sched/
+        sched_util.cpp,h
+        sched_shmem.cpp
+        transitioner.cpp
+        sched_assign.cpp
+    tools/
+        backend_lib.cpp
+        create_work.cpp
+    html/ops/
+        db_update.php
+    lib/
+        common_defs.h
+
+David  30 Jan 2012
+    - admin web: improvements to the pages for investigating result failures
+        (though considerable funkiness remains)
+
+    html/
+        ops/
+            failure_result_summary_by_platform.php
+            failure_result_summary_by_host.php
+            index.php
+            pass_percentage_by_platform.php
+        inc/
+            db_ops.inc
+
+David  31 Jan 2012
+    - admin web: fixes and clarifications to failure summaries
+
+    html/
+        ops/
+            failure_result_summary_by_platform.php
+            failure_result_summary_by_host.php
+            index.php
+            pass_percentage_by_platform.php
+        inc/
+            boinc_db.inc
+            db_ops.inc
+        user/
+            apps.php
+
+David  31 Jan 2012
+    - create_work tool: change option names for assigned jobs
+    - admin web: show actual platform name in result summary page
+
+    tools/
+        create_work.cpp
+    html/ops/
+        pass_percentage_by_platform.php
+
+David  31 Jan 2012
+    - web: fix the user search feature
+    - scheduler: parse d_project_share
+    - scheduler: if vbox and vbox_mt are both available,
+        use vbox for a 1-CPU machine
+
+    db/
+        boinc_db.h
+    sched/
+        sched_customize.cpp
+        sched_types.cpp
+    html/user/
+        user_search.php
+
+David  1 Feb 2012
+    - scheduler: add log messages to show VM-related request items
+    - fix typos in db_update script
+
+    sched/
+        sched_send.cpp
+    html/ops/
+        db_update.php
+
+Charlie 2 Feb 2012
+    - Tag for 7.0.13 release, all platforms
+      boinc_core_release_7_0_13
+
+    /
+        configure.ac
+        version.h
+
+David  2 Feb 2012
+    - client: fix job scheduler problem:
+        old: RR simulation marks some jobs as missing their deadline,
+            and the job scheduler runs those jobs as "high priority".
+        problem: those generally aren't the ones we should run.
+            E.g. if the client has a lot of jobs from a project,
+            typically the ones with later deadlines are the ones
+            whose deadlines are missed in the simulation.
+            But in this case the EDF policy says we should run
+            the ones with earliest deadlines.
+        new: if a project has N deadline misses,
+            run its N earliest-deadline jobs,
+            regardless of whether they missed their deadline in the sim.
+        Note: this is how it used to be (as designed by John McLeod).
+            I attempted to improve it, and got it wrong.
+
+    client/
+        cpu_sched.cpp
+
+Rom    2 Feb 2012
+    - MGR: Fix cookie detection problem when using the
+        IEGetProtectedModeCookie API.  Function prototype changed from the
+        InternetGetCookieEx function.  HRESULT != BOOL.
+        
+    clientgui/
+        browser.cpp
+
+Rom    2 Feb 2012
+    - Tag for 7.0.14 release, all platforms
+      boinc_core_release_7_0_14
+
+    /
+        configure.ac
+        version.h

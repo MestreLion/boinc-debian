@@ -25,7 +25,7 @@
  * Some of the fields can be changed.
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_apps.php 24980 2012-01-03 03:51:43Z davea $
+ * @(#) $Id: manage_apps.php 25115 2012-01-21 00:04:54Z davea $
 \***********************************************************************/
 
 // TODO - code cleanup and use new DB interface
@@ -47,7 +47,6 @@ for($i=0;$i<$Nplatform;$i++){
     $platform[$id]=$item->user_friendly_name;
  }
 mysql_free_result($result);
-
 
 /***************************************************\
  *  Action: process form input for changes
@@ -85,7 +84,6 @@ if( !empty($_POST) ) {
         }
 
 
-        /* Minimum version limit */
         $field="weight_".$id;
         $new_v= $_POST[$field] + 0;
         $old_v=$item->weight;
@@ -133,7 +131,13 @@ if( !empty($_POST) ) {
 
 admin_page_head("Manage Applications");
 
-if(isset($commands)) echo $commands;
+if (strlen($commands)) {
+    echo "The following updates were done: $commands
+        <p>
+        <b>You must stop and restart the project
+        for these changes to take effect</b>.
+";
+}
 
 
 $self=$_SERVER['PHP_SELF'];
@@ -245,5 +249,5 @@ echo "</form><p>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_apps.php 24980 2012-01-03 03:51:43Z davea $";
+$cvs_version_tracker[]="\$Id: manage_apps.php 25115 2012-01-21 00:04:54Z davea $";
 ?>

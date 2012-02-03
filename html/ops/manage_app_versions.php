@@ -25,7 +25,7 @@
  * Some of the fields can be changed.
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_app_versions.php 23923 2011-08-03 16:45:00Z davea $
+ * @(#) $Id: manage_app_versions.php 25115 2012-01-21 00:04:54Z davea $
 \***********************************************************************/
 
 // TODO: rewrite this using the new DB interface
@@ -112,7 +112,13 @@ if( !empty($_POST) ) {
 
 admin_page_head("Manage Application Versions");
 
-if($commands) echo $commands;   // show the last DB commands given
+if (strlen($commands)) {
+    echo "The following updates were done: $commands
+        <p>
+        <b>You must stop and restart the project
+        for these changes to take effect.</b>
+";
+}
 
 $self=$_SERVER['PHP_SELF'];
 echo "<form action='$self' method='POST'>\n";
@@ -193,5 +199,5 @@ echo "</form><P>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_app_versions.php 23923 2011-08-03 16:45:00Z davea $"; 
+$cvs_version_tracker[]="\$Id: manage_app_versions.php 25115 2012-01-21 00:04:54Z davea $"; 
 ?>
