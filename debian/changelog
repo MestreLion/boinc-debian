@@ -1,3 +1,9 @@
+boinc (7.0.14+dfsg-1) unstable; urgency=low
+
+  * New upstream version (Closes: #658485).
+
+ -- Steffen Moeller <moeller@debian.org>  Fri, 03 Feb 2012 21:28:27 +0100
+
 boinc (7.0.11+dfsg-1) unstable; urgency=low
 
   * Removing ","s from "should start" line in init script (Closes: #654693)
