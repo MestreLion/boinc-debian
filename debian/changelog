@@ -1,3 +1,9 @@
+boinc (7.0.14+dfsg-2) UNRELEASED; urgency=low
+
+  * Added patch to include unistd.h 
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 05 Feb 2012 00:25:02 +0100
+
 boinc (7.0.14+dfsg-1) unstable; urgency=low
 
   * New upstream version (Closes: #658485).
