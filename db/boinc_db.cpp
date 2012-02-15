@@ -1369,7 +1369,7 @@ int DB_TRANSITIONER_ITEM_SET::enumerate(
             "   workunit AS wu "
             "       LEFT JOIN result AS res ON wu.id = res.workunitid "
             "WHERE "
-            "   wu.transition_time < %d %s and transitioner_flags<>%d"
+            "   wu.transition_time < %d %s and transitioner_flags<>%d "
             "LIMIT "
             "   %d ",
             transition_time, mod_clause, TRANSITION_NONE, nresult_limit
@@ -2393,4 +2393,4 @@ void DB_VDA_CHUNK_HOST::db_parse(MYSQL_ROW &r) {
     transition_time = atof(r[i++]);
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 25169 2012-01-30 22:39:13Z davea $";
+const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 25197 2012-02-04 00:18:37Z davea $";

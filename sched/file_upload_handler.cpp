@@ -304,12 +304,12 @@ int handle_file_upload(FILE* in, R_RSA_PUBLIC_KEY& key) {
             "<name>%s</name><max_nbytes>%.0f</max_nbytes>",
             name, max_nbytes
         );
-        retval = verify_string(
+        retval = check_string_signature(
             signed_xml, xml_signature, key, is_valid
         );
         if (retval || !is_valid) {
             log_messages.printf(MSG_CRITICAL,
-                "verify_string() [%s] [%s] retval %d, is_valid = %d\n",
+                "check_string_signature() [%s] [%s] retval %d, is_valid = %d\n",
                 signed_xml, xml_signature,
                 retval, is_valid
             );
@@ -701,4 +701,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 24391 2011-10-13 19:05:18Z davea $";
+const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 25232 2012-02-09 20:34:29Z davea $";

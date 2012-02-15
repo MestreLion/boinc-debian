@@ -38,16 +38,18 @@
 #endif
 
 #include "error_numbers.h"
-#include "file_names.h"
 #include "filesys.h"
-#include "client_msgs.h"
 #include "log_flags.h"
 #include "md5.h"
 #include "parse.h"
-#include "util.h"
 #include "str_util.h"
 #include "str_replace.h"
+#include "util.h"
+
+#include "async_file.h"
+#include "client_msgs.h"
 #include "client_state.h"
+#include "file_names.h"
 #include "pers_file_xfer.h"
 #include "sandbox.h"
 
@@ -429,8 +431,8 @@ int PROJECT::write_state(MIOFILE& out, bool gui_rpc) {
             "        <name>%s</name>\n"
             "        <value>%f</value>\n"
             "    </rsc_backoff_interval>\n",
-            rsc_name(j), rsc_pwf[j].backoff_interval,
-            rsc_name(j), rsc_pwf[j].backoff_time
+            rsc_name(j), rsc_pwf[j].backoff_time,
+            rsc_name(j), rsc_pwf[j].backoff_interval
         );
         if (no_rsc_ams[j]) {
             out.printf("    <no_rsc_ams>%s</no_rsc_ams>\n", rsc_name(j));
@@ -861,6 +863,13 @@ FILE_INFO::FILE_INFO() {
     strcpy(xml_signature, "");
     strcpy(file_signature, "");
     cert_sigs = 0;
+    async_verify = NULL;
+}
+
+FILE_INFO::~FILE_INFO() {
+    if (async_verify) {
+        remove_async_verify(async_verify);
+    }
 }
 
 void FILE_INFO::reset() {
@@ -996,7 +1005,13 @@ int FILE_INFO::parse(XML_PARSER& xp) {
         if (xp.parse_double("nbytes", nbytes)) continue;
         if (xp.parse_double("gzipped_nbytes", gzipped_nbytes)) continue;
         if (xp.parse_double("max_nbytes", max_nbytes)) continue;
-        if (xp.parse_int("status", status)) continue;
+        if (xp.parse_int("status", status)) {
+            // on startup, VERIFY_PENDING is meaningless
+            if (status == FILE_VERIFY_PENDING) {
+                status = FILE_NOT_PRESENT;
+            }
+            continue;
+        }
         if (xp.parse_bool("executable", executable)) continue;
         if (xp.parse_bool("uploaded", uploaded)) continue;
         if (xp.parse_bool("sticky", sticky)) continue;
@@ -1244,11 +1259,14 @@ int FILE_INFO::merge_info(FILE_INFO& new_info) {
 // (couldn't download, RSA/MD5 check failed, etc)
 //
 bool FILE_INFO::had_failure(int& failnum) {
-    if (status != FILE_NOT_PRESENT && status != FILE_PRESENT) {
-        failnum = status;
-        return true;
+    switch (status) {
+    case FILE_NOT_PRESENT:
+    case FILE_PRESENT:
+    case FILE_VERIFY_PENDING:
+        return false;
     }
-    return false;
+    failnum = status;
+    return true;
 }
 
 void FILE_INFO::failure_message(string& s) {
@@ -1299,21 +1317,21 @@ int FILE_INFO::gzip() {
     return 0;
 }
 
-// unzip a file.
-// If md5_buf is not NULL, compute the uncompressed MD5 at the same time
+// unzip a file, and compute the uncompressed MD5 at the same time
 //
 int FILE_INFO::gunzip(char* md5_buf) {
     unsigned char buf[BUFSIZE];
-    char inpath[256], outpath[256];
+    char inpath[256], outpath[256], tmppath[256];
     md5_state_t md5_state;
 
-    if (md5_buf) {
-        md5_init(&md5_state);
-    }
+    md5_init(&md5_state);
     get_pathname(this, outpath, sizeof(outpath));
     strcpy(inpath, outpath);
     strcat(inpath, ".gz");
-    FILE* out = boinc_fopen(outpath, "wb");
+    strcpy(tmppath, outpath);
+    char* p = strrchr(tmppath, '/');
+    strcpy(p+1, "decompress_temp");
+    FILE* out = boinc_fopen(tmppath, "wb");
     if (!out) return ERR_FOPEN;
     gzFile in = gzopen(inpath, "rb");
     while (1) {
@@ -1325,21 +1343,18 @@ int FILE_INFO::gunzip(char* md5_buf) {
             fclose(out);
             return ERR_WRITE;
         }
-        if (md5_buf) {
-            md5_append(&md5_state, buf, n);
-        }
+        md5_append(&md5_state, buf, n);
     }
-    if (md5_buf) {
-        unsigned char binout[16];
-        md5_finish(&md5_state, binout);
-        for (int i=0; i<16; i++) {
-            sprintf(md5_buf+2*i, "%02x", binout[i]);
-        }
-        md5_buf[32] = 0;
+    unsigned char binout[16];
+    md5_finish(&md5_state, binout);
+    for (int i=0; i<16; i++) {
+        sprintf(md5_buf+2*i, "%02x", binout[i]);
     }
+    md5_buf[32] = 0;
 
     gzclose(in);
     fclose(out);
+    boinc_rename(tmppath, outpath);
     delete_project_owned_file(inpath, true);
     return 0;
 }
