@@ -18,3 +18,5 @@ stripchart_security.patch
 #andYetMorePatches04.patch
 #erase_while_1.patch
 redundant_i.patch
+cppcheck_more.patch
+cppcheck_realloc.patch

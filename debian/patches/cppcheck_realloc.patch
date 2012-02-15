@@ -1,0 +1,93 @@
+Index: boinc/lib/parse.cpp
+===================================================================
+--- boinc.orig/lib/parse.cpp	2012-01-17 00:28:55.000000000 +0100
++++ boinc/lib/parse.cpp	2012-02-10 22:21:13.000000000 +0100
+@@ -178,8 +178,21 @@
+         }
+         int n = (int)strlen(line);
+         if (nused + n >= bufsize) {
+-            bufsize *= 2;
+-            buf = (char*)realloc(buf, bufsize);
++            char *b = (char*)realloc(buf, bufsize*2);
++            if (b) {
++                buf = b;
++                bufsize *= 2;
++            }
++            else {
++                b = (char*)realloc(buf, nused+n+2);
++		if (!b) {
++                   fprintf(STDERR,"Ran out of memory.\n");
++                   free(buf);
++                   return ERR_XML_PARSE;
++		}
++                buffsize = nused+n+2;
++		buf = b;
++            }
+         }
+         strcpy(buf+nused, line);
+         nused += n;
+Index: boinc/lib/susp.cpp
+===================================================================
+--- boinc.orig/lib/susp.cpp	2011-03-17 18:51:04.000000000 +0100
++++ boinc/lib/susp.cpp	2012-02-10 22:25:31.000000000 +0100
+@@ -185,12 +185,13 @@
+ 
+     if (i >= bottom) {
+ 	bottom += 2;
+-        array = (Victim_t*)realloc (
++        Victim_t *a= (Victim_t*)realloc (
+             array, (bottom * sizeof (Victim_t)));
+-        if (array == NULL) {
++        if (a == NULL) {
+             pthread_mutex_unlock (&mut);
+             return errno;
+         }
++	array=a;
+         array[bottom-1].inuse = 0;	/* Clear new last entry */
+     }
+ 
+Index: boinc/lib/crypt_prog.cpp
+===================================================================
+--- boinc.orig/lib/crypt_prog.cpp	2012-02-03 21:33:50.000000000 +0100
++++ boinc/lib/crypt_prog.cpp	2012-02-11 11:45:38.000000000 +0100
+@@ -109,6 +109,7 @@
+         die("can't open /dev/random\n");
+     }
+     fread(&n, sizeof(n), 1, f);
++    fclose(f);
+ #endif
+     return n;
+ }
+@@ -350,10 +351,10 @@
+         } else {
+             // o2b
+             rsa_key_ = (RSA *)calloc(1, sizeof(RSA));
+-            memset(rsa_key_, 0, sizeof(RSA));
+             if (rsa_key_ == NULL) {
+                 die("could not allocate memory for RSA structure.\n");
+             }
++            //memset(rsa_key_, 0, sizeof(RSA)); // redundant (calloc initiates with 0, needs to move after if
+             if (kpriv) {
+                 fpriv = fopen (argv[4], "r");
+                 rsa_key_ = PEM_read_RSAPrivateKey(fpriv, NULL, NULL, NULL);
+Index: boinc/lib/diagnostics_win.cpp
+===================================================================
+--- boinc.orig/lib/diagnostics_win.cpp	2011-03-17 18:51:04.000000000 +0100
++++ boinc/lib/diagnostics_win.cpp	2012-02-11 11:49:37.000000000 +0100
+@@ -331,6 +331,7 @@
+         *ppBuffer = HeapAlloc(hHeap, HEAP_ZERO_MEMORY, *pcbBuffer);
+         if (ppBuffer == NULL) {
+             retval = ERROR_NOT_ENOUGH_MEMORY;
++            return retval;
+         }
+ 
+         Status = pNTQSI(
+@@ -1638,6 +1639,8 @@
+                 case 1: // write attempt
+                     sprintf(substatus, "write attempt to address 0x%8.8X", pExPtrs->ExceptionRecord->ExceptionInformation[1]);
+                     break;
++                default:// initialise substatus
++                    substatus[0]=0;
+                 }
+             }
+             fprintf(stderr, "Reason: %s (0x%x) at address 0x%p %s\n\n", status, exception_code, exception_address, substatus);

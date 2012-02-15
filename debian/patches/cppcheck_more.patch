@@ -1,0 +1,13 @@
+Index: boinc/lib/mac_address.cpp
+===================================================================
+--- boinc.orig/lib/mac_address.cpp	2012-02-03 22:45:40.000000000 +0100
++++ boinc/lib/mac_address.cpp	2012-02-12 21:23:40.000000000 +0100
+@@ -147,7 +147,7 @@
+ 		// valid, no buffer overflow
+ 		PIP_ADAPTER_INFO pAdapterInfo = AdapterInfo; // Contains pointer to current adapter info
+ 		do {
+-			sprintf(addresses, "%s%s%02x:%02x:%02x:%02x:%02x:%02x", addresses, delimiter,
++			sprintf(addresses, "%s%s%02x:%02x:%02x:%02x:%02x:%02x", "", delimiter,
+ 					pAdapterInfo->Address[0], pAdapterInfo->Address[1], pAdapterInfo->Address[2], 
+ 					pAdapterInfo->Address[3], pAdapterInfo->Address[4], pAdapterInfo->Address[5]);
+ 			delimiter[0] = ':';
