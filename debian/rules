@@ -281,8 +281,11 @@ override_dh_auto_clean:
 	  packages/solaris/CSW/boincmanager/Makefile
 	debconf-updatepo
 
-override_dh_auto_install: update-boinc-applinks.1
+override_dh_auto_install: update-boinc-applinks.1 $(SAMPLES)
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	mkdir -p $(CURDIR)/debian/tmp/samples
+	cp $(SAMPLES) $(CURDIR)/debian/tmp/samples
+	
 	dh_install
 	for i in $(CURDIR)/debian/*/usr/bin ; \
 	do \

@@ -16,11 +16,11 @@ Index: boinc/lib/parse.cpp
 +            else {
 +                b = (char*)realloc(buf, nused+n+2);
 +		if (!b) {
-+                   fprintf(STDERR,"Ran out of memory.\n");
++                   fprintf(stderr,"Ran out of memory.\n");
 +                   free(buf);
 +                   return ERR_XML_PARSE;
 +		}
-+                buffsize = nused+n+2;
++               bufsize = nused+n+2;
 +		buf = b;
 +            }
          }
