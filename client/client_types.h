@@ -59,6 +59,7 @@ extern const char* rsc_name(int);
 extern COPROCS coprocs;
 
 struct FILE_INFO;
+struct ASYNC_VERIFY;
 
 // represents a list of URLs (e.g. to download a file)
 // and a current position in that list
@@ -98,6 +99,7 @@ struct URL_LIST {
 //
 #define FILE_NOT_PRESENT    0
 #define FILE_PRESENT        1
+#define FILE_VERIFY_PENDING	2
 
 struct FILE_INFO {
     char name[256];
@@ -135,9 +137,10 @@ struct FILE_INFO {
     std::string error_msg;
         // if permanent error occurs during file xfer, it's recorded here
     CERT_SIGS* cert_sigs;
+    ASYNC_VERIFY* async_verify;
 
     FILE_INFO();
-    ~FILE_INFO(){}
+    ~FILE_INFO();
     void reset();
     int set_permissions();
     int parse(XML_PARSER&);
@@ -148,7 +151,7 @@ struct FILE_INFO {
     bool had_failure(int& failnum);
     void failure_message(std::string&);
     int merge_info(FILE_INFO&);
-    int verify_file(bool, bool);
+    int verify_file(bool, bool, bool);
     bool verify_file_certs();
     int gzip();
         // gzip file and add .gz to name
@@ -689,6 +692,9 @@ struct RESULT {
     int _state;
         // state of this result: see lib/result_state.h
     inline int state() { return _state; }
+    inline void set_ready_to_report() {
+        ready_to_report = true;
+    }
     void set_state(int, const char*);
     int exit_status;
         // return value from the application
@@ -829,8 +835,7 @@ struct RUN_MODE {
 
 // a platform supported by the client.
 
-class PLATFORM {
-public:
+struct PLATFORM {
     std::string name;
 };
 
