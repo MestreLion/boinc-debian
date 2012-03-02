@@ -1,3 +1,4 @@
+improve_opendir_warning.patch
 termios_is_everywhere.patch
 mac_addresses_cores_in_kfreebsd.patch
 stripchart_debian.patch
@@ -20,3 +21,4 @@ stripchart_security.patch
 redundant_i.patch
 cppcheck_more.patch
 cppcheck_realloc.patch
+cwd_handling.patch

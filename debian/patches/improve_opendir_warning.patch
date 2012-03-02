@@ -1,0 +1,16 @@
+Index: boinc/lib/filesys.cpp
+===================================================================
+--- boinc.orig/lib/filesys.cpp	2012-02-15 21:13:03.000000000 +0100
++++ boinc/lib/filesys.cpp	2012-02-17 11:41:14.000000000 +0100
+@@ -130,7 +130,10 @@
+     dirp->handle = INVALID_HANDLE_VALUE;
+ #else
+     dirp = opendir(p);
+-    if (!dirp) return NULL;
++    if (!dirp) {
++        fprintf("dir_open: Could not open directory '%s'.\n",p);
++        return NULL;
++    }
+ #endif
+     return dirp;
+ }
