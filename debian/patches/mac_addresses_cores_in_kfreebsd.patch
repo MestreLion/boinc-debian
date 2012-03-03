@@ -1,8 +1,8 @@
 Index: boinc/lib/mac_address.cpp
 ===================================================================
---- boinc.orig/lib/mac_address.cpp	2011-10-30 00:27:06.000000000 +0200
-+++ boinc/lib/mac_address.cpp	2012-02-01 15:49:40.000000000 +0100
-@@ -134,6 +134,10 @@
+--- boinc.orig/lib/mac_address.cpp	2012-03-03 01:12:22.000000000 +0100
++++ boinc/lib/mac_address.cpp	2012-03-03 01:14:00.000000000 +0100
+@@ -144,6 +144,10 @@
  
  bool
  get_mac_addresses(char* addresses) {
@@ -13,7 +13,7 @@ Index: boinc/lib/mac_address.cpp
  #if defined(_WIN32)
      IP_ADAPTER_INFO AdapterInfo[16]; // Allocate information for up to 16 NICs
  	DWORD dwBufLen = sizeof(AdapterInfo); // Save memory size of buffer
-@@ -261,6 +265,10 @@
+@@ -264,6 +268,10 @@
          }
          hw_addr=(struct ether_addr *)&(item->lifr_lifru.lifru_enaddr);  
  #endif

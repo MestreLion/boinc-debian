@@ -8,7 +8,7 @@ Index: boinc/lib/filesys.cpp
      dirp = opendir(p);
 -    if (!dirp) return NULL;
 +    if (!dirp) {
-+        fprintf("dir_open: Could not open directory '%s'.\n",p);
++        fprintf(stderr,"dir_open: Could not open directory '%s'.\n",p);
 +        return NULL;
 +    }
  #endif
