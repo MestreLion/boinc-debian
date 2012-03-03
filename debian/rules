@@ -120,7 +120,7 @@ CFGFLAGS_boinc-client = \
   --prefix=/usr \
   --enable-client \
   --enable-server \
-  --enable-fcgi \
+  --disable-fcgi \
   --enable-manager \
   --enable-libraries \
   --enable-unicode \
