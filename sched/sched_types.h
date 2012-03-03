@@ -306,11 +306,14 @@ struct SCHEDULER_REQUEST {
     std::vector<RESULT> file_xfer_results;
     std::vector<MSG_FROM_HOST_DESC> msgs_from_host;
     std::vector<FILE_INFO> file_infos;
-        // sticky files reported by host for locality scheduling
+        // sticky files reported by host
+
+    // temps used by locality scheduling:
     std::vector<FILE_INFO> file_delete_candidates;
-        // sticky files reported by host, deletion candidates
+        // deletion candidates
     std::vector<FILE_INFO> files_not_needed;
-        // sticky files reported by host, no longer needed
+        // files no longer needed
+
     std::vector<OTHER_RESULT> other_results;
         // in-progress results from this project
     std::vector<IP_RESULT> ip_results;
@@ -507,6 +510,7 @@ struct SCHEDULER_REPLY {
     std::vector<std::string>result_abort_if_not_starteds;
     std::vector<MSG_TO_HOST>msgs_to_host;
     std::vector<FILE_INFO>file_deletes;
+    std::vector<std::string> file_transfer_requests;
     char code_sign_key[4096];
     char code_sign_key_signature[4096];
     bool send_msg_ack;

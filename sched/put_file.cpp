@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    retval = put_file(
+    retval = create_put_file_msg(
         host_id, file_name, urls, md5, nbytes, dtime()+max_latency
     );
 
@@ -137,4 +137,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_f3c3c4b892 = "$Id: put_file.cpp 23866 2011-07-20 22:27:01Z davea $";
+const char *BOINC_RCSID_f3c3c4b892 = "$Id: put_file.cpp 25341 2012-02-24 22:55:11Z davea $";

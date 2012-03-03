@@ -250,9 +250,14 @@ int DB_BASE::update_field(const char* clause, const char* where_clause) {
 // delete record
 //
 int DB_BASE::delete_from_db() {
-    char vals[MAX_QUERY_LEN], query[MAX_QUERY_LEN];
-    db_print(vals);
+    char query[MAX_QUERY_LEN];
     sprintf(query, "delete from %s where id=%u", table_name, get_id());
+    return db->do_query(query);
+}
+
+int DB_BASE::delete_from_db_multi(const char* where_clause) {
+    char query[MAX_QUERY_LEN];
+    sprintf(query, "delete from %s where %s", table_name, where_clause);
     return db->do_query(query);
 }
 
@@ -506,4 +511,4 @@ void escape_mysql_like_pattern(const char* in, char* out) {
     }
 }
 
-const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 24555 2011-11-09 07:41:49Z davea $";
+const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 25284 2012-02-17 18:26:36Z davea $";

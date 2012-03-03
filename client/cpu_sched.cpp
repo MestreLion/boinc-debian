@@ -439,16 +439,12 @@ RESULT* first_coproc_result(int rsc_type) {
         if (!rs && bs) {
             continue;
         }
-        if (rp->received_time < best->received_time) {
+
+        // else used "arrived first" order
+        //
+        if (rp->index < best->index) {
             best = rp;
             best_prio = prio;
-        } else if (rp->received_time == best->received_time) {
-            // make it deterministic by looking at name
-            //
-            if (strcmp(rp->name, best->name) > 0) {
-                best = rp;
-                best_prio = prio;
-            }
         }
     }
     return best;
@@ -567,7 +563,7 @@ static void update_rec() {
         if (log_flags.priority_debug) {
             double dt = gstate.now - gstate.debt_interval_start;
             msg_printf(p, MSG_INFO,
-                "[debt] recent est credit: %.2fG in %.2f sec, %f + %f ->%f",
+                "[prio] recent est credit: %.2fG in %.2f sec, %f + %f ->%f",
                 x, dt, old, p->pwf.rec-old, p->pwf.rec
             );
         }
@@ -934,7 +930,7 @@ static inline bool in_run_list(vector<RESULT*>& run_list, ACTIVE_TASK* atp) {
 // if find a MT job J, and X < ncpus, move J before all non-MT jobs
 // But don't promote a MT job ahead of a job in EDF
 //
-// This is needed because there may always be a 1-CPU jobs
+// This is needed because there may always be a 1-CPU job
 // in the middle of its time-slice, and MT jobs could starve.
 //
 static void promote_multi_thread_jobs(vector<RESULT*>& runnable_jobs) {
@@ -1566,13 +1562,12 @@ bool CLIENT_STATE::enforce_run_list(vector<RESULT*>& run_list) {
     // prune jobs that don't fit in RAM or that exceed CPU usage limits.
     // Mark the rest as SCHEDULED
     //
-    bool running_multithread = false;
     for (i=0; i<run_list.size(); i++) {
         RESULT* rp = run_list[i];
         atp = lookup_active_task_by_result(rp);
 
         if (!rp->uses_coprocs()) {
-            // see if we're already using too many CPUs to run this job
+            // skip if we're already using all the CPUs
             //
             if (ncpus_used >= ncpus) {
                 if (log_flags.cpu_sched_debug) {
@@ -1583,47 +1578,6 @@ bool CLIENT_STATE::enforce_run_list(vector<RESULT*>& run_list) {
                     );
                 }
                 continue;
-            }
-
-            // Don't run a multithread app if usage would be #CPUS+1 or more.
-            // Multithread apps don't run well on an overcommitted system.
-            // Allow usage of #CPUS + fraction,
-            // so that a GPU app and a multithread app can run together.
-            //
-            if (rp->avp->avg_ncpus > 1) {
-                if (ncpus_used_non_gpu && (ncpus_used_non_gpu + rp->avp->avg_ncpus >= ncpus+1)) {
-                    // the "ncpus_used &&" is to allow running a job that uses
-                    // more than ncpus (this can happen in pathological cases)
-
-                    if (log_flags.cpu_sched_debug) {
-                        msg_printf(rp->project, MSG_INFO,
-                            "[cpu_sched_debug] not enough CPUs for multithread job, skipping %s",
-                            rp->name
-                        );
-                    }
-                    continue;
-                }
-                running_multithread = true;
-            } else {
-                // here for a single-thread app.
-                // Don't run if we're running a multithread app,
-                // and running this app would overcommit CPUs.
-                //
-                if (running_multithread) {
-                    if (ncpus_used + 1 > ncpus) {
-                        if (log_flags.cpu_sched_debug) {
-                            msg_printf(rp->project, MSG_INFO,
-                                "[cpu_sched_debug] avoiding overcommit with multithread job, skipping %s",
-                                rp->name
-                            );
-                        }
-                        continue;
-                    }
-                } else {
-                    if (ncpus_used >= ncpus) {
-                        continue;
-                    }
-                }
             }
         }
 

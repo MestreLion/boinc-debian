@@ -889,6 +889,9 @@ int SCHEDULER_REPLY::write(FILE* fout, SCHEDULER_REQUEST& sreq) {
             file_deletes[i].name
         );
     }
+    for (i=0; i<file_transfer_requests.size(); i++) {
+        fprintf(fout, "%s", file_transfer_requests[i].c_str());
+    }
 
     fprintf(fout,
         "<no_cpu_apps>%d</no_cpu_apps>\n"
@@ -1399,4 +1402,4 @@ double capped_host_fpops() {
     return x;
 }
 
-const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 25176 2012-02-01 03:30:14Z davea $";
+const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 25354 2012-02-29 01:11:28Z davea $";

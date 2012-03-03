@@ -1080,8 +1080,11 @@ function show_result_short($result) {
             $received = "<font color=\"#ff3333\">". time_str($result->report_deadline) . "</font>";
         }
     }
+    $version = sprintf("%.2f", $result->app_version_num/100);
     $av = BoincAppVersion::lookup_id($result->app_version_id);
-    $version = sprintf("%.2f", $result->app_version_num/100)." [$av->plan_class]";
+    if ($av) {
+        $version .= " [$av->plan_class]";
+    }
     $outcome_color = outcome_color($result->outcome);
     $validate_color = validate_color($result->validate_state);
     $host_user = host_user_link($result->hostid);
@@ -1264,5 +1267,5 @@ function host_name_by_id($hostid) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: db_ops.inc 25171 2012-01-31 07:21:42Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: db_ops.inc 25260 2012-02-14 21:12:57Z davea $";  //Generated automatically - do not edit
 ?>

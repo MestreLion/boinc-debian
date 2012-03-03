@@ -133,7 +133,17 @@ bool do_pass(APP& app) {
         sprintf(buf, "where workunitid=%d", wu.id);
         canonical_result.clear();
         bool found = false;
-        while (!result.enumerate(buf)) {
+        while (1) {
+            retval = result.enumerate(buf);
+            if (retval) {
+                if (retval != ERR_DB_NOT_FOUND) {
+                    log_messages.printf(MSG_DEBUG,
+                        "DB connection lost, exiting\n"
+                    );
+                    exit(0);
+                }
+                break;
+            }
             results.push_back(result);
             if (result.id == wu.canonical_resultid) {
                 canonical_result = result;
@@ -297,4 +307,4 @@ int main(int argc, char** argv) {
 }
 
 
-const char *BOINC_RCSID_7841370789 = "$Id: assimilator.cpp 23241 2011-03-18 08:20:11Z bema $";
+const char *BOINC_RCSID_7841370789 = "$Id: assimilator.cpp 25259 2012-02-14 18:50:47Z davea $";

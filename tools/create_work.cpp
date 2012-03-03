@@ -293,8 +293,16 @@ int main(int argc, const char** argv) {
             fprintf(stderr, "assignment.insert() failed: %d\n", retval);
             exit(1);
         }
+        sprintf(buf, "transitioner_flags=%d",
+            assign_multi?TRANSITION_NONE:TRANSITION_NO_NEW_RESULTS
+        );
+        retval = wu.update_field(buf);
+        if (retval) {
+            fprintf(stderr, "wu.update() failed: %d\n", retval);
+            exit(1);
+        }
     }
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 25175 2012-01-31 20:25:26Z davea $";
+const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 25314 2012-02-22 22:13:08Z davea $";

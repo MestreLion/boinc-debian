@@ -1404,12 +1404,12 @@ David  6 Feb 2012
         cs_files.cpp
 
 David  6 Feb 2012
-	- client: async file stuff.
-		async decompress/verify seems to be working
+    - client: async file stuff.
+        async decompress/verify seems to be working
 
-	client/
-		async_file.cpp,h
-		gui_http.cpp
+    client/
+        async_file.cpp,h
+        gui_http.cpp
 
 Charlie 6 Feb 2012
     - client: remove "GPU n is OpenCL-capable" messages.  They were 
@@ -1434,27 +1434,27 @@ David  7 Feb 2012
         bolt_refresh.php
 
 David  7 Feb 2012
-	- async file stuff.  mostly working.  still a few bugs
+    - async file stuff.  mostly working.  still a few bugs
 
-	client/
-		cs_apps.cpp
-		http_curl.cpp
-	clientgui/
-		AccountManagerPropertiesPage.cpp
-		ProjectPropertiesPage.cpp
-	lib/
-		str_util.h
+    client/
+        cs_apps.cpp
+        http_curl.cpp
+    clientgui/
+        AccountManagerPropertiesPage.cpp
+        ProjectPropertiesPage.cpp
+    lib/
+        str_util.h
 
 David  7 Feb 2012
-	- client: async file stuff
-		- set threshold at 10 MB for doing things asynchronously
-		- don't count VERIFY_PENDING as failure
+    - client: async file stuff
+        - set threshold at 10 MB for doing things asynchronously
+        - don't count VERIFY_PENDING as failure
 
-	client/
-		async_file.h
-		client_state.cpp
-		client_types.cpp,h
-		cs_apps.cpp
+    client/
+        async_file.h
+        client_state.cpp
+        client_types.cpp,h
+        cs_apps.cpp
 
 Charlie 7 Feb 2012
     - client: Fix bug in setting opencl_device_index.
@@ -1517,15 +1517,15 @@ Rom    8 Feb 2012
         vboxwrapper.cpp
 
 David  8 Feb 2012
-	- client: bug fix for async file ops:
-		set up files in slot dir when starting an app,
-		whether or not it's the first time
+    - client: bug fix for async file ops:
+        set up files in slot dir when starting an app,
+        whether or not it's the first time
 
-	client/
-		app.h
-		app_control.cpp
-		app_start.cpp
-		async_file.cpp,h
+    client/
+        app.h
+        app_control.cpp
+        app_start.cpp
+        async_file.cpp,h
 
 David  8 Feb 2012
     - client: on startup, check file size as well as existence
@@ -1547,18 +1547,18 @@ David  8 Feb 2012
         cs_files.cpp
 
 David  8 Feb 2012
-	- client: fixed a bug in procinfo_app() that would cause processes
-		to be treated as non-BOINC when they actually are,
-		thus falsely triggering CPU-busy suspensions
+    - client: fixed a bug in procinfo_app() that would cause processes
+        to be treated as non-BOINC when they actually are,
+        thus falsely triggering CPU-busy suspensions
 
-	lib/
-		procinfo.cpp
+    lib/
+        procinfo.cpp
 
 David  9 Feb 2012
-	- client: only check file size if the FILE_INFO specifies it.
+    - client: only check file size if the FILE_INFO specifies it.
 
-	client/
-		cs_files.cpp
+    client/
+        cs_files.cpp
 
 David  9 Feb 2012
     - scheduler: don't send "update GPU driver" messages if
@@ -1575,3 +1575,836 @@ Rom    9 Feb 2012
     /
         configure.ac
         version.h
+
+David  9 Feb 2012
+    - client (Unix): don't print misleading "task exited with no finish file"
+        message if task actually called boinc_temporary_exit().
+
+    client/
+        app_start.cpp
+        app_control.cpp
+
+David  9 Feb 2012
+    - storage stuff
+
+    vda/
+        vdad.cpp
+        vdad_lib.cpp,h
+        ssim.cpp
+        makefile
+
+Charlie 10 Feb 2012
+    - client: If OpenCL but no CAL or no CUDA, copy GPU model name from OpenCL so 
+        it will apppear in the host table's serialnum attributes (requested by 
+        Oliver Bock.)
+
+    client/
+        coproc_detect.cpp
+
+Charlie 11 Feb 2012
+    - MGR: Fix a bug which pushed modal dialogs (Attach Wizard) to rear when 
+        Manager process was brought to front from behind (Mac only.)  This 
+        bug was probably introduced in Z-order tweak of 23 Jan 2012.
+
+    clientgui/
+        BOINCGUIApp.cpp
+
+David  12 Feb 2012
+    - client: zero PROJECT::last_upload_start on reset,
+        so that we can fetch work immediately
+    - client: in PERS_FILE_XFER::create_xfer(),
+        check for already-existing file before seeing we're allowed to start a new xfer
+    - client: in PERS_FILE_XFER::create_xfer(),
+        if an async verify is in progress, mark PERS_FILE_XFER as done.
+
+    client/
+        client_state.cpp
+        log_flags.cpp
+        pers_file_xfer.cpp
+
+David  12 Feb 2012
+    - storage stuff
+    - client: message tweak
+
+    lib/
+        crypt_prog.cpp
+        susp.cpp (deleted)
+    vda/
+        vda_lib2.cpp (new)
+        vda_lib.h
+        ssim.cpp
+        makefile
+    client/
+        cpu_sched.cpp
+
+Charlie 13 Feb 2012
+    - MGR: Fix bad <organization_help_url> in Progress Through Processor's 
+        skin files provided by Matt Blumberg on 9 December 2011.
+    
+    clientgui/skins/Progress Thru Processors/
+        skin.xml
+
+Charlie 13 Feb 2012
+    - client: Try to fix incorrect NVIDIA device number in OpenCL descriptions. 
+
+    client/
+        coproc_detect.cpp
+
+Charlie 13 Feb 2012
+    - MGR: Update <organization_*> tags in 3 branded skins (GR, PtP, CE) to 
+        new values from Matt Blumberg.
+    
+    clientgui/skins/
+        GridRepublic/
+            skin.xml
+        Progress Thru Processors/
+            skin.xml
+        Charity Engine/
+            skin.xml
+
+Charlie 13 Feb 2012
+    - Mac sandbox: In initial permissions check when launching Manager or Client, 
+        don't check project-created subdirectories under project or slot 
+        directories because we have not told projects these must be readable and 
+        executable by group.
+        
+    client/
+        check_security.cpp
+
+David  14 Feb 2012
+    - scheduler: fix bug that broke broadcast jobs (from Kevin)
+
+    sched/
+        sched_shmem.cpp
+
+David  14 Feb 2012
+    - assimilator: when enumerating results for a WU, check retval.
+        Otherwise we might get a partial list,
+        which screws up assimilation logic.
+
+    sched/
+        assimilator.cpp
+    lib/
+        hostinfo.h
+
+David  14 Feb 2012
+    - admin web: fix error when showing unsent results
+
+    html/inc/
+        db_ops.inc
+
+Charlie 14 Feb 2012
+    - API: Remove apparently unnecessary include of carbon.h (requested 
+        by Bernd Machenschalk.)
+
+    api/
+        boinc_api.h
+    clientscr/
+        gfx_switcher.cpp
+
+David  14 Feb 2012
+    - storage stuff
+
+    vda/
+        vdad.cpp
+        vda_lib.h
+
+David  14 Feb 2012
+    - client: instead of saying "comm deferred",
+        say "project backoff XXX.XX".
+
+    client/
+        work_fetch.cpp
+
+David  14 Feb 2012
+    - client: more tweaks to work-fetch messages
+
+    client/
+        work_fetch.cpp
+
+David  15 Feb 2012
+    - web: in user search, show most recent rather than oldest users
+    - web: don't show URL in account page if expavg_credit < 1.
+        This discourages a type of spam.
+
+    html/
+        inc/
+            user.inc
+        user/
+            user_search.php
+
+David  15 Feb 2012
+    - client: msg tweak
+
+    client/
+        work_fetch.cpp
+
+David  15 Feb 2012
+    - lib: change get_mac_address() to avoid sprintf(buf, "%s...", buf);
+        use strcat instead
+    - client: don't use get_mac_address() to create host CPIDs
+        (we have plenty of other info to make them unique)
+    - storage stuff
+
+    db/
+        schema_vda.sql
+    lib/
+        mac_address.cpp
+        Makefile.am
+    vda/
+        vda_lib2.cpp
+        vda_lib.h
+    client/
+        hostinfo_network.cpp
+
+David  16 Feb 2012
+    - client: fetch work from backup (zero resource share) projects
+        only if a device instance is idle
+
+    client/
+        work_fetch.cpp
+
+David  16 Feb 2012
+    - web: change wording of buffer-size prefs
+
+    html/inc/
+        prefs.inc
+    sched/
+        sched_types.h
+    vda/
+        sched_vda.cpp
+
+Charlie 16 Feb 2012
+    - client: Remove some temporary debugging code.
+
+    client/
+        coproc_detect.cpp
+
+David  16 Feb 2012
+    - storage stuff (work in progress)
+    - small code shuffle
+
+    db/
+        boinc_db.h
+    sched/
+        delete_file.cpp
+    tools/
+        backend_lib.cpp,h
+    lib/
+        str_util.h
+    vda/
+        sched_vda.cpp
+        makefile
+
+Charlie 16 Feb 2012
+    - client: Always use GPU model name from OpenCL if available for ATI / AMD 
+        GPUs because (we believe) it is more reliable and user-friendly.
+
+    client/
+        coproc_detect.cpp
+
+David  17 Feb 2012
+	- client: fix bug where WCG downloads were getting wrong size errors.
+		To be honest, I don't know that the problem was or why my change fixed it.
+	client/
+		http_curl.cpp
+
+Charlie 17 Feb 2012
+    - client: Prevent an unlikely but possible crash.
+
+    client/
+        coproc_detect.cpp
+
+Charlie 17 Feb 2012
+    - MGR: Fix a Mac-only bug which showed Event Log if About BOINC is selected 
+        from task bar menu when BOINC is hidden.
+
+    clientgui/
+        BOINCGUIApp.cpp
+        BOINCTaskBar.cpp
+
+Rom    17 Feb 2012
+    - Tag for 7.0.16 release, all platforms
+      boinc_core_release_7_0_16
+
+    /
+        configure.ac
+        version.h
+
+David  17 Feb 2012
+    - db_purge: when deleting a workunit record,
+        delete any assignments that refer to it
+
+    db/
+        db_base.cpp,h
+    sched/
+        db_purge.cpp
+
+David  17 Feb 2012
+    - server: add volunteer data archival to the build system
+
+    sched/
+        sched_config.cpp,h
+        Makefile.am
+    configure.ac
+    Makefile.am
+    vda/
+        Makefile.am new
+        makefile (renamed to makefile_orig)
+
+Charlie 17 Feb 2012
+    - Mac: Fix back trace to work under OS > 10.5.
+    (Checked in to boinc_core_release_7_0_16 tag)
+    
+    lib/
+        mac/
+            mac_backtrace.cpp
+
+Charlie 18 Feb 2012
+    - client: Fix OpenCL NVIDIA GPU detection when CUDA is not present.
+
+    client/
+        coproc_detect.cpp
+
+David  18 Feb 2012
+    - client: tweak to work-fetch policy:
+        if we're making a scheduler RPC to a project for reasons
+        other than work fetch,
+        and we're deciding whether to ask for work, ignore hysteresis;
+        i.e. ask for work even if we're above the min buffer
+        (idea from John McLeod).
+
+    client/
+        work_fetch.cpp,h
+        cs_scheduler.cpp
+    sched/
+        feeder.cpp
+    vda/
+        vdad.cpp
+
+David  19 Feb 2012
+	- client: fix bug in notices where, after a notice is deleted,
+		the notices tab refreshes once/second forever after
+
+	client/
+		cs_notice.cpp
+
+Rom    20 Feb 2012
+    - Tag for 7.0.17 release, all platforms
+      boinc_core_release_7_0_17
+
+    /
+        configure.ac
+        version.h
+
+David  20 Feb 2012
+    - client: message tweaks
+    - scheduler: fix crash when use <enable_assignment>
+
+    sched/
+        db_purge.cpp
+        sched_assign.cpp
+    client/
+        work_fetch.cpp
+
+David  20 Feb 2012
+    - Manager/Client: fix bugs in GUI RPC that prevented
+        updates to proxy info from being saved by client
+
+    lib/
+        gui_rpc_client_print.cpp
+        gui_rpc_client_ops.cpp
+        gui_rpc_client.h
+    client/
+        boinc_cmd.cpp
+
+David  20 Feb 2012
+	- Manager: compile fix
+
+	clientgui/
+		MainDocument.cpp
+
+David  20 Feb 2012
+    - scheduler: fix a couple of assigned-job bugs
+        (need "where" at start of enumerate() clause!)
+
+    sched/
+        sched_util.cpp
+        sched_assign.cpp
+
+David  20 Feb 2012
+    - client: define a "arrived-first" order on results
+        in which the tiebreaker is MD5 of name.
+        That way the order is stable
+        (it doesn't change from one run of the client to the next)
+        and it doesn't grep results with similar names
+        (and hence for the same app).
+        This ordering is used for
+        1) the order of display in the manager
+        2) the job scheduler's notion of FIFO
+
+    client/
+        client_types.h
+        cs_statefile.cpp
+        cpu_sched.cpp
+
+Charlie 20 Feb 2012
+    - client: Fix OpenCL NVIDIA GPU enumeration bug I introduced 
+        with last checkin.
+
+    client/
+        coproc_detect.cpp
+
+Charlie 20 Feb 2012
+    - Tag for 7.0.18 release, all platforms
+      boinc_core_release_7_0_18
+
+    /
+        configure.ac
+        version.h
+
+Charlie 20 Feb 2012
+    - Mac installer: Update copyright notice from 2009 to 2012.
+
+    clientgui/
+        mac/
+        SetVersion.cpp
+
+David  21 Feb 2012
+    - storage stuff
+
+    db/
+        schema_vda.sql
+    py/Boinc/
+        setup_project.py
+    vda/
+        vda.cpp
+        vda_lib.cpp,h
+        vda_lib2.cpp
+        vdad.cpp
+        ssim.cpp
+
+Rom    21 Feb 2012
+    - Vbox: Include date component in log messages to ease debugging long
+        running VM tasks.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+        vboxwrapper.cpp, .h
+
+David  22 Feb 2012
+    - scheduler: in version selection, when deciding which version is fastest,
+        we multiple projected FLOPS by a normal random var
+        with mean 1 and stddev 0.1.
+        Make the stddev configurable; in particular it can be zero.
+
+    db/
+        boinc_db.h
+        schema_vda.sql
+    sched/
+        sched_config.cpp,h
+        sched_version.cpp
+    vda/
+        vdad.cpp
+
+David  22 Feb 2012
+    - client: change the job scheduling policy for MT jobs.
+        The old policy avoided running an N-CPU job unless N CPUs were free.
+        This could result in idle CPUs for long periods; for example:
+        on a 4-CPU machine, suppose you have a long 1-CPU job in EDF mode,
+        and some 4-CPU jobs.
+        3 CPUs will be idle until the 1-CPU job finishes.
+        Furthermore, the work fetch mechanism won't try to get
+        jobs (possibly non-MT) from other projects,
+        because the RR simulation doesn't reflect the scheduling
+        policy's exclusion principle.
+
+        The change: schedule jobs until ncpus_used >= ncpus.
+        E.g. in the above situation run the 1- and 4-CPU jobs together.
+        In extreme cases we might run 3 1-CPU jobs and the 4-CPU job.
+        This will degrade the performance of the 4-CPU job,
+        but that's probably better than having idle CPUs.
+
+    client/
+        cpu_sched.cpp
+
+David  22 Feb 2012
+    - scheduler: tell the user if we're not sending work because
+        VirtualBox is not installed
+
+    sched/
+        sched_customize.cpp
+
+David  22 Feb 2012
+    - scheduler and create_work: fix bugs that caused targeted jobs
+        to be sent to non-targeted hosts.
+        The feeder was erroneously putting targeted jobs
+        in the shared mem cache.
+        Changes:
+        - The feeder only enumerates jobs for which
+            workunit.transitioner_flags is zero.
+            NOTE: this field is nonzero iff the job is assigned.
+        - create_work: when creating an assigned jobs,
+            set workunit.transitioner_flags appropriately
+
+    db/
+        boinc_db.cpp,h
+        schema.sql
+    sched/
+        sched_array.cpp
+    tools/
+        create_work.cpp
+
+David  22 Feb 2012
+    - API, client, and Manager: add an optional "reason" argument to
+        boinc_temporary_exit(),
+        explaining why the app is exiting.
+        Convey this to the client, and then to the Manager,
+        and display it there and in the log.
+
+    clientgui/
+        MainDocument.cpp
+    lib/
+        gui_rpc_client_ops.cpp
+        gui_rpc_client.h
+    api/
+        boinc_api.cpp,h
+    client/
+        client_types.cpp,h
+        app.h
+        app_control.cpp
+
+David  22 Feb 2012
+    - client: fix an instance of
+        sprintf(buf, "%s...", buf)
+        on Unix
+
+    client/
+        hostinfo_unix.cpp
+
+Charlie 22 Feb 2012
+    - API: fix compile error on Mac.
+    
+    api/
+        macglutfix.m
+
+Charlie 22 Feb 2012
+    - client: When available, use total RAM value from CAL for all ATI 
+        OpenCL GPUs, not only for the "best" GPU, so the descriptions 
+        show this value.
+        
+    client/
+        coproc_detect.cpp
+
+David  22 Feb 2012
+    - server: split out the "antique file deletion" feature of
+        file_deleter.cpp into a separate program,
+        since it blocks normal file deletion while it's running.
+        From Bernd.
+    - storage stuff
+
+    db/
+        boinc_db.cpp,h
+        schema_vda.sql
+    sched/
+        file_deleter.cpp
+        antique_file_deleter.cpp (new)
+        Makefile.am
+    vda/
+        vdad.cpp
+        vda_lib.cpp
+        vda_lib2.cpp
+        vda.cpp
+
+David  22 Feb 2012
+    - install antique file deleter as periodic task (24 hours)
+        when create new project
+
+    sched/
+        antique_file_deleter.cpp
+    tools/
+        make_project
+    py/Boinc/
+        setup_project.py
+
+Charlie 23 Feb 2012
+    - MGR: Update <organization_help_url> in Progress Through Processor's 
+        skin file again as requested by Matt Blumberg on 17 February 2012.
+    
+    clientgui/skins/Progress Thru Processors/
+        skin.xml
+
+Charlie 24 Feb 2012
+    - Mac installer: Create RealName field for users boinc_master and 
+        boinc_project and set it to empty string (following new advice from 
+        Apple Developer technical Suport.)
+
+    clientgui/
+        mac/
+            SetupSecurity.cpp
+
+Rom    24 Feb 2012
+    - MGR: Rename the "Remaining" column to "Remaining (Estimated)" in the
+        Advanced GUI/Work view.
+        
+    clientgui/
+        ViewWork.cpp
+
+David  24 Feb 2012
+    - client: amend checkin of 18 Feb to not request work if
+        work buffer is above upper limit
+
+    client/
+        work_fetch.cpp
+
+David  24 Feb 2012
+    - storage stuff
+
+    vda/
+        vdad.cpp
+        vda.cpp
+        vda_lib2.cpp
+        vda_lib.h
+
+David  24 Feb 2012
+    - storage stuff
+
+    db/
+        boinc_db.h
+        schema_vda.sql
+    sched/
+        delete_file.cpp
+        put_file.cpp
+        get_file.cpp
+    tools/
+        backend_lib.cpp,h
+    vda/
+        vda.cpp
+        vda_policy.cpp,h (new)
+        vda_lib.cpp,h
+        Makefile.am
+        ssim.cpp
+
+David  24 Feb 2012
+    - scheduler: when choosing the best app version,
+        by default we skip app versions that use a resource
+        for which work has not been requested.
+        This is determined by the "check_req" arg to get_app_version().
+        This flag is cleared whenever we want to send a job
+        regardless of whether a requested resource can be used:
+        namely, when resending lost jobs, and when sending assigned jobs.
+
+        Fix a bug that could skip unrequested versions even
+        when check_req is false.
+
+        NOTES:
+
+        1) The current semantics aren't right.
+        When check_req is false, we selected the fastest of all app versions,
+        including those for which no work is requested.
+        Instead, we should select the fastest of the versions
+        for which work is requested if there are any;
+        otherwise, select the fastest version.
+
+        2) The mechanism isn't implemented for anonymous platform.
+        It should be.
+
+        3) If we've cached an answer (including NULL) for a given
+        value of check_req, that answer may be wrong for a different value.
+
+    sched/
+        sched_version.cpp
+
+Bernd  27 feb 2012
+    - db_purge: record result and workunit name in index file
+
+    sched/
+        db_purge.cpp
+
+Bernd  27 feb 2012
+    - validator: output the version string even when not in project directory
+
+    sched/
+        validator.cpp
+
+Bernd  27 feb 2012
+    - scheduler: allow to configure userids for which the scheduler should
+        not scan the host table. This was previously hardcoded for
+        Einstein@home to prevent some users with many (identical) hosts
+        from flooding the DB with slow queries. Now add
+        <dont_search_host_for_userid>userid</dont_search_host_for_userid>
+        to the project config (in config.xml) for each such userid.
+
+    sched/
+        sched_config.h
+        sched_config.cpp
+        handle_request.cpp
+
+Bernd  27 Feb 2012
+    - scheduler: fix typo in previous commit (patch was using old parser)
+
+    sched/
+        sched_config.cpp
+
+Bernd  27 Feb 2012
+    - scheduler: the scheduler (stderr) log is buffered to keep the output of
+        one instance together in the scheduler.log when multiple instances are
+        running. Currently the buffer has a fixed size of 32768 charaters.
+        On one hand with much debug output this buffer may turn out to be
+        too small. OTOH the log of this instance is completely lost in case
+        of a crash, which doesn't help with debugging. Thus make the
+        scheduler log buffer size configurable using the tag
+        <scheduler_log_buffer> in project config. The default value is
+        still the old size (32768), set it to 0 to disable buffering
+        completely, e.g. for debugging.
+
+    sched/
+        sched_config.h
+        sched_config.cpp
+        sched_main.cpp
+
+Bernd  27 Feb 2012
+    - scheduler: Another feature for debugging the scheduler.
+        Previously (little known) the scheduler could be hacked to preserve
+        the sched_request.xml and sched_reply.xml in own directories
+        (you had to modify the initial value of use_files in sched_main.cpp).
+        This feature could now be switched on and off on the fly just by
+        changing the project config.
+        When there is an (existing) directory configured as
+        <debug_req_reply_dir>, each schduler instance will write three
+        files in there: PID_C_sched.log, PID_C_sched_request.xml and (if all
+        goes well) PID_C_sched_reply.xml. PID is the process id of this
+        scheduler instance, C is an internal counter within the process if
+        FCGI is used. The sched.log will contain nothing else than the
+        pid and the IP address of the client. This should allow for
+        identifying the scheduler instance responsible for a given
+        apache error log message ("premature end of script headers") when
+        a scheduler crashed. sched_request.xml (obviously) is the scheduler
+        request, and if the scheduler doesn't crash in between, there will
+        also be the reply to the client kept in sched_reply.xml
+        Remove the <debug_req_reply_dir> tag from the project config
+        to turn this feature off.
+
+    sched/
+        sched_config.h
+        sched_config.cpp
+        sched_main.cpp
+
+Rytis  27 Feb 2012
+    - change antique_file_deleter logic not to delete files that still have
+        workunit records
+    
+    sched/
+        antique_file_deleter.cpp
+
+David  27 Feb 2012
+    - VDA: add some log messages
+    - scheduler: add VDA
+    - client, web: change default prefs to min_buf=.1 days, max_buf=.5 days
+    - scheduler: app plan function for vbox requires 7.0+ client
+
+    Makefile.incl
+    sched/
+        antique_file_deleter.cpp
+        sched_config.cpp,h
+        sched_customize.cpp
+        handle_request.cpp
+    html/inc/
+        prefs.inc
+    lib/
+        prefs.cpp
+    vda/
+        vda.cpp
+        sched_vda.cpp,h
+
+Charlie 28 Feb 2012
+    - MGR: Change strings in Simple View to match changes in Advanced View: 
+        "Remaining" -> "Remaining (Estimated)", "Home page" instead of project 
+        name in web links.
+
+    clientgui/
+        sg_ProjectWebSitesPopup.cpp
+        sg_TaskPanel.cpp
+
+David  28 Feb 2012
+    - storage stuff
+
+    db/
+        boinc_db.cpp,h
+        schema_vda.sql
+    sched/
+        sched_types.cpp,h
+    vda/
+        sched_vda.cpp
+
+David  28 Feb 2012
+    - storage stuff.  Getting there.
+
+    db/
+        boinc_db.cpp
+    sched/
+        handle_request.cpp
+    vda/
+        vdad.cpp
+        vda_policy.h
+        sched_vda.cpp
+        vda.cpp
+
+David  29 Feb 2012
+    - wrapper: compute final CPU time correctly for multi-process apps
+    - storage stuff
+
+    db/
+        boinc_db.cpp,h
+        schema_vda.sql
+    samples/wrapper/
+        wrapper.cpp
+    vda/
+        vda_lib.cpp,h
+        sched_vda.cpp
+        vda.cpp
+        ssim.cpp
+
+Charlie 29 Feb 2012
+    - client: On Mac only, get ATI RAM sizes from OpenGL.
+    
+    client/
+        coproc_detect.cpp
+    lib/
+        coproc.h
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Rom    29 Feb 2012
+    - VBOX: Implement an exponential backoff scheme of sleeping between
+        commands if a session lock error has been detected.  Cap the overall
+        delay to 30 seconds total for a single command.
+    
+        Experiments performed by jujube(T4T) suggest changing the sleep interval
+        to an exponential style backoff would increase our chances of recovering in
+        situations where the previous lock is held by a previous instance of
+        vboxmanage whos instance data hasn't been cleaned up within vboxsvc yet.
+    
+    client/
+        vbox.cpp
+
+David  1 Mar 2012
+    - client: fix crashing bug when there is 1 instance of a resources.
+        I'm not sure how this every worked.
+
+    client/
+        work_fetch.h
+    sched/
+        feeder.cpp
+    vda/
+        storage.txt
+
+Rom    2 Mar 2012
+    - Tag for 7.0.19 release, all platforms
+      boinc_core_release_7_0_19
+
+    /
+        configure.ac
+        version.h
+

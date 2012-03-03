@@ -311,7 +311,7 @@ static bool result_still_sendable(DB_RESULT& result, WORKUNIT& wu) {
 // Return true if no more work is needed.
 //
 static bool scan_work_array() {
-    int i, j, retval, rnd_off, last_retval=0;;
+    int i, j, rnd_off, last_retval=0;;
     APP* app;
     BEST_APP_VERSION* bavp;
     bool no_more_needed = false;
@@ -371,7 +371,7 @@ static bool scan_work_array() {
             //
             result.id = wu_result.resultid;
             if (result_still_sendable(result, wu)) {
-                retval = add_result_to_reply(result, wu, bavp, false);
+                add_result_to_reply(result, wu, bavp, false);
 
                 // add_result_to_reply() fails only in pathological cases -
                 // e.g. we couldn't update the DB record or modify XML fields.
@@ -451,4 +451,4 @@ void send_work_old() {
     }
 }
 
-const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 24493 2011-10-26 16:51:10Z davea $";
+const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 25314 2012-02-22 22:13:08Z davea $";
