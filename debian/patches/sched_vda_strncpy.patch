@@ -1,0 +1,38 @@
+Index: boinc/vda/sched_vda.cpp
+===================================================================
+--- boinc.orig/vda/sched_vda.cpp	2012-03-03 01:12:31.000000000 +0100
++++ boinc/vda/sched_vda.cpp	2012-03-03 12:13:55.000000000 +0100
+@@ -48,11 +48,13 @@
+ 
+ typedef map<string, DB_VDA_CHUNK_HOST> CHUNK_LIST;
+ 
++static const size_t chunk_dirs_size=256;
++
+ // get the path to the chunk's directory
+ //
+ static void get_chunk_dir(DB_VDA_FILE& vf, const char* chunk_name, char* dir) {
+-    char chunk_dirs[256];
+-    strcpy(chunk_dirs, chunk_name);
++    char chunk_dirs[chunk_dirs_size];
++    strlcpy(chunk_dirs, chunk_name, chunk_dirs_size);
+     while (1) {
+         char* p = strchr(chunk_dirs, '.');
+         if (!p) break;
+@@ -63,7 +65,7 @@
+ 
+ static void get_chunk_url(DB_VDA_FILE& vf, const char* chunk_name, char* url) {
+     char chunk_dirs[256];
+-    strcpy(chunk_dirs, chunk_name);
++    strlcpy(chunk_dirs, chunk_name, chunk_dirs_size);
+     while (1) {
+         char* p = strchr(chunk_dirs, '.');
+         if (!p) break;
+@@ -74,7 +76,7 @@
+ 
+ // read the chunk's MD5 file into a buffer
+ //
+-static int get_chunk_md5(char* chunk_dir, char* md5_buf) {
++static int get_chunk_md5(const char* chunk_dir, char* md5_buf) {
+     char md5_path[1024];
+     sprintf(md5_path, "%s/md5.txt", chunk_dir);
+     FILE* f = fopen(md5_path, "r");
