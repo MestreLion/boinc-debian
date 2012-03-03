@@ -344,10 +344,13 @@ int archive_result(DB_RESULT& result) {
         "</result_archive>\n"
     );
 
-    if (n >= 0) n = fprintf(re_index_stream,
-        "%d     %d\n",
-        result.id, time_int
-    );
+    if (n >= 0) {
+        n = fprintf(re_index_stream,
+            "%d     %d    %s\n",
+            result.id, time_int, result.name
+        );
+    }
+
     if (n < 0) fail("fprintf() failed\n");
 
     return 0;
@@ -421,10 +424,12 @@ int archive_wu(DB_WORKUNIT& wu) {
         "</workunit_archive>\n"
     );
 
-    if (n >= 0) n = fprintf(wu_index_stream,
-        "%d     %d\n",
-        wu.id, time_int
-    );
+    if (n >= 0) {
+        n = fprintf(wu_index_stream,
+            "%d     %d    %s\n",
+            wu.id, time_int, wu.name
+        );
+    }
 
     if (n < 0) fail("fprintf() failed\n");
 
@@ -548,6 +553,13 @@ bool do_pass() {
         log_messages.printf(MSG_DEBUG,
             "Purged workunit [%d] from database\n", wu.id
         );
+
+        if (config.enable_assignment) {
+            DB_ASSIGNMENT asg;
+            char buf2[256];
+            sprintf(buf, "workunitid=%d", wu.id);
+            asg.delete_from_db_multi(buf2);
+        }
 
         purged_workunits++;
         do_pass_purged_workunits++;
@@ -737,4 +749,4 @@ int main(int argc, char** argv) {
     exit(0);
 }
 
-const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 24564 2011-11-09 20:24:48Z jeffc $";
+const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 25344 2012-02-27 11:08:14Z bema $";

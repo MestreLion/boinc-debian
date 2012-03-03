@@ -720,6 +720,9 @@ struct RESULT {
     bool report_immediately;
     bool not_started;   // temp for CPU sched
 
+    std::string name_md5;   // see sort_results();
+    int index;              // index in results vector
+
     APP* app;
     WORKUNIT* wup;
     PROJECT* project;
@@ -815,6 +818,7 @@ struct RESULT {
     double schedule_backoff;
         // don't try to schedule until this time
         // (wait for free GPU RAM)
+    char schedule_backoff_reason[256];
 };
 
 // represents an always/auto/never value, possibly temporarily overridden

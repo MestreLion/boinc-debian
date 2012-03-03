@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    retval = get_file(
+    retval = create_get_file_msg(
         host_id, file_name, urls, max_nbytes,
         dtime() + max_latency,
         generate_upload_certificate, key
@@ -143,4 +143,4 @@ int main(int argc, char** argv) {
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 23866 2011-07-20 22:27:01Z davea $";
+const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 25341 2012-02-24 22:55:11Z davea $";

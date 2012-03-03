@@ -31,7 +31,6 @@ require_once("../inc/sandbox.inc");
 //
 function lammps_est() {
     $avg_cpu = 0;
-    $disk_space = 0;
     $test_result = 0;
     $descs = array();
     $pipes = array();
@@ -53,8 +52,73 @@ function lammps_est() {
         //echo "sleeping\n";
         sleep(1);
     }
+    $total_steps=get_total_steps("cmd_variables");
+    $disk_space=calc_est_size("lammps_script","structure_file","cmd_variables");
+    $total_cpu=$total_steps*$avg_cpu;
+    return array($test_result, $total_cpu, $disk_space);
+}
+function get_total_steps($cmd_file)
+{
+        $fd=fopen($cmd_file,"r");
+        if(!$fd){
+            echo "can not open file $cmd_file\n";
+            exit(-1);
+        }
+        $loopno=1;
+        $looprun=1;
+        while(!feof($fd)){
+            $line=fgets($fd,4096);
+            if(preg_match("/loopnumber\s+\d+/",$line,$matches) and preg_match("/\d+/",$matches[0],$no)){
+                $loopno=$no[0];
+            }
+            if(preg_match("/looprun\s+\d+/",$line,$matches)   and preg_match("/\d+/",$matches[0],$no)){
+            $looprun=$no[0];
+            }
+        }
+        fclose($fd);
+        $total_steps=$loopno*$looprun;
+        print "total_steps=".$total_steps;
+        return $total_steps;
+}
 
-    return array($test_result, $avg_cpu, $disk_space);
+function calc_est_size($lammps_script,$structure_file,$cmd_file){
+    $dump_types=0;
+    $fd=fopen($lammps_script,"r");
+    if(!$fd){
+        echo "can not open file $lammps_script\n";
+        exit(-1);
+    }
+    while(!feof($fd)){
+        $line=fgets($fd,4096);
+        if(preg_match("/^\s*dump/",$line) and preg_match_all("/dump\S+\.\w{3}/",$line,$matches,PREG_PATTERN_ORDER)){
+            $dump_types=count($matches[0]);
+            break;
+        }
+    }
+    fclose($fd);
+    print "dump_types= ".$dump_types;
+
+    $structure_file_size=filesize($structure_file);
+    $fd=fopen($cmd_file,"r");
+    if(!$fd){
+        echo "can not open file $cmd_file\n";
+        exit(-1);
+    }
+    print "structure_file_size=".$structure_file_size;
+   
+    $loopno=1;
+    while(!feof($fd)){
+        $line=fgets($fd,4096);
+        if(preg_match("/loopnumber\s+\d+/",$line,$matches)){
+            if(preg_match("/\d+/",$matches[0],$no)){
+                $loopno=$no[0];                                                               
+            }
+        }
+    }
+    fclose($fd);
+    print "loopno=".$loopno;
+    $est_size=$loopno*$structure_file_size*0.8*$dump_types;
+    return $est_size;
 }
 
 function calc_step_cpu($filename) {
@@ -87,7 +151,7 @@ function calc_step_cpu($filename) {
             $start_step = $step;
         } else {
             $cur_step = $step;
-            if ($cur_step-$start_step>=5) {
+            if ($cur_step-$start_step>=9) {
                 $avg_cpu = $cpu/($cur_step-$start_step);
                 //echo "avg_cpu is ".$avg_cpu;
                 break;
@@ -114,11 +178,11 @@ function show_submit_form($user) {
         <input type=hidden name=action value=prepare>
     ";
     start_table();
-    row2("Structure file", sandbox_file_select($user, "structure_file"));
-    row2("Script file", sandbox_file_select($user, "command_file"));
-    row2("Command-line file<br><span class=note>List of command lines, one per job</span>", sandbox_file_select($user, "cmdline_file"));
-    row2("Zipped potential files", sandbox_file_select($user, "pot_files"));
-    row2("Area", area_select());
+    row2("<strong>structure_file</strong><br><span class=note>structure_file*</span>", sandbox_file_select($user, "structure_file"));
+    row2("<strong>lammps_script</strong><br><span class=note>lammps_script*</span>", sandbox_file_select($user, "lammps_script"));
+    row2("<strong>cmdline_file</strong><br><span class=note>cmdline_file*</span><span class=note> ( List of command lines, one per job )</span>", sandbox_file_select($user, "cmdline_file"));
+    row2("<strong>pot.zip</strong><br><span class=note>*.zip</span><span class-note> ( Zipped Potential files )</span>", sandbox_file_select($user, "zip"));
+    row2("<strong>Area</strong>", area_select());
     row2("", "<input type=submit value=Prepare>");
     end_table();
     echo "</form>
@@ -180,9 +244,9 @@ function estimated_makespan($njobs, $flops_per_job) {
 
 function prepare_batch($user) {
     $structure_file_path = get_file_path($user, 'structure_file');
-    $command_file_path = get_file_path($user, 'command_file');
+    $command_file_path = get_file_path($user, 'lammps_script');
     $cmdline_file_path = get_file_path($user, 'cmdline_file');
-    $pot_files_path = get_file_path($user, 'pot_files');
+    $pot_files_path = get_file_path($user, 'zip');
 
     $info = null;
     $info->structure_file_path = $structure_file_path;
@@ -218,7 +282,7 @@ function prepare_batch($user) {
     system("rm *");
     $info->rsc_fpops_est = $est_cpu_time * 5e9;
 
-    $info->rsc_disk_bound = 1e8;
+    $info->rsc_disk_bound = $disk;
 
     $tmpfile = tempnam("/tmp", "lammps_");
     file_put_contents($tmpfile, serialize($info));
@@ -228,8 +292,8 @@ function prepare_batch($user) {
     $njobs = count(file($cmdline_file_path));
     $secs_est = estimated_makespan($njobs, $info->rsc_fpops_est);
     $hrs_est = number_format($secs_est/3600, 1);
-    $client_mb = $info->rsc_disk_bound/1e6;
-    $server_mb = $njobs*$client_mb;
+    $client_mb = number_format($info->rsc_disk_bound/1e6,1);
+    $server_mb = number_format($njobs*$info->rsc_disk_bound/1e6,1);
 
     page_head("Batch prepared");
     echo "
@@ -268,21 +332,26 @@ function submit_batch($user, $app) {
     $x = file_get_contents("$tmpfile");
     $info = unserialize($x);
 
+    $njobs=0;
     $cmdlines = file($info->cmdline_file_path);
-    $njobs = count($cmdlines);
-
+    foreach($cmdlines as $cmdline){
+        if(preg_match("/^\s*-var/",$cmdline))$njobs++;
+    }
+    
     $now = time();
-    $batch_name = $info->area;
+    $batch_name = $info->area."_".date("Y-M-d H:m:s");
 
     $batch_id = BoincBatch::insert(
-        "(user_id, create_time, njobs, name, app_id) values ($user->id, $now, $njobs, '$batch_name', $app->id)"
+        "(user_id, create_time, njobs, name, app_id, state) values ($user->id, $now, $njobs, '$batch_name', $app->id, ".BATCH_STATE_IN_PROGRESS.")"
     );
 //    $batch_id=99;
 
     $i = 0;
     foreach ($cmdlines as $cmdline) {
-        submit_job($app, $batch_id, $info, $cmdline, $i);
-        $i++;
+        if(preg_match("/^\s*-var/",$cmdline)){
+            submit_job($app, $batch_id, $info, $cmdline, $i);
+            $i++;
+        }
     }
 }
 

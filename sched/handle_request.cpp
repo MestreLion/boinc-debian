@@ -47,6 +47,8 @@
 #include "util.h"
 #include "filesys.h"
 
+#include "sched_vda.h"
+
 #include "credit.h"
 #include "sched_main.h"
 #include "sched_types.h"
@@ -68,11 +70,11 @@ static bool find_host_by_other(DB_USER& user, HOST req_host, DB_HOST& host) {
     char buf[2048];
     char dn[512], ip[512], os[512], pm[512];
 
-#ifdef EINSTEIN_AT_HOME
-    // This is to prevent GRID hosts that manipulate their hostids from flooding E@H's DB with slow queries
-    if ((user.id == 282952) || (user.id == 243543))
-      return false;
-#endif
+    // don't dig through hosts of these users
+    // prevents flooding the DB with slow queries from users with many hosts
+    for(unsigned int i=0; i < config.dont_search_host_for_userid.size(); i++)
+      if (user.id == config.dont_search_host_for_userid[i])
+        return false;
 
     // Only check if the fields are populated
     if (strlen(req_host.domain_name) && strlen(req_host.last_ip_addr) && strlen(req_host.os_name) && strlen(req_host.p_model)) {
@@ -1139,7 +1141,7 @@ void process_request(char* code_sign_key) {
     ) {
         g_reply->insert_message("No work available", "low");
         g_reply->set_delay(DELAY_NO_WORK_SKIP);
-        if (!config.msg_to_host) {
+        if (!config.msg_to_host && !config.enable_vda) {
             log_messages.printf(MSG_NORMAL, "No work - skipping DB access\n");
             return;
         }
@@ -1251,6 +1253,9 @@ void process_request(char* code_sign_key) {
 
     handle_results();
     handle_file_xfer_results();
+    if (config.enable_vda) {
+        handle_vda();
+    }
 
     // Do this before resending lost jobs
     //
@@ -1397,4 +1402,4 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     }
 }
 
-const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 24937 2011-12-29 06:30:18Z davea $";
+const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 25355 2012-02-29 07:22:59Z davea $";

@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 25056 2012-01-14 05:48:01Z davea $
+## $Id: Makefile.am 25285 2012-02-17 19:16:49Z davea $
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -13,7 +13,7 @@ if ENABLE_LIBRARIES
 endif
 
 if ENABLE_SERVER
-   SERVER_SUBDIRS = db test py sched apps tools samples/example_app
+   SERVER_SUBDIRS = db test py sched apps tools samples/example_app vda
 endif
 
 if ENABLE_CLIENT

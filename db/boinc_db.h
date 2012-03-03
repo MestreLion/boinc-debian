@@ -266,6 +266,7 @@ struct HOST {
     double connected_frac;
     double active_frac;
     double cpu_efficiency;  // deprecated as of 6.4 client
+        // reused for volunteer data archival as a timeout
     double duration_correction_factor;
 
     int p_ncpus;            // Number of CPUs on host
@@ -376,12 +377,12 @@ struct HOST {
 #define WU_ERROR_CANCELLED                      16
 #define WU_ERROR_NO_CANONICAL_RESULT            32
 
-// bit fields of transition_flags
+// bit fields of transition_flags; used for assigned jobs
 //
 #define TRANSITION_NONE             1
-    // don't transition
+    // don't transition; used for broadcast jobs
 #define TRANSITION_NO_NEW_RESULTS   2
-    // transition, but don't create results
+    // transition, but don't create results; used for targeted jobs
 
 struct WORKUNIT {
     int id;
@@ -1132,25 +1133,39 @@ public:
 
 struct VDA_FILE {
     int id;
+    double create_time;
     char dir[256];
     char name[256];
     double size;
-    double chunk_size;
-    double created;
     bool need_update;
-    bool inited;
+    bool initialized;
+    bool retrieving;
     void clear();
 };
 
 struct VDA_CHUNK_HOST {
+    double create_time;
     int vda_file_id;
-    int host_id;        // zero if we're waiting for a host
-    char name[256];
+    int host_id;
+    char name[256];     // C1.C2.Cn
+    double size;
     bool present_on_host;
     bool transfer_in_progress;
     bool transfer_wait;
-    double transition_time;
+    double transfer_request_time;
+        // when vdad assigned this chunk to this host
+    double transfer_send_time;
+        // when transfer request was sent to host
+
+    // the following not in DB
+    //
+    bool found;
+
     void clear();
+    inline bool download_in_progress() {
+        return (transfer_in_progress && !present_on_host);
+    }
+
 };
 
 struct DB_VDA_FILE : public DB_BASE, public VDA_FILE {

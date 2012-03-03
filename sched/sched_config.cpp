@@ -90,6 +90,8 @@ int SCHED_CONFIG::parse(FILE* f) {
     fuh_debug_level = MSG_NORMAL;
     strcpy(httpd_user, "apache");
     max_ncpus = MAX_NCPUS;
+    scheduler_log_buffer = 32768;
+    version_select_random_factor = .1;
 
     if (!xp.parse_start("boinc")) return ERR_XML_PARSE;
     if (!xp.parse_start("config")) return ERR_XML_PARSE;
@@ -172,6 +174,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_int("shmem_work_items", shmem_work_items)) continue;
         if (xp.parse_int("feeder_query_size", feeder_query_size)) continue;
         if (xp.parse_str("httpd_user", httpd_user, sizeof(httpd_user))) continue;
+        if (xp.parse_bool("enable_vda", enable_vda)) continue;
         if (xp.parse_bool("enable_assignment", enable_assignment)) continue;
         if (xp.parse_bool("enable_assignment_multi", enable_assignment_multi)) continue;
         if (xp.parse_bool("job_size_matching", job_size_matching)) continue;
@@ -195,6 +198,10 @@ int SCHED_CONFIG::parse(FILE* f) {
             } else {
                 ban_os->push_back(re);
             }
+            continue;
+        }
+        if (xp.parse_int("dont_search_host_for_user", retval)) {
+            dont_search_host_for_userid.push_back(retval);
             continue;
         }
         if (xp.parse_int("daily_result_quota", daily_result_quota)) continue;
@@ -284,6 +291,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool("request_time_stats_log", request_time_stats_log)) continue;
         if (xp.parse_bool("resend_lost_results", resend_lost_results)) continue;
         if (xp.parse_int("sched_debug_level", sched_debug_level)) continue;
+        if (xp.parse_int("scheduler_log_buffer", scheduler_log_buffer)) continue;
         if (xp.parse_str("sched_lockfile_dir", sched_lockfile_dir, sizeof(sched_lockfile_dir))) continue;
         if (xp.parse_bool("send_result_abort", send_result_abort)) continue;
         if (xp.parse_str("symstore", symstore, sizeof(symstore))) continue;
@@ -291,6 +299,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool("user_filter", user_filter)) continue;
         if (xp.parse_bool("workload_sim", workload_sim)) continue;
         if (xp.parse_bool("prefer_primary_platform", prefer_primary_platform)) continue;
+        if (xp.parse_double("version_select_random_factor", version_select_random_factor)) continue;
 
         //////////// SCHEDULER LOG FLAGS /////////
 
@@ -309,7 +318,10 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool("debug_resend", debug_resend)) continue;
         if (xp.parse_bool("debug_send", debug_send)) continue;
         if (xp.parse_bool("debug_user_messages", debug_user_messages)) continue;
+        if (xp.parse_bool("debug_vda", debug_vda)) continue;
         if (xp.parse_bool("debug_version_select", debug_version_select)) continue;
+
+        if (xp.parse_str("debug_req_reply_dir", debug_req_reply_dir, sizeof(debug_req_reply_dir))) continue;
 
         // don't complain about unparsed XML;
         // there are lots of tags the scheduler doesn't know about
@@ -405,4 +417,4 @@ const char *SCHED_CONFIG::project_path(const char *fmt, ...) {
     return (const char *)path;
 }
 
-const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 25169 2012-01-30 22:39:13Z davea $";
+const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 25351 2012-02-28 06:57:28Z davea $";

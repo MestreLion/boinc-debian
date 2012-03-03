@@ -1,5 +1,5 @@
 ## -*-Makefile -*-
-## $Id: Makefile.incl 24303 2011-09-27 19:45:27Z davea $
+## $Id: Makefile.incl 25351 2012-02-28 06:57:28Z davea $
 
 # Note: MYSQL_CFLAGS and MYSQL_LIBS set by configure from mysql_config
 
@@ -18,13 +18,13 @@ RSA_LIBS = -lcrypto
 AM_LIBTOOLFLAGS =
 
 AM_CPPFLAGS =					\
-        -I$(top_srcdir)/lib			\
         -I$(top_srcdir)/api			\
         -I$(top_srcdir)/db			\
-        -I$(top_srcdir)/client			\
-        -I$(top_srcdir)/tools			\
-        -I$(top_srcdir)/sched			\
+        -I$(top_srcdir)/lib			\
         -I$(top_srcdir)/lib/mac			\
+        -I$(top_srcdir)/sched			\
+        -I$(top_srcdir)/tools			\
+        -I$(top_srcdir)/vda			\
 	$(PTHREAD_CFLAGS)
 
 AM_CFLAGS = -Wall -Wextra -Wshadow -Wredundant-decls -Wdisabled-optimization -Wpointer-arith -Wstrict-aliasing

@@ -48,12 +48,10 @@ if (parse_bool($config, "disable_account_creation")) {
 }
 
 $nwac = parse_bool($config, "no_web_account_creation");
-if ($nwac) {
+if (!$nwac && !no_computing()) {
     echo "<p>
-        <b>".tra("Don't use this form. Just run BOINC, select Add Project, and enter an email address and password.")."</b></p>
+        <b>".tra("NOTE: If you use the BOINC Manager, don't use this form. Just run BOINC, select Add Project, and enter an email address and password.")."</b></p>
     ";
-    page_tail();
-    exit();
 }
 
 echo "
@@ -133,6 +131,6 @@ echo "
     </form>
 ";
 
-$cvs_version_tracker[]="\$Id: create_account_form.php 24174 2011-09-13 04:53:13Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: create_account_form.php 25335 2012-02-24 16:42:38Z davea $";  //Generated automatically - do not edit
 page_tail();
 ?>

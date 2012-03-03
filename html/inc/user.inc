@@ -312,7 +312,9 @@ function show_user_summary_public($user) {
     row2(tra("User ID"), $user->id);
     row2(tra("%1 member since", PROJECT), date_str($user->create_time));
     row2(tra("Country"), $user->country);
-    if (strlen($user->url)) {
+    // don't show URL if user has no recent credit (spam suppression)
+    //
+    if (strlen($user->url) && $user->expavg_credit > 1) {
         row2(tra("URL"), "<a href=\"http://$user->url\">http://$user->url</a>");
     }
     if (!no_computing()) {
@@ -467,6 +469,6 @@ function make_user(
     }
 }
 
-$cvs_version_tracker[]="\$Id: user.inc 24447 2011-10-21 06:58:35Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: user.inc 25267 2012-02-15 19:25:41Z boincadm $";  //Generated automatically - do not edit
 
 ?>

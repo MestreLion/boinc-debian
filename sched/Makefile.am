@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 24107 2011-09-01 19:58:27Z davea $
+## $Id: Makefile.am 25321 2012-02-24 03:09:56Z davea $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -19,7 +19,8 @@ libsched_sources = \
     ../db/db_base.cpp \
     ../tools/process_result_template.cpp \
     ../tools/process_input_template.cpp \
-    ../tools/backend_lib.cpp
+    ../tools/backend_lib.cpp \
+	../vda/sched_vda.cpp
 
 lib_LTLIBRARIES = libsched.la
 libsched_la_SOURCES = $(libsched_sources)
@@ -106,6 +107,7 @@ sched_PROGRAMS = \
     db_purge \
     feeder \
     file_deleter \
+    antique_file_deleter \
     message_handler \
     sample_assimilator \
     sample_dummy_assimilator \
@@ -189,6 +191,9 @@ show_shmem_LDADD = $(SERVERLIBS)
 
 file_deleter_SOURCES = file_deleter.cpp
 file_deleter_LDADD = $(SERVERLIBS)
+
+antique_file_deleter_SOURCES = antique_file_deleter.cpp
+antique_file_deleter_LDADD = $(SERVERLIBS)
 
 VALIDATOR_SOURCES = \
 	credit.cpp \

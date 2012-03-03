@@ -358,15 +358,17 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
                 break;
             }
             double x;
-            if (temporary_exit_file_present(x)) {
+            char buf[256];
+            if (temporary_exit_file_present(x, buf)) {
                 if (log_flags.task_debug) {
                     msg_printf(result->project, MSG_INFO,
-                        "[task] task called temporary_exit(%f)", x
+                        "[task] task called temporary_exit(%f, %s)", x, buf
                     );
                 }
                 set_task_state(PROCESS_UNINITIALIZED, "temporary exit");
                 will_restart = true;
                 result->schedule_backoff = gstate.now + x;
+                strcpy(result->schedule_backoff_reason, buf);
                 break;
             }
             handle_premature_exit(will_restart);
@@ -408,23 +410,9 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
         if (WIFEXITED(stat)) {
             result->exit_status = WEXITSTATUS(stat);
 
-            if (result->exit_status) {
-                set_task_state(PROCESS_EXITED, "handle_exited_app");
-                gstate.report_result_error(
-                    *result,
-                    "process exited with code %d (0x%x, %d)",
-                    result->exit_status, result->exit_status,
-                    (-1<<8)|result->exit_status
-                );
-            } else {
-                if (finish_file_present()) {
-                    set_task_state(PROCESS_EXITED, "handle_exited_app");
-                } else {
-                    handle_premature_exit(will_restart);
-                }
-            }
             double x;
-            if (temporary_exit_file_present(x)) {
+            char buf[256];
+            if (temporary_exit_file_present(x, buf)) {
                 if (log_flags.task_debug) {
                     msg_printf(result->project, MSG_INFO,
                         "[task] task called temporary_exit(%f)", x
@@ -433,12 +421,28 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
                 set_task_state(PROCESS_UNINITIALIZED, "temporary exit");
                 will_restart = true;
                 result->schedule_backoff = gstate.now + x;
+                strcpy(result->schedule_backoff_reason, buf);
             } else {
                 if (log_flags.task_debug) {
                     msg_printf(result->project, MSG_INFO,
                         "[task] process exited with status %d\n",
                         result->exit_status
                     );
+                }
+                if (result->exit_status) {
+                    set_task_state(PROCESS_EXITED, "handle_exited_app");
+                    gstate.report_result_error(
+                        *result,
+                        "process exited with code %d (0x%x, %d)",
+                        result->exit_status, result->exit_status,
+                        (-1<<8)|result->exit_status
+                    );
+                } else {
+                    if (finish_file_present()) {
+                        set_task_state(PROCESS_EXITED, "handle_exited_app");
+                    } else {
+                        handle_premature_exit(will_restart);
+                    }
                 }
             }
         } else if (WIFSIGNALED(stat)) {
@@ -510,7 +514,7 @@ bool ACTIVE_TASK::finish_file_present() {
     return (boinc_file_exists(path) != 0);
 }
 
-bool ACTIVE_TASK::temporary_exit_file_present(double& x) {
+bool ACTIVE_TASK::temporary_exit_file_present(double& x, char* buf) {
     char path[256];
     sprintf(path, "%s/%s", slot_dir, TEMPORARY_EXIT_FILE);
     FILE* f = fopen(path, "r");
@@ -523,6 +527,9 @@ bool ACTIVE_TASK::temporary_exit_file_present(double& x) {
     } else {
         x = y;
     }
+    fgets(buf, 256, f);     // read the \n
+    fgets(buf, 256, f);
+    strip_whitespace(buf);
     return true;
 }
 

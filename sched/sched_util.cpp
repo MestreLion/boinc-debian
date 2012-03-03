@@ -315,7 +315,7 @@ int restrict_wu_to_user(DB_WORKUNIT& wu, int userid) {
 
     // mark unsent results as DIDNT_NEED
     //
-    sprintf(buf, "workunitid=%d and server_state=%d",
+    sprintf(buf, "where workunitid=%d and server_state=%d",
         wu.id, RESULT_SERVER_STATE_UNSENT
     );
     while (result.enumerate(buf)) {
@@ -383,4 +383,4 @@ void continue_simulation(const char *daemonname){
 
 #endif
 
-const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 25169 2012-01-30 22:39:13Z davea $";
+const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 25299 2012-02-20 21:54:31Z davea $";

@@ -109,6 +109,7 @@ unsigned int random_int() {
         die("can't open /dev/random\n");
     }
     fread(&n, sizeof(n), 1, f);
+    fclose(f);
 #endif
     return n;
 }
@@ -357,7 +358,6 @@ int main(int argc, char** argv) {
         } else {
             // o2b
             rsa_key_ = (RSA *)calloc(1, sizeof(RSA));
-            memset(rsa_key_, 0, sizeof(RSA));
             if (rsa_key_ == NULL) {
                 die("could not allocate memory for RSA structure.\n");
             }
@@ -400,4 +400,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_6633b596b9 = "$Id: crypt_prog.cpp 25209 2012-02-06 22:57:36Z davea $";
+const char *BOINC_RCSID_6633b596b9 = "$Id: crypt_prog.cpp 25244 2012-02-13 08:41:48Z davea $";

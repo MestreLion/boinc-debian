@@ -39,7 +39,7 @@
 // It maintains a DB enumerator (DB_WORK_ITEM).
 // scan_work_array() scans the work array.
 // looking for empty slots and trying to fill them in.
-// The  enumeration may return results already in the array.
+// The enumeration may return results already in the array.
 // So, for each result, we scan the entire array to make sure
 // it's not there already (can this be streamlined?)
 //
@@ -55,7 +55,7 @@
 //   stop the scan and sleep for N seconds
 // - Otherwise immediately start another scan
 
-// If -allapps is used:
+// If --allapps is used:
 // - there are separate DB enumerators for each app
 // - the work array is interleaved by application, based on their weights.
 //   slot_to_app[] maps slot (i.e. work array index) to app index.
@@ -71,7 +71,7 @@
 // (proportional to the total RAC of hosts in that class).
 // This is to maximize the likelihood of having work for an average host.
 //
-// If you use different HR types between apps, you must use -allapps.
+// If you use different HR types between apps, you must use --allapps.
 // Otherwise we wouldn't know how many slots to reserve for each HR type.
 //
 // It's OK to use HR for some apps and not others.
@@ -142,7 +142,7 @@ int purge_stale_time = 0;
 int num_work_items = MAX_WU_RESULTS;
 int enum_limit = MAX_WU_RESULTS*2;
 
-// The following defined if -allapps:
+// The following defined if --allapps:
 int *enum_sizes;
     // the enum size per app; else not used
 int *app_indices;
@@ -232,7 +232,7 @@ void hr_count_slots() {
 // 
 static bool get_job_from_db(
     DB_WORK_ITEM& wi,    // enumerator to get job from
-    int app_index,       // if using -allapps, the app index
+    int app_index,       // if using --allapps, the app index
     int& enum_phase,
     int& ncollisions
 ) {
@@ -341,7 +341,7 @@ static bool get_job_from_db(
     return false;   // never reached
 }
 
-// This function decides the interleaving used for -allapps.
+// This function decides the interleaving used for --allapps.
 // Inputs:
 //   n (number of weights)
 //   k (length of vector)
@@ -607,7 +607,7 @@ void hr_init() {
         if (some_app_uses_hr) {
             if (apps_differ && !all_apps) {
                 log_messages.printf(MSG_CRITICAL,
-                    "You must use -allapps if apps have different HR\n"
+                    "You must use --allapps if apps have different HR\n"
                 );
                 exit(1);
             }
@@ -871,4 +871,4 @@ int main(int argc, char** argv) {
     feeder_loop();
 }
 
-const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 25114 2012-01-20 23:48:07Z davea $";
+const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 25362 2012-03-02 03:56:26Z davea $";
