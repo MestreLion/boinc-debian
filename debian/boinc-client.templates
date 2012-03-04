@@ -1,6 +1,6 @@
 Template: boinc-client/remove_boinc_dir
 Type: boolean
-Default: false
+Default: true
 # HINT: The wording of this template is similar to the wording of the
 # dbconfig-common/purge template. Please have a look at the translation for
 # the dbconfig-common/purge template first before translating this template,

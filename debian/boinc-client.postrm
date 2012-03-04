@@ -39,7 +39,11 @@ case "$1" in
         db_go || true
         db_get boinc-client/remove_boinc_dir || true
         if [ "$RET" = "true" ]; then
-            rm_boinc_dir
+            if [ "/var/lib/boinc-client" = "$BOINC_DIR" ]; then
+                rm_boinc_dir
+            else
+                echo "BOINC_DIR ($BOINC_DIR) is not '/var/lib/boinc-client', decided against recursively removing it. You customize it, you clean it."
+            fi
         fi
     ;;
 
