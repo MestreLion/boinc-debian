@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOINC Manager 5.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-02-09 12:37-0500\n"
+"POT-Creation-Date: 2012-03-05 10:58-0500\n"
 "PO-Revision-Date: 2012-02-12 10:22+0200\n"
 "Last-Translator: Gabor Cseh <csega@mailbox.hu>\n"
 "Language-Team: BOINC Development Team <rwalton@ssl.berkeley.edu>\n"
@@ -911,79 +911,79 @@ msgstr "(Ismeretlen)"
 msgid "(User Defined)"
 msgstr "(Felhasználó által megadott)"
 
-#: clientgui/BOINCTaskBar.cpp:490
+#: clientgui/BOINCTaskBar.cpp:502
 #, c-format
 msgid "Open %s Web..."
 msgstr "%s megnyitása a Weben..."
 
-#: clientgui/BOINCTaskBar.cpp:497
+#: clientgui/BOINCTaskBar.cpp:509
 #, c-format
 msgid "Open %s..."
 msgstr "%s megnyitása"
 
-#: clientgui/BOINCTaskBar.cpp:504
-#: clientgui/BOINCTaskBar.cpp:600
-#: clientgui/BOINCTaskBar.cpp:608
+#: clientgui/BOINCTaskBar.cpp:516
+#: clientgui/BOINCTaskBar.cpp:612
+#: clientgui/BOINCTaskBar.cpp:620
 msgid "Snooze"
 msgstr "Szundi"
 
-#: clientgui/BOINCTaskBar.cpp:506
-#: clientgui/BOINCTaskBar.cpp:627
-#: clientgui/BOINCTaskBar.cpp:635
+#: clientgui/BOINCTaskBar.cpp:518
+#: clientgui/BOINCTaskBar.cpp:639
+#: clientgui/BOINCTaskBar.cpp:647
 msgid "Snooze GPU"
 msgstr "GPU szundi"
 
-#: clientgui/BOINCTaskBar.cpp:522
+#: clientgui/BOINCTaskBar.cpp:534
 msgid "E&xit"
 msgstr "K&ilépés"
 
-#: clientgui/BOINCTaskBar.cpp:593
+#: clientgui/BOINCTaskBar.cpp:605
 msgid "Resume"
 msgstr "Folytatás"
 
-#: clientgui/BOINCTaskBar.cpp:620
+#: clientgui/BOINCTaskBar.cpp:632
 #, fuzzy
 msgid "Resume GPU"
 msgstr "Folytatás"
 
-#: clientgui/BOINCTaskBar.cpp:696
+#: clientgui/BOINCTaskBar.cpp:708
 msgid "Computing is enabled"
 msgstr "Számítás engedélyezve"
 
-#: clientgui/BOINCTaskBar.cpp:699
+#: clientgui/BOINCTaskBar.cpp:711
 msgid "Computing is suspended - "
 msgstr "Számítás felfüggesztve -"
 
-#: clientgui/BOINCTaskBar.cpp:709
+#: clientgui/BOINCTaskBar.cpp:721
 msgid "GPU computing is enabled"
 msgstr "GPU számítás engedélyezve"
 
-#: clientgui/BOINCTaskBar.cpp:712
+#: clientgui/BOINCTaskBar.cpp:724
 msgid "GPU computing is suspended - "
 msgstr "GPU számítás felfüggesztve -"
 
-#: clientgui/BOINCTaskBar.cpp:721
+#: clientgui/BOINCTaskBar.cpp:733
 msgid "Network is enabled"
 msgstr "Hálózati forgalom engedélyezve"
 
-#: clientgui/BOINCTaskBar.cpp:724
+#: clientgui/BOINCTaskBar.cpp:736
 msgid "Network is suspended - "
 msgstr "Hálózati forgalom felfüggesztve -"
 
-#: clientgui/BOINCTaskBar.cpp:732
+#: clientgui/BOINCTaskBar.cpp:744
 msgid "Reconnecting to client."
 msgstr "Újracsatlakozás a klienshez."
 
-#: clientgui/BOINCTaskBar.cpp:734
+#: clientgui/BOINCTaskBar.cpp:746
 msgid "Not connected to a client."
 msgstr "Nincs kapcsolódva a klienshez."
 
-#: clientgui/BOINCTaskBar.cpp:787
+#: clientgui/BOINCTaskBar.cpp:799
 #, c-format
 msgid "%s Notices"
 msgstr "%s Megjegyzések"
 
-#: clientgui/BOINCTaskBar.cpp:793
+#: clientgui/BOINCTaskBar.cpp:805
 msgid "There are new notices - click to view."
 msgstr "Új üzenetek érkeztek - kattintson a megtekintésükhöz."
 
@@ -1494,7 +1494,7 @@ msgid "network usage stop hour"
 msgstr "hálózathasználat befejezési ideje"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:597
-#: clientgui/DlgItemProperties.cpp:214
+#: clientgui/DlgItemProperties.cpp:234
 msgid "Disk usage"
 msgstr "Lemezhasználat"
 
@@ -1609,7 +1609,6 @@ msgstr "Üzenet"
 
 #: clientgui/DlgEventLog.cpp:263
 #: clientgui/DlgEventLog.cpp:327
-#, fuzzy
 msgid "&Show only this project"
 msgstr "&Csak ezt a projektet mutassa"
 
@@ -1623,7 +1622,6 @@ msgid "Copy all the messages to the clipboard."
 msgstr "Minden üzenet másolása a vágólapra."
 
 #: clientgui/DlgEventLog.cpp:278
-#, fuzzy
 msgid "Copy &Selected"
 msgstr "&Kijelöltek másolása"
 
@@ -1653,7 +1651,6 @@ msgid "Get help with %s"
 msgstr "Segítség ehhez: %s"
 
 #: clientgui/DlgEventLog.cpp:321
-#, fuzzy
 msgid "Show all &messages"
 msgstr "&Minden üzenet mutatása"
 
@@ -1691,7 +1688,6 @@ msgstr ""
 
 #: clientgui/DlgExitMessage.cpp:135
 #, c-format
-#, fuzzy, c-format
 msgid ""
 "This will shut down %s and its tasks until either the\n"
 "%s or the %s screen saver is run again.\n"
@@ -1725,262 +1721,248 @@ msgstr "Mégsem"
 msgid "Don't show this dialog again."
 msgstr "Ne mutassa újra ezt a párbeszédablakot."
 
-#: clientgui/DlgItemProperties.cpp:196
-msgid "Properties of project "
-msgstr "Projekt tulajdonságok"
-
-#: clientgui/DlgItemProperties.cpp:200
-msgid "General"
-msgstr "Általános"
-
-#: clientgui/DlgItemProperties.cpp:201
-msgid "Master URL"
-msgstr "Mester URL"
-
-#: clientgui/DlgItemProperties.cpp:202
-msgid "User name"
-msgstr "Felhasználónév"
-
-#: clientgui/DlgItemProperties.cpp:203
-msgid "Team name"
-msgstr "Csapatnév"
-
-#: clientgui/DlgItemProperties.cpp:204
-msgid "Resource share"
-msgstr "Erőforrásmegosztás"
-
-#: clientgui/DlgItemProperties.cpp:206
-msgid "Scheduler RPC deferred for"
-msgstr "Ütemező RPC elhalasztva ennyi időre"
-
-#: clientgui/DlgItemProperties.cpp:209
-msgid "File downloads deferred for"
-msgstr "Fájlok letöltése elhalasztva ennyi időre"
-
-#: clientgui/DlgItemProperties.cpp:212
-msgid "File uploads deferred for"
-msgstr "Fájlok feltöltése elhalasztva ennyi időre"
-
-#: clientgui/DlgItemProperties.cpp:215
-msgid "Computer ID"
-msgstr "Számítógép azonosító (ID)"
-
-#: clientgui/DlgItemProperties.cpp:217
-msgid "Non CPU intensive"
-msgstr "Nem processzorigényes"
-
-#: clientgui/DlgItemProperties.cpp:217
-#: clientgui/DlgItemProperties.cpp:219
-#: clientgui/DlgItemProperties.cpp:220
-#: clientgui/DlgItemProperties.cpp:222
-#: clientgui/DlgItemProperties.cpp:225
-#: clientgui/DlgItemProperties.cpp:234
-#: clientgui/DlgItemProperties.cpp:237
-#: clientgui/DlgItemProperties.cpp:240
-msgid "yes"
-msgstr "igen"
-
-#: clientgui/DlgItemProperties.cpp:219
-msgid "Suspended via GUI"
-msgstr "GUI-n keresztül felfüggesztve"
-
-#: clientgui/DlgItemProperties.cpp:219
-#: clientgui/DlgItemProperties.cpp:220
-msgid "no"
-msgstr "nem"
-
-#: clientgui/DlgItemProperties.cpp:220
-msgid "Don't request more work"
-msgstr "Ne kérjen több feladatot"
-
-#: clientgui/DlgItemProperties.cpp:222
+#: clientgui/DlgItemProperties.cpp:171
+#: clientgui/DlgItemProperties.cpp:174
+#: clientgui/DlgItemProperties.cpp:177
+#: clientgui/DlgItemProperties.cpp:180
 #, fuzzy
-msgid "Scheduler call in progress"
-msgstr "Ütemező által indított kérés folyamatban"
-
-#: clientgui/DlgItemProperties.cpp:225
-msgid "Trickle-up pending"
-msgstr "Időközi jelentés függőben"
-
-#: clientgui/DlgItemProperties.cpp:228
-#: clientgui/DlgItemProperties.cpp:230
-msgid "Host location"
-msgstr "A számítógép helyzete"
-
-#: clientgui/DlgItemProperties.cpp:230
-msgid "default"
-msgstr "alapértelmezett"
-
-#: clientgui/DlgItemProperties.cpp:234
-msgid "Added via account manager"
-msgstr "Hozzáadva a fiókkezelővel"
-
-#: clientgui/DlgItemProperties.cpp:237
-msgid "Remove when tasks done"
-msgstr "Eltávolítás a munkák elkészültekor"
-
-#: clientgui/DlgItemProperties.cpp:240
-msgid "Ended"
-msgstr "Vége"
-
-#: clientgui/DlgItemProperties.cpp:242
-msgid "Credit"
-msgstr "Kredit"
-
-#: clientgui/DlgItemProperties.cpp:243
-msgid "User"
-msgstr "Felhasználó"
-
-#: clientgui/DlgItemProperties.cpp:250
-msgid "Host"
-msgstr "Számítógép"
-
-#: clientgui/DlgItemProperties.cpp:259
-msgid "Scheduling"
-msgstr "Ütemezés"
-
-#: clientgui/DlgItemProperties.cpp:261
-#: clientgui/DlgItemProperties.cpp:264
-#: clientgui/DlgItemProperties.cpp:267
-msgid "Don't fetch CPU tasks"
+msgid "Don't fetch tasks for "
 msgstr "Ne töltsön le CPU feladatokat"
 
-#: clientgui/DlgItemProperties.cpp:261
-#: clientgui/DlgItemProperties.cpp:277
-#: clientgui/DlgItemProperties.cpp:287
-#: clientgui/DlgItemProperties.cpp:298
-#: clientgui/DlgItemProperties.cpp:308
+#: clientgui/DlgItemProperties.cpp:171
 msgid "Project preference"
 msgstr "Projektbeállítások"
 
-#: clientgui/DlgItemProperties.cpp:264
-#: clientgui/DlgItemProperties.cpp:282
-#: clientgui/DlgItemProperties.cpp:303
+#: clientgui/DlgItemProperties.cpp:174
 #, fuzzy
 msgid "Account manager preference"
 msgstr "Fiókkezelő honlap"
 
-#: clientgui/DlgItemProperties.cpp:267
+#: clientgui/DlgItemProperties.cpp:177
 #, fuzzy
-msgid "Project has no CPU apps"
+msgid "Project has no apps for "
 msgstr "A projekt weboldalai"
 
-#: clientgui/DlgItemProperties.cpp:269
+#: clientgui/DlgItemProperties.cpp:180
 #, fuzzy
+msgid "Client configuration excludes "
+msgstr "Kliensfiók-létrehozás letiltva"
+
+#: clientgui/DlgItemProperties.cpp:184
+#, fuzzy
+msgid " work fetch deferred for"
+msgstr "CPU munka letöltése elhalasztva"
+
+#: clientgui/DlgItemProperties.cpp:185
+#, fuzzy
+msgid " work fetch deferral interval"
+msgstr "CPU munkaletöltés elhalasztási intervalluma"
+
+#: clientgui/DlgItemProperties.cpp:216
+msgid "Properties of project "
+msgstr "Projekt tulajdonságok"
+
+#: clientgui/DlgItemProperties.cpp:220
+msgid "General"
+msgstr "Általános"
+
+#: clientgui/DlgItemProperties.cpp:221
+msgid "Master URL"
+msgstr "Mester URL"
+
+#: clientgui/DlgItemProperties.cpp:222
+msgid "User name"
+msgstr "Felhasználónév"
+
+#: clientgui/DlgItemProperties.cpp:223
+msgid "Team name"
+msgstr "Csapatnév"
+
+#: clientgui/DlgItemProperties.cpp:224
+msgid "Resource share"
+msgstr "Erőforrásmegosztás"
+
+#: clientgui/DlgItemProperties.cpp:226
+msgid "Scheduler RPC deferred for"
+msgstr "Ütemező RPC elhalasztva ennyi időre"
+
+#: clientgui/DlgItemProperties.cpp:229
+msgid "File downloads deferred for"
+msgstr "Fájlok letöltése elhalasztva ennyi időre"
+
+#: clientgui/DlgItemProperties.cpp:232
+msgid "File uploads deferred for"
+msgstr "Fájlok feltöltése elhalasztva ennyi időre"
+
+#: clientgui/DlgItemProperties.cpp:235
+msgid "Computer ID"
+msgstr "Számítógép azonosító (ID)"
+
+#: clientgui/DlgItemProperties.cpp:237
+msgid "Non CPU intensive"
+msgstr "Nem processzorigényes"
+
+#: clientgui/DlgItemProperties.cpp:237
+#: clientgui/DlgItemProperties.cpp:239
+#: clientgui/DlgItemProperties.cpp:240
+#: clientgui/DlgItemProperties.cpp:242
+#: clientgui/DlgItemProperties.cpp:245
+#: clientgui/DlgItemProperties.cpp:254
+#: clientgui/DlgItemProperties.cpp:257
+#: clientgui/DlgItemProperties.cpp:260
+msgid "yes"
+msgstr "igen"
+
+#: clientgui/DlgItemProperties.cpp:239
+msgid "Suspended via GUI"
+msgstr "GUI-n keresztül felfüggesztve"
+
+#: clientgui/DlgItemProperties.cpp:239
+#: clientgui/DlgItemProperties.cpp:240
+msgid "no"
+msgstr "nem"
+
+#: clientgui/DlgItemProperties.cpp:240
+msgid "Don't request more work"
+msgstr "Ne kérjen több feladatot"
+
+#: clientgui/DlgItemProperties.cpp:242
+#, fuzzy
+msgid "Scheduler call in progress"
+msgstr "Ütemező által indított kérés folyamatban"
+
+#: clientgui/DlgItemProperties.cpp:245
+msgid "Trickle-up pending"
+msgstr "Időközi jelentés függőben"
+
+#: clientgui/DlgItemProperties.cpp:248
+#: clientgui/DlgItemProperties.cpp:250
+msgid "Host location"
+msgstr "A számítógép helyzete"
+
+#: clientgui/DlgItemProperties.cpp:250
+msgid "default"
+msgstr "alapértelmezett"
+
+#: clientgui/DlgItemProperties.cpp:254
+msgid "Added via account manager"
+msgstr "Hozzáadva a fiókkezelővel"
+
+#: clientgui/DlgItemProperties.cpp:257
+msgid "Remove when tasks done"
+msgstr "Eltávolítás a munkák elkészültekor"
+
+#: clientgui/DlgItemProperties.cpp:260
+msgid "Ended"
+msgstr "Vége"
+
+#: clientgui/DlgItemProperties.cpp:262
+msgid "Credit"
+msgstr "Kredit"
+
+#: clientgui/DlgItemProperties.cpp:263
+msgid "User"
+msgstr "Felhasználó"
+
+#: clientgui/DlgItemProperties.cpp:270
+msgid "Host"
+msgstr "Számítógép"
+
+#: clientgui/DlgItemProperties.cpp:279
+msgid "Scheduling"
+msgstr "Ütemezés"
+
+#: clientgui/DlgItemProperties.cpp:280
 msgid "Scheduling priority"
 msgstr "Ütemezés prioritása"
 
-#: clientgui/DlgItemProperties.cpp:272
-msgid "CPU work fetch deferred for"
-msgstr "CPU munka letöltése elhalasztva"
+#: clientgui/DlgItemProperties.cpp:281
+msgid "CPU"
+msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:273
-msgid "CPU work fetch deferral interval"
-msgstr "CPU munkaletöltés elhalasztási intervalluma"
+#: clientgui/DlgItemProperties.cpp:283
+msgid "NVIDIA GPU"
+msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:277
-#: clientgui/DlgItemProperties.cpp:282
-#: clientgui/DlgItemProperties.cpp:287
-msgid "Don't fetch NVIDIA GPU tasks"
-msgstr "Ne töltsön le NVIDIA GPU feladatokat"
+#: clientgui/DlgItemProperties.cpp:286
+msgid "ATI GPU"
+msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:292
-msgid "NVIDIA GPU work fetch deferred for"
-msgstr "NVIDIA GPU munkaletöltés elhalasztva"
-
-#: clientgui/DlgItemProperties.cpp:293
-msgid "NVIDIA GPU work fetch deferral interval"
-msgstr "NVIDIA GPU munkaletöltés elhalasztási intervalluma"
-
-#: clientgui/DlgItemProperties.cpp:298
-#: clientgui/DlgItemProperties.cpp:303
-#: clientgui/DlgItemProperties.cpp:308
-msgid "Don't fetch ATI GPU tasks"
-msgstr "Ne töltsön le ATI GPU feladatokat"
-
-#: clientgui/DlgItemProperties.cpp:313
-msgid "ATI GPU work fetch deferred for"
-msgstr "ATI GPU munka letöltése elhalasztva"
-
-#: clientgui/DlgItemProperties.cpp:314
-msgid "ATI GPU work fetch deferral interval"
-msgstr "ATI GPU munkaletöltés elhalasztási intervalluma"
-
-#: clientgui/DlgItemProperties.cpp:316
+#: clientgui/DlgItemProperties.cpp:288
 msgid "Duration correction factor"
 msgstr "Időtartam korrekciós faktor"
 
-#: clientgui/DlgItemProperties.cpp:327
+#: clientgui/DlgItemProperties.cpp:299
 msgid "Properties of task "
 msgstr "Feladat tulajdonságai"
 
-#: clientgui/DlgItemProperties.cpp:339
+#: clientgui/DlgItemProperties.cpp:311
 msgid "Application"
 msgstr "Alkalmazás"
 
-#: clientgui/DlgItemProperties.cpp:340
+#: clientgui/DlgItemProperties.cpp:312
 msgid "Workunit name"
 msgstr "A munkacsomag neve"
 
-#: clientgui/DlgItemProperties.cpp:341
+#: clientgui/DlgItemProperties.cpp:313
 msgid "State"
 msgstr "Állapot"
 
-#: clientgui/DlgItemProperties.cpp:344
+#: clientgui/DlgItemProperties.cpp:316
 msgid "Received"
 msgstr "Letöltve"
 
-#: clientgui/DlgItemProperties.cpp:347
+#: clientgui/DlgItemProperties.cpp:319
 msgid "Report deadline"
 msgstr "Jelentési határidő"
 
-#: clientgui/DlgItemProperties.cpp:349
+#: clientgui/DlgItemProperties.cpp:321
 msgid "Resources"
 msgstr "Erőforrások"
 
-#: clientgui/DlgItemProperties.cpp:352
+#: clientgui/DlgItemProperties.cpp:324
 msgid "Estimated computation size"
 msgstr "Becsült kiszámítási idő"
 
-#: clientgui/DlgItemProperties.cpp:355
+#: clientgui/DlgItemProperties.cpp:327
 msgid "CPU time at last checkpoint"
 msgstr "CPU idő az utolsó ellenőrzőpontnál"
 
-#: clientgui/DlgItemProperties.cpp:356
-#: clientgui/DlgItemProperties.cpp:371
+#: clientgui/DlgItemProperties.cpp:328
+#: clientgui/DlgItemProperties.cpp:343
 msgid "CPU time"
 msgstr "Processzor idő"
 
-#: clientgui/DlgItemProperties.cpp:358
-#: clientgui/DlgItemProperties.cpp:372
+#: clientgui/DlgItemProperties.cpp:330
+#: clientgui/DlgItemProperties.cpp:344
 msgid "Elapsed time"
 msgstr "Eltelt idő"
 
-#: clientgui/DlgItemProperties.cpp:360
+#: clientgui/DlgItemProperties.cpp:332
 msgid "Estimated time remaining"
 msgstr "Becsült hátralévő idő"
 
-#: clientgui/DlgItemProperties.cpp:361
+#: clientgui/DlgItemProperties.cpp:333
 msgid "Fraction done"
 msgstr "Elkészült rész"
 
-#: clientgui/DlgItemProperties.cpp:362
+#: clientgui/DlgItemProperties.cpp:334
 msgid "Virtual memory size"
 msgstr "A virtuális memória mérete"
 
-#: clientgui/DlgItemProperties.cpp:363
+#: clientgui/DlgItemProperties.cpp:335
 msgid "Working set size"
 msgstr "A munkahalmaz mérete"
 
-#: clientgui/DlgItemProperties.cpp:365
+#: clientgui/DlgItemProperties.cpp:337
 msgid "Directory"
 msgstr "Mappa"
 
-#: clientgui/DlgItemProperties.cpp:368
+#: clientgui/DlgItemProperties.cpp:340
 msgid "Process ID"
 msgstr "Folyamat azonosító"
 
-#: clientgui/DlgItemProperties.cpp:442
+#: clientgui/DlgItemProperties.cpp:414
 msgid "Local: "
 msgstr "Helyi:"
 
@@ -2381,166 +2363,171 @@ msgstr "exkluzív alkalmazások"
 msgid "Please download and install the CoRD application from http://cord.sourceforge.net"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2394
+#: clientgui/MainDocument.cpp:2390
 msgid "on batteries"
 msgstr "akkumulátorról működik"
 
-#: clientgui/MainDocument.cpp:2395
+#: clientgui/MainDocument.cpp:2391
 msgid "computer is in use"
 msgstr "a számítógép használatban van"
 
-#: clientgui/MainDocument.cpp:2396
+#: clientgui/MainDocument.cpp:2392
 msgid "user request"
 msgstr "felhasználói kérés"
 
-#: clientgui/MainDocument.cpp:2397
+#: clientgui/MainDocument.cpp:2393
 msgid "time of day"
 msgstr "napszak"
 
-#: clientgui/MainDocument.cpp:2398
+#: clientgui/MainDocument.cpp:2394
 msgid "CPU benchmarks in progress"
 msgstr "CPU sebességmérés fut"
 
-#: clientgui/MainDocument.cpp:2399
+#: clientgui/MainDocument.cpp:2395
 msgid "need disk space - check preferences"
 msgstr "több lemezterület szükséges - ellenőrizze a beállításokat"
 
-#: clientgui/MainDocument.cpp:2400
+#: clientgui/MainDocument.cpp:2396
 msgid "computer is not in use"
 msgstr "a számítógép nincs használatban"
 
-#: clientgui/MainDocument.cpp:2401
+#: clientgui/MainDocument.cpp:2397
 msgid "starting up"
 msgstr "elindulás"
 
-#: clientgui/MainDocument.cpp:2402
+#: clientgui/MainDocument.cpp:2398
 msgid "an exclusive app is running"
 msgstr "egy alkalmazás kizárólagosan fut"
 
-#: clientgui/MainDocument.cpp:2403
+#: clientgui/MainDocument.cpp:2399
 msgid "CPU is busy"
 msgstr "a CPU foglalt"
 
-#: clientgui/MainDocument.cpp:2404
+#: clientgui/MainDocument.cpp:2400
 msgid "network bandwidth limit exceeded"
 msgstr "hálózati sávszélességi korlát túllépve"
 
-#: clientgui/MainDocument.cpp:2405
+#: clientgui/MainDocument.cpp:2401
 msgid "requested by operating system"
 msgstr "az operációs rendszer kérésére"
 
-#: clientgui/MainDocument.cpp:2407
+#: clientgui/MainDocument.cpp:2403
 msgid "unknown reason"
 msgstr "ismerelten ok"
 
-#: clientgui/MainDocument.cpp:2424
+#: clientgui/MainDocument.cpp:2420
 msgid "GPU missing, "
 msgstr "GPU hiányzik,"
 
-#: clientgui/MainDocument.cpp:2431
+#: clientgui/MainDocument.cpp:2427
 msgid "New"
 msgstr "Új"
 
-#: clientgui/MainDocument.cpp:2435
+#: clientgui/MainDocument.cpp:2431
 msgid "Download failed"
 msgstr "Sikertelen letöltés"
 
-#: clientgui/MainDocument.cpp:2437
+#: clientgui/MainDocument.cpp:2433
 msgid "Downloading"
 msgstr "Letöltés..."
 
-#: clientgui/MainDocument.cpp:2439
-#: clientgui/MainDocument.cpp:2497
+#: clientgui/MainDocument.cpp:2435
+#: clientgui/MainDocument.cpp:2499
 msgid " (suspended - "
 msgstr " (felfüggesztve - "
 
-#: clientgui/MainDocument.cpp:2447
+#: clientgui/MainDocument.cpp:2443
 msgid "Project suspended by user"
 msgstr "A projektet a felhasználó felfüggesztette"
 
-#: clientgui/MainDocument.cpp:2449
+#: clientgui/MainDocument.cpp:2445
 msgid "Task suspended by user"
 msgstr "A feladatot a felhasználó felfüggesztette"
 
-#: clientgui/MainDocument.cpp:2451
+#: clientgui/MainDocument.cpp:2447
 msgid "Suspended - "
 msgstr "Felfüggesztve - "
 
-#: clientgui/MainDocument.cpp:2458
+#: clientgui/MainDocument.cpp:2454
 msgid "Waiting for memory"
 msgstr "Várakozás memóriára"
 
-#: clientgui/MainDocument.cpp:2460
+#: clientgui/MainDocument.cpp:2456
 msgid "Waiting for shared memory"
 msgstr "Várakozás megosztott memóriára"
 
-#: clientgui/MainDocument.cpp:2463
+#: clientgui/MainDocument.cpp:2459
 msgid "Running, high priority"
 msgstr "Fut (magas prioritással)"
 
-#: clientgui/MainDocument.cpp:2465
+#: clientgui/MainDocument.cpp:2461
 msgid "Running"
 msgstr "Fut"
 
-#: clientgui/MainDocument.cpp:2468
+#: clientgui/MainDocument.cpp:2464
 msgid " (non-CPU-intensive)"
 msgstr " (nem CPU igényes)"
 
-#: clientgui/MainDocument.cpp:2471
+#: clientgui/MainDocument.cpp:2467
 msgid "Waiting to run"
 msgstr "Futásra vár"
 
-#: clientgui/MainDocument.cpp:2473
-#: clientgui/MainDocument.cpp:2479
+#: clientgui/MainDocument.cpp:2469
+#: clientgui/MainDocument.cpp:2475
 msgid "Ready to start"
 msgstr "Indításra kész"
 
-#: clientgui/MainDocument.cpp:2482
+#: clientgui/MainDocument.cpp:2479
+#, fuzzy
+msgid " (Scheduler wait: "
+msgstr "(Ütemező vár)"
+
+#: clientgui/MainDocument.cpp:2483
 msgid " (Scheduler wait)"
 msgstr "(Ütemező vár)"
 
-#: clientgui/MainDocument.cpp:2485
+#: clientgui/MainDocument.cpp:2487
 #, fuzzy
 msgid " (Waiting for network access)"
 msgstr "Várakozás memóriára"
 
-#: clientgui/MainDocument.cpp:2489
+#: clientgui/MainDocument.cpp:2491
 msgid "Computation error"
 msgstr "Számolási hiba"
 
-#: clientgui/MainDocument.cpp:2493
+#: clientgui/MainDocument.cpp:2495
 msgid "Upload failed"
 msgstr "Sikertelen feltöltés"
 
-#: clientgui/MainDocument.cpp:2495
+#: clientgui/MainDocument.cpp:2497
 msgid "Uploading"
 msgstr "Feltöltés..."
 
-#: clientgui/MainDocument.cpp:2506
+#: clientgui/MainDocument.cpp:2508
 msgid "Aborted by user"
 msgstr "Felhasználó által eldobva"
 
-#: clientgui/MainDocument.cpp:2509
+#: clientgui/MainDocument.cpp:2511
 msgid "Aborted by project"
 msgstr "A projekt által eldobva"
 
-#: clientgui/MainDocument.cpp:2512
+#: clientgui/MainDocument.cpp:2514
 msgid "Aborted: not started by deadline"
 msgstr "Eldobva: a jelentési határidőig nem indult el"
 
-#: clientgui/MainDocument.cpp:2515
+#: clientgui/MainDocument.cpp:2517
 msgid "Aborted"
 msgstr "Eldobva"
 
-#: clientgui/MainDocument.cpp:2520
+#: clientgui/MainDocument.cpp:2522
 msgid "Acknowledged"
 msgstr "Nyugtázva"
 
-#: clientgui/MainDocument.cpp:2522
+#: clientgui/MainDocument.cpp:2524
 msgid "Ready to report"
 msgstr "Jelentésre kész"
 
-#: clientgui/MainDocument.cpp:2524
+#: clientgui/MainDocument.cpp:2526
 #, c-format
 msgid "Error: invalid state '%d'"
 msgstr "Hiba: érvénytelen állapot \"%d\""
@@ -2643,7 +2630,6 @@ msgid "Categories:"
 msgstr "Kategóriák:"
 
 #: clientgui/ProjectInfoPage.cpp:588
-#, fuzzy
 msgid "Projects:"
 msgstr "Projektek:"
 
@@ -2660,7 +2646,6 @@ msgid "Organization:"
 msgstr "Szervezet:"
 
 #: clientgui/ProjectInfoPage.cpp:604
-#, fuzzy
 msgid "Web site:"
 msgstr "Weboldal:"
 
@@ -2833,7 +2818,6 @@ msgid "&%s"
 msgstr "&%s"
 
 #: clientgui/sg_BoincSimpleFrame.cpp:358
-#, fuzzy
 msgid "Default"
 msgstr "Alapértelmezett"
 
@@ -2936,7 +2920,6 @@ msgstr "Bezár"
 
 #: clientgui/sg_DlgMessages.cpp:332
 #, c-format
-#, fuzzy, c-format
 msgid "%s - Notices"
 msgstr "%s - Értesítések"
 
@@ -3289,7 +3272,6 @@ msgstr ""
 #: clientgui/sg_ProjectPanel.cpp:134
 #: clientgui/sg_ProjectPanel.cpp:262
 #, c-format
-#, fuzzy, c-format
 msgid "%s: %.0f"
 msgstr "%s: %.0f"
 
@@ -3392,7 +3374,6 @@ msgid "Not available"
 msgstr "Nem elérhető"
 
 #: clientgui/sg_TaskPanel.cpp:455
-#, fuzzy
 msgid "Tasks:"
 msgstr "Feladatok:"
 
@@ -3441,7 +3422,8 @@ msgstr "Eltelt: %s"
 
 #: clientgui/sg_TaskPanel.cpp:839
 #, c-format
-msgid "Remaining: %s"
+#, fuzzy, c-format
+msgid "Remaining (estimated): %s"
 msgstr "Hátralévő: %s"
 
 #: clientgui/sg_TaskPanel.cpp:854
@@ -4017,15 +3999,16 @@ msgid "Abort File Transfer"
 msgstr "Adatátvitel megszakítása"
 
 #: clientgui/ViewTransfers.cpp:769
+#, fuzzy
 msgid "Upload"
 msgstr "Feltölt"
 
 #: clientgui/ViewTransfers.cpp:769
+#, fuzzy
 msgid "Download"
 msgstr "Letölt"
 
 #: clientgui/ViewTransfers.cpp:773
-#, fuzzy
 msgid "retry in "
 msgstr "Újrapróbálás ennyi idő múlva: "
 
@@ -4074,8 +4057,9 @@ msgid "Elapsed"
 msgstr "Eltelt"
 
 #: clientgui/ViewWork.cpp:235
-msgid "Remaining"
-msgstr "Hátravan"
+#, fuzzy
+msgid "Remaining (estimated)"
+msgstr "Hátralévő: %s"
 
 #: clientgui/ViewWork.cpp:236
 msgid "Deadline"
@@ -4373,6 +4357,27 @@ msgid "specify network usage start and stop hours in format HH:MM-HH:MM"
 msgstr ""
 "adja meg a hálózat használatának kezdetét és végét ÓÓ:PP-ÓÓ:PP formátumban"
 
+#~ msgid "Don't fetch NVIDIA GPU tasks"
+#~ msgstr "Ne töltsön le NVIDIA GPU feladatokat"
+
+#~ msgid "NVIDIA GPU work fetch deferred for"
+#~ msgstr "NVIDIA GPU munkaletöltés elhalasztva"
+
+#~ msgid "NVIDIA GPU work fetch deferral interval"
+#~ msgstr "NVIDIA GPU munkaletöltés elhalasztási intervalluma"
+
+#~ msgid "Don't fetch ATI GPU tasks"
+#~ msgstr "Ne töltsön le ATI GPU feladatokat"
+
+#~ msgid "ATI GPU work fetch deferred for"
+#~ msgstr "ATI GPU munka letöltése elhalasztva"
+
+#~ msgid "ATI GPU work fetch deferral interval"
+#~ msgstr "ATI GPU munkaletöltés elhalasztási intervalluma"
+
+#~ msgid "Remaining"
+#~ msgstr "Hátravan"
+
 #~ msgid "Web sites"
 #~ msgstr "Weboldalak"
 
@@ -4663,9 +4668,6 @@ msgstr ""
 
 #~ msgid "Account Creation Disabled"
 #~ msgstr "Fióklétrehozás letiltva"
-
-#~ msgid "Client Account Creation Disabled"
-#~ msgstr "Kliensfiók-létrehozás letiltva"
 
 #~ msgid "Account Already Exists"
 #~ msgstr "Fiók már létezik"

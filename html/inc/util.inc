@@ -536,7 +536,7 @@ function close_output_buffer($filename) {
 }
 
 function html_info() {
-    return "<br><a href=\"bbcode.php\"><span class=\"smalltext\">".tra("Use BBCode tags to format your text")."</span></a>\n";
+    return "<br><a href=bbcode.php target=new><span class=smalltext>".tra("Use BBCode tags to format your text")."</span></a>\n";
 }
 
 // strip slashes if magic quotes in effect
@@ -823,11 +823,7 @@ function sanitize_local_url($x) {
 // strip HTML tags
 //
 function sanitize_tags($x) {
-    if (function_exists('filter_var')) {
-        return filter_var($x, FILTER_SANITIZE_STRING);
-    } else {
-        return strip_tags($x);
-    }
+    return strip_tags($x);
 }
 
 function sanitize_numeric($x) {
@@ -854,6 +850,6 @@ function credit_to_gflop_hours($c) {
     return $c/(200/24);
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 24968 2012-01-02 05:53:42Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: util.inc 25378 2012-03-04 20:37:10Z davea $";  //Generated automatically - do not edit
 
 ?>

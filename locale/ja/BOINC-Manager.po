@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOINC Manager 5.10 Japanese\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-02-09 12:37-0500\n"
+"POT-Creation-Date: 2012-03-05 10:58-0500\n"
 "PO-Revision-Date: 2011-12-04 22:23+0200\n"
 "Last-Translator: shirayuki <shirayuking@gmail.com>\n"
 "Language-Team: \n"
@@ -899,79 +899,79 @@ msgid "(User Defined)"
 msgstr "(実装上のダミーエントリ2)"
 
 # For account managers
-#: clientgui/BOINCTaskBar.cpp:490
+#: clientgui/BOINCTaskBar.cpp:502
 #, c-format
 msgid "Open %s Web..."
 msgstr "%s のウェブサイトを開く..."
 
-#: clientgui/BOINCTaskBar.cpp:497
+#: clientgui/BOINCTaskBar.cpp:509
 #, c-format
 msgid "Open %s..."
 msgstr "%s を開く..."
 
-#: clientgui/BOINCTaskBar.cpp:504
-#: clientgui/BOINCTaskBar.cpp:600
-#: clientgui/BOINCTaskBar.cpp:608
+#: clientgui/BOINCTaskBar.cpp:516
+#: clientgui/BOINCTaskBar.cpp:612
+#: clientgui/BOINCTaskBar.cpp:620
 msgid "Snooze"
 msgstr "休止"
 
-#: clientgui/BOINCTaskBar.cpp:506
-#: clientgui/BOINCTaskBar.cpp:627
-#: clientgui/BOINCTaskBar.cpp:635
+#: clientgui/BOINCTaskBar.cpp:518
+#: clientgui/BOINCTaskBar.cpp:639
+#: clientgui/BOINCTaskBar.cpp:647
 msgid "Snooze GPU"
 msgstr "GPU を休止"
 
-#: clientgui/BOINCTaskBar.cpp:522
+#: clientgui/BOINCTaskBar.cpp:534
 msgid "E&xit"
 msgstr "終了(&X)"
 
-#: clientgui/BOINCTaskBar.cpp:593
+#: clientgui/BOINCTaskBar.cpp:605
 msgid "Resume"
 msgstr "再開"
 
-#: clientgui/BOINCTaskBar.cpp:620
+#: clientgui/BOINCTaskBar.cpp:632
 #, fuzzy
 msgid "Resume GPU"
 msgstr "再開"
 
-#: clientgui/BOINCTaskBar.cpp:696
+#: clientgui/BOINCTaskBar.cpp:708
 msgid "Computing is enabled"
 msgstr "計算処理許可状態"
 
-#: clientgui/BOINCTaskBar.cpp:699
+#: clientgui/BOINCTaskBar.cpp:711
 msgid "Computing is suspended - "
 msgstr "計算処理は一時停止中 - "
 
-#: clientgui/BOINCTaskBar.cpp:709
+#: clientgui/BOINCTaskBar.cpp:721
 msgid "GPU computing is enabled"
 msgstr "GPU 計算処理許可状態"
 
-#: clientgui/BOINCTaskBar.cpp:712
+#: clientgui/BOINCTaskBar.cpp:724
 msgid "GPU computing is suspended - "
 msgstr "GPU 計算処理は一時停止中 -"
 
-#: clientgui/BOINCTaskBar.cpp:721
+#: clientgui/BOINCTaskBar.cpp:733
 msgid "Network is enabled"
 msgstr "ネットワーク使用許可状態"
 
-#: clientgui/BOINCTaskBar.cpp:724
+#: clientgui/BOINCTaskBar.cpp:736
 msgid "Network is suspended - "
 msgstr "ネットワークの使用を一時停止中 - "
 
-#: clientgui/BOINCTaskBar.cpp:732
+#: clientgui/BOINCTaskBar.cpp:744
 msgid "Reconnecting to client."
 msgstr "クライアントに再接続中。"
 
-#: clientgui/BOINCTaskBar.cpp:734
+#: clientgui/BOINCTaskBar.cpp:746
 msgid "Not connected to a client."
 msgstr "クライアントに接続されていません。"
 
-#: clientgui/BOINCTaskBar.cpp:787
+#: clientgui/BOINCTaskBar.cpp:799
 #, c-format
 msgid "%s Notices"
 msgstr "%s からのお知らせ"
 
-#: clientgui/BOINCTaskBar.cpp:793
+#: clientgui/BOINCTaskBar.cpp:805
 msgid "There are new notices - click to view."
 msgstr "新しいお知らせがあります - クリックして見てください。"
 
@@ -1474,7 +1474,7 @@ msgid "network usage stop hour"
 msgstr "ネットワーク使用終了時刻"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:597
-#: clientgui/DlgItemProperties.cpp:214
+#: clientgui/DlgItemProperties.cpp:234
 msgid "Disk usage"
 msgstr "ディスク領域"
 
@@ -1693,262 +1693,248 @@ msgstr "キャンセル(&C)"
 msgid "Don't show this dialog again."
 msgstr "再びこのダイアログを表示しない"
 
-#: clientgui/DlgItemProperties.cpp:196
-msgid "Properties of project "
-msgstr "プロジェクトのプロパティ 　"
-
-#: clientgui/DlgItemProperties.cpp:200
-msgid "General"
-msgstr "一般"
-
-#: clientgui/DlgItemProperties.cpp:201
-msgid "Master URL"
-msgstr "マスター URL"
-
-#: clientgui/DlgItemProperties.cpp:202
-msgid "User name"
-msgstr "参加者名（User name)　"
-
-#: clientgui/DlgItemProperties.cpp:203
-msgid "Team name"
-msgstr "チームの名称"
-
-#: clientgui/DlgItemProperties.cpp:204
-msgid "Resource share"
-msgstr "リソース割り当て"
-
-#: clientgui/DlgItemProperties.cpp:206
-msgid "Scheduler RPC deferred for"
-msgstr "スケジューラ RPC の保留時間"
-
-#: clientgui/DlgItemProperties.cpp:209
-msgid "File downloads deferred for"
-msgstr "ファイルダウンロード 待機"
-
-#: clientgui/DlgItemProperties.cpp:212
-msgid "File uploads deferred for"
-msgstr "ファイルアップロード 待機"
-
-#: clientgui/DlgItemProperties.cpp:215
-msgid "Computer ID"
-msgstr "コンピュータ ID"
-
-#: clientgui/DlgItemProperties.cpp:217
-msgid "Non CPU intensive"
-msgstr "CPU を集中的に使わない"
-
-#: clientgui/DlgItemProperties.cpp:217
-#: clientgui/DlgItemProperties.cpp:219
-#: clientgui/DlgItemProperties.cpp:220
-#: clientgui/DlgItemProperties.cpp:222
-#: clientgui/DlgItemProperties.cpp:225
-#: clientgui/DlgItemProperties.cpp:234
-#: clientgui/DlgItemProperties.cpp:237
-#: clientgui/DlgItemProperties.cpp:240
-msgid "yes"
-msgstr "はい"
-
-#: clientgui/DlgItemProperties.cpp:219
-msgid "Suspended via GUI"
-msgstr "GUI 経由で保留状態にされている"
-
-#: clientgui/DlgItemProperties.cpp:219
-#: clientgui/DlgItemProperties.cpp:220
-msgid "no"
-msgstr "いいえ"
-
-#: clientgui/DlgItemProperties.cpp:220
-msgid "Don't request more work"
-msgstr "新しい仕事を取りに行かない"
-
-#: clientgui/DlgItemProperties.cpp:222
-msgid "Scheduler call in progress"
-msgstr "スケジューラへ要求中"
-
-#: clientgui/DlgItemProperties.cpp:225
-msgid "Trickle-up pending"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:228
-#: clientgui/DlgItemProperties.cpp:230
-msgid "Host location"
-msgstr "計算機の所在"
-
-#: clientgui/DlgItemProperties.cpp:230
-msgid "default"
-msgstr "デフォルト"
-
-#: clientgui/DlgItemProperties.cpp:234
-msgid "Added via account manager"
-msgstr "アカウント･マネージャ経由での追加"
-
-#: clientgui/DlgItemProperties.cpp:237
-msgid "Remove when tasks done"
-msgstr "タスクが完了したら削除する"
-
-#: clientgui/DlgItemProperties.cpp:240
-msgid "Ended"
-msgstr "終了した"
-
-#: clientgui/DlgItemProperties.cpp:242
-msgid "Credit"
-msgstr "功績(credit)の値"
-
-#: clientgui/DlgItemProperties.cpp:243
-msgid "User"
-msgstr "参加者"
-
-#: clientgui/DlgItemProperties.cpp:250
-msgid "Host"
-msgstr "計算機"
-
-#: clientgui/DlgItemProperties.cpp:259
-msgid "Scheduling"
-msgstr "スケジューリング"
-
-#: clientgui/DlgItemProperties.cpp:261
-#: clientgui/DlgItemProperties.cpp:264
-#: clientgui/DlgItemProperties.cpp:267
-msgid "Don't fetch CPU tasks"
+#: clientgui/DlgItemProperties.cpp:171
+#: clientgui/DlgItemProperties.cpp:174
+#: clientgui/DlgItemProperties.cpp:177
+#: clientgui/DlgItemProperties.cpp:180
+#, fuzzy
+msgid "Don't fetch tasks for "
 msgstr "CPU向けタスクを新たに取得しない"
 
-#: clientgui/DlgItemProperties.cpp:261
-#: clientgui/DlgItemProperties.cpp:277
-#: clientgui/DlgItemProperties.cpp:287
-#: clientgui/DlgItemProperties.cpp:298
-#: clientgui/DlgItemProperties.cpp:308
+#: clientgui/DlgItemProperties.cpp:171
 msgid "Project preference"
 msgstr "プロジェクトごとのプレファレンス"
 
-#: clientgui/DlgItemProperties.cpp:264
-#: clientgui/DlgItemProperties.cpp:282
-#: clientgui/DlgItemProperties.cpp:303
+#: clientgui/DlgItemProperties.cpp:174
 #, fuzzy
 msgid "Account manager preference"
 msgstr "アカウント・マネージャのウェブサイト"
 
-#: clientgui/DlgItemProperties.cpp:267
+#: clientgui/DlgItemProperties.cpp:177
 #, fuzzy
-msgid "Project has no CPU apps"
+msgid "Project has no apps for "
 msgstr "プロジェクトのウェブサイト"
 
-#: clientgui/DlgItemProperties.cpp:269
+#: clientgui/DlgItemProperties.cpp:180
+msgid "Client configuration excludes "
+msgstr ""
+
+#: clientgui/DlgItemProperties.cpp:184
+#, fuzzy
+msgid " work fetch deferred for"
+msgstr "CPU 向けの仕事を獲得する処理の保留時間"
+
+#: clientgui/DlgItemProperties.cpp:185
+#, fuzzy
+msgid " work fetch deferral interval"
+msgstr "CPU 向けの仕事を獲得する処理の保留間隔"
+
+#: clientgui/DlgItemProperties.cpp:216
+msgid "Properties of project "
+msgstr "プロジェクトのプロパティ 　"
+
+#: clientgui/DlgItemProperties.cpp:220
+msgid "General"
+msgstr "一般"
+
+#: clientgui/DlgItemProperties.cpp:221
+msgid "Master URL"
+msgstr "マスター URL"
+
+#: clientgui/DlgItemProperties.cpp:222
+msgid "User name"
+msgstr "参加者名（User name)　"
+
+#: clientgui/DlgItemProperties.cpp:223
+msgid "Team name"
+msgstr "チームの名称"
+
+#: clientgui/DlgItemProperties.cpp:224
+msgid "Resource share"
+msgstr "リソース割り当て"
+
+#: clientgui/DlgItemProperties.cpp:226
+msgid "Scheduler RPC deferred for"
+msgstr "スケジューラ RPC の保留時間"
+
+#: clientgui/DlgItemProperties.cpp:229
+msgid "File downloads deferred for"
+msgstr "ファイルダウンロード 待機"
+
+#: clientgui/DlgItemProperties.cpp:232
+msgid "File uploads deferred for"
+msgstr "ファイルアップロード 待機"
+
+#: clientgui/DlgItemProperties.cpp:235
+msgid "Computer ID"
+msgstr "コンピュータ ID"
+
+#: clientgui/DlgItemProperties.cpp:237
+msgid "Non CPU intensive"
+msgstr "CPU を集中的に使わない"
+
+#: clientgui/DlgItemProperties.cpp:237
+#: clientgui/DlgItemProperties.cpp:239
+#: clientgui/DlgItemProperties.cpp:240
+#: clientgui/DlgItemProperties.cpp:242
+#: clientgui/DlgItemProperties.cpp:245
+#: clientgui/DlgItemProperties.cpp:254
+#: clientgui/DlgItemProperties.cpp:257
+#: clientgui/DlgItemProperties.cpp:260
+msgid "yes"
+msgstr "はい"
+
+#: clientgui/DlgItemProperties.cpp:239
+msgid "Suspended via GUI"
+msgstr "GUI 経由で保留状態にされている"
+
+#: clientgui/DlgItemProperties.cpp:239
+#: clientgui/DlgItemProperties.cpp:240
+msgid "no"
+msgstr "いいえ"
+
+#: clientgui/DlgItemProperties.cpp:240
+msgid "Don't request more work"
+msgstr "新しい仕事を取りに行かない"
+
+#: clientgui/DlgItemProperties.cpp:242
+msgid "Scheduler call in progress"
+msgstr "スケジューラへ要求中"
+
+#: clientgui/DlgItemProperties.cpp:245
+msgid "Trickle-up pending"
+msgstr ""
+
+#: clientgui/DlgItemProperties.cpp:248
+#: clientgui/DlgItemProperties.cpp:250
+msgid "Host location"
+msgstr "計算機の所在"
+
+#: clientgui/DlgItemProperties.cpp:250
+msgid "default"
+msgstr "デフォルト"
+
+#: clientgui/DlgItemProperties.cpp:254
+msgid "Added via account manager"
+msgstr "アカウント･マネージャ経由での追加"
+
+#: clientgui/DlgItemProperties.cpp:257
+msgid "Remove when tasks done"
+msgstr "タスクが完了したら削除する"
+
+#: clientgui/DlgItemProperties.cpp:260
+msgid "Ended"
+msgstr "終了した"
+
+#: clientgui/DlgItemProperties.cpp:262
+msgid "Credit"
+msgstr "功績(credit)の値"
+
+#: clientgui/DlgItemProperties.cpp:263
+msgid "User"
+msgstr "参加者"
+
+#: clientgui/DlgItemProperties.cpp:270
+msgid "Host"
+msgstr "計算機"
+
+#: clientgui/DlgItemProperties.cpp:279
+msgid "Scheduling"
+msgstr "スケジューリング"
+
+#: clientgui/DlgItemProperties.cpp:280
 #, fuzzy
 msgid "Scheduling priority"
 msgstr "CPU 向けスケジューリングの優先度"
 
-#: clientgui/DlgItemProperties.cpp:272
-msgid "CPU work fetch deferred for"
-msgstr "CPU 向けの仕事を獲得する処理の保留時間"
+#: clientgui/DlgItemProperties.cpp:281
+msgid "CPU"
+msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:273
-msgid "CPU work fetch deferral interval"
-msgstr "CPU 向けの仕事を獲得する処理の保留間隔"
+#: clientgui/DlgItemProperties.cpp:283
+msgid "NVIDIA GPU"
+msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:277
-#: clientgui/DlgItemProperties.cpp:282
-#: clientgui/DlgItemProperties.cpp:287
-msgid "Don't fetch NVIDIA GPU tasks"
-msgstr "NVIDIA GPU向けタスクを新たに取得しない"
-
-#: clientgui/DlgItemProperties.cpp:292
-msgid "NVIDIA GPU work fetch deferred for"
-msgstr "NVIDIA GPU 向けの仕事を獲得する処理の保留時間"
-
-#: clientgui/DlgItemProperties.cpp:293
-msgid "NVIDIA GPU work fetch deferral interval"
-msgstr "NVIDIA GPU 向けの仕事を獲得する処理の保留間隔"
-
-#: clientgui/DlgItemProperties.cpp:298
-#: clientgui/DlgItemProperties.cpp:303
-#: clientgui/DlgItemProperties.cpp:308
-msgid "Don't fetch ATI GPU tasks"
-msgstr "ATI GPU向けタスクを新たに取得しない"
-
-#: clientgui/DlgItemProperties.cpp:313
-msgid "ATI GPU work fetch deferred for"
-msgstr "ATI GPU 向けの仕事を獲得する処理の保留時間"
-
-#: clientgui/DlgItemProperties.cpp:314
-msgid "ATI GPU work fetch deferral interval"
-msgstr "ATI GPU 向けの仕事を獲得する処理の保留間隔"
+#: clientgui/DlgItemProperties.cpp:286
+msgid "ATI GPU"
+msgstr ""
 
 # good translation not found
-#: clientgui/DlgItemProperties.cpp:316
+#: clientgui/DlgItemProperties.cpp:288
 msgid "Duration correction factor"
 msgstr "Duration correction factor"
 
-#: clientgui/DlgItemProperties.cpp:327
+#: clientgui/DlgItemProperties.cpp:299
 msgid "Properties of task "
 msgstr "タスクのプロパティ ： "
 
-#: clientgui/DlgItemProperties.cpp:339
+#: clientgui/DlgItemProperties.cpp:311
 msgid "Application"
 msgstr "アプリケーション"
 
-#: clientgui/DlgItemProperties.cpp:340
+#: clientgui/DlgItemProperties.cpp:312
 msgid "Workunit name"
 msgstr "ワークユニットの名前"
 
-#: clientgui/DlgItemProperties.cpp:341
+#: clientgui/DlgItemProperties.cpp:313
 msgid "State"
 msgstr "状態"
 
-#: clientgui/DlgItemProperties.cpp:344
+#: clientgui/DlgItemProperties.cpp:316
 msgid "Received"
 msgstr "受信時刻 "
 
-#: clientgui/DlgItemProperties.cpp:347
+#: clientgui/DlgItemProperties.cpp:319
 msgid "Report deadline"
 msgstr "報告期限"
 
-#: clientgui/DlgItemProperties.cpp:349
+#: clientgui/DlgItemProperties.cpp:321
 msgid "Resources"
 msgstr "リソース"
 
-#: clientgui/DlgItemProperties.cpp:352
+#: clientgui/DlgItemProperties.cpp:324
 msgid "Estimated computation size"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:355
+#: clientgui/DlgItemProperties.cpp:327
 msgid "CPU time at last checkpoint"
 msgstr "最新のチェックポイントでの CPU 時間"
 
-#: clientgui/DlgItemProperties.cpp:356
-#: clientgui/DlgItemProperties.cpp:371
+#: clientgui/DlgItemProperties.cpp:328
+#: clientgui/DlgItemProperties.cpp:343
 msgid "CPU time"
 msgstr "CPU時間"
 
-#: clientgui/DlgItemProperties.cpp:358
-#: clientgui/DlgItemProperties.cpp:372
+#: clientgui/DlgItemProperties.cpp:330
+#: clientgui/DlgItemProperties.cpp:344
 msgid "Elapsed time"
 msgstr "経過時間"
 
-#: clientgui/DlgItemProperties.cpp:360
+#: clientgui/DlgItemProperties.cpp:332
 msgid "Estimated time remaining"
 msgstr "処理完了までの想定時間"
 
-#: clientgui/DlgItemProperties.cpp:361
+#: clientgui/DlgItemProperties.cpp:333
 msgid "Fraction done"
 msgstr "仕事の計算完了率"
 
-#: clientgui/DlgItemProperties.cpp:362
+#: clientgui/DlgItemProperties.cpp:334
 msgid "Virtual memory size"
 msgstr "仮想メモリの大きさ"
 
-#: clientgui/DlgItemProperties.cpp:363
+#: clientgui/DlgItemProperties.cpp:335
 msgid "Working set size"
 msgstr "ワーキング・セットの大きさ"
 
-#: clientgui/DlgItemProperties.cpp:365
+#: clientgui/DlgItemProperties.cpp:337
 msgid "Directory"
 msgstr "ディレクトリ"
 
-#: clientgui/DlgItemProperties.cpp:368
+#: clientgui/DlgItemProperties.cpp:340
 msgid "Process ID"
 msgstr "プロセスID"
 
-#: clientgui/DlgItemProperties.cpp:442
+#: clientgui/DlgItemProperties.cpp:414
 msgid "Local: "
 msgstr "Local:"
 
@@ -2337,166 +2323,170 @@ msgstr "アプリケーション"
 msgid "Please download and install the CoRD application from http://cord.sourceforge.net"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2394
+#: clientgui/MainDocument.cpp:2390
 msgid "on batteries"
 msgstr "バッテリで駆動中"
 
-#: clientgui/MainDocument.cpp:2395
+#: clientgui/MainDocument.cpp:2391
 msgid "computer is in use"
 msgstr "コンピュータを別途利用中"
 
-#: clientgui/MainDocument.cpp:2396
+#: clientgui/MainDocument.cpp:2392
 msgid "user request"
 msgstr "参加者の要求"
 
-#: clientgui/MainDocument.cpp:2397
+#: clientgui/MainDocument.cpp:2393
 msgid "time of day"
 msgstr "実行時間帯制約"
 
-#: clientgui/MainDocument.cpp:2398
+#: clientgui/MainDocument.cpp:2394
 msgid "CPU benchmarks in progress"
 msgstr "CPU ベンチマーク実行中"
 
-#: clientgui/MainDocument.cpp:2399
+#: clientgui/MainDocument.cpp:2395
 msgid "need disk space - check preferences"
 msgstr "ディスク容量の不足 - 好みの設定(プレファレンス)を確認してください"
 
-#: clientgui/MainDocument.cpp:2400
+#: clientgui/MainDocument.cpp:2396
 msgid "computer is not in use"
 msgstr "コンピュータの利用者なし"
 
-#: clientgui/MainDocument.cpp:2401
+#: clientgui/MainDocument.cpp:2397
 msgid "starting up"
 msgstr "起動の途中"
 
-#: clientgui/MainDocument.cpp:2402
+#: clientgui/MainDocument.cpp:2398
 msgid "an exclusive app is running"
 msgstr "排他的なアプリケーションを実行中"
 
-#: clientgui/MainDocument.cpp:2403
+#: clientgui/MainDocument.cpp:2399
 msgid "CPU is busy"
 msgstr "CPU が別途利用中"
 
-#: clientgui/MainDocument.cpp:2404
+#: clientgui/MainDocument.cpp:2400
 msgid "network bandwidth limit exceeded"
 msgstr "ネットワーク帯域幅の制約超過"
 
-#: clientgui/MainDocument.cpp:2405
+#: clientgui/MainDocument.cpp:2401
 msgid "requested by operating system"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2407
+#: clientgui/MainDocument.cpp:2403
 msgid "unknown reason"
 msgstr "理由不明"
 
-#: clientgui/MainDocument.cpp:2424
+#: clientgui/MainDocument.cpp:2420
 msgid "GPU missing, "
 msgstr "GPU がありません、"
 
-#: clientgui/MainDocument.cpp:2431
+#: clientgui/MainDocument.cpp:2427
 msgid "New"
 msgstr "新規"
 
-#: clientgui/MainDocument.cpp:2435
+#: clientgui/MainDocument.cpp:2431
 msgid "Download failed"
 msgstr "ダウンロード失敗"
 
-#: clientgui/MainDocument.cpp:2437
+#: clientgui/MainDocument.cpp:2433
 msgid "Downloading"
 msgstr "ダウンロード処理中"
 
-#: clientgui/MainDocument.cpp:2439
-#: clientgui/MainDocument.cpp:2497
+#: clientgui/MainDocument.cpp:2435
+#: clientgui/MainDocument.cpp:2499
 msgid " (suspended - "
 msgstr "(一時停止中 - "
 
-#: clientgui/MainDocument.cpp:2447
+#: clientgui/MainDocument.cpp:2443
 msgid "Project suspended by user"
 msgstr "参加者によってプロジェクト一時停止"
 
-#: clientgui/MainDocument.cpp:2449
+#: clientgui/MainDocument.cpp:2445
 msgid "Task suspended by user"
 msgstr "参加者によってタスク一時停止"
 
-#: clientgui/MainDocument.cpp:2451
+#: clientgui/MainDocument.cpp:2447
 msgid "Suspended - "
 msgstr "一時停止中 - "
 
-#: clientgui/MainDocument.cpp:2458
+#: clientgui/MainDocument.cpp:2454
 msgid "Waiting for memory"
 msgstr "メモリ不足のため待機"
 
-#: clientgui/MainDocument.cpp:2460
+#: clientgui/MainDocument.cpp:2456
 msgid "Waiting for shared memory"
 msgstr "共有メモリが空くまで待機中"
 
-#: clientgui/MainDocument.cpp:2463
+#: clientgui/MainDocument.cpp:2459
 msgid "Running, high priority"
 msgstr "優先度高で処理中"
 
-#: clientgui/MainDocument.cpp:2465
+#: clientgui/MainDocument.cpp:2461
 msgid "Running"
 msgstr "実行中"
 
-#: clientgui/MainDocument.cpp:2468
+#: clientgui/MainDocument.cpp:2464
 msgid " (non-CPU-intensive)"
 msgstr "（常時 CPU を使用するわけではありません）"
 
-#: clientgui/MainDocument.cpp:2471
+#: clientgui/MainDocument.cpp:2467
 msgid "Waiting to run"
 msgstr "実行待機"
 
-#: clientgui/MainDocument.cpp:2473
-#: clientgui/MainDocument.cpp:2479
+#: clientgui/MainDocument.cpp:2469
+#: clientgui/MainDocument.cpp:2475
 msgid "Ready to start"
 msgstr "開始まで待機"
 
-#: clientgui/MainDocument.cpp:2482
+#: clientgui/MainDocument.cpp:2479
+msgid " (Scheduler wait: "
+msgstr ""
+
+#: clientgui/MainDocument.cpp:2483
 msgid " (Scheduler wait)"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2485
+#: clientgui/MainDocument.cpp:2487
 #, fuzzy
 msgid " (Waiting for network access)"
 msgstr "メモリ不足のため待機"
 
-#: clientgui/MainDocument.cpp:2489
+#: clientgui/MainDocument.cpp:2491
 msgid "Computation error"
 msgstr "計算エラー"
 
-#: clientgui/MainDocument.cpp:2493
+#: clientgui/MainDocument.cpp:2495
 msgid "Upload failed"
 msgstr "アップロード失敗"
 
-#: clientgui/MainDocument.cpp:2495
+#: clientgui/MainDocument.cpp:2497
 msgid "Uploading"
 msgstr "アップロード処理中"
 
-#: clientgui/MainDocument.cpp:2506
+#: clientgui/MainDocument.cpp:2508
 msgid "Aborted by user"
 msgstr "参加者によって中止"
 
-#: clientgui/MainDocument.cpp:2509
+#: clientgui/MainDocument.cpp:2511
 msgid "Aborted by project"
 msgstr "プロジェクトによって中止"
 
-#: clientgui/MainDocument.cpp:2512
+#: clientgui/MainDocument.cpp:2514
 msgid "Aborted: not started by deadline"
 msgstr "中止されました： 期限までに開始されませんでした"
 
-#: clientgui/MainDocument.cpp:2515
+#: clientgui/MainDocument.cpp:2517
 msgid "Aborted"
 msgstr "中止"
 
-#: clientgui/MainDocument.cpp:2520
+#: clientgui/MainDocument.cpp:2522
 msgid "Acknowledged"
 msgstr "サーバ確認済み"
 
-#: clientgui/MainDocument.cpp:2522
+#: clientgui/MainDocument.cpp:2524
 msgid "Ready to report"
 msgstr "報告待機"
 
-#: clientgui/MainDocument.cpp:2524
+#: clientgui/MainDocument.cpp:2526
 #, c-format
 msgid "Error: invalid state '%d'"
 msgstr "エラー： 無効状態 '%d'"
@@ -3381,8 +3371,9 @@ msgstr ""
 
 #: clientgui/sg_TaskPanel.cpp:839
 #, c-format
-msgid "Remaining: %s"
-msgstr ""
+#, fuzzy, c-format
+msgid "Remaining (estimated): %s"
+msgstr "残り時間: %s"
 
 #: clientgui/sg_TaskPanel.cpp:854
 #, c-format
@@ -4014,7 +4005,8 @@ msgid "Elapsed"
 msgstr "経過時間"
 
 #: clientgui/ViewWork.cpp:235
-msgid "Remaining"
+#, fuzzy
+msgid "Remaining (estimated)"
 msgstr "終了までの予想時間"
 
 #: clientgui/ViewWork.cpp:236
@@ -4310,6 +4302,24 @@ msgstr "仕事をする時間帯の始めと終わりを HH:MM-HH:MM の形式�
 msgid "specify network usage start and stop hours in format HH:MM-HH:MM"
 msgstr "ネットワークを使う時間帯の始めと終わりを HH:MM-HH:MM の形式で記入してください"
 
+#~ msgid "Don't fetch NVIDIA GPU tasks"
+#~ msgstr "NVIDIA GPU向けタスクを新たに取得しない"
+
+#~ msgid "NVIDIA GPU work fetch deferred for"
+#~ msgstr "NVIDIA GPU 向けの仕事を獲得する処理の保留時間"
+
+#~ msgid "NVIDIA GPU work fetch deferral interval"
+#~ msgstr "NVIDIA GPU 向けの仕事を獲得する処理の保留間隔"
+
+#~ msgid "Don't fetch ATI GPU tasks"
+#~ msgstr "ATI GPU向けタスクを新たに取得しない"
+
+#~ msgid "ATI GPU work fetch deferred for"
+#~ msgstr "ATI GPU 向けの仕事を獲得する処理の保留時間"
+
+#~ msgid "ATI GPU work fetch deferral interval"
+#~ msgstr "ATI GPU 向けの仕事を獲得する処理の保留間隔"
+
 #~ msgid "Web sites"
 #~ msgstr "ウェブサイト"
 
@@ -4418,9 +4428,6 @@ msgstr "ネットワークを使う時間帯の始めと終わりを HH:MM-HH:MM
 
 #~ msgid "Elapsed Time: %s"
 #~ msgstr "経過時間： %s"
-
-#~ msgid "Time Remaining: %s"
-#~ msgstr "残り時間: %s"
 
 #~ msgid "Upload suspended - "
 #~ msgstr "アップロード保留中 - "
