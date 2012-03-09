@@ -2408,3 +2408,69 @@ Rom    2 Mar 2012
         configure.ac
         version.h
 
+Charlie 3 Mar 2012
+    - Mac installer: Utility shell script creates users & groups boinc_master 
+        and boinc_project with IDs at 501 or above; also creates RealName field 
+        for users boinc_master and boinc_project and sets it to empty string 
+        (following advice from Apple Developer technical Suport.)
+
+    mac_build/
+        Mac_SA_Secure.sh
+
+David  3 Mar 2012
+	- Manager: small code cleanup
+	client/
+		client_state.cpp
+	clientgui/
+		DltItemProperties.cpp,h
+
+David  3 Mar 2012
+    - Manager: in Project Properties page,
+        show if a GPU type is excluded by configuration
+    - client: don't fetch work for a resource type if all instances
+        of that type are excluded
+    - web: don't use filter_var(, FILTER_SANITIZE_STRING)
+        to strip HTML tags from a string.
+        This escapes singles quotes also.
+        Use strip_tags() instead.
+
+    clientgui/
+        DltItemProperties.cpp
+    html/inc/
+        util.inc
+    lib/
+        gui_rpc_client_ops.cpp
+        gui_rpc_client.h
+
+David  3 Mar 2012
+    - LAMMPS job submission: set rsc_fpops_bound to 20 times rsc_fpops_est
+    html/user/
+        lammps.php
+
+David  4 Mar 2012
+    - web: open BBCode instructions in new window (or tab).
+        Otherwise, on IE, you lose the text you already entered
+        when you go back.
+
+    html/inc/
+        util.inc
+
+Bernd  5 Mar 2012
+    - scheduler: fix/augment file_deleter usage message
+
+    sched/
+        file_deleter.cpp
+
+David  5 Mar 2012
+    - LAMMPS: fix code formatting
+
+    html/user/
+        lammps.php
+
+Rom    6 Mar 2012
+    - Tag for 7.0.20 release, all platforms
+      boinc_core_release_7_0_20
+
+    /
+        configure.ac
+        version.h

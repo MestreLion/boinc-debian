@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOINC Manager 6.6.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-02-09 12:37-0500\n"
+"POT-Creation-Date: 2012-03-05 10:58-0500\n"
 "PO-Revision-Date: 2011-10-23 17:03+0200\n"
 "Last-Translator: Anonymous Pootle User\n"
 "Language-Team: Galician <LL@li.org>\n"
@@ -919,85 +919,85 @@ msgstr "(Descoñecido)"
 msgid "(User Defined)"
 msgstr "(Definido polo usuario)"
 
-#: clientgui/BOINCTaskBar.cpp:490
+#: clientgui/BOINCTaskBar.cpp:502
 #, c-format
 msgid "Open %s Web..."
 msgstr "Abrir a web de %s..."
 
-#: clientgui/BOINCTaskBar.cpp:497
+#: clientgui/BOINCTaskBar.cpp:509
 #, c-format
 msgid "Open %s..."
 msgstr "Abrir %s..."
 
-#: clientgui/BOINCTaskBar.cpp:504
-#: clientgui/BOINCTaskBar.cpp:600
-#: clientgui/BOINCTaskBar.cpp:608
+#: clientgui/BOINCTaskBar.cpp:516
+#: clientgui/BOINCTaskBar.cpp:612
+#: clientgui/BOINCTaskBar.cpp:620
 msgid "Snooze"
 msgstr "Dormitar"
 
-#: clientgui/BOINCTaskBar.cpp:506
-#: clientgui/BOINCTaskBar.cpp:627
-#: clientgui/BOINCTaskBar.cpp:635
+#: clientgui/BOINCTaskBar.cpp:518
+#: clientgui/BOINCTaskBar.cpp:639
+#: clientgui/BOINCTaskBar.cpp:647
 msgid "Snooze GPU"
 msgstr ""
 
-#: clientgui/BOINCTaskBar.cpp:522
+#: clientgui/BOINCTaskBar.cpp:534
 msgid "E&xit"
 msgstr "&Saír"
 
-#: clientgui/BOINCTaskBar.cpp:593
+#: clientgui/BOINCTaskBar.cpp:605
 msgid "Resume"
 msgstr "Retomar"
 
-#: clientgui/BOINCTaskBar.cpp:620
+#: clientgui/BOINCTaskBar.cpp:632
 #, fuzzy
 msgid "Resume GPU"
 msgstr "Retomar"
 
-#: clientgui/BOINCTaskBar.cpp:696
+#: clientgui/BOINCTaskBar.cpp:708
 #, fuzzy
 msgid "Computing is enabled"
 msgstr "Computación permitida"
 
-#: clientgui/BOINCTaskBar.cpp:699
+#: clientgui/BOINCTaskBar.cpp:711
 #, fuzzy
 msgid "Computing is suspended - "
 msgstr "Computación suspendida."
 
-#: clientgui/BOINCTaskBar.cpp:709
+#: clientgui/BOINCTaskBar.cpp:721
 #, fuzzy
 msgid "GPU computing is enabled"
 msgstr "Computación permitida"
 
-#: clientgui/BOINCTaskBar.cpp:712
+#: clientgui/BOINCTaskBar.cpp:724
 #, fuzzy
 msgid "GPU computing is suspended - "
 msgstr "Computación suspendida."
 
-#: clientgui/BOINCTaskBar.cpp:721
+#: clientgui/BOINCTaskBar.cpp:733
 #, fuzzy
 msgid "Network is enabled"
 msgstr "Uso da rede permitido"
 
-#: clientgui/BOINCTaskBar.cpp:724
+#: clientgui/BOINCTaskBar.cpp:736
 #, fuzzy
 msgid "Network is suspended - "
 msgstr "Suspender actividade de &rede"
 
-#: clientgui/BOINCTaskBar.cpp:732
+#: clientgui/BOINCTaskBar.cpp:744
 msgid "Reconnecting to client."
 msgstr "A reconectar co cliente."
 
-#: clientgui/BOINCTaskBar.cpp:734
+#: clientgui/BOINCTaskBar.cpp:746
 msgid "Not connected to a client."
 msgstr "Non conectado a un cliente."
 
-#: clientgui/BOINCTaskBar.cpp:787
+#: clientgui/BOINCTaskBar.cpp:799
 #, c-format
 msgid "%s Notices"
 msgstr ""
 
-#: clientgui/BOINCTaskBar.cpp:793
+#: clientgui/BOINCTaskBar.cpp:805
 msgid "There are new notices - click to view."
 msgstr ""
 
@@ -1509,7 +1509,7 @@ msgid "network usage stop hour"
 msgstr "hora de final do uso da rede"
 
 #: clientgui/DlgAdvPreferencesBase.cpp:597
-#: clientgui/DlgItemProperties.cpp:214
+#: clientgui/DlgItemProperties.cpp:234
 msgid "Disk usage"
 msgstr "Uso do disco"
 
@@ -1732,267 +1732,251 @@ msgstr "&Cancelar"
 msgid "Don't show this dialog again."
 msgstr "Non amosar máis este diálogo."
 
-#: clientgui/DlgItemProperties.cpp:196
-msgid "Properties of project "
-msgstr "Propiedades do proxecto "
-
-#: clientgui/DlgItemProperties.cpp:200
-msgid "General"
-msgstr "Xeral"
-
-#: clientgui/DlgItemProperties.cpp:201
-msgid "Master URL"
-msgstr "URL mestra"
-
-#: clientgui/DlgItemProperties.cpp:202
-msgid "User name"
-msgstr "Nome do usuario"
-
-#: clientgui/DlgItemProperties.cpp:203
-msgid "Team name"
-msgstr "Nome do equipo"
-
-#: clientgui/DlgItemProperties.cpp:204
-msgid "Resource share"
-msgstr "Compartición de recursos"
-
-#: clientgui/DlgItemProperties.cpp:206
-msgid "Scheduler RPC deferred for"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:209
-msgid "File downloads deferred for"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:212
-msgid "File uploads deferred for"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:215
-msgid "Computer ID"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:217
-msgid "Non CPU intensive"
-msgstr "Sen CPU intensiva"
-
-#: clientgui/DlgItemProperties.cpp:217
-#: clientgui/DlgItemProperties.cpp:219
-#: clientgui/DlgItemProperties.cpp:220
-#: clientgui/DlgItemProperties.cpp:222
-#: clientgui/DlgItemProperties.cpp:225
-#: clientgui/DlgItemProperties.cpp:234
-#: clientgui/DlgItemProperties.cpp:237
-#: clientgui/DlgItemProperties.cpp:240
-msgid "yes"
-msgstr "si"
-
-#: clientgui/DlgItemProperties.cpp:219
-msgid "Suspended via GUI"
-msgstr "Suspender por GUI"
-
-#: clientgui/DlgItemProperties.cpp:219
-#: clientgui/DlgItemProperties.cpp:220
-msgid "no"
-msgstr "non"
-
-#: clientgui/DlgItemProperties.cpp:220
-msgid "Don't request more work"
-msgstr "Non pedir máis traballo"
-
-#: clientgui/DlgItemProperties.cpp:222
-msgid "Scheduler call in progress"
-msgstr "Chamada ao planificador en progreso"
-
-#: clientgui/DlgItemProperties.cpp:225
-msgid "Trickle-up pending"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:228
-#: clientgui/DlgItemProperties.cpp:230
+#: clientgui/DlgItemProperties.cpp:171
+#: clientgui/DlgItemProperties.cpp:174
+#: clientgui/DlgItemProperties.cpp:177
+#: clientgui/DlgItemProperties.cpp:180
 #, fuzzy
-msgid "Host location"
-msgstr "Total do Servidor"
-
-#: clientgui/DlgItemProperties.cpp:230
-#, fuzzy
-msgid "default"
-msgstr "&Configuración por defecto"
-
-#: clientgui/DlgItemProperties.cpp:234
-#, fuzzy
-msgid "Added via account manager"
-msgstr "Unido polo xestor de contas"
-
-#: clientgui/DlgItemProperties.cpp:237
-#, fuzzy
-msgid "Remove when tasks done"
-msgstr "Separarase cando rematen as tarefas"
-
-#: clientgui/DlgItemProperties.cpp:240
-msgid "Ended"
-msgstr "Finalizado"
-
-#: clientgui/DlgItemProperties.cpp:242
-msgid "Credit"
-msgstr "Crédito"
-
-#: clientgui/DlgItemProperties.cpp:243
-msgid "User"
-msgstr "Usuario"
-
-#: clientgui/DlgItemProperties.cpp:250
-msgid "Host"
-msgstr "Servidor"
-
-#: clientgui/DlgItemProperties.cpp:259
-msgid "Scheduling"
-msgstr "A planificar"
-
-#: clientgui/DlgItemProperties.cpp:261
-#: clientgui/DlgItemProperties.cpp:264
-#: clientgui/DlgItemProperties.cpp:267
-#, fuzzy
-msgid "Don't fetch CPU tasks"
+msgid "Don't fetch tasks for "
 msgstr "Sen novas tarefas"
 
-#: clientgui/DlgItemProperties.cpp:261
-#: clientgui/DlgItemProperties.cpp:277
-#: clientgui/DlgItemProperties.cpp:287
-#: clientgui/DlgItemProperties.cpp:298
-#: clientgui/DlgItemProperties.cpp:308
+#: clientgui/DlgItemProperties.cpp:171
 #, fuzzy
 msgid "Project preference"
 msgstr "As súas preferencias"
 
-#: clientgui/DlgItemProperties.cpp:264
-#: clientgui/DlgItemProperties.cpp:282
-#: clientgui/DlgItemProperties.cpp:303
+#: clientgui/DlgItemProperties.cpp:174
 #, fuzzy
 msgid "Account manager preference"
 msgstr "Xestor de contas non atopado"
 
-#: clientgui/DlgItemProperties.cpp:267
-msgid "Project has no CPU apps"
+#: clientgui/DlgItemProperties.cpp:177
+#, fuzzy
+msgid "Project has no apps for "
+msgstr "Proxecto non atopado"
+
+#: clientgui/DlgItemProperties.cpp:180
+#, fuzzy
+msgid "Client configuration excludes "
+msgstr "Creación de contas no cliente desactivada"
+
+#: clientgui/DlgItemProperties.cpp:184
+#, fuzzy
+msgid " work fetch deferred for"
+msgstr "Traballar tras unha inactividade de:"
+
+#: clientgui/DlgItemProperties.cpp:185
+msgid " work fetch deferral interval"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:269
+#: clientgui/DlgItemProperties.cpp:216
+msgid "Properties of project "
+msgstr "Propiedades do proxecto "
+
+#: clientgui/DlgItemProperties.cpp:220
+msgid "General"
+msgstr "Xeral"
+
+#: clientgui/DlgItemProperties.cpp:221
+msgid "Master URL"
+msgstr "URL mestra"
+
+#: clientgui/DlgItemProperties.cpp:222
+msgid "User name"
+msgstr "Nome do usuario"
+
+#: clientgui/DlgItemProperties.cpp:223
+msgid "Team name"
+msgstr "Nome do equipo"
+
+#: clientgui/DlgItemProperties.cpp:224
+msgid "Resource share"
+msgstr "Compartición de recursos"
+
+#: clientgui/DlgItemProperties.cpp:226
+msgid "Scheduler RPC deferred for"
+msgstr ""
+
+#: clientgui/DlgItemProperties.cpp:229
+msgid "File downloads deferred for"
+msgstr ""
+
+#: clientgui/DlgItemProperties.cpp:232
+msgid "File uploads deferred for"
+msgstr ""
+
+#: clientgui/DlgItemProperties.cpp:235
+msgid "Computer ID"
+msgstr ""
+
+#: clientgui/DlgItemProperties.cpp:237
+msgid "Non CPU intensive"
+msgstr "Sen CPU intensiva"
+
+#: clientgui/DlgItemProperties.cpp:237
+#: clientgui/DlgItemProperties.cpp:239
+#: clientgui/DlgItemProperties.cpp:240
+#: clientgui/DlgItemProperties.cpp:242
+#: clientgui/DlgItemProperties.cpp:245
+#: clientgui/DlgItemProperties.cpp:254
+#: clientgui/DlgItemProperties.cpp:257
+#: clientgui/DlgItemProperties.cpp:260
+msgid "yes"
+msgstr "si"
+
+#: clientgui/DlgItemProperties.cpp:239
+msgid "Suspended via GUI"
+msgstr "Suspender por GUI"
+
+#: clientgui/DlgItemProperties.cpp:239
+#: clientgui/DlgItemProperties.cpp:240
+msgid "no"
+msgstr "non"
+
+#: clientgui/DlgItemProperties.cpp:240
+msgid "Don't request more work"
+msgstr "Non pedir máis traballo"
+
+#: clientgui/DlgItemProperties.cpp:242
+msgid "Scheduler call in progress"
+msgstr "Chamada ao planificador en progreso"
+
+#: clientgui/DlgItemProperties.cpp:245
+msgid "Trickle-up pending"
+msgstr ""
+
+#: clientgui/DlgItemProperties.cpp:248
+#: clientgui/DlgItemProperties.cpp:250
+#, fuzzy
+msgid "Host location"
+msgstr "Total do Servidor"
+
+#: clientgui/DlgItemProperties.cpp:250
+#, fuzzy
+msgid "default"
+msgstr "&Configuración por defecto"
+
+#: clientgui/DlgItemProperties.cpp:254
+#, fuzzy
+msgid "Added via account manager"
+msgstr "Unido polo xestor de contas"
+
+#: clientgui/DlgItemProperties.cpp:257
+#, fuzzy
+msgid "Remove when tasks done"
+msgstr "Separarase cando rematen as tarefas"
+
+#: clientgui/DlgItemProperties.cpp:260
+msgid "Ended"
+msgstr "Finalizado"
+
+#: clientgui/DlgItemProperties.cpp:262
+msgid "Credit"
+msgstr "Crédito"
+
+#: clientgui/DlgItemProperties.cpp:263
+msgid "User"
+msgstr "Usuario"
+
+#: clientgui/DlgItemProperties.cpp:270
+msgid "Host"
+msgstr "Servidor"
+
+#: clientgui/DlgItemProperties.cpp:279
+msgid "Scheduling"
+msgstr "A planificar"
+
+#: clientgui/DlgItemProperties.cpp:280
 msgid "Scheduling priority"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:272
-msgid "CPU work fetch deferred for"
+#: clientgui/DlgItemProperties.cpp:281
+msgid "CPU"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:273
-msgid "CPU work fetch deferral interval"
+#: clientgui/DlgItemProperties.cpp:283
+msgid "NVIDIA GPU"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:277
-#: clientgui/DlgItemProperties.cpp:282
-#: clientgui/DlgItemProperties.cpp:287
-#, fuzzy
-msgid "Don't fetch NVIDIA GPU tasks"
-msgstr "Sen novas tarefas"
-
-#: clientgui/DlgItemProperties.cpp:292
-msgid "NVIDIA GPU work fetch deferred for"
+#: clientgui/DlgItemProperties.cpp:286
+msgid "ATI GPU"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:293
-msgid "NVIDIA GPU work fetch deferral interval"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:298
-#: clientgui/DlgItemProperties.cpp:303
-#: clientgui/DlgItemProperties.cpp:308
-#, fuzzy
-msgid "Don't fetch ATI GPU tasks"
-msgstr "Sen novas tarefas"
-
-#: clientgui/DlgItemProperties.cpp:313
-msgid "ATI GPU work fetch deferred for"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:314
-msgid "ATI GPU work fetch deferral interval"
-msgstr ""
-
-#: clientgui/DlgItemProperties.cpp:316
+#: clientgui/DlgItemProperties.cpp:288
 msgid "Duration correction factor"
 msgstr "Duración do factor de corrección"
 
-#: clientgui/DlgItemProperties.cpp:327
+#: clientgui/DlgItemProperties.cpp:299
 msgid "Properties of task "
 msgstr "Propiedades da tarefa "
 
-#: clientgui/DlgItemProperties.cpp:339
+#: clientgui/DlgItemProperties.cpp:311
 msgid "Application"
 msgstr "Aplicación"
 
-#: clientgui/DlgItemProperties.cpp:340
+#: clientgui/DlgItemProperties.cpp:312
 msgid "Workunit name"
 msgstr "Nome da unidade de traballo"
 
-#: clientgui/DlgItemProperties.cpp:341
+#: clientgui/DlgItemProperties.cpp:313
 msgid "State"
 msgstr "Estado"
 
-#: clientgui/DlgItemProperties.cpp:344
+#: clientgui/DlgItemProperties.cpp:316
 msgid "Received"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:347
+#: clientgui/DlgItemProperties.cpp:319
 msgid "Report deadline"
 msgstr "Límite para reportar"
 
-#: clientgui/DlgItemProperties.cpp:349
+#: clientgui/DlgItemProperties.cpp:321
 msgid "Resources"
 msgstr "Recursos"
 
-#: clientgui/DlgItemProperties.cpp:352
+#: clientgui/DlgItemProperties.cpp:324
 msgid "Estimated computation size"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:355
+#: clientgui/DlgItemProperties.cpp:327
 msgid "CPU time at last checkpoint"
 msgstr "Tempo da CPU na última comprobación"
 
-#: clientgui/DlgItemProperties.cpp:356
-#: clientgui/DlgItemProperties.cpp:371
+#: clientgui/DlgItemProperties.cpp:328
+#: clientgui/DlgItemProperties.cpp:343
 msgid "CPU time"
 msgstr "Tempo da CPU"
 
-#: clientgui/DlgItemProperties.cpp:358
-#: clientgui/DlgItemProperties.cpp:372
+#: clientgui/DlgItemProperties.cpp:330
+#: clientgui/DlgItemProperties.cpp:344
 msgid "Elapsed time"
 msgstr "Tempo transcorrido"
 
-#: clientgui/DlgItemProperties.cpp:360
+#: clientgui/DlgItemProperties.cpp:332
 msgid "Estimated time remaining"
 msgstr "Tempo restante estimado"
 
-#: clientgui/DlgItemProperties.cpp:361
+#: clientgui/DlgItemProperties.cpp:333
 msgid "Fraction done"
 msgstr "Fracción feita"
 
-#: clientgui/DlgItemProperties.cpp:362
+#: clientgui/DlgItemProperties.cpp:334
 msgid "Virtual memory size"
 msgstr "Tamaño da memoria virtual"
 
-#: clientgui/DlgItemProperties.cpp:363
+#: clientgui/DlgItemProperties.cpp:335
 msgid "Working set size"
 msgstr "Tamaño do conxunto de traballo"
 
-#: clientgui/DlgItemProperties.cpp:365
+#: clientgui/DlgItemProperties.cpp:337
 msgid "Directory"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:368
+#: clientgui/DlgItemProperties.cpp:340
 msgid "Process ID"
 msgstr ""
 
-#: clientgui/DlgItemProperties.cpp:442
+#: clientgui/DlgItemProperties.cpp:414
 msgid "Local: "
 msgstr ""
 
@@ -2395,175 +2379,179 @@ msgstr "Aplicación"
 msgid "Please download and install the CoRD application from http://cord.sourceforge.net"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2394
+#: clientgui/MainDocument.cpp:2390
 #, fuzzy
 msgid "on batteries"
 msgstr " - a baterías"
 
-#: clientgui/MainDocument.cpp:2395
+#: clientgui/MainDocument.cpp:2391
 #, fuzzy
 msgid "computer is in use"
 msgstr " Mentres está en uso"
 
-#: clientgui/MainDocument.cpp:2396
+#: clientgui/MainDocument.cpp:2392
 msgid "user request"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2397
+#: clientgui/MainDocument.cpp:2393
 #, fuzzy
 msgid "time of day"
 msgstr " - hora do día"
 
-#: clientgui/MainDocument.cpp:2398
+#: clientgui/MainDocument.cpp:2394
 #, fuzzy
 msgid "CPU benchmarks in progress"
 msgstr " - probas de CPU"
 
-#: clientgui/MainDocument.cpp:2399
+#: clientgui/MainDocument.cpp:2395
 msgid "need disk space - check preferences"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2400
+#: clientgui/MainDocument.cpp:2396
 #, fuzzy
 msgid "computer is not in use"
 msgstr " Mentres está en uso"
 
-#: clientgui/MainDocument.cpp:2401
+#: clientgui/MainDocument.cpp:2397
 msgid "starting up"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2402
+#: clientgui/MainDocument.cpp:2398
 #, fuzzy
 msgid "an exclusive app is running"
 msgstr " - unha aplicación exclusiva en execución"
 
-#: clientgui/MainDocument.cpp:2403
+#: clientgui/MainDocument.cpp:2399
 msgid "CPU is busy"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2404
+#: clientgui/MainDocument.cpp:2400
 msgid "network bandwidth limit exceeded"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2405
+#: clientgui/MainDocument.cpp:2401
 msgid "requested by operating system"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2407
+#: clientgui/MainDocument.cpp:2403
 #, fuzzy
 msgid "unknown reason"
 msgstr "(Descoñecido)"
 
-#: clientgui/MainDocument.cpp:2424
+#: clientgui/MainDocument.cpp:2420
 msgid "GPU missing, "
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2431
+#: clientgui/MainDocument.cpp:2427
 msgid "New"
 msgstr "Novo"
 
-#: clientgui/MainDocument.cpp:2435
+#: clientgui/MainDocument.cpp:2431
 msgid "Download failed"
 msgstr "Descarga fallida"
 
-#: clientgui/MainDocument.cpp:2437
+#: clientgui/MainDocument.cpp:2433
 msgid "Downloading"
 msgstr "A descargar"
 
-#: clientgui/MainDocument.cpp:2439
-#: clientgui/MainDocument.cpp:2497
+#: clientgui/MainDocument.cpp:2435
+#: clientgui/MainDocument.cpp:2499
 #, fuzzy
 msgid " (suspended - "
 msgstr "Suspendida"
 
-#: clientgui/MainDocument.cpp:2447
+#: clientgui/MainDocument.cpp:2443
 msgid "Project suspended by user"
 msgstr "Proxecto suspendido polo usuario"
 
-#: clientgui/MainDocument.cpp:2449
+#: clientgui/MainDocument.cpp:2445
 msgid "Task suspended by user"
 msgstr "Tarefa suspendida polo usuario"
 
-#: clientgui/MainDocument.cpp:2451
+#: clientgui/MainDocument.cpp:2447
 #, fuzzy
 msgid "Suspended - "
 msgstr "Suspendida"
 
-#: clientgui/MainDocument.cpp:2458
+#: clientgui/MainDocument.cpp:2454
 msgid "Waiting for memory"
 msgstr "Agardando por memoria"
 
-#: clientgui/MainDocument.cpp:2460
+#: clientgui/MainDocument.cpp:2456
 msgid "Waiting for shared memory"
 msgstr "Agardando por memoria compartida"
 
-#: clientgui/MainDocument.cpp:2463
+#: clientgui/MainDocument.cpp:2459
 msgid "Running, high priority"
 msgstr "A executar, alta prioridade"
 
-#: clientgui/MainDocument.cpp:2465
+#: clientgui/MainDocument.cpp:2461
 msgid "Running"
 msgstr "A executar"
 
-#: clientgui/MainDocument.cpp:2468
+#: clientgui/MainDocument.cpp:2464
 msgid " (non-CPU-intensive)"
 msgstr " (sen CPU intensiva)"
 
-#: clientgui/MainDocument.cpp:2471
+#: clientgui/MainDocument.cpp:2467
 msgid "Waiting to run"
 msgstr "Á espera"
 
-#: clientgui/MainDocument.cpp:2473
-#: clientgui/MainDocument.cpp:2479
+#: clientgui/MainDocument.cpp:2469
+#: clientgui/MainDocument.cpp:2475
 msgid "Ready to start"
 msgstr "Listo para comezar"
 
-#: clientgui/MainDocument.cpp:2482
+#: clientgui/MainDocument.cpp:2479
+msgid " (Scheduler wait: "
+msgstr ""
+
+#: clientgui/MainDocument.cpp:2483
 msgid " (Scheduler wait)"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2485
+#: clientgui/MainDocument.cpp:2487
 #, fuzzy
 msgid " (Waiting for network access)"
 msgstr "Agardando por memoria"
 
-#: clientgui/MainDocument.cpp:2489
+#: clientgui/MainDocument.cpp:2491
 msgid "Computation error"
 msgstr "Erro de computación"
 
-#: clientgui/MainDocument.cpp:2493
+#: clientgui/MainDocument.cpp:2495
 msgid "Upload failed"
 msgstr "Suba fallida"
 
-#: clientgui/MainDocument.cpp:2495
+#: clientgui/MainDocument.cpp:2497
 msgid "Uploading"
 msgstr "A subir"
 
-#: clientgui/MainDocument.cpp:2506
+#: clientgui/MainDocument.cpp:2508
 msgid "Aborted by user"
 msgstr "Abortado polo usuario"
 
-#: clientgui/MainDocument.cpp:2509
+#: clientgui/MainDocument.cpp:2511
 msgid "Aborted by project"
 msgstr "Abortado polo proxecto"
 
-#: clientgui/MainDocument.cpp:2512
+#: clientgui/MainDocument.cpp:2514
 msgid "Aborted: not started by deadline"
 msgstr ""
 
-#: clientgui/MainDocument.cpp:2515
+#: clientgui/MainDocument.cpp:2517
 msgid "Aborted"
 msgstr "Abortado"
 
-#: clientgui/MainDocument.cpp:2520
+#: clientgui/MainDocument.cpp:2522
 msgid "Acknowledged"
 msgstr "Recibido"
 
-#: clientgui/MainDocument.cpp:2522
+#: clientgui/MainDocument.cpp:2524
 msgid "Ready to report"
 msgstr "Listo para reportar"
 
-#: clientgui/MainDocument.cpp:2524
+#: clientgui/MainDocument.cpp:2526
 #, c-format
 msgid "Error: invalid state '%d'"
 msgstr "Erro: estado inválido '%d'"
@@ -3461,7 +3449,7 @@ msgstr ""
 
 #: clientgui/sg_TaskPanel.cpp:839
 #, c-format
-msgid "Remaining: %s"
+msgid "Remaining (estimated): %s"
 msgstr ""
 
 #: clientgui/sg_TaskPanel.cpp:854
@@ -4104,7 +4092,7 @@ msgstr ""
 
 #: clientgui/ViewWork.cpp:235
 #, fuzzy
-msgid "Remaining"
+msgid "Remaining (estimated)"
 msgstr "Tempo restante: "
 
 #: clientgui/ViewWork.cpp:236
@@ -4399,6 +4387,14 @@ msgstr ""
 msgid "specify network usage start and stop hours in format HH:MM-HH:MM"
 msgstr ""
 "especifica as horas de inicio e remate do uso da rede co formato HH:MM-HH:MM"
+
+#, fuzzy
+#~ msgid "Don't fetch NVIDIA GPU tasks"
+#~ msgstr "Sen novas tarefas"
+
+#, fuzzy
+#~ msgid "Don't fetch ATI GPU tasks"
+#~ msgstr "Sen novas tarefas"
 
 #~ msgid "Web sites"
 #~ msgstr "Sitios web"
@@ -4727,9 +4723,6 @@ msgstr ""
 
 #~ msgid "Account Creation Disabled"
 #~ msgstr "Creación de contas desactivada"
-
-#~ msgid "Client Account Creation Disabled"
-#~ msgstr "Creación de contas no cliente desactivada"
 
 #~ msgid "Account Already Exists"
 #~ msgstr "conta xa existente"

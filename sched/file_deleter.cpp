@@ -85,7 +85,8 @@ void usage(char *name) {
         "Options:\n"
         "  -d N | --debug_level N          set debug output level (1 to 4)\n"
         "  --mod M R                       handle only WUs with ID mod M == R\n"
-        "  --appid ID                      handle only WUs of a particular app\n"
+        "  --appid ID                      handle only WUs of app with id ID\n"
+        "  --app NAME                      handle only WUs of app with name NAME\n"
         "  --one_pass                      instead of sleeping in 2), exit\n"
         "  --dont_retry_error              don't do 4)\n"
         "  --preserve_result_files         update the DB, but don't delete output files.\n"
@@ -559,4 +560,4 @@ int main(int argc, char** argv) {
     }
 }
 
-const char *BOINC_RCSID_bd0d4938a6 = "$Id: file_deleter.cpp 25321 2012-02-24 03:09:56Z davea $";
+const char *BOINC_RCSID_bd0d4938a6 = "$Id: file_deleter.cpp 25379 2012-03-05 13:19:47Z bema $";
