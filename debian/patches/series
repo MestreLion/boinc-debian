@@ -24,3 +24,4 @@ cwd_handling.patch
 sched_vda_strncpy.patch
 parse_issues.patch
 client_stream_realloc.patch
+MoreInformativeAppStartFailure.patch

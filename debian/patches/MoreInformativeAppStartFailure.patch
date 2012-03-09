@@ -1,0 +1,49 @@
+Index: boinc/client/app_start.cpp
+===================================================================
+--- boinc.orig/client/app_start.cpp	2012-03-09 14:16:53.000000000 +0100
++++ boinc/client/app_start.cpp	2012-03-09 14:31:40.000000000 +0100
+@@ -320,7 +320,10 @@
+         strcat(dir_path, "/");
+         strcat(dir_path, p);
+         retval = boinc_mkdir(dir_path);
+-        if (retval) return retval;
++        if (retval) {
++            fprintf(stderr,"create_dirs_for_logical_name: could not create dir '%s'.\n",dir_path);
++            return retval;
++        }
+         p = q+1;
+     }
+     return 0;
+@@ -1003,6 +1006,9 @@
+ #endif
+         }
+         sprintf(buf, "../../%s", exec_path);
++
++        char errorMsg[8000];
++        strcpy(errorMsg,"execv: ");
+         if (g_use_sandbox) {
+             char switcher_path[100];
+             sprintf(switcher_path, "../../%s/%s",
+@@ -1020,17 +1026,21 @@
+             // so they must be world-readable so BOINC CLient can read them
+             //
+             umask(2);
++            strcat(errorMsg," switcher_path:");
++            strcat(errorMsg,switcher_path);
+             retval = execv(switcher_path, argv);
+         } else {
+             argv[0] = buf;
+             parse_command_line(cmdline, argv+1);
+             retval = execv(buf, argv);
+         }
++        strcat(errorMsg,buf);
+         msg_printf(wup->project, MSG_INTERNAL_ERROR,
+             "Process creation (%s) failed: %s, errno=%d\n",
+             buf, boincerror(retval), errno
+         );
+-        perror("execv");
++
++        perror(errorMsg);
+         fflush(NULL);
+         _exit(errno);
+     }
