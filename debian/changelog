@@ -1,4 +1,10 @@
-boinc (7.0.19+dfsg-1) unstable; urgency=low
+boinc (7.0.20+dfsg-1) unstable; urgency=low
+
+  * New upstream version.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 03 Mar 2012 01:19:45 +0100
+
+boinc (7.0.19+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream version.
   * Added dependency on schedtools for boinc-client.
