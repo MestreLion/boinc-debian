@@ -22,3 +22,5 @@ redundant_i.patch
 cppcheck_realloc.patch
 cwd_handling.patch
 sched_vda_strncpy.patch
+parse_issues.patch
+client_stream_realloc.patch
