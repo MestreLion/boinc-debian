@@ -1,0 +1,38 @@
+Index: boinc/client/stream.cpp
+===================================================================
+--- boinc.orig/client/stream.cpp	2012-02-15 21:13:47.000000000 +0100
++++ boinc/client/stream.cpp	2012-03-04 16:09:33.000000000 +0100
+@@ -95,6 +95,12 @@
+   double  *a=(double *)malloc((N+OFFSET)*sizeof(double));
+   double  *b=(double *)malloc((N+OFFSET)*sizeof(double));
+   double  *c=(double *)malloc((N+OFFSET)*sizeof(double));
++  if ( !a || !b || !c ) {
++      if (a) free(a);
++      if (b) free(b);
++      if (c) free(c);
++      return;
++  }
+   double   quantum=checktick();
+   int   BytesPerWord;
+   register int j, k;
+@@ -109,10 +115,16 @@
+   int check_cache=(cache_size==0);
+   do {
+     N*=2;
+-    a=(double *)realloc(a,(N+OFFSET)*sizeof(double));
+-    b=(double *)realloc(b,(N+OFFSET)*sizeof(double));
+-    c=(double *)realloc(c,(N+OFFSET)*sizeof(double));
+-    if ( !a || !b || !c ) return;
++    double *aa=(double *)realloc(a,(N+OFFSET)*sizeof(double));
++    double *bb=(double *)realloc(b,(N+OFFSET)*sizeof(double));
++    double *cc=(double *)realloc(c,(N+OFFSET)*sizeof(double));
++    if ( !a || !b || !c ) {
++	if (aa) free(aa) else free(a);
++	if (bb) free(bb) else free(b);
++	if (cc) free(cc) else free(c);
++	return;
++    }
++    a=aa; b=bb; c=cc;
+ 
+     for (j=0; j<N; j++) {
+       a[j] = 1.0;
