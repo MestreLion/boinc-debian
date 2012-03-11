@@ -7,7 +7,7 @@ Uploaders: Steffen Moeller <moeller@debian.org>,
  Rene Mayorga <rmayorga@debian.org>,
  Daniel Hahler <ubuntu@thequod.de>
 DM-Upload-Allowed: yes
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Build-Depends: debhelper (>= 7.0.50~), po-debconf, dh-buildinfo, pkg-config (>= 0.15),
  libtool, autoconf (>= 2.59), autotools-dev, automake1.9 (>= 1.9.3), gettext,
  docbook2x, docbook-xml, libxml2-utils,
@@ -86,8 +86,7 @@ Package: boinc-client
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3),
  adduser,
- ca-certificates,
- schedtool
+ ca-certificates
 Recommends: ia32-libs [amd64]
 Suggests: boinc-app-seti, boinc-manager, x11-xserver-utils, libcuda1, libcuda1-ia32 [amd64]
 Breaks: udev (<< 136-1)
