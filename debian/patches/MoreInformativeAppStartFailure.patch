@@ -1,7 +1,7 @@
 Index: boinc/client/app_start.cpp
 ===================================================================
---- boinc.orig/client/app_start.cpp	2012-03-09 14:16:53.000000000 +0100
-+++ boinc/client/app_start.cpp	2012-03-09 14:31:40.000000000 +0100
+--- boinc.orig/client/app_start.cpp	2012-03-11 13:38:50.000000000 +0100
++++ boinc/client/app_start.cpp	2012-03-11 13:52:26.000000000 +0100
 @@ -320,7 +320,10 @@
          strcat(dir_path, "/");
          strcat(dir_path, p);
@@ -24,7 +24,7 @@ Index: boinc/client/app_start.cpp
          if (g_use_sandbox) {
              char switcher_path[100];
              sprintf(switcher_path, "../../%s/%s",
-@@ -1020,17 +1026,21 @@
+@@ -1020,17 +1026,30 @@
              // so they must be world-readable so BOINC CLient can read them
              //
              umask(2);
@@ -33,10 +33,19 @@ Index: boinc/client/app_start.cpp
              retval = execv(switcher_path, argv);
          } else {
              argv[0] = buf;
++            strcat(errorMsg," buf:");
++            strcat(errorMsg,buf);
              parse_command_line(cmdline, argv+1);
++            strcat(errorMsg," cmdline:");
++            strcat(errorMsg,cmdline);
++            strcat(errorMsg," argv[1]:");
++            strcat(errorMsg,argv[1]);
++            char *cwd=get_current_dir_name();
++            strcat(errorMsg," cwd:");
++            strcat(errorMsg,cwd);
++            free(cwd);
              retval = execv(buf, argv);
          }
-+        strcat(errorMsg,buf);
          msg_printf(wup->project, MSG_INTERNAL_ERROR,
              "Process creation (%s) failed: %s, errno=%d\n",
              buf, boincerror(retval), errno

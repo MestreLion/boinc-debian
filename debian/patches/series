@@ -1,27 +1,27 @@
-improve_opendir_warning.patch
-termios_is_everywhere.patch
-mac_addresses_cores_in_kfreebsd.patch
+# improve_opendir_warning.patch
+# termios_is_everywhere.patch
+# mac_addresses_cores_in_kfreebsd.patch
 stripchart_debian.patch
-upstream_sztaki_configureEval.patch
-generate_less.patch
+# upstream_sztaki_configureEval.patch
+# generate_less.patch
 texfont_removal.patch
-#Makefile_subdirs.patch
-csh2tcsh.patch
-file_upload_handler_permission.patch
-possible_size_type_error.patch
-upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
-debian_debian_AdjustBoincTopdirPython.patch
+# #Makefile_subdirs.patch
+# csh2tcsh.patch
+# file_upload_handler_permission.patch
+# possible_size_type_error.patch
+# upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
+# debian_debian_AdjustBoincTopdirPython.patch
 libnotify-0.7.patch
-stripchart_security.patch
-#AddSomeConstToMakeClearMemoryIsNotAllocated.patch
-#AddingMoreConst.patch
-#evenMoreConst03.patch
-#andYetMorePatches04.patch
-#erase_while_1.patch
-redundant_i.patch
-cppcheck_realloc.patch
-cwd_handling.patch
-sched_vda_strncpy.patch
-parse_issues.patch
-client_stream_realloc.patch
+# stripchart_security.patch
+# #AddSomeConstToMakeClearMemoryIsNotAllocated.patch
+# #AddingMoreConst.patch
+# #evenMoreConst03.patch
+# #andYetMorePatches04.patch
+# #erase_while_1.patch
+# redundant_i.patch
+# cppcheck_realloc.patch
+# cwd_handling.patch
+# sched_vda_strncpy.patch
+# parse_issues.patch
+# client_stream_realloc.patch
 MoreInformativeAppStartFailure.patch

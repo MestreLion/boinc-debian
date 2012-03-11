@@ -133,7 +133,7 @@ CFGFLAGS_boinc-client = \
 
 # Default rule
 %:
-	dh $@
+	dh $@ --parallel
 
 clean:
 	dh clean
