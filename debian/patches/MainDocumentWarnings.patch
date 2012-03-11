@@ -1,0 +1,29 @@
+Index: boinc/clientgui/MainDocument.cpp
+===================================================================
+--- boinc.orig/clientgui/MainDocument.cpp	2012-03-03 01:12:22.000000000 +0100
++++ boinc/clientgui/MainDocument.cpp	2012-03-12 01:23:00.000000000 +0100
+@@ -1631,20 +1631,16 @@
+ }
+ #else
+ void CMainDocument::KillGraphicsApp(int pid) {
+-    char* argv[6];
++    char* argv[6] = {
++	"switcher","/bin/kill","kill","-KILL","12345678901234567890",0
++    };
+     char currentDir[1024];
+     char thePIDbuf[10];
+     int id, iRetVal;
+     
+ 
+     if (g_use_sandbox) {
+-        snprintf(thePIDbuf, sizeof(thePIDbuf), "%d", pid);
+-        argv[0] = "switcher";
+-        argv[1] = "/bin/kill";
+-        argv[2] =  "kill";
+-        argv[3] = "-KILL";
+-        argv[4] = thePIDbuf;
+-        argv[5] = 0;
++        snprintf(argv[4], 20, "%d", pid);
+     
+         iRetVal = run_program(
+             getcwd(currentDir, sizeof(currentDir)),
