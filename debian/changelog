@@ -1,4 +1,11 @@
-boinc (7.0.20+dfsg-1) unstable; urgency=low
+boinc (7.0.21+dfsg-1) unstable; urgency=low
+
+  * New upstream version.
+  * Added icons in /usr/share/boinc to boinc-manager package
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 18 Mar 2012 13:43:58 +0100
+
+boinc (7.0.20+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream version.
   * Removed dependency on schedtools again - and fixed bug in patch.
