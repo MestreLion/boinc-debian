@@ -210,6 +210,7 @@ void sigterm_handler(int /*signo*/) {
     log_messages.printf(MSG_CRITICAL,
         "Caught SIGTERM (sent by Apache); exiting\n"
     );
+    unlock_sched();
     fflush((FILE*)NULL);
     exit(1);
     return;
@@ -668,4 +669,4 @@ void JOB_LIMITS::print_log() {
     }
 }
 
-const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 25349 2012-02-27 13:12:24Z bema $";
+const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 25402 2012-03-12 09:10:42Z bema $";

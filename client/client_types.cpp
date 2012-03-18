@@ -1255,6 +1255,21 @@ int FILE_INFO::merge_info(FILE_INFO& new_info) {
         strcpy(xml_signature, new_info.xml_signature);
     }
 
+    // If the file is supposed to be executable and is PRESENT,
+    // make sure it's actually executable.
+    // This deals with cases where somehow a file didn't
+    // get protected right when it was initially downloaded.
+    //
+    if (status == FILE_PRESENT && new_info.executable) {
+        int retval = set_permissions();
+        if (retval) {
+            msg_printf(project, MSG_INTERNAL_ERROR,
+                "merge_info(): failed to change permissions of %s", name
+            );
+        }
+        return retval;
+    }
+
     return 0;
 }
 
@@ -2051,12 +2066,20 @@ int RESULT::write_gui(MIOFILE& out) {
         // only need to compute this string once
         //
         if (avp->gpu_usage.rsc_type) {
-            sprintf(resources,
-                "%.2f CPUs + %.2f %s GPUs",
-                avp->avg_ncpus,
-                avp->gpu_usage.usage,
-                rsc_name(avp->gpu_usage.rsc_type)
-            );
+            if (avp->gpu_usage.usage == 1) {
+                sprintf(resources,
+                    "%.4f CPUs + 1 %s GPU",
+                    avp->avg_ncpus,
+                    rsc_name(avp->gpu_usage.rsc_type)
+                );
+            } else {
+                sprintf(resources,
+                    "%.4f CPUs + %f %s GPUs",
+                    avp->avg_ncpus,
+                    avp->gpu_usage.usage,
+                    rsc_name(avp->gpu_usage.rsc_type)
+                );
+            }
         } else if (avp->missing_coproc) {
             sprintf(resources, "%.2f CPUs + %s GPU (missing)",
                 avp->avg_ncpus, avp->missing_coproc_name
@@ -2275,4 +2298,3 @@ double RUN_MODE::delay() {
         return 0;
     }
 }
-

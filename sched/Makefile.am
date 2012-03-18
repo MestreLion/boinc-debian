@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 25321 2012-02-24 03:09:56Z davea $
+## $Id: Makefile.am 25435 2012-03-16 17:23:55Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -130,6 +130,7 @@ bin_SCRIPTS = start stop status
 noinst_HEADERS = \
     assimilate_handler.h \
     handle_request.h \
+    plan_class_spec.h \
     sched_main.h \
     sched_locality.h \
     sched_score.h \
@@ -147,6 +148,7 @@ cgi_sources = \
     handle_request.cpp \
     hr.cpp \
     hr_info.cpp \
+    plan_class_spec.cpp \
     sched_main.cpp \
     sched_array.cpp \
     sched_assign.cpp \

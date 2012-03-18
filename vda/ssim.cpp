@@ -101,7 +101,6 @@ struct PARAMS {
 // initial downloads have all succeeded or failed
 
 #define EVENT_DEBUG
-#define SAMPLE_DEBUG
 //#define RECOVERY_DEBUG
 
 SIMULATOR sim;
@@ -449,6 +448,18 @@ void CHUNK::download_complete() {
     }
     SIM_FILE* sfp = (SIM_FILE*)parent->dfile;
     sfp->recover();
+}
+
+int META_CHUNK::encode() {
+    return 0;
+}
+
+int META_CHUNK::decode() {
+    return 0;
+}
+
+int DATA_UNIT::delete_file() {
+    return 0;
 }
 
 const char* status_str(int status) {

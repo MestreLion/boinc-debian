@@ -141,6 +141,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool("non_cpu_intensive", non_cpu_intensive)) continue;
         if (xp.parse_bool("verify_files_on_app_start", verify_files_on_app_start)) continue;
         if (xp.parse_int("homogeneous_redundancy", homogeneous_redundancy)) continue;
+        if (xp.parse_bool("hr_allocate_slots", hr_allocate_slots)) continue;
         if (xp.parse_bool("msg_to_host", msg_to_host)) continue;
         if (xp.parse_bool("ignore_upload_certificates", ignore_upload_certificates)) continue;
         if (xp.parse_bool("dont_generate_upload_certificates", dont_generate_upload_certificates)) continue;
@@ -417,4 +418,4 @@ const char *SCHED_CONFIG::project_path(const char *fmt, ...) {
     return (const char *)path;
 }
 
-const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 25351 2012-02-28 06:57:28Z davea $";
+const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 25435 2012-03-16 17:23:55Z romw $";

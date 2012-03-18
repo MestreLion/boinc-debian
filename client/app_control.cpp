@@ -208,15 +208,6 @@ int ACTIVE_TASK::kill_task(bool restart) {
     get_descendants(pid, pids);
     pids.push_back(pid);
     kill_processes(pids);
-    cleanup_task();
-    if (restart) {
-        set_task_state(PROCESS_UNINITIALIZED, "kill_task");
-        char buf[256];
-        sprintf(buf, "restarting %s", result->name);
-        gstate.request_schedule_cpus(buf);
-    } else {
-        set_task_state(PROCESS_ABORTED, "kill_task");
-    }
     return 0;
 }
 
@@ -1083,8 +1074,9 @@ void ACTIVE_TASK_SET::kill_tasks(PROJECT* proj) {
 int ACTIVE_TASK::suspend() {
     if (!app_client_shm.shm) return 0;
     if (task_state() != PROCESS_EXECUTING) {
-        msg_printf(result->project, MSG_INFO,
-            "Internal error: expected process %s to be executing", result->name
+        msg_printf(result->project, MSG_INTERNAL_ERROR,
+            "ACTIVE_TASK::SUSPEND(): expected task %s to be executing",
+            result->name
         );
     }
     int n = process_control_queue.msg_queue_purge("<resume/>");
