@@ -25,3 +25,5 @@ parse_issues.patch
 client_stream_realloc.patch
 MoreInformativeAppStartFailure.patch
 MainDocumentWarnings.patch
+stream_memory_leak_fix.patch
+fix_realloc_use.patch

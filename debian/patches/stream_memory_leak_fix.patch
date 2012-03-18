@@ -1,0 +1,13 @@
+Index: boinc/client/stream.cpp
+===================================================================
+--- boinc.orig/client/stream.cpp	2012-03-18 13:57:51.000000000 +0100
++++ boinc/client/stream.cpp	2012-03-18 14:09:11.000000000 +0100
+@@ -221,6 +221,8 @@
+   /* --- Check Results --- */
+   checkSTREAMresults(a,b,c);
+ 
++  /* --- Release prior allocated memory --- */
++  free(a); free(b); free(c);
+ }
+ 
+ # define M 20
