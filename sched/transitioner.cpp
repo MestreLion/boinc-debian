@@ -330,11 +330,14 @@ int handle_wu(
         wu_item.error_mask |= WU_ERROR_COULDNT_SEND_RESULT;
     }
 
-    // if WU has results with errors and no success yet,
+    // if WU has results with errors and there are no results that are
+    // - successful
+    // - in progress
+    // - timed out (but could still be returned)
     // reset homogeneous redundancy class to give other platforms a try;
     // also reset app version ID if using HAV
     //
-    if (nerrors && !(nsuccess || ninprogress)) {
+    if (nerrors && !(nsuccess || ninprogress || nno_reply)) {
         wu_item.hr_class = 0;
         wu_item.app_version_id = 0;
     }
@@ -815,4 +818,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 25169 2012-01-30 22:39:13Z davea $";
+const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 25435 2012-03-16 17:23:55Z romw $";

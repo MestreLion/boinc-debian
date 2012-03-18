@@ -191,8 +191,8 @@ void read_checkpoint(double& cpu, VBOX_VM& vm) {
 //
 void set_throttles(APP_INIT_DATA& aid, VBOX_VM& vm) {
     double x = aid.global_prefs.cpu_usage_limit;
-    if (x && x<100) {
-        vm.set_cpu_usage_fraction(x/100.);
+    if (x) {
+        vm.set_cpu_usage_fraction(x);
     }
 
     // vbox doesn't distinguish up and down bandwidth; use the min of the prefs
@@ -448,11 +448,16 @@ int main(int argc, char** argv) {
 
     retval = vm.run();
     if (retval) {
+        // All failure to start error are unrecoverable by default
+        bool  unrecoverable_error = true;
+        char* temp_reason = "";
+        int   temp_delay = 300;
+
         // Get logs before cleanup
         vm.get_system_log(system_log);
         vm.get_vm_log(vm_log);
 
-        // Cleanup
+        // Attempt to cleanup the VM
         vm.cleanup();
         write_checkpoint(elapsed_time, vm);
 
@@ -491,6 +496,15 @@ int main(int argc, char** argv) {
                 "    Please report this issue to the project so that it can be addresssed.\n",
                 vboxwrapper_msg_prefix(buf, sizeof(buf))
             );
+        } else if (vm_log.find("VERR_EM_NO_MEMORY") != std::string::npos) {
+            fprintf(
+                stderr,
+                "%s NOTE: VirtualBox has failed to allocate enough memory to start the configured virtual machine.\n"
+                "    This might be a temporary problem and so this job will be rescheduled for another time.\n",
+                vboxwrapper_msg_prefix(buf, sizeof(buf))
+            );
+            unrecoverable_error = false;
+            temp_reason = "VM Hypervisor was unable to allocate enough memory to start VM.";
         } else {
             fprintf(
                 stderr,
@@ -505,7 +519,11 @@ int main(int argc, char** argv) {
             );
         }
 
-        boinc_finish(retval);
+        if (unrecoverable_error) {
+            boinc_finish(retval);
+        } else {
+            boinc_temporary_exit(temp_delay, temp_reason);
+        }
     }
 
     set_floppy_image(aid, vm);
@@ -522,6 +540,7 @@ int main(int argc, char** argv) {
         vm.poll();
 
         if (boinc_status.no_heartbeat || boinc_status.quit_request) {
+            vm.reset_vm_process_priority();
             vm.stop();
             write_checkpoint(checkpoint_cpu_time, vm);
             boinc_temporary_exit(0);
@@ -583,7 +602,7 @@ int main(int argc, char** argv) {
             if (!vm_pid) {
                 vm.get_vm_process_id(vm_pid);
                 if (vm_pid) {
-                    vm.reset_vm_process_priority();
+                    vm.lower_vm_process_priority();
                     report_vm_pid = true;
                 }
             }
@@ -651,6 +670,20 @@ int main(int argc, char** argv) {
                 }
             }
 
+            if (boinc_status.reread_init_data_file) {
+                boinc_status.reread_init_data_file = false;
+
+                fprintf(
+                    stderr,
+                    "%s Preference change detected\n",
+                    vboxwrapper_msg_prefix(buf, sizeof(buf))
+                );
+
+                boinc_parse_init_data_file();
+                boinc_get_init_data_p(&aid);
+                set_throttles(aid, vm);
+            }
+
             // if the VM has a maximum amount of time it is allowed to run,
             // shut it down gacefully and exit.
             //
@@ -670,19 +703,6 @@ int main(int argc, char** argv) {
                     vm.set_network_access(true);
                 }
             }
-        }
-        if (boinc_status.reread_init_data_file) {
-            boinc_status.reread_init_data_file = false;
-
-            fprintf(
-                stderr,
-                "%s Preference change detected\n",
-                vboxwrapper_msg_prefix(buf, sizeof(buf))
-            );
-
-            boinc_parse_init_data_file();
-            boinc_get_init_data_p(&aid);
-            set_throttles(aid, vm);
         }
 
         // report network usage every 10 min so the client can enforce quota

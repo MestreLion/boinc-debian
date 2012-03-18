@@ -1,3 +1,5 @@
+// DEPRECATED - DO NOT USE
+
 // Event loop and support functions for Windows versions
 // of BOINC applications w/ graphics.
 // Platform-independent code should NOT be here.
@@ -536,4 +538,4 @@ void win_graphics_event_loop() {
     SetEvent(hQuitEvent);        // Signal the worker thread that we're quitting
 }
 
-const char *BOINC_RCSID_462f482d81 = "$Id: windows_opengl.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_462f482d81 = "$Id: windows_opengl.cpp 25393 2012-03-08 22:42:44Z davea $";

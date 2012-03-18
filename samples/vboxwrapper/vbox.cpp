@@ -1247,16 +1247,17 @@ int VBOX_VM::set_cpu_usage_fraction(double x) {
     char buf[256];
     int retval;
 
-    // the arg to modifyvm is percentage
+    // the arg to controlvm is percentage
     //
     fprintf(
         stderr,
-        "%s Setting cpu throttle for virtual machine.\n",
-        vboxwrapper_msg_prefix(buf, sizeof(buf))
+        "%s Setting cpu throttle for virtual machine. (%d%%)\n",
+        vboxwrapper_msg_prefix(buf, sizeof(buf)),
+        (int)x
     );
-    sprintf(buf, "%d", (int)(x*100.));
-    command  = "modifyvm \"" + vm_name + "\" ";
-    command += "--cpuexecutioncap ";
+    sprintf(buf, "%d", (int)x);
+    command  = "controlvm \"" + vm_name + "\" ";
+    command += "cpuexecutioncap ";
     command += buf;
     command += " ";
 
@@ -1306,7 +1307,7 @@ int VBOX_VM::write_floppy(std::string& data) {
     return 1;
 }
 
-void VBOX_VM::reset_vm_process_priority() {
+void VBOX_VM::lower_vm_process_priority() {
 #ifndef _WIN32
     if (vm_pid) {
         setpriority(PRIO_PROCESS, vm_pid, PROCESS_IDLE_PRIORITY);
@@ -1314,6 +1315,18 @@ void VBOX_VM::reset_vm_process_priority() {
 #else
     if (vm_pid_handle) {
         SetPriorityClass(vm_pid_handle, BELOW_NORMAL_PRIORITY_CLASS);
+    }
+#endif
+}
+
+void VBOX_VM::reset_vm_process_priority() {
+#ifndef _WIN32
+    if (vm_pid) {
+        setpriority(PRIO_PROCESS, vm_pid, PROCESS_MEDIUM_PRIORITY);
+    }
+#else
+    if (vm_pid_handle) {
+        SetPriorityClass(vm_pid_handle, NORMAL_PRIORITY_CLASS);
     }
 #endif
 }
@@ -1413,6 +1426,9 @@ int VBOX_VM::vbm_popen(string& arguments, string& output, const char* item, bool
 int VBOX_VM::vbm_popen_raw(string& arguments, string& output) {
     char buf[256];
     string command;
+    size_t errcode_start;
+    size_t errcode_end;
+    string errcode;
     int retval = 0;
 
     // Initialize command line
@@ -1432,9 +1448,6 @@ int VBOX_VM::vbm_popen_raw(string& arguments, string& output) {
     DWORD dwCount = 0;
     unsigned long ulExitCode = 0;
     unsigned long ulExitTimeout = 0;
-    size_t errcode_start;
-    size_t errcode_end;
-    string errcode;
 
     memset(&si, 0, sizeof(si));
     memset(&pi, 0, sizeof(pi));
@@ -1571,6 +1584,17 @@ CLEANUP:
 
         // Close stream
         pclose(fp);
+
+        // Determine the real error code by parsing the output
+        errcode_start = output.find("(0x");
+        if (errcode_start) {
+            errcode_start += 1;
+            errcode_end = output.find(")", errcode_start);
+            errcode = output.substr(errcode_start, errcode_end - errcode_start);
+
+            sscanf(errcode.c_str(), "%x", &retval);
+        }
+
         retval = 0;
     }
 

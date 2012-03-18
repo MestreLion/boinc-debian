@@ -2467,9 +2467,258 @@ David  5 Mar 2012
     html/user/
         lammps.php
 
-Rom    6 Mar 2012
-    - Tag for 7.0.20 release, all platforms
-      boinc_core_release_7_0_20
+David  8 Mar 2012
+    - API: fix various bugs related to process control and critical sections.
+    - client: code cleanup (no functional change)
+
+    api/
+        boinc_api.cpp
+        windows_opengl.cpp
+    client/
+        app.cpp
+        app_control.cpp
+    vda/
+        *
+        
+Rom    8 Mar 2012
+    - VBOX: Parse the vboxmanage error code for *nix as well.
+    - VBOX: Switch to using status.suspend_request instead of status.suspend
+        when determining when to suspend/resume a VM.  status.suspended is
+        now only changed when direct_process_action is set to true.
+
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+        vbox.cpp
+
+David  9 Mar 2012
+    - API: remove BOINC_STATUS::suspend_request;
+        it's an implementation thing, not intended for export.
+        Fix a related bug.
+
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+    api/
+        boinc_api.cpp
+    vda/
+        vda_lib.cpp
+
+Rom    9 Mar 2012
+    - VBOX: Setting the CPU Execution Cap should be done with the controlvm
+        command after the VM has entered a running state instead of using
+        modifyvm.
+        
+    samples/vboxwrapper/
+        vbox.cpp
+
+David  9 Mar 2012
+    - web: allow a project to specify 2 stylesheets
+
+    html/
+        inc/
+            util.inc
+        project.sample/
+            project.inc
+
+Rom    9 Mar 2012
+    - VBOX: Allow the CPU execution cap to be set back to 100% after it had
+        alreadly been set lower.
+
+    samples/vboxwrapper/
+        vbox.cpp
+        vboxwrapper.cpp
+
+David  10 Mar 2012
+    - storage: add some code
+
+    vda/
+        vda_lib.cpp,h
+        ssim.cpp
+        vdad.cpp
+
+David  10 Mar 2012
+    - forgot to add files
+
+    vda/
+        stats.cpp,h (new)
+
+Bernd  12 Mar 2012
+    - scheduler: remove lock file when scheduler caught SIGTERM
+
+    sched/
+        handle_request.h
+        sched_main.cpp
+
+Rom    12 Mar 2012
+    - VBOX: Only attempt to reset throttle values if the VM is in
+        a running state, otherwise controlvm throws an error.
+        
+    samples/vboxsamples/
+        vboxwrapper.cpp
+
+Rom    12 Mar 2012
+    - VBOX: If a VM fails to start because the machine is low on memory,
+        temporarily exit so BOINC can reschedule it for a later time.
+        If the problem doesn't go away it'll just time out eventually anyway.
+        
+    samples/vboxsamples/
+        vboxwrapper.cpp
+
+David  12 Mar 2012
+    - server: allow <db_host> to include a :port
+
+    db/
+        db_base.cpp
+
+David  12 Mar 2012
+    - client: msg tweak and fix compile warnings
+
+    client/
+        client_types.cpp
+        coproc_detect.cpp
+        work_fetch.h
+    lib/
+        coproc.h
+        str_util.cpp
+
+Charlie 12 Mar 2012
+    - client: fix compile errors.
+
+    client/
+        client_types.cpp
+
+Charlie 12 Mar 2012
+    - client: In COPROCS::get_ati_mem_size_from_opengl() on Mac, compare ATI 
+        model names from OpenGL with those from IOKit only if coproc_debug 
+        flag is set.
+    
+    client/
+        coproc_detect.cpp
+
+Charlie 12 Mar 2012
+    - VBOX: Fix typo in Mac wrapper name (1686 -> i686).
+
+    samples/vboxwrapper/
+        vboxwrapper.xcodeproj
+            project.pbxproj
+
+David  13 Mar 2012
+    - scheduler: do homogeneous app version check before rereading WU
+        as well as after.
+
+    sched/
+        sched_send.cpp,h
+
+David  13 Mar 2012
+    - transitioner: don't clear a WU's HR and HAV class if there are
+        timed-out instances; they could still be returned.
+
+    sched/
+        transitioner.cpp
+
+Charlie 14 Mar 2012
+    - MGR: fix French translations of Remaining (estimated).
+    
+    locale/fr/
+        BOINC_Manager.po
+
+Charlie 14 Mar 2012
+    - client: When comparing ATI model names from OpenCL and IOKit on a 
+        Mac, substitute "AMD" for "ATI" because sometimes one API returns 
+        "ATI" but the other API returns "AMD".
+    
+    client/
+        coproc_detect.cpp
+
+Rom    14 Mar 2012
+    - VBOX: Use the boinc_temporary_exit API properly.  Wait for 5 minutes
+       before allowing another attempt to start the VM when the hypervisor
+       cannot allocate enough memory.
+    - VBOX: Print out a trace statement about the suspend/resume directive
+       from the vboxwrapper perspective.  This in conjuction with the
+       BOINC API trace statements should provide a better idea with
+       what is going on.
+       
+    samples/vboxwrapper
+        vboxwrapper.cpp
+
+David  14 Mar 2012
+    - scheduler: add an alternative way of defining app plan functions
+        that uses an XML configuration file;
+        see http://boinc.berkeley.edu/trac/wiki/AppPlanConfig
+        From Bernd.
+
+    sched/
+        sched_customize.cpp
+        plan_class_spec.cpp,h
+        Makefile.am
+
+David  14 Mar 2012
+    - scheduler: code cleanup for the above
+
+    sched/
+        plan_class_spec.cpp,h
+
+Charlie 14 Mar 2012
+    - client: On Mac only, update ATI available RAM after getting ATI total 
+        RAM size from OpenGL.
+    
+    client/
+        coproc_detect.cpp
+
+David  14 Mar 2012
+    - scheduler: fix FCGI compile
+
+    vda/
+        sched_vda.cpp
+
+David  14 Mar 2012
+    - client: on each scheduler RPC,
+        make sure that files flagged as executable in the reply,
+        and that are present, are actually executable.
+
+    client/
+        client_types.cpp
+
+David  15 Mar 2012
+    - client: when killing a task, don't delete its shmem or change its state.
+        These mess up the logic for dealing with exited processes,
+        resulting in incorrect log messages.
+
+    client/
+        app.cpp
+        app_control.cpp
+
+David  15 Mar 2012
+    - scheduler: when HR is being used,
+        make per-HR slot allocation an option rather than the default.
+        Kevin reported that slot allocation wasn't working for WCG.
+        The default is now no slot allocation,
+        and use the regular result enumeration function
+        rather than the once that scans the entire table.
+        The config flag for enabling slot allocation is <hr_allocate_slots/>.
+
+    sched/
+        sched_config.cpp,h
+        feeder.cpp
+        hr_info.cpp
+
+Rom    15 Mar 2012
+    - VBOX: Give the VM process a short priority boost when responding
+        to a quit request.  On older XP machines it might speed up the memory
+        dump to disk.
+    - client: Increase the quit request timeout from 10 seconds to 60 seconds for
+        machines running VMs and slow disk drives.  It should give the VM enough
+        time to gracefully shutdown and not give boinc reason to kill the wrapper.
+
+    client/
+        app.h
+    samples/vboxwrapper/
+        vbox.cpp, .h
+        vboxwrapper.cpp
+
+Rom    16 Mar 2012
+    - Tag for 7.0.21 release, all platforms
+      boinc_core_release_7_0_21
 
     /
         configure.ac

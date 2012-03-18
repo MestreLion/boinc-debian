@@ -25,37 +25,13 @@
 
 #include "boinc_db.h"
 
+#include "stats.h"
 #include "vda_policy.h"
 
 // a host with rpc_time < now-HOST_TIMEOUT is considered dead.
 // Make sure you set next_rpc_delay accordingly (e.g., to 86400)
 //
 #define VDA_HOST_TIMEOUT (86400*4)
-
-// keeps track of a time-varying property of a file
-// (server disk usage, up/download rate, fault tolerance level)
-//
-
-typedef enum {DISK, NETWORK, FAULT_TOLERANCE} STATS_KIND;
-
-struct STATS_ITEM {
-    STATS_KIND kind;
-    double value;
-    double integral;
-    double extreme_val;
-    double extreme_val_time;
-    double prev_t;
-    double start_time;
-    bool first;
-    char name[256];
-    FILE* f;
-
-    void init(const char* n, const char* filename, STATS_KIND k);
-    void sample(double v, bool collecting_stats, double now);
-    void sample_inc(double inc, bool collecting_stats, double now);
-    void print(double now);
-    void print_summary(FILE* f, double now);
-};
 
 struct META_CHUNK;
 
@@ -110,6 +86,11 @@ struct DATA_UNIT {
     int min_failures;
         // min # of host failures that would make this unrecoverable
     char name[64];
+    char dir[1024];
+    bool keep_present;
+    bool need_present;
+
+    int delete_file();
 };
 
 struct META_CHUNK : DATA_UNIT {
@@ -120,6 +101,10 @@ struct META_CHUNK : DATA_UNIT {
     VDA_FILE_AUX* dfile;
     bool uploading;
     CODING coding;
+    bool bottom_level;
+    bool need_reconstruct;
+    bool needed_by_parent;
+    double child_size;
 
     // used by ssim
     META_CHUNK(
@@ -134,6 +119,19 @@ struct META_CHUNK : DATA_UNIT {
 
     virtual int recovery_plan();
     virtual int recovery_action(double);
+
+    void decide_reconstruct();
+    int reconstruct_and_cleanup();
+    int expand();
+    bool some_child_is_unrecoverable() {
+        for (unsigned int i=0; i<children.size(); i++) {
+            DATA_UNIT& d = *(children[i]);
+            if (d.status == UNRECOVERABLE) return true;
+        }
+        return false;
+    }
+    int decode();
+    int encode();
 };
 
 struct CHUNK : DATA_UNIT {
@@ -141,6 +139,7 @@ struct CHUNK : DATA_UNIT {
     META_CHUNK* parent;
     double size;
     bool present_on_server;
+    bool new_present_on_server;
 
     CHUNK(META_CHUNK* mc, double s, int index);
 
@@ -152,6 +151,7 @@ struct CHUNK : DATA_UNIT {
     int assign();
     virtual int recovery_plan();
     virtual int recovery_action(double);
+    bool need_more_replicas() {
+        return ((int)hosts.size() < parent->dfile->policy.replication);
+    }
 };
-
-extern char* time_str(double);
