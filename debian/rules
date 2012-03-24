@@ -133,7 +133,7 @@ CFGFLAGS_boinc-client = \
 
 # Default rule
 %:
-	dh $@ --parallel
+	dh $@ --parallel --with python2,quilt
 
 clean:
 	dh clean
@@ -220,14 +220,6 @@ BINARIES += samples/worker/worker samples/wrapper/wrapper samples/sleeper/sleepe
 
 override_dh_auto_clean: 
 	dh_auto_clean
-	# don't interfere with dpkg-source
-	#if [ -d .pc ]; then  \
-	#	quilt pop -a ; \
-	#	$(RM) -r .pc ; \
-	#fi
-	#if [ -d debian/patches ]; then \
-	#	cat debian/patches/*| patch -p1 -R --batch --quiet || true ; \
-	#fi
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
 	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
