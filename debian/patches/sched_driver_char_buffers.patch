@@ -1,0 +1,26 @@
+Index: boinc/sched/sched_driver.cpp
+===================================================================
+--- boinc.orig/sched/sched_driver.cpp	2012-03-24 16:31:19.000000000 +0100
++++ boinc/sched/sched_driver.cpp	2012-03-24 16:33:58.000000000 +0100
+@@ -49,9 +49,9 @@
+ using std::vector;
+ 
+ struct HOST_DESC{
+-    char os_name[128];
+-    char p_vendor[128];
+-    char p_model[128];
++    char os_name[512];
++    char p_vendor[512];
++    char p_model[512];
+ };
+ 
+ vector<HOST_DESC> host_descs;
+@@ -59,7 +59,7 @@
+ double max_time = 1;
+ 
+ void read_hosts() {
+-    char buf[256], buf2[256];
++    char buf[1024], buf2[1024];
+     host_descs.clear();
+     FILE* f = fopen("host_descs.txt", "r");
+     if (!f) {

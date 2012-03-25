@@ -1,6 +1,8 @@
 boinc (7.0.23+dfsg-1) unstable; urgency=low
 
   * New upstream version.
+  * Moving towards inclusion of glib.h instead of glib/*.h
+    (Closes: #665512).
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 24 Mar 2012 16:05:42 +0100
 

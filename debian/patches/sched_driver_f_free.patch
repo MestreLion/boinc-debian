@@ -1,0 +1,34 @@
+Index: boinc/sched/sched_driver.cpp
+===================================================================
+--- boinc.orig/sched/sched_driver.cpp	2011-03-17 18:51:04.000000000 +0100
++++ boinc/sched/sched_driver.cpp	2012-03-24 16:31:19.000000000 +0100
+@@ -44,6 +44,7 @@
+ #include <vector>
+ #include "util.h"
+ #include "svn_version.h"
++#include "str_util.h"     // safe_strcpy
+ 
+ using std::vector;
+ 
+@@ -69,17 +70,18 @@
+         HOST_DESC hd;
+         strcpy(buf2, buf);
+         char* p1 = strtok(buf2, "\t\n");
+-        strcpy(hd.os_name, p1);
++        safe_strcpy(hd.os_name, p1);
+         char* p2 = strtok(0, "\t\n");
+-        strcpy(hd.p_vendor, p2);
++        safe_strcpy(hd.p_vendor, p2);
+         char* p3 = strtok(0, "\t\n");
+         if (!p3) {
+             fprintf(stderr, "bad line: %s\n", buf);
+             exit(1);
+         }
+-        strcpy(hd.p_model, p3);
++        safe_strcpy(hd.p_model, p3);
+         host_descs.push_back(hd);
+     }
++    free(f);
+ }
+ 
+ inline double req_time() {
