@@ -1,3 +1,5 @@
+sched_driver_f_free.patch
+sched_driver_char_buffers.patch
 improve_opendir_warning.patch
 termios_is_everywhere.patch
 mac_addresses_cores_in_kfreebsd.patch
@@ -26,3 +28,5 @@ client_stream_realloc.patch
 MoreInformativeAppStartFailure.patch
 MainDocumentWarnings.patch
 stream_memory_leak_fix.patch
+nvidia_detect_buffers.patch
+glib_includes_glib.h_only.patch
