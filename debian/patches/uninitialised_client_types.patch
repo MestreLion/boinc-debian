@@ -1,0 +1,38 @@
+Index: boinc/client/client_types.h
+===================================================================
+--- boinc.orig/client/client_types.h	2012-03-27 15:27:11.375392892 +0200
++++ boinc/client/client_types.h	2012-03-27 15:49:22.585313098 +0200
+@@ -727,7 +727,17 @@
+     WORKUNIT* wup;
+     PROJECT* project;
+ 
+-    RESULT(){}
++    RESULT(){
++       edf_scheduled=0;
++       coproc_missing=0;
++       suspended_via_gui=0;
++       report_immediately=0;
++       not_started=0;
++       project=NULL;
++       wup=NULL;
++       app=NULL;
++       clear();
++    }
+     ~RESULT(){}
+     void clear();
+     int parse_server(XML_PARSER&);
+@@ -813,12 +823,12 @@
+ 
+     int coproc_indices[MAX_COPROCS_PER_JOB];
+         // keep track of coprocessor reservations
+-    char resources[1024];
++    char resources[256];
+         // textual description of resources used
+     double schedule_backoff;
+         // don't try to schedule until this time
+         // (wait for free GPU RAM)
+-    char schedule_backoff_reason[1024];
++    char schedule_backoff_reason[256];
+ };
+ 
+ // represents an always/auto/never value, possibly temporarily overridden

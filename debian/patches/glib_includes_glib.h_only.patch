@@ -1,7 +1,7 @@
 Index: boinc/clientgui/gtk/taskbarex.cpp
 ===================================================================
---- boinc.orig/clientgui/gtk/taskbarex.cpp	2011-10-30 00:27:06.000000000 +0200
-+++ boinc/clientgui/gtk/taskbarex.cpp	2012-03-25 13:41:46.000000000 +0200
+--- boinc.orig/clientgui/gtk/taskbarex.cpp	2012-03-27 14:02:22.348761024 +0200
++++ boinc/clientgui/gtk/taskbarex.cpp	2012-03-27 14:29:40.162412105 +0200
 @@ -20,8 +20,7 @@
  #include "stdwx.h"
  

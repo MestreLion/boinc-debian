@@ -1,7 +1,7 @@
 Index: boinc/lib/parse.cpp
 ===================================================================
---- boinc.orig/lib/parse.cpp	2012-03-18 14:31:22.000000000 +0100
-+++ boinc/lib/parse.cpp	2012-03-24 16:13:26.000000000 +0100
+--- boinc.orig/lib/parse.cpp	2012-03-27 16:38:37.000000000 +0200
++++ boinc/lib/parse.cpp	2012-03-27 16:41:59.678459719 +0200
 @@ -179,7 +179,12 @@
          int n = (int)strlen(line);
          if (nused + n >= bufsize) {
@@ -18,8 +18,8 @@ Index: boinc/lib/parse.cpp
          nused += n;
 Index: boinc/lib/procinfo_win.cpp
 ===================================================================
---- boinc.orig/lib/procinfo_win.cpp	2012-03-18 14:31:22.000000000 +0100
-+++ boinc/lib/procinfo_win.cpp	2012-03-24 16:09:26.000000000 +0100
+--- boinc.orig/lib/procinfo_win.cpp	2012-03-27 16:38:02.000000000 +0200
++++ boinc/lib/procinfo_win.cpp	2012-03-27 16:41:59.682459664 +0200
 @@ -24,13 +24,16 @@
      tNTQSI   pNTQSI = (tNTQSI)GetProcAddress(hNTDllLib, "NtQuerySystemInformation");
      ULONG    cbBuffer = 0;

@@ -1,7 +1,7 @@
 Index: boinc/client/cs_notice.cpp
 ===================================================================
---- boinc.orig/client/cs_notice.cpp	2012-03-27 14:02:21.796768567 +0200
-+++ boinc/client/cs_notice.cpp	2012-03-27 14:23:43.183280859 +0200
+--- boinc.orig/client/cs_notice.cpp	2012-03-27 16:38:37.801203569 +0200
++++ boinc/client/cs_notice.cpp	2012-03-27 16:42:13.398273243 +0200
 @@ -591,7 +591,7 @@
              return 0;
          }
@@ -13,8 +13,8 @@ Index: boinc/client/cs_notice.cpp
          if (xp.parse_double("next_poll_time", next_poll_time)) continue;
 Index: boinc/lib/app_ipc.cpp
 ===================================================================
---- boinc.orig/lib/app_ipc.cpp	2012-03-27 14:02:25.520717680 +0200
-+++ boinc/lib/app_ipc.cpp	2012-03-27 14:23:09.259743498 +0200
+--- boinc.orig/lib/app_ipc.cpp	2012-03-27 16:38:37.801203569 +0200
++++ boinc/lib/app_ipc.cpp	2012-03-27 16:42:13.406273134 +0200
 @@ -349,11 +349,11 @@
          if (xp.parse_int("teamid", ai.teamid)) continue;
          if (xp.parse_int("hostid", ai.hostid)) continue;
@@ -31,8 +31,8 @@ Index: boinc/lib/app_ipc.cpp
          if (xp.parse_str("project_dir", ai.project_dir, sizeof(ai.project_dir))) continue;
 Index: boinc/lib/gui_rpc_client_ops.cpp
 ===================================================================
---- boinc.orig/lib/gui_rpc_client_ops.cpp	2012-03-27 14:02:25.596716641 +0200
-+++ boinc/lib/gui_rpc_client_ops.cpp	2012-03-27 14:22:26.448327341 +0200
+--- boinc.orig/lib/gui_rpc_client_ops.cpp	2012-03-27 16:38:37.801203569 +0200
++++ boinc/lib/gui_rpc_client_ops.cpp	2012-03-27 16:42:13.410273077 +0200
 @@ -254,11 +254,11 @@
          if (xp.parse_double("resource_share", resource_share)) continue;
          if (xp.parse_string("project_name", project_name)) continue;
@@ -49,8 +49,8 @@ Index: boinc/lib/gui_rpc_client_ops.cpp
          if (xp.parse_int("hostid", hostid)) continue;
 Index: boinc/lib/notice.cpp
 ===================================================================
---- boinc.orig/lib/notice.cpp	2012-03-27 14:02:25.648715931 +0200
-+++ boinc/lib/notice.cpp	2012-03-27 14:21:53.096782169 +0200
+--- boinc.orig/lib/notice.cpp	2012-03-27 16:38:37.801203569 +0200
++++ boinc/lib/notice.cpp	2012-03-27 16:42:13.414273021 +0200
 @@ -48,7 +48,7 @@
          if (xp.parse_int("seqno", seqno)) continue;
          if (xp.parse_str("title", title, sizeof(title))) continue;
@@ -62,8 +62,8 @@ Index: boinc/lib/notice.cpp
          if (xp.parse_double("create_time", create_time)) continue;
 Index: boinc/lib/parse.cpp
 ===================================================================
---- boinc.orig/lib/parse.cpp	2012-03-27 14:02:25.656715821 +0200
-+++ boinc/lib/parse.cpp	2012-03-27 14:21:27.545130625 +0200
+--- boinc.orig/lib/parse.cpp	2012-03-27 16:41:59.678459719 +0200
++++ boinc/lib/parse.cpp	2012-03-27 16:42:13.418272966 +0200
 @@ -52,9 +52,6 @@
  #include "boinc_fcgi.h"
  #endif
@@ -97,7 +97,7 @@ Index: boinc/lib/parse.cpp
      char tempbuf[1024];
      if (!parse_str(buf, tag, tempbuf, 1024)) return false;
      dest = tempbuf;
-@@ -229,7 +226,7 @@
+@@ -234,7 +231,7 @@
      return ERR_XML_PARSE;
  }
  
@@ -106,7 +106,7 @@ Index: boinc/lib/parse.cpp
      char buf[256];
  
      str = "";
-@@ -400,16 +397,16 @@
+@@ -405,16 +402,16 @@
  
  // Note: XML unescaping never increases string length
  //
@@ -126,7 +126,7 @@ Index: boinc/lib/parse.cpp
      char* out = buf;
      char* in = buf;
      char* p;
-@@ -471,7 +468,7 @@
+@@ -476,7 +473,7 @@
      }
      if (q[-1] == '/') return 0;
      *q = 0;
@@ -135,7 +135,7 @@ Index: boinc/lib/parse.cpp
      while (fin.fgets(buf2, 256)) {
          if (strstr(buf2, close_tag.c_str())) {
              return 0;
-@@ -722,12 +719,12 @@
+@@ -727,12 +724,12 @@
      if (!is_tag) return false;
      if (strcmp(tag, end_tag)) return false;
      if (retval != XML_PARSE_CDATA) {
@@ -150,7 +150,7 @@ Index: boinc/lib/parse.cpp
      char buf[MAX_XML_STRING];
      bool flag = parse_str(start_tag, buf, sizeof(buf));
      if (!flag) return false;
-@@ -1013,7 +1010,7 @@
+@@ -1018,7 +1015,7 @@
  // we just parsed a tag.
  // copy this entire element, including start and end tags, to the buffer
  //
@@ -161,8 +161,8 @@ Index: boinc/lib/parse.cpp
      // handle <foo/> case
 Index: boinc/lib/parse.h
 ===================================================================
---- boinc.orig/lib/parse.h	2012-03-27 14:02:25.656715821 +0200
-+++ boinc/lib/parse.h	2012-03-27 14:19:36.182649278 +0200
+--- boinc.orig/lib/parse.h	2012-03-27 16:38:37.801203569 +0200
++++ boinc/lib/parse.h	2012-03-27 16:42:13.422272914 +0200
 @@ -65,6 +65,8 @@
      void skip_unexpected(bool verbose=false, const char* msg="") {
          skip_unexpected(parsed_tag, verbose, msg);

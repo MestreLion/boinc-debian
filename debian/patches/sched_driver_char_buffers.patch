@@ -1,8 +1,13 @@
 Index: boinc/sched/sched_driver.cpp
 ===================================================================
---- boinc.orig/sched/sched_driver.cpp	2012-03-24 16:31:19.000000000 +0100
-+++ boinc/sched/sched_driver.cpp	2012-03-24 16:33:58.000000000 +0100
-@@ -49,9 +49,9 @@
+--- boinc.orig/sched/sched_driver.cpp	2012-03-27 14:29:39.610419635 +0200
++++ boinc/sched/sched_driver.cpp	2012-03-27 14:48:59.970588289 +0200
+@@ -45,13 +45,14 @@
+ #include "util.h"
+ #include "svn_version.h"
+ #include "str_util.h"     // safe_strcpy
++#include "str_replace.h"     // strlcpy
+ 
  using std::vector;
  
  struct HOST_DESC{
@@ -15,7 +20,7 @@ Index: boinc/sched/sched_driver.cpp
  };
  
  vector<HOST_DESC> host_descs;
-@@ -59,7 +59,7 @@
+@@ -59,7 +60,7 @@
  double max_time = 1;
  
  void read_hosts() {
