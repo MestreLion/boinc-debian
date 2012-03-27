@@ -1,0 +1,183 @@
+Index: boinc/client/cs_notice.cpp
+===================================================================
+--- boinc.orig/client/cs_notice.cpp	2012-03-27 14:02:21.796768567 +0200
++++ boinc/client/cs_notice.cpp	2012-03-27 14:23:43.183280859 +0200
+@@ -591,7 +591,7 @@
+             return 0;
+         }
+         if (xp.parse_str("url", url, sizeof(url))) {
+-            xml_unescape(url);
++            XML_PARSER::xml_unescape(url);
+         }
+         if (xp.parse_double("poll_interval", poll_interval)) continue;
+         if (xp.parse_double("next_poll_time", next_poll_time)) continue;
+Index: boinc/lib/app_ipc.cpp
+===================================================================
+--- boinc.orig/lib/app_ipc.cpp	2012-03-27 14:02:25.520717680 +0200
++++ boinc/lib/app_ipc.cpp	2012-03-27 14:23:09.259743498 +0200
+@@ -349,11 +349,11 @@
+         if (xp.parse_int("teamid", ai.teamid)) continue;
+         if (xp.parse_int("hostid", ai.hostid)) continue;
+         if (xp.parse_str("user_name", ai.user_name, sizeof(ai.user_name))) {
+-            xml_unescape(ai.user_name);
++            XML_PARSER::xml_unescape(ai.user_name);
+             continue;
+         }
+         if (xp.parse_str("team_name", ai.team_name, sizeof(ai.team_name))) {
+-            xml_unescape(ai.team_name);
++            XML_PARSER::xml_unescape(ai.team_name);
+             continue;
+         }
+         if (xp.parse_str("project_dir", ai.project_dir, sizeof(ai.project_dir))) continue;
+Index: boinc/lib/gui_rpc_client_ops.cpp
+===================================================================
+--- boinc.orig/lib/gui_rpc_client_ops.cpp	2012-03-27 14:02:25.596716641 +0200
++++ boinc/lib/gui_rpc_client_ops.cpp	2012-03-27 14:22:26.448327341 +0200
+@@ -254,11 +254,11 @@
+         if (xp.parse_double("resource_share", resource_share)) continue;
+         if (xp.parse_string("project_name", project_name)) continue;
+         if (xp.parse_string("user_name", user_name)) {
+-            xml_unescape(user_name);
++            XML_PARSER::xml_unescape(user_name);
+             continue;
+         }
+         if (xp.parse_string("team_name", team_name)) {
+-            xml_unescape(team_name);
++            XML_PARSER::xml_unescape(team_name);
+             continue;
+         }
+         if (xp.parse_int("hostid", hostid)) continue;
+Index: boinc/lib/notice.cpp
+===================================================================
+--- boinc.orig/lib/notice.cpp	2012-03-27 14:02:25.648715931 +0200
++++ boinc/lib/notice.cpp	2012-03-27 14:21:53.096782169 +0200
+@@ -48,7 +48,7 @@
+         if (xp.parse_int("seqno", seqno)) continue;
+         if (xp.parse_str("title", title, sizeof(title))) continue;
+         if (xp.parse_string("description", description)) {
+-            xml_unescape(description);   // 2nd pass
++            XML_PARSER::xml_unescape(description);   // 2nd pass
+             continue;
+         }
+         if (xp.parse_double("create_time", create_time)) continue;
+Index: boinc/lib/parse.cpp
+===================================================================
+--- boinc.orig/lib/parse.cpp	2012-03-27 14:02:25.656715821 +0200
++++ boinc/lib/parse.cpp	2012-03-27 14:21:27.545130625 +0200
+@@ -52,9 +52,6 @@
+ #include "boinc_fcgi.h"
+ #endif
+ 
+-using std::string;
+-
+-
+ 
+ // Parse a boolean; tag is of form "foobar"
+ // Accept either <foobar/>, <foobar />, or <foobar>0|1</foobar>
+@@ -90,7 +87,7 @@
+ // Use "<tag", not "<tag>", if there might be attributes
+ //
+ bool parse_str(const char* buf, const char* tag, char* dest, int destlen) {
+-    string str;
++    std::string str;
+     const char* p;
+     int len;
+ 
+@@ -105,11 +102,11 @@
+     memcpy(dest, p, len);
+     dest[len] = 0;
+     strip_whitespace(dest);
+-    xml_unescape(dest);
++    XML_PARSER::xml_unescape(dest);
+     return true;
+ }
+ 
+-bool parse_str(const char* buf, const char* tag, string& dest) {
++bool parse_str(const char* buf, const char* tag, std::string& dest) {
+     char tempbuf[1024];
+     if (!parse_str(buf, tag, tempbuf, 1024)) return false;
+     dest = tempbuf;
+@@ -229,7 +226,7 @@
+     return ERR_XML_PARSE;
+ }
+ 
+-int copy_element_contents(FILE* in, const char* end_tag, string& str) {
++int copy_element_contents(FILE* in, const char* end_tag, std::string& str) {
+     char buf[256];
+ 
+     str = "";
+@@ -400,16 +397,16 @@
+ 
+ // Note: XML unescaping never increases string length
+ //
+-void xml_unescape(string& in) {
++void XML_PARSER::xml_unescape(std::string& in) {
+     int n = (int)in.size()+1;
+     char* buf = (char*)malloc(n);
+     strcpy(buf, in.c_str());
+-    xml_unescape(buf);
++    XML_PARSER::xml_unescape(buf);
+     in = buf;
+     free(buf);
+ }
+ 
+-void xml_unescape(char* buf) {
++void XML_PARSER::xml_unescape(char* buf) {
+     char* out = buf;
+     char* in = buf;
+     char* p;
+@@ -471,7 +468,7 @@
+     }
+     if (q[-1] == '/') return 0;
+     *q = 0;
+-    close_tag = string("</") + string(p+1) + string(">");
++    close_tag = std::string("</") + std::string(p+1) + std::string(">");
+     while (fin.fgets(buf2, 256)) {
+         if (strstr(buf2, close_tag.c_str())) {
+             return 0;
+@@ -722,12 +719,12 @@
+     if (!is_tag) return false;
+     if (strcmp(tag, end_tag)) return false;
+     if (retval != XML_PARSE_CDATA) {
+-        xml_unescape(buf);
++        XML_PARSER::xml_unescape(buf);
+     }
+     return true;
+ }
+ 
+-bool XML_PARSER::parse_string(const char* start_tag, string& str) {
++bool XML_PARSER::parse_string(const char* start_tag, std::string& str) {
+     char buf[MAX_XML_STRING];
+     bool flag = parse_str(start_tag, buf, sizeof(buf));
+     if (!flag) return false;
+@@ -1013,7 +1010,7 @@
+ // we just parsed a tag.
+ // copy this entire element, including start and end tags, to the buffer
+ //
+-int XML_PARSER::copy_element(string& out) {
++int XML_PARSER::copy_element(std::string& out) {
+     char end_tag[256], buf[1024];
+ 
+     // handle <foo/> case
+Index: boinc/lib/parse.h
+===================================================================
+--- boinc.orig/lib/parse.h	2012-03-27 14:02:25.656715821 +0200
++++ boinc/lib/parse.h	2012-03-27 14:19:36.182649278 +0200
+@@ -65,6 +65,8 @@
+     void skip_unexpected(bool verbose=false, const char* msg="") {
+         skip_unexpected(parsed_tag, verbose, msg);
+     }
++    static void xml_unescape(std::string&);
++    static void xml_unescape(char*);
+ };
+ 
+ extern bool boinc_is_finite(double);
+@@ -189,8 +191,6 @@
+ extern char* sgets(char* buf, int len, char* &in);
+ extern void non_ascii_escape(const char*, char*, int len);
+ extern void xml_escape(const char*, char*, int len);
+-extern void xml_unescape(std::string&);
+-extern void xml_unescape(char*);
+ extern void extract_venue(const char*, const char*, char*);
+ extern int skip_unrecognized(char* buf, MIOFILE&);
+ 
