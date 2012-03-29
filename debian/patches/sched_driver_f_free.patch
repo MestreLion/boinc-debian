@@ -1,16 +1,17 @@
 Index: boinc/sched/sched_driver.cpp
 ===================================================================
---- boinc.orig/sched/sched_driver.cpp	2011-03-17 18:51:04.000000000 +0100
-+++ boinc/sched/sched_driver.cpp	2012-03-24 16:31:19.000000000 +0100
-@@ -44,6 +44,7 @@
+--- boinc.orig/sched/sched_driver.cpp	2012-03-29 22:39:58.000000000 +0200
++++ boinc/sched/sched_driver.cpp	2012-03-29 22:40:55.000000000 +0200
+@@ -44,6 +44,8 @@
  #include <vector>
  #include "util.h"
  #include "svn_version.h"
++#include "str_replace.h"  // strlcpy
 +#include "str_util.h"     // safe_strcpy
  
  using std::vector;
  
-@@ -69,17 +70,18 @@
+@@ -69,17 +71,18 @@
          HOST_DESC hd;
          strcpy(buf2, buf);
          char* p1 = strtok(buf2, "\t\n");
