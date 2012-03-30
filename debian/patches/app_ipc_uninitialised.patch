@@ -1,11 +1,12 @@
 Index: boinc/lib/app_ipc.cpp
 ===================================================================
---- boinc.orig/lib/app_ipc.cpp	2012-03-27 16:15:08.096347030 +0200
-+++ boinc/lib/app_ipc.cpp	2012-03-27 16:37:37.690020564 +0200
-@@ -56,12 +56,13 @@
+--- boinc.orig/lib/app_ipc.cpp	2012-03-27 16:54:40.940116654 +0200
++++ boinc/lib/app_ipc.cpp	2012-03-27 18:18:24.763761557 +0200
+@@ -56,12 +56,14 @@
  }
  
  APP_INIT_DATA::APP_INIT_DATA() : project_preferences(NULL) {
++    gpu_type[0]=0;
 +    clear();
  }
  
@@ -17,12 +18,12 @@ Index: boinc/lib/app_ipc.cpp
      }
  }
  
-@@ -77,6 +78,12 @@
+@@ -77,6 +79,12 @@
  }
  
  void APP_INIT_DATA::copy(const APP_INIT_DATA& a) {
 +
-+    clear(); // also avoiding memory leak in project_preferences
++    clear(); // initialising values not copied, also avoiding memory leak in project_preferences
 +    if (a.project_preferences) {
 +        project_preferences = strdup(a.project_preferences);
 +    }
@@ -30,7 +31,7 @@ Index: boinc/lib/app_ipc.cpp
      strcpy(app_name, a.app_name);
      strcpy(symstore, a.symstore);
      strcpy(acct_mgr_url, a.acct_mgr_url);
-@@ -87,7 +94,11 @@
+@@ -87,7 +95,11 @@
      strcpy(wu_name, a.wu_name);
      strcpy(result_name, a.result_name);
      strcpy(authenticator, a.authenticator);
@@ -43,7 +44,7 @@ Index: boinc/lib/app_ipc.cpp
      strcpy(gpu_type, a.gpu_type);
                  
      // use assignment for the rest, especially the classes
-@@ -122,15 +133,10 @@
+@@ -122,15 +134,10 @@
      ncpus                         = a.ncpus;
      checkpoint_period             = a.checkpoint_period;
      wu_cpu_time                   = a.wu_cpu_time;
@@ -60,7 +61,7 @@ Index: boinc/lib/app_ipc.cpp
      fprintf(f,
          "<app_init_data>\n"
          "<major_version>%d</major_version>\n"
-@@ -202,16 +208,7 @@
+@@ -202,16 +209,7 @@
          "<resource_share_fraction>%f</resource_share_fraction>\n"
          "<checkpoint_period>%f</checkpoint_period>\n"
          "<fraction_done_start>%f</fraction_done_start>\n"
@@ -78,20 +79,21 @@ Index: boinc/lib/app_ipc.cpp
          ai.slot,
          ai.wu_cpu_time,
          ai.starting_elapsed_time,
-@@ -223,10 +220,23 @@
+@@ -223,10 +221,22 @@
          ai.resource_share_fraction,
          ai.checkpoint_period,
          ai.fraction_done_start,
 -        ai.fraction_done_end,
+-        ai.gpu_type,
 +        ai.fraction_done_end
 +    );
++    fprintf(f,"<gpu_type>%s</gpu_type>\n", ai.gpu_type);
 +    fprintf(f,
-+        "<gpu_type>%s</gpu_type>\n"
 +        "<gpu_device_num>%d</gpu_device_num>\n"
 +        "<gpu_opencl_dev_index>%d</gpu_opencl_dev_index>\n",
-         ai.gpu_type,
          ai.gpu_device_num,
-         ai.gpu_opencl_dev_index,
+-        ai.gpu_opencl_dev_index,
++        ai.gpu_opencl_dev_index
 +    );
 +    fprintf(f,
 +        "<ncpus>%f</ncpus>\n"
@@ -161,10 +163,45 @@ Index: boinc/lib/app_ipc.cpp
      wu_cpu_time = 0;
  }
  
+@@ -447,7 +469,7 @@
+     const char *virtual_name, char *physical_name, int len
+ ) {
+     FILE *fp;
+-    char buf[512], *p;
++    char buf[4096], *p;
+ 
+     if (!virtual_name) return ERR_NULL;
+     strlcpy(physical_name, virtual_name, len);
+@@ -480,7 +502,7 @@
+ // same, std::string version
+ //
+ int boinc_resolve_filename_s(const char *virtual_name, string& physical_name) {
+-    char buf[512], *p;
++    char buf[4096], *p;
+     if (!virtual_name) return ERR_NULL;
+     physical_name = virtual_name;
+ #ifndef _WIN32
+@@ -491,14 +513,14 @@
+     FILE *fp = boinc_fopen(virtual_name, "r");
+     if (!fp) return 0;
+     buf[0] = 0;
+-    p = fgets(buf, 512, fp);
++    p = fgets(buf, sizeof(buf), fp);
+     fclose(fp);
+     if (p) parse_str(buf, "<soft_link>", physical_name);
+     return 0;
+ }
+ 
+ void url_to_project_dir(char* url, char* dir) {
+-    char buf[256];
++    char buf[4096];
+     escape_project_url(url, buf);
+     sprintf(dir, "%s/%s", PROJECT_DIR, buf);
+ }
 Index: boinc/lib/app_ipc.h
 ===================================================================
---- boinc.orig/lib/app_ipc.h	2012-03-27 16:15:08.096347030 +0200
-+++ boinc/lib/app_ipc.h	2012-03-27 16:15:52.803740286 +0200
+--- boinc.orig/lib/app_ipc.h	2012-03-27 16:49:03.004705896 +0200
++++ boinc/lib/app_ipc.h	2012-03-27 16:54:40.980116111 +0200
 @@ -193,7 +193,7 @@
  
      // info for GPU apps

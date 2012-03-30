@@ -1,3 +1,5 @@
+add_init_to_client_state_constructor.patch
+client_path_char_array_length.patch
 sched_driver_f_free.patch
 sched_driver_char_buffers.patch
 improve_opendir_warning.patch
