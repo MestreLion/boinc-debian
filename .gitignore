@@ -11,11 +11,11 @@ config.log
 libtool
 Makefile
 Makefile.in
-*/*.o
-*/*.la
-*/*.lo
-*/*.so
-*/*.a
+*.o
+*.la
+*.lo
+*.so
+*.a
 */.deps/
 */.libs/
 debian/*.debhelper
@@ -52,3 +52,6 @@ m4/*.m4
 missing
 debian/patches/debian-changes-*
 version.log
+svn_version.h
+version.h
+*/.*.swp
