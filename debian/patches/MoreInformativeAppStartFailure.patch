@@ -1,7 +1,7 @@
 Index: boinc/client/app_start.cpp
 ===================================================================
---- boinc.orig/client/app_start.cpp	2012-03-24 16:09:25.000000000 +0100
-+++ boinc/client/app_start.cpp	2012-03-24 16:09:26.000000000 +0100
+--- boinc.orig/client/app_start.cpp	2012-03-30 19:47:18.671846060 +0200
++++ boinc/client/app_start.cpp	2012-03-30 19:47:21.035813811 +0200
 @@ -320,7 +320,10 @@
          strcat(dir_path, "/");
          strcat(dir_path, p);
@@ -58,9 +58,9 @@ Index: boinc/client/app_start.cpp
      }
 Index: boinc/client/client_state.cpp
 ===================================================================
---- boinc.orig/client/client_state.cpp	2012-03-18 14:31:22.000000000 +0100
-+++ boinc/client/client_state.cpp	2012-03-24 16:09:26.000000000 +0100
-@@ -808,7 +808,7 @@
+--- boinc.orig/client/client_state.cpp	2012-03-30 19:46:53.244192936 +0200
++++ boinc/client/client_state.cpp	2012-03-30 19:47:21.043813702 +0200
+@@ -809,7 +809,7 @@
      check_suspend_network();
      if (network_suspend_reason) {
          if (!old_network_suspend_reason) {
@@ -69,7 +69,7 @@ Index: boinc/client/client_state.cpp
              if (network_suspended) {
                  sprintf(buf,
                      "Suspending network activity - %s",
-@@ -1627,7 +1627,7 @@
+@@ -1628,7 +1628,7 @@
  //   so that we don't try to run it again.
  //
  int CLIENT_STATE::report_result_error(RESULT& res, const char* format, ...) {
@@ -78,7 +78,7 @@ Index: boinc/client/client_state.cpp
          // The above store 1-line messages and short XML snippets.
          // Shouldn't exceed a few hundred bytes.
      unsigned int i;
-@@ -1829,7 +1829,7 @@
+@@ -1830,7 +1830,7 @@
      vector<FILE_INFO*>::iterator fi_iter;
      FILE_INFO* fip;
      PROJECT* p;
@@ -87,7 +87,7 @@ Index: boinc/client/client_state.cpp
      int retval;
  
      reset_project(project, true);
-@@ -1999,7 +1999,7 @@
+@@ -2000,7 +2000,7 @@
  }
  
  void CLIENT_STATE::log_show_projects() {
@@ -98,8 +98,8 @@ Index: boinc/client/client_state.cpp
          if (p->hostid) {
 Index: boinc/client/client_types.h
 ===================================================================
---- boinc.orig/client/client_types.h	2012-03-24 16:04:08.000000000 +0100
-+++ boinc/client/client_types.h	2012-03-24 16:09:26.000000000 +0100
+--- boinc.orig/client/client_types.h	2012-03-30 18:44:05.623654263 +0200
++++ boinc/client/client_types.h	2012-03-30 19:47:21.051813592 +0200
 @@ -813,12 +813,12 @@
  
      int coproc_indices[MAX_COPROCS_PER_JOB];
@@ -117,8 +117,8 @@ Index: boinc/client/client_types.h
  // represents an always/auto/never value, possibly temporarily overridden
 Index: boinc/client/hostinfo_unix.cpp
 ===================================================================
---- boinc.orig/client/hostinfo_unix.cpp	2012-03-24 16:04:10.000000000 +0100
-+++ boinc/client/hostinfo_unix.cpp	2012-03-24 16:09:26.000000000 +0100
+--- boinc.orig/client/hostinfo_unix.cpp	2012-03-30 18:44:05.623654263 +0200
++++ boinc/client/hostinfo_unix.cpp	2012-03-30 19:47:21.055813538 +0200
 @@ -220,7 +220,7 @@
        SysClass,
        NoBattery
@@ -249,8 +249,8 @@ Index: boinc/client/hostinfo_unix.cpp
  
 Index: boinc/lib/hostinfo.cpp
 ===================================================================
---- boinc.orig/lib/hostinfo.cpp	2012-03-18 14:31:22.000000000 +0100
-+++ boinc/lib/hostinfo.cpp	2012-03-24 16:09:26.000000000 +0100
+--- boinc.orig/lib/hostinfo.cpp	2012-03-30 18:44:05.623654263 +0200
++++ boinc/lib/hostinfo.cpp	2012-03-30 19:47:21.059813484 +0200
 @@ -131,7 +131,7 @@
  int HOST_INFO::write(
      MIOFILE& out, bool include_net_info, bool include_coprocs
@@ -277,8 +277,8 @@ Index: boinc/lib/hostinfo.cpp
          else if (parse_double(buf, "<p_fpops>", p_fpops)) continue;
 Index: boinc/lib/hostinfo.h
 ===================================================================
---- boinc.orig/lib/hostinfo.h	2012-03-18 14:31:22.000000000 +0100
-+++ boinc/lib/hostinfo.h	2012-03-24 16:09:26.000000000 +0100
+--- boinc.orig/lib/hostinfo.h	2012-03-30 18:44:05.623654263 +0200
++++ boinc/lib/hostinfo.h	2012-03-30 19:47:21.063813429 +0200
 @@ -44,7 +44,7 @@
      int p_ncpus;
      char p_vendor[256];

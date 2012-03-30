@@ -1,10 +1,10 @@
 Index: boinc/sched/sched_driver.cpp
 ===================================================================
---- boinc.orig/sched/sched_driver.cpp	2012-03-27 14:29:39.610419635 +0200
-+++ boinc/sched/sched_driver.cpp	2012-03-27 14:48:59.970588289 +0200
-@@ -45,13 +45,14 @@
- #include "util.h"
+--- boinc.orig/sched/sched_driver.cpp	2012-03-30 19:46:56.436149392 +0200
++++ boinc/sched/sched_driver.cpp	2012-03-30 19:46:57.428135859 +0200
+@@ -46,13 +46,14 @@
  #include "svn_version.h"
+ #include "str_replace.h"  // strlcpy
  #include "str_util.h"     // safe_strcpy
 +#include "str_replace.h"     // strlcpy
  
@@ -20,12 +20,3 @@ Index: boinc/sched/sched_driver.cpp
  };
  
  vector<HOST_DESC> host_descs;
-@@ -59,7 +60,7 @@
- double max_time = 1;
- 
- void read_hosts() {
--    char buf[256], buf2[256];
-+    char buf[1024], buf2[1024];
-     host_descs.clear();
-     FILE* f = fopen("host_descs.txt", "r");
-     if (!f) {

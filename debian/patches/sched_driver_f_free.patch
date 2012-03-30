@@ -1,7 +1,7 @@
 Index: boinc/sched/sched_driver.cpp
 ===================================================================
---- boinc.orig/sched/sched_driver.cpp	2012-03-29 22:39:58.000000000 +0200
-+++ boinc/sched/sched_driver.cpp	2012-03-29 22:40:55.000000000 +0200
+--- boinc.orig/sched/sched_driver.cpp	2012-03-30 18:44:06.691639668 +0200
++++ boinc/sched/sched_driver.cpp	2012-03-30 19:42:10.688047314 +0200
 @@ -44,6 +44,8 @@
  #include <vector>
  #include "util.h"
@@ -11,6 +11,15 @@ Index: boinc/sched/sched_driver.cpp
  
  using std::vector;
  
+@@ -58,7 +60,7 @@
+ double max_time = 1;
+ 
+ void read_hosts() {
+-    char buf[256], buf2[256];
++    char buf[1024], buf2[1024];
+     host_descs.clear();
+     FILE* f = fopen("host_descs.txt", "r");
+     if (!f) {
 @@ -69,17 +71,18 @@
          HOST_DESC hd;
          strcpy(buf2, buf);
