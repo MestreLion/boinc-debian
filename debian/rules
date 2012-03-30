@@ -195,7 +195,7 @@ override_dh_auto_build: update-boinc-applinks.1
 	$(MAKE)
 
 	# Generate binary message catalogs of the BOINC Manager.
-	if [ -d localte/client ]; then \
+	if [ -d locale/client ]; then \
 	  for i in `ls locale/client`; do \
 	    if [ -f "locale/client/$$i/BOINC-Manager.po" ]; then \
 	     msgfmt -o "locale/client/$$i/BOINC-Manager.mo" \
