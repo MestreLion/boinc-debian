@@ -30,7 +30,7 @@ client_stream_realloc.patch
 MoreInformativeAppStartFailure.patch
 MainDocumentWarnings.patch
 stream_memory_leak_fix.patch
-#nvidia_detect_buffers.patch
+nvidia_detect_buffers.patch
 glib_includes_glib.h_only.patch
 no_std_string.patch
 app_ipc_uninitialised.patch
