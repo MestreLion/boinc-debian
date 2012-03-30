@@ -133,7 +133,7 @@ CFGFLAGS_boinc-client = \
 
 # Default rule
 %:
-	dh $@ --parallel --with python2,quilt
+	dh $@ --parallel --with python2
 
 clean:
 	dh clean

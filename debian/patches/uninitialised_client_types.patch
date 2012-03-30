@@ -1,7 +1,7 @@
 Index: boinc/client/client_types.h
 ===================================================================
---- boinc.orig/client/client_types.h	2012-03-30 20:04:23.261868804 +0200
-+++ boinc/client/client_types.h	2012-03-30 20:04:23.465866021 +0200
+--- boinc.orig/client/client_types.h	2012-03-31 02:15:34.846451729 +0200
++++ boinc/client/client_types.h	2012-03-31 02:15:35.074448621 +0200
 @@ -727,7 +727,17 @@
      WORKUNIT* wup;
      PROJECT* project;
@@ -36,3 +36,31 @@ Index: boinc/client/client_types.h
  };
  
  // represents an always/auto/never value, possibly temporarily overridden
+Index: boinc/client/client_types.cpp
+===================================================================
+--- boinc.orig/client/client_types.cpp	2012-03-31 02:14:39.315208652 +0200
++++ boinc/client/client_types.cpp	2012-03-31 02:15:35.078448566 +0200
+@@ -181,7 +181,7 @@
+ // parse project fields from client_state.xml
+ //
+ int PROJECT::parse_state(XML_PARSER& xp) {
+-    char buf[256];
++    char buf[1024];
+     std::string sched_url, stemp;
+     string str1, str2;
+     int retval, rt;
+Index: boinc/client/client_state.cpp
+===================================================================
+--- boinc.orig/client/client_state.cpp	2012-03-31 02:15:34.842451783 +0200
++++ boinc/client/client_state.cpp	2012-03-31 02:16:44.401503648 +0200
+@@ -139,8 +139,8 @@
+ #endif
+     launched_by_manager = false;
+     initialized = false;
+-    last_wakeup_time = dtime();
+-    init();
++
++    now=last_wakeup_time = dtime();
+ }
+ 
+ void CLIENT_STATE::show_host_info() {

@@ -4,7 +4,8 @@ boinc (7.0.23+dfsg-2) unstable; urgency=low
   * Added invocations of init() functions to constructors
     of RESULT and CLIENT_STATE classes to work towards valgrind
     cleanliness
-  * Removed optimisation for better debug information
+  * Built without optimisation on amd64 for better debug information
+  * Removed Christoph from uploaders
   * First sponsoring upload by Thorsten - many thanks!!
 
  -- Steffen Moeller <moeller@debian.org>  Fri, 30 Mar 2012 18:49:07 +0200
