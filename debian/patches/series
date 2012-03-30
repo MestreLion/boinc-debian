@@ -35,3 +35,4 @@ glib_includes_glib.h_only.patch
 no_std_string.patch
 app_ipc_uninitialised.patch
 uninitialised_client_types.patch
+MainDocumentConst.patch

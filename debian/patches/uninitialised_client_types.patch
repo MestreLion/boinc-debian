@@ -1,7 +1,7 @@
 Index: boinc/client/client_types.h
 ===================================================================
---- boinc.orig/client/client_types.h	2012-03-27 15:27:11.375392892 +0200
-+++ boinc/client/client_types.h	2012-03-27 15:49:22.585313098 +0200
+--- boinc.orig/client/client_types.h	2012-03-30 20:04:23.261868804 +0200
++++ boinc/client/client_types.h	2012-03-30 20:04:23.465866021 +0200
 @@ -727,7 +727,17 @@
      WORKUNIT* wup;
      PROJECT* project;

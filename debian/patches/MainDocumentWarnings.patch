@@ -1,29 +1,60 @@
 Index: boinc/clientgui/MainDocument.cpp
 ===================================================================
---- boinc.orig/clientgui/MainDocument.cpp	2012-03-03 01:12:22.000000000 +0100
-+++ boinc/clientgui/MainDocument.cpp	2012-03-12 01:23:00.000000000 +0100
+--- boinc.orig/clientgui/MainDocument.cpp	2012-03-30 20:25:20.908709004 +0200
++++ boinc/clientgui/MainDocument.cpp	2012-03-30 20:35:13.648727074 +0200
+@@ -906,8 +906,8 @@
+         pFrame->AddPendingEvent(event);
+         CTaskBarIcon* pTaskbar = wxGetApp().GetTaskBarIcon();
+         if (pTaskbar) {
+-            CTaskbarEvent event(wxEVT_TASKBAR_REFRESH, pTaskbar);
+-            pTaskbar->AddPendingEvent(event);
++            CTaskbarEvent eventTB(wxEVT_TASKBAR_REFRESH, pTaskbar);
++            pTaskbar->AddPendingEvent(eventTB);
+         }
+         CDlgEventLog* eventLog = wxGetApp().GetEventLog();
+         if (eventLog) {
+@@ -1528,7 +1528,7 @@
+ // If the graphics application for the current task is already 
+ // running, return a pointer to its RUNNING_GFX_APP struct.
+ //
+-RUNNING_GFX_APP* CMainDocument::GetRunningGraphicsApp(RESULT* result, int slot) {
++RUNNING_GFX_APP* CMainDocument::GetRunningGraphicsApp(RESULT* resultArg, int slot) {
+     bool exited = false;
+     std::vector<RUNNING_GFX_APP>::iterator gfx_app_iter;
+     
+@@ -1551,8 +1551,8 @@
+         }
+ #endif
+         if (! exited) {
+-            if ( (result->name == (*gfx_app_iter).name) &&
+-                (result->project_url == (*gfx_app_iter).project_url) ) {
++            if ( (resultArg->name == (*gfx_app_iter).name) &&
++                (resultArg->project_url == (*gfx_app_iter).project_url) ) {
+                 return &(*gfx_app_iter);
+             }
+     
 @@ -1631,20 +1631,16 @@
  }
  #else
  void CMainDocument::KillGraphicsApp(int pid) {
 -    char* argv[6];
-+    char* argv[6] = {
-+	"switcher","/bin/kill","kill","-KILL","12345678901234567890",0
-+    };
      char currentDir[1024];
-     char thePIDbuf[10];
+-    char thePIDbuf[10];
++    char thePIDbuf[20];
      int id, iRetVal;
      
  
      if (g_use_sandbox) {
--        snprintf(thePIDbuf, sizeof(thePIDbuf), "%d", pid);
+         snprintf(thePIDbuf, sizeof(thePIDbuf), "%d", pid);
 -        argv[0] = "switcher";
 -        argv[1] = "/bin/kill";
 -        argv[2] =  "kill";
 -        argv[3] = "-KILL";
 -        argv[4] = thePIDbuf;
 -        argv[5] = 0;
-+        snprintf(argv[4], 20, "%d", pid);
++        const char* argv[6] = {
++            "switcher","/bin/kill","kill","-KILL",thePIDbuf,0
++        };
      
          iRetVal = run_program(
              getcwd(currentDir, sizeof(currentDir)),
