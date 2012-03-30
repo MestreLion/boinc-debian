@@ -1,7 +1,7 @@
 Index: boinc/clientgui/MainDocument.cpp
 ===================================================================
---- boinc.orig/clientgui/MainDocument.cpp	2012-03-30 20:25:20.908709004 +0200
-+++ boinc/clientgui/MainDocument.cpp	2012-03-30 20:35:13.648727074 +0200
+--- boinc.orig/clientgui/MainDocument.cpp	2012-03-30 23:42:06.944079056 +0200
++++ boinc/clientgui/MainDocument.cpp	2012-03-30 23:47:44.963448069 +0200
 @@ -906,8 +906,8 @@
          pFrame->AddPendingEvent(event);
          CTaskBarIcon* pTaskbar = wxGetApp().GetTaskBarIcon();
@@ -33,7 +33,7 @@ Index: boinc/clientgui/MainDocument.cpp
                  return &(*gfx_app_iter);
              }
      
-@@ -1631,20 +1631,16 @@
+@@ -1631,20 +1631,20 @@
  }
  #else
  void CMainDocument::KillGraphicsApp(int pid) {
@@ -52,9 +52,213 @@ Index: boinc/clientgui/MainDocument.cpp
 -        argv[3] = "-KILL";
 -        argv[4] = thePIDbuf;
 -        argv[5] = 0;
-+        const char* argv[6] = {
-+            "switcher","/bin/kill","kill","-KILL",thePIDbuf,0
++        char* const argv[6] = {
++            strdup("switcher"),
++	    strdup("/bin/kill"),
++	    strdup("kill"),
++	    strdup("-KILL"),
++	    thePIDbuf,0
 +        };
      
          iRetVal = run_program(
              getcwd(currentDir, sizeof(currentDir)),
+@@ -1654,21 +1654,25 @@
+             0,
+             id
+         );
++	free(argv[0]);
++	free(argv[1]);
++	free(argv[2]);
++	free(argv[3]);
+     } else {
+         kill_program(pid);
+     }
+ }
+ #endif
+ 
+-int CMainDocument::WorkShowGraphics(RESULT* result) {
++int CMainDocument::WorkShowGraphics(RESULT* resultArg) {
+     int iRetVal = 0;
+     
+-    if (strlen(result->web_graphics_url)) {
+-        wxString url(result->web_graphics_url, wxConvUTF8);
++    if (strlen(resultArg->web_graphics_url)) {
++        wxString url(resultArg->web_graphics_url, wxConvUTF8);
+         wxLaunchDefaultBrowser(url);
+         return 0;
+     }
+-    if (strlen(result->graphics_exec_path)) {
++    if (strlen(resultArg->graphics_exec_path)) {
+         // V6 Graphics
+         RUNNING_GFX_APP gfx_app;
+         RUNNING_GFX_APP* previous_gfx_app;
+@@ -1680,12 +1684,12 @@
+         int      id;
+ #endif
+ 
+-        p = strrchr((char*)result->slot_path, '/');
++        p = strrchr((char*)resultArg->slot_path, '/');
+         if (!p) return ERR_INVALID_PARAM;
+         slot = atoi(p+1);
+         
+         // See if we are already running the graphics application for this task
+-        previous_gfx_app = GetRunningGraphicsApp(result, slot);
++        previous_gfx_app = GetRunningGraphicsApp(resultArg, slot);
+ 
+ #ifndef __WXMSW__
+         char* argv[4];
+@@ -1709,13 +1713,13 @@
+         // exits with "RegisterProcess failed (error = -50)" unless 
+         // we pass its full path twice in the argument list to execv.
+         //
+-        argv[1] = (char *)result->graphics_exec_path;
+-        argv[2] = (char *)result->graphics_exec_path;
++        argv[1] = (char *)resultArg->graphics_exec_path;
++        argv[2] = (char *)resultArg->graphics_exec_path;
+         argv[3] = 0;
+     
+          if (g_use_sandbox) {
+             iRetVal = run_program(
+-                result->slot_path,
++                resultArg->slot_path,
+                "../../switcher/switcher",
+                 3,
+                 argv,
+@@ -1724,8 +1728,8 @@
+             );
+         } else {        
+             iRetVal = run_program(
+-                result->slot_path,
+-                result->graphics_exec_path,
++                resultArg->slot_path,
++                resultArg->graphics_exec_path,
+                 1,
+                 &argv[2],
+                 0,
+@@ -1741,8 +1745,8 @@
+         argv[0] = 0;
+         
+         iRetVal = run_program(
+-            result->slot_path,
+-            result->graphics_exec_path,
++            resultArg->slot_path,
++            resultArg->graphics_exec_path,
+             0,
+             argv,
+             0,
+@@ -1751,8 +1755,8 @@
+ #endif
+         if (!iRetVal) {
+             gfx_app.slot = slot;
+-            gfx_app.project_url = result->project_url;
+-            gfx_app.name = result->name;
++            gfx_app.project_url = resultArg->project_url;
++            gfx_app.name = resultArg->name;
+             gfx_app.pid = id;
+             m_running_gfx_apps.push_back(gfx_app);
+         }
+Index: boinc/lib/util.cpp
+===================================================================
+--- boinc.orig/lib/util.cpp	2012-03-30 23:42:06.944079056 +0200
++++ boinc/lib/util.cpp	2012-03-30 23:42:09.248047487 +0200
+@@ -376,7 +376,9 @@
+ 
+ #ifdef _WIN32
+ int run_program(
+-    const char* dir, const char* file, int argc, char *const argv[], double nsecs, HANDLE& id
++    const char* const dir, const char* const file, const int argc,
++    /* not const */ char *const argv[],
++    const double nsecs, HANDLE& id
+ ) {
+     int retval;
+     PROCESS_INFORMATION process_info;
+@@ -428,7 +430,9 @@
+ }
+ #else
+ int run_program(
+-    const char* dir, const char* file, int , char *const argv[], double nsecs, int& id
++    const char* const dir, const char* const file, const int,
++    /* not const */ char *const argv[],
++    const double nsecs, int& id
+ ) {
+     int retval;
+     int pid = fork();
+@@ -458,7 +462,7 @@
+     TerminateProcess(pid, 0);
+ }
+ #else
+-void kill_program(int pid) {
++void kill_program(const int pid) {
+     kill(pid, SIGKILL);
+ }
+ #endif
+@@ -486,12 +490,12 @@
+ }
+ 
+ #else
+-int get_exit_status(int pid) {
++int get_exit_status(const int pid) {
+     int status;
+     waitpid(pid, &status, 0);
+     return status;
+ }
+-bool process_exists(int pid) {
++bool process_exists(const int pid) {
+     int p = waitpid(pid, 0, WNOHANG);
+     if (p == pid) return false;     // process has exited
+     if (p == -1) return false;      // PID doesn't exist
+@@ -530,7 +534,7 @@
+     return 0;
+ }
+ 
+-int wait_client_mutex(const char* dir, double timeout) {
++int wait_client_mutex(const char* dir, const double timeout) {
+     double start = dtime();
+     int retval = 0;
+     while (1) {
+@@ -542,7 +546,7 @@
+     return retval;
+ }
+ 
+-bool boinc_is_finite(double x) {
++bool boinc_is_finite(const double x) {
+ #if defined (HPUX_SOURCE)
+     return _Isfinite(x);
+     return false;
+Index: boinc/lib/util.h
+===================================================================
+--- boinc.orig/lib/util.h	2012-03-30 23:42:06.944079056 +0200
++++ boinc/lib/util.h	2012-03-30 23:42:09.252047432 +0200
+@@ -83,7 +83,9 @@
+ #ifdef _WIN32
+ 
+ extern int run_program(
+-    const char* dir, const char* file, int argc, char *const argv[], double, HANDLE&
++    const char* const dir, const char* const file, const int argc,
++    /* not const */ char *const argv[],
++    const double, HANDLE&
+ );
+ 
+ extern void kill_program(HANDLE);
+@@ -92,14 +94,16 @@
+ 
+ #else
+ extern int run_program(
+-    const char* dir, const char* file, int argc, char *const argv[], double, int&
++    const char* const dir, const char* const file, const int argc,
++    /* not const */ char *const argv[],
++    const double, int&
+ );
+-extern void kill_program(int);
+-extern int get_exit_status(int);
+-extern bool process_exists(int);
++extern void kill_program(const int);
++extern int get_exit_status(const int);
++extern bool process_exists(const int);
+ #endif
+ 
+-extern int wait_client_mutex(const char* dir, double timeout);
++extern int wait_client_mutex(const char* dir, const double timeout);
+ 
+ #ifdef GCL_SIMULATOR
+ extern double simtime;
