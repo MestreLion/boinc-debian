@@ -1,0 +1,35 @@
+Index: boinc/client/client_state.cpp
+===================================================================
+--- boinc.orig/client/client_state.cpp	2012-03-27 18:56:34.408623477 +0200
++++ boinc/client/client_state.cpp	2012-03-30 18:17:25.397539245 +0200
+@@ -140,10 +140,11 @@
+     launched_by_manager = false;
+     initialized = false;
+     last_wakeup_time = dtime();
++    init();
+ }
+ 
+ void CLIENT_STATE::show_host_info() {
+-    char buf[256], buf2[256];
++    char buf[2048], buf2[2048];
+ 
+     nbytes_to_string(host_info.m_cache, 0, buf, sizeof(buf));
+     msg_printf(NULL, MSG_INFO,
+@@ -291,7 +292,7 @@
+ int CLIENT_STATE::init() {
+     int retval;
+     unsigned int i;
+-    char buf[256];
++    char buf[2048];
+     PROJECT* p;
+ 
+     srand((unsigned int)time(0));
+@@ -1057,7 +1058,7 @@
+         }
+ 
+         if (!strcmp(file_ref.open_name, GRAPHICS_APP_FILENAME)) {
+-            char relpath[512], path[512];
++            char relpath[1024], path[2048];
+             get_pathname(fip, relpath, sizeof(relpath));
+             relative_to_absolute(relpath, path);
+             strlcpy(avp->graphics_exec_path, path, sizeof(avp->graphics_exec_path));
