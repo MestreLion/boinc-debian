@@ -55,3 +55,10 @@ version.log
 svn_version.h
 version.h
 */.*.swp
+apps/1sec
+apps/concat
+apps/upper_case
+client/boinc
+client/boinc_client
+client/boinccmd
+client/switcher
