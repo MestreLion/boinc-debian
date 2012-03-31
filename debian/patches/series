@@ -34,7 +34,7 @@ app_ipc_uninitialised.patch
 client_types_buffer_size.patch
 uninitialised_client_types.patch
 uninitialised_client_states.patch
-MainDocumentWarnings.patch
+#MainDocumentWarnings.patch
 MainDocumentConst.patch
 # --- B 
 add_init_to_client_state_constructor.patch
