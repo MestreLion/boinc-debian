@@ -3,8 +3,8 @@ Description: Addressing Valgrind reporting lacking initialisations of BOINC.
 
 Index: boinc/client/client_types.h
 ===================================================================
---- boinc.orig/client/client_types.h	2012-03-31 02:15:34.846451729 +0200
-+++ boinc/client/client_types.h	2012-03-31 02:15:35.074448621 +0200
+--- boinc.orig/client/client_types.h	2012-03-31 11:03:30.000000000 +0200
++++ boinc/client/client_types.h	2012-03-31 12:29:54.600215604 +0200
 @@ -727,7 +727,17 @@
      WORKUNIT* wup;
      PROJECT* project;

@@ -3,9 +3,9 @@ Description: Increasing buffers for technical descriptions
 
 Index: boinc/client/client_types.h
 ===================================================================
---- boinc.orig/client/client_types.h	2012-03-31 11:29:03.250183433 +0200
-+++ boinc/client/client_types.h	2012-03-31 12:06:52.215123265 +0200
-@@ -823,12 +823,12 @@
+--- boinc.orig/client/client_types.h	2012-03-31 13:10:53.334625581 +0200
++++ boinc/client/client_types.h	2012-03-31 13:11:06.606444194 +0200
+@@ -813,12 +813,12 @@
  
      int coproc_indices[MAX_COPROCS_PER_JOB];
          // keep track of coprocessor reservations
@@ -22,8 +22,8 @@ Index: boinc/client/client_types.h
  // represents an always/auto/never value, possibly temporarily overridden
 Index: boinc/client/client_types.cpp
 ===================================================================
---- boinc.orig/client/client_types.cpp	2012-03-31 02:27:22.000000000 +0200
-+++ boinc/client/client_types.cpp	2012-03-31 12:06:52.219123211 +0200
+--- boinc.orig/client/client_types.cpp	2012-03-31 12:29:54.600215604 +0200
++++ boinc/client/client_types.cpp	2012-03-31 13:11:06.610444139 +0200
 @@ -181,7 +181,7 @@
  // parse project fields from client_state.xml
  //

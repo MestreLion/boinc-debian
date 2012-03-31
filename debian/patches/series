@@ -1,5 +1,7 @@
-add_init_to_client_state_constructor.patch
-client_path_char_array_length.patch
+# patches to get Debian going
+texfont_removal.patch
+libnotify-0.7.patch
+# undisputed patches above
 sched_driver_f_free.patch
 sched_driver_char_buffers.patch
 improve_opendir_warning.patch
@@ -8,14 +10,12 @@ mac_addresses_cores_in_kfreebsd.patch
 stripchart_debian.patch
 upstream_sztaki_configureEval.patch
 generate_less.patch
-texfont_removal.patch
 #Makefile_subdirs.patch
 csh2tcsh.patch
 file_upload_handler_permission.patch
 possible_size_type_error.patch
 upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
 debian_debian_AdjustBoincTopdirPython.patch
-libnotify-0.7.patch
 stripchart_security.patch
 #AddSomeConstToMakeClearMemoryIsNotAllocated.patch
 #AddingMoreConst.patch
@@ -26,15 +26,19 @@ cppcheck_realloc.patch
 cwd_handling.patch
 parse_issues.patch
 client_stream_realloc.patch
+# --- B 
+#B#add_init_to_client_state_constructor.patch
+#B#client_path_char_array_length.patch
+# --- A
 MoreInformativeAppStartFailure.patch
-MainDocumentWarnings.patch
 stream_memory_leak_fix.patch
 nvidia_detect_buffers.patch
 glib_includes_glib.h_only.patch
-#glib_taskbar_warnings.patch
-no_std_string.patch
 app_ipc_uninitialised.patch
-uninitialised_client_types.patch
-uninitialised_client_states.patch
-MainDocumentConst.patch
 client_types_buffer_size.patch
+#A#MainDocumentWarnings.patch
+#glib_taskbar_warnings.patch
+#A#no_std_string.patch
+#A#uninitialised_client_types.patch
+#A#uninitialised_client_states.patch
+#A#MainDocumentConst.patch

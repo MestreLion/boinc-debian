@@ -4,8 +4,8 @@ Disclaimer: For backports, this patch needs to be disabled.
 
 Index: boinc/clientgui/Makefile.am
 ===================================================================
---- boinc.orig/clientgui/Makefile.am	2011-12-02 02:55:57.000000000 +0100
-+++ boinc/clientgui/Makefile.am	2011-12-03 00:16:43.000000000 +0100
+--- boinc.orig/clientgui/Makefile.am	2012-03-31 12:34:56.392088389 +0200
++++ boinc/clientgui/Makefile.am	2012-03-31 12:38:41.129017444 +0200
 @@ -118,9 +118,13 @@
      ../lib/error_numbers.h \
      locale $(mac_headers)
@@ -25,9 +25,9 @@ Index: boinc/clientgui/Makefile.am
  	grep '#define.*BOINC.*VERSION' $^ > $@
 Index: boinc/configure.ac
 ===================================================================
---- boinc.orig/configure.ac	2011-12-03 00:16:37.000000000 +0100
-+++ boinc/configure.ac	2011-12-03 00:16:43.000000000 +0100
-@@ -709,14 +709,12 @@
+--- boinc.orig/configure.ac	2012-03-31 12:34:56.944080840 +0200
++++ boinc/configure.ac	2012-03-31 12:38:41.133017390 +0200
+@@ -695,14 +695,12 @@
  
  dnl ---------- libNotify --------------------------------------------------
  if test "${enable_manager}" = yes ; then
@@ -47,7 +47,7 @@ Index: boinc/configure.ac
  fi
  
  dnl ---------- Sqlite3 ----------------------------------------------------
-@@ -860,7 +858,7 @@
+@@ -846,7 +844,7 @@
     ],
    [enable_wx_debug="no"])
  
