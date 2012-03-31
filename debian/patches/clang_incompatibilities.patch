@@ -1,0 +1,70 @@
+Index: boinc/lib/Makefile.am
+===================================================================
+--- boinc.orig/lib/Makefile.am	2012-03-31 23:50:52.780651101 +0200
++++ boinc/lib/Makefile.am	2012-03-31 23:58:18.698533236 +0200
+@@ -147,13 +147,13 @@
+ libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+ libboinc_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+ libboinc_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -static -version-number $(LIBBOINC_VERSION)
+-libboinc_la_LIBADD =
++libboinc_la_LIBADD = -lm -lstdc++
+ 
+ libboinc_crypt_la_SOURCES = crypt.cpp
+ libboinc_crypt_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+ libboinc_crypt_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+ libboinc_crypt_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -static -version-number $(LIBBOINC_VERSION)
+-libboinc_crypt_la_LIBADD = 
++libboinc_crypt_la_LIBADD =  -lm -lstdc++
+ 
+ 
+ if ENABLE_FCGI
+Index: boinc/lib/util.cpp
+===================================================================
+--- boinc.orig/lib/util.cpp	2012-03-31 23:42:04.779899659 +0200
++++ boinc/lib/util.cpp	2012-03-31 23:46:22.976354118 +0200
+@@ -310,7 +310,7 @@
+ #ifdef _WIN32
+     DebugBreak();
+ #else
+-    *(int*)0 = 0;
++    __builtin_trap();
+ #endif
+ }
+ 
+Index: boinc/sched/make_work.cpp
+===================================================================
+--- boinc.orig/sched/make_work.cpp	2012-03-31 13:44:26.739115369 +0200
++++ boinc/sched/make_work.cpp	2012-04-01 00:57:02.846130700 +0200
+@@ -175,9 +175,6 @@
+     char keypath[256];
+     char buf[BLOB_SIZE];
+     R_RSA_PRIVATE_KEY key;
+-    int nwu_names = wu_names.size();
+-    DB_WORKUNIT wus[nwu_names];
+-    int i;
+     static int index=0;
+ 
+     retval = config.parse_file();
+@@ -192,8 +189,11 @@
+         exit(1);
+     }
+ 
+-    for (i=0; i<nwu_names; i++) {
+-        DB_WORKUNIT& wu = wus[i];
++    const int nwu_names = wu_names.size();
++    DB_WORKUNIT *wus = new DB_WORKUNIT[nwu_names]();
++
++    for (int i=0; i<nwu_names; i++) {
++	DB_WORKUNIT& wu=wus[i];
+         sprintf(buf, "where name='%s'", wu_names[i].c_str());
+         retval = wu.lookup(buf);
+         if (retval) {
+@@ -264,6 +264,8 @@
+ 
+         wait_for_results(new_wu_id);
+     }
++
++    delete [] wus;
+ }
+ 
+ void usage(char *name) {

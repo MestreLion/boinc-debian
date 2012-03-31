@@ -41,3 +41,4 @@ add_init_to_client_state_constructor.patch
 client_path_char_array_length.patch
 # --- Z --- Currently not applicable
 #Z#no_std_string.patch
+clang_incompatibilities.patch

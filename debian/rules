@@ -110,7 +110,7 @@ else
 endif
 
 ifneq (,$(findstring clang,$(DEB_BUILD_OPTIONS)))
-  CXX = clang
+  export CXX=clang
 endif
 
 CFLAGS += $(DEB_OPT_FLAGS)
