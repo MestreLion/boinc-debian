@@ -608,9 +608,6 @@ SCHEDULER_REPLY::SCHEDULER_REPLY() {
     strcpy(email_hash, "");
 }
 
-SCHEDULER_REPLY::~SCHEDULER_REPLY() {
-}
-
 int SCHEDULER_REPLY::write(FILE* fout, SCHEDULER_REQUEST& sreq) {
     unsigned int i;
     char buf[BLOB_SIZE];
@@ -623,7 +620,8 @@ int SCHEDULER_REPLY::write(FILE* fout, SCHEDULER_REQUEST& sreq) {
     fprintf(fout,
         "Content-type: text/xml\n\n"
         "<scheduler_reply>\n"
-        "<scheduler_version>%d</scheduler_version>\n",
+        "<scheduler_version>%d</scheduler_version>\n"
+        "<dont_use_dcf/>\n",
         BOINC_MAJOR_VERSION*100+BOINC_MINOR_VERSION
     );
     if (strlen(config.master_url)) {
@@ -1402,4 +1400,4 @@ double capped_host_fpops() {
     return x;
 }
 
-const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 25354 2012-02-29 01:11:28Z davea $";
+const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 25517 2012-03-30 15:42:18Z romw $";

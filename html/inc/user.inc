@@ -438,6 +438,22 @@ function is_banned_email_addr($email_addr) {
     return false;
 }
 
+function is_valid_user_name($name, &$reason) {
+    if (trim($name) !== $name) {
+        $reason = tra("user name cannot have leading or trailing white space");
+        return false;
+    }
+    if (strlen($name) == 0) {
+        $reason = tra("user name must be nonempty");
+        return false;
+    }
+    if (sanitize_tags($name) !== $name) {
+        $reason = tra("user name may not contain HTML tags");
+        return false;
+    }
+    return true;
+}
+
 // the following DB-escapes its args
 //
 function make_user(
@@ -469,6 +485,6 @@ function make_user(
     }
 }
 
-$cvs_version_tracker[]="\$Id: user.inc 25267 2012-02-15 19:25:41Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id: user.inc 25504 2012-03-28 18:53:30Z romw $";  //Generated automatically - do not edit
 
 ?>
