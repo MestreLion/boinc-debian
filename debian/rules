@@ -109,6 +109,10 @@ else
   DEB_OPT_FLAGS = -O2
 endif
 
+ifneq (,$(findstring clang,$(DEB_BUILD_OPTIONS)))
+  CXX = clang
+endif
+
 CFLAGS += $(DEB_OPT_FLAGS)
 CXXFLAGS += $(DEB_OPT_FLAGS)
 
