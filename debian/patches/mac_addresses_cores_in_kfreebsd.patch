@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Helping verbosity of error messages.
+
 Index: boinc/lib/mac_address.cpp
 ===================================================================
 --- boinc.orig/lib/mac_address.cpp	2012-03-03 01:12:22.000000000 +0100

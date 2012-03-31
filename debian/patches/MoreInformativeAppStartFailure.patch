@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Increased verbosity when the client does not start. Many increased buffers.
+
 Index: boinc/client/app_start.cpp
 ===================================================================
 --- boinc.orig/client/app_start.cpp	2012-03-30 19:47:18.671846060 +0200

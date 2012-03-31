@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Helping verbosity of error messages.
+
 Index: boinc/lib/filesys.cpp
 ===================================================================
 --- boinc.orig/lib/filesys.cpp	2012-02-15 21:13:03.000000000 +0100

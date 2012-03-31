@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Improved handling of realloc errors, which again 
+ can need some help.
 Index: boinc/client/stream.cpp
 ===================================================================
 --- boinc.orig/client/stream.cpp	2012-03-27 18:56:34.504622172 +0200

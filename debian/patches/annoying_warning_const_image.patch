@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Adding now truly missing const flags to icons.
+
 Index: boinc/clientgui/res/linuxicon.xpm
 ===================================================================
 --- boinc.orig/clientgui/res/linuxicon.xpm	2011-07-24 19:39:09.000000000 +0200

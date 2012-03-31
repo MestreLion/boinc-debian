@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Initialisation.
+
 Index: boinc/lib/diagnostics_win.cpp
 ===================================================================
 --- boinc.orig/lib/diagnostics_win.cpp	2012-02-16 01:37:40.000000000 +0100

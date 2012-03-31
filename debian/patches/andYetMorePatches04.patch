@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: More 'const' flags. This patch is not applied.
 Index: boinc/lib/url.cpp
 ===================================================================
 --- boinc.orig/lib/url.cpp	2011-11-26 19:31:03.000000000 +0100

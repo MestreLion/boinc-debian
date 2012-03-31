@@ -1,3 +1,7 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Adjusting paths
+Disclaimer: This is mostly dead code of upstream.
+
 Index: boinc/stripchart/samples/get_load
 ===================================================================
 --- boinc.orig/stripchart/samples/get_load	2012-01-15 01:31:59.000000000 +0100

@@ -1,3 +1,6 @@
+Author: SZTAKI developers
+Description: Just some coding style.
+Disclaimer: Part of some past motivation to bring the SZTAKI and official BOINC trees closer together.
 Index: boinc/api/boinc_api.h
 ===================================================================
 --- boinc.orig/api/boinc_api.h	2011-06-12 21:03:24.000000000 +0200

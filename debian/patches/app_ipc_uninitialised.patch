@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Improving initalisation of app_init_data
+
 Index: boinc/lib/app_ipc.cpp
 ===================================================================
 --- boinc.orig/lib/app_ipc.cpp	2012-03-27 16:54:40.940116654 +0200

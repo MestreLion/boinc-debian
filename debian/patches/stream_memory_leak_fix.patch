@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Freeing memory.
 Index: boinc/client/stream.cpp
 ===================================================================
 --- boinc.orig/client/stream.cpp	2012-03-18 13:57:51.000000000 +0100

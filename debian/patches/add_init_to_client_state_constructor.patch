@@ -1,20 +1,10 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Increase of buffers describing client state.
+
 Index: boinc/client/client_state.cpp
 ===================================================================
 --- boinc.orig/client/client_state.cpp	2012-03-27 18:56:34.408623477 +0200
 +++ boinc/client/client_state.cpp	2012-03-30 18:17:25.397539245 +0200
-@@ -140,10 +140,11 @@
-     launched_by_manager = false;
-     initialized = false;
-     last_wakeup_time = dtime();
-+    init();
- }
- 
- void CLIENT_STATE::show_host_info() {
--    char buf[256], buf2[256];
-+    char buf[2048], buf2[2048];
- 
-     nbytes_to_string(host_info.m_cache, 0, buf, sizeof(buf));
-     msg_printf(NULL, MSG_INFO,
 @@ -291,7 +292,7 @@
  int CLIENT_STATE::init() {
      int retval;

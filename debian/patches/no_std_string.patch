@@ -1,3 +1,7 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Conversion of xml_unescape into class method, no using::std string;
+Disclaimer: This patch should be removed with 7.0.24 when upstream found a working solution for avoiding a valgrind error.
+
 Index: boinc/client/cs_notice.cpp
 ===================================================================
 --- boinc.orig/client/cs_notice.cpp	2012-03-27 16:49:03.152703887 +0200

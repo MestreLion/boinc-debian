@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Adjusting paths.
+Disclaimer: This is mostly dead code in upstream.
 Index: boinc/stripchart/stripchart.cnf
 ===================================================================
 --- boinc.orig/stripchart/stripchart.cnf	2011-07-24 22:21:26.000000000 +0200

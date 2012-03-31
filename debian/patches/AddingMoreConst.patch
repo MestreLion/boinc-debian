@@ -1,3 +1,10 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: The patch adds "const" where values are not
+ supposed to change. Well meant, but not accepted by upstream
+ and should hence not be in. Becaues of issues with inheritance
+ of virtual functions, the introduction of const may be harmful.
+ This patch should not be used. And it is not.
+
 Index: boinc/clientgui/ViewWork.cpp
 ===================================================================
 --- boinc.orig/clientgui/ViewWork.cpp	2011-03-17 18:51:03.000000000 +0100

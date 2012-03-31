@@ -1,15 +1,9 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Helping compilation on freebsd machines.
 Index: boinc/zip/unzip/ttyio.c
 ===================================================================
 --- boinc.orig/zip/unzip/ttyio.c	2012-02-04 18:57:37.000000000 +0100
 +++ boinc/zip/unzip/ttyio.c	2012-02-05 00:17:10.000000000 +0100
-@@ -26,6 +26,7 @@
- 
- #define __TTYIO_C       /* identifies this source module */
- 
-+
- #include "zip.h"
- //#include "crypt.h"
- 
 @@ -54,6 +55,7 @@
  #  define HAVE_TERMIOS_H
  #endif

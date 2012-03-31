@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: About nothing should be world writable.
 Index: boinc/test/test.inc
 ===================================================================
 --- boinc.orig/test/test.inc	2011-06-12 20:42:41.000000000 +0200

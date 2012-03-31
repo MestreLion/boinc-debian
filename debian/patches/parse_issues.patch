@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Improved memory handling.
+
 Index: boinc/lib/parse.cpp
 ===================================================================
 --- boinc.orig/lib/parse.cpp	2012-03-27 16:38:37.000000000 +0200

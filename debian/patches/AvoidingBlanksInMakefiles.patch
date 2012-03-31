@@ -1,3 +1,6 @@
+Author: Unclear
+Description: Just indentiation.
+
 Index: boinc/Makefile.am
 ===================================================================
 --- boinc.orig/Makefile.am	2011-06-10 10:39:29.000000000 +0200

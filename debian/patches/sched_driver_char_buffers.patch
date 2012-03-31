@@ -1,3 +1,5 @@
+Author: Steffen Moeller
+Description: Allowing descriptions of hosts, vendor or model that are larger than a SMS.
 Index: boinc/sched/sched_driver.cpp
 ===================================================================
 --- boinc.orig/sched/sched_driver.cpp	2012-03-30 19:46:56.436149392 +0200

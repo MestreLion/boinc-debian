@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Nothing in this patch should be functionally relevant, only compile time warnings as by the ambiguity of the result parameter are resolved.
 Index: boinc/clientgui/MainDocument.cpp
 ===================================================================
 --- boinc.orig/clientgui/MainDocument.cpp	2012-03-30 23:42:06.944079056 +0200

@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: int may not be enough (theoretically) for large files.
+
 Index: boinc/sched/file_upload_handler.cpp
 ===================================================================
 --- boinc.orig/sched/file_upload_handler.cpp	2011-10-30 00:29:08.000000000 +0200

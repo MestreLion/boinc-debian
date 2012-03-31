@@ -21,7 +21,6 @@ stripchart_security.patch
 #AddingMoreConst.patch
 #evenMoreConst03.patch
 #andYetMorePatches04.patch
-#erase_while_1.patch
 redundant_i.patch
 cppcheck_realloc.patch
 cwd_handling.patch
@@ -32,7 +31,10 @@ MainDocumentWarnings.patch
 stream_memory_leak_fix.patch
 nvidia_detect_buffers.patch
 glib_includes_glib.h_only.patch
+#glib_taskbar_warnings.patch
 no_std_string.patch
 app_ipc_uninitialised.patch
 uninitialised_client_types.patch
+uninitialised_client_states.patch
 MainDocumentConst.patch
+client_types_buffer_size.patch

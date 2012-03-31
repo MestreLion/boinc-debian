@@ -1,3 +1,7 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Later versions of Debian come with libnotify 0.7.
+Disclaimer: For backports, this patch needs to be disabled.
+
 Index: boinc/clientgui/Makefile.am
 ===================================================================
 --- boinc.orig/clientgui/Makefile.am	2011-12-02 02:55:57.000000000 +0100

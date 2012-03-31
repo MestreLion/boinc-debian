@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Increased buffers and eliminated memory sink.
 Index: boinc/sched/sched_driver.cpp
 ===================================================================
 --- boinc.orig/sched/sched_driver.cpp	2012-03-30 18:44:06.691639668 +0200

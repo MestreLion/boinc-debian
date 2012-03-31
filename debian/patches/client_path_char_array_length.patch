@@ -1,3 +1,6 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Extension of path lengths
+
 Index: boinc/client/acct_mgr.h
 ===================================================================
 --- boinc.orig/client/acct_mgr.h	2012-03-27 14:02:21.716769660 +0200

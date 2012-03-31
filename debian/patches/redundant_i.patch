@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Bringing variable declarations to where they are used.
 Index: boinc/clientgui/BOINCListCtrl.cpp
 ===================================================================
 --- boinc.orig/clientgui/BOINCListCtrl.cpp	2011-03-17 18:51:03.000000000 +0100

@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Introduction of "const" flag. This patch is not applied.
 Index: boinc/clientgui/ProjectListCtrl.cpp
 ===================================================================
 --- boinc.orig/clientgui/ProjectListCtrl.cpp	2011-03-17 18:51:03.000000000 +0100
