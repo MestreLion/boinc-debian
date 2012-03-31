@@ -377,7 +377,7 @@ static bool is_project_dir(const char* dir) {
     sprintf(buf, "%s/%s", dir, CONFIG_FILE);
     if (!is_file(buf)) return false;
     sprintf(buf, "%s/cgi-bin", dir);
-    if (!is_dir(buf)) return false;
+    if (!is_dir_follow_symlinks(buf)) return false;
     return true;
 }
 
@@ -418,4 +418,4 @@ const char *SCHED_CONFIG::project_path(const char *fmt, ...) {
     return (const char *)path;
 }
 
-const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 25435 2012-03-16 17:23:55Z romw $";
+const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 25504 2012-03-28 18:53:30Z romw $";
