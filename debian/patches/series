@@ -34,10 +34,10 @@ app_ipc_uninitialised.patch
 client_types_buffer_size.patch
 uninitialised_client_types.patch
 uninitialised_client_states.patch
-#MainDocumentWarnings.patch
 MainDocumentConst.patch
+#MainDocumentWarnings.patch
 # --- B 
 add_init_to_client_state_constructor.patch
-#B#client_path_char_array_length.patch
+client_path_char_array_length.patch
 # --- Z --- Currently not applicable
 #Z#no_std_string.patch

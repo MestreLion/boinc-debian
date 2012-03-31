@@ -2,8 +2,8 @@ Author: Steffen Moeller <moeller@debian.org>
 Description: Adding attribute 'const' to attributes of MainDocument
 Index: boinc/clientgui/MainDocument.h
 ===================================================================
---- boinc.orig/clientgui/MainDocument.h	2012-03-30 23:24:22.722662278 +0200
-+++ boinc/clientgui/MainDocument.h	2012-03-30 23:25:30.993729219 +0200
+--- boinc.orig/clientgui/MainDocument.h	2012-03-31 20:04:32.000000000 +0200
++++ boinc/clientgui/MainDocument.h	2012-03-31 20:06:55.229342879 +0200
 @@ -247,13 +247,13 @@
      double                      m_fResultsRPCExecutionTime;
      wxDateTime                  m_dtKillInactiveGfxTimestamp;
@@ -20,21 +20,10 @@ Index: boinc/clientgui/MainDocument.h
  #endif
  
  public:
-Index: boinc/clientgui/MainDocument.cpp
+Index: boinc/lib/util.cpp
 ===================================================================
---- boinc.orig/clientgui/MainDocument.cpp	2012-03-30 23:25:30.837731351 +0200
-+++ boinc/clientgui/MainDocument.cpp	2012-03-30 23:25:30.997729165 +0200
-@@ -1630,7 +1630,7 @@
-     kill_program(pid);
- }
- #else
--void CMainDocument::KillGraphicsApp(int pid) {
-+void CMainDocument::KillGraphicsApp(const int pid) {
-     char currentDir[1024];
-     char thePIDbuf[20];
-     int id, iRetVal;
---- boinc.orig/lib/util.cpp	2012-03-30 23:42:06.944079056 +0200
-+++ boinc/lib/util.cpp	2012-03-30 23:42:09.248047487 +0200
+--- boinc.orig/lib/util.cpp	2012-03-31 20:03:41.000000000 +0200
++++ boinc/lib/util.cpp	2012-03-31 20:06:55.245342660 +0200
 @@ -376,7 +376,9 @@
  
  #ifdef _WIN32
@@ -101,8 +90,8 @@ Index: boinc/clientgui/MainDocument.cpp
      return false;
 Index: boinc/lib/util.h
 ===================================================================
---- boinc.orig/lib/util.h	2012-03-30 23:42:06.944079056 +0200
-+++ boinc/lib/util.h	2012-03-30 23:42:09.252047432 +0200
+--- boinc.orig/lib/util.h	2012-03-31 20:03:41.000000000 +0200
++++ boinc/lib/util.h	2012-03-31 20:06:55.249342605 +0200
 @@ -83,7 +83,9 @@
  #ifdef _WIN32
  
@@ -136,3 +125,16 @@ Index: boinc/lib/util.h
  
  #ifdef GCL_SIMULATOR
  extern double simtime;
+Index: boinc/clientgui/MainDocument.cpp
+===================================================================
+--- boinc.orig/clientgui/MainDocument.cpp	2012-03-31 19:54:26.000000000 +0200
++++ boinc/clientgui/MainDocument.cpp	2012-03-31 20:07:20.141001126 +0200
+@@ -1630,7 +1630,7 @@
+     kill_program(pid);
+ }
+ #else
+-void CMainDocument::KillGraphicsApp(int pid) {
++void CMainDocument::KillGraphicsApp(const int pid) {
+     char* argv[6];
+     char currentDir[1024];
+     char thePIDbuf[10];
