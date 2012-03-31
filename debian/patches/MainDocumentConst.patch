@@ -1,3 +1,5 @@
+Author: Steffen Moeller <moeller@debian.org>
+Description: Adding attribute 'const' to attributes of MainDocument
 Index: boinc/clientgui/MainDocument.h
 ===================================================================
 --- boinc.orig/clientgui/MainDocument.h	2012-03-30 23:24:22.722662278 +0200
@@ -31,3 +33,106 @@ Index: boinc/clientgui/MainDocument.cpp
      char currentDir[1024];
      char thePIDbuf[20];
      int id, iRetVal;
+--- boinc.orig/lib/util.cpp	2012-03-30 23:42:06.944079056 +0200
++++ boinc/lib/util.cpp	2012-03-30 23:42:09.248047487 +0200
+@@ -376,7 +376,9 @@
+ 
+ #ifdef _WIN32
+ int run_program(
+-    const char* dir, const char* file, int argc, char *const argv[], double nsecs, HANDLE& id
++    const char* const dir, const char* const file, const int argc,
++    /* not const */ char *const argv[],
++    const double nsecs, HANDLE& id
+ ) {
+     int retval;
+     PROCESS_INFORMATION process_info;
+@@ -428,7 +430,9 @@
+ }
+ #else
+ int run_program(
+-    const char* dir, const char* file, int , char *const argv[], double nsecs, int& id
++    const char* const dir, const char* const file, const int,
++    /* not const */ char *const argv[],
++    const double nsecs, int& id
+ ) {
+     int retval;
+     int pid = fork();
+@@ -458,7 +462,7 @@
+     TerminateProcess(pid, 0);
+ }
+ #else
+-void kill_program(int pid) {
++void kill_program(const int pid) {
+     kill(pid, SIGKILL);
+ }
+ #endif
+@@ -486,12 +490,12 @@
+ }
+ 
+ #else
+-int get_exit_status(int pid) {
++int get_exit_status(const int pid) {
+     int status;
+     waitpid(pid, &status, 0);
+     return status;
+ }
+-bool process_exists(int pid) {
++bool process_exists(const int pid) {
+     int p = waitpid(pid, 0, WNOHANG);
+     if (p == pid) return false;     // process has exited
+     if (p == -1) return false;      // PID doesn't exist
+@@ -530,7 +534,7 @@
+     return 0;
+ }
+ 
+-int wait_client_mutex(const char* dir, double timeout) {
++int wait_client_mutex(const char* dir, const double timeout) {
+     double start = dtime();
+     int retval = 0;
+     while (1) {
+@@ -542,7 +546,7 @@
+     return retval;
+ }
+ 
+-bool boinc_is_finite(double x) {
++bool boinc_is_finite(const double x) {
+ #if defined (HPUX_SOURCE)
+     return _Isfinite(x);
+     return false;
+Index: boinc/lib/util.h
+===================================================================
+--- boinc.orig/lib/util.h	2012-03-30 23:42:06.944079056 +0200
++++ boinc/lib/util.h	2012-03-30 23:42:09.252047432 +0200
+@@ -83,7 +83,9 @@
+ #ifdef _WIN32
+ 
+ extern int run_program(
+-    const char* dir, const char* file, int argc, char *const argv[], double, HANDLE&
++    const char* const dir, const char* const file, const int argc,
++    /* not const */ char *const argv[],
++    const double, HANDLE&
+ );
+ 
+ extern void kill_program(HANDLE);
+@@ -92,14 +94,16 @@
+ 
+ #else
+ extern int run_program(
+-    const char* dir, const char* file, int argc, char *const argv[], double, int&
++    const char* const dir, const char* const file, const int argc,
++    /* not const */ char *const argv[],
++    const double, int&
+ );
+-extern void kill_program(int);
+-extern int get_exit_status(int);
+-extern bool process_exists(int);
++extern void kill_program(const int);
++extern int get_exit_status(const int);
++extern bool process_exists(const int);
+ #endif
+ 
+-extern int wait_client_mutex(const char* dir, double timeout);
++extern int wait_client_mutex(const char* dir, const double timeout);
+ 
+ #ifdef GCL_SIMULATOR
+ extern double simtime;

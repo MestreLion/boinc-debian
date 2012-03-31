@@ -32,12 +32,12 @@ stream_memory_leak_fix.patch
 nvidia_detect_buffers.patch
 app_ipc_uninitialised.patch
 client_types_buffer_size.patch
-#A#MainDocumentWarnings.patch
 uninitialised_client_types.patch
 uninitialised_client_states.patch
-#A#MainDocumentConst.patch
+MainDocumentWarnings.patch
+MainDocumentConst.patch
 # --- B 
-#B#add_init_to_client_state_constructor.patch
+add_init_to_client_state_constructor.patch
 #B#client_path_char_array_length.patch
 # --- Z --- Currently not applicable
 #Z#no_std_string.patch
