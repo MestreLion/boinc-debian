@@ -26,19 +26,18 @@ cppcheck_realloc.patch
 cwd_handling.patch
 parse_issues.patch
 client_stream_realloc.patch
-# --- B 
-#B#add_init_to_client_state_constructor.patch
-#B#client_path_char_array_length.patch
 # --- A
 MoreInformativeAppStartFailure.patch
 stream_memory_leak_fix.patch
 nvidia_detect_buffers.patch
-glib_includes_glib.h_only.patch
 app_ipc_uninitialised.patch
 client_types_buffer_size.patch
 #A#MainDocumentWarnings.patch
-#glib_taskbar_warnings.patch
-#A#no_std_string.patch
-#A#uninitialised_client_types.patch
-#A#uninitialised_client_states.patch
+uninitialised_client_types.patch
+uninitialised_client_states.patch
 #A#MainDocumentConst.patch
+# --- B 
+#B#add_init_to_client_state_constructor.patch
+#B#client_path_char_array_length.patch
+# --- Z --- Currently not applicable
+#Z#no_std_string.patch

@@ -3,7 +3,8 @@ boinc (7.0.24+dfsg-1) unstable; urgency=low
   * New upstream version.
   * Built without optimisation on amd64 for better debug information to help
     investigation of apparent incompatibility with NVidia 295.33 modules.
-  * First sponsoring upload by Thorsten - many thanks!!
+  * <glib.h> patch accepted by upstream (Closes: #665512).
+  * First sponsoring upload by Thorsten - many thanks!
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 31 Mar 2012 13:41:50 +0200
 
@@ -20,8 +21,7 @@ boinc (7.0.23+dfsg-2) UNRELEASED; urgency=low
 boinc (7.0.23+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream version.
-  * Moving towards inclusion of glib.h instead of glib/*.h
-    (Closes: #665512).
+  * Moving towards inclusion of glib.h instead of glib/*.h.
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 24 Mar 2012 16:05:42 +0100
 

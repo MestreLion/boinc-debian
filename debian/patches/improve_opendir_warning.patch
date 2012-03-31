@@ -3,9 +3,9 @@ Description: Helping verbosity of error messages.
 
 Index: boinc/lib/filesys.cpp
 ===================================================================
---- boinc.orig/lib/filesys.cpp	2012-02-15 21:13:03.000000000 +0100
-+++ boinc/lib/filesys.cpp	2012-02-17 11:41:14.000000000 +0100
-@@ -130,7 +130,10 @@
+--- boinc.orig/lib/filesys.cpp	2012-03-31 13:47:20.020748355 +0200
++++ boinc/lib/filesys.cpp	2012-03-31 13:47:27.320648639 +0200
+@@ -136,7 +136,10 @@
      dirp->handle = INVALID_HANDLE_VALUE;
  #else
      dirp = opendir(p);
