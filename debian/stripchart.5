@@ -29,10 +29,10 @@ stripchart with data starting at TIME (default: 24 hours ago)
 stripchart with data ending at TIME (default: now)
 .TP 
 \*(T<\fB\-r\fR\*(T> range RANGE
-stripchart data centered around "from" time the size of RANGE (overrides -t)
+stripchart data centered around "from" time the size of RANGE (overrides \-t)
 .TP 
 \*(T<\fB\-l\fR\*(T> last LINES
-stripchart last number of LINES in data file (overrides -f and -t and -r)
+stripchart last number of LINES in data file (overrides \-f and \-t and \-r)
 .TP 
 \*(T<\fB\-T\fR\*(T> title TITLE
 title to put on graphic (default: FILE RANGE)
@@ -50,7 +50,7 @@ overplot second "y" column (default: none)
 overplot baseline of arbitrary value VALUE
 .TP 
 \*(T<\fB\-B\fR\*(T> baseline-avg
-overrides -b, it plots baseline of computed average
+overrides \-b, it plots baseline of computed average
 .TP 
 \*(T<\fB\-d\fR\*(T> dump low VALUE
 ignore data less than VALUE
@@ -89,13 +89,13 @@ display this help
     If you have a decimal point, it assumes it is julian date
     If it is an integer, it assumes it is unix date (epoch seconds)
     If it is a negative number, it is in decimal days from current time
-      (i.e. -2.5 = two and a half days ago)
+      (i.e. \-2.5 = two and a half days ago)
     * All times on command line are assumed to be "local" times
     * All times in the data file must be in unix date (epoch seconds)
   * RANGE is given in decimal days (i.e. 1.25 = 1 day, 6 hours)
-  * if LINES == 0, (i.e. -l 0) then the whole data file is read in
-  * columns (given with -x, -y, -Y flags) start at 1
-  * titles given with -T can contain the following key words which will
+  * if LINES == 0, (i.e. \-l 0) then the whole data file is read in
+  * columns (given with \-x, \-y, \-Y flags) start at 1
+  * titles given with \-T can contain the following key words which will
     be converted:
       FILE - basename of input file
       RANGE - pretty civil date range (in local time zone)
