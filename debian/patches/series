@@ -29,7 +29,6 @@ client_stream_realloc.patch
 # --- A
 MoreInformativeAppStartFailure.patch
 stream_memory_leak_fix.patch
-nvidia_detect_buffers.patch
 app_ipc_uninitialised.patch
 client_types_buffer_size.patch
 uninitialised_client_types.patch
@@ -42,3 +41,9 @@ client_path_char_array_length.patch
 # --- Z --- Currently not applicable
 #Z#no_std_string.patch
 clang_incompatibilities.patch
+#either these 3
+nvidia_detect_buffers.patch
+nvidia_detect_bugs.patch
+nvidia_detect_optinal.patch
+#or this one
+#debian/patches/nvidia_detect_experiments.patch

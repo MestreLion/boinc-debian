@@ -1,0 +1,337 @@
+Index: boinc/client/coproc_detect.cpp
+===================================================================
+--- boinc.orig/client/coproc_detect.cpp	2012-04-03 20:56:25.381346207 +0200
++++ boinc/client/coproc_detect.cpp	2012-04-04 01:31:29.482497496 +0200
+@@ -786,6 +786,15 @@
+     return 0;
+ }
+ 
++#if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64)
++typedef unsigned long long CUdeviceptr;
++#else
++typedef unsigned int CUdeviceptr;
++#endif
++
++typedef int CUdevice;
++typedef void* CUcontext;
++
+ enum CUdevice_attribute_enum {
+   CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1,
+   CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X = 2,
+@@ -813,16 +822,16 @@
+ typedef int (__stdcall *CUDA_GDC)(int *count);
+ typedef int (__stdcall *CUDA_GDV)(int* version);
+ typedef int (__stdcall *CUDA_GDI)(int);
+-typedef int (__stdcall *CUDA_GDG)(int*, int);
++typedef int (__stdcall *CUDA_GDG)(CUdevice*, int);
+ typedef int (__stdcall *CUDA_GDA)(int*, int, int);
+-typedef int (__stdcall *CUDA_GDN)(char*, int, int);
+-typedef int (__stdcall *CUDA_GDM)(unsigned int*, int);
++typedef int (__stdcall *CUDA_GDN)(char*, int, CUdevice);
++typedef int (__stdcall *CUDA_GDM)(sizt_t*, int);
+ typedef int (__stdcall *CUDA_GDCC)(int*, int*, int);
+-typedef int (__stdcall *CUDA_CC)(void**, unsigned int, unsigned int);
+-typedef int (__stdcall *CUDA_CD)(void*);
+-typedef int (__stdcall *CUDA_MA)(unsigned int*, unsigned int);
+-typedef int (__stdcall *CUDA_MF)(unsigned int);
+-typedef int (__stdcall *CUDA_MGI)(unsigned int*, unsigned int*);
++typedef int (__stdcall *CUDA_CC)(CUcontext*, unsigned int, unsigned int);
++typedef int (__stdcall *CUDA_CD)(CUcontext);
++typedef int (__stdcall *CUDA_MA)(CUdeviceptr*, size_t);
++typedef int (__stdcall *CUDA_MF)(CUdeviceptr);
++typedef int (__stdcall *CUDA_MGI)(size_t*, size_t*);
+ 
+ CUDA_GDC __cuDeviceGetCount = NULL;
+ CUDA_GDV __cuDriverGetVersion = NULL;
+@@ -842,16 +851,16 @@
+ int (*__cuInit)(int);
+ int (*__cuDeviceGetCount)(int*);
+ int (*__cuDriverGetVersion)(int*);
+-int (*__cuDeviceGet)(int*, int);
+-int (*__cuDeviceGetAttribute)(int*, int, int);
+-int (*__cuDeviceGetName)(char*, int, int);
+-int (*__cuDeviceTotalMem)(unsigned int*, int);
++int (*__cuDeviceGet)(CUdevice*, int);
++int (*__cuDeviceGetAttribute)(int*, int, CUdevice);
++int (*__cuDeviceGetName)(char*, int, CUdevice);
++int (*__cuDeviceTotalMem)(size_t*, CUdevice);
+ int (*__cuDeviceComputeCapability)(int*, int*, int);
+-int (*__cuCtxCreate)(void**, unsigned int, unsigned int);
+-int (*__cuCtxDestroy)(void*);
+-int (*__cuMemAlloc)(unsigned int*, unsigned int);
+-int (*__cuMemFree)(unsigned int);
+-int (*__cuMemGetInfo)(unsigned int*, unsigned int*);
++int (*__cuCtxCreate)(CUcontext*, unsigned int, CUdevice);
++int (*__cuCtxDestroy)(CUcontext);
++int (*__cuMemAlloc)(CUdeviceptr *, unsigned int);
++int (*__cuMemFree)(CUdeviceptr);
++int (*__cuMemGetInfo)(size_t*, size_t*);
+ #endif
+ 
+ // NVIDIA interfaces are documented here:
+@@ -908,16 +917,16 @@
+     __cuDeviceGetCount = (int(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
+     __cuDriverGetVersion = (int(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
+     __cuInit = (int(*)(int)) dlsym( cudalib, "cuInit" );
+-    __cuDeviceGet = (int(*)(int*, int)) dlsym( cudalib, "cuDeviceGet" );
+-    __cuDeviceGetAttribute = (int(*)(int*, int, int)) dlsym( cudalib, "cuDeviceGetAttribute" );
+-    __cuDeviceGetName = (int(*)(char*, int, int)) dlsym( cudalib, "cuDeviceGetName" );
+-    __cuDeviceTotalMem = (int(*)(unsigned int*, int)) dlsym( cudalib, "cuDeviceTotalMem" );
+-    __cuDeviceComputeCapability = (int(*)(int*, int*, int)) dlsym( cudalib, "cuDeviceComputeCapability" );
+-    __cuCtxCreate = (int(*)(void**, unsigned int, unsigned int)) dlsym( cudalib, "cuCtxCreate" );
+-    __cuCtxDestroy = (int(*)(void*)) dlsym( cudalib, "cuCtxDestroy" );
+-    __cuMemAlloc = (int(*)(unsigned int*, unsigned int)) dlsym( cudalib, "cuMemAlloc" );
+-    __cuMemFree = (int(*)(unsigned int)) dlsym( cudalib, "cuMemFree" );
+-    __cuMemGetInfo = (int(*)(unsigned int*, unsigned int*)) dlsym( cudalib, "cuMemGetInfo" );
++    __cuDeviceGet = (int(*)(CUdevice*, int)) dlsym( cudalib, "cuDeviceGet" );
++    __cuDeviceGetAttribute = (int(*)(int*, int, CUdevice)) dlsym( cudalib, "cuDeviceGetAttribute" );
++    __cuDeviceGetName = (int(*)(char*, int, CUdevice)) dlsym( cudalib, "cuDeviceGetName" );
++    __cuDeviceTotalMem = (int(*)(size_t*, CUdevice)) dlsym( cudalib, "cuDeviceTotalMem" );
++    __cuDeviceComputeCapability = (int(*)(int*, int*, CUdevice)) dlsym( cudalib, "cuDeviceComputeCapability" );
++    __cuCtxCreate = (int(*)(CUcontext*, unsigned int, CUdevice)) dlsym( cudalib, "cuCtxCreate" );
++    __cuCtxDestroy = (int(*)(CUcontext)) dlsym( cudalib, "cuCtxDestroy" );
++    __cuMemAlloc = (int(*)(CUdeviceptr*, unsigned int)) dlsym( cudalib, "cuMemAlloc" );
++    __cuMemFree = (int(*)(CUdeviceptr)) dlsym( cudalib, "cuMemFree" );
++    __cuMemGetInfo = (int(*)(size_t*, size_t*)) dlsym( cudalib, "cuMemGetInfo" );
+ #endif
+ 
+     if (!__cuDriverGetVersion) {
+@@ -1134,11 +1143,10 @@
+ //
+ void COPROC_NVIDIA::get_available_ram() {
+     int retval;
+-    unsigned int memfree, memtotal;
+-	int device;
+-    void* ctx;
+     
+     available_ram = prop.dtotalGlobalMem;
++
++    int device;
+     retval = (*__cuDeviceGet)(&device, device_num);
+     if (retval) {
+         if (log_flags.coproc_debug) {
+@@ -1148,6 +1156,8 @@
+         }
+         return;
+     }
++
++    CUcontext ctx; // no immediate better idea
+     retval = (*__cuCtxCreate)(&ctx, 0, device);
+     if (retval) {
+         if (log_flags.coproc_debug) {
+@@ -1157,6 +1167,8 @@
+         }
+         return;
+     }
++
++    size_t memfree, memtotal;
+     retval = (*__cuMemGetInfo)(&memfree, &memtotal);
+     if (retval) {
+         if (log_flags.coproc_debug) {
+Index: boinc/lib/coproc.h
+===================================================================
+--- boinc.orig/lib/coproc.h	2012-04-03 20:56:25.381346207 +0200
++++ boinc/lib/coproc.h	2012-04-04 01:31:58.746095526 +0200
+@@ -263,22 +263,22 @@
+ struct CUDA_DEVICE_PROP {
+   char  name[256];
+   int   deviceHandle;
+-  unsigned int totalGlobalMem;
++  size_t totalGlobalMem;
+     // not used on the server; dtotalGlobalMem is used instead
+     // (since some boards have >= 4GB)
+-  int   sharedMemPerBlock;
+-  int   regsPerBlock;
+-  int   warpSize;
+-  int   memPitch;
+-  int   maxThreadsPerBlock;
+-  int   maxThreadsDim[3];
+-  int   maxGridSize[3]; 
+-  int   clockRate;
+-  int   totalConstMem; 
++  int   sharedMemPerBlock;     // All returned by int* from NVidia API
++  int   regsPerBlock;          //
++  int   warpSize;              //
++  int   memPitch;              //
++  int   maxThreadsPerBlock;    //
++  int   maxThreadsDim[3];      //
++  int   maxGridSize[3];        //
++  int   clockRate;             //
++  int   totalConstMem;         //
+   int   major;     // compute capability
+   int   minor;
+-  int   textureAlignment;
+-  int   deviceOverlap;
++  int   textureAlignment;      //
++  int   deviceOverlap;         //
+   int   multiProcessorCount;
+   double dtotalGlobalMem;   // not defined in client
+ };
+Index: boinc/client/main.cpp
+===================================================================
+--- boinc.orig/client/main.cpp	2012-04-03 20:56:25.381346207 +0200
++++ boinc/client/main.cpp	2012-04-03 20:57:31.152442932 +0200
+@@ -76,14 +76,14 @@
+         msg
+     );
+     if (!gstate.executing_as_daemon) {
+-        fprintf(stdout, evt_msg);
++        fprintf(stdout, "%s", evt_msg);
+     } else {
+ #ifdef _WIN32
+         LogEventInfoMessage(evt_msg);
+ #elif defined(__EMX__)
+ #elif defined (__APPLE__)
+ #else
+-        syslog(LOG_DAEMON|LOG_INFO, evt_msg);
++        syslog(LOG_DAEMON|LOG_INFO, "%s", evt_msg);
+ #endif
+     }
+ }
+@@ -105,14 +105,14 @@
+     );
+ #endif
+     if (!gstate.executing_as_daemon) {
+-        fprintf(stderr, evt_msg);
++        fprintf(stderr, "%s", evt_msg);
+     } else {
+ #ifdef _WIN32
+         LogEventErrorMessage(evt_msg);
+ #elif defined(__EMX__)
+ #elif defined (__APPLE__)
+ #else
+-        syslog(LOG_DAEMON|LOG_ERR, evt_msg);
++        syslog(LOG_DAEMON|LOG_ERR, "%s", evt_msg);
+ #endif
+     }
+ }
+@@ -125,14 +125,14 @@
+         msg, error_code
+     );
+     if (!gstate.executing_as_daemon) {
+-        fprintf(stderr, evt_msg);
++        fprintf(stderr, "%s", evt_msg);
+     } else {
+ #ifdef _WIN32
+         LogEventErrorMessage(evt_msg);
+ #elif defined(__EMX__)
+ #elif defined (__APPLE__)
+ #else
+-        syslog(LOG_DAEMON|LOG_ERR, evt_msg);
++        syslog(LOG_DAEMON|LOG_ERR, "%s", evt_msg);
+ #endif
+     }
+ }
+Index: boinc/client/cs_account.cpp
+===================================================================
+--- boinc.orig/client/cs_account.cpp	2012-04-03 20:56:25.381346207 +0200
++++ boinc/client/cs_account.cpp	2012-04-04 01:31:29.486497442 +0200
+@@ -77,7 +77,7 @@
+     fprintf(f, "<project_preferences>\n%s</project_preferences>\n",
+         project_prefs.c_str()
+     );
+-    fprintf(f, gui_urls.c_str());
++    fprintf(f, "%s", gui_urls.c_str());
+     fprintf(f, "</account>\n");
+     fclose(f);
+     retval = boinc_rename(TEMP_ACCT_FILE_NAME, path);
+Index: boinc/client/cs_benchmark.cpp
+===================================================================
+--- boinc.orig/client/cs_benchmark.cpp	2012-04-03 20:56:25.381346207 +0200
++++ boinc/client/cs_benchmark.cpp	2012-04-03 20:57:31.160442822 +0200
+@@ -463,7 +463,7 @@
+             }
+             ndone++;
+             if (benchmark_descs[i].error) {
+-                msg_printf(0, MSG_INFO, benchmark_descs[i].error_str);
++                msg_printf(0, MSG_INFO, "%s", benchmark_descs[i].error_str);
+                 had_error = true;
+             }
+         }
+Index: boinc/client/work_fetch.cpp
+===================================================================
+--- boinc.orig/client/work_fetch.cpp	2012-04-03 20:56:25.381346207 +0200
++++ boinc/client/work_fetch.cpp	2012-04-04 01:31:29.486497442 +0200
+@@ -781,7 +781,7 @@
+     if (log_flags.work_fetch_debug) {
+         char buf[256];
+         request_string(buf);
+-        msg_printf(p, MSG_INFO, buf);
++        msg_printf(p, MSG_INFO, "%s", buf);
+     }
+ }
+ 
+Index: boinc/lib/coproc.cpp
+===================================================================
+--- boinc.orig/lib/coproc.cpp	2012-04-03 20:56:25.381346207 +0200
++++ boinc/lib/coproc.cpp	2012-04-04 01:31:46.014270413 +0200
+@@ -398,7 +398,7 @@
+         "   <cudaVersion>%d</cudaVersion>\n"
+         "   <drvVersion>%d</drvVersion>\n"
+         "   <deviceHandle>%p</deviceHandle>\n"
+-        "   <totalGlobalMem>%u</totalGlobalMem>\n"
++        "   <totalGlobalMem>%lu</totalGlobalMem>\n"
+         "   <sharedMemPerBlock>%u</sharedMemPerBlock>\n"
+         "   <regsPerBlock>%d</regsPerBlock>\n"
+         "   <warpSize>%d</warpSize>\n"
+@@ -417,16 +417,16 @@
+         cuda_version,
+         display_driver_version,
+         prop.deviceHandle,
+-        (unsigned int)prop.totalGlobalMem,
+-        (unsigned int)prop.sharedMemPerBlock,
++        prop.totalGlobalMem,
++        prop.sharedMemPerBlock,
+         prop.regsPerBlock,
+         prop.warpSize,
+-        (unsigned int)prop.memPitch,
++        prop.memPitch,
+         prop.maxThreadsPerBlock,
+         prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2],
+         prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2],
+         prop.clockRate,
+-        (unsigned int)prop.totalConstMem,
++        prop.totalConstMem,
+         prop.major,
+         prop.minor,
+         (unsigned int)prop.textureAlignment,
+@@ -450,11 +450,11 @@
+     display_driver_version = 0;
+     strcpy(prop.name, "");
+     prop.deviceHandle = 0;
+-    prop.totalGlobalMem = 0;
++    prop.totalGlobalMem = 0L;
+     prop.sharedMemPerBlock = 0;
+     prop.regsPerBlock = 0;
+     prop.warpSize = 0;
+-    prop.memPitch = 0;
++    prop.memPitch = 0L;
+     prop.maxThreadsPerBlock = 0;
+     prop.maxThreadsDim[0] = 0;
+     prop.maxThreadsDim[1] = 0;
+@@ -499,13 +499,13 @@
+         if (xp.parse_str("name", prop.name, sizeof(prop.name))) continue;
+         if (xp.parse_int("deviceHandle", prop.deviceHandle)) continue;
+         if (xp.parse_double("totalGlobalMem", prop.dtotalGlobalMem)) {
+-            prop.totalGlobalMem = (int)prop.dtotalGlobalMem;
++            prop.totalGlobalMem = (size_t)prop.dtotalGlobalMem;
+             continue;
+         }
+-        if (xp.parse_int("sharedMemPerBlock", (int&)prop.sharedMemPerBlock)) continue;
++        if (xp.parse_int("sharedMemPerBlock", prop.sharedMemPerBlock)) continue;
+         if (xp.parse_int("regsPerBlock", prop.regsPerBlock)) continue;
+         if (xp.parse_int("warpSize", prop.warpSize)) continue;
+-        if (xp.parse_int("memPitch", (int&)prop.memPitch)) continue;
++        if (xp.parse_int("memPitch", prop.memPitch)) continue;
+         if (xp.parse_int("maxThreadsPerBlock", prop.maxThreadsPerBlock)) continue;
+         if (xp.parse_str("maxThreadsDim", buf2, sizeof(buf2))) {
+             // can't use sscanf here (FCGI)
+@@ -538,7 +538,7 @@
+             continue;
+         }
+         if (xp.parse_int("clockRate", prop.clockRate)) continue;
+-        if (xp.parse_int("totalConstMem", (int&)prop.totalConstMem)) continue;
++        if (xp.parse_int("totalConstMem", prop.totalConstMem)) continue;
+         if (xp.parse_int("major", prop.major)) continue;
+         if (xp.parse_int("minor", prop.minor)) continue;
+         if (xp.parse_int("textureAlignment", (int&)prop.textureAlignment)) continue;
