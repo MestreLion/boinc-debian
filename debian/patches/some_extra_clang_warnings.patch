@@ -1,0 +1,112 @@
+Index: boinc/tools/dir_hier_path.cpp
+===================================================================
+--- boinc.orig/tools/dir_hier_path.cpp	2012-03-31 13:44:27.123110124 +0200
++++ boinc/tools/dir_hier_path.cpp	2012-04-06 14:10:50.474361974 +0200
+@@ -41,8 +41,8 @@
+     int retval;
+ 
+     if ( (argc == 1) ||  !strcmp(argv[1], "-h")  || !strcmp(argv[1],"--help") || (argc != 2) ) {
+-      printf (usage);
+-      exit(1);
++        fprintf(stderr,"%s",usage);
++        exit(1);
+     }
+ 
+     retval = config.parse_file();
+Index: boinc/tools/dir_hier_move.cpp
+===================================================================
+--- boinc.orig/tools/dir_hier_move.cpp	2012-03-31 13:44:27.119110179 +0200
++++ boinc/tools/dir_hier_move.cpp	2012-04-06 14:13:44.847960852 +0200
+@@ -42,15 +42,15 @@
+     int retval;
+     
+     if ( (argc == 1) || !strcmp(argv[1], "-h")  || !strcmp(argv[1],"--help") || (argc != 4) ) {
+-      printf (usage);
+-      exit(1);
++        fprintf(stderr,"%s",usage);
++        exit(1);
+     }
+     src_dir = argv[1];
+     dst_dir = argv[2];
+     fanout = atoi(argv[3]);
+     if (!fanout) {
+-      printf ( usage );
+-      exit(1);
++        fprintf(stderr,"%s",usage);
++        exit(1);
+     }
+ 
+     DirScanner scanner(src_dir);
+Index: boinc/clientgui/sg_ProjectPanel.cpp
+===================================================================
+--- boinc.orig/clientgui/sg_ProjectPanel.cpp	2012-03-31 13:44:22.407174543 +0200
++++ boinc/clientgui/sg_ProjectPanel.cpp	2012-04-06 14:24:40.982925943 +0200
+@@ -387,22 +387,22 @@
+ 
+ 
+ void CSimpleProjectPanel::UpdateProjectList() {
+-	CMainDocument* pDoc = wxGetApp().GetDocument();
++    CMainDocument* pDoc = wxGetApp().GetDocument();
+     ProjectSelectionData* selData;
+     PROJECT* project;
+-    char* ctrl_url;
+-    int i, j, oldProjectSelection, newProjectSelection;
++    int oldProjectSelection, newProjectSelection;
+ 
+-	if ( pDoc->IsConnected() ) {
+-		int projCnt = pDoc->GetSimpleProjectCount();
++    if ( pDoc->IsConnected() ) {
++    	int projCnt = pDoc->GetSimpleProjectCount();
+         int ctrlCount = m_ProjectSelectionCtrl->GetCount();
+         oldProjectSelection = m_ProjectSelectionCtrl->GetSelection();
+         
+ 		// If a new project has been added, figure out which one
+-        for(i=0; i<projCnt; i++) {
++        for(int i=0; i<projCnt; i++) {
++            char* ctrl_url;
+             project = pDoc->state.projects[i];
+             bool found = false;
+-            for(j=0; j<ctrlCount; j++) {
++            for(int j=0; j<ctrlCount; j++) {
+                 ctrl_url = ((ProjectSelectionData*)m_ProjectSelectionCtrl->GetClientData(j))->project_url;
+                 if (!strcmp(project->master_url, ctrl_url)) {
+                     found = true;
+@@ -414,7 +414,7 @@
+             if ( !found ) {
+                 wxString projname(project->project_name.c_str(), wxConvUTF8);
+ #if SORTPROJECTLIST
+-                int alphaOrder;
++                int alphaOrder,j;
+                 for(j = 0; j < ctrlCount; ++j) {
+                     alphaOrder = (m_ProjectSelectionCtrl->GetString(j)).CmpNoCase(projname);
+                     if (alphaOrder > 0) {
+@@ -446,7 +446,7 @@
+         if ( projCnt < ctrlCount ) {
+ 			project = NULL;
+             // Check items in descending order so deletion won't change indexes of items yet to be checked
+-            for(j=ctrlCount-1; j>=0; --j) {
++            for(int j=ctrlCount-1; j>=0; --j) {
+                 char* ctrl_url = ((ProjectSelectionData*)m_ProjectSelectionCtrl->GetClientData(j))->project_url;
+ 				project = pDoc->state.lookup_project(ctrl_url);
+ 				if ( project == NULL ) {
+@@ -475,9 +475,9 @@
+     
+         // Check to see if we need to reload the project icon
+         ctrlCount = m_ProjectSelectionCtrl->GetCount();
+-        for(j=0; j<ctrlCount; j++) {
++        for(int j=0; j<ctrlCount; j++) {
+             selData = (ProjectSelectionData*)m_ProjectSelectionCtrl->GetClientData(j);
+-            ctrl_url = selData->project_url;
++            char* ctrl_url = selData->project_url;
+             project = pDoc->state.lookup_project(ctrl_url);
+             if ( project->project_files_downloaded_time > selData->project_files_downloaded_time ) {
+                 wxBitmap* projectBM = GetProjectSpecificBitmap(ctrl_url);
+@@ -485,7 +485,7 @@
+                 m_ProjectSelectionCtrl->SetItemBitmap(j, *projectBM);
+             }
+         }
+-	}
++    }
+ }
+ 
+ 
