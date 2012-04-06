@@ -1,8 +1,8 @@
 Index: boinc/client/coproc_detect.cpp
 ===================================================================
---- boinc.orig/client/coproc_detect.cpp	2012-04-04 01:31:29.482497496 +0200
-+++ boinc/client/coproc_detect.cpp	2012-04-04 02:06:59.173220454 +0200
-@@ -42,6 +42,7 @@
+--- boinc.orig/client/coproc_detect.cpp	2012-04-06 13:34:25.960428939 +0200
++++ boinc/client/coproc_detect.cpp	2012-04-06 13:35:37.303447216 +0200
+@@ -43,6 +43,7 @@
  
  #include "coproc.h"
  #include "str_util.h"
@@ -10,7 +10,7 @@ Index: boinc/client/coproc_detect.cpp
  #include "util.h"
  
  #include "client_state.h"
-@@ -50,7 +51,7 @@
+@@ -51,7 +52,7 @@
  using std::string;
  using std::vector;
  
@@ -19,7 +19,7 @@ Index: boinc/client/coproc_detect.cpp
      for (unsigned int i=0; i<v.size(); i++) {
          if (v[i] == n) return true;
      }
-@@ -70,14 +71,14 @@
+@@ -71,14 +72,14 @@
  vector<OPENCL_DEVICE_PROP> nvidia_opencls;
  vector<OPENCL_DEVICE_PROP> ati_opencls;
  
@@ -37,7 +37,7 @@ Index: boinc/client/coproc_detect.cpp
  
  #ifdef _WIN32
      try {
-@@ -98,13 +99,16 @@
+@@ -99,13 +100,16 @@
      catch (...) {
          warnings.push_back("Caught SIGSEGV in OpenCL detection");
      }
@@ -54,7 +54,7 @@ Index: boinc/client/coproc_detect.cpp
  #ifndef __APPLE__       // ATI does not yet support CAL on Macs
      if (setjmp(resume)) {
          warnings.push_back("Caught SIGSEGV in ATI GPU detection");
-@@ -112,32 +116,37 @@
+@@ -113,32 +117,37 @@
          ati.get(use_all, warnings, ignore_ati_dev);
      }
  #endif
@@ -97,7 +97,7 @@ Index: boinc/client/coproc_detect.cpp
          ati_gpus[i].description(buf);
          switch(ati_gpus[i].is_used) {
          case COPROC_IGNORED:
-@@ -156,14 +165,14 @@
+@@ -157,14 +166,14 @@
  
      // Create descriptions for OpenCL NVIDIA GPUs
      //
@@ -114,7 +114,7 @@ Index: boinc/client/coproc_detect.cpp
          ati_opencls[i].description(buf, GPU_TYPE_ATI);
          descs.push_back(string(buf));
      }
-@@ -227,7 +236,7 @@
+@@ -228,7 +237,7 @@
  
  // If "loose", tolerate small diff
  //
@@ -123,7 +123,7 @@ Index: boinc/client/coproc_detect.cpp
      if (c1.opencl_device_version_int > c2.opencl_device_version_int) return 1;
      if (c1.opencl_device_version_int < c2.opencl_device_version_int) return -1;
      if (loose) {
-@@ -247,7 +256,7 @@
+@@ -248,7 +257,7 @@
  // http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/
  
  void COPROCS::get_opencl(
@@ -132,7 +132,7 @@ Index: boinc/client/coproc_detect.cpp
      vector<string>& warnings, 
      vector<int>& ignore_ati_dev,
      vector<int>& ignore_nvidia_dev
-@@ -350,8 +359,8 @@
+@@ -351,8 +360,8 @@
  //TODO: Must we check if multiple platforms found the same GPU and merge the records?
  #if FAKE2NVIDIAOPENCLS
  if (device_index == 2) {
@@ -143,7 +143,7 @@ Index: boinc/client/coproc_detect.cpp
  prop.vendor_id = 16918016;
  prop.available = 1;
  prop.half_fp_config = 0;
-@@ -359,13 +368,13 @@
+@@ -360,13 +369,13 @@
  prop.double_fp_config = 63;
  prop.endian_little = 1;
  prop.execution_capabilities = 1;
@@ -160,7 +160,7 @@ Index: boinc/client/coproc_detect.cpp
  } else
  #endif
              ciErrNum = get_opencl_info(prop, device_index, warnings);
-@@ -508,7 +517,7 @@
+@@ -509,7 +518,7 @@
      vector<string>&warnings
  ) {
      cl_int ciErrNum;
@@ -169,7 +169,7 @@ Index: boinc/client/coproc_detect.cpp
      
      ciErrNum = (*__clGetDeviceInfo)(prop.device_id, CL_DEVICE_NAME, sizeof(prop.name), prop.name, NULL);
      if ((ciErrNum != CL_SUCCESS) || (prop.name[0] == 0)) {
-@@ -903,7 +912,9 @@
+@@ -918,7 +927,9 @@
      NvAPI_Initialize();
      nvapiStatus = NvAPI_GetDisplayDriverVersion(NULL, &Version);
  #endif
@@ -179,7 +179,15 @@ Index: boinc/client/coproc_detect.cpp
  
  #ifdef __APPLE__
      cudalib = dlopen("/usr/local/cuda/lib/libcuda.dylib", RTLD_NOW);
-@@ -1074,7 +1085,7 @@
+@@ -1037,7 +1048,6 @@
+     warnings.push_back(buf);
+ 
+     int j;
+-    unsigned int i;
+     COPROC_NVIDIA cc;
+     string s;
+     for (j=0; j<cuda_ndevs; j++) {
+@@ -1109,7 +1119,7 @@
      // identify the most capable non-ignored instance
      //
      bool first = true;
@@ -188,7 +196,7 @@ Index: boinc/client/coproc_detect.cpp
          if (in_vector(nvidia_gpus[i].device_num, ignore_devs)) continue;
          if (first) {
              *this = nvidia_gpus[i];
-@@ -1088,7 +1099,7 @@
+@@ -1123,7 +1133,7 @@
      // and set the "count" and "device_nums" fields
      //
      count = 0;
@@ -197,7 +205,7 @@ Index: boinc/client/coproc_detect.cpp
          if (in_vector(nvidia_gpus[i].device_num, ignore_devs)) {
              nvidia_gpus[i].is_used = COPROC_IGNORED;
          } else if (use_all || !nvidia_compare(nvidia_gpus[i], *this, true)) {
-@@ -1106,7 +1117,7 @@
+@@ -1141,7 +1151,7 @@
  void COPROC_NVIDIA::fake(
      int driver_version, double ram, double avail_ram, int n
  ) {
@@ -206,7 +214,7 @@ Index: boinc/client/coproc_detect.cpp
     count = n;
     for (int i=0; i<count; i++) {
         device_nums[i] = i;
-@@ -1187,12 +1198,11 @@
+@@ -1222,12 +1232,11 @@
  // return true if there's been a change since last time
  //
  bool COPROC_NVIDIA::check_running_graphics_app() {
@@ -221,7 +229,7 @@ Index: boinc/client/coproc_detect.cpp
          if (!retval) {
              retval = (*__cuDeviceGetAttribute)(&kernel_timeout, CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT, device);
              if (!retval && !kernel_timeout) {
-@@ -1278,7 +1288,7 @@
+@@ -1313,7 +1322,7 @@
  	vector<int>& ignore_devs
  ) {
      CALuint numDevices, cal_major, cal_minor, cal_imp;
@@ -232,8 +240,8 @@ Index: boinc/client/coproc_detect.cpp
      attribs.struct_size = sizeof(CALdeviceattribs);
 Index: boinc/client/cs_scheduler.cpp
 ===================================================================
---- boinc.orig/client/cs_scheduler.cpp	2012-04-04 01:31:29.486497442 +0200
-+++ boinc/client/cs_scheduler.cpp	2012-04-04 01:32:06.069994924 +0200
+--- boinc.orig/client/cs_scheduler.cpp	2012-04-06 13:34:25.960428939 +0200
++++ boinc/client/cs_scheduler.cpp	2012-04-06 13:34:48.164123405 +0200
 @@ -70,9 +70,8 @@
  // to be sent to a scheduling server
  //
@@ -449,8 +457,8 @@ Index: boinc/client/cs_scheduler.cpp
          PROJECT* p = r->project;
 Index: boinc/client/sim.cpp
 ===================================================================
---- boinc.orig/client/sim.cpp	2012-04-04 01:31:29.486497442 +0200
-+++ boinc/client/sim.cpp	2012-04-04 01:32:06.073994870 +0200
+--- boinc.orig/client/sim.cpp	2012-04-06 13:34:25.960428939 +0200
++++ boinc/client/sim.cpp	2012-04-06 13:34:48.172123295 +0200
 @@ -88,7 +88,7 @@
  FILE* debt_file;
  FILE* index_file;
@@ -462,8 +470,8 @@ Index: boinc/client/sim.cpp
  double active_time = 0;
 Index: boinc/client/client_types.h
 ===================================================================
---- boinc.orig/client/client_types.h	2012-04-04 01:31:29.486497442 +0200
-+++ boinc/client/client_types.h	2012-04-04 01:32:06.081994760 +0200
+--- boinc.orig/client/client_types.h	2012-04-06 13:34:25.960428939 +0200
++++ boinc/client/client_types.h	2012-04-06 13:34:48.176123240 +0200
 @@ -102,7 +102,7 @@
  #define FILE_VERIFY_PENDING	2
  
@@ -637,8 +645,8 @@ Index: boinc/client/client_types.h
  // a platform supported by the client.
 Index: boinc/lib/coproc.cpp
 ===================================================================
---- boinc.orig/lib/coproc.cpp	2012-04-04 01:31:46.014270413 +0200
-+++ boinc/lib/coproc.cpp	2012-04-04 01:32:06.085994703 +0200
+--- boinc.orig/lib/coproc.cpp	2012-04-06 13:34:25.960428939 +0200
++++ boinc/lib/coproc.cpp	2012-04-06 13:34:48.180123184 +0200
 @@ -135,7 +135,7 @@
  }
  
@@ -751,8 +759,8 @@ Index: boinc/lib/coproc.cpp
          }
 Index: boinc/lib/coproc.h
 ===================================================================
---- boinc.orig/lib/coproc.h	2012-04-04 01:31:58.746095526 +0200
-+++ boinc/lib/coproc.h	2012-04-04 01:32:06.089994646 +0200
+--- boinc.orig/lib/coproc.h	2012-04-06 13:34:25.960428939 +0200
++++ boinc/lib/coproc.h	2012-04-06 13:34:48.184123128 +0200
 @@ -99,7 +99,7 @@
  // (used in client only)
  //
@@ -862,8 +870,8 @@ Index: boinc/lib/coproc.h
              coprocs[i] = c.coprocs[i];
 Index: boinc/client/cs_account.cpp
 ===================================================================
---- boinc.orig/client/cs_account.cpp	2012-04-04 01:31:29.486497442 +0200
-+++ boinc/client/cs_account.cpp	2012-04-04 01:32:06.093994589 +0200
+--- boinc.orig/client/cs_account.cpp	2012-04-06 13:34:25.960428939 +0200
++++ boinc/client/cs_account.cpp	2012-04-06 13:34:48.188123073 +0200
 @@ -95,7 +95,7 @@
  // (since we don't know the host venue yet)
  //
@@ -893,8 +901,8 @@ Index: boinc/client/cs_account.cpp
  
 Index: boinc/client/cs_statefile.cpp
 ===================================================================
---- boinc.orig/client/cs_statefile.cpp	2012-04-04 01:31:29.486497442 +0200
-+++ boinc/client/cs_statefile.cpp	2012-04-04 01:32:06.101994482 +0200
+--- boinc.orig/client/cs_statefile.cpp	2012-04-06 13:34:25.960428939 +0200
++++ boinc/client/cs_statefile.cpp	2012-04-06 13:34:48.192123018 +0200
 @@ -28,6 +28,7 @@
  #include "md5_file.h"
  #include "parse.h"
@@ -945,8 +953,8 @@ Index: boinc/client/cs_statefile.cpp
                  strcat(buf, fip->name);
 Index: boinc/client/work_fetch.cpp
 ===================================================================
---- boinc.orig/client/work_fetch.cpp	2012-04-04 01:31:29.486497442 +0200
-+++ boinc/client/work_fetch.cpp	2012-04-04 01:32:06.101994482 +0200
+--- boinc.orig/client/work_fetch.cpp	2012-04-06 13:34:25.960428939 +0200
++++ boinc/client/work_fetch.cpp	2012-04-06 13:34:48.196122963 +0200
 @@ -779,7 +779,7 @@
          rsc_work_fetch[0].req_secs?rsc_work_fetch[0].busy_time_estimator.get_busy_time():0
      );

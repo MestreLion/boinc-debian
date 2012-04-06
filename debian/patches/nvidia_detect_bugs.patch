@@ -1,78 +1,121 @@
 Index: boinc/client/coproc_detect.cpp
 ===================================================================
---- boinc.orig/client/coproc_detect.cpp	2012-04-03 20:56:25.381346207 +0200
-+++ boinc/client/coproc_detect.cpp	2012-04-04 01:31:29.482497496 +0200
-@@ -786,6 +786,15 @@
+--- boinc.orig/client/coproc_detect.cpp	2012-04-06 12:16:24.864889382 +0200
++++ boinc/client/coproc_detect.cpp	2012-04-06 13:34:25.960428939 +0200
+@@ -38,6 +38,7 @@
+ #include <dlfcn.h>
+ #include <setjmp.h>
+ #include <signal.h>
++#include <cuda.h>
+ #endif
+ 
+ #include "coproc.h"
+@@ -786,6 +787,19 @@
      return 0;
  }
  
++#ifndef __cuda_cuda_h__
++
 +#if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64)
 +typedef unsigned long long CUdeviceptr;
 +#else
 +typedef unsigned int CUdeviceptr;
 +#endif
 +
++typedef int CUdevice_attribute;
++typedef unsigned int CUresult;
 +typedef int CUdevice;
 +typedef void* CUcontext;
 +
  enum CUdevice_attribute_enum {
    CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1,
    CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X = 2,
-@@ -813,16 +822,16 @@
- typedef int (__stdcall *CUDA_GDC)(int *count);
- typedef int (__stdcall *CUDA_GDV)(int* version);
- typedef int (__stdcall *CUDA_GDI)(int);
+@@ -809,20 +823,29 @@
+   CU_DEVICE_ATTRIBUTE_COMPUTE_MODE = 20
+ };
+ 
++#endif  // ifndef __cuda_cuda_h__
++
++
++#ifdef _WIN32
++#define CUDAAPI __stdcall
++#else
++#define CUDAAPI
++#endif
++
+ #ifdef _WIN32
+-typedef int (__stdcall *CUDA_GDC)(int *count);
+-typedef int (__stdcall *CUDA_GDV)(int* version);
+-typedef int (__stdcall *CUDA_GDI)(int);
 -typedef int (__stdcall *CUDA_GDG)(int*, int);
-+typedef int (__stdcall *CUDA_GDG)(CUdevice*, int);
- typedef int (__stdcall *CUDA_GDA)(int*, int, int);
+-typedef int (__stdcall *CUDA_GDA)(int*, int, int);
 -typedef int (__stdcall *CUDA_GDN)(char*, int, int);
 -typedef int (__stdcall *CUDA_GDM)(unsigned int*, int);
-+typedef int (__stdcall *CUDA_GDN)(char*, int, CUdevice);
-+typedef int (__stdcall *CUDA_GDM)(sizt_t*, int);
- typedef int (__stdcall *CUDA_GDCC)(int*, int*, int);
+-typedef int (__stdcall *CUDA_GDCC)(int*, int*, int);
 -typedef int (__stdcall *CUDA_CC)(void**, unsigned int, unsigned int);
 -typedef int (__stdcall *CUDA_CD)(void*);
 -typedef int (__stdcall *CUDA_MA)(unsigned int*, unsigned int);
 -typedef int (__stdcall *CUDA_MF)(unsigned int);
 -typedef int (__stdcall *CUDA_MGI)(unsigned int*, unsigned int*);
-+typedef int (__stdcall *CUDA_CC)(CUcontext*, unsigned int, unsigned int);
-+typedef int (__stdcall *CUDA_CD)(CUcontext);
-+typedef int (__stdcall *CUDA_MA)(CUdeviceptr*, size_t);
-+typedef int (__stdcall *CUDA_MF)(CUdeviceptr);
-+typedef int (__stdcall *CUDA_MGI)(size_t*, size_t*);
++typedef CUresult CUDAAPI (*CUDA_GDC)(int *count);
++typedef CUresult CUDAAPI (*CUDA_GDV)(int* version);
++typedef CUresult CUDAAPI (*CUDA_GDI)(unsigned int);
++typedef CUresult CUDAAPI (*CUDA_GDG)(CUdevice*, int);
++typedef CUresult CUDAAPI (*CUDA_GDA)(int*, CUdevice_attribute, CUdevice);
++typedef CUresult CUDAAPI (*CUDA_GDN)(char*, int, CUdevice);
++typedef CUresult CUDAAPI (*CUDA_GDM)(sizt_t*, int);
++typedef CUresult CUDAAPI (*CUDA_GDCC)(int*, int*, int);
++typedef CUresult CUDAAPI (*CUDA_CC)(CUcontext*, unsigned int, CUdevice);
++typedef CUresult CUDAAPI (*CUDA_CD)(CUcontext);
++typedef CUresult CUDAAPI (*CUDA_MA)(CUdeviceptr*, size_t);
++typedef CUresult CUDAAPI (*CUDA_MF)(CUdeviceptr);
++typedef CUresult CUDAAPI (*CUDA_MGI)(size_t*, size_t*);
  
  CUDA_GDC __cuDeviceGetCount = NULL;
  CUDA_GDV __cuDriverGetVersion = NULL;
-@@ -842,16 +851,16 @@
- int (*__cuInit)(int);
- int (*__cuDeviceGetCount)(int*);
- int (*__cuDriverGetVersion)(int*);
+@@ -839,21 +862,22 @@
+ CUDA_MGI __cuMemGetInfo = NULL;
+ #else
+ void* cudalib;
+-int (*__cuInit)(int);
+-int (*__cuDeviceGetCount)(int*);
+-int (*__cuDriverGetVersion)(int*);
 -int (*__cuDeviceGet)(int*, int);
 -int (*__cuDeviceGetAttribute)(int*, int, int);
 -int (*__cuDeviceGetName)(char*, int, int);
 -int (*__cuDeviceTotalMem)(unsigned int*, int);
-+int (*__cuDeviceGet)(CUdevice*, int);
-+int (*__cuDeviceGetAttribute)(int*, int, CUdevice);
-+int (*__cuDeviceGetName)(char*, int, CUdevice);
-+int (*__cuDeviceTotalMem)(size_t*, CUdevice);
- int (*__cuDeviceComputeCapability)(int*, int*, int);
+-int (*__cuDeviceComputeCapability)(int*, int*, int);
 -int (*__cuCtxCreate)(void**, unsigned int, unsigned int);
 -int (*__cuCtxDestroy)(void*);
 -int (*__cuMemAlloc)(unsigned int*, unsigned int);
 -int (*__cuMemFree)(unsigned int);
 -int (*__cuMemGetInfo)(unsigned int*, unsigned int*);
-+int (*__cuCtxCreate)(CUcontext*, unsigned int, CUdevice);
-+int (*__cuCtxDestroy)(CUcontext);
-+int (*__cuMemAlloc)(CUdeviceptr *, unsigned int);
-+int (*__cuMemFree)(CUdeviceptr);
-+int (*__cuMemGetInfo)(size_t*, size_t*);
++CUresult (*__cuInit)(unsigned int);
++CUresult (*__cuDeviceGetCount)(int*);
++CUresult (*__cuDriverGetVersion)(int*);
++CUresult (*__cuDeviceGet)(CUdevice*, int);
++CUresult (*__cuDeviceGetAttribute)(int*, CUdevice_attribute, CUdevice);
++CUresult (*__cuDeviceGetName)(char*, int, CUdevice);
++CUresult (*__cuDeviceTotalMem)(size_t*, CUdevice);
++CUresult (*__cuDeviceComputeCapability)(int*, int*, int);
++CUresult (*__cuCtxCreate)(CUcontext*, unsigned int, CUdevice);
++CUresult (*__cuCtxDestroy)(CUcontext);
++CUresult (*__cuMemAlloc)(CUdeviceptr *, size_t);
++CUresult (*__cuMemFree)(CUdeviceptr);
++CUresult (*__cuMemGetInfo)(size_t*, size_t*);
  #endif
  
++
  // NVIDIA interfaces are documented here:
-@@ -908,16 +917,16 @@
-     __cuDeviceGetCount = (int(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
-     __cuDriverGetVersion = (int(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
-     __cuInit = (int(*)(int)) dlsym( cudalib, "cuInit" );
+ // http://developer.download.nvidia.com/compute/cuda/2_3/toolkit/docs/online/index.html
+ 
+@@ -905,21 +929,41 @@
+         warnings.push_back("No NVIDIA library found");
+         return;
+     }
+-    __cuDeviceGetCount = (int(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
+-    __cuDriverGetVersion = (int(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
+-    __cuInit = (int(*)(int)) dlsym( cudalib, "cuInit" );
 -    __cuDeviceGet = (int(*)(int*, int)) dlsym( cudalib, "cuDeviceGet" );
 -    __cuDeviceGetAttribute = (int(*)(int*, int, int)) dlsym( cudalib, "cuDeviceGetAttribute" );
 -    __cuDeviceGetName = (int(*)(char*, int, int)) dlsym( cudalib, "cuDeviceGetName" );
@@ -83,20 +126,45 @@ Index: boinc/client/coproc_detect.cpp
 -    __cuMemAlloc = (int(*)(unsigned int*, unsigned int)) dlsym( cudalib, "cuMemAlloc" );
 -    __cuMemFree = (int(*)(unsigned int)) dlsym( cudalib, "cuMemFree" );
 -    __cuMemGetInfo = (int(*)(unsigned int*, unsigned int*)) dlsym( cudalib, "cuMemGetInfo" );
-+    __cuDeviceGet = (int(*)(CUdevice*, int)) dlsym( cudalib, "cuDeviceGet" );
-+    __cuDeviceGetAttribute = (int(*)(int*, int, CUdevice)) dlsym( cudalib, "cuDeviceGetAttribute" );
-+    __cuDeviceGetName = (int(*)(char*, int, CUdevice)) dlsym( cudalib, "cuDeviceGetName" );
-+    __cuDeviceTotalMem = (int(*)(size_t*, CUdevice)) dlsym( cudalib, "cuDeviceTotalMem" );
-+    __cuDeviceComputeCapability = (int(*)(int*, int*, CUdevice)) dlsym( cudalib, "cuDeviceComputeCapability" );
-+    __cuCtxCreate = (int(*)(CUcontext*, unsigned int, CUdevice)) dlsym( cudalib, "cuCtxCreate" );
-+    __cuCtxDestroy = (int(*)(CUcontext)) dlsym( cudalib, "cuCtxDestroy" );
-+    __cuMemAlloc = (int(*)(CUdeviceptr*, unsigned int)) dlsym( cudalib, "cuMemAlloc" );
-+    __cuMemFree = (int(*)(CUdeviceptr)) dlsym( cudalib, "cuMemFree" );
-+    __cuMemGetInfo = (int(*)(size_t*, size_t*)) dlsym( cudalib, "cuMemGetInfo" );
++
++
++#ifndef __cuda_cuda_h__
++    __cuDeviceGetCount = (CUresult(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
++    __cuDriverGetVersion = (CUresult(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
++    __cuInit = (CUresult(*)(int)) dlsym( cudalib, "cuInit" );
++    __cuDeviceGet = (CUresult(*)(CUdevice*, int)) dlsym( cudalib, "cuDeviceGet" );
++    __cuDeviceGetAttribute = (CUresult(*)(int*, int, CUdevice)) dlsym( cudalib, "cuDeviceGetAttribute" );
++    __cuDeviceGetName = (CUresult(*)(char*, int, CUdevice)) dlsym( cudalib, "cuDeviceGetName" );
++    __cuDeviceTotalMem = (CUresult(*)(size_t*, CUdevice)) dlsym( cudalib, "cuDeviceTotalMem" );
++    __cuDeviceComputeCapability = (CUresult(*)(int*, int*, CUdevice)) dlsym( cudalib, "cuDeviceComputeCapability" );
++    __cuCtxCreate = (CUresult(*)(CUcontext*, unsigned int, CUdevice)) dlsym( cudalib, "cuCtxCreate" );
++    __cuCtxDestroy = (CUresult(*)(CUcontext)) dlsym( cudalib, "cuCtxDestroy" );
++    __cuMemAlloc = (CUresult(*)(CUdeviceptr*, size_t)) dlsym( cudalib, "cuMemAlloc" );
++    __cuMemFree = (CUresult(*)(CUdeviceptr)) dlsym( cudalib, "cuMemFree" );
++    __cuMemGetInfo = (CUresult(*)(size_t*, size_t*)) dlsym( cudalib, "cuMemGetInfo" );
++#else
++    __cuDeviceGetCount = &cuDeviceGetCount;
++    __cuDriverGetVersion = &cuDriverGetVersion;
++    __cuInit = &cuInit;
++    __cuDeviceGet = &cuDeviceGet;
++    __cuDeviceGetAttribute = &cuDeviceGetAttribute;
++    __cuDeviceGetName = &cuDeviceGetName;
++    __cuDeviceTotalMem = &cuDeviceTotalMem;
++    __cuDeviceComputeCapability = &cuDeviceComputeCapability;
++    __cuCtxCreate = &cuCtxCreate;
++    __cuCtxDestroy = &cuCtxDestroy;
++    __cuMemAlloc = &cuMemAlloc;
++    __cuMemFree = &cuMemFree;
++    __cuMemGetInfo = &cuMemGetInfo;
  #endif
  
++
++#endif	 // Win32
++
      if (!__cuDriverGetVersion) {
-@@ -1134,11 +1143,10 @@
+         warnings.push_back("cuDriverGetVersion() missing from NVIDIA library");
+         return;
+@@ -1134,11 +1178,10 @@
  //
  void COPROC_NVIDIA::get_available_ram() {
      int retval;
@@ -110,7 +178,7 @@ Index: boinc/client/coproc_detect.cpp
      retval = (*__cuDeviceGet)(&device, device_num);
      if (retval) {
          if (log_flags.coproc_debug) {
-@@ -1148,6 +1156,8 @@
+@@ -1148,6 +1191,8 @@
          }
          return;
      }
@@ -119,7 +187,7 @@ Index: boinc/client/coproc_detect.cpp
      retval = (*__cuCtxCreate)(&ctx, 0, device);
      if (retval) {
          if (log_flags.coproc_debug) {
-@@ -1157,6 +1167,8 @@
+@@ -1157,6 +1202,8 @@
          }
          return;
      }
@@ -130,8 +198,8 @@ Index: boinc/client/coproc_detect.cpp
          if (log_flags.coproc_debug) {
 Index: boinc/lib/coproc.h
 ===================================================================
---- boinc.orig/lib/coproc.h	2012-04-03 20:56:25.381346207 +0200
-+++ boinc/lib/coproc.h	2012-04-04 01:31:58.746095526 +0200
+--- boinc.orig/lib/coproc.h	2012-04-06 11:54:31.642978165 +0200
++++ boinc/lib/coproc.h	2012-04-06 13:34:25.960428939 +0200
 @@ -263,22 +263,22 @@
  struct CUDA_DEVICE_PROP {
    char  name[256];
@@ -169,8 +237,8 @@ Index: boinc/lib/coproc.h
  };
 Index: boinc/client/main.cpp
 ===================================================================
---- boinc.orig/client/main.cpp	2012-04-03 20:56:25.381346207 +0200
-+++ boinc/client/main.cpp	2012-04-03 20:57:31.152442932 +0200
+--- boinc.orig/client/main.cpp	2012-04-06 11:54:31.642978165 +0200
++++ boinc/client/main.cpp	2012-04-06 12:16:26.012873569 +0200
 @@ -76,14 +76,14 @@
          msg
      );
@@ -224,8 +292,8 @@ Index: boinc/client/main.cpp
  }
 Index: boinc/client/cs_account.cpp
 ===================================================================
---- boinc.orig/client/cs_account.cpp	2012-04-03 20:56:25.381346207 +0200
-+++ boinc/client/cs_account.cpp	2012-04-04 01:31:29.486497442 +0200
+--- boinc.orig/client/cs_account.cpp	2012-04-06 11:54:31.642978165 +0200
++++ boinc/client/cs_account.cpp	2012-04-06 13:34:25.960428939 +0200
 @@ -77,7 +77,7 @@
      fprintf(f, "<project_preferences>\n%s</project_preferences>\n",
          project_prefs.c_str()
@@ -237,8 +305,8 @@ Index: boinc/client/cs_account.cpp
      retval = boinc_rename(TEMP_ACCT_FILE_NAME, path);
 Index: boinc/client/cs_benchmark.cpp
 ===================================================================
---- boinc.orig/client/cs_benchmark.cpp	2012-04-03 20:56:25.381346207 +0200
-+++ boinc/client/cs_benchmark.cpp	2012-04-03 20:57:31.160442822 +0200
+--- boinc.orig/client/cs_benchmark.cpp	2012-04-06 11:54:31.642978165 +0200
++++ boinc/client/cs_benchmark.cpp	2012-04-06 12:16:26.020873458 +0200
 @@ -463,7 +463,7 @@
              }
              ndone++;
@@ -250,8 +318,8 @@ Index: boinc/client/cs_benchmark.cpp
          }
 Index: boinc/client/work_fetch.cpp
 ===================================================================
---- boinc.orig/client/work_fetch.cpp	2012-04-03 20:56:25.381346207 +0200
-+++ boinc/client/work_fetch.cpp	2012-04-04 01:31:29.486497442 +0200
+--- boinc.orig/client/work_fetch.cpp	2012-04-06 11:54:31.642978165 +0200
++++ boinc/client/work_fetch.cpp	2012-04-06 13:34:25.960428939 +0200
 @@ -781,7 +781,7 @@
      if (log_flags.work_fetch_debug) {
          char buf[256];
@@ -263,8 +331,8 @@ Index: boinc/client/work_fetch.cpp
  
 Index: boinc/lib/coproc.cpp
 ===================================================================
---- boinc.orig/lib/coproc.cpp	2012-04-03 20:56:25.381346207 +0200
-+++ boinc/lib/coproc.cpp	2012-04-04 01:31:46.014270413 +0200
+--- boinc.orig/lib/coproc.cpp	2012-04-06 11:54:31.642978165 +0200
++++ boinc/lib/coproc.cpp	2012-04-06 13:34:25.960428939 +0200
 @@ -398,7 +398,7 @@
          "   <cudaVersion>%d</cudaVersion>\n"
          "   <drvVersion>%d</drvVersion>\n"
@@ -335,3 +403,25 @@ Index: boinc/lib/coproc.cpp
          if (xp.parse_int("major", prop.major)) continue;
          if (xp.parse_int("minor", prop.minor)) continue;
          if (xp.parse_int("textureAlignment", (int&)prop.textureAlignment)) continue;
+Index: boinc/client/Makefile.am
+===================================================================
+--- boinc.orig/client/Makefile.am	2012-04-06 12:30:08.557543613 +0200
++++ boinc/client/Makefile.am	2012-04-06 13:34:40.744225506 +0200
+@@ -28,7 +28,7 @@
+ boinccmd_DEPENDENCIES = $(LIBBOINC)
+ boinccmd_CPPFLAGS = $(AM_CPPFLAGS)
+ boinccmd_LDFLAGS = $(AM_LDFLAGS) -L../lib
+-boinccmd_LDADD = $(LIBBOINC) -lcuda $(BOINC_EXTRA_LIBS) $(PTHREAD_LIBS)
++boinccmd_LDADD = $(LIBBOINC) $(BOINC_EXTRA_LIBS) $(PTHREAD_LIBS)
+ 
+ boinc_client_SOURCES = \
+     acct_mgr.cpp \
+@@ -83,7 +83,7 @@
+ if OS_DARWIN
+ boinc_client_LDFLAGS += -Wl,-flat_namespace,-undefined,dynamic_lookup
+ endif
+-boinc_client_LDADD = $(LIBBOINC) $(LIBBOINC_CRYPT) $(BOINC_EXTRA_LIBS) $(PTHREAD_LIBS)
++boinc_client_LDADD = $(LIBBOINC) -lcuda $(LIBBOINC_CRYPT) $(BOINC_EXTRA_LIBS) $(PTHREAD_LIBS)
+ 
+ boinc_clientdir = $(bindir)
+ 
