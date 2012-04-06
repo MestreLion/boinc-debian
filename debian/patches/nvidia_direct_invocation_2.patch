@@ -1,0 +1,165 @@
+Index: boinc/client/coproc_detect.cpp
+===================================================================
+--- boinc.orig/client/coproc_detect.cpp	2012-04-06 16:02:05.930486849 +0200
++++ boinc/client/coproc_detect.cpp	2012-04-06 16:45:53.186344403 +0200
+@@ -870,6 +870,7 @@
+ CUDA_MF __cuMemFree = NULL;
+ CUDA_MGI __cuMemGetInfo = NULL;
+ #else
++#ifndef __cuda_cuda_h__
+ void* cudalib;
+ CUresult (*__cuInit)(unsigned int);
+ CUresult (*__cuDeviceGetCount)(int*);
+@@ -885,6 +886,7 @@
+ CUresult (*__cuMemFree)(CUdeviceptr);
+ CUresult (*__cuMemGetInfo)(size_t*, size_t*);
+ #endif
++#endif
+ 
+ 
+ // NVIDIA interfaces are documented here:
+@@ -931,6 +933,7 @@
+ #else
+ 	// not WIN32
+ 
++#ifndef __cuda_cuda_h__
+ #ifdef __APPLE__
+     cudalib = dlopen("/usr/local/cuda/lib/libcuda.dylib", RTLD_NOW);
+ #else
+@@ -942,7 +945,6 @@
+     }
+ 
+ 
+-#ifndef __cuda_cuda_h__
+     __cuDeviceGetCount = (CUresult(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
+     __cuDriverGetVersion = (CUresult(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
+     __cuInit = (CUresult(*)(int)) dlsym( cudalib, "cuInit" );
+@@ -957,6 +959,7 @@
+     __cuMemFree = (CUresult(*)(CUdeviceptr)) dlsym( cudalib, "cuMemFree" );
+     __cuMemGetInfo = (CUresult(*)(size_t*, size_t*)) dlsym( cudalib, "cuMemGetInfo" );
+ #else
++#if 0
+     __cuDeviceGetCount = &cuDeviceGetCount;
+     __cuDriverGetVersion = &cuDriverGetVersion;
+     __cuInit = &cuInit;
+@@ -970,11 +973,12 @@
+     __cuMemAlloc = &cuMemAlloc;
+     __cuMemFree = &cuMemFree;
+     __cuMemGetInfo = &cuMemGetInfo;
+-#endif
++#endif  // #if 0
++#endif  // #ifndef __cuda_cuda_h__
+ 
++#endif	 //#ifdef Win32
+ 
+-#endif	 // Win32
+-
++#ifndef __cuda_cuda_h__
+     if (!__cuDriverGetVersion) {
+         warnings.push_back("cuDriverGetVersion() missing from NVIDIA library");
+         return;
+@@ -1023,6 +1027,7 @@
+         warnings.push_back("cuMemGetInfo() missing from NVIDIA library");
+         return;
+     }
++#endif
+ 
+ #ifndef __cuda_cuda_h__
+     retval = (*__cuInit)(0);
+@@ -1094,24 +1099,60 @@
+             warnings.push_back(buf);
+             return;
+         }
+-        (*__cuDeviceComputeCapability)(&cc.prop.major, &cc.prop.minor, device);
+-        (*__cuDeviceTotalMem)(&cc.prop.totalGlobalMem, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.sharedMemPerBlock, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.regsPerBlock, CU_DEVICE_ATTRIBUTE_REGISTERS_PER_BLOCK, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.warpSize, CU_DEVICE_ATTRIBUTE_WARP_SIZE, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.memPitch, CU_DEVICE_ATTRIBUTE_MAX_PITCH, device);
+-        retval = (*__cuDeviceGetAttribute)(&cc.prop.maxThreadsPerBlock, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
+-        retval = (*__cuDeviceGetAttribute)(&cc.prop.maxThreadsDim[0], CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.maxThreadsDim[1], CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.maxThreadsDim[2], CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.maxGridSize[0], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.maxGridSize[1], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.maxGridSize[2], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.clockRate, CU_DEVICE_ATTRIBUTE_CLOCK_RATE, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.totalConstMem, CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.textureAlignment, CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
+-        (*__cuDeviceGetAttribute)(&cc.prop.deviceOverlap, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
+-        retval = (*__cuDeviceGetAttribute)(&cc.prop.multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device);
++
++#ifndef __cuda_cuda_h__
++        retval = (*__cuDeviceComputeCapability)(&cc.prop.major, &cc.prop.minor, device);
++#else
++        retval = cuDeviceComputeCapability(&cc.prop.major, &cc.prop.minor, device);
++#endif
++        if (retval) {
++            sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
++            warnings.push_back(buf);
++            return;
++        }
++
++#ifndef __cuda_cuda_h__
++        retval = (*__cuDeviceTotalMem)(&cc.prop.totalGlobalMem, device);
++#else
++        retval = cuDeviceTotalMem(&cc.prop.totalGlobalMem, device);
++#endif
++        if (retval) {
++            sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
++            warnings.push_back(buf);
++            return;
++        }
++#define ErrorPartialBlock(Name) \
++        if (retval) { \
++            sprintf(buf, "cuDeviceGetAttribute(%s,%d) returned %d", Name, j, retval); \
++            warnings.push_back(buf); \
++            return; \
++	}
++
++#ifndef __cuda_cuda_h__
++#define Block(Desc,Attrib,Name) retval=(*__cuDeviceGetAttribute)(Desc, Attrib, device); ErrorPartialBlock(Name);
++#else
++#define Block(Desc,Attrib,Name) retval=cuDeviceGetAttribute(Desc, Attrib, device); ErrorPartialBlock(Name);
++#endif
++
++	Block(&cc.prop.sharedMemPerBlock,CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK,"CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK")
++        Block(&cc.prop.regsPerBlock, CU_DEVICE_ATTRIBUTE_REGISTERS_PER_BLOCK, "CU_DEVICE_ATTRIBUTE_REGISTERS_PER_BLOCK");
++        Block(&cc.prop.warpSize, CU_DEVICE_ATTRIBUTE_WARP_SIZE, "CU_DEVICE_ATTRIBUTE_WARP_SIZE");
++        Block(&cc.prop.memPitch, CU_DEVICE_ATTRIBUTE_MAX_PITCH, "CU_DEVICE_ATTRIBUTE_MAX_PITCH");
++        Block(&cc.prop.maxThreadsPerBlock, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, "CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK");
++        Block(&cc.prop.maxThreadsDim[0], CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X");
++        Block(&cc.prop.maxThreadsDim[1], CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y, "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y");
++        Block(&cc.prop.maxThreadsDim[2], CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z, "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z");
++        Block(&cc.prop.maxGridSize[0], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X, "CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X");
++        Block(&cc.prop.maxGridSize[1], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y, "CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X");
++        Block(&cc.prop.maxGridSize[2], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z, "CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z");
++        Block(&cc.prop.clockRate, CU_DEVICE_ATTRIBUTE_CLOCK_RATE, "CU_DEVICE_ATTRIBUTE_CLOCK_RATE");
++        Block(&cc.prop.totalConstMem, CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY, "CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY");
++        Block(&cc.prop.textureAlignment, CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, "CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT");
++        Block(&cc.prop.deviceOverlap, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, "CU_DEVICE_ATTRIBUTE_GPU_OVERLAP");
++        Block(&cc.prop.multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, "CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT");
++#undef Block
++#undef ErrorPartialBlock
++
+         //retval = (*__cuDeviceGetProperties)(&cc.prop, device);
+         if (cc.prop.major <= 0) continue;  // major == 0 means emulation
+         if (cc.prop.major > 100) continue;  // e.g. 9999 is an error
+@@ -1277,9 +1318,17 @@
+     for (int j=0; j<count; j++) {
+         bool new_val = true;
+         int device, kernel_timeout;
++#ifndef __cuda_cuda_h__
+         int retval = (*__cuDeviceGet)(&device, j);
++#else
++        int retval = cuDeviceGet(&device, j);
++#endif
+         if (!retval) {
++#ifndef __cuda_cuda_h__
+             retval = (*__cuDeviceGetAttribute)(&kernel_timeout, CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT, device);
++#else
++            retval = cuDeviceGetAttribute(&kernel_timeout, CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT, device);
++#endif
+             if (!retval && !kernel_timeout) {
+                 new_val = false;
+             }

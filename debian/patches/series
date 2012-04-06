@@ -48,3 +48,5 @@ nvidia_detect_optinal.patch
 #or this one
 #debian/patches/nvidia_detect_experiments.patch
 some_extra_clang_warnings.patch
+nvidia_direct_invocation.patch
+nvidia_direct_invocation_2.patch
