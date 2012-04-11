@@ -1,3 +1,15 @@
+boinc (7.0.25+dfsg-1) UNRELEASED; urgency=low
+
+  [ Steffen ]
+  * New upstream version (not yet with NVidia API improvements).
+
+  [ Thorsten ]
+  * Helping warnings in init scripts (Closes: #651278,#651303).
+  * Fixing Python dir problem for boinc-server-maker (Closes: #657036)
+  * Fixed warning for man page to stripchart.
+
+ -- Steffen Moeller <moeller@debian.org>  Fri, 06 Apr 2012 12:15:30 +0200
+
 boinc (7.0.24+dfsg-4) UNRELEASED; urgency=low
 
   * Improved support of NVidia cards - API incompatibility
