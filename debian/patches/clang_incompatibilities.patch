@@ -1,3 +1,5 @@
+Author: Steffen Moeller <steffen.moeller@uk-sh.de>
+Description: Tested compatibility with clang.
 Index: boinc/lib/Makefile.am
 ===================================================================
 --- boinc.orig/lib/Makefile.am	2012-03-31 23:50:52.780651101 +0200

@@ -147,7 +147,6 @@ Description: development files to build applications for BOINC projects
 
 
 Package: boinc-server-maker
-Section: net
 Architecture: any
 Provides: boinc-server
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
@@ -171,7 +170,6 @@ Description: BOINC server applications and data files
 
 
 Package: boinc-app-examples
-Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: boinc-server-maker
