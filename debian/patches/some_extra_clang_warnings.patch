@@ -1,7 +1,7 @@
 Index: boinc/tools/dir_hier_path.cpp
 ===================================================================
---- boinc.orig/tools/dir_hier_path.cpp	2012-03-31 13:44:27.123110124 +0200
-+++ boinc/tools/dir_hier_path.cpp	2012-04-06 14:10:50.474361974 +0200
+--- boinc.orig/tools/dir_hier_path.cpp	2012-04-06 20:32:38.470898177 +0200
++++ boinc/tools/dir_hier_path.cpp	2012-04-06 20:32:43.646826925 +0200
 @@ -41,8 +41,8 @@
      int retval;
  
@@ -15,8 +15,8 @@ Index: boinc/tools/dir_hier_path.cpp
      retval = config.parse_file();
 Index: boinc/tools/dir_hier_move.cpp
 ===================================================================
---- boinc.orig/tools/dir_hier_move.cpp	2012-03-31 13:44:27.119110179 +0200
-+++ boinc/tools/dir_hier_move.cpp	2012-04-06 14:13:44.847960852 +0200
+--- boinc.orig/tools/dir_hier_move.cpp	2012-04-06 20:32:38.470898177 +0200
++++ boinc/tools/dir_hier_move.cpp	2012-04-06 20:32:43.650826870 +0200
 @@ -42,15 +42,15 @@
      int retval;
      
@@ -39,8 +39,8 @@ Index: boinc/tools/dir_hier_move.cpp
      DirScanner scanner(src_dir);
 Index: boinc/clientgui/sg_ProjectPanel.cpp
 ===================================================================
---- boinc.orig/clientgui/sg_ProjectPanel.cpp	2012-03-31 13:44:22.407174543 +0200
-+++ boinc/clientgui/sg_ProjectPanel.cpp	2012-04-06 14:24:40.982925943 +0200
+--- boinc.orig/clientgui/sg_ProjectPanel.cpp	2012-04-06 20:32:38.470898177 +0200
++++ boinc/clientgui/sg_ProjectPanel.cpp	2012-04-06 20:32:43.654826815 +0200
 @@ -387,22 +387,22 @@
  
  

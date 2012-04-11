@@ -1,7 +1,7 @@
 Index: boinc/client/coproc_detect.cpp
 ===================================================================
---- boinc.orig/client/coproc_detect.cpp	2012-04-06 16:02:05.930486849 +0200
-+++ boinc/client/coproc_detect.cpp	2012-04-06 16:45:53.186344403 +0200
+--- boinc.orig/client/coproc_detect.cpp	2012-04-06 20:32:08.683308222 +0200
++++ boinc/client/coproc_detect.cpp	2012-04-06 20:32:11.627267696 +0200
 @@ -870,6 +870,7 @@
  CUDA_MF __cuMemFree = NULL;
  CUDA_MGI __cuMemGetInfo = NULL;
@@ -33,7 +33,7 @@ Index: boinc/client/coproc_detect.cpp
 -#ifndef __cuda_cuda_h__
      __cuDeviceGetCount = (CUresult(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
      __cuDriverGetVersion = (CUresult(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
-     __cuInit = (CUresult(*)(int)) dlsym( cudalib, "cuInit" );
+     __cuInit = (CUresult(*)(unsigned int)) dlsym( cudalib, "cuInit" );
 @@ -957,6 +959,7 @@
      __cuMemFree = (CUresult(*)(CUdeviceptr)) dlsym( cudalib, "cuMemFree" );
      __cuMemGetInfo = (CUresult(*)(size_t*, size_t*)) dlsym( cudalib, "cuMemGetInfo" );
