@@ -1,3 +1,10 @@
+boinc (7.0.25+dfsg-2) UNRELEASED; urgency=low
+
+  * Added patch by Bernd Machenschalk to improve the uniqueness
+    of clients when multiple instances are run.
+
+ -- Steffen Moeller <moeller@debian.org>  Thu, 12 Apr 2012 14:04:52 +0200
+
 boinc (7.0.25+dfsg-1) UNRELEASED; urgency=low
 
   [ Steffen ]

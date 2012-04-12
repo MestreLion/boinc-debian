@@ -1,0 +1,22 @@
+Index: boinc/client/hostinfo_network.cpp
+===================================================================
+--- boinc.orig/client/hostinfo_network.cpp	2012-03-31 13:44:21.271190061 +0200
++++ boinc/client/hostinfo_network.cpp	2012-04-12 14:11:41.811872354 +0200
+@@ -92,7 +92,7 @@
+ void HOST_INFO::make_random_string(const char* salt, char* out) {
+     char buf[1024];
+ 
+-    sprintf(buf, "%.15e%s%s%f%s", dtime(), domain_name, ip_addr, d_free, salt);
++    sprintf(buf, "%.15e%s%s%f%u%s", dtime(), domain_name, ip_addr, d_free, getpid(), salt);
+     md5_block((const unsigned char*) buf, (int)strlen(buf), out);
+ }
+ 
+@@ -100,6 +100,7 @@
+ // Should be unique across hosts with very high probability
+ //
+ void HOST_INFO::generate_host_cpid() {
+-    make_random_string("", host_cpid);
++    if (!config.allow_multiple_clients)
++        make_random_string("", host_cpid);
+ }
+ 
