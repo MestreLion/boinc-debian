@@ -287,6 +287,10 @@ override_dh_auto_install: update-boinc-applinks.1 $(SAMPLES)
 	do \
 		egrep -l "^#!.*env..*python" $$i/* | xargs -r sed -i '1s%#!.*%#!/usr/bin/python%' ; \
 	done
+	
+	# something for upstream to fix
+	-chmod +x $(CURDIR)/debian/boinc-server-maker/usr/share/boinc-server/sched/transitioner_catchup.php
+	
 	touch $@
 
 override_dh_strip:
