@@ -816,13 +816,13 @@ typedef int (__stdcall *CUDA_GDI)(int);
 typedef int (__stdcall *CUDA_GDG)(int*, int);
 typedef int (__stdcall *CUDA_GDA)(int*, int, int);
 typedef int (__stdcall *CUDA_GDN)(char*, int, int);
-typedef int (__stdcall *CUDA_GDM)(unsigned int*, int);
+typedef int (__stdcall *CUDA_GDM)(size_t*, int);
 typedef int (__stdcall *CUDA_GDCC)(int*, int*, int);
 typedef int (__stdcall *CUDA_CC)(void**, unsigned int, unsigned int);
 typedef int (__stdcall *CUDA_CD)(void*);
 typedef int (__stdcall *CUDA_MA)(unsigned int*, unsigned int);
 typedef int (__stdcall *CUDA_MF)(unsigned int);
-typedef int (__stdcall *CUDA_MGI)(unsigned int*, unsigned int*);
+typedef int (__stdcall *CUDA_MGI)(size_t*, size_t*);
 
 CUDA_GDC __cuDeviceGetCount = NULL;
 CUDA_GDV __cuDriverGetVersion = NULL;
@@ -845,13 +845,13 @@ int (*__cuDriverGetVersion)(int*);
 int (*__cuDeviceGet)(int*, int);
 int (*__cuDeviceGetAttribute)(int*, int, int);
 int (*__cuDeviceGetName)(char*, int, int);
-int (*__cuDeviceTotalMem)(unsigned int*, int);
+int (*__cuDeviceTotalMem)(size_t*, int);
 int (*__cuDeviceComputeCapability)(int*, int*, int);
 int (*__cuCtxCreate)(void**, unsigned int, unsigned int);
 int (*__cuCtxDestroy)(void*);
-int (*__cuMemAlloc)(unsigned int*, unsigned int);
+int (*__cuMemAlloc)(unsigned int*, size_t);
 int (*__cuMemFree)(unsigned int);
-int (*__cuMemGetInfo)(unsigned int*, unsigned int*);
+int (*__cuMemGetInfo)(size_t*, size_t*);
 #endif
 
 // NVIDIA interfaces are documented here:
@@ -911,13 +911,13 @@ void COPROC_NVIDIA::get(
     __cuDeviceGet = (int(*)(int*, int)) dlsym( cudalib, "cuDeviceGet" );
     __cuDeviceGetAttribute = (int(*)(int*, int, int)) dlsym( cudalib, "cuDeviceGetAttribute" );
     __cuDeviceGetName = (int(*)(char*, int, int)) dlsym( cudalib, "cuDeviceGetName" );
-    __cuDeviceTotalMem = (int(*)(unsigned int*, int)) dlsym( cudalib, "cuDeviceTotalMem" );
+    __cuDeviceTotalMem = (int(*)(size_t*, int)) dlsym( cudalib, "cuDeviceTotalMem" );
     __cuDeviceComputeCapability = (int(*)(int*, int*, int)) dlsym( cudalib, "cuDeviceComputeCapability" );
     __cuCtxCreate = (int(*)(void**, unsigned int, unsigned int)) dlsym( cudalib, "cuCtxCreate" );
     __cuCtxDestroy = (int(*)(void*)) dlsym( cudalib, "cuCtxDestroy" );
-    __cuMemAlloc = (int(*)(unsigned int*, unsigned int)) dlsym( cudalib, "cuMemAlloc" );
+    __cuMemAlloc = (int(*)(unsigned int*, size_t)) dlsym( cudalib, "cuMemAlloc" );
     __cuMemFree = (int(*)(unsigned int)) dlsym( cudalib, "cuMemFree" );
-    __cuMemGetInfo = (int(*)(unsigned int*, unsigned int*)) dlsym( cudalib, "cuMemGetInfo" );
+    __cuMemGetInfo = (int(*)(size_t*, size_t*)) dlsym( cudalib, "cuMemGetInfo" );
 #endif
 
     if (!__cuDriverGetVersion) {
@@ -994,6 +994,7 @@ void COPROC_NVIDIA::get(
 
     int j;
     unsigned int i;
+    size_t global_mem;
     COPROC_NVIDIA cc;
     string s;
     for (j=0; j<cuda_ndevs; j++) {
@@ -1020,7 +1021,8 @@ if (j == 0) {
             return;
         }
         (*__cuDeviceComputeCapability)(&cc.prop.major, &cc.prop.minor, device);
-        (*__cuDeviceTotalMem)(&cc.prop.totalGlobalMem, device);
+        (*__cuDeviceTotalMem)(&global_mem, device);
+        cc.prop.totalGlobalMem = (double) global_mem;
         (*__cuDeviceGetAttribute)(&cc.prop.sharedMemPerBlock, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, device);
         (*__cuDeviceGetAttribute)(&cc.prop.regsPerBlock, CU_DEVICE_ATTRIBUTE_REGISTERS_PER_BLOCK, device);
         (*__cuDeviceGetAttribute)(&cc.prop.warpSize, CU_DEVICE_ATTRIBUTE_WARP_SIZE, device);
@@ -1106,7 +1108,7 @@ void COPROC_NVIDIA::fake(
    display_driver_version = driver_version;
    cuda_version = 2020;
    strcpy(prop.name, "Fake NVIDIA GPU");
-   prop.totalGlobalMem = (unsigned int)ram;
+   prop.totalGlobalMem = ram;
    prop.sharedMemPerBlock = 100;
    prop.regsPerBlock = 8;
    prop.warpSize = 10;
@@ -1134,11 +1136,11 @@ void COPROC_NVIDIA::fake(
 //
 void COPROC_NVIDIA::get_available_ram() {
     int retval;
-    unsigned int memfree, memtotal;
+    size_t memfree, memtotal;
 	int device;
     void* ctx;
     
-    available_ram = prop.dtotalGlobalMem;
+    available_ram = prop.totalGlobalMem;
     retval = (*__cuDeviceGet)(&device, device_num);
     if (retval) {
         if (log_flags.coproc_debug) {
