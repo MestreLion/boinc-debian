@@ -1,3 +1,11 @@
+boinc (7.0.26+dfsg-1) unstable; urgency=low
+
+  * New upstream release
+    - Comes with NVidia patches
+    - Other incompatibilities with various projects fixed
+
+ -- Steffen Moeller <moeller@debian.org>  Fri, 20 Apr 2012 11:43:15 +0200
+
 boinc (7.0.25+dfsg-2) UNRELEASED; urgency=low
 
   * Added patch by Bernd Machenschalk to improve the uniqueness

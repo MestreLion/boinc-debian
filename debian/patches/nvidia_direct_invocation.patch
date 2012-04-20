@@ -1,8 +1,8 @@
 Index: boinc/client/coproc_detect.cpp
 ===================================================================
---- boinc.orig/client/coproc_detect.cpp	2012-04-06 13:35:37.303447216 +0200
-+++ boinc/client/coproc_detect.cpp	2012-04-06 16:02:05.930486849 +0200
-@@ -1024,21 +1024,33 @@
+--- boinc.orig/client/coproc_detect.cpp	2012-04-19 19:16:02.000000000 +0200
++++ boinc/client/coproc_detect.cpp	2012-04-19 19:27:35.988709344 +0200
+@@ -1022,21 +1022,33 @@
          return;
      }
  
@@ -36,7 +36,7 @@ Index: boinc/client/coproc_detect.cpp
      if (retval) {
          sprintf(buf, "cuDeviceGetCount() returned %d", retval);
          warnings.push_back(buf);
-@@ -1060,14 +1072,23 @@
+@@ -1059,14 +1071,23 @@
   nvidia_gpus.push_back(cc);
  }
  #endif
@@ -61,10 +61,10 @@ Index: boinc/client/coproc_detect.cpp
          if (retval) {
              sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
              warnings.push_back(buf);
-@@ -1192,7 +1213,11 @@
-     available_ram = prop.dtotalGlobalMem;
- 
-     int device;
+@@ -1193,7 +1214,11 @@
+     void* ctx;
+     
+     available_ram = prop.totalGlobalMem;
 +#ifndef __cuda_cuda_h__
      retval = (*__cuDeviceGet)(&device, device_num);
 +#else
@@ -73,7 +73,7 @@ Index: boinc/client/coproc_detect.cpp
      if (retval) {
          if (log_flags.coproc_debug) {
              msg_printf(0, MSG_INFO,
-@@ -1203,7 +1228,11 @@
+@@ -1204,7 +1229,11 @@
      }
  
      CUcontext ctx; // no immediate better idea
@@ -85,7 +85,7 @@ Index: boinc/client/coproc_detect.cpp
      if (retval) {
          if (log_flags.coproc_debug) {
              msg_printf(0, MSG_INFO,
-@@ -1214,17 +1243,29 @@
+@@ -1215,17 +1244,29 @@
      }
  
      size_t memfree, memtotal;

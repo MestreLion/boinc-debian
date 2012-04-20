@@ -1,7 +1,7 @@
 Index: boinc/client/coproc_detect.cpp
 ===================================================================
---- boinc.orig/client/coproc_detect.cpp	2012-04-06 20:32:08.683308222 +0200
-+++ boinc/client/coproc_detect.cpp	2012-04-06 20:32:11.627267696 +0200
+--- boinc.orig/client/coproc_detect.cpp	2012-04-19 19:27:35.988709344 +0200
++++ boinc/client/coproc_detect.cpp	2012-04-20 11:40:06.141906960 +0200
 @@ -870,6 +870,7 @@
  CUDA_MF __cuMemFree = NULL;
  CUDA_MGI __cuMemGetInfo = NULL;
@@ -18,15 +18,15 @@ Index: boinc/client/coproc_detect.cpp
  
  
  // NVIDIA interfaces are documented here:
-@@ -931,6 +933,7 @@
+@@ -929,6 +931,7 @@
+ #endif
  #else
- 	// not WIN32
  
 +#ifndef __cuda_cuda_h__
  #ifdef __APPLE__
      cudalib = dlopen("/usr/local/cuda/lib/libcuda.dylib", RTLD_NOW);
  #else
-@@ -942,7 +945,6 @@
+@@ -940,7 +943,6 @@
      }
  
  
@@ -34,7 +34,7 @@ Index: boinc/client/coproc_detect.cpp
      __cuDeviceGetCount = (CUresult(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
      __cuDriverGetVersion = (CUresult(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
      __cuInit = (CUresult(*)(unsigned int)) dlsym( cudalib, "cuInit" );
-@@ -957,6 +959,7 @@
+@@ -955,6 +957,7 @@
      __cuMemFree = (CUresult(*)(CUdeviceptr)) dlsym( cudalib, "cuMemFree" );
      __cuMemGetInfo = (CUresult(*)(size_t*, size_t*)) dlsym( cudalib, "cuMemGetInfo" );
  #else
@@ -42,23 +42,23 @@ Index: boinc/client/coproc_detect.cpp
      __cuDeviceGetCount = &cuDeviceGetCount;
      __cuDriverGetVersion = &cuDriverGetVersion;
      __cuInit = &cuInit;
-@@ -970,11 +973,12 @@
+@@ -968,11 +971,12 @@
      __cuMemAlloc = &cuMemAlloc;
      __cuMemFree = &cuMemFree;
      __cuMemGetInfo = &cuMemGetInfo;
 -#endif
+-
 +#endif  // #if 0
 +#endif  // #ifndef __cuda_cuda_h__
  
+-#endif	 // Win32
 +#endif	 //#ifdef Win32
  
--#endif	 // Win32
--
 +#ifndef __cuda_cuda_h__
      if (!__cuDriverGetVersion) {
          warnings.push_back("cuDriverGetVersion() missing from NVIDIA library");
          return;
-@@ -1023,6 +1027,7 @@
+@@ -1021,6 +1025,7 @@
          warnings.push_back("cuMemGetInfo() missing from NVIDIA library");
          return;
      }
@@ -66,12 +66,35 @@ Index: boinc/client/coproc_detect.cpp
  
  #ifndef __cuda_cuda_h__
      retval = (*__cuInit)(0);
-@@ -1094,24 +1099,60 @@
+@@ -1093,25 +1098,61 @@
              warnings.push_back(buf);
              return;
          }
 -        (*__cuDeviceComputeCapability)(&cc.prop.major, &cc.prop.minor, device);
--        (*__cuDeviceTotalMem)(&cc.prop.totalGlobalMem, device);
+-        (*__cuDeviceTotalMem)(&global_mem, device);
++
++#ifndef __cuda_cuda_h__
++        retval = (*__cuDeviceComputeCapability)(&cc.prop.major, &cc.prop.minor, device);
++#else
++        retval = cuDeviceComputeCapability(&cc.prop.major, &cc.prop.minor, device);
++#endif
++        if (retval) {
++            sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
++            warnings.push_back(buf);
++            return;
++        }
++
++#ifndef __cuda_cuda_h__
++        retval = (*__cuDeviceTotalMem)(&globalMem, device);
++#else
++        retval = cuDeviceTotalMem(&cc.prop.totalGlobalMem, device);
++#endif
++        if (retval) {
++            sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
++            warnings.push_back(buf);
++            return;
++        }
+         cc.prop.totalGlobalMem = (double) global_mem;
 -        (*__cuDeviceGetAttribute)(&cc.prop.sharedMemPerBlock, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, device);
 -        (*__cuDeviceGetAttribute)(&cc.prop.regsPerBlock, CU_DEVICE_ATTRIBUTE_REGISTERS_PER_BLOCK, device);
 -        (*__cuDeviceGetAttribute)(&cc.prop.warpSize, CU_DEVICE_ATTRIBUTE_WARP_SIZE, device);
@@ -88,28 +111,6 @@ Index: boinc/client/coproc_detect.cpp
 -        (*__cuDeviceGetAttribute)(&cc.prop.textureAlignment, CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
 -        (*__cuDeviceGetAttribute)(&cc.prop.deviceOverlap, CU_DEVICE_ATTRIBUTE_GPU_OVERLAP, device);
 -        retval = (*__cuDeviceGetAttribute)(&cc.prop.multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device);
-+
-+#ifndef __cuda_cuda_h__
-+        retval = (*__cuDeviceComputeCapability)(&cc.prop.major, &cc.prop.minor, device);
-+#else
-+        retval = cuDeviceComputeCapability(&cc.prop.major, &cc.prop.minor, device);
-+#endif
-+        if (retval) {
-+            sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
-+            warnings.push_back(buf);
-+            return;
-+        }
-+
-+#ifndef __cuda_cuda_h__
-+        retval = (*__cuDeviceTotalMem)(&cc.prop.totalGlobalMem, device);
-+#else
-+        retval = cuDeviceTotalMem(&cc.prop.totalGlobalMem, device);
-+#endif
-+        if (retval) {
-+            sprintf(buf, "cuDeviceGetName(%d) returned %d", j, retval);
-+            warnings.push_back(buf);
-+            return;
-+        }
 +#define ErrorPartialBlock(Name) \
 +        if (retval) { \
 +            sprintf(buf, "cuDeviceGetAttribute(%s,%d) returned %d", Name, j, retval); \
@@ -123,7 +124,7 @@ Index: boinc/client/coproc_detect.cpp
 +#define Block(Desc,Attrib,Name) retval=cuDeviceGetAttribute(Desc, Attrib, device); ErrorPartialBlock(Name);
 +#endif
 +
-+	Block(&cc.prop.sharedMemPerBlock,CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK,"CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK")
++        Block(&cc.prop.sharedMemPerBlock,CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK,"CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK")
 +        Block(&cc.prop.regsPerBlock, CU_DEVICE_ATTRIBUTE_REGISTERS_PER_BLOCK, "CU_DEVICE_ATTRIBUTE_REGISTERS_PER_BLOCK");
 +        Block(&cc.prop.warpSize, CU_DEVICE_ATTRIBUTE_WARP_SIZE, "CU_DEVICE_ATTRIBUTE_WARP_SIZE");
 +        Block(&cc.prop.memPitch, CU_DEVICE_ATTRIBUTE_MAX_PITCH, "CU_DEVICE_ATTRIBUTE_MAX_PITCH");
@@ -145,21 +146,3 @@ Index: boinc/client/coproc_detect.cpp
          //retval = (*__cuDeviceGetProperties)(&cc.prop, device);
          if (cc.prop.major <= 0) continue;  // major == 0 means emulation
          if (cc.prop.major > 100) continue;  // e.g. 9999 is an error
-@@ -1277,9 +1318,17 @@
-     for (int j=0; j<count; j++) {
-         bool new_val = true;
-         int device, kernel_timeout;
-+#ifndef __cuda_cuda_h__
-         int retval = (*__cuDeviceGet)(&device, j);
-+#else
-+        int retval = cuDeviceGet(&device, j);
-+#endif
-         if (!retval) {
-+#ifndef __cuda_cuda_h__
-             retval = (*__cuDeviceGetAttribute)(&kernel_timeout, CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT, device);
-+#else
-+            retval = cuDeviceGetAttribute(&kernel_timeout, CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT, device);
-+#endif
-             if (!retval && !kernel_timeout) {
-                 new_val = false;
-             }
