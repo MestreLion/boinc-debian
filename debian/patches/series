@@ -50,3 +50,4 @@ nvidia_detect_optinal.patch
 some_extra_clang_warnings.patch
 nvidia_direct_invocation.patch
 nvidia_direct_invocation_2.patch
+dTotalGlobalMem.patch

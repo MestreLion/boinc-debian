@@ -615,7 +615,7 @@ Index: boinc/lib/coproc.cpp
  
      strcpy(buf, "");
      if (nvidia.count) {
-         int mem = (int)(nvidia.prop.dtotalGlobalMem/MEGA);
+         int mem = (int)(nvidia.prop.totalGlobalMem/MEGA);
 -        sprintf(buf2, "[CUDA|%s|%d|%dMB|%d]",
 +        snprintf(buf2, sizeof(buf2), "[CUDA|%s|%d|%dMB|%d]",
              nvidia.prop.name, nvidia.count, mem, nvidia.display_driver_version
