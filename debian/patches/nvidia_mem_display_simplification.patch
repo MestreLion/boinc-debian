@@ -2,19 +2,6 @@ Index: boinc/lib/coproc.cpp
 ===================================================================
 --- boinc.orig/lib/coproc.cpp	2012-04-21 12:55:43.000000000 +0200
 +++ boinc/lib/coproc.cpp	2012-04-21 12:59:48.631727184 +0200
-@@ -286,9 +286,9 @@
- 
-     strcpy(buf, "");
-     if (nvidia.count) {
--        int mem = (int)(nvidia.prop.totalGlobalMem/MEGA);
--        snprintf(buf2, sizeof(buf2), "[CUDA|%s|%d|%dMB|%d]",
--            nvidia.prop.name, nvidia.count, mem, nvidia.display_driver_version
-+        snprintf(buf2, sizeof(buf2), "[CUDA|%s|%d|%.0fMB|%d]",
-+            nvidia.prop.name, nvidia.count,
-+            nvidia.prop.totalGlobalMem/MEGA, nvidia.display_driver_version
-         );
-         strlcat(buf, buf2, len);
-     }
 @@ -448,7 +448,7 @@
      display_driver_version = 0;
      strcpy(prop.name, "");

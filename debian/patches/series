@@ -26,27 +26,27 @@ cwd_handling.patch
 parse_issues.patch
 client_stream_realloc.patch
 # --- A
-MoreInformativeAppStartFailure.patch
+#tmpA# MoreInformativeAppStartFailure.patch
 stream_memory_leak_fix.patch
-app_ipc_uninitialised.patch
+#tmpA# app_ipc_uninitialised.patch
 uninitialised_client_states.patch
-MainDocumentConst.patch
+#convinceDavid# MainDocumentConst.patch
 #MainDocumentWarnings.patch
 # --- B 
-add_init_to_client_state_constructor.patch
-client_path_char_array_length.patch
+#tmpA# add_init_to_client_state_constructor.patch
+#convinceDavid# client_path_char_array_length.patch
 # --- Z --- Currently not applicable
 #Z#no_std_string.patch
 clang_incompatibilities.patch
 #either these 3
-nvidia_detect_buffers.patch
-nvidia_detect_bugs.patch
-nvidia_detect_optinal.patch
+#tmpA# nvidia_detect_buffers.patch
+#tmpA# nvidia_detect_bugs.patch
+#tmpA# nvidia_detect_optinal.patch
 #or this one
 #debian/patches/nvidia_detect_experiments.patch
 some_extra_clang_warnings.patch
-nvidia_direct_invocation.patch
-nvidia_direct_invocation_2.patch
+#tmpA# nvidia_direct_invocation.patch
+#tmpA# nvidia_direct_invocation_2.patch
 dTotalGlobalMem.patch
 nvidia_mem_display_simplification.patch
 api_NULL_not_defined.patch
