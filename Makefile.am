@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 25285 2012-02-17 19:16:49Z davea $
+## $Id: Makefile.am 25623 2012-04-30 21:06:39Z romw $
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -21,7 +21,7 @@ if ENABLE_CLIENT
 endif
 
 if ENABLE_MANAGER
-   CLIENTGUI_SUBDIRS = clientgui clientgui/res locale
+   CLIENTGUI_SUBDIRS = clientgui locale
 #if BUILD_X11_SCREENSAVER
 #   CLIENTGUI_SUBDIRS += clientscr
 #endif

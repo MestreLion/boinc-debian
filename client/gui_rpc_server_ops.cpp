@@ -50,20 +50,22 @@
 #endif
 #endif
 
+#include "error_numbers.h"
+#include "filesys.h"
+#include "network.h"
+#include "parse.h"
 #include "str_util.h"
 #include "url.h"
-#include "client_state.h"
 #include "util.h"
-#include "error_numbers.h"
-#include "parse.h"
-#include "network.h"
-#include "filesys.h"
 
-#include "file_names.h"
+#include "client_state.h"
 #include "client_msgs.h"
 #include "client_state.h"
 #include "cs_proxy.h"
 #include "cs_notice.h"
+#include "file_names.h"
+#include "project.h"
+#include "result.h"
 
 using std::string;
 using std::vector;
@@ -116,7 +118,7 @@ static void handle_get_simple_gui_info(GUI_RPC_CONN& grc) {
         PROJECT* p = gstate.projects[i];
         p->write_state(grc.mfout, true);
     }
-    gstate.write_tasks_gui(grc.mfout, false);
+    gstate.write_tasks_gui(grc.mfout, true);
     grc.mfout.printf("</simple_gui_info>\n");
 }
 
@@ -521,9 +523,9 @@ static void handle_result_op(GUI_RPC_CONN& grc, const char* op) {
         msg_printf(p, MSG_INFO, "task %s aborted by user", result_name);
         atp = gstate.lookup_active_task_by_result(rp);
         if (atp) {
-            atp->abort_task(ERR_ABORTED_VIA_GUI, "aborted by user");
+            atp->abort_task(EXIT_ABORTED_VIA_GUI, "aborted by user");
         } else {
-            rp->abort_inactive(ERR_ABORTED_VIA_GUI);
+            rp->abort_inactive(EXIT_ABORTED_VIA_GUI);
         }
         gstate.request_work_fetch("result aborted by user");
     } else if (!strcmp(op, "suspend")) {

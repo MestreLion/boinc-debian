@@ -29,15 +29,18 @@
 #include <csignal>
 #endif
 
-#include "md5_file.h"
-#include "util.h"
 #include "error_numbers.h"
-#include "file_names.h"
 #include "filesys.h"
+#include "md5_file.h"
 #include "shmem.h"
-#include "log_flags.h"
+#include "util.h"
+
 #include "client_msgs.h"
 #include "client_state.h"
+#include "file_names.h"
+#include "log_flags.h"
+#include "project.h"
+#include "result.h"
 
 using std::vector;
 
@@ -108,8 +111,8 @@ int CLIENT_STATE::app_finished(ACTIVE_TASK& at) {
     // Don't bother doing this if result was aborted via GUI or by project
     //
     switch (rp->exit_status) {
-    case ERR_ABORTED_VIA_GUI:
-    case ERR_ABORTED_BY_PROJECT:
+    case EXIT_ABORTED_VIA_GUI:
+    case EXIT_ABORTED_BY_PROJECT:
         break;
     default:
         for (i=0; i<rp->output_files.size(); i++) {
@@ -180,8 +183,8 @@ int CLIENT_STATE::app_finished(ACTIVE_TASK& at) {
 
     if (had_error) {
         switch (rp->exit_status) {
-        case ERR_ABORTED_VIA_GUI:
-        case ERR_ABORTED_BY_PROJECT:
+        case EXIT_ABORTED_VIA_GUI:
+        case EXIT_ABORTED_BY_PROJECT:
             rp->set_state(RESULT_ABORTED, "CS::app_finished");
             break;
         default:

@@ -47,6 +47,8 @@
 #include "client_msgs.h"
 #include "cs_notice.h"
 #include "cs_trickle.h"
+#include "project.h"
+#include "result.h"
 #include "scheduler_op.h"
 #include "sandbox.h"
 
@@ -334,7 +336,7 @@ int CLIENT_STATE::make_scheduler_request(PROJECT* p) {
         fprintf(f, "<in_progress_results>\n");
         for (i=0; i<results.size(); i++) {
             rp = results[i];
-            double x = rp->estimated_time_remaining();
+            double x = rp->estimated_runtime_remaining();
             if (x == 0) continue;
             strcpy(buf, "");
             int rt = rp->avp->gpu_usage.rsc_type;
@@ -836,9 +838,9 @@ int CLIENT_STATE::handle_scheduler_reply(
         wup->clear_errors();
         workunits.push_back(wup);
     }
-    double est_rsc_duration[MAX_RSC];
+    double est_rsc_runtime[MAX_RSC];
     for (int j=0; j<coprocs.n_rsc; j++) {
-        est_rsc_duration[j] = 0;
+        est_rsc_runtime[j] = 0;
     }
     for (i=0; i<sr.results.size(); i++) {
         if (lookup_result(project, sr.results[i].name)) {
@@ -876,17 +878,17 @@ int CLIENT_STATE::handle_scheduler_reply(
             msg_printf(project, MSG_INTERNAL_ERROR,
                 "Missing coprocessor for task %s; aborting", rp->name
             );
-            rp->abort_inactive(ERR_MISSING_COPROC);
+            rp->abort_inactive(EXIT_MISSING_COPROC);
             continue;
         } else {
             rp->set_state(RESULT_NEW, "handle_scheduler_reply");
             int rt = rp->avp->gpu_usage.rsc_type;
             if (rt > 0) {
-                est_rsc_duration[rt] += rp->estimated_duration();
+                est_rsc_runtime[rt] += rp->estimated_runtime();
                 gpus_usable = true;
                     // trigger a check of whether GPU is actually usable
             } else {
-                est_rsc_duration[0] += rp->estimated_duration();
+                est_rsc_runtime[0] += rp->estimated_runtime();
             }
         }
         rp->wup->version_num = rp->version_num;
@@ -901,7 +903,8 @@ int CLIENT_STATE::handle_scheduler_reply(
             for (int j=0; j<coprocs.n_rsc; j++) {
                 msg_printf(project, MSG_INFO,
                     "[sched_op] estimated total %s task duration: %.0f seconds",
-                    rsc_name(j), est_rsc_duration[j]
+                    rsc_name(j),
+                    est_rsc_runtime[j]/time_stats.availability_frac(j)
                 );
             }
         }
@@ -933,11 +936,11 @@ int CLIENT_STATE::handle_scheduler_reply(
         if (rp) {
             ACTIVE_TASK* atp = lookup_active_task_by_result(rp);
             if (atp) {
-                atp->abort_task(ERR_ABORTED_BY_PROJECT,
+                atp->abort_task(EXIT_ABORTED_BY_PROJECT,
                     "aborted by project - no longer usable"
                 );
             } else {
-                rp->abort_inactive(ERR_ABORTED_BY_PROJECT);
+                rp->abort_inactive(EXIT_ABORTED_BY_PROJECT);
             }
         } else {
             msg_printf(project, MSG_INTERNAL_ERROR,
@@ -956,7 +959,7 @@ int CLIENT_STATE::handle_scheduler_reply(
             continue;
         }
         if (rp->not_started) {
-            rp->abort_inactive(ERR_ABORTED_BY_PROJECT);
+            rp->abort_inactive(EXIT_ABORTED_BY_PROJECT);
         }
     }
 
@@ -1002,7 +1005,9 @@ int CLIENT_STATE::handle_scheduler_reply(
     }
 #endif
 
-    project->link_project_files(true);
+    project->project_files = sr.project_files;
+    project->link_project_files();
+    project->create_project_file_symlinks();
 
     if (log_flags.state_debug) {
         msg_printf(project, MSG_INFO,
@@ -1057,25 +1062,6 @@ void CLIENT_STATE::check_project_timeout() {
             request_work_fetch(buf);
         }
     }
-}
-
-void PROJECT::set_min_rpc_time(double future_time, const char* reason) {
-    if (future_time <= min_rpc_time) return;
-    min_rpc_time = future_time;
-    possibly_backed_off = true;
-    if (log_flags.sched_op_debug) {
-        msg_printf(this, MSG_INFO,
-            "[sched_op] Deferring communication for %s",
-            timediff_format(min_rpc_time - gstate.now).c_str()
-        );
-        msg_printf(this, MSG_INFO, "[sched_op] Reason: %s\n", reason);
-    }
-}
-
-// Return true if we should not contact the project yet.
-//
-bool PROJECT::waiting_until_min_rpc_time() {
-    return (min_rpc_time > gstate.now);
 }
 
 // find a project that needs to have its master file fetched
