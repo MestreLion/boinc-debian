@@ -30,10 +30,12 @@
 #include "str_util.h"
 #include "util.h"
 
-#include "cs_proxy.h"
-#include "file_names.h"
 #include "client_msgs.h"
 #include "client_state.h"
+#include "cs_proxy.h"
+#include "file_names.h"
+#include "project.h"
+#include "result.h"
 
 #define MAX_STATE_FILE_WRITE_ATTEMPTS 2
 
@@ -392,8 +394,8 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
                 xp.skip_unexpected();
                 continue;
             }
-            project->parse_project_files(xp, false);
-            project->link_project_files(false);
+            parse_project_files(xp, project->project_files);
+            project->link_project_files();
             continue;
         }
         if (xp.match_tag("host_info")) {

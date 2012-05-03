@@ -33,15 +33,17 @@
 #endif
 #endif
 
+#include "filesys.h"
+#include "parse.h"
 #include "str_util.h"
 #include "str_replace.h"
 #include "util.h"
-#include "filesys.h"
-#include "parse.h"
-#include "file_names.h"
-#include "cpu_benchmark.h"
+
 #include "client_msgs.h"
 #include "client_state.h"
+#include "cpu_benchmark.h"
+#include "file_names.h"
+#include "project.h"
 
 using std::min;
 using std::string;
@@ -295,11 +297,14 @@ void CLIENT_STATE::check_suspend_network() {
     network_suspended = false;
     file_xfers_suspended = false;
     network_suspend_reason = 0;
+    bool recent_rpc;
 
+    // don't start network ops if system is shutting down
+    //
     if (os_requested_suspend) {
         network_suspend_reason = SUSPEND_REASON_OS;
         network_suspended = true;
-        return;
+        goto done;
     }
 
     // no network traffic if we're allowing unsigned apps
@@ -308,22 +313,23 @@ void CLIENT_STATE::check_suspend_network() {
         network_suspended = true;
         file_xfers_suspended = true;
         network_suspend_reason = SUSPEND_REASON_USER_REQ;
-        return;
+        goto done;
     }
 
     // was there a recent GUI RPC that needs network?
     //
-    bool recent_rpc = gui_rpcs.recent_rpc_needs_network(
+    recent_rpc = gui_rpcs.recent_rpc_needs_network(
         ALLOW_NETWORK_IF_RECENT_RPC_PERIOD
     );
 
     switch(network_run_mode.get_current()) {
     case RUN_MODE_ALWAYS: 
-        return;
+        goto done;
     case RUN_MODE_NEVER:
         file_xfers_suspended = true;
         if (!recent_rpc) network_suspended = true;
         network_suspend_reason = SUSPEND_REASON_USER_REQ;
+        goto done;
     }
 
     if (global_prefs.daily_xfer_limit_mb && global_prefs.daily_xfer_period_days) {
@@ -352,6 +358,13 @@ void CLIENT_STATE::check_suspend_network() {
         file_xfers_suspended = true;
         if (!recent_rpc) network_suspended = true;
         network_suspend_reason = SUSPEND_REASON_EXCLUSIVE_APP_RUNNING;
+    }
+
+done:
+    if (log_flags.suspend_debug) {
+        msg_printf(0, MSG_INFO, "[suspend] net_susp %d file_xfer_susp %d reason %d",
+            network_suspended, file_xfers_suspended, network_suspend_reason
+        );
     }
 }
 

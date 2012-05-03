@@ -2504,14 +2504,23 @@ wxString result_description(RESULT* result, bool show_resources) {
         break;
     case RESULT_ABORTED:
         switch(result->exit_status) {
-        case ERR_ABORTED_VIA_GUI:
+        case EXIT_ABORTED_VIA_GUI:
             strBuffer += _("Aborted by user");
             break;
-        case ERR_ABORTED_BY_PROJECT:
+        case EXIT_ABORTED_BY_PROJECT:
             strBuffer += _("Aborted by project");
             break;
-        case ERR_UNSTARTED_LATE:
+        case EXIT_UNSTARTED_LATE:
             strBuffer += _("Aborted: not started by deadline");
+            break;
+        case EXIT_DISK_LIMIT_EXCEEDED:
+            strBuffer += _("Aborted: disk limit exceeded");
+            break;
+        case EXIT_TIME_LIMIT_EXCEEDED:
+            strBuffer += _("Aborted: run time limit exceeded");
+            break;
+        case EXIT_MEM_LIMIT_EXCEEDED:
+            strBuffer += _("Aborted: memory limit exceeded");
             break;
         default:
             strBuffer += _("Aborted");
