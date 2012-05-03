@@ -107,3 +107,9 @@ tools/dir_hier_move
 tools/dir_hier_path
 tools/sign_executable
 lib/parse_test
+debian/boinc-amd-opencl
+debian/boinc-app-examples
+debian/boinc-cgi-stripchart
+debian/boinc-nvidia-cuda
+debian/boinc-server-maker
+
