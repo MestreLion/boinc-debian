@@ -1,0 +1,13 @@
+Index: boinc/api/boinc_api.h
+===================================================================
+--- boinc.orig/api/boinc_api.h	2012-05-03 13:31:53.445255219 +0200
++++ boinc/api/boinc_api.h	2012-05-03 13:32:10.805017260 +0200
+@@ -83,7 +83,7 @@
+ 
+ extern int boinc_init(void);
+ extern int boinc_finish(int status);
+-extern int boinc_temporary_exit(int delay, const char* reason=NULL);
++extern int boinc_temporary_exit(int delay, const char* reason=(const char *) 0);
+ extern int boinc_get_init_data_p(struct APP_INIT_DATA*);
+ extern int boinc_parse_init_data_file(void);
+ extern int boinc_send_trickle_up(char* variety, char* text);

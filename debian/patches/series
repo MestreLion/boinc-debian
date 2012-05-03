@@ -52,3 +52,5 @@ nvidia_direct_invocation.patch
 nvidia_direct_invocation_2.patch
 dTotalGlobalMem.patch
 msg_log_assert.patch
+nvidia_mem_display_simplification.patch
+api_NULL_not_defined.patch
