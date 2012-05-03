@@ -2,9 +2,9 @@ Author: Steffen Moeller <moeller@debian.org>
 Description: Valgrind indicated some values for a jump not to be initialised. This addresses it.
 Index: boinc/client/client_state.cpp
 ===================================================================
---- boinc.orig/client/client_state.cpp	2012-03-31 11:03:30.000000000 +0200
-+++ boinc/client/client_state.cpp	2012-03-31 11:31:18.888325534 +0200
-@@ -139,7 +139,7 @@
+--- boinc.orig/client/client_state.cpp	2012-05-03 13:46:54.964902713 +0200
++++ boinc/client/client_state.cpp	2012-05-03 13:53:07.275804022 +0200
+@@ -141,7 +141,7 @@
  #endif
      launched_by_manager = false;
      initialized = false;

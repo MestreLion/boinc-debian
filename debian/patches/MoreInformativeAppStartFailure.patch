@@ -3,9 +3,9 @@ Description: Increased verbosity when the client does not start. Many increased 
 
 Index: boinc/client/app_start.cpp
 ===================================================================
---- boinc.orig/client/app_start.cpp	2012-03-31 13:47:53.756287591 +0200
-+++ boinc/client/app_start.cpp	2012-03-31 13:47:58.624221119 +0200
-@@ -320,7 +320,10 @@
+--- boinc.orig/client/app_start.cpp	2012-05-03 13:42:12.000000000 +0200
++++ boinc/client/app_start.cpp	2012-05-03 13:46:54.956902823 +0200
+@@ -321,7 +321,10 @@
          strcat(dir_path, "/");
          strcat(dir_path, p);
          retval = boinc_mkdir(dir_path);
@@ -17,7 +17,7 @@ Index: boinc/client/app_start.cpp
          p = q+1;
      }
      return 0;
-@@ -1002,6 +1005,9 @@
+@@ -1003,6 +1006,9 @@
  #endif
          }
          sprintf(buf, "../../%s", exec_path);
@@ -27,7 +27,7 @@ Index: boinc/client/app_start.cpp
          if (g_use_sandbox) {
              char switcher_path[100];
              sprintf(switcher_path, "../../%s/%s",
-@@ -1019,17 +1025,30 @@
+@@ -1020,17 +1026,30 @@
              // so they must be world-readable so BOINC CLient can read them
              //
              umask(2);
@@ -61,9 +61,9 @@ Index: boinc/client/app_start.cpp
      }
 Index: boinc/client/client_state.cpp
 ===================================================================
---- boinc.orig/client/client_state.cpp	2012-03-31 13:47:53.760287536 +0200
-+++ boinc/client/client_state.cpp	2012-03-31 13:47:58.632221009 +0200
-@@ -808,7 +808,7 @@
+--- boinc.orig/client/client_state.cpp	2012-05-03 13:38:04.000000000 +0200
++++ boinc/client/client_state.cpp	2012-05-03 13:46:54.964902713 +0200
+@@ -810,7 +810,7 @@
      check_suspend_network();
      if (network_suspend_reason) {
          if (!old_network_suspend_reason) {
@@ -72,7 +72,7 @@ Index: boinc/client/client_state.cpp
              if (network_suspended) {
                  sprintf(buf,
                      "Suspending network activity - %s",
-@@ -1627,7 +1627,7 @@
+@@ -1629,7 +1629,7 @@
  //   so that we don't try to run it again.
  //
  int CLIENT_STATE::report_result_error(RESULT& res, const char* format, ...) {
@@ -81,7 +81,7 @@ Index: boinc/client/client_state.cpp
          // The above store 1-line messages and short XML snippets.
          // Shouldn't exceed a few hundred bytes.
      unsigned int i;
-@@ -1829,7 +1829,7 @@
+@@ -1831,7 +1831,7 @@
      vector<FILE_INFO*>::iterator fi_iter;
      FILE_INFO* fip;
      PROJECT* p;
@@ -90,7 +90,7 @@ Index: boinc/client/client_state.cpp
      int retval;
  
      reset_project(project, true);
-@@ -1999,7 +1999,7 @@
+@@ -2001,7 +2001,7 @@
  }
  
  void CLIENT_STATE::log_show_projects() {
@@ -99,29 +99,10 @@ Index: boinc/client/client_state.cpp
      for (unsigned int i=0; i<projects.size(); i++) {
          PROJECT* p = projects[i];
          if (p->hostid) {
-Index: boinc/client/client_types.h
-===================================================================
---- boinc.orig/client/client_types.h	2012-03-31 13:47:53.760287536 +0200
-+++ boinc/client/client_types.h	2012-03-31 13:47:58.636220955 +0200
-@@ -814,12 +814,12 @@
- 
-     int coproc_indices[MAX_COPROCS_PER_JOB];
-         // keep track of coprocessor reservations
--    char resources[256];
-+    char resources[1024];
-         // textual description of resources used
-     double schedule_backoff;
-         // don't try to schedule until this time
-         // (wait for free GPU RAM)
--    char schedule_backoff_reason[256];
-+    char schedule_backoff_reason[1024];
- };
- 
- // represents an always/auto/never value, possibly temporarily overridden
 Index: boinc/client/hostinfo_unix.cpp
 ===================================================================
---- boinc.orig/client/hostinfo_unix.cpp	2012-03-31 13:47:53.760287536 +0200
-+++ boinc/client/hostinfo_unix.cpp	2012-03-31 13:47:58.640220901 +0200
+--- boinc.orig/client/hostinfo_unix.cpp	2012-05-03 13:28:55.000000000 +0200
++++ boinc/client/hostinfo_unix.cpp	2012-05-03 13:46:54.972902604 +0200
 @@ -220,7 +220,7 @@
        SysClass,
        NoBattery
@@ -252,8 +233,8 @@ Index: boinc/client/hostinfo_unix.cpp
  
 Index: boinc/lib/hostinfo.cpp
 ===================================================================
---- boinc.orig/lib/hostinfo.cpp	2012-03-31 13:47:53.760287536 +0200
-+++ boinc/lib/hostinfo.cpp	2012-03-31 13:47:58.648220791 +0200
+--- boinc.orig/lib/hostinfo.cpp	2012-05-03 13:28:55.000000000 +0200
++++ boinc/lib/hostinfo.cpp	2012-05-03 13:46:54.980902494 +0200
 @@ -131,7 +131,7 @@
  int HOST_INFO::write(
      MIOFILE& out, bool include_net_info, bool include_coprocs
@@ -280,8 +261,8 @@ Index: boinc/lib/hostinfo.cpp
          else if (parse_double(buf, "<p_fpops>", p_fpops)) continue;
 Index: boinc/lib/hostinfo.h
 ===================================================================
---- boinc.orig/lib/hostinfo.h	2012-03-31 13:47:53.760287536 +0200
-+++ boinc/lib/hostinfo.h	2012-03-31 13:47:58.652220736 +0200
+--- boinc.orig/lib/hostinfo.h	2012-05-03 13:28:55.000000000 +0200
++++ boinc/lib/hostinfo.h	2012-05-03 13:46:54.984902440 +0200
 @@ -44,7 +44,7 @@
      int p_ncpus;
      char p_vendor[256];

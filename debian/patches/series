@@ -12,7 +12,6 @@ upstream_sztaki_configureEval.patch
 generate_less.patch
 #Makefile_subdirs.patch
 csh2tcsh.patch
-file_upload_handler_permission.patch
 possible_size_type_error.patch
 upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
 debian_debian_AdjustBoincTopdirPython.patch
@@ -30,8 +29,6 @@ client_stream_realloc.patch
 MoreInformativeAppStartFailure.patch
 stream_memory_leak_fix.patch
 app_ipc_uninitialised.patch
-client_types_buffer_size.patch
-uninitialised_client_types.patch
 uninitialised_client_states.patch
 MainDocumentConst.patch
 #MainDocumentWarnings.patch
@@ -51,6 +48,5 @@ some_extra_clang_warnings.patch
 nvidia_direct_invocation.patch
 nvidia_direct_invocation_2.patch
 dTotalGlobalMem.patch
-msg_log_assert.patch
 nvidia_mem_display_simplification.patch
 api_NULL_not_defined.patch
