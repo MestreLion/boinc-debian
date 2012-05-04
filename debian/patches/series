@@ -26,7 +26,7 @@ cwd_handling.patch
 parse_issues.patch
 client_stream_realloc.patch
 # --- A
-#tmpA# MoreInformativeAppStartFailure.patch
+#convinceDavid# MoreInformativeAppStartFailure.patch
 stream_memory_leak_fix.patch
 #tmpA# app_ipc_uninitialised.patch
 uninitialised_client_states.patch
@@ -38,10 +38,11 @@ uninitialised_client_states.patch
 # --- Z --- Currently not applicable
 #Z#no_std_string.patch
 clang_incompatibilities.patch
+printf.patch
 #either these 3
-#tmpA# nvidia_detect_buffers.patch
-#tmpA# nvidia_detect_bugs.patch
-#tmpA# nvidia_detect_optinal.patch
+#convinceDavid# nvidia_detect_buffers.patch
+#convinceDavid# nvidia_detect_bugs.patch
+#convinceDavid# nvidia_detect_optinal.patch
 #or this one
 #debian/patches/nvidia_detect_experiments.patch
 some_extra_clang_warnings.patch

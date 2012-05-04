@@ -72,16 +72,3 @@ Index: boinc/client/scheduler_op.cpp
      int retval;
      MIOFILE mf;
      XML_PARSER xp(&mf);
-Index: boinc/client/cs_statefile.cpp
-===================================================================
---- boinc.orig/client/cs_statefile.cpp	2012-05-03 13:38:04.328171383 +0200
-+++ boinc/client/cs_statefile.cpp	2012-05-03 13:53:32.507458470 +0200
-@@ -865,7 +865,7 @@
-                     _("File referenced in app_info.xml does not exist: ")
-                 );
-                 strcat(buf, fip->name);
--                msg_printf(p, MSG_USER_ALERT, buf);
-+                msg_printf(p, MSG_USER_ALERT, "%s", buf);
-                 delete fip;
-                 continue;
-             }
