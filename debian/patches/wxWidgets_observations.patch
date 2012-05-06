@@ -1,0 +1,26 @@
+Index: boinc/clientgui/BOINCGUIApp.cpp
+===================================================================
+--- boinc.orig/clientgui/BOINCGUIApp.cpp	2012-04-29 16:07:21.000000000 +0200
++++ boinc/clientgui/BOINCGUIApp.cpp	2012-04-29 16:14:32.000000000 +0200
+@@ -108,7 +108,7 @@
+ #endif
+ 
+ 
+-bool CBOINCGUIApp::OnInit() {
++virtual bool CBOINCGUIApp::OnInit() {
+     // Initialize globals
+ #ifdef SANDBOX
+     g_use_sandbox = true;
+Index: boinc/clientgui/BOINCGUIApp.h
+===================================================================
+--- boinc.orig/clientgui/BOINCGUIApp.h	2012-04-29 16:07:21.000000000 +0200
++++ boinc/clientgui/BOINCGUIApp.h	2012-04-29 16:11:23.000000000 +0200
+@@ -117,7 +117,7 @@
+ 
+ public:
+ 
+-    bool                OnInit();
++    virtual bool        OnInit();
+ 
+     wxLocale*           GetLocale()                 { return m_pLocale; }
+     CSkinManager*       GetSkinManager()            { return m_pSkinManager; }
