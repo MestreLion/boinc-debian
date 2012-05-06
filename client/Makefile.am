@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 25192 2012-02-03 18:33:39Z davea $
+## $Id: Makefile.am 25636 2012-05-02 16:41:54Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -70,6 +70,8 @@ boinc_client_SOURCES = \
     main.cpp \
     net_stats.cpp \
     pers_file_xfer.cpp \
+	project.cpp \
+	result.cpp \
     rr_sim.cpp \
     sandbox.cpp \
     scheduler_op.cpp \

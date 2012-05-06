@@ -1,7 +1,7 @@
 Index: boinc/client/coproc_detect.cpp
 ===================================================================
---- boinc.orig/client/coproc_detect.cpp	2012-04-19 18:33:13.000000000 +0200
-+++ boinc/client/coproc_detect.cpp	2012-04-19 19:14:33.175444067 +0200
+--- boinc.orig/client/coproc_detect.cpp	2012-05-03 13:53:32.000000000 +0200
++++ boinc/client/coproc_detect.cpp	2012-05-03 13:58:43.375200952 +0200
 @@ -38,6 +38,7 @@
  #include <dlfcn.h>
  #include <setjmp.h>
@@ -10,7 +10,7 @@ Index: boinc/client/coproc_detect.cpp
  #endif
  
  #include "coproc.h"
-@@ -786,6 +787,19 @@
+@@ -788,6 +789,19 @@
      return 0;
  }
  
@@ -30,7 +30,7 @@ Index: boinc/client/coproc_detect.cpp
  enum CUdevice_attribute_enum {
    CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1,
    CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X = 2,
-@@ -809,20 +823,29 @@
+@@ -811,20 +825,29 @@
    CU_DEVICE_ATTRIBUTE_COMPUTE_MODE = 20
  };
  
@@ -46,7 +46,7 @@ Index: boinc/client/coproc_detect.cpp
  #ifdef _WIN32
 -typedef int (__stdcall *CUDA_GDC)(int *count);
 -typedef int (__stdcall *CUDA_GDV)(int* version);
--typedef int (__stdcall *CUDA_GDI)(int);
+-typedef int (__stdcall *CUDA_GDI)(unsigned int);
 -typedef int (__stdcall *CUDA_GDG)(int*, int);
 -typedef int (__stdcall *CUDA_GDA)(int*, int, int);
 -typedef int (__stdcall *CUDA_GDN)(char*, int, int);
@@ -54,7 +54,7 @@ Index: boinc/client/coproc_detect.cpp
 -typedef int (__stdcall *CUDA_GDCC)(int*, int*, int);
 -typedef int (__stdcall *CUDA_CC)(void**, unsigned int, unsigned int);
 -typedef int (__stdcall *CUDA_CD)(void*);
--typedef int (__stdcall *CUDA_MA)(unsigned int*, unsigned int);
+-typedef int (__stdcall *CUDA_MA)(unsigned int*, size_t);
 -typedef int (__stdcall *CUDA_MF)(unsigned int);
 -typedef int (__stdcall *CUDA_MGI)(size_t*, size_t*);
 +typedef CUresult CUDAAPI (*CUDA_GDC)(int *count);
@@ -73,11 +73,11 @@ Index: boinc/client/coproc_detect.cpp
  
  CUDA_GDC __cuDeviceGetCount = NULL;
  CUDA_GDV __cuDriverGetVersion = NULL;
-@@ -839,21 +862,22 @@
+@@ -841,21 +864,22 @@
  CUDA_MGI __cuMemGetInfo = NULL;
  #else
  void* cudalib;
--int (*__cuInit)(int);
+-int (*__cuInit)(unsigned int);
 -int (*__cuDeviceGetCount)(int*);
 -int (*__cuDriverGetVersion)(int*);
 -int (*__cuDeviceGet)(int*, int);
@@ -109,13 +109,13 @@ Index: boinc/client/coproc_detect.cpp
  // NVIDIA interfaces are documented here:
  // http://developer.download.nvidia.com/compute/cuda/2_3/toolkit/docs/online/index.html
  
-@@ -905,21 +929,41 @@
+@@ -907,21 +931,41 @@
          warnings.push_back("No NVIDIA library found");
          return;
      }
 -    __cuDeviceGetCount = (int(*)(int*)) dlsym(cudalib, "cuDeviceGetCount");
 -    __cuDriverGetVersion = (int(*)(int*)) dlsym( cudalib, "cuDriverGetVersion" );
--    __cuInit = (int(*)(int)) dlsym( cudalib, "cuInit" );
+-    __cuInit = (int(*)(unsigned int)) dlsym( cudalib, "cuInit" );
 -    __cuDeviceGet = (int(*)(int*, int)) dlsym( cudalib, "cuDeviceGet" );
 -    __cuDeviceGetAttribute = (int(*)(int*, int, int)) dlsym( cudalib, "cuDeviceGetAttribute" );
 -    __cuDeviceGetName = (int(*)(char*, int, int)) dlsym( cudalib, "cuDeviceGetName" );
@@ -164,7 +164,7 @@ Index: boinc/client/coproc_detect.cpp
      if (!__cuDriverGetVersion) {
          warnings.push_back("cuDriverGetVersion() missing from NVIDIA library");
          return;
-@@ -1150,6 +1194,8 @@
+@@ -1152,6 +1196,8 @@
          }
          return;
      }
@@ -173,7 +173,7 @@ Index: boinc/client/coproc_detect.cpp
      retval = (*__cuCtxCreate)(&ctx, 0, device);
      if (retval) {
          if (log_flags.coproc_debug) {
-@@ -1159,6 +1205,8 @@
+@@ -1161,6 +1207,8 @@
          }
          return;
      }
@@ -184,8 +184,8 @@ Index: boinc/client/coproc_detect.cpp
          if (log_flags.coproc_debug) {
 Index: boinc/client/main.cpp
 ===================================================================
---- boinc.orig/client/main.cpp	2012-04-19 18:33:13.000000000 +0200
-+++ boinc/client/main.cpp	2012-04-19 18:35:03.243932948 +0200
+--- boinc.orig/client/main.cpp	2012-05-03 13:28:55.000000000 +0200
++++ boinc/client/main.cpp	2012-05-03 13:58:43.379200898 +0200
 @@ -76,14 +76,14 @@
          msg
      );
@@ -239,9 +239,9 @@ Index: boinc/client/main.cpp
  }
 Index: boinc/client/cs_account.cpp
 ===================================================================
---- boinc.orig/client/cs_account.cpp	2012-04-19 18:33:13.000000000 +0200
-+++ boinc/client/cs_account.cpp	2012-04-19 19:14:33.175444067 +0200
-@@ -77,7 +77,7 @@
+--- boinc.orig/client/cs_account.cpp	2012-05-03 13:38:04.000000000 +0200
++++ boinc/client/cs_account.cpp	2012-05-03 13:58:43.387200788 +0200
+@@ -79,7 +79,7 @@
      fprintf(f, "<project_preferences>\n%s</project_preferences>\n",
          project_prefs.c_str()
      );
@@ -252,8 +252,8 @@ Index: boinc/client/cs_account.cpp
      retval = boinc_rename(TEMP_ACCT_FILE_NAME, path);
 Index: boinc/client/cs_benchmark.cpp
 ===================================================================
---- boinc.orig/client/cs_benchmark.cpp	2012-04-19 18:33:13.000000000 +0200
-+++ boinc/client/cs_benchmark.cpp	2012-04-19 18:35:03.255932784 +0200
+--- boinc.orig/client/cs_benchmark.cpp	2012-05-03 13:28:55.000000000 +0200
++++ boinc/client/cs_benchmark.cpp	2012-05-03 13:58:43.391200733 +0200
 @@ -463,7 +463,7 @@
              }
              ndone++;
@@ -265,9 +265,9 @@ Index: boinc/client/cs_benchmark.cpp
          }
 Index: boinc/client/work_fetch.cpp
 ===================================================================
---- boinc.orig/client/work_fetch.cpp	2012-04-19 18:33:13.000000000 +0200
-+++ boinc/client/work_fetch.cpp	2012-04-19 19:14:33.175444067 +0200
-@@ -781,7 +781,7 @@
+--- boinc.orig/client/work_fetch.cpp	2012-05-03 13:38:04.000000000 +0200
++++ boinc/client/work_fetch.cpp	2012-05-03 13:58:43.395200679 +0200
+@@ -790,7 +790,7 @@
      if (log_flags.work_fetch_debug) {
          char buf[256];
          request_string(buf);
@@ -278,8 +278,8 @@ Index: boinc/client/work_fetch.cpp
  
 Index: boinc/lib/coproc.cpp
 ===================================================================
---- boinc.orig/lib/coproc.cpp	2012-04-19 18:33:13.000000000 +0200
-+++ boinc/lib/coproc.cpp	2012-04-19 19:14:33.175444067 +0200
+--- boinc.orig/lib/coproc.cpp	2012-05-03 13:28:55.000000000 +0200
++++ boinc/lib/coproc.cpp	2012-05-03 13:58:43.399200624 +0200
 @@ -416,15 +416,15 @@
          cuda_version,
          display_driver_version,

@@ -24,17 +24,19 @@
 #include <cstring>
 #endif
 
-#include "parse.h"
+#include "crypt.h"
 #include "error_numbers.h"
-#include "client_msgs.h"
+#include "parse.h"
 #include "str_util.h"
 #include "str_replace.h"
 #include "url.h"
+
+#include "client_msgs.h"
+#include "client_state.h"
 #include "file_names.h"
 #include "filesys.h"
-#include "client_state.h"
 #include "gui_http.h"
-#include "crypt.h"
+#include "project.h"
 
 #include "acct_mgr.h"
 
@@ -589,6 +591,14 @@ void ACCT_MGR_OP::handle_reply(int http_op_retval) {
                     }
                 }
             } else {
+                if (acct.authenticator.empty()) {
+                    msg_printf(NULL, MSG_INFO,
+                        "Account manager reply missing authenticator for %s",
+                        acct.url.c_str()
+                    );
+                    continue;
+                }
+
                 // here we don't already have the project.
                 // Attach to it, unless the acct mgr is telling us to detach
                 //

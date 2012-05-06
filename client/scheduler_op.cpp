@@ -27,12 +27,12 @@
 #include <ctime>
 #endif
 
+#include "error_numbers.h"
+#include "filesys.h"
+#include "parse.h"
 #include "str_util.h"
 #include "str_replace.h"
 #include "util.h"
-#include "parse.h"
-#include "error_numbers.h"
-#include "filesys.h"
 
 #include "client_state.h"
 #include "client_types.h"
@@ -40,6 +40,8 @@
 #include "file_names.h"
 #include "log_flags.h"
 #include "main.h"
+#include "project.h"
+#include "result.h"
 #include "scheduler_op.h"
 
 using std::vector;
@@ -885,7 +887,7 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
         } else if (xp.parse_int("scheduler_version", scheduler_version)) {
             continue;
         } else if (xp.match_tag("project_files")) {
-            retval = project->parse_project_files(xp, true);
+            retval = parse_project_files(xp, project_files);
 #ifdef ENABLE_AUTO_UPDATE
         } else if (xp.match_tag("auto_update")) {
             retval = auto_update.parse(xp);

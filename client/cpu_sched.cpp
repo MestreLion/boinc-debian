@@ -70,11 +70,13 @@
 #include "str_util.h"
 #include "util.h"
 
-#include "client_msgs.h"
-#include "log_flags.h"
 #include "app.h"
-
+#include "client_msgs.h"
 #include "client_state.h"
+#include "log_flags.h"
+#include "project.h"
+#include "result.h"
+
 
 using std::vector;
 using std::list;
@@ -84,9 +86,6 @@ using std::isnan;
 #endif
 
 static double rec_sum;
-
-#define DEADLINE_CUSHION    0
-    // try to finish jobs this much in advance of their deadline
 
 // used in schedule_cpus() to keep track of resources used
 // by jobs tentatively scheduled so far
@@ -468,9 +467,11 @@ static RESULT* earliest_deadline_result(int rsc_type) {
         if (rp->non_cpu_intensive()) continue;
         PROJECT* p = rp->project;
 
-        // treat projects with DCF>90 as if they had deadline misses
+        // Skip this job if the project's deadline-miss count is zero.
+        // If the project's DCF is > 90 (and we're not ignoring it)
+        // treat all jobs as deadline misses
         //
-        if (!p->dont_use_dcf && p->duration_correction_factor < 90.0) {
+        if (p->dont_use_dcf || p->duration_correction_factor < 90.0) {
             if (p->rsc_pwf[rsc_type].deadlines_missed_copy <= 0) {
                 continue;
             }
@@ -498,7 +499,7 @@ static RESULT* earliest_deadline_result(int rsc_type) {
         //
         ACTIVE_TASK* atp = gstate.lookup_active_task_by_result(rp);
         if (best_atp && !atp) continue;
-        if (rp->estimated_time_remaining() < best_result->estimated_time_remaining()
+        if (rp->estimated_runtime_remaining() < best_result->estimated_runtime_remaining()
             || (!best_atp && atp)
         ) {
             best_result = rp;
@@ -1915,40 +1916,6 @@ ACTIVE_TASK* CLIENT_STATE::get_task(RESULT* rp) {
     return atp;
 }
 
-// Results must be complete early enough to report before the report deadline.
-// Not all hosts are connected all of the time.
-//
-double RESULT::computation_deadline() {
-    return report_deadline - (
-        gstate.work_buf_min()
-            // Seconds that the host will not be connected to the Internet
-        + DEADLINE_CUSHION
-    );
-}
-
-static const char* result_state_name(int val) {
-    switch (val) {
-    case RESULT_NEW: return "NEW";
-    case RESULT_FILES_DOWNLOADING: return "FILES_DOWNLOADING";
-    case RESULT_FILES_DOWNLOADED: return "FILES_DOWNLOADED";
-    case RESULT_COMPUTE_ERROR: return "COMPUTE_ERROR";
-    case RESULT_FILES_UPLOADING: return "FILES_UPLOADING";
-    case RESULT_FILES_UPLOADED: return "FILES_UPLOADED";
-    case RESULT_ABORTED: return "ABORTED";
-    }
-    return "Unknown";
-}
-
-void RESULT::set_state(int val, const char* where) {
-    _state = val;
-    if (log_flags.task_debug) {
-        msg_printf(project, MSG_INFO,
-            "[task] result state=%s for %s from %s",
-            result_state_name(val), name, where
-        );
-    }
-}
-
 // called at startup (after get_host_info())
 // and when general prefs have been parsed.
 // NOTE: GSTATE.NCPUS MUST BE 1 OR MORE; WE DIVIDE BY IT IN A COUPLE OF PLACES
@@ -1990,8 +1957,8 @@ void CLIENT_STATE::set_ncpus() {
 void PROJECT::update_duration_correction_factor(ACTIVE_TASK* atp) {
     if (dont_use_dcf) return;
     RESULT* rp = atp->result;
-    double raw_ratio = atp->elapsed_time/rp->estimated_duration_uncorrected();
-    double adj_ratio = atp->elapsed_time/rp->estimated_duration();
+    double raw_ratio = atp->elapsed_time/rp->estimated_runtime_uncorrected();
+    double adj_ratio = atp->elapsed_time/rp->estimated_runtime();
     double old_dcf = duration_correction_factor;
 
     // it's OK to overestimate completion time,
@@ -2023,4 +1990,3 @@ void PROJECT::update_duration_correction_factor(ACTIVE_TASK* atp) {
         );
     }
 }
-

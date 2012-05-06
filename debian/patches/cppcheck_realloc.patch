@@ -3,14 +3,11 @@ Description: Initialisation.
 
 Index: boinc/lib/diagnostics_win.cpp
 ===================================================================
---- boinc.orig/lib/diagnostics_win.cpp	2012-02-16 01:37:40.000000000 +0100
-+++ boinc/lib/diagnostics_win.cpp	2012-02-16 10:59:49.000000000 +0100
-@@ -329,8 +329,9 @@
- 
-     do {
+--- boinc.orig/lib/diagnostics_win.cpp	2012-05-03 13:41:57.688973563 +0200
++++ boinc/lib/diagnostics_win.cpp	2012-05-03 13:42:06.408854158 +0200
+@@ -331,6 +331,7 @@
          *ppBuffer = HeapAlloc(hHeap, HEAP_ZERO_MEMORY, *pcbBuffer);
--        if (ppBuffer == NULL) {
-+        if (*ppBuffer == NULL) {
+         if (*ppBuffer == NULL) {
              retval = ERROR_NOT_ENOUGH_MEMORY;
 +            return retval;
          }
@@ -26,8 +23,8 @@ Index: boinc/lib/diagnostics_win.cpp
                  case 0: // read attempt
 Index: boinc/lib/crypt.cpp
 ===================================================================
---- boinc.orig/lib/crypt.cpp	2012-02-15 22:04:05.000000000 +0100
-+++ boinc/lib/crypt.cpp	2012-02-16 10:54:04.000000000 +0100
+--- boinc.orig/lib/crypt.cpp	2012-05-03 13:28:56.000000000 +0200
++++ boinc/lib/crypt.cpp	2012-05-03 13:42:06.416854048 +0200
 @@ -339,6 +339,7 @@
      char clear_buf[MD5_LEN];
      int n, retval;

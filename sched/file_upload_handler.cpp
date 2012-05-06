@@ -119,7 +119,7 @@ int copy_socket_to_file(FILE* in, char* path, double offset, double nbytes) {
     //
     int fd = open(path,
         O_WRONLY|O_CREAT,
-        S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
+        S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH
     );
     if (fd<0) {
         return return_error(ERR_TRANSIENT,
@@ -701,4 +701,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 25232 2012-02-09 20:34:29Z davea $";
+const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 25623 2012-04-30 21:06:39Z romw $";
