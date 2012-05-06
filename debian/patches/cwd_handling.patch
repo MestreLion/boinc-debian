@@ -3,9 +3,9 @@ Description: Path length beyond 256.
 
 Index: boinc/client/app_start.cpp
 ===================================================================
---- boinc.orig/client/app_start.cpp	2012-03-24 16:04:03.000000000 +0100
-+++ boinc/client/app_start.cpp	2012-03-24 16:12:00.000000000 +0100
-@@ -122,7 +122,7 @@
+--- boinc.orig/client/app_start.cpp	2012-05-03 13:38:04.268172206 +0200
++++ boinc/client/app_start.cpp	2012-05-03 13:42:12.008777476 +0200
+@@ -123,7 +123,7 @@
  static void coproc_cmdline(
      int rsc_type, RESULT* rp, double ninstances, char* cmdline
  ) {
@@ -14,7 +14,7 @@ Index: boinc/client/app_start.cpp
      COPROC* coproc = &coprocs.coprocs[rsc_type];
      for (int j=0; j<ninstances; j++) {
          int k = rp->coproc_indices[j];
-@@ -159,7 +159,7 @@
+@@ -160,7 +160,7 @@
      if (!shm_handle) return ERR_SHMGET;
      sprintf(shmem_seg_name, "boinc_%d", i);
  #else
@@ -23,7 +23,7 @@ Index: boinc/client/app_start.cpp
  #ifndef __EMX__
      // shmem_seg_name is not used with mmap() shared memory
      if (app_version->api_major_version() >= 6) {
-@@ -194,7 +194,7 @@
+@@ -195,7 +195,7 @@
  }
  
  void ACTIVE_TASK::init_app_init_data(APP_INIT_DATA& aid) {
@@ -32,7 +32,7 @@ Index: boinc/client/app_start.cpp
  
      aid.major_version = BOINC_MAJOR_VERSION;
      aid.minor_version = BOINC_MINOR_VERSION;
-@@ -278,7 +278,7 @@
+@@ -279,7 +279,7 @@
  //
  int ACTIVE_TASK::write_app_init_file(APP_INIT_DATA& aid) {
      FILE *f;
@@ -41,7 +41,7 @@ Index: boinc/client/app_start.cpp
  
      sprintf(init_data_path, "%s/%s", slot_dir, INIT_DATA_FILE);
  
-@@ -352,7 +352,7 @@
+@@ -353,7 +353,7 @@
  int ACTIVE_TASK::setup_file(
      FILE_INFO* fip, FILE_REF& fref, char* file_path, bool input, bool is_io_file
  ) {
@@ -50,7 +50,7 @@ Index: boinc/client/app_start.cpp
      int retval;
      PROJECT* project = result->project;
  
-@@ -438,7 +438,7 @@
+@@ -439,7 +439,7 @@
  }
  
  int ACTIVE_TASK::copy_output_files() {
@@ -59,7 +59,7 @@ Index: boinc/client/app_start.cpp
      unsigned int i;
      for (i=0; i<result->output_files.size(); i++) {
          FILE_REF& fref = result->output_files[i];
-@@ -480,7 +480,7 @@
+@@ -481,7 +481,7 @@
  //   ACTIVE_TASK::task_state is PROCESS_EXECUTING
  //
  int ACTIVE_TASK::start() {
@@ -68,7 +68,7 @@ Index: boinc/client/app_start.cpp
      char cmdline[80000];    // 64KB plus some extra
      unsigned int i;
      FILE_REF fref;
-@@ -627,7 +627,7 @@
+@@ -628,7 +628,7 @@
      PROCESS_INFORMATION process_info;
      STARTUPINFO startup_info;
      LPVOID environment_block = NULL;
@@ -79,8 +79,8 @@ Index: boinc/client/app_start.cpp
  
 Index: boinc/client/auto_update.cpp
 ===================================================================
---- boinc.orig/client/auto_update.cpp	2012-03-18 14:31:22.000000000 +0100
-+++ boinc/client/auto_update.cpp	2012-03-24 16:09:25.000000000 +0100
+--- boinc.orig/client/auto_update.cpp	2012-05-03 13:28:56.075686520 +0200
++++ boinc/client/auto_update.cpp	2012-05-03 13:42:12.012777421 +0200
 @@ -179,7 +179,7 @@
      unsigned int i;
      FILE_INFO* fip=0;

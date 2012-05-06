@@ -1,0 +1,22 @@
+Index: boinc/lib/coproc.cpp
+===================================================================
+--- boinc.orig/lib/coproc.cpp	2012-04-21 12:55:43.000000000 +0200
++++ boinc/lib/coproc.cpp	2012-04-21 12:59:48.631727184 +0200
+@@ -448,7 +448,7 @@
+     display_driver_version = 0;
+     strcpy(prop.name, "");
+     prop.deviceHandle = 0;
+-    prop.totalGlobalMem = 0;
++    prop.totalGlobalMem = 0.0;
+     prop.sharedMemPerBlock = 0;
+     prop.regsPerBlock = 0;
+     prop.warpSize = 0;
+@@ -477,7 +477,7 @@
+     while (!xp.get_tag()) {
+         if (xp.match_tag("/coproc_cuda")) {
+             if (!peak_flops) {
+-				set_peak_flops();
++                set_peak_flops();
+             }
+             if (!available_ram) {
+                 available_ram = prop.totalGlobalMem;
