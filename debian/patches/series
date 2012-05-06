@@ -28,10 +28,11 @@ client_stream_realloc.patch
 # --- A
 #convinceDavid# MoreInformativeAppStartFailure.patch
 stream_memory_leak_fix.patch
-#tmpA# app_ipc_uninitialised.patch
+#SETIprobCandidate#app_ipc_uninitialised_A_reorder.patch
+#SETIprobCandidate#app_ipc_uninitialised_B_buffer.patch
 uninitialised_client_states.patch
 #convinceDavid# MainDocumentConst.patch
-#MainDocumentWarnings.patch
+MainDocumentWarnings.patch
 # --- B 
 #tmpA# add_init_to_client_state_constructor.patch
 #convinceDavid# client_path_char_array_length.patch
