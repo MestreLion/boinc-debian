@@ -1,15 +1,9 @@
-boinc (7.0.27+dfsg-3) UNRELEASED; urgency=low
-
-  * Attempt to eliminate menu line issue
-
- -- Steffen Moeller <moeller@debian.org>  Mon, 07 May 2012 00:23:27 +0200
-
 boinc (7.0.27+dfsg-2) unstable; urgency=low
 
   * Removed a couple of patches to help preventing crash in some
     scientific apps
 
- -- Steffen Moeller <moeller@debian.org>  Sun, 06 May 2012 14:06:18 +0200
+ -- Steffen Moeller <moeller@debian.org>  Mon, 07 May 2012 23:39:30 +0200
 
 boinc (7.0.27+dfsg-1) unstable; urgency=low
 

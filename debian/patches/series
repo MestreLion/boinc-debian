@@ -26,12 +26,13 @@ cwd_handling.patch
 parse_issues.patch
 client_stream_realloc.patch
 # --- A
-#convinceDavid# MoreInformativeAppStartFailure.patch
+#convinceDavid#
+MoreInformativeAppStartFailure.patch
+#send to David#
 stream_memory_leak_fix.patch
 #SETIprobCandidate#app_ipc_uninitialised_A_reorder.patch
 #SETIprobCandidate#app_ipc_uninitialised_B_buffer.patch
 uninitialised_client_states.patch
-#convinceDavid# MainDocumentConst.patch
 MainDocumentWarnings.patch
 # --- B 
 #tmpA# add_init_to_client_state_constructor.patch
