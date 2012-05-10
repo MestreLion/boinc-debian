@@ -26,8 +26,7 @@ cwd_handling.patch
 parse_issues.patch
 client_stream_realloc.patch
 # --- A
-#convinceDavid#
-MoreInformativeAppStartFailure.patch
+#convinceDavid# bug672328  MoreInformativeAppStartFailure.patch
 #send to David#
 stream_memory_leak_fix.patch
 #SETIprobCandidate#app_ipc_uninitialised_A_reorder.patch
