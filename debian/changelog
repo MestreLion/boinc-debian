@@ -1,6 +1,11 @@
 boinc (7.0.27+dfsg-3) unstable; urgency=low
 
-  * Now truly reconstituting compatibility with SETI (Closes: #672328).
+  * Now truly reconstituting compatibility with SETI
+    (Closes: #672328, lp: #991179).
+  * builds with gcc 4.7 (Closes: #671999)
+    Thanks to Matthias Klose for his patch, had sadly only seen it after
+    I patched it myself :o/  The NMU of his should not kick in because
+    of the SETI incompatibility.
 
  -- Steffen Moeller <moeller@debian.org>  Thu, 10 May 2012 10:59:30 +0200
 
