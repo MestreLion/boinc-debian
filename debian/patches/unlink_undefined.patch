@@ -1,0 +1,12 @@
+Index: boinc/tools/process_input_template.cpp
+===================================================================
+--- boinc.orig/tools/process_input_template.cpp	2012-03-29 22:49:59.000000000 +0200
++++ boinc/tools/process_input_template.cpp	2012-05-10 12:26:30.000000000 +0200
+@@ -17,6 +17,7 @@
+ 
+ #include <stdio.h>
+ #include <string>
++#include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ 
