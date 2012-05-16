@@ -1,0 +1,37 @@
+Index: boinc/clientscr/screensaver_x11.cpp
+===================================================================
+--- boinc.orig/clientscr/screensaver_x11.cpp	2012-03-31 13:44:23.171164107 +0200
++++ boinc/clientscr/screensaver_x11.cpp	2012-05-16 17:05:03.009253195 +0200
+@@ -531,9 +531,12 @@
+   for(int n = 0; n < 10; n++)
+     {
+       // get list of x clients
+-      xcb_atom_t NET_CLIENT_LIST = xcb_atom_get(con, "_NET_CLIENT_LIST");
++      //xcb_atom_t NET_CLIENT_LIST = xcb_atom_get(con, "_NET_CLIENT_LIST");
++      xcb_intern_atom_cookie_t cookie0=xcb_intern_atom(con, 0, strlen("_NET_CLIENT_LIST"), "_NET_CLIENT_LIST");;
++      xcb_intern_atom_reply_t *reply0=xcb_intern_atom_reply(con, cookie0, NULL);;
++
+       xcb_get_property_cookie_t cookie =
+-        xcb_get_property(con, 0, screen->root, NET_CLIENT_LIST, WINDOW, 0,
++        xcb_get_property(con, 0, screen->root, reply0->atom, XCB_ATOM_WINDOW, 0,
+                         std::numeric_limits<uint32_t>::max());
+ 
+       xcb_generic_error_t  *error;
+@@ -554,7 +557,7 @@
+           xcb_get_property_reply_t *reply2;
+ 
+           // check WM_COMMAND
+-          cookie = xcb_get_property(con, 0, clients[c], WM_COMMAND, STRING,
++          cookie = xcb_get_property(con, 0, clients[c], XCB_ATOM_WM_COMMAND, XCB_ATOM_STRING,
+                                     0, std::numeric_limits<uint32_t>::max());
+           reply2 = xcb_get_property_reply(con, cookie, &error);
+           if(!error) // ignore errors
+@@ -571,7 +574,7 @@
+             }
+ 
+           // check WM_CLASS
+-          cookie = xcb_get_property(con, 0, clients[c], WM_CLASS, STRING,
++          cookie = xcb_get_property(con, 0, clients[c], XCB_ATOM_WM_CLASS, XCB_ATOM_STRING,
+                                     0, std::numeric_limits<uint32_t>::max());
+           reply2 = xcb_get_property_reply(con, cookie, &error);
+           if(!error) // ignore errors
