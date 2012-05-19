@@ -817,7 +817,7 @@ int handle_global_prefs() {
 bool send_code_sign_key(char* code_sign_key) {
     char* oldkey, *signature;
     int i, retval;
-    char path[256];
+    char path[MAXPATHLEN];
 
     if (strlen(g_request->code_sign_key)) {
         if (strcmp(g_request->code_sign_key, code_sign_key)) {
@@ -1402,4 +1402,4 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     }
 }
 
-const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 25355 2012-02-29 07:22:59Z davea $";
+const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 25682 2012-05-15 19:07:12Z romw $";

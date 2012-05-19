@@ -53,7 +53,7 @@ void usage() {
 
 int main(int argc, char** argv) {
     int i, retval;
-    char file_name[256], url[1024], path[1024];
+    char file_name[256], url[1024], path[MAXPATHLEN];
     int host_id;
     vector<const char*> urls;
     double nbytes = -1;
@@ -137,4 +137,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_f3c3c4b892 = "$Id: put_file.cpp 25341 2012-02-24 22:55:11Z davea $";
+const char *BOINC_RCSID_f3c3c4b892 = "$Id: put_file.cpp 25682 2012-05-15 19:07:12Z romw $";

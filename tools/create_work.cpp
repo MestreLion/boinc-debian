@@ -21,6 +21,7 @@
 // This program must be run in the project's root directory
 //
 #include "config.h"
+#include <sys/param.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -82,7 +83,7 @@ int main(int argc, const char** argv) {
     DB_WORKUNIT wu;
     int retval;
     char wu_template[BLOB_SIZE];
-    char wu_template_file[256], result_template_file[256], result_template_path[1024];
+    char wu_template_file[256], result_template_file[256], result_template_path[MAXPATHLEN];
     const char* command_line=NULL;
     const char** infiles = NULL;
     int i, ninfiles;
@@ -305,4 +306,4 @@ int main(int argc, const char** argv) {
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 25314 2012-02-22 22:13:08Z davea $";
+const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 25682 2012-05-15 19:07:12Z romw $";

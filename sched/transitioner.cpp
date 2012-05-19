@@ -35,6 +35,7 @@
 #include <string>
 #include <signal.h>
 #include <sys/time.h>
+#include <sys/param.h>
 
 #include "boinc_db.h"
 #include "util.h"
@@ -753,7 +754,7 @@ void usage(char *name) {
 
 int main(int argc, char** argv) {
     int i, retval;
-    char path[256];
+    char path[MAXPATHLEN];
 
     startup_time = time(0);
     for (i=1; i<argc; i++) {
@@ -818,4 +819,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 25435 2012-03-16 17:23:55Z romw $";
+const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 25682 2012-05-15 19:07:12Z romw $";

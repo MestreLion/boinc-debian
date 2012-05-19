@@ -107,7 +107,7 @@ int try_fopen(const char* path, FCGI_FILE*& f, const char *mode) {
 #endif
     const char* p;
     DIR* d;
-    char dirpath[256];
+    char dirpath[MAXPATHLEN];
 
 #ifndef _USING_FCGI_
     f = fopen(path, mode);
@@ -162,7 +162,7 @@ int dir_hier_path(
     const char* filename, const char* root, int fanout,
     char* path, bool create
 ) {
-    char dir[256], dirpath[256];
+    char dir[256], dirpath[MAXPATHLEN];
     int retval;
 
     if (fanout==0) {
@@ -383,4 +383,4 @@ void continue_simulation(const char *daemonname){
 
 #endif
 
-const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 25299 2012-02-20 21:54:31Z davea $";
+const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 25682 2012-05-15 19:07:12Z romw $";

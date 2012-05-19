@@ -3501,3 +3501,127 @@ Rom    2 May 2012
     /
         configure.ac
         version.h
+
+Charlie 3 May 2012
+    - Mac installer: changes for OS 10.8 compatibility.
+
+    mac_installer/
+        PostInstall.cpp
+        Uninstall.cpp
+
+Charlie 6 May 2012
+    - Mac installer: changes for OS 10.8 compatibility.
+
+    mac_installer/
+        PostInstall.cpp
+        Uninstall.cpp
+
+Charlie 10 May 2012
+    - MGR: Eliminate QuickDraw calls for OS 10.8 compatibility.
+
+    clientgui/
+        BOINCGUIApp.cpp
+        DlgEventLog.cpp
+        DlgitemProperties.cpp
+        sg_DlgMessages.cpp
+        mac/
+            MacGUI.cpp,.h
+
+David  6 May 2012
+    - client: fix bug where coproc name could be set incorrectly when:
+        a) there are multiple GPU vendors
+        b) one of them is detected via OpenCL but not "native" (CUDA/CAL)
+
+    client/
+        coproc_detect.cpp
+
+Bernd  7 May 2012
+    - lib: added function secs_to_hmsf() which converts (double) seconds
+        to a string 0h00m00s00
+
+    lib/
+        str_util.cpp, .h
+
+David  9 May 2012
+    - C++ code: use MAXPATHLEN for char arrays that hold paths
+
+    (many .cpp files)
+
+David  9 May 2012
+    - compile fix
+
+    api/
+        boinc_opencl.cpp,h
+
+David  9 May 2012
+    - Win compile fixes
+
+    lib/
+        boinc_win.h
+        filesys.cpp
+    samples/vboxwrapper/
+        vboxwrapper.cpp
+
+Rom    9 May 2012
+    - lib: Fix a bug where information that was meant for stdout was
+        being written to stderr instead.
+    - lib: Keep track of the rough estimate of stdout and stderr by
+        incrementing internal variables instead of doing a stat on
+        each log write.  stat() on Windows is converted to a FindFirstFile()
+        call which in turn looks up the file size information in the
+        directory structure file system entry.  The directory structure 
+        information is only updated periodically.  This lead to larger
+        than expected log file for both the manager and core client.
+        
+        This has the added advantage of reducing the overall number of
+        file I/O operations when logging information.
+        
+    lib/
+        diagnostics.cpp
+
+David  10 May 2012
+    - diagnostics lib:
+        - store file sizes as double rather than int
+        - if we're appending to log files, initialize the
+            size variables to the current size
+        - check return value of fprintf, only increment size if it's +
+        - when rotate log file, reset size var to zero
+
+    lib/
+        diagnostics.cpp
+
+David  13 May 2012
+    - lib: down case processor features
+
+    lib/
+        hostinfo.cpp
+
+Rom    15 May 2012
+    - MGR: Add OpenCL icon to the ProjectInfo wizard page.
+
+    clientgui/
+        ProjectInfoPage.cpp, .h
+    clientgui/res/
+        openclicon.xpm
+    clientgui/res/templates/
+        openclicon.png
+    lib/
+        diagnostics.cpp
+
+Rom    15 May 2012
+    - MGR: Fix the icon we use to represent OpenCL.
+    - client: Update the stock all_project_list.xml file we send out
+        with new client software.
+
+    clientgui/res/
+        openclicon.xpm
+    win_build/installerv2/redist/
+        all_projects_list.xml
+
+Rom    2 May 2012
+    - Tag for 7.0.28 release, all platforms
+      boinc_core_release_7_0_28
+
+    /
+        configure.ac
+        version.h
