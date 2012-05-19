@@ -23,6 +23,7 @@
 // NOTE 2: should rewrite to enumerate WUs, not results
 
 #include "config.h"
+#include <sys/param.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -57,7 +58,7 @@ int get_file_path(WORKUNIT& wu, char* path) {
 int handle_result(DB_RESULT& result) {
     DB_WORKUNIT wu;
     int retval;
-    char path[256];
+    char path[MAXPATHLEN];
     char buf[256];
     FILE* f;
 
@@ -166,4 +167,4 @@ int main(int argc, char** argv) {
     printf("%d out of %d errors\n", nerr, n);
 }
 
-const char *BOINC_RCSID_8f4e399992 = "$Id: wu_check.cpp 22647 2010-11-08 17:51:57Z davea $";
+const char *BOINC_RCSID_8f4e399992 = "$Id: wu_check.cpp 25682 2012-05-15 19:07:12Z romw $";

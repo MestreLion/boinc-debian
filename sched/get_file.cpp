@@ -31,6 +31,7 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <sys/param.h>
 #include <stdlib.h>
 #include <string>
 #include <time.h>
@@ -122,7 +123,7 @@ int main(int argc, char** argv) {
     R_RSA_PRIVATE_KEY key;
     bool generate_upload_certificate = !config.dont_generate_upload_certificates;
     if (generate_upload_certificate) {
-        char keypath[256];
+        char keypath[MAXPATHLEN];
         sprintf(keypath, "%s/upload_private", config.key_dir);
         retval = read_key_file(keypath, key);
         if (retval) {
@@ -143,4 +144,4 @@ int main(int argc, char** argv) {
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 25341 2012-02-24 22:55:11Z davea $";
+const char *BOINC_RCSID_37238a0141 = "$Id: get_file.cpp 25682 2012-05-15 19:07:12Z romw $";

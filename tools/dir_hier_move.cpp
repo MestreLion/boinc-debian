@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     char* src_dir, *dst_dir;
     int fanout=0;
     std::string filename;
-    char dst_path[256], src_path[256];
+    char dst_path[MAXPATHLEN], src_path[MAXPATHLEN];
     int retval;
     
     if ( (argc == 1) || !strcmp(argv[1], "-h")  || !strcmp(argv[1],"--help") || (argc != 4) ) {
@@ -69,4 +69,4 @@ int main(int argc, char** argv) {
     }
 }
 
-const char *BOINC_RCSID_d6492ba662 = "$Id: dir_hier_move.cpp 17388 2009-02-26 00:23:23Z korpela $";
+const char *BOINC_RCSID_d6492ba662 = "$Id: dir_hier_move.cpp 25682 2012-05-15 19:07:12Z romw $";

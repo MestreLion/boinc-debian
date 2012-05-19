@@ -28,6 +28,7 @@
 //
 
 #include "config.h"
+#include <sys/param.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -172,7 +173,7 @@ void wait_for_results(int wu_id) {
 
 void make_work(vector<string> &wu_names) {
     int retval, start_time=time(0);
-    char keypath[256];
+    char keypath[MAXPATHLEN];
     char buf[BLOB_SIZE];
     R_RSA_PRIVATE_KEY key;
     int nwu_names = wu_names.size();
@@ -352,4 +353,4 @@ int main(int argc, char** argv) {
     make_work(wu_names);
 }
 
-const char *BOINC_RCSID_d24265dc7f = "$Id: make_work.cpp 22647 2010-11-08 17:51:57Z davea $";
+const char *BOINC_RCSID_d24265dc7f = "$Id: make_work.cpp 25682 2012-05-15 19:07:12Z romw $";

@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include <cstdio>
+#include <sys/param.h>
 
 #include "util.h"
 #include "sched_config.h"
@@ -37,7 +38,7 @@ const char *usage =
 "   and creates the directory if needed.\n\n";
 
 int main(int argc, char** argv) {
-    char path[256];
+    char path[MAXPATHLEN];
     int retval;
 
     if ( (argc == 1) ||  !strcmp(argv[1], "-h")  || !strcmp(argv[1],"--help") || (argc != 2) ) {
@@ -61,4 +62,4 @@ int main(int argc, char** argv) {
     printf("%s\n", path);
 }
 
-const char *BOINC_RCSID_c683969ea8 = "$Id: dir_hier_path.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_c683969ea8 = "$Id: dir_hier_path.cpp 25682 2012-05-15 19:07:12Z romw $";

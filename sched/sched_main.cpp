@@ -286,7 +286,7 @@ void set_core_dump_size_limit() {
 #endif
 
 void attach_to_feeder_shmem() {
-    char path[256];
+    char path[MAXPATHLEN];
     strncpy(path, config.project_dir, sizeof(path));
     get_key(path, 'a', sema_key);
     int i, retval;
@@ -356,7 +356,7 @@ int main(int argc, char** argv) {
     FCGI_FILE *fin, *fout;
 #endif
     int i, retval;
-    char req_path[256], reply_path[256], log_path[256], path[256];
+    char req_path[MAXPATHLEN], reply_path[MAXPATHLEN], log_path[MAXPATHLEN], path[MAXPATHLEN];
     unsigned int counter=0;
     char* code_sign_key;
     int length=-1;
@@ -669,4 +669,4 @@ void JOB_LIMITS::print_log() {
     }
 }
 
-const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 25402 2012-03-12 09:10:42Z bema $";
+const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 25682 2012-05-15 19:07:12Z romw $";

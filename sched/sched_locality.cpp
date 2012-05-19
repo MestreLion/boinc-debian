@@ -212,7 +212,7 @@ bool host_has_file(char *filename, bool skip_last_wu) {
 // routine, in the same way as if there was no scheduling locality.
 //
 int decrement_disk_space_locality( WORKUNIT& wu) {
-    char filename[256], path[512];
+    char filename[256], path[MAXPATHLEN];
     int filesize;
     struct stat buf;
 
@@ -1307,4 +1307,4 @@ void send_file_deletes() {
 
 // (8) If addtional results are needed, return to step 4 above.
 
-const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 23636 2011-06-06 03:40:42Z davea $";
+const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 25682 2012-05-15 19:07:12Z romw $";

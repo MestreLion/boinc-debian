@@ -201,7 +201,7 @@ int create_result(
 //
 int check_files(char** infiles, int ninfiles, SCHED_CONFIG& config_loc) {
     int i;
-    char path[256];
+    char path[MAXPATHLEN];
 
     for (i=0; i<ninfiles; i++) {
         dir_hier_path(
@@ -535,4 +535,4 @@ int cancel_jobs(int min_id, int max_id) {
     return 0;
 }
 
-const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 25341 2012-02-24 22:55:11Z davea $";
+const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 25682 2012-05-15 19:07:12Z romw $";
