@@ -1,3 +1,9 @@
+boinc (7.0.28+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream version.
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 19 May 2012 12:19:25 +0200
+
 boinc (7.0.27+dfsg-4) UNRELEASED; urgency=low
 
   * Preparing for screen saver

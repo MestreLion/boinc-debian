@@ -1,7 +1,7 @@
 Index: boinc/api/boinc_api.h
 ===================================================================
---- boinc.orig/api/boinc_api.h	2012-05-03 13:31:53.445255219 +0200
-+++ boinc/api/boinc_api.h	2012-05-03 13:32:10.805017260 +0200
+--- boinc.orig/api/boinc_api.h	2012-05-18 14:36:50.000000000 +0200
++++ boinc/api/boinc_api.h	2012-05-19 12:21:09.620351315 +0200
 @@ -83,7 +83,7 @@
  
  extern int boinc_init(void);

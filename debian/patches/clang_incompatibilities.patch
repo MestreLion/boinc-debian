@@ -2,8 +2,8 @@ Author: Steffen Moeller <steffen.moeller@uk-sh.de>
 Description: Tested compatibility with clang.
 Index: boinc/lib/Makefile.am
 ===================================================================
---- boinc.orig/lib/Makefile.am	2012-03-31 23:50:52.780651101 +0200
-+++ boinc/lib/Makefile.am	2012-03-31 23:58:18.698533236 +0200
+--- boinc.orig/lib/Makefile.am	2012-05-19 12:21:48.983806017 +0200
++++ boinc/lib/Makefile.am	2012-05-19 12:22:11.987487371 +0200
 @@ -147,13 +147,13 @@
  libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
  libboinc_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
@@ -22,8 +22,8 @@ Index: boinc/lib/Makefile.am
  if ENABLE_FCGI
 Index: boinc/lib/util.cpp
 ===================================================================
---- boinc.orig/lib/util.cpp	2012-03-31 23:42:04.779899659 +0200
-+++ boinc/lib/util.cpp	2012-03-31 23:46:22.976354118 +0200
+--- boinc.orig/lib/util.cpp	2012-05-19 12:21:48.983806017 +0200
++++ boinc/lib/util.cpp	2012-05-19 12:22:11.991487316 +0200
 @@ -310,7 +310,7 @@
  #ifdef _WIN32
      DebugBreak();
@@ -35,10 +35,10 @@ Index: boinc/lib/util.cpp
  
 Index: boinc/sched/make_work.cpp
 ===================================================================
---- boinc.orig/sched/make_work.cpp	2012-03-31 13:44:26.739115369 +0200
-+++ boinc/sched/make_work.cpp	2012-04-01 00:57:02.846130700 +0200
-@@ -175,9 +175,6 @@
-     char keypath[256];
+--- boinc.orig/sched/make_work.cpp	2012-05-19 12:21:48.983806017 +0200
++++ boinc/sched/make_work.cpp	2012-05-19 12:22:11.999487205 +0200
+@@ -176,9 +176,6 @@
+     char keypath[MAXPATHLEN];
      char buf[BLOB_SIZE];
      R_RSA_PRIVATE_KEY key;
 -    int nwu_names = wu_names.size();
@@ -47,7 +47,7 @@ Index: boinc/sched/make_work.cpp
      static int index=0;
  
      retval = config.parse_file();
-@@ -192,8 +189,11 @@
+@@ -193,8 +190,11 @@
          exit(1);
      }
  
@@ -61,7 +61,7 @@ Index: boinc/sched/make_work.cpp
          sprintf(buf, "where name='%s'", wu_names[i].c_str());
          retval = wu.lookup(buf);
          if (retval) {
-@@ -264,6 +264,8 @@
+@@ -265,6 +265,8 @@
  
          wait_for_results(new_wu_id);
      }

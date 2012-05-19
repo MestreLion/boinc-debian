@@ -22,7 +22,7 @@ stripchart_security.patch
 #andYetMorePatches04.patch
 redundant_i.patch
 cppcheck_realloc.patch
-cwd_handling.patch
+#convinceDavid#cwd_handling.patch
 parse_issues.patch
 client_stream_realloc.patch
 # --- A
