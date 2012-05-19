@@ -119,6 +119,7 @@ CXXFLAGS += $(DEB_OPT_FLAGS)
 CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
+# --enable-debug
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
@@ -232,6 +233,7 @@ override_dh_auto_clean:
 	rm -f lib/crypt_prog test/run notices/feeds.xml
 	find test -name "run-*" | xargs -r rm -rf
 	rm -f $(BINARIES)
+	rm -fr debian/boinc-amd-opencl # for cases when this is not in debian/control
 	rm -f \
 	  lockfile \
 	  doc/manpages/*.1 \

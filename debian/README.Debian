@@ -1,0 +1,11 @@
+The package provides two virtial packages that help with package
+dependencies to support the employment of graphics cards with the
+computations. For NVidia this is fine, but the AMD/ATI fglrx drivers
+are regularly incompatible with the latest releases of X. At
+the very moment the release team has hence decided to remove those
+and all source packages that depend with a binary on them, to
+be removed from the testing distribution.
+
+To have BOINC back in, and to help eliminate an older mysql dependency,
+this release now sees the OpenCL helper package for AMD/ATI removed.
+This is remporary, I very much hope.
