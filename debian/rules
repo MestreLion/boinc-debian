@@ -101,7 +101,11 @@ endif
 
 CFLAGS += -g -Wall
 CXXFLAGS += -g -Wall
+CFLAGS += -D_FORTIFY_SOURCE=1 -fstack-protector
+CXXFLAGS += -D_FORTIFY_SOURCE=1 -fstack-protector
 LDFLAGS += -Wl,--as-needed
+LDFLAGS += -Wl,-z,relro
+LDFLAGS += -Wl,-z,now
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
   DEB_OPT_FLAGS = -O0
