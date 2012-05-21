@@ -1,0 +1,22 @@
+Index: boinc/clientscr/screensaver_x11.cpp
+===================================================================
+--- boinc.orig/clientscr/screensaver_x11.cpp	2012-05-22 01:03:09.000000000 +0200
++++ boinc/clientscr/screensaver_x11.cpp	2012-05-22 23:37:35.829892017 +0200
+@@ -23,7 +23,7 @@
+ //
+ // GL:  boincscr -root  \n\
+ //
+-// If your BOINC directory differs from /var/lib/boinc, you can use
++// If your BOINC directory differs from /var/lib/boinc-client, you can use
+ // the -boinc_dir command line argument.
+ //
+ // When run, this screensaver connects to the BOINC client via RPC, asks for
+@@ -404,7 +404,7 @@
+ {
+   unsigned long int window_id = 0;
+   bool windowed = true;
+-  std::string boinc_wd = "/var/lib/boinc";
++  std::string boinc_wd = "/var/lib/boinc-client";
+ 
+   // parse command line
+   for(int c = 0; c < argc; c++)

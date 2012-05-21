@@ -55,3 +55,4 @@ api_NULL_not_defined.patch
 unlink_undefined.patch
 0001-Patch-from-Steffen-Moeller-for-recent-Xcb.patch
 0002-re-enable-X11-screensaver-build.patch
+screen_saver_boinc_extra.patch
