@@ -10,7 +10,6 @@ mac_addresses_cores_in_kfreebsd.patch
 stripchart_debian.patch
 upstream_sztaki_configureEval.patch
 generate_less.patch
-#Makefile_subdirs.patch
 csh2tcsh.patch
 possible_size_type_error.patch
 upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
@@ -54,4 +53,5 @@ nvidia_mem_display_simplification.patch
 api_NULL_not_defined.patch
 #convinceRom#wxWidgets_observations.patch
 unlink_undefined.patch
-screensaver_woes.patch
+0001-Patch-from-Steffen-Moeller-for-recent-Xcb.patch
+0002-re-enable-X11-screensaver-build.patch

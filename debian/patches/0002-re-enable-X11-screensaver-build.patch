@@ -1,0 +1,29 @@
+>From d5cb7777c766c302ce0d9c37315bae7468ae297c Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Mon, 21 May 2012 17:39:14 +0200
+Subject: [PATCH 2/2] re-enable X11 screensaver build
+
+---
+ Makefile.am |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 0c2ea14..f74a363 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -22,9 +22,9 @@ endif
+ 
+ if ENABLE_MANAGER
+    CLIENTGUI_SUBDIRS = clientgui locale
+-#if BUILD_X11_SCREENSAVER
+-#   CLIENTGUI_SUBDIRS += clientscr
+-#endif
++if BUILD_X11_SCREENSAVER
++   CLIENTGUI_SUBDIRS += clientscr
++endif
+ endif
+ 
+ # ORDER MATTERS below.  One must build dependencies FIRST, then things
+-- 
+1.7.10.1
+
