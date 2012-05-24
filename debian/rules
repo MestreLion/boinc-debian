@@ -106,6 +106,8 @@ CXXFLAGS += -D_FORTIFY_SOURCE=1 -fstack-protector
 LDFLAGS += -Wl,--as-needed
 LDFLAGS += -Wl,-z,relro
 LDFLAGS += -Wl,-z,now
+# hurd needs the following
+LDFLAGS += -Wl,--no-add-needed
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
   DEB_OPT_FLAGS = -O0

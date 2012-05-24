@@ -1,6 +1,8 @@
 boinc (7.0.28+dfsg-2) UNRELEASED; urgency=low
 
   * Reactivating the screensaver (Steffen and Bernd)
+    - not ready, yet.
+  * Addressed FTBFS on hurd (Closes: #672725)
 
  -- Steffen Moeller <moeller@debian.org>  Tue, 22 May 2012 01:01:39 +0200
 
