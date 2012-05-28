@@ -1,3 +1,4 @@
+# This seems unfortunate, let us improve this over time
 usr/include/BOINC/boinc_api.h       usr/share/boinc-dev/api/boinc_api.h
 usr/include/BOINC/gutil.h           usr/share/boinc-dev/api/gutil.h
 usr/include/BOINC/app_ipc.h         usr/share/boinc-dev/lib/app_ipc.h
@@ -29,6 +30,4 @@ usr/include/BOINC/api/graphics_data.h   usr/share/boinc-dev/api/graphics_data.h
 usr/include/BOINC/api/reduce.h          usr/share/boinc-dev/api/reduce.h
 usr/include/BOINC/lib/md5_file.h        usr/share/boinc-dev/lib/md5_file.h
 
-usr/lib/libboinc.a                  usr/share/boinc-dev/lib/libboinc.a
-usr/lib/libboinc_api.a              usr/share/boinc-dev/api/libboinc_api.a
 usr/include/boinc 		    usr/include/BOINC

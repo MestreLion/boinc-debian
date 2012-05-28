@@ -239,7 +239,7 @@ override_dh_auto_clean:
 	rm -f lib/crypt_prog test/run notices/feeds.xml
 	find test -name "run-*" | xargs -r rm -rf
 	rm -f $(BINARIES)
-	rm -fr debian/boinc-amd-opencl # for cases when this is not in debian/control
+	rm -fr debian/boinc-amd-opencl debian/boinc-screensaver # for cases when this is not in debian/control
 	rm -f \
 	  lockfile \
 	  doc/manpages/*.1 \

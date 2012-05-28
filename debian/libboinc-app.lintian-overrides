@@ -1,2 +1,2 @@
-boinc-dev binary: package-name-doesnt-match-sonames
+libboinc-app binary: package-name-doesnt-match-sonames
 # Well, yes, and this is not supposed to change for a while

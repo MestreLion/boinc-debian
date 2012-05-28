@@ -1,4 +1,10 @@
-boinc (7.0.28+dfsg-2) unstable; urgency=low
+boinc (7.0.28+dfsg-3) unstable; urgency=low
+
+  * Splitting -dev package into libboinc and libboinc-dev.
+ 
+ -- Steffen Moeller <moeller@debian.org>  Mon, 28 May 2012 13:21:35 +0200
+
+boinc (7.0.28+dfsg-2) UNRELEASED; urgency=low
 
   * Reactivating the screensaver (Steffen and Bernd)
     - not ready, yet.
