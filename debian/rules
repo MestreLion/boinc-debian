@@ -125,6 +125,7 @@ CXXFLAGS += $(DEB_OPT_FLAGS)
 CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
+# --disable-static \
 # --enable-debug
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
@@ -135,6 +136,7 @@ CFGFLAGS_boinc-client = \
   --enable-manager \
   --enable-libraries \
   --enable-unicode \
+  --enable-shared \
   --with-ssl \
   --with-x \
   CFLAGS="$(CFLAGS_boinc-client)" \

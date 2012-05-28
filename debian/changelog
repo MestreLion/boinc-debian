@@ -1,6 +1,7 @@
-boinc (7.0.28+dfsg-3) unstable; urgency=low
+boinc (7.0.28+dfsg-3) UNRELEASED; urgency=low
 
   * Splitting -dev package into libboinc and libboinc-dev.
+  * Added shared library for libboinc.
  
  -- Steffen Moeller <moeller@debian.org>  Mon, 28 May 2012 13:21:35 +0200
 

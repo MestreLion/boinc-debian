@@ -1,0 +1,20 @@
+Index: boinc/lib/Makefile.am
+===================================================================
+--- boinc.orig/lib/Makefile.am	2012-05-28 20:27:20.000000000 +0200
++++ boinc/lib/Makefile.am	2012-05-28 20:28:21.196071929 +0200
+@@ -146,13 +146,13 @@
+ libboinc_la_SOURCES = $(generic_sources) $(mac_sources)
+ libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+ libboinc_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+-libboinc_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -static -version-number $(LIBBOINC_VERSION)
++libboinc_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -version-number $(LIBBOINC_VERSION)
+ libboinc_la_LIBADD = -lm -lstdc++
+ 
+ libboinc_crypt_la_SOURCES = crypt.cpp
+ libboinc_crypt_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+ libboinc_crypt_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
+-libboinc_crypt_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -static -version-number $(LIBBOINC_VERSION)
++libboinc_crypt_la_LDFLAGS = -L$(libdir) -rpath $(libdir) -version-number $(LIBBOINC_VERSION)
+ libboinc_crypt_la_LIBADD =  -lm -lstdc++
+ 
+ 
