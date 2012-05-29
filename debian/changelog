@@ -2,6 +2,8 @@ boinc (7.0.28+dfsg-3) UNRELEASED; urgency=low
 
   * Splitting -dev package into libboinc and libboinc-dev.
   * Added shared library for libboinc.
+  * Added configure flag in debian/rules to allow dynamic clients
+  * Installing more from  debian/tmp to avoid lintian wrappers
  
  -- Steffen Moeller <moeller@debian.org>  Mon, 28 May 2012 13:21:35 +0200
 

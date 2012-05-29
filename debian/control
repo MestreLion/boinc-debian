@@ -39,6 +39,22 @@ Description: metapackage for the BOINC client and the manager
  BOINC core client.
 
 
+Package: libboinc
+Architecture: any
+Section: libs
+Depends: ${misc:Depends} 
+Description: libraries of BOINC the client depends on
+ The Berkeley Open Infrastructure for Network Computing (BOINC) is a
+ software platform for distributed computing using volunteered computer
+ resources.
+ .
+ The environment offers a series of libraries that both the user-run
+ client and the client-invoked scientific applications run on. With
+ the number of cores per machine growing, and with scientific apps
+ commonly started for every core, it is essential to have memory
+ shared as much as possible between all binaries.
+
+
 Package: boinc-nvidia-cuda
 Architecture: amd64 i386
 Section: contrib/net
@@ -85,7 +101,9 @@ Description: metapackage for CUDA-savvy BOINC client and manager
 
 Package: boinc-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.3),
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libboinc (= ${binary:Version}),
+ python (>= 2.3),
  adduser,
  ca-certificates
 Recommends: ia32-libs [amd64]

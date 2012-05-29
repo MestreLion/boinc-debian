@@ -1,1 +1,4 @@
-usr/lib/lib*so.*         usr/lib
+usr/lib/libboinc_api.so.*         usr/lib
+usr/lib/libboinc_graphics2.so.*         usr/lib
+usr/lib/libboinc_opencl.so.*         usr/lib
+usr/lib/libboinc_zip.so.*         usr/lib

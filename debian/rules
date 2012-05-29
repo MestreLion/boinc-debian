@@ -139,6 +139,7 @@ CFGFLAGS_boinc-client = \
   --enable-shared \
   --with-ssl \
   --with-x \
+  --enable-dynamic-client-linkage \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)" \
   LDFLAGS="$(LDFLAGS)"

@@ -58,3 +58,4 @@ unlink_undefined.patch
 screen_saver_boinc_extra.patch
 #socklenBuildFixByDavid.patch
 boinclib_shared.patch
+dynamic_libboinc.patch
