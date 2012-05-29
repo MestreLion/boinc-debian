@@ -6,3 +6,5 @@ api/*.h                         usr/include/boinc/api
 
 config.h			usr/include/boinc
 Makefile.am                     usr/share/boinc-dev
+
+usr/lib/lib*.so                 usr/lib
