@@ -114,3 +114,13 @@ debian/boinc-app-examples
 debian/boinc-cgi-stripchart
 debian/boinc-nvidia-cuda
 debian/boinc-server-maker
+boinc_lockfile
+debian/libboinc-app-dev
+debian/libboinc-app
+debian/libboinc
+stderr.txt
+clientscr/boincscr
+doc/manpages/appmgr.8
+doc/manpages/boinc.1
+doc/manpages/boinccmd.1
+doc/manpages/boincmgr.1
