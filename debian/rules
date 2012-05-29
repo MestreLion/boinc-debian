@@ -239,6 +239,7 @@ override_dh_auto_clean:
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	find . -name "*.pyc" | xargs -r rm
 	find . -type d -a \( -name .deps -o -name .libs \) | xargs -r rm -r
+	rm -f stderr.txt # remnant of application started
 	rm -f lib/crypt_prog test/run notices/feeds.xml
 	find test -name "run-*" | xargs -r rm -rf
 	rm -f $(BINARIES)
