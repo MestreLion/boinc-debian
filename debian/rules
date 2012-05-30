@@ -125,8 +125,10 @@ CXXFLAGS += $(DEB_OPT_FLAGS)
 CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
-# --disable-static \
-# --enable-debug
+# --disable-static
+# For debugging, these options are useful:
+#   --enable-debug
+#   --enable-wx-debug (need to install libwxbase2.8-dbg and libwxgtk2.8-dbg)
 CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
