@@ -59,3 +59,4 @@ screen_saver_boinc_extra.patch
 #socklenBuildFixByDavid.patch
 boinclib_shared.patch
 dynamic_libboinc.patch
+boinc_manager_project_info_page.patch
