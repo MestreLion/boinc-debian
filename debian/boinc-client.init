@@ -181,13 +181,18 @@ schedule()
     if [ ! -x "`which chrt 2>/dev/null`" ]; then
       log_progress_msg "chrt not found"
     else
-      (chrt_many --idle 0 19 $pid $children >/dev/null \
-        && log_progress_msg "idleprio") || \
-      (chrt_many --batch 0 19 $pid $children >/dev/null \
-        && log_progress_msg "batch") || \
-      (chrt_many --other 0 19 $pid $children >/dev/null \
-        && log_progress_msg "normal") || \
-      log_progress_msg "chrt failed"
+      # BOINC client needs higher priority than scientific apps
+      renice 10 -p $pid > /dev/null || renice -n 10 -p $pid
+      # Apps receive minimal priority
+      if [ -n "$children" ]; then
+        (chrt_many --idle 0 19 $children >/dev/null \
+          && log_progress_msg "idleprio") || \
+        (chrt_many --batch 0 19 $children >/dev/null \
+          && log_progress_msg "batch") || \
+        (chrt_many --other 0 19 $children >/dev/null \
+          && log_progress_msg "normal") || \
+        log_progress_msg "chrt failed"
+      fi
     fi
     for BPID in ${pid} ${children}; do
       if [ -w /proc/${BPID}/oom_adj ]; then
