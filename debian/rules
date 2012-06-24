@@ -110,11 +110,6 @@ LDFLAGS += -Wl,-z,now
 # hurd needs the following
 LDFLAGS += -Wl,--no-add-needed
 
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-  DEB_OPT_FLAGS = -O0
-else
-  DEB_OPT_FLAGS = -O2
-endif
 
 ifneq (,$(findstring clang,$(DEB_BUILD_OPTIONS)))
   export CXX=clang
