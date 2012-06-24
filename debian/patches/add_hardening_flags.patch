@@ -1,0 +1,86 @@
+Author: Guo Yixuan <culu.gyx@gmail.com>
+Description: Add standard flags to custom Makefiles
+ There're several hand-written Makefiles among other Makefiles by automake, they don't take
+ CXXFLAGS and CPPFLAGS from environment.
+Index: boinc/samples/sleeper/Makefile
+===================================================================
+--- boinc.orig/samples/sleeper/Makefile	2012-06-24 21:56:27.000000000 +0800
++++ boinc/samples/sleeper/Makefile	2012-06-24 22:01:09.745618530 +0800
+@@ -4,7 +4,7 @@
+ BOINC_API_DIR = $(BOINC_DIR)/api
+ BOINC_LIB_DIR = $(BOINC_DIR)/lib
+ 
+-CXXFLAGS = -g \
++CXXFLAGS += -g \
+     -I$(BOINC_DIR) \
+     -I$(BOINC_LIB_DIR) \
+     -I$(BOINC_API_DIR) \
+@@ -26,4 +26,4 @@
+ 	/bin/rm -f $(PROGS) *.o libstdc++.a
+ 
+ sleeper: sleeper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
+-	g++ $(CXXFLAGS) -o sleeper sleeper.o libstdc++.a -pthread -lboinc_api -lboinc
++	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o sleeper sleeper.o libstdc++.a -pthread -lboinc_api -lboinc
+Index: boinc/samples/example_app/Makefile
+===================================================================
+--- boinc.orig/samples/example_app/Makefile	2012-06-24 21:56:27.000000000 +0800
++++ boinc/samples/example_app/Makefile	2012-06-24 22:00:45.305617579 +0800
+@@ -4,7 +4,7 @@
+ BOINC_API_DIR = $(BOINC_DIR)/api
+ BOINC_LIB_DIR = $(BOINC_DIR)/lib
+ 
+-CXXFLAGS = -g \
++CXXFLAGS += -g \
+ 	-Wall -W -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common \
+     -DAPP_GRAPHICS \
+     -I$(BOINC_DIR) \
+@@ -47,12 +47,12 @@
+ # because otherwise you might get a version in /usr/lib etc.
+ 
+ uc2: uc2.o libstdc++.a $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
+-	$(CXX) $(CXXFLAGS) -o uc2 uc2.o libstdc++.a -pthread \
++	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o uc2 uc2.o libstdc++.a -pthread \
+ 	$(BOINC_API_DIR)/libboinc_api.a \
+ 	$(BOINC_LIB_DIR)/libboinc.a
+ 
+ uc2_graphics: uc2_graphics.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_graphics2.a
+-	$(CXX) $(CXXFLAGS) -o uc2_graphics uc2_graphics.o libstdc++.a -pthread \
++	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o uc2_graphics uc2_graphics.o libstdc++.a -pthread \
+ 	$(BOINC_API_DIR)/libboinc_graphics2.a \
+ 	$(BOINC_API_DIR)/libboinc_api.a \
+ 	$(BOINC_LIB_DIR)/libboinc.a \
+Index: boinc/samples/worker/Makefile
+===================================================================
+--- boinc.orig/samples/worker/Makefile	2012-06-24 21:56:27.000000000 +0800
++++ boinc/samples/worker/Makefile	2012-06-24 22:01:23.257619057 +0800
+@@ -1,4 +1,4 @@
+-CXXFLAGS = -g 
++CXXFLAGS += -g
+ 
+ PROGS = worker
+ 
+@@ -11,4 +11,4 @@
+ 	rm $(PROGS)
+ 
+ worker: worker.o
+-	g++ $(CXXFLAGS) -o worker worker.o
++	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o worker worker.o
+Index: boinc/samples/wrapper/Makefile
+===================================================================
+--- boinc.orig/samples/wrapper/Makefile	2012-06-24 21:56:27.000000000 +0800
++++ boinc/samples/wrapper/Makefile	2012-06-24 22:01:43.641619849 +0800
+@@ -5,7 +5,7 @@
+ BOINC_API_DIR = $(BOINC_DIR)/api
+ BOINC_LIB_DIR = $(BOINC_DIR)/lib
+ 
+-CXXFLAGS = -g \
++CXXFLAGS += -g \
+ 	-Wall -W -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common \
+     -I$(BOINC_DIR) \
+     -I$(BOINC_LIB_DIR) \
+@@ -28,4 +28,4 @@
+ 	/bin/rm -f $(PROGS) *.o libstdc++.a
+ 
+ wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
+-	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
++	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
