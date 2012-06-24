@@ -11,7 +11,7 @@
 # Set default flags with dpkg-buildflags
 # -Wformat -Werror=format-security will need many fixes to avoid ftbfs,
 # so it's disabled for now
-export DEB_BUILD_MAINT_OPTIONS = hardening=-format
+export DEB_BUILD_MAINT_OPTIONS = hardening=-format,+bindnow
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
@@ -109,7 +109,6 @@ endif
 CFLAGS += -Wall
 CXXFLAGS += -Wall
 LDFLAGS += -Wl,--as-needed
-LDFLAGS += -Wl,-z,now
 # hurd needs the following
 LDFLAGS += -Wl,--no-add-needed
 
