@@ -1,7 +1,7 @@
 Index: boinc/lib/Makefile.am
 ===================================================================
---- boinc.orig/lib/Makefile.am	2012-05-29 16:17:23.176263313 +0200
-+++ boinc/lib/Makefile.am	2012-05-29 17:00:22.337518324 +0200
+--- boinc.orig/lib/Makefile.am	2012-06-30 22:00:36.063690282 +0200
++++ boinc/lib/Makefile.am	2012-06-30 22:01:07.023273444 +0200
 @@ -146,13 +146,13 @@
  libboinc_la_SOURCES = $(generic_sources) $(mac_sources)
  libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
@@ -30,9 +30,9 @@ Index: boinc/lib/Makefile.am
  parse_test_LDADD = $(LIBBOINC)
 Index: boinc/client/Makefile.am
 ===================================================================
---- boinc.orig/client/Makefile.am	2012-05-03 13:38:04.248172480 +0200
-+++ boinc/client/Makefile.am	2012-05-29 16:55:00.989851700 +0200
-@@ -85,7 +85,7 @@
+--- boinc.orig/client/Makefile.am	2012-06-30 21:59:09.960849517 +0200
++++ boinc/client/Makefile.am	2012-06-30 22:01:07.027273390 +0200
+@@ -88,7 +88,7 @@
  if OS_DARWIN
  boinc_client_LDFLAGS += -Wl,-flat_namespace,-undefined,dynamic_lookup
  endif
