@@ -20,6 +20,7 @@ override_dh_auto_install
 *.a
 */.deps/
 */.libs/
+py/build/.*
 debian/*.debhelper
 debian/*.debhelper.log
 debian/*.substvars
