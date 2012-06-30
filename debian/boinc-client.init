@@ -33,6 +33,17 @@ BOINC_OOM_ADJ=15
 #VALGRIND_OPTIONS="-v --log-file=/tmp/valgrind_boinc.log "
 VALGRIND_OPTIONS=""
 
+# nice levels
+BOINC_NICE_CLIENT=10
+BOINC_NICE_APP_DEFAULT=19    # minimal
+#BOINC_NICE_APP_GPU=5        # less than regular, not yet used
+
+# ionice classes
+BOINC_IONICE_CLIENT=3        # idle
+#BOINC_IONICE_APP_DEFAULT=3  # idle, not yet used
+#BOINC_IONICE_APP_GPU=2      # best effort, not yet used
+
+
 # Source defaults file. Edit that file to configure this script.
 if [ -e /etc/default/boinc-client ]; then
   . /etc/default/boinc-client
@@ -169,7 +180,7 @@ schedule()
     if [ ! -x "`which ionice 2>/dev/null`" ]; then
       log_progress_msg "ionice not found,"
     else
-      if ionice -c 3 -p $pid 2>/dev/null; then
+      if ionice -c $BOINC_IONICE_CLIENT -p $pid 2>/dev/null; then
         log_progress_msg "idle,"
       else
         log_progress_msg "ionice failed,"
@@ -182,14 +193,14 @@ schedule()
       log_progress_msg "chrt not found"
     else
       # BOINC client needs higher priority than scientific apps
-      renice 10 -p $pid > /dev/null || renice -n 10 -p $pid
+      renice $BOINC_NICE_CLIENT -p $pid > /dev/null || renice -n $BOINC_NICE_CLIENT -p $pid
       # Apps receive minimal priority
       if [ -n "$children" ]; then
-        (chrt_many --idle 0 19 $children >/dev/null \
+        (chrt_many --idle 0 $BOINC_NICE_APP_DEFAULT $children >/dev/null \
           && log_progress_msg "idleprio") || \
-        (chrt_many --batch 0 19 $children >/dev/null \
+        (chrt_many --batch 0 $BOINC_NICE_APP_DEFAULT $children >/dev/null \
           && log_progress_msg "batch") || \
-        (chrt_many --other 0 19 $children >/dev/null \
+        (chrt_many --other 0 $BOINC_NICE_APP_DEFAULT $children >/dev/null \
           && log_progress_msg "normal") || \
         log_progress_msg "chrt failed"
       fi
