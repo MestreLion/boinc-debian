@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 25636 2012-05-02 16:41:54Z romw $
+## $Id: Makefile.am 25782 2012-06-22 02:10:29Z charlief $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -41,7 +41,6 @@ boinc_client_SOURCES = \
     client_msgs.cpp \
     client_state.cpp \
     client_types.cpp \
-	coproc_detect.cpp \
     cpu_sched.cpp \
     cs_account.cpp \
     cs_apps.cpp \
@@ -60,6 +59,10 @@ boinc_client_SOURCES = \
     dhrystone2.cpp \
     file_names.cpp \
     file_xfer.cpp \
+	gpu_amd.cpp \
+	gpu_detect.cpp \
+	gpu_nvidia.cpp \
+	gpu_opencl.cpp \
     gui_http.cpp \
     gui_rpc_server.cpp \
     gui_rpc_server_ops.cpp \

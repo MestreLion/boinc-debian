@@ -3157,39 +3157,6 @@ David  9 Apr 2012
         coproc_detect.cpp
         scheduler_op.cpp
 
-David  9 Apr 2012
-    - API: fix C compile error
-    - initial checkin of remote job stuff for app from ICT
-
-    tools/
-        tt_boinc
-    api/
-        boinc_api.h
-    html/user/
-        tree_threader.php
-
-David  12 Apr 2012
-    - CAS@home stuff
-    tools/
-        tt_boinc.cpp
-    html/user/
-        tree_threader.cpp
-
-David  12 Apr 2012
-    - add script for canceling jobs
-    - CAS@home stuff
-
-    tools/
-        tt_boinc
-    html/
-        ops/
-            cancel_wu_action.php
-            cancel_wus.php
-        inc/
-            util_ops.inc
-        user/
-            tree_threader.php
-        
 Charlie 12 Apr 2012
     - web: separate Intel-only from Universal (PowerPC & Intel) clients 
         on download-all page so that PowerPC clients don't tell users 
@@ -3621,6 +3588,195 @@ Rom    15 May 2012
 Rom    2 May 2012
     - Tag for 7.0.28 release, all platforms
       boinc_core_release_7_0_28
+
+    /
+        configure.ac
+        version.h
+
+Charlie 13 June 2012
+    - client: Reverse my logic of 16 Feb 2012: we now always use GPU model 
+        name determined from CAL TargetID (if available) for OpenCL model  
+        name of ATI / AMD GPUs because (we believe) it is more user-friendly.
+
+    client/
+        coproc_detect.cpp
+
+Charlie 16 June 2012
+    - Mac installer: Fix bugs I introduced on May 3 and May 6.
+
+    mac_installer/
+        PostInstall.cpp
+        Uninstall.cpp
+
+Charlie 18 June 2012
+    - Mac installer: Create or delete Login Items and set screensaver 
+        properly when installing for multiple users on OS 10.7, 10.8.
+
+    mac_installer/
+        PostInstall.cpp
+        Uninstall.cpp
+
+Charlie 18 June 2012
+    - Tag for 7.0.29 release, Macintosh only
+      boinc_core_release_7_0_29
+
+    /
+        configure.ac
+        version.h
+
+Rom    18 May 2012
+    - MGR: Remove the visuals in the wizard for multi-core and opencl.  This area
+        will get a bunch of work in a future commit.
+        
+    clientgui/
+        ProjectInfoPage.cpp, .h
+    clientgui/res/
+        openclicon.xpm (deleted)
+        multicore.xpm (deleted)
+
+Rom    18 May 2012
+    - MGR: Fix build breaks
+    
+    clientgui/
+        AccountManagerInfoPage.cpp
+    clientgui/
+        ProjectListCtrl.cpp, .h
+
+Rom    21 May 2012
+    - MGR: Fix menu redraw issue under Ubuntu's new interface.
+      fixes #1180
+      (From Huibert)
+
+    clientgui/
+        AdvancedFrame.cpp
+
+Rom    30 May 2012
+    - MGR: Wait until there is valid data in the list box before processing
+        the OnProjectSelected() event.
+        
+    clientgui/
+        ProjectInfoPage.cpp
+
+David  14 June 2012
+    - client: 
+        - added the definitions for the new Windows 7/2008r2 preSP1
+            and Windows 8/2012 SKUs based on the winnt.h
+            from the Windows 8 RC SKD (also added as proof)
+        - added the detection for some more Windows SKU
+
+    client/
+        hostinfo_win.cpp
+
+David  18 June 2012
+    - client: split GPU detection code into separate files
+
+    lib/
+        coproc.h
+    client/
+        gpu.h (new)
+        gpu_opencl.cpp (new)
+        gpu_amd.cpp (new)
+        gpu_nvidia.cpp (new)
+        coproc_detect.cpp
+        Makefile.am
+
+David  18 June 2012
+    - client: rename coproc_detect.cpp to gpu_detect.cpp
+
+    client/
+        gpu_detect.cpp,h
+        Makefile.am
+
+David  18 June 2012
+    - client: compile fixes
+
+    client/
+        gpu_opencl.cpp
+        gpu_amd.cpp
+        gpu_nvidia.cpp
+    lib/
+        coproc.cpp,h
+
+David  18 June 2012
+    - win compile fixes
+
+    client/
+        gpu_nvidia.cpp
+    win_build/
+        boinc_cli.vcproj
+
+David  18 June 2012
+    - client: for NVIDIA, make an array of the PCI info
+        for all usable GPUs
+
+    client/
+        gpu_nvidia.cpp
+
+David  18 June 2012
+    - client: it's possible for a host to get app versions for
+        a given app that have different platforms and different version #s.
+        The client was erroneously deleting the one w/ the lower version
+        when it was no longer in use.
+        Fix: in garbage collection, consider one version to supercede another
+        only if they have the same platform
+
+    client/
+        client_state.cpp
+    vda/
+        ssim.cpp
+
+David  19 June 2012
+	- client: AMD GPU detection addition (from [P3D] Crashtest)
+
+	client/
+		gpu_amd.cpp
+
+Charlie 20 June 2012
+    - Mac: Update XCode project with new source files.
+
+       mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 21 June 2012
+    - Mac: Fix displayed names of BOINC installer, uninstaller, etc.
+
+    clientgui/
+        mac/
+            SetVersion.cpp
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+Charlie 22 June 2012
+    - Mac: Code sign the BOINC installer and uninstaller if we have a 
+        valid code signing identity.  Code signing using a registered 
+        Apple Developer ID is necessary for GateKeeper with default 
+        settings to allow running downloaded applications under OS 10.8.
+    
+    mac_installer/
+        release_boinc.sh
+
+David  22 June 2012
+	- client: AMD GPU detection addition (from [P3D] Crashtest)
+
+	client/
+		gpu_amd.cpp
+
+Charlie 26 June 2012
+    - Mac client: Upgrade to curl 7.26.60 and c-ares 1.9.1.
+    
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+        buildc_ares.sh
+        buildcurl.sh
+        HowToBuildBOINC_XCode.rtf
+        setupforBOINC.sh
+
+Rom    2 May 2012
+    - Tag for 7.0.30 release, all platforms
+      boinc_core_release_7_0_30
 
     /
         configure.ac
