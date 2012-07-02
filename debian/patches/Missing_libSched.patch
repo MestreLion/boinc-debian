@@ -1,0 +1,26 @@
+Index: boinc/tools/Makefile.am
+===================================================================
+--- boinc.orig/tools/Makefile.am	2012-03-31 13:44:27.091110561 +0200
++++ boinc/tools/Makefile.am	2012-06-30 22:50:33.519053725 +0200
+@@ -24,7 +24,7 @@
+ 		run_in_ops
+ 
+ AM_CXXFLAGS += $(MYSQL_CFLAGS)
+-AM_LDFLAGS += -static
++AM_LDFLAGS += -static -L../sched
+ 
+ cancel_jobs_SOURCES = cancel_jobs.cpp
+ cancel_jobs_LDADD = $(SERVERLIBS)
+Index: boinc/vda/Makefile.am
+===================================================================
+--- boinc.orig/vda/Makefile.am	2012-03-31 13:44:27.175109414 +0200
++++ boinc/vda/Makefile.am	2012-06-30 22:52:03.037837461 +0200
+@@ -3,7 +3,7 @@
+ bin_PROGRAMS = vda vdad ssim
+ 
+ AM_CXXFLAGS += $(MYSQL_CFLAGS)
+-AM_LDFLAGS += -static
++AM_LDFLAGS += -static -L../sched
+ 
+ vda_SOURCES = vda.cpp vda_policy.cpp
+ vda_LDADD = $(SERVERLIBS)
