@@ -9,6 +9,7 @@ boinc (7.0.30+dfsg-1) UNRELEASED; urgency=low
     buildflags.mk and DEB_BUILD_MAINT_OPTIONS are needed.
   * debian/patches/add_hardening_flags.patch: pass CXXFLAGS, CPPFLAGS and
     LDFLAGS to hand-written Makefiles in samples/.
+  * Add myself to uploaders. (Closes: #511243)
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 30 Jun 2012 21:59:59 +0200
 
