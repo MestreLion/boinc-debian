@@ -3774,10 +3774,58 @@ Charlie 26 June 2012
         HowToBuildBOINC_XCode.rtf
         setupforBOINC.sh
 
-Rom    2 May 2012
+Rom    27 June 2012
     - Tag for 7.0.30 release, all platforms
       boinc_core_release_7_0_30
 
     /
         configure.ac
         version.h
+
+Charlie 28 June 2012
+    - Mac client: Update wxMac build script for partial compatibility 
+        with OS 10.8 and XCode 4.5. See comments in script for details.
+
+     mac_build/
+        buildWxMac.sh
+
+David  29 June 2012
+    - client: add missing end tag for <pci_info>.  Doh!
+
+    lib/
+        coproc.cpp
+
+David  1 July 2012
+    - When the client makes a scheduler RPC without requesting work,
+        and there's a simple reason
+        (e.g. the project is suspended, no-new-tasks, downloads stalled, etc.)
+        show it in the event lot.
+        If the reason is more complex, don't try to explain.
+
+    client/
+        work_fetch.cpp,h
+        scheduler_op.cpp
+
+David  2 July 2012
+    - client: in the job scheduler, there's a check to prevent
+        overcommitting the CPUs if an MT is scheduled.
+        Skip this check for GPU jobs.
+
+    client/
+        cpu_sched.cpp
+
+Rom    2 July 2012
+    - Tag for 7.0.31 release, all platforms
+      boinc_core_release_7_0_31
+
+    /
+        configure.ac
+        version.h
+
+Charlie 3 July 2012
+    - Mac client: Update Xcode project for compatibility with Xcode 4.3.2 
+        and Xcode 4.5.  (Checked into 7.0.31 tag.)
+
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
