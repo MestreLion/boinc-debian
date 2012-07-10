@@ -149,8 +149,8 @@ CFGFLAGS_boinc-client = \
 %:
 	dh $@ --parallel --with python2
 
-clean:
-	dh clean
+override_dh_clean:
+	dh_clean
 	find . -name "Makefile" | grep -v samples | xargs -r rm
 	rm -f configure clientscr/boincscr
 	rm -rf py/lib.linux-*-2.*
@@ -369,5 +369,5 @@ get-orig-source:
 	$$nice $$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: clean get-orig-source
+.PHONY: get-orig-source
 
