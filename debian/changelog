@@ -7,6 +7,7 @@ boinc (7.0.31+dfsg-1) UNRELEASED; urgency=low
   * debian/control:
     - add missed dependency for libboinc.
     - remove dependency on python-support.
+    - libboinc-app-dev: depend on libboinc.
   * debian/watch: check for even minor version, and fix dpkg warnings.
   * debian/rules: use dh_python2 instead of py_support.
 
