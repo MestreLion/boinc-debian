@@ -339,15 +339,16 @@ override_dh_compress:
 override_dh_installexamples:
 	dh_installexamples -Xjpeglib 
 
-binary-arch: build install
-	dh binary-arch
+# These targets are handled by the pattern rule (dh $@)
+# binary-arch: build install
+#	dh binary-arch
 
 # only the 'empty' package boinc
-binary-indep: 
-	dh binary-indep
+# binary-indep:
+# 	dh binary-indep
 
-binary:
-	dh binary
+# binary:
+#	dh binary
 
 origDir ?= .
 
@@ -368,5 +369,5 @@ get-orig-source:
 	$$nice $$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: clean install binary-arch binary get-orig-source
+.PHONY: clean get-orig-source
 
