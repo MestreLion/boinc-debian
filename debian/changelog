@@ -9,7 +9,9 @@ boinc (7.0.31+dfsg-1) UNRELEASED; urgency=low
     - remove dependency on python-support.
     - libboinc-app-dev: depend on libboinc.
   * debian/watch: check for even minor version, and fix dpkg warnings.
-  * debian/rules: use dh_python2 instead of py_support.
+  * debian/rules:
+    - use dh_python2 instead of py_support.
+    - remove build-stamp, use override_dh_auto_build to build samples.
 
  -- Guo Yixuan <culu.gyx@gmail.com>  Tue, 10 Jul 2012 23:21:13 +0800
 
