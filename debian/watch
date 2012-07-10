@@ -1,3 +1,3 @@
 version=3
 opts="dversionmangle=s/\./_/g;s/\+dfsg//,uversionmangle=s/\///" \
-  http://boinc.berkeley.edu/svn/tags/boinc_core_release_(\d+_\d*[13579]_.*)
+  http://boinc.berkeley.edu/svn/tags/boinc_core_release_(\d+_\d*[02468]_.*)
