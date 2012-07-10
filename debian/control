@@ -44,7 +44,7 @@ Description: metapackage for the BOINC client and the manager
 Package: libboinc
 Architecture: any
 Section: libs
-Depends: ${misc:Depends} 
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: libraries of BOINC the client depends on
  The Berkeley Open Infrastructure for Network Computing (BOINC) is a
  software platform for distributed computing using volunteered computer
