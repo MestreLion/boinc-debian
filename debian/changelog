@@ -5,6 +5,7 @@ boinc (7.0.31+dfsg-1) UNRELEASED; urgency=low
 
   [ Guo Yixuan ]
   * debian/control: add missed dependency for libboinc.
+  * debian/watch: check for even minor version, and fix dpkg warnings.
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 08 Jul 2012 20:06:22 +0200
 
