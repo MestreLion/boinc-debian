@@ -197,7 +197,7 @@ SAMPLES=samples/sleeper/sleeper samples/worker/worker samples/example_app/uc2 sa
 
 build:	build-stamp $(SAMPLES)
 build-stamp:
-	dh build --parallel
+	dh build --parallel --with python2
 	touch $@
 
 override_dh_auto_build: update-boinc-applinks.1
