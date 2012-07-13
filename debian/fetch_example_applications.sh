@@ -60,7 +60,7 @@ fi
 
 if [ -n "$1" ]; then
 	projectroot=$1
-elif [ -z "$projectroot" ]
+elif [ -z "$projectroot" ]; then
 	if [ -n "$installroot" -a -n "$fileprojectname" ]; then
 		projectroot="$installroot/$fileprojectname"
 	else
