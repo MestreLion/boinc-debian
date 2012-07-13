@@ -149,8 +149,8 @@ CFGFLAGS_boinc-client = \
 %:
 	dh $@ --parallel --with python2
 
-clean:
-	dh clean
+override_dh_clean:
+	dh_clean
 	find . -name "Makefile" | grep -v samples | xargs -r rm
 	rm -f configure clientscr/boincscr
 	rm -rf py/lib.linux-*-2.*
@@ -183,22 +183,9 @@ override_dh_auto_configure:
 update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
 
-
-samples/sleeper/sleeper: build-stamp samples/sleeper/sleeper.cpp
-	$(MAKE) -C samples/sleeper
-samples/worker/worker: build-stamp samples/worker/worker.cpp
-	$(MAKE) -C samples/worker
-samples/example_app/uc2: build-stamp samples/example_app/uc2.cpp
-	$(MAKE) -C samples/example_app
-samples/wrapper/wrapper: build-stamp samples/wrapper/wrapper.cpp
-	$(MAKE) -C samples/wrapper
-
-SAMPLES=samples/sleeper/sleeper samples/worker/worker samples/example_app/uc2 samples/wrapper/wrapper
-
-build:	build-stamp $(SAMPLES)
-build-stamp:
-	dh build --parallel --with python2
-	touch $@
+# use pattern rule for build
+# build:
+#	dh build --parallel --with python2
 
 override_dh_auto_build: update-boinc-applinks.1
 	@echo
@@ -217,6 +204,11 @@ override_dh_auto_build: update-boinc-applinks.1
 	    fi; \
 	  done; \
 	fi
+
+	$(MAKE) -C samples/sleeper
+	$(MAKE) -C samples/worker
+	$(MAKE) -C samples/example_app
+	$(MAKE) -C samples/wrapper
 
 BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
 	sched/delete_file sched/feeder sched/file_deleter \
@@ -290,7 +282,9 @@ override_dh_auto_clean:
 	  packages/solaris/CSW/boincmanager/Makefile
 	debconf-updatepo
 
-override_dh_auto_install: update-boinc-applinks.1 $(SAMPLES)
+SAMPLES=samples/sleeper/sleeper samples/worker/worker samples/example_app/uc2 samples/wrapper/wrapper
+
+override_dh_auto_install: update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 	mkdir -p $(CURDIR)/debian/tmp/samples
 	cp $(SAMPLES) $(CURDIR)/debian/tmp/samples
@@ -331,7 +325,7 @@ override_dh_fixperms:
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
 
-override_dh_install: $(SAMPLES)
+override_dh_install:
 	dh_install
 	rm -rf debian/boinc-manager/usr/share/locale/en_US/
 	# delete empty dirs
@@ -345,15 +339,16 @@ override_dh_compress:
 override_dh_installexamples:
 	dh_installexamples -Xjpeglib 
 
-binary-arch: build install
-	dh binary-arch
+# These targets are handled by the pattern rule (dh $@)
+# binary-arch: build install
+#	dh binary-arch
 
 # only the 'empty' package boinc
-binary-indep: 
-	dh binary-indep
+# binary-indep:
+# 	dh binary-indep
 
-binary:
-	dh binary
+# binary:
+#	dh binary
 
 origDir ?= .
 
@@ -374,5 +369,5 @@ get-orig-source:
 	$$nice $$EXB -r $$VERSION -t $(origDir); \
 	rm -f $$EXB
 
-.PHONY: build clean install binary-arch binary get-orig-source
+.PHONY: get-orig-source
 
