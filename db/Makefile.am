@@ -1,11 +1,11 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 17563 2009-03-09 15:38:21Z korpela $
+## $Id: Makefile.am 25911 2012-07-30 19:52:51Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
 ## the following headers need to be installed
 if INSTALL_HEADERS
-pkginclude_HEADERS =  boinc_db.h db_base.h
+pkginclude_HEADERS =  boinc_db.h db_base.h boinc_db_types.h
 endif
 
 ## other stuff to go into the distribution

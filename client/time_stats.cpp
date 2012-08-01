@@ -76,13 +76,14 @@ int get_connected_state() {
 const float ALPHA = (SECONDS_PER_DAY*10);
 //const float ALPHA = 60;   // for testing
 
-TIME_STATS::TIME_STATS() {
+void TIME_STATS::init() {
     last_update = 0;
     first = true;
     on_frac = 1;
     connected_frac = 1;
     active_frac = 1;
     gpu_active_frac = 1;
+    cpu_and_network_available_frac = 1;
     previous_connected_state = CONNECTED_STATE_UNINITIALIZED;
     inactive_start = 0;
     trim_stats_log();
@@ -162,6 +163,7 @@ void TIME_STATS::update(int suspend_reason, int _gpu_suspend_reason) {
         connected_frac = 1;
         active_frac = 1;
         gpu_active_frac = 1;
+        cpu_and_network_available_frac = 1;
         first = false;
         last_update = gstate.now;
         log_append("power_on", gstate.now);
@@ -204,7 +206,9 @@ void TIME_STATS::update(int suspend_reason, int _gpu_suspend_reason) {
             sprintf(buf, "platform %s", gstate.get_primary_platform());
             log_append(buf, gstate.now);
 #endif
-            sprintf(buf, "version %d.%d.%d", BOINC_MAJOR_VERSION, BOINC_MINOR_VERSION, BOINC_RELEASE);
+            sprintf(buf, "version %d.%d.%d",
+                BOINC_MAJOR_VERSION, BOINC_MINOR_VERSION, BOINC_RELEASE
+            );
             log_append(buf, gstate.now);
             log_append("power_on", gstate.now);
         } else if (dt > 100) {
@@ -216,6 +220,7 @@ void TIME_STATS::update(int suspend_reason, int _gpu_suspend_reason) {
             }
         } else {
             on_frac = w1 + w2*on_frac;
+            cpu_and_network_available_frac *= w2;
             if (connected_frac < 0) connected_frac = 0;
             switch (connected_state) {
             case CONNECTED_STATE_NOT_CONNECTED:
@@ -224,9 +229,15 @@ void TIME_STATS::update(int suspend_reason, int _gpu_suspend_reason) {
             case CONNECTED_STATE_CONNECTED:
                 connected_frac *= w2;
                 connected_frac += w1;
+                if (!gstate.network_suspended && !gstate.tasks_suspended) {
+                    cpu_and_network_available_frac += w1;
+                }
                 break;
             case CONNECTED_STATE_UNKNOWN:
                 connected_frac = -1;
+                if (!gstate.network_suspended && !gstate.tasks_suspended) {
+                    cpu_and_network_available_frac += w1;
+                }
             }
             if (connected_state != previous_connected_state) {
                 log_append_net(connected_state);
@@ -255,8 +266,9 @@ void TIME_STATS::update(int suspend_reason, int _gpu_suspend_reason) {
         last_update = gstate.now;
         if (log_flags.time_debug) {
             msg_printf(0, MSG_INFO,
-                "[time] dt %f w2 %f on %f; active %f; gpu_active %f; conn %f",
-                dt, w2, on_frac, active_frac, gpu_active_frac, connected_frac
+                "[time] dt %f w2 %f on %f; active %f; gpu_active %f; conn %f, cpu_and_net_avail %f",
+                dt, w2, on_frac, active_frac, gpu_active_frac, connected_frac,
+                cpu_and_network_available_frac
             );
         }
     }
@@ -269,10 +281,12 @@ int TIME_STATS::write(MIOFILE& out, bool to_server) {
         "<time_stats>\n"
         "    <on_frac>%f</on_frac>\n"
         "    <connected_frac>%f</connected_frac>\n"
+        "    <cpu_and_network_available_frac>%f</cpu_and_network_available_frac>\n"
         "    <active_frac>%f</active_frac>\n"
         "    <gpu_active_frac>%f</gpu_active_frac>\n",
         on_frac,
         connected_frac,
+        cpu_and_network_available_frac,
         active_frac,
         gpu_active_frac
     );
@@ -306,12 +320,12 @@ int TIME_STATS::parse(XML_PARSER& xp) {
             return 0;
         }
 #ifdef SIM
-        else if (xp.parse_double("on_lambda", on_lambda)) continue;
-        else if (xp.parse_double("connected_lambda", connected_lambda)) continue;
-        else if (xp.parse_double("active_lambda", active_lambda)) continue;
-        else if (xp.parse_double("gpu_active_lambda", gpu_active_lambda)) continue;
+        if (xp.parse_double("on_lambda", on_lambda)) continue;
+        if (xp.parse_double("connected_lambda", connected_lambda)) continue;
+        if (xp.parse_double("active_lambda", active_lambda)) continue;
+        if (xp.parse_double("gpu_active_lambda", gpu_active_lambda)) continue;
 #endif
-        else if (xp.parse_double("last_update", x)) {
+        if (xp.parse_double("last_update", x)) {
             if (x < 0 || x > gstate.now) {
 #ifndef SIM
                 msg_printf(0, MSG_INTERNAL_ERROR,
@@ -322,7 +336,8 @@ int TIME_STATS::parse(XML_PARSER& xp) {
                 last_update = x;
             }
             continue;
-        } else if (xp.parse_double("on_frac", x)) {
+        }
+        if (xp.parse_double("on_frac", x)) {
             if (x <= 0 || x > 1) {
                 msg_printf(0, MSG_INTERNAL_ERROR,
                     "bad value %f of time stats on_frac; ignoring", x
@@ -331,11 +346,23 @@ int TIME_STATS::parse(XML_PARSER& xp) {
                 on_frac = x;
             }
             continue;
-        } else if (xp.parse_double("connected_frac", x)) {
+        }
+        if (xp.parse_double("connected_frac", x)) {
             // -1 means undefined; skip check
             connected_frac = x;
             continue;
-        } else if (xp.parse_double("active_frac", x)) {
+        }
+        if (xp.parse_double("cpu_and_network_available_frac", x)) {
+            if (x <= 0 || x > 1) {
+                msg_printf(0, MSG_INTERNAL_ERROR,
+                    "bad value %f of time stats cpu_and_network_available_frac; ignoring", x
+                );
+            } else {
+                cpu_and_network_available_frac = x;
+            }
+            continue;
+        }
+        if (xp.parse_double("active_frac", x)) {
             if (x <= 0 || x > 1) {
                 msg_printf(0, MSG_INTERNAL_ERROR,
                     "bad value %f of time stats active_frac; ignoring", x
@@ -344,7 +371,8 @@ int TIME_STATS::parse(XML_PARSER& xp) {
                 active_frac = x;
             }
             continue;
-        } else if (xp.parse_double("gpu_active_frac", x)) {
+        }
+        if (xp.parse_double("gpu_active_frac", x)) {
             if (x <= 0 || x > 1) {
                 msg_printf(0, MSG_INTERNAL_ERROR,
                     "bad value %f of time stats gpu_active_frac; ignoring", x
@@ -353,13 +381,12 @@ int TIME_STATS::parse(XML_PARSER& xp) {
                 gpu_active_frac = x;
             }
             continue;
-        } else {
-            if (log_flags.unparsed_xml) {
-                msg_printf(0, MSG_INFO,
-                    "[unparsed_xml] TIME_STATS::parse(): unrecognized: %s\n",
-                    xp.parsed_tag
-                );
-            }
+        }
+        if (log_flags.unparsed_xml) {
+            msg_printf(0, MSG_INFO,
+                "[unparsed_xml] TIME_STATS::parse(): unrecognized: %s\n",
+                xp.parsed_tag
+            );
         }
     }
     return ERR_XML_PARSE;
