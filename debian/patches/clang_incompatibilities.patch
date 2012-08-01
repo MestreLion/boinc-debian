@@ -2,8 +2,8 @@ Author: Steffen Moeller <steffen.moeller@uk-sh.de>
 Description: Tested compatibility with clang.
 Index: boinc/lib/Makefile.am
 ===================================================================
---- boinc.orig/lib/Makefile.am	2012-05-19 12:21:48.983806017 +0200
-+++ boinc/lib/Makefile.am	2012-05-19 12:22:11.987487371 +0200
+--- boinc.orig/lib/Makefile.am	2012-08-01 20:48:02.126264079 +0200
++++ boinc/lib/Makefile.am	2012-08-01 20:52:55.174302455 +0200
 @@ -147,13 +147,13 @@
  libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
  libboinc_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
@@ -22,9 +22,9 @@ Index: boinc/lib/Makefile.am
  if ENABLE_FCGI
 Index: boinc/lib/util.cpp
 ===================================================================
---- boinc.orig/lib/util.cpp	2012-05-19 12:21:48.983806017 +0200
-+++ boinc/lib/util.cpp	2012-05-19 12:22:11.991487316 +0200
-@@ -310,7 +310,7 @@
+--- boinc.orig/lib/util.cpp	2012-08-01 20:52:04.670985198 +0200
++++ boinc/lib/util.cpp	2012-08-01 20:52:55.182302347 +0200
+@@ -311,7 +311,7 @@
  #ifdef _WIN32
      DebugBreak();
  #else
@@ -35,8 +35,8 @@ Index: boinc/lib/util.cpp
  
 Index: boinc/sched/make_work.cpp
 ===================================================================
---- boinc.orig/sched/make_work.cpp	2012-05-19 12:21:48.983806017 +0200
-+++ boinc/sched/make_work.cpp	2012-05-19 12:22:11.999487205 +0200
+--- boinc.orig/sched/make_work.cpp	2012-08-01 20:48:02.126264079 +0200
++++ boinc/sched/make_work.cpp	2012-08-01 20:52:55.186302294 +0200
 @@ -176,9 +176,6 @@
      char keypath[MAXPATHLEN];
      char buf[BLOB_SIZE];
