@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-// command-line version of the BOINC core client
+// command-line version of the BOINC client
 
 // This file contains no GUI-related code.
 
@@ -51,7 +51,6 @@
 #include "str_util.h"
 #include "str_replace.h"
 #include "util.h"
-#include "unix_util.h"
 #include "prefs.h"
 #include "filesys.h"
 #include "network.h"

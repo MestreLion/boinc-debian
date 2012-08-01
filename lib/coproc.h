@@ -64,7 +64,6 @@
 
 #include <vector>
 #include <string>
-#include <cstring>
 
 #ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
@@ -83,6 +82,15 @@
     // max # of processing resources types
 
 #define MAX_OPENCL_PLATFORMS 16
+
+#define PROC_TYPE_CPU        0
+#define PROC_TYPE_NVIDIA_GPU 1
+#define PROC_TYPE_AMD_GPU    2
+#define PROC_TYPE_INTEL_GPU  3
+#define NPROC_TYPES          4
+
+extern const char* proc_type_name(int);
+extern const char* proc_type_name_xml(int);
 
 #define GPU_TYPE_NVIDIA "NVIDIA"
 #define GPU_TYPE_ATI "ATI"
@@ -280,23 +288,24 @@ struct COPROC {
 //
 struct CUDA_DEVICE_PROP {
     char  name[256];
-    int   deviceHandle;
     double totalGlobalMem;
-    int   sharedMemPerBlock;
+    double   sharedMemPerBlock;
     int   regsPerBlock;
     int   warpSize;
-    int   memPitch;
+    double   memPitch;
     int   maxThreadsPerBlock;
     int   maxThreadsDim[3];
     int   maxGridSize[3]; 
     int   clockRate;
-    int   totalConstMem; 
+    double   totalConstMem; 
     int   major;     // compute capability
     int   minor;
-    int   textureAlignment;
+    double   textureAlignment;
     int   deviceOverlap;
     int   multiProcessorCount;
 };
+
+typedef int CUdevice;
 
 struct COPROC_NVIDIA : public COPROC {
     int cuda_version;  // CUDA runtime version

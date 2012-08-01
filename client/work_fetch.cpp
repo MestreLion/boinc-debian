@@ -521,6 +521,12 @@ void WORK_FETCH::set_all_requests_hyst(PROJECT* p, int rsc_type) {
             if (rsc_work_fetch[i].saturated_time > gstate.work_buf_total()) {
                 continue;
             }
+            
+            // don't fetch work if backup project and no idle instances
+            //
+            if (p->resource_share==0 && rsc_work_fetch[i].nidle_now==0) {
+                continue;
+            }
 
             if (i>0 && !gpus_usable) {
                 continue;
@@ -960,6 +966,12 @@ double CLIENT_STATE::overall_gpu_frac() {
     if (x > 1) x = 1;
     return x;
 }
+double CLIENT_STATE::overall_cpu_and_network_frac() {
+    double x = time_stats.on_frac * time_stats.cpu_and_network_available_frac;
+    if (x < 0.01) x = 0.01;
+    if (x > 1) x = 1;
+    return x;
+}
 
 // called when benchmarks change
 //
@@ -991,4 +1003,3 @@ void CLIENT_STATE::generate_new_host_cpid() {
         }
     }
 }
-

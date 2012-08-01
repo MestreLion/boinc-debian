@@ -26,6 +26,7 @@
 #include <ctime>
 #include <cstdarg>
 #include <cstring>
+#include <math.h>
 #if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -303,6 +304,7 @@ int CLIENT_STATE::init() {
 
     notices.init();
     daily_xfer_history.init();
+    time_stats.init();
 
     detect_platforms();
     time_stats.start();
@@ -466,7 +468,7 @@ int CLIENT_STATE::init() {
             // assume app will run at peak CPU speed, not peak GPU
             //
             if (avp->gpu_usage.rsc_type) {
-                avp->flops += avp->gpu_usage.usage * host_info.p_fpops;
+                avp->flops += avp->gpu_usage.usage * 10 * host_info.p_fpops;
             }
         }
     }
@@ -1724,12 +1726,11 @@ int CLIENT_STATE::report_result_error(RESULT& res, const char* format, ...) {
 // - stop all active tasks
 // - stop all file transfers
 // - stop scheduler RPC if any
-// - delete all workunits and results
-// - delete all apps and app_versions
+// - delete workunits and results
+// - delete apps and app_versions
 // - garbage collect to delete unneeded files
-// - clear debts and backoffs
+// - clear backoffs
 //
-// Note: does NOT delete persistent files or user-supplied files;
 // does not delete project dir
 //
 int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
@@ -1781,6 +1782,15 @@ int CLIENT_STATE::reset_project(PROJECT* project, bool detaching) {
 
     project->user_files.clear();
     project->project_files.clear();
+
+    // clear flags so that sticky files get deleted
+    //
+    for (i=0; i<file_infos.size(); i++) {
+        FILE_INFO* fip = file_infos[i];
+        if (fip->project == project) {
+            fip->sticky = false;
+        }
+    }
 
     garbage_collect_always();
 

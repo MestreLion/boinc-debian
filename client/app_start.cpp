@@ -83,8 +83,6 @@ using std::string;
 #include "file_names.h"
 #include "result.h"
 #include "sandbox.h"
-#include "unix_util.h"
-
 
 #ifdef _WIN32
 #include "run_app_windows.h"
@@ -643,7 +641,7 @@ int ACTIVE_TASK::start() {
     app_client_shm.reset_msgs();
 
     if (config.run_apps_manually) {
-        // fill in core client's PID so we won't think app has exited
+        // fill in client's PID so we won't think app has exited
         //
         pid = GetCurrentProcessId();
         process_handle = GetCurrentProcess();
@@ -911,7 +909,7 @@ int ACTIVE_TASK::start() {
     if (pid == 0) {
         // from here on we're running in a new process.
         // If an error happens,
-        // exit nonzero so that the core client knows there was a problem.
+        // exit nonzero so that the client knows there was a problem.
 
         // don't pass stdout to the app
         //

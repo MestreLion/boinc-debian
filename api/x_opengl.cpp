@@ -1,3 +1,5 @@
+// DEPRECATED
+
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
 // Copyright (C) 2008 University of California
@@ -28,7 +30,6 @@
 #include "app_ipc.h"
 #include "util.h"
 #include "filesys.h"
-#include "unix_util.h"
 
 #include "boinc_gl.h"
 #include "boinc_glut.h"
@@ -672,4 +673,4 @@ void xwin_graphics_event_loop() {
 }
 
 
-const char *BOINC_RCSID_c457a14644 = "$Id: x_opengl.cpp 17388 2009-02-26 00:23:23Z korpela $";
+const char *BOINC_RCSID_c457a14644 = "$Id: x_opengl.cpp 25906 2012-07-30 19:37:51Z romw $";

@@ -3822,6 +3822,96 @@ Rom    2 July 2012
         configure.ac
         version.h
 
+David  26 June 2012
+    - client: keep track of the fraction of time that
+        1) a network connection is available and
+        2) network communication is allowed and
+        3) CPU computation is allowed
+    - If an app version is marked as needs_network,
+        use the above fraction in estimating its rate of progress
+    - replace "core client" with "client" in comments.
+
+    client/
+        client_state.h
+        cs_files.cpp
+        rr_sim.cpp
+        app_start.cpp
+        gui_rpc_server_ops.cpp
+        boinc_cmd.cpp
+        app_control.cpp
+        time_state.cpp,h
+        boinc_log.cpp
+        sandbox.cpp
+        check_state.cpp
+        main.cpp
+        work_fetch.cpp
+        gui_rpc_server.cpp
+    lib/
+        coproc.cpp
+
+Charlie 26 June 2012
+    - Mac client: build libssl.a and libcrypto.a from openssl 1.0.1c and 
+        do static links instead of a dynamic links with Apple-supplied 
+        dynamic libraries.
+    
+     mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+        buildopenssl.sh (new)
+        HowToBuildBOINC_XCode.rtf
+        setupforBOINC.sh
+
+David  28 June 2012
+    - client: when estimating FLOPS for an anonymous-platform app version
+        for which no estimate has been supplied by user,
+        use (CPU speed)*(cpu_usage + 10*gpu_usage)
+        (add the 10*)
+
+    lib/
+        common_defs.h
+        str_util.cpp
+    client/
+        client_state.cpp
+
+David  2 July 2012
+    - Compile fixes for Fedora core 17.  From Christian B.  Fixes #1194.
+    - Fix various #include issues.
+
+    CODING STYLE LAW (minimal inclusion principle):
+        If foo.cpp requires <blah.h>,
+        #include <blah.h> in foo.cpp, NOT foo.h
+
+    various/
+        various
+
+David  2 July 2012
+    - more code cleanup
+
+    lib/
+        various
+
+Charlie 3 July 2012
+    - Mac: fix build break.
+
+    client/
+        cpu_sched.cpp
+
+David  3 July 2012
+	- Client (Win): in file_size(), use _stat64() instead of stat().
+		Otherwise it doesn't work for files >= 2GB
+	- Client: TIME_STATS::trim_stats_log() wasn't working because
+		it's called in the constructor of TIME_STATS,
+		which is called before we've done a chdir() to the data dir.
+
+	Note: for this reason, no disk access should be done in constructors
+	of global objects.  A quick scan found no instances of this.
+
+	client/
+		client_state.cpp
+		time_stats.cpp,h
+	lib/
+		filesys.cpp
+
 Charlie 3 July 2012
     - Mac client: Update Xcode project for compatibility with Xcode 4.3.2 
         and Xcode 4.5.  (Checked into 7.0.31 tag.)
@@ -3829,3 +3919,168 @@ Charlie 3 July 2012
      mac_build/
         boinc.xcodeproj/
             project.pbxproj
+
+David  5 July 2012
+    - client: remove "device" entry from CUDA_DEVICE_PROP,
+        and change types of mem-size fields from int to double.
+        These fields are size_t in NVIDIA's version of this;
+        however, cuDeviceGetAttribute() returns them as int,
+        so I don't see where this makes any difference.
+    - client: fix bug in handling of <no_rsc_apps> element.
+
+
+    lib/
+        coproc.cpp,h
+    client/
+        gui_nvidia.cpp
+        work_fetch.cpp
+        scheduler_op.cpp
+
+Charlie 5 July 2012
+    - Mac: update script which builds our installer to work with Xcode 4.3 
+        for Lion and later.  Because PackageMaker is now distributed 
+        separately from Xcode, we emulate it using low-level tools.
+        
+    mac_installer/
+        release_boinc.sh
+
+Charlie 5 July 2012
+    - Mac: update build script to work with Xcode 4.3 for Lion and later.  
+        Xcode and the Mac OS X SDKs are no longer installed at fixed locations.
+        
+    mac_build/
+        buildWxMac.sh
+
+David  10 July 2012
+    - client: small code cleanup, no functional change
+
+    client/
+        time_stats.cpp
+
+Charlie 10 July 2012
+    - Mac: update build scripts, source files and Xcode project to allow 
+        building with Xcode 4.3 under OS 10.7.x Lion and Xcode 4.4GM under 
+        OS 10.8 Mountain Lion and Xcode 4.5 under OS 10.8 Mountain Lion.
+        Xcode and the Mac OS X SDKs are no longer installed at fixed locations.
+
+    clientgui/
+        mac/
+            MacBitmapCompboBox.cpp
+            MacSysMenu.cpp
+    clientscr/
+        Mac_Saver_ModuleView.m
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+        buildc_ares.sh
+        buildcurl.sh
+        buildopenssl.sh
+        BuildMacBOINC.sh
+        HowToBuildBOINC_XCode.rtf
+
+Charlie 12 July 2012
+    - Mac: update sample code to allow building with Xcode 4.3 under 
+	OS 10.7.x Lion and with Xcode 4.4 GM seed under OS 10.8 Mountain 
+	Lion GM seed and to eliminate compiler warnings.
+
+    samples/
+        example_app/
+            MakeMacExample.sh
+            Makefile_mac
+            Makefile_mac2
+            uc_graphics.cpp
+        mac_build/
+            UpperCase2.xcodeproj/
+                project.pbxproj
+        vboxwrapper/
+            BuildMacVboxWrapper.sh (new)
+            Makefile_mac (new)
+            vboxwrapper.xcodeproj/
+                project.pbxproj
+        wrapper/
+            BuildMacWrapper.sh
+
+David  16 July 2012
+    - lib: treat MINGW32 like CYGWIN32 (in 1 place - should do everywhere?)
+        from Oliver
+
+    lib/
+        filesys.cpp
+
+David  17 July 2012
+    - client: delete sticky files when reset project
+
+    client/
+        client_state.cpp
+
+David  17 July 2012
+	- client: if we get a job for which a GPU is missing,
+		keep the RESULT record so that we can report it to the scheduler.
+		Otherwise we'll keep getting the same job if the project has
+		<resend_lost_results> set.
+
+	client/
+		cs_scheduler.cpp
+
+Charlie 17 July 2012
+    - Mac: Minor corrections to documentation and sample code.
+    
+    mac_build/
+        HowToBuildBOINC_XCode.rtf
+    samples/
+        example_app/
+            Makefile_mac2
+
+Rom    18 July 2012
+    - client: Re-introduce the WM_QUERYENDSESSION window message handler to
+        the power management window proc, it was removed during one of the Win9x
+        code scrubs.  When we see it, inform the client it is time to shutdown.
+
+    client/
+        sysmon_win.cpp
+
+Charlie 18 July 2012
+    - lib: Adjust #include files as requested by Oliver Bock.
+    
+    lib/
+        procinfo_mac.cpp
+
+David  21 July 2012
+    - lib: fix typo
+
+    lib/
+        coproc.cpp
+
+David  21 July 2012
+    - client: don't request work for backup project for a processor type
+        unless there are idle instances of that type
+        
+    client/
+        work_fetch.cpp
+
+David  23 July 2012
+	- client: improve "new version available" notice
+
+	client/
+		current_version.cpp
+
+Charlie 27 July 2012
+    - Mac: Eliminate extra output from wxMac build script.
+    
+     mac_build/
+        buildWxMac.sh
+
+Rom    30 July 2012
+    - MGR: Use the same fix for the simple gui that we used on the advanced
+        gui with regards to the menu on Ubuntu's interface.
+
+    clientgui/
+        sg_BoincSimpleFrame.cpp
+
+Rom    30 July 2012
+    - Tag for 7.0.32 release, all platforms
+      boinc_core_release_7_0_32
+
+    /
+        configure.ac
+        version.h
