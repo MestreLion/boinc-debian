@@ -123,6 +123,12 @@ CXXFLAGS += $(DEB_OPT_FLAGS)
 CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
+ENABLE_SERVER_TEST := $(shell egrep '^Package:.*boinc-server-maker' debian/control)
+ENABLE_SERVER :=
+ifneq (,$(findstring clang,$(DEB_BUILD_OPTIONS)))
+ENABLE_SERVER :=--enable-server 
+endif
+
 # --disable-static
 # For debugging, these options are useful:
 #   --enable-debug
@@ -131,7 +137,7 @@ CFGFLAGS_boinc-client = \
   $(TYPE_FLAGS) \
   --prefix=/usr \
   --enable-client \
-  --enable-server \
+  $(ENABLE_SERVER) \
   --disable-fcgi \
   --enable-manager \
   --enable-libraries \
@@ -295,8 +301,10 @@ override_dh_auto_install: update-boinc-applinks.1
 		egrep -l "^#!.*env..*python" $$i/* | xargs -r sed -i '1s%#!.*%#!/usr/bin/python%' ; \
 	done
 	
-	# something for upstream to fix
-	-chmod +x $(CURDIR)/debian/boinc-server-maker/usr/share/boinc-server/sched/transitioner_catchup.php
+	# something for upstream to fix, optional, in case we do not build the server
+	if [ -d $(CURDIR)/debian/boinc-server-maker ]; then \
+	-chmod +x $(CURDIR)/debian/boinc-server-maker/usr/share/boinc-server/sched/transitioner_catchup.php ; \
+	fi
 	
 	touch $@
 
@@ -311,12 +319,14 @@ override_dh_fixperms:
 	# some files are not right with 755
 	find debian -name "*.php" -o -name "*.php.example" -o -name "*.cpp" | grep -v "update_translations.php" | grep -v "transitioner_catchup.php" | xargs -L 1 -r chmod 644 --
 	# some other files are indeed to be executed via the command line
-	cd debian/boinc-server-maker/usr/share/boinc-server/html/ops ; \
-	for i in *.php; do \
-		if head -n 1 "$$i" | grep -q "^#!"; then \
-			chmod 755 "$$i" ; \
-		fi ; \
-	done
+	if [ -d debian/boinc-server-maker/usr/share/boinc-server/html/ops ]; then \
+		cd debian/boinc-server-maker/usr/share/boinc-server/html/ops ; \
+		for i in *.php; do \
+			if head -n 1 "$$i" | grep -q "^#!"; then \
+				chmod 755 "$$i" ; \
+			fi ; \
+		done ; \
+	fi
 
 	# Correct catalog file perms
 	find debian -name "*.mo" -exec chmod 644   {} \;

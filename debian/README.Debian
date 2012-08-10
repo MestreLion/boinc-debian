@@ -9,3 +9,12 @@ be removed from the testing distribution.
 To have BOINC back in, and to help eliminate an older mysql dependency,
 this release now sees the OpenCL helper package for AMD/ATI removed.
 This is temporary, I very much hope.
+
+----
+
+Upstream at times performs changes to the boinc-client and the
+boinc-server at the same time. The clients set the pace for releases
+and hence sometimes the server package should better not be released.
+The preparation of the boinc-server-maker package is now made optional.
+Anybody commenting out the package in debian/control will have the
+package rebuilt for the client only.
