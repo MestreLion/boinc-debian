@@ -123,10 +123,13 @@ CXXFLAGS += $(DEB_OPT_FLAGS)
 CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
-ENABLE_SERVER_TEST := $(shell egrep '^Package:.*boinc-server-maker' debian/control)
+ENABLE_SERVER_TEST := $(shell egrep '^Package:.*boinc-server-maker' debian/control.in)
 ENABLE_SERVER := --disable-server
-ifneq (,$(findstring clang,$(DEB_BUILD_OPTIONS)))
+ifneq (,$(ENABLE_SERVER_TEST))
 ENABLE_SERVER :=--enable-server 
+TMP=$(shell sed -e 's/^%//' debian/control.in > debian/control)
+else
+TMP=$(shell egrep -v '^%' debian/control.in > debian/control)
 endif
 
 # --disable-static
@@ -153,14 +156,24 @@ CFGFLAGS_boinc-client = \
 
 # Default rule
 %:
+	if [ ! -f debian/control ]; then \
+		if egrep -q '^Package:.*boinc-server-maker' debian/control.in; then \
+			sed -e 's/^%//' debian/control.in > debian/control ; \
+		else \
+			egrep -v '^%' debian/control.in > debian/control ; \
+		fi ; \
+	fi
+	
 	dh $@ --parallel --with python2
 
 override_dh_clean:
 	dh_clean
+	rm -rf debian/boinc-app-examples debian/boinc-server-maker
 	find . -name "Makefile" | grep -v samples | xargs -r rm
 	rm -f configure clientscr/boincscr
 	rm -rf py/lib.linux-*-2.*
 	rm -f override_dh_auto_install client_state.xml gui_rpc_auth.cfg
+	rm -f debian/control
 
 # Commands not to execute - empty overrides
 override_dh_auto_test:
@@ -292,21 +305,26 @@ SAMPLES=samples/sleeper/sleeper samples/worker/worker samples/example_app/uc2 sa
 
 override_dh_auto_install: update-boinc-applinks.1
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+ifneq (,$(ENABLE_SERVER_TEST))
+	echo "I: Installing example scientific applications"
 	mkdir -p $(CURDIR)/debian/tmp/samples
-	cp $(SAMPLES) $(CURDIR)/debian/tmp/samples
-	
-	dh_install
+	cp $(SAMPLES) $(CURDIR)/debian/tmp/samples || echo "W: Could not install samples ($(SAMPLES))"
+endif
 	for i in $(CURDIR)/debian/*/usr/bin ; \
 	do \
 		egrep -l "^#!.*env..*python" $$i/* | xargs -r sed -i '1s%#!.*%#!/usr/bin/python%' ; \
 	done
-	
-	# something for upstream to fix, optional, in case we do not build the server
-	if [ -d $(CURDIR)/debian/boinc-server-maker ]; then \
 	-chmod +x $(CURDIR)/debian/boinc-server-maker/usr/share/boinc-server/sched/transitioner_catchup.php ; \
-	fi
-	
 	touch $@
+
+override_dh_install:
+	# boinc apps are built only together with the server
+	dh_install
+	rm -rf debian/boinc-manager/usr/share/locale/en_US/
+	# delete empty dirs
+	if [ -d debian/boinc-manager/usr/share/locale ] ; then find debian/boinc-manager/usr/share/locale -type d -empty -delete; fi
+	# delete .la files (Closes: #621197)
+	find $(CURDIR)/debian -name "*.la" | xargs -r rm -f
 
 override_dh_strip:
 	dh_strip -a --dbg-package=boinc-dbg
@@ -327,21 +345,12 @@ override_dh_fixperms:
 			fi ; \
 		done ; \
 	fi
-
 	# Correct catalog file perms
 	find debian -name "*.mo" -exec chmod 644   {} \;
 	chmod 755 \
 	  debian/boinc-client/usr/share/boinc-client/udev-cpu_share \
 	  debian/boinc-client/usr/share/bug/boinc-client/script \
 	  debian/boinc-manager/usr/share/doc/boinc-manager/examples/run-boincmgr
-
-override_dh_install:
-	dh_install
-	rm -rf debian/boinc-manager/usr/share/locale/en_US/
-	# delete empty dirs
-	if [ -d debian/boinc-manager/usr/share/locale ] ; then find debian/boinc-manager/usr/share/locale -type d -empty -delete; fi
-	# delete .la files (Closes: #621197)
-	find $(CURDIR)/debian -name "*.la" | xargs -r rm -f
 
 override_dh_compress:
 	dh_compress -Xsamples -X.cpp

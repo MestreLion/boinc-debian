@@ -1,3 +1,14 @@
+Building client+libs or everything
+==================================
+
+The file debian/control.in is the template the control file to be used.
+If the Package: boinc-server-maker is not commented out, then all the
+%-starting lines will be uncommented, too. Otherwise, those lines are removed
+and only those parts of the source tree be built that upstream tests for
+every release. The server side may be at an unbuildable developmental state
+at times.
+
+
 Modifications to the upstream source
 ====================================
  This package uses the Debian quilt format to manage all modifications
@@ -46,6 +57,8 @@ removal of the build dependencies
  libxcb-util0-dev|libxcb-atom1-dev
 
 
+
+
 Removed non-dfsg upstream files
 ===============================
  The files removed from upstream tag are:
@@ -59,10 +72,3 @@ Removed non-dfsg upstream files
    client/app_stats_mac.cpp
 
 
-Debian packaging VCS
-=====================
- Very recently, the management of the packaging has moved from subversion
- to a git repository. The Wiki pages hold instructions for using git,
- see http://wiki.debian.org/BOINC/Development/GitUsage for details.
- The site also offers further references for the current and future
- contributors - you? Give it a try.
