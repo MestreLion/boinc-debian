@@ -124,7 +124,7 @@ CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
 ENABLE_SERVER_TEST := $(shell egrep '^Package:.*boinc-server-maker' debian/control)
-ENABLE_SERVER :=
+ENABLE_SERVER := --disable-server
 ifneq (,$(findstring clang,$(DEB_BUILD_OPTIONS)))
 ENABLE_SERVER :=--enable-server 
 endif
