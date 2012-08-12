@@ -1,7 +1,7 @@
 Index: boinc/api/gutil.cpp
 ===================================================================
---- boinc.orig/api/gutil.cpp	2012-08-11 10:15:02.283736809 +0200
-+++ boinc/api/gutil.cpp	2012-08-11 10:18:20.305048085 +0200
+--- boinc.orig/api/gutil.cpp	2012-08-11 14:10:10.273150461 +0200
++++ boinc/api/gutil.cpp	2012-08-12 17:39:12.567958473 +0200
 @@ -24,7 +24,7 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -13,8 +13,8 @@ Index: boinc/api/gutil.cpp
  #ifdef _WIN32
 Index: boinc/api/gutil_text.cpp
 ===================================================================
---- boinc.orig/api/gutil_text.cpp	2012-08-11 10:15:02.287736754 +0200
-+++ boinc/api/gutil_text.cpp	2012-08-11 10:18:20.309048031 +0200
+--- boinc.orig/api/gutil_text.cpp	2012-08-11 14:10:10.273150461 +0200
++++ boinc/api/gutil_text.cpp	2012-08-12 17:39:12.575958366 +0200
 @@ -26,7 +26,7 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -26,8 +26,8 @@ Index: boinc/api/gutil_text.cpp
  #ifdef _WIN32
 Index: boinc/client/client_state.cpp
 ===================================================================
---- boinc.orig/client/client_state.cpp	2012-08-11 10:18:19.825054602 +0200
-+++ boinc/client/client_state.cpp	2012-08-11 10:18:20.317047922 +0200
+--- boinc.orig/client/client_state.cpp	2012-08-12 17:39:12.155964046 +0200
++++ boinc/client/client_state.cpp	2012-08-12 17:39:12.579958312 +0200
 @@ -26,7 +26,7 @@
  #include <ctime>
  #include <cstdarg>
@@ -39,8 +39,8 @@ Index: boinc/client/client_state.cpp
  #endif
 Index: boinc/client/sim_util.cpp
 ===================================================================
---- boinc.orig/client/sim_util.cpp	2012-08-11 10:15:02.295736646 +0200
-+++ boinc/client/sim_util.cpp	2012-08-11 10:18:20.321047868 +0200
+--- boinc.orig/client/sim_util.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/client/sim_util.cpp	2012-08-12 17:39:12.583958257 +0200
 @@ -35,7 +35,7 @@
  #define finite _finite
  #endif
@@ -52,8 +52,8 @@ Index: boinc/client/sim_util.cpp
  #include "str_util.h"
 Index: boinc/client/whetstone.cpp
 ===================================================================
---- boinc.orig/client/whetstone.cpp	2012-08-11 10:15:02.295736646 +0200
-+++ boinc/client/whetstone.cpp	2012-08-11 10:18:20.325047814 +0200
+--- boinc.orig/client/whetstone.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/client/whetstone.cpp	2012-08-12 17:39:12.587958203 +0200
 @@ -29,7 +29,7 @@
  #include <stdlib.h>
  #include <stdio.h>
@@ -65,8 +65,8 @@ Index: boinc/client/whetstone.cpp
  
 Index: boinc/clientgui/sqlite3.c
 ===================================================================
---- boinc.orig/clientgui/sqlite3.c	2012-08-11 10:15:02.355735831 +0200
-+++ boinc/clientgui/sqlite3.c	2012-08-11 10:18:20.421046510 +0200
+--- boinc.orig/clientgui/sqlite3.c	2012-08-11 14:10:10.277150407 +0200
++++ boinc/clientgui/sqlite3.c	2012-08-12 17:39:12.687956850 +0200
 @@ -20222,7 +20222,7 @@
  **
  */
@@ -78,8 +78,8 @@ Index: boinc/clientgui/sqlite3.c
  /*
 Index: boinc/clientscr/ss_app.cpp
 ===================================================================
---- boinc.orig/clientscr/ss_app.cpp	2012-08-11 10:15:02.359735777 +0200
-+++ boinc/clientscr/ss_app.cpp	2012-08-11 10:18:20.429046402 +0200
+--- boinc.orig/clientscr/ss_app.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/clientscr/ss_app.cpp	2012-08-12 17:39:12.695956743 +0200
 @@ -22,7 +22,7 @@
  #ifdef _WIN32
  #include "boinc_win.h"
@@ -91,8 +91,8 @@ Index: boinc/clientscr/ss_app.cpp
  #include <vector>
 Index: boinc/db/boinc_db.cpp
 ===================================================================
---- boinc.orig/db/boinc_db.cpp	2012-08-11 10:15:02.363735722 +0200
-+++ boinc/db/boinc_db.cpp	2012-08-11 10:18:20.433046347 +0200
+--- boinc.orig/db/boinc_db.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/db/boinc_db.cpp	2012-08-12 17:39:12.703956634 +0200
 @@ -22,7 +22,7 @@
  #include <ctime>
  #include <unistd.h>
@@ -104,8 +104,8 @@ Index: boinc/db/boinc_db.cpp
  #if HAVE_IEEEFP_H
 Index: boinc/lib/boinc_win.h
 ===================================================================
---- boinc.orig/lib/boinc_win.h	2012-08-11 10:15:02.371735614 +0200
-+++ boinc/lib/boinc_win.h	2012-08-11 10:18:20.441046239 +0200
+--- boinc.orig/lib/boinc_win.h	2012-08-11 14:10:10.277150407 +0200
++++ boinc/lib/boinc_win.h	2012-08-12 17:39:12.707956580 +0200
 @@ -200,7 +200,7 @@
  #include <assert.h>
  #include <ctype.h>
@@ -117,8 +117,8 @@ Index: boinc/lib/boinc_win.h
  #include <stdarg.h>
 Index: boinc/lib/md5.c
 ===================================================================
---- boinc.orig/lib/md5.c	2012-08-11 10:15:02.371735614 +0200
-+++ boinc/lib/md5.c	2012-08-11 10:18:20.445046184 +0200
+--- boinc.orig/lib/md5.c	2012-08-11 14:10:10.277150407 +0200
++++ boinc/lib/md5.c	2012-08-12 17:39:12.711956526 +0200
 @@ -88,7 +88,7 @@
   * For reference, here is the program that computed the T values.
   */
@@ -130,8 +130,8 @@ Index: boinc/lib/md5.c
      int i;
 Index: boinc/lib/parse.cpp
 ===================================================================
---- boinc.orig/lib/parse.cpp	2012-08-11 10:18:19.753055580 +0200
-+++ boinc/lib/parse.cpp	2012-08-11 10:18:20.449046130 +0200
+--- boinc.orig/lib/parse.cpp	2012-08-12 17:39:12.095964857 +0200
++++ boinc/lib/parse.cpp	2012-08-12 17:39:12.715956472 +0200
 @@ -31,7 +31,7 @@
  #include <cstring>
  #include <cstdlib>
@@ -143,8 +143,8 @@ Index: boinc/lib/parse.cpp
  #if HAVE_IEEEFP_H
 Index: boinc/lib/str_util.cpp
 ===================================================================
---- boinc.orig/lib/str_util.cpp	2012-08-11 10:15:02.379735505 +0200
-+++ boinc/lib/str_util.cpp	2012-08-11 10:18:20.453046076 +0200
+--- boinc.orig/lib/str_util.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/lib/str_util.cpp	2012-08-12 17:39:12.723956364 +0200
 @@ -27,7 +27,7 @@
  #ifndef _WIN32
  #include "config.h"
@@ -156,8 +156,8 @@ Index: boinc/lib/str_util.cpp
  #include <ctype.h>
 Index: boinc/lib/util.cpp
 ===================================================================
---- boinc.orig/lib/util.cpp	2012-08-11 10:18:19.877053896 +0200
-+++ boinc/lib/util.cpp	2012-08-11 10:18:20.461045967 +0200
+--- boinc.orig/lib/util.cpp	2012-08-12 17:39:12.199963451 +0200
++++ boinc/lib/util.cpp	2012-08-12 17:39:12.723956364 +0200
 @@ -44,7 +44,7 @@
  #include <errno.h>
  #include <string>
@@ -169,8 +169,8 @@ Index: boinc/lib/util.cpp
  extern "C" {
 Index: boinc/samples/atiopencl/atiopencl.hpp
 ===================================================================
---- boinc.orig/samples/atiopencl/atiopencl.hpp	2012-08-11 10:15:02.383735451 +0200
-+++ boinc/samples/atiopencl/atiopencl.hpp	2012-08-11 10:18:20.465045913 +0200
+--- boinc.orig/samples/atiopencl/atiopencl.hpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/samples/atiopencl/atiopencl.hpp	2012-08-12 17:39:12.731956255 +0200
 @@ -28,7 +28,7 @@
  #endif
  
@@ -182,8 +182,8 @@ Index: boinc/samples/atiopencl/atiopencl.hpp
  #include <iostream>
 Index: boinc/samples/example_app/uc2_graphics.cpp
 ===================================================================
---- boinc.orig/samples/example_app/uc2_graphics.cpp	2012-08-11 10:15:02.387735397 +0200
-+++ boinc/samples/example_app/uc2_graphics.cpp	2012-08-11 10:18:20.469045858 +0200
+--- boinc.orig/samples/example_app/uc2_graphics.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/samples/example_app/uc2_graphics.cpp	2012-08-12 17:39:12.735956202 +0200
 @@ -26,7 +26,7 @@
  #ifdef _WIN32
  #include "boinc_win.h"
@@ -195,8 +195,8 @@ Index: boinc/samples/example_app/uc2_graphics.cpp
  #include "parse.h"
 Index: boinc/samples/nvcuda/cuda_kernel.cu
 ===================================================================
---- boinc.orig/samples/nvcuda/cuda_kernel.cu	2012-08-11 10:15:02.391735342 +0200
-+++ boinc/samples/nvcuda/cuda_kernel.cu	2012-08-11 10:18:20.473045804 +0200
+--- boinc.orig/samples/nvcuda/cuda_kernel.cu	2012-08-11 14:10:10.277150407 +0200
++++ boinc/samples/nvcuda/cuda_kernel.cu	2012-08-12 17:39:12.739956148 +0200
 @@ -25,7 +25,7 @@
  // identity matrix and the product A * incerse(A). For debugging...
  //#define VERIFY 1
@@ -208,8 +208,8 @@ Index: boinc/samples/nvcuda/cuda_kernel.cu
  
 Index: boinc/samples/nvopencl/nvopencl.hpp
 ===================================================================
---- boinc.orig/samples/nvopencl/nvopencl.hpp	2012-08-11 10:15:02.391735342 +0200
-+++ boinc/samples/nvopencl/nvopencl.hpp	2012-08-11 10:18:20.477045750 +0200
+--- boinc.orig/samples/nvopencl/nvopencl.hpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/samples/nvopencl/nvopencl.hpp	2012-08-12 17:39:12.743956093 +0200
 @@ -24,7 +24,7 @@
  #include <CL/cl.h>
  #include <oclUtils.h>
@@ -221,8 +221,8 @@ Index: boinc/samples/nvopencl/nvopencl.hpp
  #include <iostream>
 Index: boinc/samples/vboxwrapper/vboxwrapper.cpp
 ===================================================================
---- boinc.orig/samples/vboxwrapper/vboxwrapper.cpp	2012-08-11 10:15:02.395735288 +0200
-+++ boinc/samples/vboxwrapper/vboxwrapper.cpp	2012-08-11 10:18:20.485045641 +0200
+--- boinc.orig/samples/vboxwrapper/vboxwrapper.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/samples/vboxwrapper/vboxwrapper.cpp	2012-08-12 17:39:12.751955985 +0200
 @@ -56,7 +56,7 @@
  #include <sys/types.h>
  #include <sys/stat.h>
@@ -234,8 +234,8 @@ Index: boinc/samples/vboxwrapper/vboxwrapper.cpp
  #endif
 Index: boinc/samples/wrappture/fermi.cpp
 ===================================================================
---- boinc.orig/samples/wrappture/fermi.cpp	2012-08-11 10:15:02.419734962 +0200
-+++ boinc/samples/wrappture/fermi.cpp	2012-08-11 10:18:20.517045207 +0200
+--- boinc.orig/samples/wrappture/fermi.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/samples/wrappture/fermi.cpp	2012-08-12 17:39:12.771955714 +0200
 @@ -2,7 +2,7 @@
  
  #include <stdlib.h>
@@ -247,8 +247,8 @@ Index: boinc/samples/wrappture/fermi.cpp
  int main(int argc, char * argv[]) {
 Index: boinc/samples/wrappture/wrappture_example.cpp
 ===================================================================
---- boinc.orig/samples/wrappture/wrappture_example.cpp	2012-08-11 10:15:02.427734853 +0200
-+++ boinc/samples/wrappture/wrappture_example.cpp	2012-08-11 10:18:20.525045098 +0200
+--- boinc.orig/samples/wrappture/wrappture_example.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/samples/wrappture/wrappture_example.cpp	2012-08-12 17:39:12.779955607 +0200
 @@ -15,7 +15,7 @@
  
  #include <stdlib.h>
@@ -260,8 +260,8 @@ Index: boinc/samples/wrappture/wrappture_example.cpp
  #endif
 Index: boinc/sched/credit.cpp
 ===================================================================
---- boinc.orig/sched/credit.cpp	2012-08-11 10:15:02.431734799 +0200
-+++ boinc/sched/credit.cpp	2012-08-11 10:18:20.529045044 +0200
+--- boinc.orig/sched/credit.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/sched/credit.cpp	2012-08-12 17:39:12.787955498 +0200
 @@ -22,7 +22,7 @@
  // Note: this is credit.cpp rather than sched_credit.cpp
  // because you might grant credit e.g. from a trickle handler
@@ -273,8 +273,8 @@ Index: boinc/sched/credit.cpp
  #include "error_numbers.h"
 Index: boinc/sched/feeder.cpp
 ===================================================================
---- boinc.orig/sched/feeder.cpp	2012-08-11 10:15:02.431734799 +0200
-+++ boinc/sched/feeder.cpp	2012-08-11 10:18:20.537044935 +0200
+--- boinc.orig/sched/feeder.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/sched/feeder.cpp	2012-08-12 17:39:12.791955444 +0200
 @@ -98,7 +98,7 @@
  #include <ctime>
  #include <csignal>
@@ -286,8 +286,8 @@ Index: boinc/sched/feeder.cpp
  #include <sys/param.h>
 Index: boinc/vda/vda_lib.cpp
 ===================================================================
---- boinc.orig/vda/vda_lib.cpp	2012-08-11 10:15:02.435734745 +0200
-+++ boinc/vda/vda_lib.cpp	2012-08-11 10:18:20.541044881 +0200
+--- boinc.orig/vda/vda_lib.cpp	2012-08-11 14:10:10.277150407 +0200
++++ boinc/vda/vda_lib.cpp	2012-08-12 17:39:12.795955390 +0200
 @@ -23,7 +23,7 @@
  #include <vector>
  #include <set>
