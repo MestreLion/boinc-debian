@@ -1,7 +1,11 @@
 boinc (7.0.33+dfsg-1) UNRELEASED; urgency=low
 
+  [ Steffen Moeller ]
   * New upstream version
   * Conditional builds of debian/control
+
+  [ Guo Yixuan ]
+  * debian/rules: disable optimization (-O2) for SETI to work.
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 30 Jun 2012 21:59:59 +0200
 
