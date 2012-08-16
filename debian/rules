@@ -154,6 +154,7 @@ CFGFLAGS_boinc-client = \
   --enable-dynamic-client-linkage \
   CFLAGS="$(CFLAGS_boinc-client)" \
   CXXFLAGS="$(CXXFLAGS_boinc-client)" \
+  CPPFLAGS="$(CPPFLAGS)" \
   LDFLAGS="$(LDFLAGS)"
 
 
