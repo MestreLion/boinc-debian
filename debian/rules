@@ -12,9 +12,6 @@
 # -Wformat -Werror=format-security will need many fixes to avoid ftbfs,
 # so it's disabled for now
 export DEB_BUILD_MAINT_OPTIONS = hardening=-format,+bindnow
-# disable optimization for SETI
-export DEB_CFLAGS_MAINT_STRIP = -O2
-export DEB_CXXFLAGS_MAINT_STRIP = -O2
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
@@ -209,12 +206,18 @@ update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
 # build:
 #	dh build --parallel --with python2
 
+CFLAGS_noopt = $(subst -O2,-O0,$(CFLAGS))
+CXXFLAGS_noopt = $(subst -O2,-O0,$(CXXFLAGS))
+
 override_dh_auto_build: update-boinc-applinks.1
 	@echo
 	@echo "****        *****"
 	@echo "**** Making ****"
 	@echo "****        *****"
 	@echo
+	# disable optimization in api/ and lib/, for SETI to work
+	$(MAKE) -C api CFLAGS="$(CFLAGS_noopt)" CXXFLAGS="$(CXXFLAGS_noopt)"
+	$(MAKE) -C lib CFLAGS="$(CFLAGS_noopt)" CXXFLAGS="$(CXXFLAGS_noopt)"
 	$(MAKE)
 
 	# Generate binary message catalogs of the BOINC Manager.
