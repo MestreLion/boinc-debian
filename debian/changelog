@@ -5,7 +5,9 @@ boinc (7.0.33+dfsg-1) UNRELEASED; urgency=low
   * Conditional builds of debian/control
 
   [ Guo Yixuan ]
-  * debian/rules: disable optimization in api/, for SETI to work.
+  * debian/rules: partially disable some optimization and hardening flags,
+    - in api/, for SETI to work,
+    - in clientgui/, as a workaround for #679207.
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 30 Jun 2012 21:59:59 +0200
 

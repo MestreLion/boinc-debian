@@ -206,8 +206,12 @@ update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
 # build:
 #	dh build --parallel --with python2
 
+# noopt
 CFLAGS_noopt = $(subst -O2,-O0,$(CFLAGS))
 CXXFLAGS_noopt = $(subst -O2,-O0,$(CXXFLAGS))
+# noopt and no hardening
+CFLAGS_plain = -g -O0 -Wall
+CXXFLAGS_plain = $(CFLAGS_plain)
 
 override_dh_auto_build: update-boinc-applinks.1
 	@echo
@@ -217,6 +221,9 @@ override_dh_auto_build: update-boinc-applinks.1
 	@echo
 	# disable optimization in api/, for SETI to work
 	$(MAKE) -C api CFLAGS="$(CFLAGS_noopt)" CXXFLAGS="$(CXXFLAGS_noopt)"
+	# workaround for bug #679207 (proxy setting segfault)
+	$(MAKE) -C lib
+	$(MAKE) -C clientgui CFLAGS="$(CFLAGS_plain)" CXXFLAGS="$(CXXFLAGS_plain)"
 	$(MAKE)
 
 	# Generate binary message catalogs of the BOINC Manager.
