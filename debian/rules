@@ -215,9 +215,8 @@ override_dh_auto_build: update-boinc-applinks.1
 	@echo "**** Making ****"
 	@echo "****        *****"
 	@echo
-	# disable optimization in api/ and lib/, for SETI to work
+	# disable optimization in api/, for SETI to work
 	$(MAKE) -C api CFLAGS="$(CFLAGS_noopt)" CXXFLAGS="$(CXXFLAGS_noopt)"
-	$(MAKE) -C lib CFLAGS="$(CFLAGS_noopt)" CXXFLAGS="$(CXXFLAGS_noopt)"
 	$(MAKE)
 
 	# Generate binary message catalogs of the BOINC Manager.
