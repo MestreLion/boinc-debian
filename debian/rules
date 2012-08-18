@@ -269,11 +269,12 @@ override_dh_auto_clean:
 	rm -fr debian/boinc-amd-opencl debian/boinc-screensaver # for cases when this is not in debian/control
 	rm -f debian/boinc-screensaver.substvars debian/boinc-amd-opencl.substvars # dito
 	rm -f \
-	  lockfile \
+	  boinc_lockfile lockfile \
 	  doc/manpages/*.1 \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
 	  aclocal.m4 \
+	  config.h \
 	  config.h.in \
 	  configure \
 	  compile \

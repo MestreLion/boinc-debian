@@ -66,6 +66,8 @@ client/boinc_client
 client/boinccmd
 client/switcher
 clientgui/boincmgr
+client/scripts/boinc-client
+client/win/boinc_path_config.py
 vda/plot
 vda/ssim
 vda/vda
@@ -125,3 +127,5 @@ doc/manpages/appmgr.8
 doc/manpages/boinc.1
 doc/manpages/boinccmd.1
 doc/manpages/boincmgr.1
+test/version.inc
+py/Boinc/version.py
