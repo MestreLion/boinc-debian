@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 24429 2011-10-19 06:37:03Z davea $
+## $Id: Makefile.am 26029 2012-08-16 17:42:54Z romw $
 
 include $(top_srcdir)/Makefile.incl
 
@@ -16,9 +16,6 @@ graphics2_files = \
     gutil.cpp \
     gutil_text.cpp \
     reduce_lib.cpp \
-    texfont.cpp \
-    texture.cpp \
-    txf_util.cpp \
     graphics2.cpp \
     graphics2_unix.cpp
 
