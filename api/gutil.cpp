@@ -29,14 +29,12 @@
 
 #ifdef _WIN32
 
-#ifndef SANS_JPEGLIB
 #ifdef __cplusplus
 extern "C" {
 #include "jpeglib.h"
 }
 #else
 #include "jpeglib.h"
-#endif
 #endif
 
 #include "bmplib.h"
@@ -54,11 +52,9 @@ extern "C" {
 #include <alloca.h>
 #endif
 
-#ifndef SANS_JPEGLIB
 extern "C"{
 #include <jpeglib.h>
 }
-#endif
 
 #endif
 
@@ -655,7 +651,6 @@ void printdata(const char* filename, int x, int y, unsigned char* data) {
 }
 #endif
 
-#ifndef SANS_JPEGLIB
 void DecodeJPG(jpeg_decompress_struct* cinfo, tImageJPG *pImageData) {
 	jpeg_read_header(cinfo, TRUE);
 	jpeg_start_decompress(cinfo);
@@ -753,29 +748,6 @@ int TEXTURE_DESC::CreateTextureJPG(const char* strFileName) {
 	}
 	return 0;
 }
-#endif
-
-#ifdef _WIN32
-int TEXTURE_DESC::CreateTextureBMP(const char* strFileName) {
-	DIB_BITMAP image;
-    if(image.loadBMP(strFileName) == false) {
-		return -1;
-    }
-	glPixelStorei(GL_UNPACK_ALIGNMENT,4);
-	glGenTextures(1, &id);
-	glBindTexture(GL_TEXTURE_2D, id);
-	gluBuild2DMipmaps(GL_TEXTURE_2D, image.get_channels(), image.get_width(),
-        image.get_height(), GL_BGR_EXT, GL_UNSIGNED_BYTE,
-        image.getLinePtr(0)
-    );
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-    xsize = image.get_width();
-    ysize = image.get_height();
-	return 0;
-}
-#endif  // _WIN32
-
 
 int TEXTURE_DESC::CreateTexturePPM(const char* strFileName) {
 	unsigned char* pixels;
@@ -796,60 +768,6 @@ int TEXTURE_DESC::CreateTexturePPM(const char* strFileName) {
 	return 0;
 }
 
-
-int TEXTURE_DESC::CreateTextureRGB(const char* strFileName) {
-	if(!strFileName) return -1;
-	int sizeX;
-	int sizeY;
-	int sizeZ;
-	// Load the image and store the data
-	unsigned int *pImage = read_rgb_texture(strFileName,&sizeX,&sizeY,&sizeZ);
-	if(pImage == NULL) return -1;
-	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-	glGenTextures(1, (GLuint*)&id);
-	glBindTexture(GL_TEXTURE_2D, id);
-	gluBuild2DMipmaps(GL_TEXTURE_2D, 3, sizeX, sizeY, GL_RGBA, GL_UNSIGNED_BYTE, pImage);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-    if (pImage)
-		free(pImage);
-	return 0;
-}
-
-#ifdef _WIN32
-int TEXTURE_DESC::CreateTextureTGA(const char* strFileName) {
-	if(!strFileName)									// Return from the function if no file name was passed in
-		return -1;
-
-	tImageTGA *pImage = LoadTGA(strFileName);			// Load the image and store the data
-    if(pImage == NULL) {
-		return -1;
-    }
-	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-	glGenTextures(1, &id);
-	glBindTexture(GL_TEXTURE_2D, id);
-	int textureType = GL_RGB;
-	if(pImage->channels == 4) {
-		textureType = GL_RGBA;
-	}
-	gluBuild2DMipmaps(GL_TEXTURE_2D, pImage->channels, pImage->sizeX,
-	pImage->sizeY, textureType, GL_UNSIGNED_BYTE, pImage->data);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-    xsize = pImage->sizeX;
-    ysize = pImage->sizeY;
-
-    if (pImage)	{									// If we loaded the image
-        if (pImage->data) {							// If there is texture data
-			delete[] pImage->data;					// Free the texture data, we don't need it anymore
-		}
-		free(pImage);								// Free the image structure
-	}
-	return 0;
-}
-#endif  // _WIN32
-
-
 int TEXTURE_DESC::load_image_file(const char* filename) {
     int retval;
     FILE* f;
@@ -860,36 +778,18 @@ int TEXTURE_DESC::load_image_file(const char* filename) {
     // for now, just try all the image types in turn
 
     present = true;
-#ifndef SANS_JPEGLIB
 	retval = CreateTextureJPG(filename);
     if (!retval) {
         fprintf(stderr, "Successfully loaded '%s'.\n", filename);
         return 0;
     }
-#endif
 #ifdef _WIN32
     retval = CreateTexturePPM(filename);
     if (!retval) {
         fprintf(stderr, "Successfully loaded '%s'.\n", filename);
         return 0;
     }
-    retval = CreateTextureBMP(filename);
-    if (!retval) {
-        fprintf(stderr, "Successfully loaded '%s'.\n", filename);
-        return 0;
-    }
-    retval = CreateTextureTGA(filename);
-    if (!retval) {
-        fprintf(stderr, "Successfully loaded '%s'.\n", filename);
-        return 0;
-    }
 #endif
-	retval = CreateTextureRGB(filename);
-    if (!retval) {
-        fprintf(stderr, "Successfully loaded '%s'.\n", filename);
-        return 0;
-    }
-
 done:
     present = false;
     fprintf(stderr, "Failed to load '%s'.\n", filename);

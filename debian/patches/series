@@ -1,5 +1,5 @@
 # patches to get Debian going
-texfont_removal.patch
+#texfont_removal.patch
 libnotify-0.7.patch
 # undisputed patches above
 sched_driver_f_free.patch

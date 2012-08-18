@@ -4103,3 +4103,223 @@ Rom    1 Aug 2012
     /
         configure.ac
         version.h
+
+Charlie 1 Aug 2012
+    - API, SCR: Switch from *.txf fonts to TrueType fonts in graphics 
+        applications, ensuring that all related files have no licensing 
+        issues.
+        
+    /
+        COPYRIGHT
+    api/
+        gutil/cpp,.h
+        ttfont.cpp,.h
+        texfont.cpp,.h (deleted)
+        texture.cpp,.h (deleted)
+        txf_util.cpp,.h (deleted)
+        txf/
+            *.txf (deleted)
+        ttf/
+            courier_bold (deleted)
+            helvetica (deleted)
+            README (deleted)
+            liberation-fonts-ttf-2.00.0/ (added)
+                AUTHORS (added)
+                CHANGELOG (added)
+                LICENSE (added)
+                README (added)
+                *.ttf (added)
+    clientscr/
+        ss_app.cpp
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    mac_installer/
+        release_boinc.sh
+
+Charlie 2 Aug 2012
+    - Mac: Update scripts for building branded installers to allow 
+        building with Xcode 4.3 under OS 10.7.x Lion; change names of 
+        branded installers from "*macOSX_universal" to "*macOSX_i686" 
+        since we no longer support PowerPC Macs.
+        
+    mac_installer/
+        make_CharityEngine.sh
+        make_GridRepublic.sh
+        make_ProgThruProc.sh
+
+Rom    2 Aug 2012
+    - SS: Update project files to use FreeType and FTGL on Windows.
+
+    api/
+        ttfont.cpp, .h
+    clientscr/
+        ss_app.cpp
+    win_build/
+        boinc_ss.vcproj
+        libgraphics2.vcproj
+
+Charlie 3 Aug 2012
+    - Sample Graphics app: Switch from *.txf fonts to TrueType fonts.
+    samples/
+        example_app/
+            MakeMacExample.sh
+            Makefile_mac
+            Makefile_mac2
+            uc2_graphics.cpp
+        mac_build/
+            UpperCase2.xcodeproj/
+                project.pbxproj
+
+Charlie 3 Aug 2012
+    - Mac: Update build instructions and build script.
+
+    mac_build/
+        HowToBuildBOINC_XCode.rtf
+        setupforBOINC.sh
+
+Rom    3 Aug 2012
+    - WIN: Make the example graphics application build again.
+    - WIN: Get rid of the linker warnings for both the default screensaver and
+        the example graphics application
+
+    win_build/
+        boinc_ss.vcproj
+        uc2_graphics.vcproj
+
+David  3 Aug 2012
+    - API: remove support for BMP and TGA image files;
+        the code to parse these had no license info.
+        Only JPEG is supported now.
+
+    api/
+        Makefile.am
+        bmplib.cpp,h (removed)
+        tgalib.cpp,h (removed)
+        gutil.cpp
+
+David  6 Aug 2012
+	- client: fix error in runtime estimation for active tasks
+
+	client/
+		work_fetch.cpp
+
+Rom    7 Aug 2012
+    - MGR: Enforce the 0..10 day limit on the connect interval for the
+        advanced preferences dialog.  At some point we should rename
+        it.
+
+    clientgui/
+        DlgAdvPreferences.cpp
+
+Rom    7 Aug 2012
+    - API: Remove ttfont.cpp from Makefile.am.  Apps should include it
+        in there Makefile as needed.
+
+    api/
+        Makefile.am
+
+Rom    7 Aug 2012
+    - WINSCR: Fix problem with the screensaver needlessly cycling in
+        preview mode.  Ugh.
+
+    clientscr/
+        screensaver_win.cpp
+
+Charlie 7 Aug 2012
+    - WIN: Remove reference to deleted tgalib.cpp file.
+
+    win_build/
+        libgraphics2.vcproj
+
+David  8 Aug 2012
+    - Client/manager: there was a bug because some code was writing
+        "cpu" in XML, and other code was looking for "CPU".
+        To fix this and prevent similar problems,
+        processor type names are now encapsulated in proc_type_name_xml().
+        Code should use this rather than having hard-wired names.
+        Redefine: GPU_TYPE_* as macros that call proc_type_name_xml().
+
+    client/
+        client_types.cpp
+        client_state.cpp
+    clientgui/
+        DlgItemProperties.cpp
+    sched/
+        sched_version.cpp
+    lib/
+        gui_rpc_client_ops.cpp
+        coproc.cpp,h
+
+Charlie 8 Aug 2012
+    - MGR: Fix build break.
+    
+     clientgui/
+        DlgItemProperties.cpp
+
+David  10 Aug 2012
+    - client: when we're making a scheduler RPC
+        for a reason other than work fetch,
+        and we're deciding whether to piggyback a work request,
+        skip the checks for hysteresis (buffer < min)
+        and for per-resource backoff time.
+        These checks are there only to limit the rate of RPCs,
+        which is not relevant since we're doing one any.
+
+        This fixes a bug where a project w/ sporadic jobs specifies
+        a next_rpc_delay to ensure regular polling from clients.
+        When these polls occur they should request work regardless of backoff.
+
+    client/
+        work_fetch.cpp,h
+
+David  10 Aug 2012
+    - client: tweak to the above: never ask for work if buffer > max.
+        This is needed to prevent projects that use next_rpc_delay
+        from queuing unbounded work.
+
+    client/
+        work_fetch.cpp
+
+David  13 Aug 2012
+    - client: treat all 4xx HTTP errors as permanent
+    - code cleanup
+
+    lib/
+        msg_log.cpp,h
+    client/
+        http_curl.cpp
+
+Rom    13 Aug 2012
+    - WINSETUP: Provide the ability to create the acct_mgr_login.xml from
+        from the command line.  Useful for mass deployments within companies
+        and charities.
+
+    win_build/installerv2/redist/Windows/src/boinccas/
+        boinccas.rc
+        boinccas95.def
+        boinccas95.vcproj
+        CACreateAcctMgrLoginFile.cpp, .h
+        CACreateProjectInitFile.cpp
+    win_build/installerv2/redist/Windows/Win32/
+        boinccas.dll
+        boinccas95.dll
+    win_build/installerv2/redist/Windows/x64/
+        boinccas.dll
+        boinccas95.dll
+
+Charlie 14 Aug 2012
+    - Mac installer: Fixes for short (posix) user names containing spaces.
+    
+    mac_installer/
+        PostInstall.cpp
+        release_boinc.sh
+        Uninstall.cpp
+
+Rom    16 Aug 2012
+    - Tag for 7.0.34 release, all platforms
+      boinc_core_release_7_0_34
+
+    /
+        configure.ac
+        version.h

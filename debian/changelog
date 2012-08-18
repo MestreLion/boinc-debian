@@ -1,3 +1,15 @@
+boinc (7.0.34+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream version
+    - many non-Linux fixes
+    - consistency with GPU types
+    - api loses supports for legacy image formats
+    - switch from *.txf fonts to TrueType fonts in graphics apps,
+      ensuring that all related files have no licensing issues.
+  * Helping boinc's cuda package towards multiarch
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 18 Aug 2012 14:41:47 +0200
+
 boinc (7.0.33+dfsg-1) unstable; urgency=low
 
   [ Steffen Moeller ]

@@ -1,8 +1,8 @@
 Index: boinc/sched/plan_class_spec.cpp
 ===================================================================
---- boinc.orig/sched/plan_class_spec.cpp	2012-03-31 13:44:26.743115315 +0200
-+++ boinc/sched/plan_class_spec.cpp	2012-04-20 11:58:25.622844943 +0200
-@@ -209,11 +209,11 @@
+--- boinc.orig/sched/plan_class_spec.cpp	2012-08-17 16:08:27.014489919 +0200
++++ boinc/sched/plan_class_spec.cpp	2012-08-18 14:42:31.369116154 +0200
+@@ -210,11 +210,11 @@
          }
  
          // GPU RAM
@@ -16,7 +16,7 @@ Index: boinc/sched/plan_class_spec.cpp
                  );
              }
              return false;
-@@ -290,8 +290,8 @@
+@@ -291,8 +291,8 @@
          // i.e. fill the device memory with tasks
          if (ngpus < 0) {
              hu.ncudas =
@@ -29,8 +29,8 @@ Index: boinc/sched/plan_class_spec.cpp
              hu.ncudas = ngpus * gpu_utilization;
 Index: boinc/sched/sched_send.cpp
 ===================================================================
---- boinc.orig/sched/sched_send.cpp	2012-04-19 18:05:13.224503011 +0200
-+++ boinc/sched/sched_send.cpp	2012-04-20 11:59:03.982319022 +0200
+--- boinc.orig/sched/sched_send.cpp	2012-08-17 16:08:27.014489919 +0200
++++ boinc/sched/sched_send.cpp	2012-08-18 14:42:31.373116100 +0200
 @@ -1432,7 +1432,7 @@
  
      if (g_request->coprocs.nvidia.count && ssp->have_cuda_apps) {
