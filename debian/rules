@@ -169,7 +169,7 @@ CFGFLAGS_boinc-client = \
 
 override_dh_clean:
 	dh_clean
-	rm -rf debian/boinc-app-examples debian/boinc-server-maker
+	rm -rf debian/boinc-app-examples debian/boinc-server-maker debian/boinc-app-examples.substvars debian/boinc-server-maker.substvars
 	find . -name "Makefile" | grep -v samples | xargs -r rm
 	rm -f configure clientscr/boincscr
 	rm -rf py/lib.linux-*-2.*

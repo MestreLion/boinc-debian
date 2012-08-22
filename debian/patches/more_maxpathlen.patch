@@ -1,13 +1,13 @@
 Index: boinc/api/graphics2_util.cpp
 ===================================================================
---- boinc.orig/api/graphics2_util.cpp	2012-03-31 13:44:20.927194759 +0200
-+++ boinc/api/graphics2_util.cpp	2012-08-18 22:06:59.095703443 +0200
+--- boinc.orig/api/graphics2_util.cpp	2012-08-22 20:35:24.792922502 +0200
++++ boinc/api/graphics2_util.cpp	2012-08-22 20:47:47.234849517 +0200
 @@ -35,9 +35,9 @@
  
  #ifdef __EMX__
  static key_t get_shmem_name(const char* prog_name) {
 -    char cwd[256], path[256];
-+    char cwd[MATPATHLEN], path[MATPATHLEN];
++    char cwd[MAXPATHLEN], path[MAXPATHLEN];
      boinc_getcwd(cwd);
 -    sprintf(path, "%s/init_data.xml", cwd);
 +    snprintf(path, sizeof(path), "%s/init_data.xml", cwd);
@@ -27,7 +27,7 @@ Index: boinc/api/graphics2_util.cpp
  #ifdef _WIN32
      HANDLE shmem_handle;
 -    char shmem_name[256];
-+    char shmem_name[MATPATHLEN];
++    char shmem_name[MAXPATHLEN];
      void* p;
      get_shmem_name(prog_name, shmem_name);
      shmem_handle = create_shmem(shmem_name, size, &p);
@@ -36,7 +36,7 @@ Index: boinc/api/graphics2_util.cpp
  #else
      // V6 Unix/Linux/Mac applications always use mmap() shared memory for graphics communication
 -    char shmem_name[256];
-+    char shmem_name[MATPATHLEN];
++    char shmem_name[MAXPATHLEN];
      get_shmem_name(prog_name, shmem_name);
      int retval = create_shmem_mmap(shmem_name, size, &p);
      // Graphics app may be run by a different user & group than worker app
@@ -45,7 +45,7 @@ Index: boinc/api/graphics2_util.cpp
  void* boinc_graphics_get_shmem(const char* prog_name) {
      HANDLE shmem_handle;
 -    char shmem_name[256];
-+    char shmem_name[MATPATHLEN];
++    char shmem_name[MAXPATHLEN];
      void* p;
      get_shmem_name(prog_name, shmem_name);
      shmem_handle = attach_shmem(shmem_name, &p);
@@ -54,14 +54,14 @@ Index: boinc/api/graphics2_util.cpp
  #else
      // V6 Unix/Linux/Mac applications always use mmap() shared memory for graphics communication
 -    char shmem_name[256];
-+    char shmem_name[MATPATHLEN];
++    char shmem_name[MAXPATHLEN];
      get_shmem_name(prog_name, shmem_name);
      retval = attach_shmem_mmap(shmem_name, &p);
  #endif
 Index: boinc/lib/filesys.cpp
 ===================================================================
---- boinc.orig/lib/filesys.cpp	2012-08-18 16:00:23.485826204 +0200
-+++ boinc/lib/filesys.cpp	2012-08-18 22:23:33.110256806 +0200
+--- boinc.orig/lib/filesys.cpp	2012-08-22 20:46:19.264044088 +0200
++++ boinc/lib/filesys.cpp	2012-08-22 20:46:19.528040503 +0200
 @@ -209,7 +209,7 @@
  }
  
@@ -116,8 +116,8 @@ Index: boinc/lib/filesys.cpp
          strcpy(oldpath, newpath);
 Index: boinc/lib/network.cpp
 ===================================================================
---- boinc.orig/lib/network.cpp	2012-08-01 20:52:04.638985631 +0200
-+++ boinc/lib/network.cpp	2012-08-18 22:30:17.052799909 +0200
+--- boinc.orig/lib/network.cpp	2012-08-22 20:35:24.792922502 +0200
++++ boinc/lib/network.cpp	2012-08-22 20:46:19.532040449 +0200
 @@ -70,7 +70,7 @@
      case WSAENOTSOCK:
          return "not a socket";

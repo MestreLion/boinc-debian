@@ -8,6 +8,9 @@ boinc (7.0.34+dfsg-1) unstable; urgency=low
     - switch from *.txf fonts to TrueType fonts in graphics apps,
       ensuring that all related files have no licensing issues.
   * Helping boinc-nvidia-cuda package towards multi-arch
+  * Help cleaning remnants of packages (temporarily) not in
+    debian/control but in debian/control.in.
+  * Override boinc-nvidia-cuda: bad-provided-package-name libcuda1:i386
 
   [ Guo Yixuan ]
   * Remove broken links from libboinc-app-dev. (Closes: #659845)
