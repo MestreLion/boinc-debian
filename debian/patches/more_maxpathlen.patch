@@ -1,0 +1,152 @@
+Index: boinc/api/graphics2_util.cpp
+===================================================================
+--- boinc.orig/api/graphics2_util.cpp	2012-03-31 13:44:20.927194759 +0200
++++ boinc/api/graphics2_util.cpp	2012-08-18 22:06:59.095703443 +0200
+@@ -35,9 +35,9 @@
+ 
+ #ifdef __EMX__
+ static key_t get_shmem_name(const char* prog_name) {
+-    char cwd[256], path[256];
++    char cwd[MATPATHLEN], path[MATPATHLEN];
+     boinc_getcwd(cwd);
+-    sprintf(path, "%s/init_data.xml", cwd);
++    snprintf(path, sizeof(path), "%s/init_data.xml", cwd);
+     return ftok(path, 2);
+ }
+ #else
+@@ -47,14 +47,14 @@
+     APP_INIT_DATA aid;
+     int retval = boinc_get_init_data(aid);
+     if (retval) aid.slot = 0;
+-    sprintf(shmem_name, "boinc_%s_%d", prog_name, aid.slot);
++    snprintf(shmem_name, sizeof(shmem_name), "boinc_%s_%d", prog_name, aid.slot);
+ }
+ #endif
+ 
+ void* boinc_graphics_make_shmem(const char* prog_name, int size) {
+ #ifdef _WIN32
+     HANDLE shmem_handle;
+-    char shmem_name[256];
++    char shmem_name[MATPATHLEN];
+     void* p;
+     get_shmem_name(prog_name, shmem_name);
+     shmem_handle = create_shmem(shmem_name, size, &p);
+@@ -67,7 +67,7 @@
+     int retval = create_shmem(key, size, 0, &p);
+ #else
+     // V6 Unix/Linux/Mac applications always use mmap() shared memory for graphics communication
+-    char shmem_name[256];
++    char shmem_name[MATPATHLEN];
+     get_shmem_name(prog_name, shmem_name);
+     int retval = create_shmem_mmap(shmem_name, size, &p);
+     // Graphics app may be run by a different user & group than worker app
+@@ -82,7 +82,7 @@
+ #ifdef _WIN32
+ void* boinc_graphics_get_shmem(const char* prog_name) {
+     HANDLE shmem_handle;
+-    char shmem_name[256];
++    char shmem_name[MATPATHLEN];
+     void* p;
+     get_shmem_name(prog_name, shmem_name);
+     shmem_handle = attach_shmem(shmem_name, &p);
+@@ -100,7 +100,7 @@
+     retval = attach_shmem(key, &p);
+ #else
+     // V6 Unix/Linux/Mac applications always use mmap() shared memory for graphics communication
+-    char shmem_name[256];
++    char shmem_name[MATPATHLEN];
+     get_shmem_name(prog_name, shmem_name);
+     retval = attach_shmem_mmap(shmem_name, &p);
+ #endif
+Index: boinc/lib/filesys.cpp
+===================================================================
+--- boinc.orig/lib/filesys.cpp	2012-08-18 16:00:23.485826204 +0200
++++ boinc/lib/filesys.cpp	2012-08-18 22:23:33.110256806 +0200
+@@ -209,7 +209,7 @@
+ }
+ 
+ bool is_dir_empty(const char *p) {
+-    char file[256];
++    char file[MAXPATHLEN];
+ 
+     DIRREF dir = dir_open(p);
+     if (!dir) return true;
+@@ -430,7 +430,7 @@
+     while (1) {
+         retval = dir_scan(filename, dirp, sizeof(filename));
+         if (retval) break;
+-        sprintf(subdir, "%s/%s", dirpath, filename);
++        snprintf(subdir, sizeof(subdir), "%s/%s", dirpath, filename);
+ 
+         if (is_dir(subdir)) {
+             if (recurse) {
+@@ -548,8 +548,8 @@
+     }
+     return 0;
+ #elif defined(__EMX__)
+-    char cmd[1024];
+-    sprintf(cmd, "copy \"%s\" \"%s\"", orig, newf);
++    char cmd[2*MAXPATHLEN+5];
++    snprintf(cmd, sizeof(cmd), "copy \"%s\" \"%s\"", orig, newf);
+     return system(cmd);
+ #else
+     // POSIX requires that shells run from an application will use the 
+@@ -659,11 +659,11 @@
+ // create directories dirpath/a, dirpath/a/b etc.
+ //
+ int boinc_make_dirs(const char* dirpath, const char* filepath) {
+-    char buf[1024], oldpath[1024], newpath[1024];
++    char buf[MAXPATHLEN*2], oldpath[MAXPATHLEN], newpath[MAXPATHLEN];
+     int retval;
+     char *p, *q;
+ 
+-    if (strlen(filepath) + strlen(dirpath) > 1023) return ERR_BUFFER_OVERFLOW;
++    if (strlen(filepath) + strlen(dirpath) > sizeof(buf)-1) return ERR_BUFFER_OVERFLOW;
+     strcpy(buf, filepath);
+     strcpy(oldpath, dirpath);
+ 
+@@ -672,7 +672,7 @@
+         p = strchr(q, '/');
+         if (!p) break;
+         *p = 0;
+-        sprintf(newpath, "%s/%s", oldpath, q);
++        snprintf(newpath, sizeof(newpath), "%s/%s", oldpath, q);
+         retval = boinc_mkdir(newpath);
+         if (retval) return retval;
+         strcpy(oldpath, newpath);
+Index: boinc/lib/network.cpp
+===================================================================
+--- boinc.orig/lib/network.cpp	2012-08-01 20:52:04.638985631 +0200
++++ boinc/lib/network.cpp	2012-08-18 22:30:17.052799909 +0200
+@@ -70,7 +70,7 @@
+     case WSAENOTSOCK:
+         return "not a socket";
+     }
+-    sprintf(buf, "error %d", e);
++    snprintf(buf, sizeof(buf), "error %d", e);
+     return buf;
+ #else
+     switch (h_errno) {
+@@ -84,11 +84,11 @@
+         return "host not found or server failure";
+ #ifdef NETDB_INTERNAL
+     case NETDB_INTERNAL:
+-        sprintf(buf,"network internal error %d",errno);
++        snprintf(buf, sizeof(buf), "network internal error %d",errno);
+         return buf;
+ #endif
+     }
+-    sprintf(buf, "error %d", h_errno);
++    snprintf(buf, sizeof(buf), "error %d", h_errno);
+     return buf;
+ #endif
+ }
+@@ -108,7 +108,7 @@
+         {
+             sockaddr_in6* sin = (sockaddr_in6*)&s;
+             char buf[256];
+-            inet_ntop(AF_INET6, (void*)(&sin->sin6_addr), buf, 256);
++            inet_ntop(AF_INET6, (void*)(&sin->sin6_addr), buf, sizeof(buf));
+             return (strcmp(buf, "::1") == 0);
+         }
+ 

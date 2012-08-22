@@ -1,4 +1,4 @@
-boinc (7.0.34+dfsg-1) UNRELEASED; urgency=low
+boinc (7.0.34+dfsg-1) unstable; urgency=low
 
   [ Steffen Moeller ]
   * New upstream version
@@ -7,7 +7,7 @@ boinc (7.0.34+dfsg-1) UNRELEASED; urgency=low
     - api loses supports for legacy image formats
     - switch from *.txf fonts to TrueType fonts in graphics apps,
       ensuring that all related files have no licensing issues.
-  * Helping boinc's cuda package towards multiarch
+  * Helping boinc-nvidia-cuda package towards multi-arch
 
   [ Guo Yixuan ]
   * Remove broken links from libboinc-app-dev. (Closes: #659845)

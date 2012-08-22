@@ -66,3 +66,4 @@ add_hardening_flags.patch
 cmath_missing.patch
 investigate_boinc_api.patch
 opendir_error_messages.patch
+more_maxpathlen.patch
