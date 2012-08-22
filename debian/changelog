@@ -11,6 +11,7 @@ boinc (7.0.34+dfsg-1) UNRELEASED; urgency=low
 
   [ Guo Yixuan ]
   * Remove broken links from libboinc-app-dev. (Closes: #659845)
+  * Bump build-depend on dpkg-dev >= 1.16.5 for arch-qualified depends.
 
  -- Steffen Moeller <moeller@debian.org>  Sat, 18 Aug 2012 14:41:47 +0200
 
