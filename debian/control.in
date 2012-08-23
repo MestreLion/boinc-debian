@@ -57,23 +57,27 @@ Description: libraries of BOINC the client depends on
  shared as much as possible between all binaries.
 
 
-Package: boinc-nvidia-cuda
-Architecture: amd64 i386
-Section: contrib/net
-Depends: ${misc:Depends}, boinc, libcuda1|nvidia-current, libcuda1-ia32 [amd64]|nvidia-current [amd64], ia32-libs [amd64]|nvidia-current [amd64]
-Description: metapackage for CUDA-savvy BOINC client and manager
- The Berkeley Open Infrastructure for Network Computing (BOINC) is a
- software platform for distributed computing: several initiatives of
- various scientific disciplines all compete for the idle time of
- desktop computers. The developers' web site at the University of
- Berkeley serves as a common portal to the otherwise independently run
- projects.
- .
- Regular users (rightously) often find it an unbearable nuissance to
- care for the exact configuration of BOINC for CUDA-savvy graphics
- cards. This package adds a series of dependencies from the non-free
- section to the regular boinc package. This also meant this binary
- package to be redistributed in the contrib section of Debian.
+# Not compatible with Wheezy because of libcuda1:i386 [amd64]
+# Decided against having it in by default since the former
+# libcuda1-ia32 is no longer functional in unstable. Backports
+# shall see it again.
+%Package: boinc-nvidia-cuda
+%Architecture: amd64 i386
+%Section: contrib/net
+%Depends: ${misc:Depends}, boinc, libcuda1|nvidia-current, libcuda1:i386 [amd64]|nvidia-current [amd64], ia32-libs [amd64]|nvidia-current [amd64]
+%Description: metapackage for CUDA-savvy BOINC client and manager
+% The Berkeley Open Infrastructure for Network Computing (BOINC) is a
+% software platform for distributed computing: several initiatives of
+% various scientific disciplines all compete for the idle time of
+% desktop computers. The developers' web site at the University of
+% Berkeley serves as a common portal to the otherwise independently run
+% projects.
+% .
+% Regular users (rightously) often find it an unbearable nuissance to
+% care for the exact configuration of BOINC for CUDA-savvy graphics
+% cards. This package adds a series of dependencies from the non-free
+% section to the regular boinc package. This also meant this binary
+% package to be redistributed in the contrib section of Debian.
 
 # Removed until fglrx is back in testing
 #
