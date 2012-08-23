@@ -129,3 +129,4 @@ doc/manpages/boinccmd.1
 doc/manpages/boincmgr.1
 test/version.inc
 py/Boinc/version.py
+debian/control

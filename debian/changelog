@@ -1,3 +1,11 @@
+boinc (7.0.34+dfsg-2) unstable; urgency=low
+
+  * Reacting to ftpmasters' comments
+    - libraries get package name adjusted to soname
+    - boinc-nvidia-cuda package loses dependency on libcuda1:i386
+
+ -- Steffen Moeller <moeller@debian.org>  Thu, 23 Aug 2012 23:58:26 +0200
+
 boinc (7.0.34+dfsg-1) unstable; urgency=low
 
   [ Steffen Moeller ]
