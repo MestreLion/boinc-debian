@@ -171,6 +171,9 @@ CFGFLAGS_boinc-client = \
 override_dh_clean:
 	dh_clean
 	rm -rf debian/boinc-app-examples debian/boinc-server-maker debian/boinc-app-examples.substvars debian/boinc-server-maker.substvars
+	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp
+	rm -fr debian/boinc-amd-opencl debian/boinc-screensaver # for cases when this is not in debian/control
+	rm -f debian/boinc-screensaver.substvars debian/boinc-amd-opencl.substvars # dito
 
 # Commands not to execute - empty overrides
 override_dh_auto_test:
@@ -260,15 +263,12 @@ override_dh_auto_clean:
 	rm -f configure clientscr/boincscr
 	rm -rf py/lib.linux-*-2.*
 	rm -f client_state.xml gui_rpc_auth.cfg
-	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	find . -name "*.pyc" | xargs -r rm
 	rm -f stderr.txt # remnant of application started
 	rm -f lib/crypt_prog test/run notices/feeds.xml
 	find test -name "run-*" | xargs -r rm -rf
 	rm -f $(BINARIES)
-	rm -fr debian/boinc-amd-opencl debian/boinc-screensaver # for cases when this is not in debian/control
-	rm -f debian/boinc-screensaver.substvars debian/boinc-amd-opencl.substvars # dito
 	rm -f \
 	  boinc_lockfile lockfile \
 	  client/boinc.optimized \
