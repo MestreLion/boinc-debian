@@ -1,2 +1,2 @@
-boinc-server-maker binary: csh-considered-harmful
 # changed already to tcsh, upstream seems to like it, though
+boinc-server-maker binary: csh-considered-harmful
