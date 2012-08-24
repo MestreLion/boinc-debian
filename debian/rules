@@ -179,7 +179,6 @@ override_dh_clean:
 # Commands not to execute - empty overrides
 override_dh_auto_test:
 
-
 #test-stamp:
 #	dh_testdir
 #	xmllint --nonet --noout \
@@ -202,10 +201,6 @@ override_dh_auto_configure:
 
 update-boinc-applinks.1: debian/manpages/update-boinc-applinks.xml
 	docbook2x-man debian/manpages/update-boinc-applinks.xml
-
-# use pattern rule for build
-# build:
-#	dh build --parallel --with python2
 
 # noopt
 CFLAGS_noopt = $(subst -O2,-O0,$(CFLAGS))
@@ -371,17 +366,6 @@ override_dh_compress:
 
 override_dh_installexamples:
 	dh_installexamples -Xjpeglib 
-
-# These targets are handled by the pattern rule (dh $@)
-# binary-arch: build install
-#	dh binary-arch
-
-# only the 'empty' package boinc
-# binary-indep:
-# 	dh binary-indep
-
-# binary:
-#	dh binary
 
 origDir ?= .
 
