@@ -171,10 +171,6 @@ CFGFLAGS_boinc-client = \
 override_dh_clean:
 	dh_clean
 	rm -rf debian/boinc-app-examples debian/boinc-server-maker debian/boinc-app-examples.substvars debian/boinc-server-maker.substvars
-	find . -name "Makefile" | grep -v samples | xargs -r rm
-	rm -f configure clientscr/boincscr
-	rm -rf py/lib.linux-*-2.*
-	rm -f client_state.xml gui_rpc_auth.cfg
 
 # Commands not to execute - empty overrides
 override_dh_auto_test:
@@ -260,6 +256,10 @@ override_dh_auto_clean:
 	$(MAKE) -C samples/example_app distclean
 	$(MAKE) -C samples/wrapper distclean
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
+	find . -name "Makefile" | grep -v samples | xargs -r rm
+	rm -f configure clientscr/boincscr
+	rm -rf py/lib.linux-*-2.*
+	rm -f client_state.xml gui_rpc_auth.cfg
 	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	find . -name "*.pyc" | xargs -r rm
