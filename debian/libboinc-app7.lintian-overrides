@@ -1,2 +1,3 @@
-libboinc-app binary: package-name-doesnt-match-sonames
-# Well, yes, and this is not supposed to change for a while
+libboinc-app7 binary: package-name-doesnt-match-sonames
+# it would not have complained if the package name was
+# libboinc-api7. It is not.
