@@ -1,8 +1,15 @@
 boinc (7.0.34+dfsg-2) unstable; urgency=low
 
+  [ Steffen Moeller ]
   * Reacting to ftpmasters' comments
     - libraries get package name adjusted to soname
     - boinc-nvidia-cuda package loses dependency on libcuda1:i386
+
+  [ Guo Yixuan ]
+  * Change libboinc-app-dev's depends to be binnmuable, to resolve lintian
+    errors.
+  * Revert dpkg-dev's version in build-deps to >= 1.16.1.1.
+  * Add libboinc7 and libboinc-app7 to boinc-dbg's depends.
 
  -- Steffen Moeller <moeller@debian.org>  Thu, 23 Aug 2012 23:58:26 +0200
 
