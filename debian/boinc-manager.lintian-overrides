@@ -1,0 +1,2 @@
+boinc-manager binary: hardening-no-fortify-functions
+# we build boinc-manager with -O0 now, to work around #679207.
