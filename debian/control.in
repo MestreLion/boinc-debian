@@ -43,8 +43,8 @@ Description: metapackage for the BOINC client and the manager
 
 Package: libboinc7
 Provides: libboinc
-Replaces: libboinc (<<7.0.33+dfsg-2)
-Conflicts: libboinc (<<7.0.33+dfsg-2)
+Replaces: libboinc (<= 7.0.34+dfsg-1)
+Conflicts: libboinc (<= 7.0.34+dfsg-1)
 Architecture: any
 Section: libs
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -221,8 +221,8 @@ Description: development files to build applications for BOINC projects
 
 Package: libboinc-app7
 Provides: libboinc-app
-Replaces: libboinc-app (<< 7.0.33+dfsg-1)
-Conflicts: libboinc-app (<< 7.0.33+dfsg-1),
+Replaces: libboinc-app (<= 7.0.34+dfsg-1)
+Conflicts: libboinc-app (<= 7.0.34+dfsg-1),
  boinc-dev (<= 7.0.28+dfsg-2)
 Section: libs
 Architecture: any
