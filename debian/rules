@@ -158,7 +158,8 @@ CFGFLAGS_boinc-client = \
 # Default rule
 
 %:
-	if [ ! -f debian/control ]; then \
+	if [ ! -f debian/control -o debian/control.in -nt debian/control ]; then \
+		echo "Generating debian/control file from debian/control.in" ; \
 		if egrep -q '^Package:.*boinc-server-maker' debian/control.in; then \
 			sed -e 's/^%//' debian/control.in > debian/control ; \
 		else \
