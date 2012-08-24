@@ -119,8 +119,8 @@ debian/boinc-nvidia-cuda
 debian/boinc-server-maker
 boinc_lockfile
 debian/libboinc-app-dev
-debian/libboinc-app
-debian/libboinc
+debian/libboinc-app7
+debian/libboinc7
 stderr.txt
 clientscr/boincscr
 doc/manpages/appmgr.8
@@ -129,4 +129,8 @@ doc/manpages/boinccmd.1
 doc/manpages/boincmgr.1
 test/version.inc
 py/Boinc/version.py
+py/boinc_path_config.py
+py/setup.py
+test/boinc_path_config.py
+tools/boinc_path_config.py
 debian/control
