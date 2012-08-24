@@ -202,8 +202,8 @@ Package: libboinc-app-dev
 Section: libdevel
 Architecture: all
 Depends: ${misc:Depends},
- libboinc7 (= ${source:Version}),
- libboinc-app7 (= ${source:Version}),
+ libboinc7 (= ${binary:Version}),
+ libboinc-app7 (= ${binary:Version}),
  libc6-dev | libc-dev,
  libstdc++6-4.3-dev | libstdc++-dev, libssl-dev, libmysqlclient-dev
 Conflicts: boinc-dev (<= 7.0.28+dfsg-2)
