@@ -67,3 +67,5 @@ cmath_missing.patch
 investigate_boinc_api.patch
 opendir_error_messages.patch
 more_maxpathlen.patch
+slot_dir_source_trace.patch
+ignored_return_value.patch

@@ -1,0 +1,363 @@
+Index: boinc/client/app.cpp
+===================================================================
+--- boinc.orig/client/app.cpp	2012-06-30 21:30:06.444327787 +0200
++++ boinc/client/app.cpp	2012-08-25 23:08:31.136959941 +0200
+@@ -417,8 +417,8 @@
+     int retval;
+ 
+     get_project_dir(result->project, project_dir, sizeof(project_dir));
+-    sprintf(old_path, "%s/trickle_up.xml", slot_dir);
+-    sprintf(new_path,
++    snprintf(old_path, sizeof(old_path), "%s/trickle_up.xml", slot_dir);
++    snprintf(new_path, sizeof(new_path),
+         "%s/trickle_up_%s_%d.xml",
+         project_dir, result->name, (int)time(0)
+     );
+@@ -453,7 +453,7 @@
+     return 0;
+ }
+ 
+-bool ACTIVE_TASK_SET::is_slot_in_use(int slot) {
++bool ACTIVE_TASK_SET::is_slot_in_use(const int slot) const {
+     unsigned int i;
+     for (i=0; i<active_tasks.size(); i++) {
+         if (active_tasks[i]->slot == slot) {
+@@ -463,7 +463,7 @@
+     return false;
+ }
+ 
+-bool ACTIVE_TASK_SET::is_slot_dir_in_use(char* dir) {
++bool ACTIVE_TASK_SET::is_slot_dir_in_use(const char* const dir) const {
+     char path[MAXPATHLEN];
+     unsigned int i;
+     for (i=0; i<active_tasks.size(); i++) {
+@@ -504,7 +504,7 @@
+ #endif
+ }
+ 
+-bool ACTIVE_TASK_SET::slot_taken(int slot) {
++bool ACTIVE_TASK_SET::slot_taken(const int slot) const {
+     unsigned int i;
+     for (i=0; i<active_tasks.size(); i++) {
+         if (active_tasks[i]->slot == slot) return true;
+@@ -616,7 +616,7 @@
+ #endif
+ 
+ int ACTIVE_TASK::parse(XML_PARSER& xp) {
+-    char result_name[256], project_master_url[256];
++    char result_name[MAXPATHLEN], project_master_url[MAXPATHLEN];
+     int n, dummy;
+     unsigned int i;
+     PROJECT* project=0;
+@@ -886,12 +886,12 @@
+ //
+ int ACTIVE_TASK::handle_upload_files() {
+     std::string filename;
+-    char buf[256], path[MAXPATHLEN];
++    char buf[MAXPATHLEN], path[MAXPATHLEN];
+     int retval;
+ 
+     DirScanner dirscan(slot_dir);
+     while (dirscan.scan(filename)) {
+-        strcpy(buf, filename.c_str());
++        strncpy(buf, filename.c_str(), sizeof(buf));
+         if (strstr(buf, UPLOAD_FILE_REQ_PREFIX) == buf) {
+             char* p = buf+strlen(UPLOAD_FILE_REQ_PREFIX);
+             FILE_INFO* fip = result->lookup_file_logical(p);
+Index: boinc/client/app.h
+===================================================================
+--- boinc.orig/client/app.h	2012-05-03 17:05:19.619492780 +0200
++++ boinc/client/app.h	2012-08-26 17:14:34.521163171 +0200
+@@ -47,6 +47,7 @@
+ typedef int PROCESS_ID;
+ 
+ #define MAX_STDERR_LEN  65536
++#define SLOT_DIR_LEN 256
+     // The stderr output of an application is truncated to this length
+     // before sending to server,
+     // to protect against apps that write unbounded amounts.
+@@ -110,9 +111,9 @@
+     double bytes_sent;
+         // reported by the app if it does network I/O
+     double bytes_received;
+-    char slot_dir[256];
++    char slot_dir[SLOT_DIR_LEN];
+         // directory where process runs (relative)
+-    char slot_path[512];
++    char slot_path[MAXPATHLEN];
+         // same, absolute
+         // This is used only to run graphics apps
+         // (that way don't have to worry about top-level dirs
+@@ -151,8 +152,8 @@
+         // but not descendants of the main process
+         // (e.g. VMs created by vboxwrapper)
+         // These are communicated via the app_status message channel
+-    char web_graphics_url[256];
+-    char remote_desktop_addr[256];
++    char web_graphics_url[MAXPATHLEN];
++    char remote_desktop_addr[MAXPATHLEN];
+     ASYNC_COPY* async_copy;
+ 
+     void set_task_state(int, const char*);
+@@ -285,8 +286,8 @@
+     bool check_app_exited();
+     bool check_rsc_limits_exceeded();
+     bool check_quit_timeout_exceeded();
+-    bool is_slot_in_use(int);
+-    bool is_slot_dir_in_use(char*);
++    bool is_slot_in_use(const int) const;
++    bool is_slot_dir_in_use(const char* const) const;
+     void send_heartbeats();
+     void send_trickle_downs();
+     void report_overdue();
+@@ -295,7 +296,7 @@
+     bool want_network();    // does any task want network?
+     void network_available();   // notify tasks that network is available
+     void free_mem();
+-    bool slot_taken(int);
++    bool slot_taken(const int) const;
+     void get_memory_usage();
+ 
+     void process_control_poll();
+Index: boinc/lib/crypt.cpp
+===================================================================
+--- boinc.orig/lib/crypt.cpp	2012-08-25 22:40:33.319581192 +0200
++++ boinc/lib/crypt.cpp	2012-08-26 12:04:00.552220560 +0200
+@@ -603,7 +603,7 @@
+ 
+     DIRREF dir = dir_open(certPath);
+ 
+-    char file[256];
++    char file[MAXPATHLEN];
+     while (dir_scan(file, dir, sizeof(file))) {
+         char fpath[MAXPATHLEN];
+ 	    snprintf(fpath, sizeof(fpath), "%s/%s", certPath, file);
+Index: boinc/lib/filesys.cpp
+===================================================================
+--- boinc.orig/lib/filesys.cpp	2012-08-25 22:40:35.959545606 +0200
++++ boinc/lib/filesys.cpp	2012-08-26 16:24:13.834254700 +0200
+@@ -82,11 +82,11 @@
+ 
+ using std::string;
+ 
+-char boinc_failed_file[256];
++char boinc_failed_file[MAXPATHLEN];
+ 
+ // routines for enumerating the entries in a directory
+ 
+-int is_file(const char* path) {
++int is_file(const char* const path) {
+     struct stat sbuf;
+ #ifdef _WIN32
+     int retval = stat(path, &sbuf);
+@@ -96,7 +96,7 @@
+     return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFREG));
+ }
+ 
+-int is_dir(const char* path) {
++int is_dir(const char* const path) {
+     struct stat sbuf;
+ #ifdef _WIN32
+     int retval = stat(path, &sbuf);
+@@ -113,7 +113,7 @@
+ }
+ 
+ #ifndef _WIN32
+-int is_symlink(const char* path) {
++int is_symlink(const char* const path) {
+     struct stat sbuf;
+     int retval = lstat(path, &sbuf);
+     return (!retval && S_ISLNK(sbuf.st_mode));
+@@ -122,7 +122,7 @@
+ 
+ // Open a directory
+ //
+-DIRREF dir_open(const char* p) {
++DIRREF dir_open(const char* const p) {
+     DIRREF dirp;
+ #ifdef _WIN32
+     if (!is_dir(p)) return NULL;
+@@ -138,7 +138,9 @@
+ #else
+     dirp = opendir(p);
+     if (!dirp) {
+-        fprintf(stderr,"dir_open: Could not open directory '%s'.\n",p);
++        char whereami[MAXPATHLEN];
++	boinc_getcwd(whereami);
++        fprintf(stderr,"dir_open: Could not open directory '%s' from directory '%s'.\n",p,whereami);
+         return NULL;
+     }
+ #endif
+@@ -208,7 +210,7 @@
+ #endif
+ }
+ 
+-bool is_dir_empty(const char *p) {
++bool is_dir_empty(const char* const p) {
+     char file[MAXPATHLEN];
+ 
+     DIRREF dir = dir_open(p);
+@@ -362,7 +364,7 @@
+ 
+ // remove everything from specified directory
+ //
+-int clean_out_dir(const char* dirpath) {
++int clean_out_dir(const char* const dirpath) {
+     char filename[MAXPATHLEN], path[MAXPATHLEN];
+     int retval;
+     DIRREF dirp;
+@@ -617,7 +619,7 @@
+ 
+ // make a dir that's owner and group RWX
+ //
+-int boinc_mkdir(const char* path) {
++int boinc_mkdir(const char* const path) {
+     if (is_dir(path)) return 0;
+ #ifdef _WIN32
+     if (!CreateDirectoryA(path, NULL)) {
+@@ -632,7 +634,7 @@
+     return 0;
+ }
+ 
+-int boinc_rmdir(const char* name) {
++int boinc_rmdir(const char* const name) {
+ #ifdef _WIN32
+     if (!RemoveDirectoryA(name)) {
+         return ERR_RMDIR;
+@@ -645,7 +647,7 @@
+ }
+ 
+ #ifndef _WIN32
+-int boinc_chown(const char* path, gid_t gid) {
++int boinc_chown(const char* const path, const gid_t gid) {
+     if (gid) {
+         if (chown(path, (uid_t)-1, gid)) {
+             return ERR_CHOWN;
+@@ -658,7 +660,7 @@
+ // if "filepath" is of the form a/b/c,
+ // create directories dirpath/a, dirpath/a/b etc.
+ //
+-int boinc_make_dirs(const char* dirpath, const char* filepath) {
++int boinc_make_dirs(const char* const dirpath, const char* const filepath) {
+     char buf[MAXPATHLEN*2], oldpath[MAXPATHLEN], newpath[MAXPATHLEN];
+     int retval;
+     char *p, *q;
+@@ -725,7 +727,7 @@
+     return 0;
+ }
+ 
+-int FILE_LOCK::unlock(const char* filename) {
++int FILE_LOCK::unlock(const char* const filename) {
+ #if defined(_WIN32) && !defined(__CYGWIN32__)
+     CloseHandle(handle);
+ #else
+@@ -737,19 +739,19 @@
+     return 0;
+ }
+ 
+-void boinc_getcwd(char* path) {
++void boinc_getcwd(char* const path) {
+ #ifdef _WIN32
+-    getcwd(path, 256);
++    getcwd(path, MAXPATHLEN);
+ #else
+     char* p 
+ #ifdef __GNUC__
+       __attribute__ ((unused))
+ #endif
+-      = getcwd(path, 256);
++      = getcwd(path, MAXPATHLEN);
+ #endif
+ }
+ 
+-void relative_to_absolute(const char* relname, char* path) {
++void relative_to_absolute(const char* const relname, char* const path) {
+     boinc_getcwd(path);
+     if (strlen(relname)) {
+         strcat(path, "/");
+@@ -760,7 +762,7 @@
+ // get total and free space on current filesystem (in bytes)
+ //
+ #ifdef _WIN32
+-int get_filesystem_info(double &total_space, double &free_space, char*) {
++int get_filesystem_info(double &total_space, double &free_space, const char* const) {
+     char buf[256];
+     boinc_getcwd(buf);
+     FreeFn pGetDiskFreeSpaceEx;
+@@ -793,7 +795,7 @@
+         total_space = (double)dwTotalClusters * dwSectPerClust * dwBytesPerSect;
+     }
+ #else
+-int get_filesystem_info(double &total_space, double &free_space, char* path) {
++int get_filesystem_info(double &total_space, double &free_space, const char* const path) {
+ #ifdef STATFS
+     struct STATFS fs_info;
+ 
+@@ -814,7 +816,7 @@
+ 
+ #ifndef _WIN32
+ 
+-int get_file_dir(char* filename, char* dir) {
++int get_file_dir(const char* const filename, char* dir) {
+     char buf[8192], *p, path[MAXPATHLEN];
+     struct stat sbuf;
+     int retval;
+Index: boinc/lib/filesys.h
+===================================================================
+--- boinc.orig/lib/filesys.h	2012-04-01 20:19:44.949682516 +0200
++++ boinc/lib/filesys.h	2012-08-26 16:24:00.994429008 +0200
+@@ -48,19 +48,19 @@
+   extern FILE* boinc_fopen(const char* path, const char* mode);
+   extern int boinc_copy(const char* orig, const char* newf);
+   extern int boinc_rename(const char* old, const char* newf);
+-  extern int boinc_mkdir(const char*);
++  extern int boinc_mkdir(const char* const );
+ #ifndef _WIN32
+-  extern int boinc_chown(const char*, gid_t);
++  extern int boinc_chown(const char* const, const gid_t);
+ #endif
+-  extern int boinc_rmdir(const char*);
+-  extern void boinc_getcwd(char*);
+-  extern void relative_to_absolute(const char* relname, char* path);
+-  extern int boinc_make_dirs(const char*, const char*);
+-  extern char boinc_failed_file[256];
+-  extern int is_file(const char* path);
+-  extern int is_dir(const char* path);
+-  extern int is_dir_follow_symlinks(const char* path);
+-  extern int is_symlink(const char* path);
++  extern int boinc_rmdir(const char* const);
++  extern void boinc_getcwd(/* not const*/ char* const);
++  extern void relative_to_absolute(const char* const relname, char* const path);
++  extern int boinc_make_dirs(const char* const, const char* const);
++  extern char boinc_failed_file[MAXPATHLEN];
++  extern int is_file(const char* const path);
++  extern int is_dir(const char* const path);
++  extern int is_dir_follow_symlinks(const char* const path);
++  extern int is_symlink(const char* const path);
+   extern int boinc_truncate(const char*, double);
+   extern int boinc_file_exists(const char* path);
+   extern int boinc_file_or_symlink_exists(const char* path);
+@@ -72,10 +72,10 @@
+ /* C++ specific prototypes/defines follow here */
+ #ifdef __cplusplus
+ 
+-extern int file_size(const char*, double&);
+-extern int clean_out_dir(const char*);
+-extern int dir_size(const char* dirpath, double&, bool recurse=true);
+-extern int get_filesystem_info(double& total, double& free, char* path=const_cast<char *>("."));
++extern int file_size(const char* const, double&);
++extern int clean_out_dir(const char* const);
++extern int dir_size(const char* const dirpath, double&, bool recurse=true);
++extern int get_filesystem_info(double& total, double& free, const char* const path=const_cast<char *>("."));
+ 
+ // TODO TODO TODO
+ // remove this code - the DirScanner class does the same thing.
+@@ -97,7 +97,7 @@
+ extern int dir_scan(std::string&, DIRREF);
+ extern void dir_close(DIRREF);
+ 
+-extern bool is_dir_empty(const char*);
++extern bool is_dir_empty(const char* const);
+ 
+ class DirScanner {
+ #if defined(_WIN32) && !defined(__CYGWIN32__)
