@@ -1,8 +1,8 @@
 Index: boinc/api/gutil.cpp
 ===================================================================
---- boinc.orig/api/gutil.cpp	2012-08-25 22:40:35.667549542 +0200
-+++ boinc/api/gutil.cpp	2012-08-26 17:10:51.276213384 +0200
-@@ -553,32 +553,61 @@
+--- boinc.orig/api/gutil.cpp	2012-08-26 19:16:06.793748659 +0200
++++ boinc/api/gutil.cpp	2012-08-26 19:17:25.488681284 +0200
+@@ -553,32 +553,62 @@
  //
  int read_ppm_file(const char* name, int& w, int& h, unsigned char** arrayp) {
      FILE* f;
@@ -34,12 +34,12 @@ Index: boinc/api/gutil.cpp
 +    int bs = sscanf(buf, "%d %d", &w, &h);
 +    if (bs < 2) {
 +        fclose(f);
-+	fprintf(stderr,"E read_ppm_file: read only %d of w and h in %s",bs,name);
++        fprintf(stderr,"E read_ppm_file: read only %d of w and h in %s",bs,name);
 +        return -1;
 +    }
 +    if (w<0 || h<0) {
 +        fclose(f);
-+	fprintf(stderr,"E read_ppm_file: w=%d<0 or h=%d<0\n",w,h);
++        fprintf(stderr,"E read_ppm_file: w=%d<0 or h=%d<0\n",w,h);
 +        return -1;
 +    }
 +    do {s=fgets(buf, sizeof(buf), f);} while (NULL != s && buf[0] == '#');
@@ -57,7 +57,8 @@ Index: boinc/api/gutil.cpp
 +            int fs=fscanf(f, "%d", &x);
 +	    if (1 != fs) {
 +	        fclose(f);
-+	        fprintf(stderr,"E: expected scanf of 1 object, but read %d of file '%s'.\n", fs, name);
++                fprintf(stderr,"E: expected scanf of 1 object, but read %d of file '%s'.\n", fs, name);
++		return -1;
 +	    }
              array[i] = x;
          }
@@ -66,7 +67,7 @@ Index: boinc/api/gutil.cpp
 +        size_t fr=fread(array, 3, w*h, f);
 +	if (fr < abs(w*h)) {
 +            fclose(f);
-+	    fprintf(stderr,"E: read %ld items in file '%s' but expected %d*%d=%d.\n", fr, name, w, h, w*h);
++            fprintf(stderr,"E: read %ld items in file '%s' but expected %d*%d=%d.\n", fr, name, w, h, w*h);
 +	    return -1;
 +	}
          break;
