@@ -1,7 +1,11 @@
 boinc (7.0.34+dfsg-3) UNRELEASED; urgency=low
 
+  [ Steffen Moeller ]
   * Improving error message on directory that cannot be opened
   * Fixing a file descriptor leak in read_ppm_file (api/gutil.cpp)
+
+  [ Guo Yixuan ]
+  * Removed dependency on dh-buildinfo, no longer used.
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 26 Aug 2012 18:20:13 +0200
 
