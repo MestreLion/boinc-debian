@@ -2,9 +2,19 @@ Author: Steffen Moeller <moeller@debian.org>
 Description: Freeing memory.
 Index: boinc/client/stream.cpp
 ===================================================================
---- boinc.orig/client/stream.cpp	2012-03-18 13:57:51.000000000 +0100
-+++ boinc/client/stream.cpp	2012-03-18 14:09:11.000000000 +0100
-@@ -221,6 +221,8 @@
+--- boinc.orig/client/stream.cpp	2012-09-01 19:25:32.003274299 +0200
++++ boinc/client/stream.cpp	2012-09-01 19:32:16.905800129 +0200
+@@ -118,7 +118,8 @@
+     double *aa=(double *)realloc(a,(N+OFFSET)*sizeof(double));
+     double *bb=(double *)realloc(b,(N+OFFSET)*sizeof(double));
+     double *cc=(double *)realloc(c,(N+OFFSET)*sizeof(double));
+-    if ( !a || !b || !c ) {
++    if ( !aa || !bb || !cc ) {
++        # either of the three reallocations had failed -> free all and return
+ 	if (aa) free(aa) else free(a);
+ 	if (bb) free(bb) else free(b);
+ 	if (cc) free(cc) else free(c);
+@@ -221,6 +222,8 @@
    /* --- Check Results --- */
    checkSTREAMresults(a,b,c);
  

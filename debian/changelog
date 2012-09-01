@@ -1,3 +1,19 @@
+boinc (7.0.34+dfsg-5) UNRELEASED; urgency=low
+
+  * Added better error messages for opendir() failures
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 01 Sep 2012 15:13:26 +0200
+
+boinc (7.0.34+dfsg-4) unstable; urgency=low
+
+  [ Guo Yixuan ]
+  * Fix of debian/patch on pathlength
+  [ Steffen Moeller ]
+  * Corrected handling of memory reallocation in client/stream.cpp
+  * Improved cpptest cleanliness
+
+ -- Steffen Moeller <moeller@debian.org>  Sat, 01 Sep 2012 15:13:26 +0200
+
 boinc (7.0.34+dfsg-3) UNRELEASED; urgency=low
 
   [ Steffen Moeller ]

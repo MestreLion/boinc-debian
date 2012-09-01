@@ -1,5 +1,4 @@
 # patches to get Debian going
-#texfont_removal.patch
 libnotify-0.7.patch
 # undisputed patches above
 sched_driver_f_free.patch
@@ -69,3 +68,5 @@ opendir_error_messages.patch
 more_maxpathlen.patch
 slot_dir_source_trace.patch
 ignored_return_value.patch
+cppcheck_avoid_redundant_check.patch
+opendir_errno.patch
