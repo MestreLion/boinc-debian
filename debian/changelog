@@ -6,6 +6,7 @@ boinc (7.0.34+dfsg-3) UNRELEASED; urgency=low
 
   [ Guo Yixuan ]
   * Removed dependency on dh-buildinfo, no longer used.
+  * Fixed a bug in our patches that truncated filename.
 
  -- Steffen Moeller <moeller@debian.org>  Sun, 26 Aug 2012 18:20:13 +0200
 
