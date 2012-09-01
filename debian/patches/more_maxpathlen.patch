@@ -1,7 +1,7 @@
 Index: boinc/api/graphics2_util.cpp
 ===================================================================
---- boinc.orig/api/graphics2_util.cpp	2012-08-22 20:35:24.792922502 +0200
-+++ boinc/api/graphics2_util.cpp	2012-08-22 20:47:47.234849517 +0200
+--- boinc.orig/api/graphics2_util.cpp	2012-09-01 19:39:28.637343110 +0800
++++ boinc/api/graphics2_util.cpp	2012-09-01 19:40:48.401346216 +0800
 @@ -35,9 +35,9 @@
  
  #ifdef __EMX__
@@ -19,7 +19,7 @@ Index: boinc/api/graphics2_util.cpp
      int retval = boinc_get_init_data(aid);
      if (retval) aid.slot = 0;
 -    sprintf(shmem_name, "boinc_%s_%d", prog_name, aid.slot);
-+    snprintf(shmem_name, sizeof(shmem_name), "boinc_%s_%d", prog_name, aid.slot);
++    snprintf(shmem_name, MAXPATHLEN, "boinc_%s_%d", prog_name, aid.slot);
  }
  #endif
  
@@ -60,8 +60,8 @@ Index: boinc/api/graphics2_util.cpp
  #endif
 Index: boinc/lib/filesys.cpp
 ===================================================================
---- boinc.orig/lib/filesys.cpp	2012-08-22 20:46:19.264044088 +0200
-+++ boinc/lib/filesys.cpp	2012-08-22 20:46:19.528040503 +0200
+--- boinc.orig/lib/filesys.cpp	2012-09-01 19:40:04.725344515 +0800
++++ boinc/lib/filesys.cpp	2012-09-01 19:40:04.733344515 +0800
 @@ -209,7 +209,7 @@
  }
  
@@ -116,8 +116,8 @@ Index: boinc/lib/filesys.cpp
          strcpy(oldpath, newpath);
 Index: boinc/lib/network.cpp
 ===================================================================
---- boinc.orig/lib/network.cpp	2012-08-22 20:35:24.792922502 +0200
-+++ boinc/lib/network.cpp	2012-08-22 20:46:19.532040449 +0200
+--- boinc.orig/lib/network.cpp	2012-09-01 19:39:28.637343110 +0800
++++ boinc/lib/network.cpp	2012-09-01 19:40:04.733344515 +0800
 @@ -70,7 +70,7 @@
      case WSAENOTSOCK:
          return "not a socket";
