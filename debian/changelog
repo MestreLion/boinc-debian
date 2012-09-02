@@ -1,3 +1,11 @@
+boinc (7.0.34+dfsg-6) UNRELEASED; urgency=low
+
+  * Fixing upstream bug 
+    https://boinc.berkeley.edu/trac/ticket/1168
+    on dir_scan usage.
+
+ -- Steffen Moeller <moeller@debian.org>  Sun, 02 Sep 2012 11:04:19 +0200
+
 boinc (7.0.34+dfsg-5) UNRELEASED; urgency=low
 
   * Added better error messages for opendir() failures

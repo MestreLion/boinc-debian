@@ -70,3 +70,4 @@ slot_dir_source_trace.patch
 ignored_return_value.patch
 cppcheck_avoid_redundant_check.patch
 opendir_errno.patch
+ticket_1168_verifycerts.patch
