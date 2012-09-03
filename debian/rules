@@ -257,7 +257,6 @@ override_dh_auto_clean:
 	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6
 	find . -name "*.pyc" | xargs -r rm
-	find . -type d -a \( -name .deps -o -name .libs \) | xargs -r rm -r
 	rm -f stderr.txt # remnant of application started
 	rm -f lib/crypt_prog test/run notices/feeds.xml
 	find test -name "run-*" | xargs -r rm -rf
@@ -266,7 +265,6 @@ override_dh_auto_clean:
 	rm -f debian/boinc-screensaver.substvars debian/boinc-amd-opencl.substvars # dito
 	rm -f \
 	  boinc_lockfile lockfile \
-	  doc/manpages/*.1 \
 	  client/boinc.optimized \
 	  update-boinc-applinks.1 \
 	  aclocal.m4 \
