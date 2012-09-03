@@ -253,6 +253,12 @@ BINARIES += samples/worker/worker samples/wrapper/wrapper samples/sleeper/sleepe
 
 override_dh_auto_clean: 
 	dh_auto_clean
+	$(MAKE) -C samples/sleeper distclean
+	# fail on unpatched source
+	# $(MAKE) -C samples/worker distclean
+	rm -rf samples/worker/worker samples/worker/worker.o
+	$(MAKE) -C samples/example_app distclean
+	$(MAKE) -C samples/wrapper distclean
 	find . -name Makefile.in -o -name "*.a" -o -name "*.o" | xargs -r rm
 	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp lib/crypt_prog
 	rm -rf  py/build py/lib.linux-x86_64-2.6

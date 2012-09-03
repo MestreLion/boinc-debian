@@ -1,0 +1,57 @@
+Author: Guo Yixuan <culu.gyx@gmail.com>
+Description: Better clean target for several Makefiles
+ This would save some rm's in override_dh_auto_clean.
+Index: boinc/samples/sleeper/Makefile
+===================================================================
+--- boinc.orig/samples/sleeper/Makefile	2012-09-03 23:38:52.540022451 +0800
++++ boinc/samples/sleeper/Makefile	2012-09-03 23:38:52.760022452 +0800
+@@ -19,11 +19,10 @@
+ libstdc++.a:
+ 	ln -s `g++ -print-file-name=libstdc++.a`
+ 
+-clean:
+-	rm $(PROGS)
++clean: distclean
+ 
+ distclean:
+-	/bin/rm -f $(PROGS) *.o libstdc++.a
++	rm -f $(PROGS) *.o libstdc++.a
+ 
+ sleeper: sleeper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
+ 	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o sleeper sleeper.o libstdc++.a -pthread -lboinc_api -lboinc
+Index: boinc/samples/worker/Makefile
+===================================================================
+--- boinc.orig/samples/worker/Makefile	2012-09-03 23:38:52.540022451 +0800
++++ boinc/samples/worker/Makefile	2012-09-03 23:42:40.068022649 +0800
+@@ -4,11 +4,10 @@
+ 
+ all: $(PROGS)
+ 
+-clean:
+-	rm $(PROGS)
++clean: distclean
+ 
+ distclean:
+-	rm $(PROGS)
++	rm -f $(PROGS) *.o
+ 
+ worker: worker.o
+ 	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o worker worker.o
+Index: boinc/samples/wrapper/Makefile
+===================================================================
+--- boinc.orig/samples/wrapper/Makefile	2012-09-03 23:38:52.540022451 +0800
++++ boinc/samples/wrapper/Makefile	2012-09-03 23:39:50.908022502 +0800
+@@ -21,11 +21,10 @@
+ libstdc++.a:
+ 	ln -s `g++ -print-file-name=libstdc++.a`
+ 
+-clean:
+-	rm $(PROGS) *.o
++clean: distclean
+ 
+ distclean:
+-	/bin/rm -f $(PROGS) *.o libstdc++.a
++	rm -f $(PROGS) *.o libstdc++.a
+ 
+ wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
+ 	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
