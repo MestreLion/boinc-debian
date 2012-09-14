@@ -54,10 +54,10 @@ Description: libraries of BOINC the client depends on
  resources.
  .
  The environment offers a series of libraries that both the user-run
- client and the client-invoked scientific applications run on. With
+ client and the client-invoked scientific applications depend on. With
  the number of cores per machine growing, and with scientific apps
  commonly started for every core, it is essential to have memory
- shared as much as possible between all binaries.
+ shared as much as possible between binaries of all projects.
 
 
 # Not compatible with Wheezy with direct notion of libcuda1:i386 [amd64]
@@ -128,7 +128,7 @@ Description: core client for the BOINC distributed computing infrastructure
  to participate in any project that uses BOINC. A central server
  distributes work units and collects results via this client. When
  attaching a local machine to a project, this client will also
- dynamically download the projects application's program to be then
+ dynamically download the scientific data and executables to be then
  wrapped by the BOINC core client.
 
 #Package: boinc-screensaver
@@ -175,13 +175,15 @@ Description: GUI to control and monitor the BOINC core client
  .
  This package contains the BOINC Manager, a graphical monitor and
  control utility for the BOINC core client. It gives a detailed
- overview of the state of the client it is monitoring, for example it
- shows attached projects, running tasks or file transfers between the
- client and project servers. It also shows statistics about granted
- credits and disk usage of the client and the projects. The BOINC
- Manager has two modes of operation, the "Simple View" in which it only
- displays the most important information and the "Advanced View" in
- which all information and all control elements are available.
+ overview of the state of the client it is monitoring, as there are
+  * attached projects
+  * running tasks
+  * file transfers between the client and project servers
+  * statistics about granted credits and disk usage for every project
+  * constraints on CPU usage
+ The BOINC Manager has two modes of operation, the "Simple View" in which
+ it only displays the most important information and the "Advanced View"
+ in which all information and all control elements are available.
  .
  For active participation in any BOINC project the recommended
  boinc-client package, not the boinc-manager, is required for every
@@ -215,9 +217,8 @@ Description: development files to build applications for BOINC projects
  software platform for distributed computing using volunteered computer
  resources.
  .
- This package contains header files and static libraries that are
- needed to develop and compile applications which utilizes the BOINC
- infrastructure.
+ This package contains header files that are needed to develop and
+ compile applications which utilizes the BOINC infrastructure.
 
 
 Package: libboinc-app7
@@ -234,7 +235,7 @@ Description: libraries for BOINC's scientific applications
  resources.
  .
  This package contains dynamic libraries that are needed for applications
- which utilizes the BOINC infrastructure.
+ which utilizes the BOINC infrastructure and the boinc-client itself.
 
 
 %Package: boinc-server-maker
