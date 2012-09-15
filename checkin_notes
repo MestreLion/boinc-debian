@@ -4323,3 +4323,105 @@ Rom    16 Aug 2012
     /
         configure.ac
         version.h
+
+Charlie 20 Aug 2012
+    - client: If OpenCL detection gets an error for a platform or device, 
+        finish detection of the remaining platforms and / or devices.
+        Move OpenCL memory size workaround back into OpenCL source file. 
+        
+    client/
+        gpu_opencl.cpp
+        gpu_amd.cpp
+    lib/
+        coproc.h
+
+David  20 Aug 2012
+    - client: put some casts to double in NVIDIA detect code.
+        Shouldn't make any difference.
+
+    client/
+        gpu_nvidia.cpp
+
+<<<<<<< .working
+Charlie 8 Sep 2012
+    - client: work around a nasty bug which crashes OSX (!) on some 
+        dual-gpu MacBooks with CUDA installed if we call cuInit() 
+        unless we force use of the discrete (NVIDIA) GPU.
+        
+    client/
+        gpu_opencl.cpp
+
+Rom    10 Sept 2012
+    - client: initialize memfree and memtotal before use for Nvidia
+        cards.  It appears that the Nvidia API was only setting 32-bits
+        of the 64-bit value.  The remaining 32-bits were whatever
+        was on the stack.
+        
+    client/
+        gpu_nvidia.cpp
+
+Charlie 12 Sep 2012
+    - client: Don't support CUDA on dual-GPU MacBooks with automatic 
+        GPU switching but continue to support OpenCL for NVIDIA GPUs.
+        This prevents forcing use of the discrete (NVIDIA) GPU, which 
+        greatly decreases time the computer can run on battery power.
+        
+    client/
+        hostinfo_unix.cpp
+        gpu_nvidia.cpp
+        gpu_opencl.cpp
+    lib/
+        hostinfo.h
+
+Charlie 12 Sep 2012
+    - Tag for 7.0.35 release, all platforms
+      boinc_core_release_7_0_35
+
+    /
+        configure.ac
+        version.h
+
+David  17 Aug 2012
+    - client: if a project has excluded GPUs of a given type,
+        allow it to fetch work of that type if the # of runnable
+        jobs it <= the # of non-excluded instances (rather than 0).
+
+    client/
+        work_fetch.cpp,h
+        rr_sim.cpp
+
+David  20 Aug 2012
+    - client: print log msgs (enabled by task_debug) if the client
+        times out on quitting or aborting a task, and has to kill it.
+
+    client/
+        app_control.cpp
+
+David  20 Aug 2012
+    - client: take GPU exclusions into account when making
+        initial work request to a project
+    - client: put some casts to double in NVIDIA detect code.
+        Shouldn't make any difference.
+
+    client/
+        work_fetch.cpp,h
+        gpu_nvidia.cpp
+        scheduler_op.cpp
+
+David  2 Sept 2012
+    - client: fix bug that broke file signing with X.509 certificates.
+        From matszpk.  Fixes #1168.
+
+    lib/
+        filesys.cpp,h
+        crypt.cpp
+    client/
+        cs_files.cpp
+
+Rom    12 Sept 2012
+    - Tag for 7.0.36 release, all platforms
+      boinc_core_release_7_0_36
+
+    /
+        configure.ac
+        version.h
