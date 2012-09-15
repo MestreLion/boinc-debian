@@ -60,17 +60,8 @@ Index: boinc/api/graphics2_util.cpp
  #endif
 Index: boinc/lib/filesys.cpp
 ===================================================================
---- boinc.orig/lib/filesys.cpp	2012-09-01 19:40:04.725344515 +0800
-+++ boinc/lib/filesys.cpp	2012-09-01 19:40:04.733344515 +0800
-@@ -209,7 +209,7 @@
- }
- 
- bool is_dir_empty(const char *p) {
--    char file[256];
-+    char file[MAXPATHLEN];
- 
-     DIRREF dir = dir_open(p);
-     if (!dir) return true;
+--- boinc.orig/lib/filesys.cpp	2012-09-15 12:23:56.681113074 +0200
++++ boinc/lib/filesys.cpp	2012-09-15 12:23:56.681113074 +0200
 @@ -430,7 +430,7 @@
      while (1) {
          retval = dir_scan(filename, dirp, sizeof(filename));

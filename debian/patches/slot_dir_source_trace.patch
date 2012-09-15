@@ -119,29 +119,11 @@ Index: boinc/client/app.h
      void get_memory_usage();
  
      void process_control_poll();
-Index: boinc/lib/crypt.cpp
-===================================================================
---- boinc.orig/lib/crypt.cpp	2012-08-25 22:40:33.319581192 +0200
-+++ boinc/lib/crypt.cpp	2012-08-26 12:04:00.552220560 +0200
-@@ -603,7 +603,7 @@
- 
-     DIRREF dir = dir_open(certPath);
- 
--    char file[256];
-+    char file[MAXPATHLEN];
-     while (dir_scan(file, dir, sizeof(file))) {
-         char fpath[MAXPATHLEN];
- 	    snprintf(fpath, sizeof(fpath), "%s/%s", certPath, file);
 Index: boinc/lib/filesys.cpp
 ===================================================================
---- boinc.orig/lib/filesys.cpp	2012-08-25 22:40:35.959545606 +0200
-+++ boinc/lib/filesys.cpp	2012-08-26 16:24:13.834254700 +0200
-@@ -82,11 +82,11 @@
- 
- using std::string;
- 
--char boinc_failed_file[256];
-+char boinc_failed_file[MAXPATHLEN];
+--- boinc.orig/lib/filesys.cpp	2012-09-15 12:23:56.681113074 +0200
++++ boinc/lib/filesys.cpp	2012-09-15 12:35:40.000000000 +0200
+@@ -86,7 +86,7 @@
  
  // routines for enumerating the entries in a directory
  
@@ -251,22 +233,16 @@ Index: boinc/lib/filesys.cpp
  #if defined(_WIN32) && !defined(__CYGWIN32__)
      CloseHandle(handle);
  #else
-@@ -737,19 +739,19 @@
+@@ -737,7 +739,7 @@
      return 0;
  }
- 
+
 -void boinc_getcwd(char* path) {
 +void boinc_getcwd(char* const path) {
  #ifdef _WIN32
--    getcwd(path, 256);
-+    getcwd(path, MAXPATHLEN);
+     getcwd(path, MAXPATHLEN);
  #else
-     char* p 
- #ifdef __GNUC__
-       __attribute__ ((unused))
- #endif
--      = getcwd(path, 256);
-+      = getcwd(path, MAXPATHLEN);
+@@ -749,7 +751,7 @@
  #endif
  }
  
@@ -275,14 +251,14 @@ Index: boinc/lib/filesys.cpp
      boinc_getcwd(path);
      if (strlen(relname)) {
          strcat(path, "/");
-@@ -760,7 +762,7 @@
+@@ -762,7 +764,7 @@
  // get total and free space on current filesystem (in bytes)
  //
  #ifdef _WIN32
 -int get_filesystem_info(double &total_space, double &free_space, char*) {
 +int get_filesystem_info(double &total_space, double &free_space, const char* const) {
-     char buf[256];
-     boinc_getcwd(buf);
+     char cwd[MAXPATHLEN];
+     boinc_getcwd(cwd);
      FreeFn pGetDiskFreeSpaceEx;
 @@ -793,7 +795,7 @@
          total_space = (double)dwTotalClusters * dwSectPerClust * dwBytesPerSect;
@@ -304,14 +280,14 @@ Index: boinc/lib/filesys.cpp
      int retval;
 Index: boinc/lib/filesys.h
 ===================================================================
---- boinc.orig/lib/filesys.h	2012-04-01 20:19:44.949682516 +0200
-+++ boinc/lib/filesys.h	2012-08-26 16:24:00.994429008 +0200
+--- boinc.orig/lib/filesys.h    2012-09-15 12:23:56.677113181 +0200
++++ boinc/lib/filesys.h 2012-09-15 13:54:49.920386693 +0200
 @@ -48,19 +48,19 @@
    extern FILE* boinc_fopen(const char* path, const char* mode);
    extern int boinc_copy(const char* orig, const char* newf);
    extern int boinc_rename(const char* old, const char* newf);
 -  extern int boinc_mkdir(const char*);
-+  extern int boinc_mkdir(const char* const );
++  extern int boinc_mkdir(const char* const);
  #ifndef _WIN32
 -  extern int boinc_chown(const char*, gid_t);
 +  extern int boinc_chown(const char* const, const gid_t);
@@ -320,16 +296,15 @@ Index: boinc/lib/filesys.h
 -  extern void boinc_getcwd(char*);
 -  extern void relative_to_absolute(const char* relname, char* path);
 -  extern int boinc_make_dirs(const char*, const char*);
--  extern char boinc_failed_file[256];
--  extern int is_file(const char* path);
--  extern int is_dir(const char* path);
--  extern int is_dir_follow_symlinks(const char* path);
--  extern int is_symlink(const char* path);
 +  extern int boinc_rmdir(const char* const);
 +  extern void boinc_getcwd(/* not const*/ char* const);
 +  extern void relative_to_absolute(const char* const relname, char* const path);
 +  extern int boinc_make_dirs(const char* const, const char* const);
-+  extern char boinc_failed_file[MAXPATHLEN];
+   extern char boinc_failed_file[MAXPATHLEN];
+-  extern int is_file(const char* path);
+-  extern int is_dir(const char* path);
+-  extern int is_dir_follow_symlinks(const char* path);
+-  extern int is_symlink(const char* path);
 +  extern int is_file(const char* const path);
 +  extern int is_dir(const char* const path);
 +  extern int is_dir_follow_symlinks(const char* const path);
