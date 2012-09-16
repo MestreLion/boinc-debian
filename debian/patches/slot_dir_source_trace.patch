@@ -1,7 +1,7 @@
 Index: boinc/client/app.cpp
 ===================================================================
---- boinc.orig/client/app.cpp	2012-06-30 21:30:06.444327787 +0200
-+++ boinc/client/app.cpp	2012-08-25 23:08:31.136959941 +0200
+--- boinc.orig/client/app.cpp	2012-09-15 18:20:12.208434304 +0200
++++ boinc/client/app.cpp	2012-09-16 21:27:08.029954395 +0200
 @@ -417,8 +417,8 @@
      int retval;
  
@@ -66,8 +66,8 @@ Index: boinc/client/app.cpp
              FILE_INFO* fip = result->lookup_file_logical(p);
 Index: boinc/client/app.h
 ===================================================================
---- boinc.orig/client/app.h	2012-05-03 17:05:19.619492780 +0200
-+++ boinc/client/app.h	2012-08-26 17:14:34.521163171 +0200
+--- boinc.orig/client/app.h	2012-09-15 18:20:12.212434251 +0200
++++ boinc/client/app.h	2012-09-16 21:27:08.033954342 +0200
 @@ -47,6 +47,7 @@
  typedef int PROCESS_ID;
  
@@ -121,8 +121,8 @@ Index: boinc/client/app.h
      void process_control_poll();
 Index: boinc/lib/filesys.cpp
 ===================================================================
---- boinc.orig/lib/filesys.cpp	2012-09-15 12:23:56.681113074 +0200
-+++ boinc/lib/filesys.cpp	2012-09-15 12:35:40.000000000 +0200
+--- boinc.orig/lib/filesys.cpp	2012-09-16 21:27:07.969955209 +0200
++++ boinc/lib/filesys.cpp	2012-09-16 21:27:29.541663047 +0200
 @@ -86,7 +86,7 @@
  
  // routines for enumerating the entries in a directory
@@ -236,7 +236,7 @@ Index: boinc/lib/filesys.cpp
 @@ -737,7 +739,7 @@
      return 0;
  }
-
+ 
 -void boinc_getcwd(char* path) {
 +void boinc_getcwd(char* const path) {
  #ifdef _WIN32
@@ -251,7 +251,7 @@ Index: boinc/lib/filesys.cpp
      boinc_getcwd(path);
      if (strlen(relname)) {
          strcat(path, "/");
-@@ -762,7 +764,7 @@
+@@ -760,7 +762,7 @@
  // get total and free space on current filesystem (in bytes)
  //
  #ifdef _WIN32
@@ -280,8 +280,8 @@ Index: boinc/lib/filesys.cpp
      int retval;
 Index: boinc/lib/filesys.h
 ===================================================================
---- boinc.orig/lib/filesys.h    2012-09-15 12:23:56.677113181 +0200
-+++ boinc/lib/filesys.h 2012-09-15 13:54:49.920386693 +0200
+--- boinc.orig/lib/filesys.h	2012-09-15 18:20:16.792373285 +0200
++++ boinc/lib/filesys.h	2012-09-16 21:27:08.041954235 +0200
 @@ -48,19 +48,19 @@
    extern FILE* boinc_fopen(const char* path, const char* mode);
    extern int boinc_copy(const char* orig, const char* newf);

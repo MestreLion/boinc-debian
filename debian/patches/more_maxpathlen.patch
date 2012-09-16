@@ -1,7 +1,7 @@
 Index: boinc/api/graphics2_util.cpp
 ===================================================================
---- boinc.orig/api/graphics2_util.cpp	2012-09-01 19:39:28.637343110 +0800
-+++ boinc/api/graphics2_util.cpp	2012-09-01 19:40:48.401346216 +0800
+--- boinc.orig/api/graphics2_util.cpp	2012-09-15 18:20:11.920438137 +0200
++++ boinc/api/graphics2_util.cpp	2012-09-16 21:27:07.961955315 +0200
 @@ -35,9 +35,9 @@
  
  #ifdef __EMX__
@@ -60,8 +60,8 @@ Index: boinc/api/graphics2_util.cpp
  #endif
 Index: boinc/lib/filesys.cpp
 ===================================================================
---- boinc.orig/lib/filesys.cpp	2012-09-15 12:23:56.681113074 +0200
-+++ boinc/lib/filesys.cpp	2012-09-15 12:23:56.681113074 +0200
+--- boinc.orig/lib/filesys.cpp	2012-09-16 21:27:07.901956127 +0200
++++ boinc/lib/filesys.cpp	2012-09-16 21:30:01.147609631 +0200
 @@ -430,7 +430,7 @@
      while (1) {
          retval = dir_scan(filename, dirp, sizeof(filename));
@@ -107,8 +107,8 @@ Index: boinc/lib/filesys.cpp
          strcpy(oldpath, newpath);
 Index: boinc/lib/network.cpp
 ===================================================================
---- boinc.orig/lib/network.cpp	2012-09-01 19:39:28.637343110 +0800
-+++ boinc/lib/network.cpp	2012-09-01 19:40:04.733344515 +0800
+--- boinc.orig/lib/network.cpp	2012-09-15 18:20:16.860372380 +0200
++++ boinc/lib/network.cpp	2012-09-16 21:27:07.973955156 +0200
 @@ -70,7 +70,7 @@
      case WSAENOTSOCK:
          return "not a socket";

@@ -1,12 +1,18 @@
-boinc (7.0.36+dfsg-1) UNRELEASED; urgency=low
+boinc (7.0.36+dfsg-1) unstable; urgency=low
+
+  * Team upload.
 
   [ Gianfranco Costamagna ]
   * New upstream version
 
   [ Guo Yixuan ]
   * Updated api_NULL_not_defined.patch.
+  
+  [ Steffen Moeller ]
+  * Updated slot_dir_source_trace.patch.
+  * Updated opendir_error_messages.patch.
 
- -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sat, 15 Sep 2012 15:10:21 +0200
+ -- Debian BOINC Maintainers <pkg-boinc-devel@lists.alioth.debian.org>  Sun, 16 Sep 2012 21:28:52 +0200
 
 boinc (7.0.34+dfsg-6) UNRELEASED; urgency=low
 
