@@ -89,3 +89,23 @@ Index: boinc/lib/filesys.cpp
      while (1) {
          strcpy(filename, "");
          retval = dir_scan(filename, dirp, sizeof(filename));
+@@ -415,7 +419,7 @@
+     } while (FindNextFileA(hFind, &findData));
+        ::FindClose(hFind);
+ #else
+-    char filename[1024], subdir[1024];
++    char filename[MAXPATHLEN], subdir[MAXPATHLEN];
+     int retval=0;
+     DIRREF dirp;
+     double x;
+@@ -579,8 +583,8 @@
+     fclose(dst);
+     // Copy file's ownership, permissions to the extent we are allowed
+     lstat(orig, &sbuf);             // Get source file's info
+-    chown(newf, sbuf.st_uid, sbuf.st_gid);
+-    chmod(newf, sbuf.st_mode);
++    if (chown(newf, sbuf.st_uid, sbuf.st_gid)) retval=ERR_FWRITE;
++    if (chmod(newf, sbuf.st_mode)) retval=ERR_FWRITE;
+     return retval;
+ #endif
+ }
