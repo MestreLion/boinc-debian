@@ -62,7 +62,7 @@ Index: boinc/lib/filesys.cpp
 ===================================================================
 --- boinc.orig/lib/filesys.cpp	2012-09-16 21:27:07.901956127 +0200
 +++ boinc/lib/filesys.cpp	2012-09-16 21:30:01.147609631 +0200
-@@ -430,7 +430,7 @@
+@@ -426,7 +426,7 @@
      while (1) {
          retval = dir_scan(filename, dirp, sizeof(filename));
          if (retval) break;
@@ -71,7 +71,7 @@ Index: boinc/lib/filesys.cpp
  
          if (is_dir(subdir)) {
              if (recurse) {
-@@ -548,8 +548,8 @@
+@@ -544,8 +544,8 @@
      }
      return 0;
  #elif defined(__EMX__)
@@ -82,7 +82,7 @@ Index: boinc/lib/filesys.cpp
      return system(cmd);
  #else
      // POSIX requires that shells run from an application will use the 
-@@ -659,11 +659,11 @@
+@@ -655,11 +655,11 @@
  // create directories dirpath/a, dirpath/a/b etc.
  //
  int boinc_make_dirs(const char* dirpath, const char* filepath) {
@@ -96,7 +96,7 @@ Index: boinc/lib/filesys.cpp
      strcpy(buf, filepath);
      strcpy(oldpath, dirpath);
  
-@@ -672,7 +672,7 @@
+@@ -668,7 +668,7 @@
          p = strchr(q, '/');
          if (!p) break;
          *p = 0;

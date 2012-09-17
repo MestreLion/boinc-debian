@@ -188,7 +188,7 @@ Index: boinc/lib/filesys.cpp
      char filename[MAXPATHLEN], path[MAXPATHLEN];
      int retval;
      DIRREF dirp;
-@@ -617,7 +619,7 @@
+@@ -613,7 +615,7 @@
  
  // make a dir that's owner and group RWX
  //
@@ -197,7 +197,7 @@ Index: boinc/lib/filesys.cpp
      if (is_dir(path)) return 0;
  #ifdef _WIN32
      if (!CreateDirectoryA(path, NULL)) {
-@@ -632,7 +634,7 @@
+@@ -628,7 +630,7 @@
      return 0;
  }
  
@@ -206,7 +206,7 @@ Index: boinc/lib/filesys.cpp
  #ifdef _WIN32
      if (!RemoveDirectoryA(name)) {
          return ERR_RMDIR;
-@@ -645,7 +647,7 @@
+@@ -641,7 +643,7 @@
  }
  
  #ifndef _WIN32
@@ -215,7 +215,7 @@ Index: boinc/lib/filesys.cpp
      if (gid) {
          if (chown(path, (uid_t)-1, gid)) {
              return ERR_CHOWN;
-@@ -658,7 +660,7 @@
+@@ -654,7 +656,7 @@
  // if "filepath" is of the form a/b/c,
  // create directories dirpath/a, dirpath/a/b etc.
  //
@@ -224,7 +224,7 @@ Index: boinc/lib/filesys.cpp
      char buf[MAXPATHLEN*2], oldpath[MAXPATHLEN], newpath[MAXPATHLEN];
      int retval;
      char *p, *q;
-@@ -725,7 +727,7 @@
+@@ -721,7 +723,7 @@
      return 0;
  }
  
@@ -233,7 +233,7 @@ Index: boinc/lib/filesys.cpp
  #if defined(_WIN32) && !defined(__CYGWIN32__)
      CloseHandle(handle);
  #else
-@@ -737,7 +739,7 @@
+@@ -733,7 +735,7 @@
      return 0;
  }
  
@@ -242,7 +242,7 @@ Index: boinc/lib/filesys.cpp
  #ifdef _WIN32
      getcwd(path, MAXPATHLEN);
  #else
-@@ -749,7 +751,7 @@
+@@ -745,7 +747,7 @@
  #endif
  }
  
@@ -251,7 +251,7 @@ Index: boinc/lib/filesys.cpp
      boinc_getcwd(path);
      if (strlen(relname)) {
          strcat(path, "/");
-@@ -760,7 +762,7 @@
+@@ -756,7 +758,7 @@
  // get total and free space on current filesystem (in bytes)
  //
  #ifdef _WIN32
@@ -260,7 +260,7 @@ Index: boinc/lib/filesys.cpp
      char cwd[MAXPATHLEN];
      boinc_getcwd(cwd);
      FreeFn pGetDiskFreeSpaceEx;
-@@ -793,7 +795,7 @@
+@@ -789,7 +791,7 @@
          total_space = (double)dwTotalClusters * dwSectPerClust * dwBytesPerSect;
      }
  #else
@@ -269,7 +269,7 @@ Index: boinc/lib/filesys.cpp
  #ifdef STATFS
      struct STATFS fs_info;
  
-@@ -814,7 +816,7 @@
+@@ -810,7 +812,7 @@
  
  #ifndef _WIN32
  

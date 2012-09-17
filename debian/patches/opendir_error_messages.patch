@@ -1,7 +1,33 @@
+Index: boinc/lib/filesys.cpp
+===================================================================
+--- boinc.orig/lib/filesys.cpp	2012-08-17 15:54:07.000000000 +0200
++++ boinc/lib/filesys.cpp	2012-08-17 16:00:33.580867206 +0200
+@@ -415,7 +419,7 @@
+     } while (FindNextFileA(hFind, &findData));
+ 	::FindClose(hFind);
+ #else
+-    char filename[1024], subdir[1024];
++    char filename[MAXPATHLEN], subdir[MAXPATHLEN];
+     int retval=0;
+     DIRREF dirp;
+     double x;
+@@ -578,9 +582,9 @@
+     fclose(src);
+     fclose(dst);
+     // Copy file's ownership, permissions to the extent we are allowed
+-    lstat(orig, &sbuf);             // Get source file's info
+-    chown(newf, sbuf.st_uid, sbuf.st_gid);
+-    chmod(newf, sbuf.st_mode);
++    if (lstat(orig, &sbuf)) retval=ERR_FWRITE;             // Get source file's info
++    if (chown(newf, sbuf.st_uid, sbuf.st_gid)) retval=ERR_FWRITE;
++    if (chmod(newf, sbuf.st_mode)) retval=ERR_FWRITE;
+     return retval;
+ #endif
+ }
 Index: boinc/lib/diagnostics.cpp
 ===================================================================
---- boinc.orig/lib/diagnostics.cpp	2012-09-15 18:20:16.772373551 +0200
-+++ boinc/lib/diagnostics.cpp	2012-09-16 21:27:07.905956075 +0200
+--- boinc.orig/lib/diagnostics.cpp	2012-08-17 15:47:19.767548254 +0200
++++ boinc/lib/diagnostics.cpp	2012-08-17 15:54:07.000000000 +0200
 @@ -75,14 +75,14 @@
  
  static int         diagnostics_initialized = false;
@@ -51,8 +77,8 @@ Index: boinc/lib/diagnostics.cpp
  			fclose(p);
 Index: boinc/client/sandbox.cpp
 ===================================================================
---- boinc.orig/client/sandbox.cpp	2012-09-15 18:20:12.456431003 +0200
-+++ boinc/client/sandbox.cpp	2012-09-16 21:27:07.909956022 +0200
+--- boinc.orig/client/sandbox.cpp	2012-08-17 15:47:19.771548200 +0200
++++ boinc/client/sandbox.cpp	2012-08-17 15:54:07.000000000 +0200
 @@ -185,7 +185,7 @@
  // If an error occurs, delete as much as possible.
  //
@@ -71,43 +97,3 @@ Index: boinc/client/sandbox.cpp
          if (is_dir(path)) {
              retval = client_clean_out_dir(path, NULL);
              if (retval) final_retval = retval;
-Index: boinc/lib/filesys.cpp
-===================================================================
---- boinc.orig/lib/filesys.cpp	2012-09-16 21:27:05.345990748 +0200
-+++ boinc/lib/filesys.cpp	2012-09-16 21:30:20.047353633 +0200
-@@ -367,8 +367,12 @@
-     int retval;
-     DIRREF dirp;
-
-+    if (!boinc_file_or_symlink_exists(dirpath)) return 0; // if dir doesn't exist, it's empty
-     dirp = dir_open(dirpath);
--    if (!dirp) return 0;    // if dir doesn't exist, it's empty
-+    if (!dirp) {
-+        fprintf(stderr,"clean_out_dir: failed dir_open on '%s'\n",dirpath);
-+        return 0;
-+    }
-     while (1) {
-         strcpy(filename, "");
-         retval = dir_scan(filename, dirp, sizeof(filename));
-@@ -415,7 +419,7 @@
-     } while (FindNextFileA(hFind, &findData));
-        ::FindClose(hFind);
- #else
--    char filename[1024], subdir[1024];
-+    char filename[MAXPATHLEN], subdir[MAXPATHLEN];
-     int retval=0;
-     DIRREF dirp;
-     double x;
-@@ -578,9 +582,9 @@
-     fclose(src);
-     fclose(dst);
-     // Copy file's ownership, permissions to the extent we are allowed
--    lstat(orig, &sbuf);             // Get source file's info
--    chown(newf, sbuf.st_uid, sbuf.st_gid);
--    chmod(newf, sbuf.st_mode);
-+    if (lstat(orig, &sbuf)) retval=ERR_FWRITE;             // Get source file's info
-+    if (chown(newf, sbuf.st_uid, sbuf.st_gid)) retval=ERR_FWRITE;
-+    if (chmod(newf, sbuf.st_mode)) retval=ERR_FWRITE;
-     return retval;
- #endif
- }
