@@ -50,7 +50,6 @@ some_extra_clang_warnings.patch
 dTotalGlobalMem.patch
 nvidia_mem_display_simplification.patch
 api_NULL_not_defined.patch
-#convinceRom#wxWidgets_observations.patch
 unlink_undefined.patch
 0001-Patch-from-Steffen-Moeller-for-recent-Xcb.patch
 0002-re-enable-X11-screensaver-build.patch
