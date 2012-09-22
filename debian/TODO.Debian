@@ -1,29 +1,12 @@
 The to-do list for developers of the BOINC Debian packages is here:
   http://wiki.debian.org/BOINC/Development#TODO
 
-This is a more detailed todo anyway:
+And somehow, to update this file on a routine basis should better be
+part of the todo list, too. It has been a bit neglected over the past.
 
-= TODO for version 6.12.19 =
-============================
-
-The stripchart should become a package on its own
-
-A    boinc-6.12.19+dfsg.orig/stripchart
-A    boinc-6.12.19+dfsg.orig/stripchart/stripchart
-A    boinc-6.12.19+dfsg.orig/stripchart/samples
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/parse_config
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/looper
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/db_looper
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/crontab
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/dir_size
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/db_query
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/datafiles
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/db_count
-A    boinc-6.12.19+dfsg.orig/stripchart/samples/get_load
-A    boinc-6.12.19+dfsg.orig/stripchart/stripchart.cgi
-A    boinc-6.12.19+dfsg.orig/stripchart/stripchart.cnf
-A    boinc-6.12.19+dfsg.orig/stripchart/README
-
+Currently ongoing is a cleanup of patches collected for the Debian
+packages. And the general attitude towards everything seems to 
+be best summarised by "hardening". Let us just find and eliminate bugs.
 
 = TODO since version 6.4.5 =
 ============================
@@ -35,6 +18,9 @@ CUDA initialisation
 -------------------
 
  needs to happen prior to boinc-clients being started
+
+ This does not seem to work for everyone, yet.
+
 
 Init script ugliness
 --------------------
@@ -64,27 +50,4 @@ chrt_many()
 Licenses and debian/copyright
 ==============================
 
- client/app_stats_mac.cpp:
- -------------------------
-  this file should be removed from upstream source, since
-  it has some copyright notice from Apple:
-  (ref: line 24...)
-   24  * Copyright (c) 2002-2004 Apple Computer, Inc.  All rights reserved.
-   25  *
-   26  * @APPLE_LICENSE_HEADER_START@
-  And http://wiki.debian.org/DFSGLicenses#head-0a5ca8d24d2dfd3d3c954c1abb441ad54b37461e
-  stands that this license is not free.
-
-
- api/textfont.[ch] and samples/glut/win32_util.c
- ------------------------------------------------
- The license on this file is not clear enough IMHO.
- also there is a precedent that this license is considered
- as non-DFSG (#467123). *IMPORTANT*
-
- samples/jpeglib/
- ---------------
- Maybe Clarify this license text, since the files refer to 
- a non-existent README file, I actually check
- the license from libjpeg62 README file.
-
+ ? 
