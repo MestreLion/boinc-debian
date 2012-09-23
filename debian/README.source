@@ -15,6 +15,16 @@ Modifications to the upstream source
  to the upstream source. Changes are stored in the source package as
  diffs in debian/patches and applied during the build.
 
+
+quilt configuration
+-------------------
+ If you plan to modify patches in debian/patches, you need the quilt package.
+ To keep it simple, these are recommended for ~/.quiltrc
+
+QUILT_PATCHES="debian/patches"
+QUILT_NO_DIFF_TIMESTAMPS=1
+
+
 Repackaged upstream source:
 ===========================
  The BOINC project does not distribute source code releases as tarballs,
