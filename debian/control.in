@@ -6,7 +6,6 @@ Uploaders: Steffen Moeller <moeller@debian.org>,
  Rene Mayorga <rmayorga@debian.org>,
  Daniel Hahler <ubuntu@thequod.de>,
  Guo Yixuan <culu.gyx@gmail.com>
-DM-Upload-Allowed: yes
 Standards-Version: 3.9.3
 Build-Depends: debhelper (>= 7.0.50~), po-debconf, pkg-config (>= 0.15),
  dpkg-dev (>= 1.16.1.1),
