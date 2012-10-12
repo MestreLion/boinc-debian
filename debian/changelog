@@ -1,8 +1,10 @@
 boinc (7.0.36+dfsg-2) UNRELEASED; urgency=low
 
   [ Guo Yixuan ]
-  * Removed some old patches (those not in series anymore).
-  * Removed the deprecated DMUA field from debian/control.
+  * debian/control: Removed the deprecated DMUA field.
+  * debian/patches:
+    - Removed some old patches (those not in series anymore).
+    - Refreshed cppcheck_avoid_redundant_check.patch.
 
   [ Gianfranco Costamagna ]
   * without boinclib_shared.patch boinc FTBFS, changed the order of patch
