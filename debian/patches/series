@@ -1,6 +1,5 @@
 # patches to get Debian going
 libnotify-0.7.patch
-boinclib_shared.patch
 # undisputed patches above
 sched_driver_f_free.patch
 improve_opendir_warning.patch
@@ -63,9 +62,7 @@ sched_driver_char_buffers.patch
 csh2tcsh.patch
 
 #socklenBuildFixByDavid.patch
-dynamic_libboinc.patch
 ensure_there_is_no_newline_in_passwd.patch
-Missing_libSched.patch
 add_hardening_flags.patch
 cmath_missing.patch
 investigate_boinc_api.patch
@@ -75,3 +72,8 @@ opendir_errno.patch
 ticket_1168_verifycerts.patch
 better_makefiles.patch
 client_app_maxpathlen.patch
+#debian specific patches
+#boinclib_shared.patch is needed in order to make boinc build correctly otherwise it will FTBFS
+boinclib_shared.patch
+dynamic_libboinc.patch
+Missing_libSched.patch
