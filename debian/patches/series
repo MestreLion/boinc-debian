@@ -1,5 +1,6 @@
 # patches to get Debian going
 libnotify-0.7.patch
+boinclib_shared.patch
 # undisputed patches above
 sched_driver_f_free.patch
 sched_driver_char_buffers.patch
@@ -55,7 +56,6 @@ unlink_undefined.patch
 0002-re-enable-X11-screensaver-build.patch
 screen_saver_boinc_extra.patch
 #socklenBuildFixByDavid.patch
-boinclib_shared.patch
 dynamic_libboinc.patch
 ensure_there_is_no_newline_in_passwd.patch
 Missing_libSched.patch
