@@ -1,8 +1,8 @@
 Index: boinc/api/gutil.cpp
 ===================================================================
---- boinc.orig/api/gutil.cpp	2012-09-01 19:32:35.497548789 +0200
-+++ boinc/api/gutil.cpp	2012-09-01 19:38:05.093079839 +0200
-@@ -767,15 +767,13 @@
+--- boinc.orig/api/gutil.cpp
++++ boinc/api/gutil.cpp
+@@ -737,15 +737,13 @@
  	gluBuild2DMipmaps(GL_TEXTURE_2D, 3, pImage->sizeX, pImage->sizeY, GL_RGB, GL_UNSIGNED_BYTE, pImage->data);
  	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
  	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
@@ -25,8 +25,8 @@ Index: boinc/api/gutil.cpp
  
 Index: boinc/api/make_app_icon_h.cpp
 ===================================================================
---- boinc.orig/api/make_app_icon_h.cpp	2012-03-31 13:44:20.967194213 +0200
-+++ boinc/api/make_app_icon_h.cpp	2012-09-01 19:40:17.671280387 +0200
+--- boinc.orig/api/make_app_icon_h.cpp
++++ boinc/api/make_app_icon_h.cpp
 @@ -39,7 +39,7 @@
      }
      
