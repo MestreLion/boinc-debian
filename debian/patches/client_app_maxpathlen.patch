@@ -33,7 +33,7 @@ Index: boinc/client/file_names.cpp
  
  void get_project_dir(PROJECT* p, char* path, int len) {
 -    char buf[1024];
-+    char buf[max(len,MAXPATHLEN)];
++    char buf[std::max(len,MAXPATHLEN)];
      escape_project_url(p->master_url, buf);
      snprintf(path, len, "%s/%s", PROJECTS_DIR, buf);
  }
@@ -42,7 +42,7 @@ Index: boinc/client/file_names.cpp
  void get_pathname(FILE_INFO* fip, char* path, int len) {
      PROJECT* p = fip->project;
 -    char buf[1024];
-+    char buf[max(len,MAXPATHLEN)];
++    char buf[std::max(len,MAXPATHLEN)];
  
      // for testing purposes, it's handy to allow a FILE_INFO without
      // an associated PROJECT.
@@ -51,7 +51,7 @@ Index: boinc/client/file_names.cpp
  
  void get_sched_request_filename(PROJECT& project, char* buf, int len) {
 -    char url[1024];
-+    char url[max(len,MAXPATHLEN)];
++    char url[std::max(len,MAXPATHLEN)];
  
      escape_project_url(project.master_url, url);
      snprintf(buf, len, "%s%s.xml", SCHED_OP_REQUEST_BASE, url);
@@ -59,7 +59,7 @@ Index: boinc/client/file_names.cpp
  
  void get_sched_reply_filename(PROJECT& project, char* buf, int len) {
 -    char url[1024];
-+    char url[max(len,MAXPATHLEN)];
++    char url[std::max(len,MAXPATHLEN)];
  
      escape_project_url(project.master_url, url);
      snprintf(buf, len, "%s%s.xml", SCHED_OP_REPLY_BASE, url);
@@ -67,7 +67,7 @@ Index: boinc/client/file_names.cpp
  
  void get_master_filename(PROJECT& project, char* buf, int len) {
 -    char url[1024];
-+    char url[max(len,MAXPATHLEN)];
++    char url[std::max(len,MAXPATHLEN)];
  
      escape_project_url(project.master_url, url);
      snprintf(buf, len, "%s%s.xml", MASTER_BASE, url);
@@ -75,7 +75,7 @@ Index: boinc/client/file_names.cpp
  
  void job_log_filename(PROJECT& project, char* buf, int len) {
 -    char url[1024];
-+    char url[max(len,MAXPATHLEN)];
++    char url[std::max(len,MAXPATHLEN)];
  
      escape_project_url(project.master_url, url);
      snprintf(buf, len, "%s%s.txt", JOB_LOG_BASE, url);
