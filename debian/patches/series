@@ -77,3 +77,4 @@ client_app_maxpathlen.patch
 boinclib_shared.patch
 dynamic_libboinc.patch
 Missing_libSched.patch
+missing_libs_wrapper.patch

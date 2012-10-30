@@ -1,8 +1,11 @@
 boinc (7.0.36+dfsg-3) UNRELEASED; urgency=low
-
+  [ Steffen Moeller ]
   * Added Gianfranco to uploaders.
 
- -- Steffen Moeller <moeller@debian.org>  Sun, 21 Oct 2012 01:09:22 +0200
+  [ Gianfranco Costamagna ]
+  * Added missing_libs_wrapper.patch to fix a FTBFS on ubuntu 13.04 raring
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Tue, 30 Oct 2012 17:28:51 +0100
 
 boinc (7.0.36+dfsg-2) experimental; urgency=low
 
