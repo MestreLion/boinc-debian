@@ -1,6 +1,8 @@
 Include some headers file, to fix a problem with getrusage and setpriority functions with the new ubuntu raring ringtail development release
 Author: Gianfranco Costamagna <costamagnagianfranco@yahoo.it>
 Forwarded: <yes>
+Fixed in upstream revision 9223fd2
+http://boinc.berkeley.edu/trac/changeset/9223fd22e3b6b848cc9e5e151d958542da8fd49d/boinc
 
 
 --- boinc-7.0.36+dfsg.orig/samples/wrapper/wrapper.cpp
