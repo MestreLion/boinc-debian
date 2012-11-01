@@ -78,3 +78,4 @@ boinclib_shared.patch
 dynamic_libboinc.patch
 Missing_libSched.patch
 missing_libs_wrapper.patch
+boinc-ftbfs-hurd.patch
