@@ -1,0 +1,29 @@
+Description: 
+ This patch should fix the ftbfs introduced by boinc-ftbfs-hurd.patch
+Author: Rom Walton
+
+Origin: upstream, 4e84139 http://boinc.berkeley.edu/trac/changeset/4e841398c9b4c901e85788b32cb1c2630ef0c390/boinc
+Forwarded: not-needed
+Reviewed-By: costamagnagianfranco@yahoo.it
+Last-Update: <2012-11-2>
+
+--- boinc-7.0.36+dfsg.orig/client/client_types.h
++++ boinc-7.0.36+dfsg/client/client_types.h
+@@ -36,6 +36,7 @@
+ #include "hostinfo.h"
+ #include "coproc.h"
+ #include "miofile.h"
++#include "filesys.h"
+ #include "common_defs.h"
+ #include "cc_config.h"
+ 
+--- boinc-7.0.36+dfsg.orig/lib/proxy_info.h
++++ boinc-7.0.36+dfsg/lib/proxy_info.h
+@@ -19,6 +19,7 @@
+ #define _PROXY_INFO_
+ 
+ #include "miofile.h"
++#include "parse.h"
+ 
+ // info on whether HTTP requests need to go through a proxy
+ //
