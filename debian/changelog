@@ -6,6 +6,7 @@ boinc (7.0.38+dfsg-1) UNRELEASED; urgency=low
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sat, 03 Nov 2012 14:20:36 +0100
 
 boinc (7.0.36+dfsg-3) UNRELEASED; urgency=low
+
   [ Steffen Moeller ]
   * Added Gianfranco to uploaders.
 
@@ -13,7 +14,10 @@ boinc (7.0.36+dfsg-3) UNRELEASED; urgency=low
   * Added missing_libs_wrapper.patch to fix a FTBFS on ubuntu 13.04 raring
   * added boinc-ftbfs-hurd.patch from upstream
 
- -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Thu, 01 Nov 2012 23:46:31 +0100
+  [ Guo Yixuan ]
+  * Commented out debian/watch, as upstream switched to git.
+
+ -- Guo Yixuan <culu.gyx@gmail.com>  Sat, 03 Nov 2012 00:27:32 +0800
 
 boinc (7.0.36+dfsg-2) experimental; urgency=low
 
