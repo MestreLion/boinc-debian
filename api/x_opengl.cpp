@@ -673,4 +673,4 @@ void xwin_graphics_event_loop() {
 }
 
 
-const char *BOINC_RCSID_c457a14644 = "$Id: x_opengl.cpp 25906 2012-07-30 19:37:51Z romw $";
+const char *BOINC_RCSID_c457a14644 = "$Id$";

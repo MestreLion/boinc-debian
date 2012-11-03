@@ -5,7 +5,7 @@
 // Author:      Julian Smart
 // Modified by: Rom Walton
 // Created:     24/3/98
-// RCS-ID:      $Id: taskbarex.cpp 22547 2010-10-18 19:21:46Z romw $
+// RCS-ID:      $Id$
 // Copyright:   (c)
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- mode: python; python-indent: 4; -*-
 
-## $Id: start 22723 2010-11-19 18:42:44Z davea $
+## $Id$
 
 '''
 A program to start/stop BOINC server daemons and run periodic tasks.

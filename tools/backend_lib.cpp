@@ -535,4 +535,4 @@ int cancel_jobs(int min_id, int max_id) {
     return 0;
 }
 
-const char *BOINC_RCSID_b5f8b10eb5 = "$Id: backend_lib.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_b5f8b10eb5 = "$Id$";

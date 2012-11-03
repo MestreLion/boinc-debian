@@ -78,4 +78,4 @@ void GRAPHICS_DOUBLE_BUFFER::generate_done(GRAPHICS_BUFFER* b) {
     b->state = GB_STATE_GENERATED;
 }
 
-const char *BOINC_RCSID_ebfbd0f929 = "$Id: graphics_data.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_ebfbd0f929 = "$Id$";

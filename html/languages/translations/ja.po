@@ -1,7 +1,7 @@
 # BOINC web translation
 # Copyright (C) 2008 University of California
 # This file is distributed under the same license as BOINC.
-# FileID  : $Id: ja.po 25406 2012-03-12 22:50:41Z davea $
+# FileID  : $Id$
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"

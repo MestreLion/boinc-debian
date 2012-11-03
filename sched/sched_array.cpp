@@ -451,4 +451,4 @@ void send_work_old() {
     }
 }
 
-const char *BOINC_RCSID_d9f764fd14="$Id: sched_array.cpp 25314 2012-02-22 22:13:08Z davea $";
+const char *BOINC_RCSID_d9f764fd14="$Id$";

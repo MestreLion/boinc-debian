@@ -218,6 +218,17 @@ void ACTIVE_TASK::init_app_init_data(APP_INIT_DATA& aid) {
     relative_to_absolute("", aid.boinc_dir);
     strcpy(aid.authenticator, wup->project->authenticator);
     aid.slot = slot;
+#ifdef _WIN32
+    if (strstr(gstate.host_info.os_name, "Windows 2000")) {
+        // Win2K immediately reuses PIDs, so can't use this mechanism
+        //
+        aid.client_pid = 0;
+    } else {
+        aid.client_pid = GetCurrentProcessId();
+    }
+#else
+    aid.client_pid = getpid();
+#endif
     strcpy(aid.wu_name, wup->name);
     strcpy(aid.result_name, result->name);
     aid.user_total_credit = wup->project->user_total_credit;
@@ -507,7 +518,8 @@ int ACTIVE_TASK::start() {
             if (fip) {
                 snprintf(
                     buf, sizeof(buf),
-                    "Input file %s missing or invalid: %d", fip->name, retval
+                    "Input file %s missing or invalid: %s",
+                    fip->name, boincerror(retval)
                 );
             } else {
                 strcpy(buf, "Input file missing or invalid");
@@ -542,7 +554,7 @@ int ACTIVE_TASK::start() {
     init_app_init_data(aid);
     retval = write_app_init_file(aid);
     if (retval) {
-        sprintf(buf, "Can't write init file: %d", retval);
+        sprintf(buf, "Can't write init file: %s", boincerror(retval));
         goto error;
     }
 
@@ -785,7 +797,7 @@ int ACTIVE_TASK::start() {
     //
     retval = chdir(slot_dir);
     if (retval) {
-        sprintf(buf, "Can't change directory: %s", slot_dir, boincerror(retval));
+        sprintf(buf, "Can't change directory to %s: %s", slot_dir, boincerror(retval));
         goto error;
     }
 
@@ -807,7 +819,7 @@ int ACTIVE_TASK::start() {
     sprintf(buf, "../../%s", exec_path );
     pid = spawnv(P_NOWAIT, buf, argv);
     if (pid == -1) {
-        sprintf(buf, "Process creation failed: %s\n", buf, boincerror(retval));
+        sprintf(buf, "Process creation failed: %s\n", boincerror(retval));
         chdir(current_dir);
         retval = ERR_EXEC;
         goto error;
@@ -1051,7 +1063,7 @@ error:
     // Verify it to trigger another download.
     //
     gstate.input_files_available(result, true);
-    gstate.report_result_error(*result, "couldn't start %s: %d", buf, retval);
+    gstate.report_result_error(*result, "couldn't start app: %s", buf);
     if (log_flags.task_debug) {
         msg_printf(wup->project, MSG_INFO,
             "[task] couldn't start app: %s", buf

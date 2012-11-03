@@ -144,5 +144,5 @@ send_moderation_email($forum, $post, $thread, $explanation, $action_name);
 
 header('Location: forum_thread.php?id='.$thread->id);
 
-$cvs_version_tracker[]="\$Id: forum_moderate_post_action.php 24048 2011-08-25 22:12:48Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

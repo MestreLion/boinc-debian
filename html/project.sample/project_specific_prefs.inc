@@ -219,6 +219,6 @@ function project_specific_prefs_parse($prefs_xml) {
     return $prefs;
 }
 
-$cvs_version_tracker[]="\$Id: project_specific_prefs.inc 24555 2011-11-09 07:41:49Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

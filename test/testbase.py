@@ -1,4 +1,4 @@
-## $Id: testbase.py 18356 2009-06-10 22:38:33Z davea $
+## $Id$
 
 # testbase.py
 #

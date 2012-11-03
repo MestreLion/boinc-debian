@@ -89,5 +89,5 @@ function show_result_page($success, $post, $thread, $choice) {
     exit;
 }
 
-$cvs_version_tracker[]="\$Id: forum_rate.php 24048 2011-08-25 22:12:48Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

@@ -306,4 +306,4 @@ int main(int argc, const char** argv) {
     boinc_db.close();
 }
 
-const char *BOINC_RCSID_3865dbbf46 = "$Id: create_work.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_3865dbbf46 = "$Id$";

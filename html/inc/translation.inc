@@ -296,5 +296,5 @@ for ($i=0; $i<sizeof($client_languages); $i++) {
 
 $GLOBALS['languages_in_use'] = $languages_in_use;   // for Drupal
 
-$cvs_version_tracker[]="\$Id: translation.inc 21878 2010-07-06 23:31:26Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

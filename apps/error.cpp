@@ -35,4 +35,4 @@ int main() {
     fprintf(stderr, "APP: upper_case ending, wrote %d chars\n", n);
 }
 
-const char *BOINC_RCSID_130fd0309d = "$Id: error.cpp 16068 2008-09-26 18:10:10Z davea $";
+const char *BOINC_RCSID_130fd0309d = "$Id$";

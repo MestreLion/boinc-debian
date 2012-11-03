@@ -317,5 +317,5 @@ void process_wu_timezone(
     }
 }
 
-const char *BOINC_RCSID_28b6ac7093 = "$Id: sched_timezone.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_28b6ac7093 = "$Id$";
 

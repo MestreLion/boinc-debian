@@ -50,5 +50,5 @@ echo "
     </form>
 ";
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: cancel_wu_form.php 19053 2009-09-15 18:14:37Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

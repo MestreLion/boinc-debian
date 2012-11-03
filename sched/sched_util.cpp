@@ -383,4 +383,4 @@ void continue_simulation(const char *daemonname){
 
 #endif
 
-const char *BOINC_RCSID_affa6ef1e4 = "$Id: sched_util.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_affa6ef1e4 = "$Id$";

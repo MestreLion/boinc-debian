@@ -1,6 +1,6 @@
 #/bin/bash
 
-# $Id: duplicate_late.sh 24510 2011-11-03 02:35:04Z romw $
+# $Id$
 
 # Duplicates workunits which are late (sent time < 3 days ago),
 # state=INPROGRESS.  Does not duplicate WUs which have been already

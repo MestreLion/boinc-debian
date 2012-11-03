@@ -58,5 +58,5 @@ if ($confirmed) {
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: prefs_remove.php 23030 2011-02-14 19:49:30Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

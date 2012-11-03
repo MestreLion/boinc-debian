@@ -711,6 +711,6 @@ function result_navigation($info, $where_clause) {
 	return $x;
 }
 
-$cvs_version_tracker[]="\$Id: result.inc 24964 2012-01-01 23:54:58Z romw $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

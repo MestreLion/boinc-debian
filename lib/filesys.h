@@ -18,12 +18,8 @@
 #ifndef _FILESYS_
 #define _FILESYS_
 
-#define FILE_RETRY_INTERVAL 5
-    // On Windows, retry for this period of time, since some other program
-    // (virus scan, defrag, index) may have the file open.
-
-
 #if defined(_WIN32) && !defined(__CYGWIN32__)
+#include "boinc_win.h"
 #else
 #include <dirent.h>
 #include <grp.h>
@@ -33,12 +29,15 @@
 #ifdef __cplusplus
 #include <string>
 #endif
+#endif /* !WIN32 */
 
 #ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
+#define MAXPATHLEN 4096
 #endif
 
-#endif /* !WIN32 */
+#define FILE_RETRY_INTERVAL 5
+    // On Windows, retry for this period of time, since some other program
+    // (virus scan, defrag, index) may have the file open.
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,15 +124,6 @@ struct FILE_LOCK {
     int lock(const char* filename);
     int unlock(const char* filename);
 };
-
-#ifndef _WIN32
-
-// search PATH, find the directory that a program is in, if any
-//
-extern int get_file_dir(char* filename, char* dir);
-
-#endif
-
 
 #endif /* c++ */
 

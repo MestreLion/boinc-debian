@@ -36,4 +36,4 @@ int cleanup_result(RESULT const&, void*) {
     return 0;
 }
 
-const char *BOINC_RCSID_f3a7a34795 = "$Id: sample_trivial_validator.cpp 24210 2011-09-14 22:45:26Z davea $";
+const char *BOINC_RCSID_f3a7a34795 = "$Id$";

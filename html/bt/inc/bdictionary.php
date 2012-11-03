@@ -9,7 +9,7 @@
  * d3:cow3:moo4:spam4:eggse represents the dictionary { "cow" => "moo", "spam" => "eggs" } 
  */
 
-$cvs_version_tracker[]="\$Id: bdictionary.php 12886 2007-06-11 18:28:57Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 class BDictionary {
     private function __construct(){

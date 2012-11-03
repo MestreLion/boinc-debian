@@ -305,5 +305,5 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR Args, int WinMode
 }
 #endif
 
-const char *BOINC_RCSID_33ac47a071 = "$Id: upper_case.cpp 23710 2011-06-12 20:58:43Z davea $";
+const char *BOINC_RCSID_33ac47a071 = "$Id$";
 

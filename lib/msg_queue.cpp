@@ -93,4 +93,4 @@ int destroy_message_queue(key_t key) {
 }
 
 
-const char *BOINC_RCSID_7b5e8a534b = "$Id: msg_queue.cpp 24303 2011-09-27 19:45:27Z davea $";
+const char *BOINC_RCSID_7b5e8a534b = "$Id$";

@@ -151,4 +151,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_8254ea59c3 = "$Id: concat.cpp 16068 2008-09-26 18:10:10Z davea $";
+const char *BOINC_RCSID_8254ea59c3 = "$Id$";

@@ -81,5 +81,5 @@ if (cancel_wu($wuid1, $wuid2)) {
 echo " cancelling workunits $wuid1 <= WUID <= $wuid2</h2>";
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: cancel_wu_action.php 20594 2010-02-16 18:38:39Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

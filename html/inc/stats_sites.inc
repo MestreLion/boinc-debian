@@ -200,5 +200,5 @@ function site_list($sites) {
 $GLOBALS['cpid_stats_sites'] = $cpid_stats_sites;
 $GLOBALS['host_sites'] = $host_sites;
 
-$cvs_version_tracker[]="\$Id: stats_sites.inc 22859 2011-01-02 03:07:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

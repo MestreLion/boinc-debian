@@ -84,5 +84,5 @@ echo "<p><a href=\"team_display.php?teamid=".$team->id."\">".tra("Return to team
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_founder_transfer_form.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

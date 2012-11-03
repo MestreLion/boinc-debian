@@ -797,4 +797,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_634dbda0b9 = "$Id: validator.cpp 25345 2012-02-27 11:54:02Z bema $";
+const char *BOINC_RCSID_634dbda0b9 = "$Id$";

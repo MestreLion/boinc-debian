@@ -35,4 +35,4 @@ int main() {
     fclose(f);
 }
 
-const char *BOINC_RCSID_afc4016a8b = "$Id: 1sec.cpp 16068 2008-09-26 18:10:10Z davea $";
+const char *BOINC_RCSID_afc4016a8b = "$Id$";

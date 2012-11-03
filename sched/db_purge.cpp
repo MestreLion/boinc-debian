@@ -749,4 +749,4 @@ int main(int argc, char** argv) {
     exit(0);
 }
 
-const char *BOINC_RCSID_0c1c4336f1 = "$Id: db_purge.cpp 25344 2012-02-27 11:08:14Z bema $";
+const char *BOINC_RCSID_0c1c4336f1 = "$Id$";

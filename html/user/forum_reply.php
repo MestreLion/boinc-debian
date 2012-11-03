@@ -166,5 +166,5 @@ function quote_text($text) {
     return $text;
 }
 
-$cvs_version_tracker[]="\$Id: forum_reply.php 24048 2011-08-25 22:12:48Z davea $";
+$cvs_version_tracker[]="\$Id$";
 ?>

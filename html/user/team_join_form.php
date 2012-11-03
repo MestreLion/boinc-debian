@@ -47,5 +47,5 @@ echo "
 ";
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_join_form.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

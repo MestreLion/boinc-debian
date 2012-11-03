@@ -136,5 +136,5 @@ echo "</form>\n";
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_post.php 24048 2011-08-25 22:12:48Z davea $";
+$cvs_version_tracker[]="\$Id$";
 ?>

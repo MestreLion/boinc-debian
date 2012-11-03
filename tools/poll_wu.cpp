@@ -136,4 +136,4 @@ int main(int argc, char** argv){
     boinc_db.close();
     return final;
 }
-const char *BOINC_RCSID_6d019426c9="$Id: poll_wu.cpp 24413 2011-10-18 07:15:04Z davea $";
+const char *BOINC_RCSID_6d019426c9="$Id$";

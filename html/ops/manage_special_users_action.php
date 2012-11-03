@@ -50,5 +50,5 @@ echo "Query was: $query</center>";
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: manage_special_users_action.php 16132 2008-10-05 12:45:33Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

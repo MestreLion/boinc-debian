@@ -1400,4 +1400,4 @@ double capped_host_fpops() {
     return x;
 }
 
-const char *BOINC_RCSID_ea659117b3 = "$Id: sched_types.cpp 25517 2012-03-30 15:42:18Z romw $";
+const char *BOINC_RCSID_ea659117b3 = "$Id$";

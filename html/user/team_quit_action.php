@@ -37,5 +37,5 @@ if ($user->teamid == $team->id) {
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: team_quit_action.php 23023 2011-02-11 18:32:47Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

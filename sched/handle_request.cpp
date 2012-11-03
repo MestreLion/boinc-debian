@@ -1402,4 +1402,4 @@ void handle_request(FILE* fin, FILE* fout, char* code_sign_key) {
     }
 }
 
-const char *BOINC_RCSID_2ac231f9de = "$Id: handle_request.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_2ac231f9de = "$Id$";

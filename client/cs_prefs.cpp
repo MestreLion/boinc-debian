@@ -144,7 +144,7 @@ void CLIENT_STATE::get_disk_shares() {
     if (log_flags.disk_usage_debug) {
         msg_printf(0, MSG_INFO,
             "[disk_usage] allowed %.2fMB used %.2fMB",
-            allowed, total_disk_usage
+            allowed/MEGA, total_disk_usage/MEGA
         );
     }
     for (i=0; i<projects.size(); i++) {
@@ -169,7 +169,7 @@ int CLIENT_STATE::check_suspend_processing() {
         return SUSPEND_REASON_BENCHMARKS;
     }
 
-    if (config.start_delay && now < client_start_time + config.start_delay) {
+    if (config.start_delay && now < time_stats.client_start_time + config.start_delay) {
         return SUSPEND_REASON_INITIAL_DELAY;
     }
 

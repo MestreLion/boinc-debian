@@ -1267,5 +1267,5 @@ function host_name_by_id($hostid) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: db_ops.inc 25260 2012-02-14 21:12:57Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

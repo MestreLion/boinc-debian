@@ -1,4 +1,4 @@
--- $Id: monitoring_compute.sql 23083 2011-02-22 21:28:13Z tonig $
+-- $Id$
 
 -- Should be run from crontab. It will add a row in the "monitoring"
 -- table with the results, for later retrieval from the "dailyreport"

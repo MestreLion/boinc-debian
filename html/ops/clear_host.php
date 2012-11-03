@@ -29,5 +29,5 @@ mysql_query("update host set rpc_time=0 where id='$hostid'");
 echo "Host RPC time cleared for host ID: $hostid\n";
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: clear_host.php 20745 2010-02-26 21:34:20Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

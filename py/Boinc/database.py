@@ -1,4 +1,4 @@
-## $Id: database.py 22667 2010-11-10 00:10:32Z davea $
+## $Id$
 
 '''
 Defines database backend library and database table and object relationships.
@@ -32,7 +32,7 @@ import configxml
 from util import *
 from db_base import *
 
-ID = '$Id: database.py 22667 2010-11-10 00:10:32Z davea $'
+ID = '$Id$'
 
 class Platform(DatabaseObject):
     _table = DatabaseTable(

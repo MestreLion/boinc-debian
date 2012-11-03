@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: add_util.py 12027 2007-02-02 20:14:18Z boincadm $
+# $Id$
 
 # add_util.py - code shared between add and xadd
 

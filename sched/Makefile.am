@@ -1,5 +1,5 @@
 ## -*- mode: makefile; tab-width: 4 -*-
-## $Id: Makefile.am 25435 2012-03-16 17:23:55Z romw $
+## $Id$
 
 include $(top_srcdir)/Makefile.incl
 

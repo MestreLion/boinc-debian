@@ -525,4 +525,4 @@ void escape_mysql_like_pattern(const char* in, char* out) {
     }
 }
 
-const char *BOINC_RCSID_43d919556b = "$Id: db_base.cpp 25405 2012-03-12 21:45:29Z davea $";
+const char *BOINC_RCSID_43d919556b = "$Id$";

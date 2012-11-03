@@ -8,7 +8,7 @@
  * simply download a .torrent for each file they want to fetch.
  */ 
 
-$cvs_version_tracker[]="\$Id: torrent.php 12884 2007-06-11 18:24:12Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
  
 class Torrent {
     private $trackerURL; // String

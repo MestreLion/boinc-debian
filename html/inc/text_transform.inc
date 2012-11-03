@@ -268,5 +268,5 @@ function highlight_terms($text, $terms) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: text_transform.inc 24622 2011-11-20 17:26:32Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

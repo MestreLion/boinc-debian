@@ -861,6 +861,6 @@ function credit_to_gflop_hours($c) {
     return $c/(200/24);
 }
 
-$cvs_version_tracker[]="\$Id: util.inc 25398 2012-03-09 21:40:57Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

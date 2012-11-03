@@ -722,6 +722,6 @@ function anonymize_hosts($user) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: host.inc 24882 2011-12-24 02:01:54Z romw $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

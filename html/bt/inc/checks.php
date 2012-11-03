@@ -3,7 +3,7 @@
  * Checks common to both the tracker and the scraping mechanism.
  */
 
-$cvs_version_tracker[]="\$Id: checks.php 13824 2007-10-10 21:04:20Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 
 function isIPBanned($ip){

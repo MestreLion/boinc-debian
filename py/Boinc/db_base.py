@@ -1,4 +1,4 @@
-## $Id: db_base.py 22616 2010-11-03 18:25:24Z davea $
+## $Id$
 
 # quarl 2003-10-16 initial version based on conglomeration of
 #                  coursesurvey/database.py and boinc/database.py
@@ -15,7 +15,7 @@ from __future__ import generators
 import MySQLdb, MySQLdb.cursors
 import sys, os, weakref
 
-ID = '$Id: db_base.py 22616 2010-11-03 18:25:24Z davea $'
+ID = '$Id$'
 
 dbconnection = None
 

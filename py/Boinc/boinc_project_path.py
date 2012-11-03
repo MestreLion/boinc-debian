@@ -1,4 +1,4 @@
-# $Id: boinc_project_path.py 18424 2009-06-15 23:24:15Z davea $
+# $Id$
 
 # boinc_project_path.py - defines the directories where config.xml and
 # run_state.xml are kept.

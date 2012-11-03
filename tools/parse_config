@@ -2,7 +2,7 @@
 
 # -*- mode: python; python-indent: 4; -*-
 
-## $Id: parse_config 18376 2009-06-11 16:06:25Z davea $
+## $Id$
 
 '''
 A program to pass config file settings to calling programs via stdout

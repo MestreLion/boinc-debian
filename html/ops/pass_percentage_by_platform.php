@@ -180,5 +180,5 @@ echo "</form>\n";
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: pass_percentage_by_platform.php 25175 2012-01-31 20:25:26Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

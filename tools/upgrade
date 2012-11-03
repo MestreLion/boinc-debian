@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: upgrade 23358 2011-04-09 03:10:29Z davea $
+# $Id$
 
 '''
 Usage: upgrade [options] project_root

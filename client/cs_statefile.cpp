@@ -499,6 +499,9 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
         if (xp.parse_string("newer_version", newer_version)) {
             continue;
         }
+        if (xp.parse_double("previous_uptime", time_stats.previous_uptime)) {
+            continue;
+        }
 #ifdef ENABLE_AUTO_UPDATE
         if (xp.match_tag("auto_update")) {
             if (!project) {
@@ -750,7 +753,8 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
         "<user_network_request>%d</user_network_request>\n"
         "%s"
         "<new_version_check_time>%f</new_version_check_time>\n"
-        "<all_projects_list_check_time>%f</all_projects_list_check_time>\n",
+        "<all_projects_list_check_time>%f</all_projects_list_check_time>\n"
+        "<previous_uptime>%f</previous_uptime>\n",
         get_primary_platform(),
         core_client_version.major,
         core_client_version.minor,
@@ -762,7 +766,8 @@ int CLIENT_STATE::write_state(MIOFILE& f) {
         network_run_mode.get_perm(),
         cpu_benchmarks_pending?"<cpu_benchmarks_pending/>\n":"",
         new_version_check_time,
-        all_projects_list_check_time
+        all_projects_list_check_time,
+        now - time_stats.client_start_time
     );
     if (newer_version.size()) {
         f.printf("<newer_version>%s</newer_version>\n", newer_version.c_str());
@@ -865,7 +870,7 @@ int CLIENT_STATE::parse_app_info(PROJECT* p, FILE* in) {
                     _("File referenced in app_info.xml does not exist: ")
                 );
                 strcat(buf, fip->name);
-                msg_printf(p, MSG_USER_ALERT, buf);
+                msg_printf(p, MSG_USER_ALERT, "%s", buf);
                 delete fip;
                 continue;
             }
@@ -922,11 +927,6 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
 
     f.printf("<client_state>\n");
 
-#if 1
-    // NOTE: the following stuff is not in CC_STATE.
-    // However, BoincView (which does its own parsing) expects it
-    // to be in the get_state() reply, so leave it in for now
-    //
     retval = host_info.write(f, true, false);
     if (retval) return retval;
 
@@ -939,11 +939,17 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
         f.printf("<have_ati/>\n");
     }
 
-    retval = time_stats.write(f, false);
-    if (retval) return retval;
+#if 1
+    // NOTE: the following is not in CC_STATE.
+    // However, BoincView (which does its own parsing) expects it
+    // to be in the get_state() reply, so leave it in for now
+    //
     retval = net_stats.write(f);
     if (retval) return retval;
 #endif
+
+    retval = time_stats.write(f, true);
+    if (retval) return retval;
 
     for (j=0; j<projects.size(); j++) {
         PROJECT* p = projects[j];

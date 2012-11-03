@@ -131,6 +131,7 @@ ACTIVE_TASK::ACTIVE_TASK() {
     strcpy(web_graphics_url, "");
     strcpy(remote_desktop_addr, "");
     async_copy = NULL;
+    finish_file_time = 0;
 }
 
 // preempt this task;
@@ -231,6 +232,7 @@ void ACTIVE_TASK::cleanup_task() {
 #endif
 
     if (config.exit_after_finish) {
+        gstate.write_state_file();
         exit(0);
     }
 }
@@ -300,8 +302,9 @@ void ACTIVE_TASK_SET::get_memory_usage() {
     int retval;
     static bool first = true;
     static double last_cpu_time;
+    double diff=0;
 
-    double diff = gstate.now - last_mem_time;
+    diff = gstate.now - last_mem_time;
     if (diff < 0 || diff > MEMORY_USAGE_PERIOD + 10) {
         // user has changed system clock,
         // or there has been a long system sleep
@@ -413,7 +416,7 @@ void ACTIVE_TASK_SET::get_memory_usage() {
 // Move it from slot dir to project dir
 //
 int ACTIVE_TASK::move_trickle_file() {
-    char project_dir[256], new_path[MAXPATHLEN], old_path[MAXPATHLEN];
+    char project_dir[MAXPATHLEN], new_path[MAXPATHLEN], old_path[MAXPATHLEN];
     int retval;
 
     get_project_dir(result->project, project_dir, sizeof(project_dir));
@@ -886,7 +889,7 @@ void ACTIVE_TASK_SET::report_overdue() {
 //
 int ACTIVE_TASK::handle_upload_files() {
     std::string filename;
-    char buf[256], path[MAXPATHLEN];
+    char buf[MAXPATHLEN], path[MAXPATHLEN];
     int retval;
 
     DirScanner dirscan(slot_dir);

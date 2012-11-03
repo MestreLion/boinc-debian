@@ -366,7 +366,7 @@ int CONFIG::parse_options_client(XML_PARSER& xp) {
         if (xp.parse_bool("os_random_only", os_random_only)) continue;
 #ifndef SIM
         if (xp.match_tag("proxy_info")) {
-            retval = config_proxy_info.parse_config(xp);
+            retval = proxy_info.parse_config(xp);
             if (retval) {
                 msg_printf_notice(NULL, false, NULL,
                     "Can't parse <proxy_info> element in cc_config.xml"
@@ -469,6 +469,9 @@ int CONFIG::parse(FILE* f) {
     return parse(xp, log_flags);
 }
 
+// read config file, e.g. cc_config.xml
+// Called on startup and in response to GUI RPC requesting reread
+//
 int read_config_file(bool init, const char* fname) {
     if (!init) {
         msg_printf(NULL, MSG_INFO, "Re-reading %s", fname);
@@ -487,9 +490,10 @@ int read_config_file(bool init, const char* fname) {
         config.max_stdout_file_size, config.max_stderr_file_size
     );
 #endif
+    config_proxy_info = config.proxy_info;
+
     if (init) {
         coprocs = config.config_coprocs;
-        config_proxy_info = config.proxy_info;
         if (strlen(config.data_dir)) {
 #ifdef _WIN32
             _chdir(config.data_dir);
@@ -497,6 +501,8 @@ int read_config_file(bool init, const char* fname) {
             chdir(config.data_dir);
 #endif
         }
+    } else {
+        select_proxy_info();        // in case added or removed proxy info
     }
     return 0;
 }
@@ -516,6 +522,7 @@ void process_gpu_exclusions() {
         for (int k=1; k<coprocs.n_rsc; k++) {
             int n=0;
             COPROC& cp = coprocs.coprocs[k];
+            p->rsc_pwf[k].non_excluded_instances = (1<<cp.count)-1;  // all 1's
             for (j=0; j<config.exclude_gpus.size(); j++) {
                 EXCLUDE_GPU& eg = config.exclude_gpus[j];
                 if (strcmp(eg.url.c_str(), p->master_url)) continue;
@@ -524,14 +531,16 @@ void process_gpu_exclusions() {
                 if (eg.device_num >= 0) {
                     // exclusion may refer to nonexistent GPU
                     //
-                    if (cp.device_num_exists(eg.device_num)) {
+                    int ind = cp.device_num_index(eg.device_num);
+                    if (ind >= 0) {
                         n++;
+                        p->rsc_pwf[k].non_excluded_instances &= ~(1<<ind);
                     }
                 } else {
                     n = cp.count;
                 }
             }
-            p->ncoprocs_excluded[k] = n;
+            p->rsc_pwf[k].ncoprocs_excluded = n;
         }
     }
 

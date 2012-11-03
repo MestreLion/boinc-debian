@@ -99,4 +99,4 @@ int cleanup_result(RESULT const& /*result*/, void* data) {
     return 0;
 }
 
-const char *BOINC_RCSID_7ab2b7189c = "$Id: sample_bitwise_validator.cpp 21735 2010-06-12 22:08:15Z davea $";
+const char *BOINC_RCSID_7ab2b7189c = "$Id$";

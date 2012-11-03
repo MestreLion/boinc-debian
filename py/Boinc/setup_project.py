@@ -1,4 +1,4 @@
-## $Id: setup_project.py 25322 2012-02-24 03:26:30Z davea $
+## $Id$
 
 # module for setting up a new project (either a real project or a test project
 # see tools/makeproject, test/testbase.py).

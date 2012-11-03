@@ -317,4 +317,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_6b05e9ecce = "$Id: update_stats.cpp 23509 2011-05-06 12:33:12Z davea $";
+const char *BOINC_RCSID_6b05e9ecce = "$Id$";

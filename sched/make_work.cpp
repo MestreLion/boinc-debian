@@ -353,4 +353,4 @@ int main(int argc, char** argv) {
     make_work(wu_names);
 }
 
-const char *BOINC_RCSID_d24265dc7f = "$Id: make_work.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_d24265dc7f = "$Id$";

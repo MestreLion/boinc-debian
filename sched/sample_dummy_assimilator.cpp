@@ -76,4 +76,4 @@ int assimilate_handler(
     return 0;
 }
 
-const char *BOINC_RCSID_8f6a5a2d27 = "$Id: sample_dummy_assimilator.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_8f6a5a2d27 = "$Id$";

@@ -91,5 +91,5 @@ end_table();
 
 page_tail();
 
-$cvs_version_tracker[]="\$Id: forum_search.php 24129 2011-09-06 04:34:29Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

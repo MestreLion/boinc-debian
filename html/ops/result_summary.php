@@ -26,5 +26,5 @@ admin_page_head("Result summary");
 show_result_summary();
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: result_summary.php 19053 2009-09-15 18:14:37Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

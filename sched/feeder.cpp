@@ -876,4 +876,4 @@ int main(int argc, char** argv) {
     feeder_loop();
 }
 
-const char *BOINC_RCSID_57c87aa242 = "$Id: feeder.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_57c87aa242 = "$Id$";

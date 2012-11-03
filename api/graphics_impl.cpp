@@ -267,4 +267,4 @@ void get_window_title(APP_INIT_DATA& aid, char* buf, int len) {
     }
 }
 
-const char *BOINC_RCSID_6e92742852 = "$Id: graphics_impl.cpp 16726 2008-12-19 18:14:02Z davea $";
+const char *BOINC_RCSID_6e92742852 = "$Id$";

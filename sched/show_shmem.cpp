@@ -75,4 +75,4 @@ int main(int argc, char *argv[]) {
     ssp->show(stdout);
 }
 
-const char *BOINC_RCSID_a370415aab = "$Id: show_shmem.cpp 21181 2010-04-15 03:13:56Z davea $";
+const char *BOINC_RCSID_a370415aab = "$Id$";

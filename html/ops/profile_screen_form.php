@@ -93,5 +93,5 @@ echo "
 ";
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: profile_screen_form.php 22197 2010-08-11 18:52:11Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

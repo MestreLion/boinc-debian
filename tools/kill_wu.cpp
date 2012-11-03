@@ -98,4 +98,4 @@ int main(int argc, char** argv){
     boinc_db.close();
     return final;
 }
-const char *BOINC_RCSID_a63ea0ae5e="$Id: kill_wu.cpp 18042 2009-05-07 13:54:51Z davea $";
+const char *BOINC_RCSID_a63ea0ae5e="$Id$";

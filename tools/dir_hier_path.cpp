@@ -42,8 +42,8 @@ int main(int argc, char** argv) {
     int retval;
 
     if ( (argc == 1) ||  !strcmp(argv[1], "-h")  || !strcmp(argv[1],"--help") || (argc != 2) ) {
-      printf (usage);
-      exit(1);
+        fprintf(stderr, usage);
+        exit(1);
     }
 
     retval = config.parse_file();
@@ -62,4 +62,4 @@ int main(int argc, char** argv) {
     printf("%s\n", path);
 }
 
-const char *BOINC_RCSID_c683969ea8 = "$Id: dir_hier_path.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_c683969ea8 = "$Id$";

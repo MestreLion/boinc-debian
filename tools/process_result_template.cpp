@@ -164,4 +164,4 @@ int process_result_template(
     return 0;
 }
 
-const char *BOINC_RCSID_e5e1e879f3 = "$Id: process_result_template.cpp 24057 2011-08-27 16:52:04Z davea $";
+const char *BOINC_RCSID_e5e1e879f3 = "$Id$";

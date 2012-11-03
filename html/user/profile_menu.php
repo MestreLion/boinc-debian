@@ -108,5 +108,5 @@ function select_profile($cmd) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile_menu.php 24324 2011-10-03 17:11:45Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

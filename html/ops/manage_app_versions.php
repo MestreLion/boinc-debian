@@ -25,7 +25,7 @@
  * Some of the fields can be changed.
  *
  * Eric Myers <myers@spy-hill.net>  - 4 June 2006
- * @(#) $Id: manage_app_versions.php 25115 2012-01-21 00:04:54Z davea $
+ * @(#) $Id$
 \***********************************************************************/
 
 // TODO: rewrite this using the new DB interface
@@ -199,5 +199,5 @@ echo "</form><P>\n";
 admin_page_tail();
 
 //Generated automatically - do not edit
-$cvs_version_tracker[]="\$Id: manage_app_versions.php 25115 2012-01-21 00:04:54Z davea $"; 
+$cvs_version_tracker[]="\$Id$"; 
 ?>

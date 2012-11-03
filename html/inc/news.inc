@@ -114,5 +114,5 @@ function show_news($start, $count) {
     );
 }
 
-$cvs_version_tracker[]="\$Id: news.inc 23119 2011-02-28 19:02:59Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

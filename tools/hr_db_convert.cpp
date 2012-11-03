@@ -58,4 +58,4 @@ int main() {
   }
 
 };
-const char *BOINC_RCSID_b8522ef5bd = "$Id: hr_db_convert.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_b8522ef5bd = "$Id$";

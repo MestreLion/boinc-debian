@@ -236,4 +236,4 @@ bool resend_lost_work() {
     return did_any;
 }
 
-const char *BOINC_RCSID_3be23838b4="$Id: sched_resend.cpp 23636 2011-06-06 03:40:42Z davea $";
+const char *BOINC_RCSID_3be23838b4="$Id$";

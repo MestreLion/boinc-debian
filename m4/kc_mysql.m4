@@ -1,5 +1,5 @@
 
-dnl $Id: kc_mysql.m4 14996 2008-04-01 21:44:12Z korpela $
+dnl $Id$
 
 AC_DEFUN([AC_CHECK_MYSQL],[
 AC_ARG_VAR([MYSQL_CONFIG], [mysql_config program])

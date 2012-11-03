@@ -289,5 +289,5 @@ case 1:
 $thread->update("views=views+1");
 
 page_tail();
-$cvs_version_tracker[]="\$Id: forum_thread.php 25006 2012-01-06 22:22:02Z davea $";
+$cvs_version_tracker[]="\$Id$";
 ?>

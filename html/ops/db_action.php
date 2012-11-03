@@ -228,5 +228,5 @@ if ($result) {
 }
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: db_action.php 24857 2011-12-21 18:29:11Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>
