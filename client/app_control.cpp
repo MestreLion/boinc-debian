@@ -120,6 +120,23 @@ bool ACTIVE_TASK_SET::poll() {
         }
     }
 
+    // Check for finish files every 10 sec.
+    // If we already found a finish file, kill the app;
+    // it must be hung somewhere in boinc_finish();
+    //
+    static double last_finish_check_time = 0;
+    if (gstate.now - last_finish_check_time > 10) {
+        last_finish_check_time = gstate.now;
+        for (i=0; i<active_tasks.size(); i++) {
+            ACTIVE_TASK* atp = active_tasks[i];
+            if (atp->task_state() == PROCESS_UNINITIALIZED) continue;
+            if (atp->finish_file_time) {
+                atp->kill_task(false);
+            } else if (atp->finish_file_present()) {
+                atp->finish_file_time = gstate.now;
+            }
+        }
+    }
     if (action) {
         gstate.set_client_state_dirty("ACTIVE_TASK_SET::poll");
     }
@@ -520,10 +537,6 @@ void ACTIVE_TASK::handle_exited_app(int stat) {
 
     cleanup_task();
 
-    if (config.exit_after_finish) {
-        exit(0);
-    }
-
     if (!will_restart) {
         copy_output_files();
         int retval = read_stderr_file();
@@ -621,6 +634,8 @@ void ACTIVE_TASK_SET::send_heartbeats() {
     }
 }
 
+// send queued process-control messages; check for timeout
+//
 void ACTIVE_TASK_SET::process_control_poll() {
     unsigned int i;
     ACTIVE_TASK* atp;

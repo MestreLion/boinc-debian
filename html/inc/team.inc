@@ -571,6 +571,6 @@ function make_team(
     }
 }
 
-$cvs_version_tracker[]="\$Id: team.inc 24050 2011-08-26 18:30:13Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

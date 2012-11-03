@@ -112,7 +112,7 @@ struct ACTIVE_TASK {
     double bytes_received;
     char slot_dir[256];
         // directory where process runs (relative)
-    char slot_path[512];
+    char slot_path[MAXPATHLEN];
         // same, absolute
         // This is used only to run graphics apps
         // (that way don't have to worry about top-level dirs
@@ -154,6 +154,9 @@ struct ACTIVE_TASK {
     char web_graphics_url[256];
     char remote_desktop_addr[256];
     ASYNC_COPY* async_copy;
+    double finish_file_time;
+        // time when we saw finish file in slot dir.
+        // Used to kill apps that hang after writing finished file
 
     void set_task_state(int, const char*);
     inline int task_state() {

@@ -73,4 +73,4 @@ void SCHED_MSG_LOG::flush() {
 }
 #endif
 
-const char *BOINC_RCSID_b40ff9bb53 = "$Id: sched_msgs.cpp 22891 2011-01-07 20:23:22Z davea $";
+const char *BOINC_RCSID_b40ff9bb53 = "$Id$";

@@ -1,4 +1,4 @@
-## $Id: db_mid.py 12027 2007-02-02 20:14:18Z boincadm $
+## $Id$
 
 ## database middle-end.  This file is not required for normal database use.
 ## it is useful for debugging scripts; e.g.

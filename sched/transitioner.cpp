@@ -819,4 +819,4 @@ int main(int argc, char** argv) {
     main_loop();
 }
 
-const char *BOINC_RCSID_be98c91511 = "$Id: transitioner.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_be98c91511 = "$Id$";

@@ -1,4 +1,4 @@
-## $Id: tools.py 23525 2011-05-12 04:11:40Z davea $
+## $Id$
 
 import configxml
 try:

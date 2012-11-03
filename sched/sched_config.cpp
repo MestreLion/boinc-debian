@@ -418,4 +418,4 @@ const char *SCHED_CONFIG::project_path(const char *fmt, ...) {
     return (const char *)path;
 }
 
-const char *BOINC_RCSID_3704204cfd = "$Id: sched_config.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_3704204cfd = "$Id$";

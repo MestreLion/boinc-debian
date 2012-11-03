@@ -701,4 +701,4 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-const char *BOINC_RCSID_470a0d4d11 = "$Id: file_upload_handler.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_470a0d4d11 = "$Id$";

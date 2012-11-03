@@ -400,4 +400,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_6633b596b9 = "$Id: crypt_prog.cpp 25244 2012-02-13 08:41:48Z davea $";
+const char *BOINC_RCSID_6633b596b9 = "$Id$";

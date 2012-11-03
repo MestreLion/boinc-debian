@@ -80,5 +80,5 @@ if ($format == "xml") {
     page_tail();
 }
 
-$cvs_version_tracker[]="\$Id: pending.php 24885 2011-12-24 05:19:21Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

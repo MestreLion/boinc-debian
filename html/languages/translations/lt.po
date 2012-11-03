@@ -1,7 +1,7 @@
 # BOINC web translation
 # Copyright (C) 2008 University of California
 # This file is distributed under the same license as BOINC.
-# FileID  : $Id: lt.po 25435 2012-03-16 17:23:55Z romw $
+# FileID  : $Id$
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
@@ -6747,7 +6747,7 @@ msgstr ""
 
 # #########################################
 # Language: Lithuanian
-# FileID  : $Id: lt.po 25435 2012-03-16 17:23:55Z romw $
+# FileID  : $Id$
 # Author  : Rytis Slatkevičius
 # Email   : rytis.s@gmail.com
 # For more information please see:

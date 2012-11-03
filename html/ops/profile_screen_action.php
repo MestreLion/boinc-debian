@@ -51,5 +51,5 @@ echo "
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: profile_screen_action.php 16243 2008-10-21 18:55:17Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

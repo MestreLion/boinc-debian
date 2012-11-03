@@ -76,6 +76,22 @@ using std::string;
 using std::vector;
 using std::sort;
 
+int TIME_STATS::parse(XML_PARSER& xp) {
+    memset(this, 0, sizeof(TIME_STATS));
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/time_stats")) return 0;
+        if (xp.parse_double("now", now)) continue;
+        if (xp.parse_double("on_frac", on_frac)) continue;
+        if (xp.parse_double("connected_frac", connected_frac)) continue;
+        if (xp.parse_double("cpu_and_network_available_frac", cpu_and_network_available_frac)) continue;
+        if (xp.parse_double("active_frac", active_frac)) continue;
+        if (xp.parse_double("gpu_active_frac", gpu_active_frac)) continue;
+        if (xp.parse_double("client_start_time", client_start_time)) continue;
+        if (xp.parse_double("previous_uptime", previous_uptime)) continue;
+    }
+    return ERR_XML_PARSE;
+}
+
 int DAILY_XFER::parse(XML_PARSER& xp) {
     while (!xp.get_tag()) {
         if (xp.match_tag("/dx")) return 0;
@@ -477,20 +493,12 @@ APP_VERSION::~APP_VERSION() {
 }
 
 int APP_VERSION::parse_coproc(XML_PARSER& xp) {
-    char type_buf[256];
-    double count = 0;
-
     while (!xp.get_tag()) {
         if (xp.match_tag("/coproc")) {
-            if (!strcmp(type_buf, "CUDA")) {
-                ncudas = count;
-            } else if (!strcmp(type_buf, GPU_TYPE_ATI)) {
-                natis = count;
-            }
             return 0;
         }
-        if (xp.parse_str("type", type_buf, sizeof(type_buf))) continue;
-        if (xp.parse_double("count", count)) continue;
+        if (xp.parse_int("gpu_type", gpu_type)) continue;
+        if (xp.parse_double("gpu_usage", gpu_usage)) continue;
     }
     return ERR_XML_PARSE;
 }
@@ -948,6 +956,10 @@ int CC_STATE::parse(XML_PARSER& xp) {
             host_info.parse(xp);
             continue;
         }
+        if (xp.match_tag("time_stats")) {
+            time_stats.parse(xp);
+            continue;
+        }
         if (xp.parse_bool("have_cuda", have_nvidia)) continue;
         if (xp.parse_bool("have_ati", have_ati)) continue;
     }
@@ -1048,7 +1060,7 @@ RESULT* CC_STATE::lookup_result(PROJECT* project, const char* name) {
 RESULT* CC_STATE::lookup_result(const char* url, const char* name) {
     unsigned int i;
     for (i=0; i<results.size(); i++) {
-        if (strcmp(results[i]->project->master_url, url)) continue;
+        if (strcmp(results[i]->project_url, url)) continue;
         if (!strcmp(results[i]->name, name)) return results[i];
     }
     return 0;

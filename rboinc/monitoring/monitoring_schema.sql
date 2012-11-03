@@ -1,4 +1,4 @@
--- $Id: monitoring_schema.sql 23083 2011-02-22 21:28:13Z tonig $
+-- $Id$
 
 -- Boinc Monitoring schema and stored procedures
 -- Re-running this file clears monitoring statistics

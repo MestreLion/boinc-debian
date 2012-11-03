@@ -1307,4 +1307,4 @@ void send_file_deletes() {
 
 // (8) If addtional results are needed, return to step 4 above.
 
-const char *BOINC_RCSID_238cc1aec4 = "$Id: sched_locality.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_238cc1aec4 = "$Id$";

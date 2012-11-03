@@ -111,5 +111,5 @@ echo " entries\n";
 admin_page_tail();
 
 end_cache($cache_sec);
-$cvs_version_tracker[]="\$Id: errorwus.php 15758 2008-08-05 22:43:14Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

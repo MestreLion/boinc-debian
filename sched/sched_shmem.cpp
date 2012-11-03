@@ -328,4 +328,4 @@ void SCHED_SHMEM::show(FILE* f) {
     }
 }
 
-const char *BOINC_RCSID_e548c94703 = "$Id: sched_shmem.cpp 25258 2012-02-14 16:58:18Z davea $";
+const char *BOINC_RCSID_e548c94703 = "$Id$";

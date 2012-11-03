@@ -2406,4 +2406,4 @@ void DB_VDA_CHUNK_HOST::db_parse(MYSQL_ROW &r) {
     transfer_send_time = atof(r[i++]);
 }
 
-const char *BOINC_RCSID_ac374386c8 = "$Id: boinc_db.cpp 25356 2012-02-29 20:58:45Z davea $";
+const char *BOINC_RCSID_ac374386c8 = "$Id$";

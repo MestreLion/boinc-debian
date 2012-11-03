@@ -177,4 +177,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_560388f67e = "$Id: trickle_handler.cpp 24227 2011-09-16 19:16:12Z davea $";
+const char *BOINC_RCSID_560388f67e = "$Id$";

@@ -180,5 +180,5 @@ row2(tra("Or click here to reset preferences to the defaults"),
 end_table();
 page_tail();
 
-$cvs_version_tracker[]="\$Id: edit_forum_preferences_form.php 24048 2011-08-25 22:12:48Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

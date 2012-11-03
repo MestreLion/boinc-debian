@@ -669,4 +669,4 @@ void JOB_LIMITS::print_log() {
     }
 }
 
-const char *BOINC_RCSID_0ebdf5d770 = "$Id: sched_main.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_0ebdf5d770 = "$Id$";

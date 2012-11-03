@@ -128,4 +128,4 @@ void boinc_zip_(int* zipmode, const char* zipfile,
 
 }   // extern "C"
 
-const char *BOINC_RCSID_4f5153609c = "$Id: boinc_api_fortran.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_4f5153609c = "$Id$";

@@ -395,5 +395,5 @@ if ($q) {
 admin_page_tail();
 
 $cvs_version_tracker[]=        //Generated automatically - do not edit
-    "\$Id: manage_user.php 24050 2011-08-26 18:30:13Z davea $"; 
+    "\$Id$"; 
 ?>

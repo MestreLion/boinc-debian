@@ -1,4 +1,4 @@
--- $Id: monitoring_functions.sql 23083 2011-02-22 21:28:13Z tonig $
+-- $Id$
 -- Boinc Monitoring stored procedures
 -- Only re-run this file upon changes
 

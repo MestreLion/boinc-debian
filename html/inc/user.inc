@@ -485,6 +485,6 @@ function make_user(
     }
 }
 
-$cvs_version_tracker[]="\$Id: user.inc 25504 2012-03-28 18:53:30Z romw $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id: projectxml.py 15679 2008-07-25 22:13:41Z davea $
+# $Id$
 # projectxml.py - module to read and parse project.xml
 
 '''

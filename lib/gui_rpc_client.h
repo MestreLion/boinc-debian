@@ -33,13 +33,14 @@
 #include <locale.h>
 #endif
 
-#include "miofile.h"
-#include "prefs.h"
-#include "hostinfo.h"
-#include "common_defs.h"
-#include "notice.h"
-#include "network.h"
 #include "cc_config.h"
+#include "common_defs.h"
+#include "filesys.h"
+#include "hostinfo.h"
+#include "miofile.h"
+#include "network.h"
+#include "notice.h"
+#include "prefs.h"
 
 struct GUI_URL {
     std::string name;
@@ -199,7 +200,9 @@ struct APP_VERSION {
     char platform[64];
     char plan_class[64];
     double avg_ncpus;
-    double ncudas;
+    int gpu_type;
+        // PROC_TYPE_xx
+    double gpu_usage;
     double natis;
     double gpu_ram;
     double flops;
@@ -367,6 +370,9 @@ struct GR_PROXY_INFO {
     void clear();
 };
 
+// Represents the entire client state.
+// Call get_state() infrequently.
+//
 struct CC_STATE {
     std::vector<PROJECT*> projects;
     std::vector<APP*> apps;
@@ -376,11 +382,12 @@ struct CC_STATE {
     std::vector<std::string> platforms;
         // platforms supported by client
     GLOBAL_PREFS global_prefs;  // working prefs, i.e. network + override
-    VERSION_INFO version_info;  // populated only if talking to pre-5.6 CC
+    VERSION_INFO version_info;  // populated only if talking to pre-5.6 client
     bool executing_as_daemon;   // true if client is running as a service / daemon
     HOST_INFO host_info;
-    bool have_nvidia;           // redundant; include for compat (set by <have_cuda/>)
-    bool have_ati;              // redundant; include for compat
+    TIME_STATS time_stats;
+    bool have_nvidia;           // deprecated; include for compat (set by <have_cuda/>)
+    bool have_ati;              // deprecated; include for compat
 
     CC_STATE();
     ~CC_STATE();

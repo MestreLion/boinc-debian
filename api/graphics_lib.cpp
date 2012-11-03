@@ -178,4 +178,4 @@ bool boinc_graphics_possible() {
     return true;
 }
 
-const char *BOINC_RCSID_93054c7e32 = "$Id: graphics_lib.cpp 20054 2010-01-01 02:50:56Z davea $";
+const char *BOINC_RCSID_93054c7e32 = "$Id$";

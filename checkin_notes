@@ -4342,7 +4342,6 @@ David  20 Aug 2012
     client/
         gpu_nvidia.cpp
 
-<<<<<<< .working
 Charlie 8 Sep 2012
     - client: work around a nasty bug which crashes OSX (!) on some 
         dual-gpu MacBooks with CUDA installed if we call cuInit() 
@@ -4421,6 +4420,318 @@ David  2 Sept 2012
 Rom    12 Sept 2012
     - Tag for 7.0.36 release, all platforms
       boinc_core_release_7_0_36
+
+    /
+        configure.ac
+        version.h
+
+Rom    13 Sept 2012
+    - client: Initialize the total mem size_t.
+    
+    client/
+        gpu_nvidia.cpp
+
+Rom    26 Oct 2012
+    - WINSETUP: Add the account manager auth logic from the 6.8 installer to current
+        generation installers.
+    - WINSETUP: Make whether or not to create start menu items configurable via the
+        command line.  Useful for mass deployment installs.
+
+    win_build\installerv2\
+        BOINC.ism
+        BOINCx64.ism
+
+David  19 Sept 2012
+    - Client/manager: if a GPU app is suspended because a GPU-exclusive
+        app is running, show an appropriate message.
+
+    clientgui/
+        sg_TaskPanel.cpp
+        MainDOcument.cpp
+    lib/
+        gui_rpc_client_ops.cpp
+        gui_rpc_client.h
+
+David  19 Sept 2012
+    - client: message tweak
+    client/
+        app.cpp
+        cs_prefs.cpp
+
+David  20 Sept 2012
+    - A bunch of tweaks from Steffen Moller, e.g. using MAXPATHLEN
+
+    various files
+
+Charlie 21 Sep 2012
+    - Mac: Fix build breaks introduced by above changes; path_to_error 
+        arg is modified by CheckNestedDirectories() so can't be const.
+
+    client/
+        check_security.cpp
+
+David  21 Sept 2012
+    - client: MAXPATHLEN tweak
+
+    client/
+        app.cpp
+
+David  21 Sept 2012
+    - Manager: fix "exclusive GPU app running" message logic.
+
+    clientgui/
+        MainDocument.cpp
+
+David  11 Oct 2012
+    - client and API: improve the way an app checks for the death of the client
+        Old: heartbeat mechanism
+        Problem: if the client is blocked for > 30 secs
+            (e.g. because it takes a long time to write the state file,
+            of because it's stopped in a debugger)
+            then apps exit.
+            This is bad is the app doesn't checkpoint and has been
+            running for a long time.
+        New: the client passes its PID to the app.
+            The app periodically (10 sec) checks that the process still exists.
+        Notes:
+        - For backward compatibility (e.g. new API w/ old client,
+            or vice versa) the client still sends heartbeats,
+            and the API checks heartbeats if the client doesn't pass a PID.
+        - The new mechanism works only if the client's PID isn't assigned
+            to a new process within 10 secs of the client exiting.
+            Windows 2000 reuses PIDs immediately, so check for Win2K
+            and don't use this mechanism if so.
+
+    TODO: For Unix multithread apps,
+        critical sections aren't currently being enforced.
+        Need to fix this by masking signals.
+
+    client/
+        hostinfo_win.cpp
+        app_start.cpp
+    lib/
+        app_ipc.cpp,h
+        proc_control.cpp
+
+David  11 Oct 2012
+	- Win compile fixes.
+		For now, include psapi.lib in various project properties.
+		Try to figure out a different way.
+
+	client/
+		app_start.cpp
+	lib/
+		boinc_win.h
+	win_build/
+		various .proj files
+
+Charlie 15 Oct 2012
+    - MGR: We don't save Simple View's width & height since it's 
+        window is not resizable, so don't try to read them back.
+    
+    clientgui/
+        BOINCGUIApp.cpp
+
+Charlie 17 Oct 2012
+    - MGR: Add Control-Shift_E shortcut (Command-Shift-E on Mac) to show Event 
+        Log in Simple View, for the convenience of tech suppport volunteers.
+    
+    clientgui/
+        sg_BoincSimpleFrame.cpp,.h
+
+David  17 Oct 2012
+    - client: maintain current and previous uptime,
+        and include them in scheduler RPC request.
+    
+    Note: this is to support a future feature where the scheduler will
+        send non-checkpointing jobs only clients likely to be able
+        to complete them.
+
+    client/
+        client_state.cpp,h
+        cs_scheduler.cpp
+        cs_statefile.cpp
+    lib/
+        gui_rpc_client_ops.cpp
+
+David  17 Oct 2012
+    - tweaks
+
+    client/
+        async_file.cpp
+    lib/
+        filesys.cpp,h
+    samples/atiopencl/
+        atiopencl.cpp
+
+Charlie 18 Oct 2012
+    - MGR: Fix bug which can cause Manager to quit when started in Simple View.
+    
+    clientgui/
+        sg_TaskPanel.cpp
+
+Rom    19 Oct 2012
+    - Add missing references to psapi.lib for various build configurations.
+
+    win_build\
+        boinc_ss.vcproj
+        example_app_multi_thread.vcproj
+        sleeper.vcproj
+        uc2.vcproj
+        uc2_graphics.vcproj
+        vboxwrapper.vcproj
+        wrapper.vcproj
+
+Charlie 18 Oct 2012
+    - lib: don't clear entire APP_VERSION struct in APP_VERSION::parse_coproc().
+    
+    lib/
+        gui_rpc_client_ops.cpp
+
+David  19 Oct 2012
+    - client: change work fetch policy to avoid starving GPUs
+        in situations where GPU exclusions are used.
+    - client: fix bug in round-robin simulation when GPU exclusions are used.
+
+    Note: this fixes a major problem (starvation)
+        with project-level GPU exclusion.
+        However, project-level GPU exclusion interferes with most of
+        the client's scheduling policies.
+        E.g., round-robin simulation doesn't take GPU exclusion into account,
+        and the resulting completion estimates and device shortfalls
+        can be wrong by an order of magnitude.
+
+        The only way I can see to fix this would be to model each
+        GPU instance as a separate resource,
+        and to associate each job with a particular GPU instance.
+        This would be a sweeping change in both client and server.
+
+    client/
+        log_flags.cpp
+        project.cpp,h
+        rr_sim.cpp
+        work_fetch.cpp,h
+    lib/
+        coproc.h
+
+Rom    22 Oct 2012
+    - SCR: Fix bug in X11 screensaver.
+      (From Michael Tughan)
+      
+    clientscr/
+        screensaver_x11.cpp
+
+Rom    23 Oct 2012
+    - SCR: Fix bug in X11 screensaver.
+      (From David Cross)
+      
+    clientscr/
+        screensaver_x11.cpp
+
+David  24 Oct 2012
+    - client: if an app's finish file has existed for 10 seconds, kill it;
+        it must be hung in boinc_finish().
+        This behavior has been seen with LHC@home and maybe other projects.
+
+    client/
+        app.cpp,h
+        cpp_control.cpp
+
+David  28 Oct 2012
+    - client: fix bug in handling proxy info in cc_config.file
+
+    client/
+        log_flags.cpp
+
+David  28 Oct 2012
+    - client: if exiting because of exit_after_finished flag,
+        write state file before exiting so we don't restart the job later.
+
+    client/
+        app.cpp
+        app_control.cpp
+
+David  28 Oct 2012
+    - client, Unix: make Curl sockets close-on-exec,
+        so that app processes don't inherit them.
+    - client: fix bug that makes client exit if a slot dir contains
+        finish file on startup
+
+    client/
+        app_control.cpp
+        http_curl.cpp
+
+David  29 Oct 2012
+    - GUI RPC: expose TIME_STATS info (e.g. on_frac) in
+        the binding of the get_state() RPC
+    - client: move client_start_time and previous_uptime
+        from CLIENT_STATE to TIME_STATS,
+        so that these are also visible in GUI RPC
+    - client: condition an RR simulation message on <rrsim_detail>
+
+    client/
+        client_state.cpp,h
+        cs_prefs.cpp
+        cs_scheduler.cpp
+        cs_statefile.cpp
+        rr_sim.cpp
+        time_stats.cpp,h
+    lib/
+        common_defs.h
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+        gui_rpc_client_print.cpp
+
+David  31 Oct 2012
+    - client: message tweaks for failed app startup
+
+    client/
+        app_start.cpp
+        client_state.cpp
+
+David  1 Nov 2012
+	- client/manager: move the conditional define of MAXPATHLEN
+		from boinc_win.h to filesys.h,
+		so that the client will hopefully build on Hurd,
+		which doesn't define MAXPATHLEN.
+
+	client/
+		http_curl.cpp
+	lib/
+		boinc_win.h
+		common_defs.h
+		filesys.h
+		gui_rpc_client.h
+
+David  1 Nov 2012
+    - fix a few unlikely but possible file-descriptor leaks
+
+    client/
+        cs_scheduler.cpp
+    lib/
+        cert_sig.cpp
+        mem_usage.cpp
+
+David  1 Nov 2012
+    - client: in checking reasons for not requesting work,
+        look at backoff last.
+        Otherwise the user can get a misleading message if they
+        update a project that's backed off
+
+    client/
+        work_fetch.cpp
+
+Rom    2 Nov 2012
+    - Tag for 7.0.37 release, all platforms
+      client_release_7_0_37
+
+    /
+        configure.ac
+        version.h
+
+Rom    2 Nov 2012
+    - Tag for 7.0.38 release, all platforms
+      client_release_7.0.38
 
     /
         configure.ac

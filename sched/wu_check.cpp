@@ -167,4 +167,4 @@ int main(int argc, char** argv) {
     printf("%d out of %d errors\n", nerr, n);
 }
 
-const char *BOINC_RCSID_8f4e399992 = "$Id: wu_check.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_8f4e399992 = "$Id$";

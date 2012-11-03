@@ -114,4 +114,4 @@ int main(int argc, char** argv) {
     return retval;
 }
 
-const char *BOINC_RCSID_f6337b04b0 = "$Id: delete_file.cpp 25341 2012-02-24 22:55:11Z davea $";
+const char *BOINC_RCSID_f6337b04b0 = "$Id$";

@@ -47,5 +47,5 @@ if ($subset == "global") {
 }
 page_tail();
 
-$cvs_version_tracker[]="\$Id: prefs.php 23010 2011-02-09 22:11:34Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

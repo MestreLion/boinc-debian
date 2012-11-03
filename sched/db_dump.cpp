@@ -912,4 +912,4 @@ int main(int argc, char** argv) {
     log_messages.printf(MSG_NORMAL, "db_dump finished\n");
 }
 
-const char *BOINC_RCSID_500089bde6 = "$Id: db_dump.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_500089bde6 = "$Id$";

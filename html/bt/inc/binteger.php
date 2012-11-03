@@ -5,7 +5,7 @@
  * An integer starts with "i", has the value and then ends with "e".
  */
  
-$cvs_version_tracker[]="\$Id: binteger.php 12887 2007-06-11 18:29:23Z jbk $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
  
 class BInteger {
     private function __construct(){

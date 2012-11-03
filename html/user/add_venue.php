@@ -93,5 +93,5 @@ if ($action) {
     print_prefs_form("add", $subset, $venue, $user, $prefs, $columns);
 }
 page_tail();
-$cvs_version_tracker[]="\$Id: add_venue.php 24124 2011-09-02 21:45:13Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

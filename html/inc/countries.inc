@@ -1,5 +1,5 @@
 <?php
-// $Id: countries.inc 18397 2009-06-12 16:35:08Z boincadm $
+// $Id$
 // list of countries taken from http://www.cia.gov
 
 $countries = array(

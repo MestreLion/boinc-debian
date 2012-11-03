@@ -73,4 +73,4 @@ void app_graphics_resize(int w, int h) {
 void app_graphics_reread_prefs() {
 }
 
-const char *BOINC_RCSID_ebba08c46e = "$Id: static_graphics.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_ebba08c46e = "$Id$";

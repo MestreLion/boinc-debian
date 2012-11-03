@@ -109,5 +109,5 @@ if ($confirm != "yes" && $update_needed) {
 mysql_free_result($result);
 
 admin_page_tail();
-$cvs_version_tracker[]="\$Id: make_emails_lowercase.php 19230 2009-10-02 18:32:40Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

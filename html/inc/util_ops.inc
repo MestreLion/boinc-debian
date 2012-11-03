@@ -242,5 +242,5 @@ if (!isset($skip_auth_ops) && array_key_exists("SERVER_PORT", $_SERVER)) {
     auth_ops();
 }
 
-$cvs_version_tracker[]="\$Id: util_ops.inc 24969 2012-01-02 07:33:08Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

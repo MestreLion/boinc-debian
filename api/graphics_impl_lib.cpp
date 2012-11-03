@@ -51,4 +51,4 @@ void block_sigalrm() {
 }
 #endif
 
-const char *BOINC_RCSID_9886dee259 = "$Id: graphics_impl_lib.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_9886dee259 = "$Id$";

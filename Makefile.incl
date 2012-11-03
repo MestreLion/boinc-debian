@@ -1,5 +1,5 @@
 ## -*-Makefile -*-
-## $Id: Makefile.incl 25351 2012-02-28 06:57:28Z davea $
+## $Id$
 
 # Note: MYSQL_CFLAGS and MYSQL_LIBS set by configure from mysql_config
 

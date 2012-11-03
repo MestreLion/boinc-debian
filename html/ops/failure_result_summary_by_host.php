@@ -85,5 +85,5 @@ end_table();
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: failure_result_summary_by_host.php 25171 2012-01-31 07:21:42Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

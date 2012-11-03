@@ -67,5 +67,5 @@ create_forum($catid, 4, "Preferences", "Using preferences");
 create_forum($catid, 5, "Wish list", "What new features would you like to see?");
 create_forum($catid, 6, "Web site", "Issues involving this web site");
 
-$cvs_version_tracker[]="\$Id: create_forums.php 19949 2009-12-16 22:35:08Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

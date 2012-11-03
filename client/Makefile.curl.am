@@ -1,5 +1,5 @@
 ## -*- mode: make; tab-width: 4 -*-
-## $Id: Makefile.curl.am 16069 2008-09-26 18:20:24Z davea $
+## $Id$
 
 include $(top_srcdir)/Makefile.incl
 

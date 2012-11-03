@@ -270,6 +270,6 @@ function show_profile($user, $logged_in_user, $screen_mode = false) {
     }
 }
 
-$cvs_version_tracker[]="\$Id: profile.inc 24050 2011-08-26 18:30:13Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 
 ?>

@@ -47,4 +47,4 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-const char *BOINC_RCSID_6911713ff8 = "$Id: shmem_test.cpp 16069 2008-09-26 18:20:24Z davea $";
+const char *BOINC_RCSID_6911713ff8 = "$Id$";

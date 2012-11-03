@@ -232,5 +232,5 @@ echo "<h3>Periodic or special tasks</h3>
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: index.php 25171 2012-01-31 07:21:42Z davea $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

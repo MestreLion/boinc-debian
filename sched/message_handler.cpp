@@ -185,4 +185,4 @@ int main(int argc, char** argv) {
     main_loop(one_pass);
 }
 
-const char *BOINC_RCSID_ff3b9880d4 = "$Id: message_handler.cpp 22647 2010-11-08 17:51:57Z davea $";
+const char *BOINC_RCSID_ff3b9880d4 = "$Id$";

@@ -1,4 +1,4 @@
-# $Id: boinc_path_config.py.in 18375 2009-06-11 16:01:36Z davea $
+# $Id$
 
 # This module prepends boinc/py/ to the python system path
 

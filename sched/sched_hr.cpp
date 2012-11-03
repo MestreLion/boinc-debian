@@ -60,4 +60,4 @@ bool already_sent_to_different_hr_class(WORKUNIT& wu, APP& app) {
     return false;
 }
 
-const char *BOINC_RCSID_4196d9a5b4="$Id: sched_hr.cpp 24484 2011-10-26 07:15:22Z davea $";
+const char *BOINC_RCSID_4196d9a5b4="$Id$";

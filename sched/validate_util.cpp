@@ -188,4 +188,4 @@ int get_credit_from_wu(WORKUNIT& wu, vector<RESULT>&, double& credit) {
     return ERR_XML_PARSE;
 }
 
-const char *BOINC_RCSID_07049e8a0e = "$Id: validate_util.cpp 25682 2012-05-15 19:07:12Z romw $";
+const char *BOINC_RCSID_07049e8a0e = "$Id$";

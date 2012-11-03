@@ -1929,4 +1929,4 @@ done:
     send_user_messages();
 }
 
-const char *BOINC_RCSID_32dcd335e7 = "$Id: sched_send.cpp 25567 2012-04-16 20:36:28Z romw $";
+const char *BOINC_RCSID_32dcd335e7 = "$Id$";

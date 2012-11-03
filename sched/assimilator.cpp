@@ -307,4 +307,4 @@ int main(int argc, char** argv) {
 }
 
 
-const char *BOINC_RCSID_7841370789 = "$Id: assimilator.cpp 25259 2012-02-14 18:50:47Z davea $";
+const char *BOINC_RCSID_7841370789 = "$Id$";

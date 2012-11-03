@@ -69,5 +69,5 @@ end_table();
 
 admin_page_tail();
 
-$cvs_version_tracker[]="\$Id: manage_special_users.php 21143 2010-04-07 22:21:44Z boincadm $";  //Generated automatically - do not edit
+$cvs_version_tracker[]="\$Id$";  //Generated automatically - do not edit
 ?>

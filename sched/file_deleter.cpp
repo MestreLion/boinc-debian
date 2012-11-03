@@ -560,4 +560,4 @@ int main(int argc, char** argv) {
     }
 }
 
-const char *BOINC_RCSID_bd0d4938a6 = "$Id: file_deleter.cpp 25379 2012-03-05 13:19:47Z bema $";
+const char *BOINC_RCSID_bd0d4938a6 = "$Id$";
