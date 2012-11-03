@@ -1,8 +1,9 @@
 boinc (7.0.38+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream version
+  * Revised some patches (some of them should will be removed in a future commit)
 
- -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sat, 03 Nov 2012 13:28:21 +0100
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sat, 03 Nov 2012 14:20:36 +0100
 
 boinc (7.0.36+dfsg-3) UNRELEASED; urgency=low
   [ Steffen Moeller ]
