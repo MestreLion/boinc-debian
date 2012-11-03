@@ -2,15 +2,6 @@ Index: boinc/lib/filesys.cpp
 ===================================================================
 --- boinc.orig/lib/filesys.cpp	2012-08-17 15:54:07.000000000 +0200
 +++ boinc/lib/filesys.cpp	2012-08-17 16:00:33.580867206 +0200
-@@ -415,7 +419,7 @@
-     } while (FindNextFileA(hFind, &findData));
- 	::FindClose(hFind);
- #else
--    char filename[1024], subdir[1024];
-+    char filename[MAXPATHLEN], subdir[MAXPATHLEN];
-     int retval=0;
-     DIRREF dirp;
-     double x;
 @@ -578,9 +582,9 @@
      fclose(src);
      fclose(dst);
@@ -79,15 +70,6 @@ Index: boinc/client/sandbox.cpp
 ===================================================================
 --- boinc.orig/client/sandbox.cpp	2012-08-17 15:47:19.771548200 +0200
 +++ boinc/client/sandbox.cpp	2012-08-17 15:54:07.000000000 +0200
-@@ -185,7 +185,7 @@
- // If an error occurs, delete as much as possible.
- //
- int client_clean_out_dir(const char* dirpath, const char* reason) {
--    char filename[256], path[MAXPATHLEN];
-+    char filename[MAXPATHLEN], path[MAXPATHLEN];
-     int retval, final_retval = 0;
-     DIRREF dirp;
- 
 @@ -207,7 +207,7 @@
          strcpy(filename, "");
          retval = dir_scan(filename, dirp, sizeof(filename));

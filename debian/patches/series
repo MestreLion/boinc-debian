@@ -17,11 +17,11 @@ stripchart_security.patch
 #andYetMorePatches04.patch
 #convinceDavid#cwd_handling.patch
 parse_issues.patch
-client_stream_realloc.patch
+#client_stream_realloc.patch #stream.cpp has been deleted in .38 release
 # --- A
 #convinceDavid# bug672328  MoreInformativeAppStartFailure.patch
 #send to David#
-stream_memory_leak_fix.patch
+#stream_memory_leak_fix.patch #stream.cpp has been deleted in .38 release
 #SETIprobCandidate#app_ipc_uninitialised_A_reorder.patch
 #SETIprobCandidate#app_ipc_uninitialised_B_buffer.patch
 uninitialised_client_states.patch
@@ -31,7 +31,7 @@ uninitialised_client_states.patch
 # --- Z --- Currently not applicable
 #Z#no_std_string.patch
 clang_incompatibilities.patch
-printf.patch
+#printf.patch #accepted upstream in 7.0.38 release
 #either these 3
 #convinceDavid# nvidia_detect_buffers.patch
 #convinceDavid# nvidia_detect_bugs.patch
@@ -45,19 +45,19 @@ dTotalGlobalMem.patch
 nvidia_mem_display_simplification.patch
 api_NULL_not_defined.patch
 unlink_undefined.patch
-0001-Patch-from-Steffen-Moeller-for-recent-Xcb.patch
+#0001-Patch-from-Steffen-Moeller-for-recent-Xcb.patch #accepted upstream in 7.0.38 release
 
 
 #patches partially applied in trunk rev=26133
-0002-re-enable-X11-screensaver-build.patch
+#0002-re-enable-X11-screensaver-build.patch #accepted upstream in 7.0.38 release
 cppcheck_realloc.patch
 cppcheck_avoid_redundant_check.patch
-upstream_sztaki_reduce_accessibility_of_php_inc_file.patch
+#upstream_sztaki_reduce_accessibility_of_php_inc_file.patch #accepted upstream in 7.0.38 release
 MainDocumentWarnings.patch
 more_maxpathlen.patch
 opendir_error_messages.patch
-redundant_i.patch
-screen_saver_boinc_extra.patch
+#redundant_i.patch #accepted upstream in 7.0.38 release
+#screen_saver_boinc_extra.patch #accepted upstream in 7.0.38 release
 sched_driver_char_buffers.patch
 csh2tcsh.patch
 
@@ -78,5 +78,5 @@ boinclib_shared.patch
 dynamic_libboinc.patch
 Missing_libSched.patch
 missing_libs_wrapper.patch
-boinc-ftbfs-hurd.patch
-boinc-ftbfs.patch
+#boinc-ftbfs-hurd.patch
+#boinc-ftbfs.patch

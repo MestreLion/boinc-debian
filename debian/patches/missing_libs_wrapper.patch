@@ -5,9 +5,10 @@ Fixed in upstream revision 9223fd2 and 2d0150c
 http://boinc.berkeley.edu/trac/changeset/9223fd22e3b6b848cc9e5e151d958542da8fd49d/boinc
 http://boinc.berkeley.edu/trac/changeset/2d0150c6872bd3f0489a90a71e2728c3a8e792fb/boinc
 
---- boinc-7.0.36+dfsg.orig/samples/wrapper/wrapper.cpp
-+++ boinc-7.0.36+dfsg/samples/wrapper/wrapper.cpp
-@@ -29,4 +29,7 @@
+--- a/samples/wrapper/wrapper.cpp
++++ b/samples/wrapper/wrapper.cpp
+@@ -28,6 +28,9 @@
+ // See http://boinc.berkeley.edu/trac/wiki/WrapperApp for details
  // Contributor: Andrew J. Younge (ajy4490@umiacs.umd.edu)
  
 +#ifndef _WIN32
@@ -15,7 +16,9 @@ http://boinc.berkeley.edu/trac/changeset/2d0150c6872bd3f0489a90a71e2728c3a8e792f
 +#endif
  #include <stdio.h>
  #include <vector>
-@@ -36,7 +39,15 @@
+ #include <string>
+@@ -35,9 +38,17 @@
+ #include "boinc_win.h"
  #include "win_util.h"
  #else
 +#ifdef HAVE_SYS_WAIT_H
@@ -31,3 +34,4 @@ http://boinc.berkeley.edu/trac/changeset/2d0150c6872bd3f0489a90a71e2728c3a8e792f
 +#endif
  #include <unistd.h>
  #endif
+ 

@@ -4,38 +4,7 @@ Index: boinc/clientgui/MainDocument.cpp
 ===================================================================
 --- boinc.orig/clientgui/MainDocument.cpp	2012-03-30 23:42:06.944079056 +0200
 +++ boinc/clientgui/MainDocument.cpp	2012-03-30 23:47:44.963448069 +0200
-@@ -906,8 +906,8 @@
-         pFrame->AddPendingEvent(event);
-         CTaskBarIcon* pTaskbar = wxGetApp().GetTaskBarIcon();
-         if (pTaskbar) {
--            CTaskbarEvent event(wxEVT_TASKBAR_REFRESH, pTaskbar);
--            pTaskbar->AddPendingEvent(event);
-+            CTaskbarEvent eventTB(wxEVT_TASKBAR_REFRESH, pTaskbar);
-+            pTaskbar->AddPendingEvent(eventTB);
-         }
-         CDlgEventLog* eventLog = wxGetApp().GetEventLog();
-         if (eventLog) {
-@@ -1528,7 +1528,7 @@
- // If the graphics application for the current task is already 
- // running, return a pointer to its RUNNING_GFX_APP struct.
- //
--RUNNING_GFX_APP* CMainDocument::GetRunningGraphicsApp(RESULT* result, int slot) {
-+RUNNING_GFX_APP* CMainDocument::GetRunningGraphicsApp(RESULT* resultArg, int slot) {
-     bool exited = false;
-     std::vector<RUNNING_GFX_APP>::iterator gfx_app_iter;
-     
-@@ -1551,8 +1551,8 @@
-         }
- #endif
-         if (! exited) {
--            if ( (result->name == (*gfx_app_iter).name) &&
--                (result->project_url == (*gfx_app_iter).project_url) ) {
-+            if ( (resultArg->name == (*gfx_app_iter).name) &&
-+                (resultArg->project_url == (*gfx_app_iter).project_url) ) {
-                 return &(*gfx_app_iter);
-             }
-     
-@@ -1631,20 +1631,20 @@
+@@ -1634,20 +1634,20 @@
  }
  #else
  void CMainDocument::KillGraphicsApp(int pid) {
@@ -64,7 +33,7 @@ Index: boinc/clientgui/MainDocument.cpp
      
          iRetVal = run_program(
              getcwd(currentDir, sizeof(currentDir)),
-@@ -1654,21 +1654,25 @@
+@@ -1657,6 +1657,10 @@
              0,
              id
          );
@@ -75,89 +44,5 @@ Index: boinc/clientgui/MainDocument.cpp
      } else {
          kill_program(pid);
      }
- }
- #endif
- 
--int CMainDocument::WorkShowGraphics(RESULT* result) {
-+int CMainDocument::WorkShowGraphics(RESULT* resultArg) {
-     int iRetVal = 0;
-     
--    if (strlen(result->web_graphics_url)) {
--        wxString url(result->web_graphics_url, wxConvUTF8);
-+    if (strlen(resultArg->web_graphics_url)) {
-+        wxString url(resultArg->web_graphics_url, wxConvUTF8);
-         wxLaunchDefaultBrowser(url);
-         return 0;
-     }
--    if (strlen(result->graphics_exec_path)) {
-+    if (strlen(resultArg->graphics_exec_path)) {
-         // V6 Graphics
-         RUNNING_GFX_APP gfx_app;
-         RUNNING_GFX_APP* previous_gfx_app;
-@@ -1680,12 +1684,12 @@
-         int      id;
- #endif
- 
--        p = strrchr((char*)result->slot_path, '/');
-+        p = strrchr((char*)resultArg->slot_path, '/');
-         if (!p) return ERR_INVALID_PARAM;
-         slot = atoi(p+1);
-         
-         // See if we are already running the graphics application for this task
--        previous_gfx_app = GetRunningGraphicsApp(result, slot);
-+        previous_gfx_app = GetRunningGraphicsApp(resultArg, slot);
- 
- #ifndef __WXMSW__
-         char* argv[4];
-@@ -1709,13 +1713,13 @@
-         // exits with "RegisterProcess failed (error = -50)" unless 
-         // we pass its full path twice in the argument list to execv.
-         //
--        argv[1] = (char *)result->graphics_exec_path;
--        argv[2] = (char *)result->graphics_exec_path;
-+        argv[1] = (char *)resultArg->graphics_exec_path;
-+        argv[2] = (char *)resultArg->graphics_exec_path;
-         argv[3] = 0;
-     
-          if (g_use_sandbox) {
-             iRetVal = run_program(
--                result->slot_path,
-+                resultArg->slot_path,
-                "../../switcher/switcher",
-                 3,
-                 argv,
-@@ -1724,8 +1728,8 @@
-             );
-         } else {        
-             iRetVal = run_program(
--                result->slot_path,
--                result->graphics_exec_path,
-+                resultArg->slot_path,
-+                resultArg->graphics_exec_path,
-                 1,
-                 &argv[2],
-                 0,
-@@ -1741,8 +1745,8 @@
-         argv[0] = 0;
-         
-         iRetVal = run_program(
--            result->slot_path,
--            result->graphics_exec_path,
-+            resultArg->slot_path,
-+            resultArg->graphics_exec_path,
-             0,
-             argv,
-             0,
-@@ -1751,8 +1755,8 @@
- #endif
-         if (!iRetVal) {
-             gfx_app.slot = slot;
--            gfx_app.project_url = result->project_url;
--            gfx_app.name = result->name;
-+            gfx_app.project_url = resultArg->project_url;
-+            gfx_app.name = resultArg->name;
-             gfx_app.pid = id;
-             m_running_gfx_apps.push_back(gfx_app);
-         }
 Index: boinc/lib/util.cpp
 ===================================================================

@@ -1,26 +1,6 @@
 Author: Steffen Moeller <moeller@debian.org>
 Description: Initialisation.
 
-Index: boinc/lib/diagnostics_win.cpp
-===================================================================
---- boinc.orig/lib/diagnostics_win.cpp	2012-05-03 13:41:57.688973563 +0200
-+++ boinc/lib/diagnostics_win.cpp	2012-05-03 13:42:06.408854158 +0200
-@@ -331,6 +331,7 @@
-         *ppBuffer = HeapAlloc(hHeap, HEAP_ZERO_MEMORY, *pcbBuffer);
-         if (*ppBuffer == NULL) {
-             retval = ERROR_NOT_ENOUGH_MEMORY;
-+            return retval;
-         }
- 
-         Status = pNTQSI(
-@@ -1630,6 +1631,7 @@
-             break;
-         case EXCEPTION_ACCESS_VIOLATION:
-             strcpy(status, "Access Violation");
-+            substatus[0]=0;
-             if (pExPtrs->ExceptionRecord->NumberParameters == 2) {
-                 switch(pExPtrs->ExceptionRecord->ExceptionInformation[0]) {
-                 case 0: // read attempt
 Index: boinc/lib/crypt.cpp
 ===================================================================
 --- boinc.orig/lib/crypt.cpp	2012-05-03 13:28:56.000000000 +0200

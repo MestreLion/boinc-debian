@@ -1,71 +1,30 @@
-Index: boinc/lib/filesys.cpp
-===================================================================
---- boinc.orig/lib/filesys.cpp	2012-09-02 00:06:37.000000000 +0200
-+++ boinc/lib/filesys.cpp	2012-09-02 00:09:30.054449395 +0200
-@@ -128,7 +128,7 @@
-     if (!is_dir(p)) return NULL;
-     dirp = (DIR_DESC*) calloc(sizeof(DIR_DESC), 1);
-     if (!dirp) {
--        fprintf(stderr, "calloc() failed in dir_open()\n");
-+        fprintf(stderr, "calloc() failed in lib/filesys.cpp: dir_open()\n");
-         return NULL;
-     }
-     dirp->first = true;
-@@ -136,11 +136,12 @@
-     strcat(dirp->path, "\\*");
-     dirp->handle = INVALID_HANDLE_VALUE;
- #else
-+    errno=0;
-     dirp = opendir(p);
-     if (!dirp) {
-         char whereami[MAXPATHLEN];
- 	boinc_getcwd(whereami);
--        fprintf(stderr,"dir_open: Could not open directory '%s' from directory '%s'.\n",p,whereami);
-+        fprintf(stderr,"lib/filesys.cpp: Could not open directory '%s' from directory '%s': %s.\n",p,whereami,strerror(errno));
-         return NULL;
-     }
- #endif
-@@ -230,7 +231,11 @@
-     }
-     dir = path + "\\*";
- #else
-+    errno=0;
-     dirp = opendir(path.c_str());
-+    if (NULL == dirp) {
-+        fprintf(stderr, "opendir() failed in DirScanner::DirScanner. %s\n", strerror(errno));
-+    }
- #endif
- }
- 
-Index: boinc/client/check_security.cpp
-===================================================================
---- boinc.orig/client/check_security.cpp	2012-09-02 00:06:07.000000000 +0200
-+++ boinc/client/check_security.cpp	2012-09-02 00:08:05.219581154 +0200
-@@ -39,9 +39,9 @@
- bool IsUserInGroupBM();
+--- boinc-7.0.38+dfsg.orig/client/check_security.cpp
++++ boinc-7.0.38+dfsg/client/check_security.cpp
+@@ -40,9 +40,9 @@ bool IsUserInGroupBM();
  #endif
  
--static int CheckNestedDirectories(char * basepath, int depth, 
-+static int CheckNestedDirectories(const char* const basepath, int depth,
-                                     int use_sandbox, int isManager, 
--                                    char * path_to_error
-+                                    const char* const path_to_error
-                                 );
+ static int CheckNestedDirectories(
+-    char * basepath, int depth, 
++    const char * const basepath, int depth, 
+     int use_sandbox, int isManager, 
+-    char * path_to_error
++    const char * const path_to_error
+ );
  
  #if (! defined(__WXMAC__) && ! defined(_MAC_INSTALLER))
-@@ -500,9 +500,9 @@
+@@ -501,9 +501,9 @@ saverName[2] = "Progress Thru Processors
  }
  
  
--static int CheckNestedDirectories(char * basepath, int depth, 
-+static int CheckNestedDirectories(const char* const basepath, int depth,
+-static int CheckNestedDirectories(char * basepath, int depth,
++static int CheckNestedDirectories(const char * const basepath, int depth,
                                      int use_sandbox, int isManager, 
 -                                    char * path_to_error
-+                                    const char* const path_to_error
++                                    const char * const path_to_error
                                  ) {
      int             isDirectory;
      char            full_path[MAXPATHLEN];
-@@ -512,6 +512,7 @@
+@@ -513,6 +513,7 @@ static int CheckNestedDirectories(char *
      dirent          *dp;
      static int      errShown = 0;
  
@@ -73,19 +32,17 @@ Index: boinc/client/check_security.cpp
      dirp = opendir(basepath);
      if (dirp == NULL) {
          // Ideally, all project-created subdirectories under project or slot 
-@@ -523,6 +524,7 @@
+@@ -522,6 +523,7 @@ static int CheckNestedDirectories(char *
+         // the subdirectory to check them.
+         strlcpy(full_path, basepath, sizeof(full_path));
          if ((depth > 1) && (errno == EACCES)) {
++            fprintf(stderr,"Could not open directory %s in client/check_security.cpp: CheckNestedDirectories: %s\n",full_path,strerror(errno));
              return 0;
          } else {
-+	    fprintf(stderr,"Could not open directory %s in client/check_security.cpp: CheckNestedDirectories: %s\n",full_path,strerror(errno));
              retval = -1200;
-         }
-     }
-Index: boinc/client/cs_platforms.cpp
-===================================================================
---- boinc.orig/client/cs_platforms.cpp	2012-09-02 00:06:07.000000000 +0200
-+++ boinc/client/cs_platforms.cpp	2012-09-02 00:08:05.223581101 +0200
-@@ -45,6 +45,7 @@
+--- boinc-7.0.38+dfsg.orig/client/cs_platforms.cpp
++++ boinc-7.0.38+dfsg/client/cs_platforms.cpp
+@@ -45,6 +45,7 @@ LPFN_ISWOW64PROCESS fnIsWow64Process;
  #include <sys/sysctl.h>
  #endif
  
@@ -93,23 +50,23 @@ Index: boinc/client/cs_platforms.cpp
  #include "error_numbers.h"
  #include "filesys.h"
  #include "str_util.h"
-@@ -180,9 +181,17 @@
+@@ -180,9 +181,17 @@ void CLIENT_STATE::detect_platforms() {
                  int i;
                  for (i=0; i < nlibdirs; i++) {
                      struct dirent *entry;
-+		    errno=0;
++                    errno=0;
                      DIR *a = opendir(libdir[i]);
 -                    // if dir doesn't exist, do to the next one
 -                    if (a == 0) continue;
 +                    if (a == 0) {
-+		       if (ENOENT==errno) {
++                      if (ENOENT==errno) {
 +                          // if dir doesn't exist, do to the next one
 +                       }
-+		       else {
-+		          fprintf(stderr,"Unexpected problem with directory '%s': %s\n",libdir[i],strerror(errno));
-+		       }
-+		       continue;
-+		    }
++                      else {
++                         fprintf(stderr,"Unexpected problem with directory '%s': %s\n",libdir[i],strerror(errno));
++                      }
++                      continue;
++                   }
                      // dir exists. read each entry until you find a 32bit lib
                      while ((support32 == 0) && ((entry=readdir(a)) != 0)) {
                          strlcpy(cmdline, file[eno], 256);

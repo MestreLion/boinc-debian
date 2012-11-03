@@ -4,18 +4,13 @@ Index: boinc/sched/sched_driver.cpp
 ===================================================================
 --- boinc.orig/sched/sched_driver.cpp	2012-03-30 19:46:56.436149392 +0200
 +++ boinc/sched/sched_driver.cpp	2012-03-30 19:46:57.428135859 +0200
-@@ -46,13 +46,14 @@
- #include "svn_version.h"
- #include "str_replace.h"  // strlcpy
- #include "str_util.h"     // safe_strcpy
-+#include "str_replace.h"     // strlcpy
- 
+@@ -50,9 +50,9 @@
  using std::vector;
  
  struct HOST_DESC{
--    char os_name[128];
--    char p_vendor[128];
--    char p_model[128];
+-    char os_name[256];
+-    char p_vendor[256];
+-    char p_model[256];
 +    char os_name[512];
 +    char p_vendor[512];
 +    char p_model[512];

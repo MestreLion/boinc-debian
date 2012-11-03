@@ -1,28 +1,3 @@
-Index: boinc/api/gutil.cpp
-===================================================================
---- boinc.orig/api/gutil.cpp
-+++ boinc/api/gutil.cpp
-@@ -737,15 +737,13 @@
- 	gluBuild2DMipmaps(GL_TEXTURE_2D, 3, pImage->sizeX, pImage->sizeY, GL_RGB, GL_UNSIGNED_BYTE, pImage->data);
- 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST);
- 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
--    xsize = pImage->sizeX;
--    ysize = pImage->sizeY;
-+	xsize = pImage->sizeX;
-+	ysize = pImage->sizeY;
- 
--	if (pImage) {
--		if (pImage->data) {
--			free(pImage->data);
--		}
--		free(pImage);
-+	if (pImage->data) {
-+		free(pImage->data);
- 	}
-+	free(pImage);
- 	return 0;
- }
- 
 Index: boinc/api/make_app_icon_h.cpp
 ===================================================================
 --- boinc.orig/api/make_app_icon_h.cpp

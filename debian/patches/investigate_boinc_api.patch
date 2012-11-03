@@ -1,7 +1,5 @@
-Index: boinc/api/boinc_api.cpp
-===================================================================
---- boinc.orig/api/boinc_api.cpp	2012-08-12 17:58:16.648464711 +0200
-+++ boinc/api/boinc_api.cpp	2012-08-12 18:12:23.456971462 +0200
+--- a/api/boinc_api.cpp
++++ b/api/boinc_api.cpp
 @@ -322,7 +322,7 @@
  
      if (standalone) return true;

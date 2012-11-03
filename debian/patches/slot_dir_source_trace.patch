@@ -1,8 +1,6 @@
-Index: boinc/client/app.cpp
-===================================================================
---- boinc.orig/client/app.cpp	2012-09-15 18:20:12.208434304 +0200
-+++ boinc/client/app.cpp	2012-09-16 21:27:08.029954395 +0200
-@@ -417,8 +417,8 @@
+--- a/client/app.cpp
++++ b/client/app.cpp
+@@ -420,8 +420,8 @@
      int retval;
  
      get_project_dir(result->project, project_dir, sizeof(project_dir));
@@ -13,7 +11,7 @@ Index: boinc/client/app.cpp
          "%s/trickle_up_%s_%d.xml",
          project_dir, result->name, (int)time(0)
      );
-@@ -453,7 +453,7 @@
+@@ -456,7 +456,7 @@
      return 0;
  }
  
@@ -22,7 +20,7 @@ Index: boinc/client/app.cpp
      unsigned int i;
      for (i=0; i<active_tasks.size(); i++) {
          if (active_tasks[i]->slot == slot) {
-@@ -463,7 +463,7 @@
+@@ -466,7 +466,7 @@
      return false;
  }
  
@@ -31,7 +29,7 @@ Index: boinc/client/app.cpp
      char path[MAXPATHLEN];
      unsigned int i;
      for (i=0; i<active_tasks.size(); i++) {
-@@ -504,7 +504,7 @@
+@@ -507,7 +507,7 @@
  #endif
  }
  
@@ -40,7 +38,7 @@ Index: boinc/client/app.cpp
      unsigned int i;
      for (i=0; i<active_tasks.size(); i++) {
          if (active_tasks[i]->slot == slot) return true;
-@@ -616,7 +616,7 @@
+@@ -619,7 +619,7 @@
  #endif
  
  int ACTIVE_TASK::parse(XML_PARSER& xp) {
@@ -49,13 +47,7 @@ Index: boinc/client/app.cpp
      int n, dummy;
      unsigned int i;
      PROJECT* project=0;
-@@ -886,12 +886,12 @@
- //
- int ACTIVE_TASK::handle_upload_files() {
-     std::string filename;
--    char buf[256], path[MAXPATHLEN];
-+    char buf[MAXPATHLEN], path[MAXPATHLEN];
-     int retval;
+@@ -894,7 +894,7 @@
  
      DirScanner dirscan(slot_dir);
      while (dirscan.scan(filename)) {
@@ -64,10 +56,8 @@ Index: boinc/client/app.cpp
          if (strstr(buf, UPLOAD_FILE_REQ_PREFIX) == buf) {
              char* p = buf+strlen(UPLOAD_FILE_REQ_PREFIX);
              FILE_INFO* fip = result->lookup_file_logical(p);
-Index: boinc/client/app.h
-===================================================================
---- boinc.orig/client/app.h	2012-09-15 18:20:12.212434251 +0200
-+++ boinc/client/app.h	2012-09-16 21:27:08.033954342 +0200
+--- a/client/app.h
++++ b/client/app.h
 @@ -47,6 +47,7 @@
  typedef int PROCESS_ID;
  
@@ -76,18 +66,15 @@ Index: boinc/client/app.h
      // The stderr output of an application is truncated to this length
      // before sending to server,
      // to protect against apps that write unbounded amounts.
-@@ -110,9 +111,9 @@
+@@ -110,7 +111,7 @@
      double bytes_sent;
          // reported by the app if it does network I/O
      double bytes_received;
 -    char slot_dir[256];
 +    char slot_dir[SLOT_DIR_LEN];
          // directory where process runs (relative)
--    char slot_path[512];
-+    char slot_path[MAXPATHLEN];
+     char slot_path[MAXPATHLEN];
          // same, absolute
-         // This is used only to run graphics apps
-         // (that way don't have to worry about top-level dirs
 @@ -151,8 +152,8 @@
          // but not descendants of the main process
          // (e.g. VMs created by vboxwrapper)
@@ -97,9 +84,9 @@ Index: boinc/client/app.h
 +    char web_graphics_url[MAXPATHLEN];
 +    char remote_desktop_addr[MAXPATHLEN];
      ASYNC_COPY* async_copy;
- 
-     void set_task_state(int, const char*);
-@@ -285,8 +286,8 @@
+     double finish_file_time;
+         // time when we saw finish file in slot dir.
+@@ -288,8 +289,8 @@
      bool check_app_exited();
      bool check_rsc_limits_exceeded();
      bool check_quit_timeout_exceeded();
@@ -110,7 +97,7 @@ Index: boinc/client/app.h
      void send_heartbeats();
      void send_trickle_downs();
      void report_overdue();
-@@ -295,7 +296,7 @@
+@@ -298,7 +299,7 @@
      bool want_network();    // does any task want network?
      void network_available();   // notify tasks that network is available
      void free_mem();
@@ -119,10 +106,8 @@ Index: boinc/client/app.h
      void get_memory_usage();
  
      void process_control_poll();
-Index: boinc/lib/filesys.cpp
-===================================================================
---- boinc.orig/lib/filesys.cpp	2012-09-16 21:27:07.969955209 +0200
-+++ boinc/lib/filesys.cpp	2012-09-16 21:27:29.541663047 +0200
+--- a/lib/filesys.cpp
++++ b/lib/filesys.cpp
 @@ -86,7 +86,7 @@
  
  // routines for enumerating the entries in a directory
@@ -150,7 +135,7 @@ Index: boinc/lib/filesys.cpp
      struct stat sbuf;
      int retval = lstat(path, &sbuf);
      return (!retval && S_ISLNK(sbuf.st_mode));
-@@ -122,7 +122,7 @@
+@@ -122,13 +122,13 @@
  
  // Open a directory
  //
@@ -159,18 +144,28 @@ Index: boinc/lib/filesys.cpp
      DIRREF dirp;
  #ifdef _WIN32
      if (!is_dir(p)) return NULL;
-@@ -138,7 +138,9 @@
+     dirp = (DIR_DESC*) calloc(sizeof(DIR_DESC), 1);
+     if (!dirp) {
+-        fprintf(stderr, "calloc() failed in dir_open()\n");
++        fprintf(stderr, "calloc() failed in lib/filesys.cpp: dir_open()\n");
+         return NULL;
+     }
+     dirp->first = true;
+@@ -136,9 +136,12 @@
+     strcat(dirp->path, "\\*");
+     dirp->handle = INVALID_HANDLE_VALUE;
  #else
++    errno=0;
      dirp = opendir(p);
      if (!dirp) {
 -        fprintf(stderr,"dir_open: Could not open directory '%s'.\n",p);
 +        char whereami[MAXPATHLEN];
 +	boinc_getcwd(whereami);
-+        fprintf(stderr,"dir_open: Could not open directory '%s' from directory '%s'.\n",p,whereami);
++        fprintf(stderr,"lib/filesys.cpp: Could not open directory '%s' from directory '%s': %s.\n",p,whereami,strerror(errno));
          return NULL;
      }
  #endif
-@@ -208,7 +210,7 @@
+@@ -208,7 +211,7 @@
  #endif
  }
  
@@ -179,7 +174,19 @@ Index: boinc/lib/filesys.cpp
      char file[MAXPATHLEN];
  
      DIRREF dir = dir_open(p);
-@@ -362,7 +364,7 @@
+@@ -228,7 +231,11 @@
+     }
+     dir = path + "\\*";
+ #else
++    errno=0;
+     dirp = opendir(path.c_str());
++    if (NULL == dirp) {
++        fprintf(stderr, "opendir() failed in DirScanner::DirScanner. %s\n", strerror(errno));
++    }
+ #endif
+ }
+ 
+@@ -362,7 +369,7 @@
  
  // remove everything from specified directory
  //
@@ -188,7 +195,7 @@ Index: boinc/lib/filesys.cpp
      char filename[MAXPATHLEN], path[MAXPATHLEN];
      int retval;
      DIRREF dirp;
-@@ -613,7 +615,7 @@
+@@ -613,7 +620,7 @@
  
  // make a dir that's owner and group RWX
  //
@@ -197,7 +204,7 @@ Index: boinc/lib/filesys.cpp
      if (is_dir(path)) return 0;
  #ifdef _WIN32
      if (!CreateDirectoryA(path, NULL)) {
-@@ -628,7 +630,7 @@
+@@ -628,7 +635,7 @@
      return 0;
  }
  
@@ -206,7 +213,7 @@ Index: boinc/lib/filesys.cpp
  #ifdef _WIN32
      if (!RemoveDirectoryA(name)) {
          return ERR_RMDIR;
-@@ -641,7 +643,7 @@
+@@ -641,7 +648,7 @@
  }
  
  #ifndef _WIN32
@@ -215,16 +222,16 @@ Index: boinc/lib/filesys.cpp
      if (gid) {
          if (chown(path, (uid_t)-1, gid)) {
              return ERR_CHOWN;
-@@ -654,7 +656,7 @@
+@@ -654,7 +661,7 @@
  // if "filepath" is of the form a/b/c,
  // create directories dirpath/a, dirpath/a/b etc.
  //
 -int boinc_make_dirs(const char* dirpath, const char* filepath) {
 +int boinc_make_dirs(const char* const dirpath, const char* const filepath) {
-     char buf[MAXPATHLEN*2], oldpath[MAXPATHLEN], newpath[MAXPATHLEN];
+     char buf[MAXPATHLEN], oldpath[MAXPATHLEN], newpath[MAXPATHLEN];
      int retval;
      char *p, *q;
-@@ -721,7 +723,7 @@
+@@ -721,7 +728,7 @@
      return 0;
  }
  
@@ -233,7 +240,7 @@ Index: boinc/lib/filesys.cpp
  #if defined(_WIN32) && !defined(__CYGWIN32__)
      CloseHandle(handle);
  #else
-@@ -733,7 +735,7 @@
+@@ -733,7 +740,7 @@
      return 0;
  }
  
@@ -242,7 +249,7 @@ Index: boinc/lib/filesys.cpp
  #ifdef _WIN32
      getcwd(path, MAXPATHLEN);
  #else
-@@ -745,7 +747,7 @@
+@@ -745,7 +752,7 @@
  #endif
  }
  
@@ -251,7 +258,7 @@ Index: boinc/lib/filesys.cpp
      boinc_getcwd(path);
      if (strlen(relname)) {
          strcat(path, "/");
-@@ -756,7 +758,7 @@
+@@ -756,7 +763,7 @@
  // get total and free space on current filesystem (in bytes)
  //
  #ifdef _WIN32
@@ -260,7 +267,7 @@ Index: boinc/lib/filesys.cpp
      char cwd[MAXPATHLEN];
      boinc_getcwd(cwd);
      FreeFn pGetDiskFreeSpaceEx;
-@@ -789,7 +791,7 @@
+@@ -789,7 +796,7 @@
          total_space = (double)dwTotalClusters * dwSectPerClust * dwBytesPerSect;
      }
  #else
@@ -269,20 +276,9 @@ Index: boinc/lib/filesys.cpp
  #ifdef STATFS
      struct STATFS fs_info;
  
-@@ -810,7 +812,7 @@
- 
- #ifndef _WIN32
- 
--int get_file_dir(char* filename, char* dir) {
-+int get_file_dir(const char* const filename, char* dir) {
-     char buf[8192], *p, path[MAXPATHLEN];
-     struct stat sbuf;
-     int retval;
-Index: boinc/lib/filesys.h
-===================================================================
---- boinc.orig/lib/filesys.h	2012-09-15 18:20:16.792373285 +0200
-+++ boinc/lib/filesys.h	2012-09-16 21:27:08.041954235 +0200
-@@ -48,19 +48,19 @@
+--- a/lib/filesys.h
++++ b/lib/filesys.h
+@@ -47,19 +47,19 @@
    extern FILE* boinc_fopen(const char* path, const char* mode);
    extern int boinc_copy(const char* orig, const char* newf);
    extern int boinc_rename(const char* old, const char* newf);
@@ -312,7 +308,7 @@ Index: boinc/lib/filesys.h
    extern int boinc_truncate(const char*, double);
    extern int boinc_file_exists(const char* path);
    extern int boinc_file_or_symlink_exists(const char* path);
-@@ -72,10 +72,10 @@
+@@ -71,10 +71,10 @@
  /* C++ specific prototypes/defines follow here */
  #ifdef __cplusplus
  
@@ -327,7 +323,7 @@ Index: boinc/lib/filesys.h
  
  // TODO TODO TODO
  // remove this code - the DirScanner class does the same thing.
-@@ -97,7 +97,7 @@
+@@ -96,7 +96,7 @@
  extern int dir_scan(std::string&, DIRREF);
  extern void dir_close(DIRREF);
  

@@ -1,16 +1,3 @@
-Index: boinc/client/app.cpp
-===================================================================
---- boinc.orig/client/app.cpp
-+++ boinc/client/app.cpp
-@@ -413,7 +413,7 @@
- // Move it from slot dir to project dir
- //
- int ACTIVE_TASK::move_trickle_file() {
--    char project_dir[256], new_path[MAXPATHLEN], old_path[MAXPATHLEN];
-+    char project_dir[MAXPATHLEN], new_path[MAXPATHLEN], old_path[MAXPATHLEN];
-     int retval;
- 
-     get_project_dir(result->project, project_dir, sizeof(project_dir));
 Index: boinc/client/app.h
 ===================================================================
 --- boinc.orig/client/app.h
