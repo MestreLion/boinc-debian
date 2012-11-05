@@ -3,8 +3,9 @@ boinc (7.0.38+dfsg-1) UNRELEASED; urgency=low
   * New upstream version
   * Revised some patches (some of them should will be removed in a future commit)
   * Added add-missing-test-files.patch to fix a FTBFS 
+  * Added add-missing-stripchart-samples.patch to fix another FTBFS
 
- -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Mon, 05 Nov 2012 10:54:32 +0100
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Mon, 05 Nov 2012 13:16:32 +0100
 
 boinc (7.0.36+dfsg-3) UNRELEASED; urgency=low
 
