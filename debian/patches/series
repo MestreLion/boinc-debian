@@ -24,7 +24,7 @@ parse_issues.patch
 #stream_memory_leak_fix.patch #stream.cpp has been deleted in .38 release
 #SETIprobCandidate#app_ipc_uninitialised_A_reorder.patch
 #SETIprobCandidate#app_ipc_uninitialised_B_buffer.patch
-uninitialised_client_states.patch
+#uninitialised_client_states.patch # this variable has been removed between 36 and 38 release 
 # --- B 
 #tmpA# add_init_to_client_state_constructor.patch
 #convinceDavid# client_path_char_array_length.patch
