@@ -20,31 +20,6 @@ Index: boinc/lib/Makefile.am
  
  
  if ENABLE_FCGI
-#FIXME, better abort() or __builtin_trap()?
-#upstream uses abort() now
-#void PERS_FILE_XFER::abort() {
-#    if (fxp) {
-#        gstate.file_xfers->remove(fxp);
-#        delete fxp;
-#        fxp = NULL;
-#    }
-#    fip->status = ERR_ABORTED_VIA_GUI;
-#    fip->error_msg = "user requested transfer abort";
-#    pers_xfer_done = true;
-#}
-
-#Index: boinc/lib/util.cpp
-#===================================================================
-#--- boinc.orig/lib/util.cpp	2012-08-01 20:52:04.670985198 +0200
-#+++ boinc/lib/util.cpp	2012-08-01 20:52:55.182302347 +0200
-#@@ -311,7 +311,7 @@
-# #ifdef _WIN32
-#     DebugBreak();
-# #else
-#-    *(int*)0 = 0;
-#+    __builtin_trap();
-# #endif
-# }
  
 Index: boinc/sched/make_work.cpp
 ===================================================================
