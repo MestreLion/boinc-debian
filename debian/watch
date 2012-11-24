@@ -1,5 +1,6 @@
-# The upstream switched to git, and there's no easy way to parse
-# tags from gitweb pages, so the following is disabled for now.
-# version=3
+ version=3
 # opts="dversionmangle=s/\+dfsg//,uversionmangle=s/\///;s/_/./g" \
 #   http://boinc.berkeley.edu/svn/tags/boinc_core_release_(\d+_\d*[02468]_.*)
+opts=dversionmangle=s/\+dfsg// \
+http://boinc.berkeley.edu/git/boinc.git/refs/tags/ \
+	client_release_([\d\.]+)
