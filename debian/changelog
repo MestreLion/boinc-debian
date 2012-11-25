@@ -2,8 +2,9 @@ boinc (7.0.39+dfsg-1) UNRELEASED; urgency=low
 
   * New upstram version
   * Dropped add-missing-test-files.patch and add-missing-stripchart-samples.patch patch already applied upstream
+  * Added link time optimisation
 
- -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sat, 10 Nov 2012 16:45:06 +0100
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Mon, 26 Nov 2012 00:11:23 +0100
 
 boinc (7.0.38+dfsg-1) UNRELEASED; urgency=low
 
