@@ -110,14 +110,15 @@ GCCVERSION=$(shell gcc --version | tr " " "\n" | egrep '^[0-9]+\.[0-9]+\.[0-9]+$
 ifneq (4.6,$(GCCVERSION))
 ifneq (4.5,$(GCCVERSION))
 ifneq (4.4,$(GCCVERSION))
-CFLAGS += -flto
+  CFLAGS += -flto
+  LDFLAGS += -flto
 endif
 endif
 endif
 
 CFLAGS += -Wall
 CXXFLAGS += -Wall
-LDFLAGS += -Wl,--as-needed -flto
+LDFLAGS += -Wl,--as-needed
 # hurd needs the following
 LDFLAGS += -Wl,--no-add-needed
 
