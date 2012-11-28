@@ -126,6 +126,15 @@
      struct stat sbuf;
  #ifdef _WIN32
      int retval = stat(path, &sbuf);
+@@ -106,7 +106,7 @@
+     return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFDIR));
+ }
+ 
+-int is_dir_follow_symlinks(const char* path) {
++int is_dir_follow_symlinks(const char* const path) {
+     struct stat sbuf;
+     int retval = stat(path, &sbuf);
+     return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFDIR));
 @@ -113,7 +113,7 @@
  }
  
