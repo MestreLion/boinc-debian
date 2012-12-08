@@ -106,13 +106,20 @@ int is_dir(const char* path) {
     return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFDIR));
 }
 
+#ifndef _WIN32
+
+int is_file_follow_symlinks(const char* path) {
+    struct stat sbuf;
+    int retval = stat(path, &sbuf);
+    return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFREG));
+}
+
 int is_dir_follow_symlinks(const char* path) {
     struct stat sbuf;
     int retval = stat(path, &sbuf);
     return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFDIR));
 }
 
-#ifndef _WIN32
 int is_symlink(const char* path) {
     struct stat sbuf;
     int retval = lstat(path, &sbuf);
@@ -752,6 +759,33 @@ void relative_to_absolute(const char* relname, char* path) {
 
 // get total and free space on current filesystem (in bytes)
 //
+#if defined(_WIN32) && !(defined(WXDEBUG) || defined(WXNDEBUG))
+int boinc_allocate_file(const char* path, double size) {
+    int retval = 0;
+    HANDLE h = CreateFile(
+        path,
+        GENERIC_WRITE,
+        0,
+        NULL,
+        OPEN_ALWAYS,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+    if (h == INVALID_HANDLE_VALUE) return ERR_FOPEN;
+    LARGE_INTEGER sz;
+    sz.LowPart = fmod(size, 4294967296.);
+    sz.HighPart = (LONG)(size/4294967296.);
+    if (SetFilePointerEx(h, sz, NULL, FILE_BEGIN) == 0) {
+        retval = ERR_FOPEN;
+    }
+    if (!retval && SetEndOfFile(h) == 0) {
+        retval = ERR_FOPEN;
+    }
+    CloseHandle(h);
+    return retval;
+}
+#endif
+
 #ifdef _WIN32
 int get_filesystem_info(double &total_space, double &free_space, char*) {
     char cwd[MAXPATHLEN];

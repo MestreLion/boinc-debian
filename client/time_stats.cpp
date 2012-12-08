@@ -294,7 +294,7 @@ int CLIENT_TIME_STATS::write(MIOFILE& out, bool to_remote) {
         active_frac,
         gpu_active_frac,
         client_start_time,
-        previous_uptime
+        gstate.now - client_start_time
     );
     if (to_remote) {
         out.printf(
@@ -392,6 +392,8 @@ int CLIENT_TIME_STATS::parse(XML_PARSER& xp) {
             }
             continue;
         }
+        if (xp.parse_double("client_start_time", x)) continue;
+        if (xp.parse_double("previous_uptime", previous_uptime)) continue;
         if (log_flags.unparsed_xml) {
             msg_printf(0, MSG_INFO,
                 "[unparsed_xml] TIME_STATS::parse(): unrecognized: %s\n",

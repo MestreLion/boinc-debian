@@ -15,9 +15,39 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-extern vector<COPROC_ATI> ati_gpus;
-extern vector<COPROC_NVIDIA> nvidia_gpus;
-extern vector<OPENCL_DEVICE_PROP> nvidia_opencls;
-extern vector<OPENCL_DEVICE_PROP> ati_opencls;
-extern vector<OPENCL_DEVICE_PROP> intel_gpu_opencls;
-extern bool in_vector(int n, vector<int>& v);
+#ifndef _APP_CONFIG_
+#define _APP_CONFIG_
+
+#include <vector>
+
+#include "parse.h"
+
+#include "client_types.h"
+
+struct PROJECT;
+struct RESULT;
+
+struct APP_CONFIG {
+    char name[256];
+    int max_concurrent;
+    double gpu_gpu_usage;
+    double gpu_cpu_usage;
+
+    int parse(XML_PARSER&);
+};
+
+struct APP_CONFIGS {
+    std::vector<APP_CONFIG> app_configs;
+
+    int parse(XML_PARSER&);
+    int parse_file(FILE*);
+    void config_app_versions(PROJECT*);
+};
+
+extern bool have_max_concurrent;
+
+extern void max_concurrent_init();
+
+extern void check_app_config();
+
+#endif

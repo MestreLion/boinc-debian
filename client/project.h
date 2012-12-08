@@ -18,6 +18,7 @@
 #ifndef _PROJECT_
 #define _PROJECT_
 
+#include "app_config.h"
 #include "client_types.h"
 
 struct PROJECT : PROJ_AM {
@@ -262,6 +263,10 @@ struct PROJECT : PROJ_AM {
         // get scheduler URL with random offset r
     bool checked;
         // temporary used when scanning projects
+    bool dont_contact;
+        // temp in find_project_with_overdue_results()
+    int n_ready;
+        // temp in find_project_with_overdue_results()
 
     FILE_XFER_BACKOFF download_backoff;
     FILE_XFER_BACKOFF upload_backoff;
@@ -272,6 +277,10 @@ struct PROJECT : PROJ_AM {
     // support for replicated trickle-ups
     //
     std::vector<TRICKLE_UP_OP*> trickle_up_ops;
+
+    // app config stuff
+    //
+    APP_CONFIGS app_configs;
 
     PROJECT();
     ~PROJECT(){}
