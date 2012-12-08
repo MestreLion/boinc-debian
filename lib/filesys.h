@@ -48,7 +48,9 @@ extern "C" {
   extern int boinc_copy(const char* orig, const char* newf);
   extern int boinc_rename(const char* old, const char* newf);
   extern int boinc_mkdir(const char*);
-#ifndef _WIN32
+#ifdef _WIN32
+  extern int boinc_allocate_file(const char*, double size);
+#else
   extern int boinc_chown(const char*, gid_t);
 #endif
   extern int boinc_rmdir(const char*);
@@ -58,6 +60,7 @@ extern "C" {
   extern char boinc_failed_file[MAXPATHLEN];
   extern int is_file(const char* path);
   extern int is_dir(const char* path);
+  extern int is_file_follow_symlinks(const char* path);
   extern int is_dir_follow_symlinks(const char* path);
   extern int is_symlink(const char* path);
   extern int boinc_truncate(const char*, double);

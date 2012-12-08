@@ -254,6 +254,11 @@ struct APP {
     char user_friendly_name[256];
     bool non_cpu_intensive;
     PROJECT* project;
+    int max_concurrent;
+        // Limit on # of concurrent jobs of this app; 0 if none
+        // Specified in app_config.xml
+    int n_concurrent;
+        // temp during job scheduling, to enforce max_concurrent
 #ifdef SIM
     double latency_bound;
     double fpops_est;
@@ -262,9 +267,9 @@ struct APP {
     double working_set;
     double weight;
     bool ignore;
-    APP() {memset(this, 0, sizeof(APP));}
 #endif
 
+    APP() {memset(this, 0, sizeof(APP));}
     int parse(XML_PARSER&);
     int write(MIOFILE&);
 };

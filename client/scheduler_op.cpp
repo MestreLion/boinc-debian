@@ -300,7 +300,7 @@ int SCHEDULER_OP::init_master_fetch(PROJECT* p) {
         msg_printf(p, MSG_INFO, "[sched_op] Fetching master file");
     }
     cur_proj = p;
-    retval = http_op.init_get(p, p->master_url, master_filename, true);
+    retval = http_op.init_get(p, p->master_url, master_filename, true, 0, 0);
     if (retval) {
         if (log_flags.sched_ops) {
             msg_printf(p, MSG_INFO,
@@ -862,6 +862,11 @@ int SCHEDULER_REPLY::parse(FILE* in, PROJECT* project) {
         } else if (xp.parse_bool("no_ati_apps", btemp)) {
             if (!project->anonymous_platform) {
                 handle_no_rsc_apps(GPU_TYPE_ATI, project, btemp);
+            }
+            continue;
+        } else if (xp.parse_bool("no_intel_gpu_apps", btemp)) {
+            if (!project->anonymous_platform) {
+                handle_no_rsc_apps(GPU_TYPE_INTEL, project, btemp);
             }
             continue;
         } else if (xp.parse_str("no_rsc_apps", buf, sizeof(buf))) {

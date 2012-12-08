@@ -30,7 +30,7 @@
 #include "proxy_info.h"
 #include "coproc.h"
 
-class XML_PARSER;
+struct XML_PARSER;
 
 #define MAX_FILE_XFERS_PER_PROJECT      2
 #define MAX_FILE_XFERS                  8
@@ -157,6 +157,7 @@ struct CONFIG {
     int http_transfer_timeout;
     std::vector<int> ignore_ati_dev;
     std::vector<int> ignore_nvidia_dev;
+    std::vector<int> ignore_intel_gpu_dev;
     int max_file_xfers;
     int max_file_xfers_per_project;
     int max_stderr_file_size;

@@ -4744,3 +4744,307 @@ Rom    8 Nov 2012
     /
         configure.ac
         version.h
+
+David  7 Nov 2012
+    - XML parser: make low-level functions inline, in an attempt
+        (unsuccessful, as far as I can tell) to boost performance
+
+    lib/
+        cc_config.h
+        parse.cpp,h
+        proxy_info.h
+
+David  7 Nov 2012
+    - Some C++ files in client had execute permissions (??).  Clear them.
+
+David  7 Nov 2012
+    - a bunch of skin files had execute permissions (??).  Clear them.
+
+    clientgui/skins/Charity Engine/graphic/*
+
+David  8 Nov 2012
+    - remove execute permissions from various files that shouldn't have them
+
+David  13 Nov 2012
+    - client: fix bug where, when updating a project, we fail to request work
+        even though higher-priority projects are marked as no-new-tasks
+        or are otherwise ineligible for work fetch.
+
+    client/
+        cs_scheduler.cpp
+        work_fetch.cpp
+
+David  13 Nov 2012
+    - build fixes for OpenBSD, from rustyBSD
+
+    configure.ac
+    client/
+        hostinfo_unix.cpp
+
+David  14 Nov 2012
+    - client: TIME_STATS fields go in <time_stats> part of state file
+
+    client/
+        cs_statefile.cpp
+        time_stats.cpp
+
+David  18 Nov 2012
+    - compile fix for FreeBSD
+
+    lib/
+        network.cpp
+
+David  19 Nov 2012
+    - remove deprecated MAC address code
+
+    lib/
+        mac_address.cpp,h (removed)
+
+David  19 Nov 2012
+    - client: if a project has 64 or more ready-to-report tasks,
+        report them.
+        64 is chosen a bit arbitrarily, but the idea is to
+        limit the number of tasks reported per RPC,
+        and to accelerate the reporting of small tasks.
+
+    client/
+        client_state.h
+        cs_scheduler.cpp
+        project.h
+
+David  22 Nov 2012
+    - client: if a project is anonymous platform,
+        don't send list of alternate platforms in scheduler RPC.
+
+    client/
+        cs_platforms.cpp
+
+David  23 Nov 2012
+    - client: fix uninitialized vars in CPU feature detection (from RustyBSD)
+
+    client/
+        hostinfo_unix.cpp
+
+David  26 Nov 2012
+    - client: when reset a project, clear its scheduler URL list
+        (force a reload of the master page)
+
+    client/
+        app_start.cpp
+        client_state.cpp
+
+David  27 Nov 2012
+    - allow config.xml to be a symlink
+
+    lib/
+        filesys.cpp,h
+
+Charlie 28 Nov 2012
+    - Mgr: Fix Windows hangs and simplify code for notices display:
+        - Handle protocol-relative URLs which hung Manager on Windows.
+            RSS feeds and web pages may use protocol-relative (scheme-
+            relative) URLs, such as <img src="//sample.com/test.jpg"/>
+            Since the html comes from a web server via http, the scheme 
+            is assumed to also be http.  But we have cached the html in
+            a local file, so it is no longer associated with the http 
+            protocol / scheme.  Therefore all our URLs must explicity 
+            specify the http protocol.
+         - The Manager would hang when trying to get data from web 
+            servers if there was no Internet connection.  This happened 
+            on Windows only, not on Mac.  (I don't have the hardware to 
+            test on Linux, but I suspect it is OK as Mac uses UNIX.)  I 
+            fixed this by implementing asynchronous network I/O in 
+            CBOINCHtmlListBox on Windows.
+         - Eliminate need for CBOINCVListBox class and greatly simplify 
+            CBOINCHtmlListBox class.
+
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCGUIApp.cpp,.h
+        BOINCHtmlLBox.cpp,.h
+        BOINCInternetFSHandler.cpp,.h
+        BOINCVListBox.cpp,.h  (removed)
+        Makefile.am
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+    win_build/
+            boincmgr.vcproj
+
+David  28 Nov 2012
+    - client: add "client app configuration" feature; see
+        http://boinc.berkeley.edu/trac/wiki/ClientAppConfig
+        This lets users do the following:
+        1) limit the number of concurrent jobs of a given app
+            (e.g. for WCG apps that are I/O-intensive)
+        2) Specify the CPU and GPU usage parameters of GPU versions
+            of a given app.
+        Implementation notes:
+        - max app concurrency is enforced in 2 places:
+            1) when building the initial job run list
+            2) when enforcing the final job run list
+            Both are needed to avoid possible starvation.
+        - however, we don't enforce it during RR simulation.
+            Doing so could cause erroneous shortfall and work fetch.
+            This means, however, that work buffering will not work
+            as expected if you're using max concurrency.
+
+    client/
+        app_config.cpp,h (new)
+        Makefile
+        client_state.cpp
+        client_types.h
+        cpu_sched.cpp
+        file_names.h
+        project.h
+        result.h
+
+David  28 Nov 2012
+	- client: add the above to VS project
+
+	win_build/
+		boinc_cli.vcproj
+
+David  28 Nov 2012
+	- client: bug fixes for app config feature
+
+	client/
+		client_state.cpp
+		client_types.h
+
+Charlie 28 Nov 2012
+	- client: add new files app_config.cpp,h to Xcode project.
+
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+David  29 Nov 2012
+    - client (Win) preallocate large files to avoid file fragmentation
+        when you write to them incrementally
+        (workaround for shoddy filesystem design)
+    - admin web: remove line that limited mass emails to 10
+    client/
+        async_file.cpp
+        file_xfer.cpp
+        gui_http.cpp
+        http_curl.cpp,h
+        scheduler_op.cpp
+    lib/
+        filesys.cpp,h
+    html/ops/
+        mass_email.php
+
+David  30 Nov 2012
+	- lib: Win compile fix for boinc_allocate_file()
+
+	lib/
+		filesys.cpp
+
+Charlie 30 Nov 2012
+    - Mgr: Fix some rare issues on Windows (including a possible memory 
+        leak) when switching to a client on a different computer after 
+        trying to display notices without an Internet connection.
+
+    clientgui/
+        BOINCHtmlLBox.cpp,.h
+        BOINCInternetFSHandler.cpp
+        NoticeListCtrl.cpp,.h
+
+
+David  30 Nov 2012
+    - client: if <dont_check_file_sizes> is set, don't check file existence at startup
+
+    client/
+        cs_files.cpp
+    lib/
+        procinfo.cpp
+
+David  30 Nov 2012
+    - Mac installer: add missing pclose() (from RustyBSD)
+
+    mac_installer/PostInstall.cpp
+
+Charlie 5 Dec 2012
+    - OpenCL: Add definition of GPU_TYPE_INTEL to match definitions of 
+        GPU_TYPE_ATI and GPU_TYPE_NVIDIA.
+
+    lib/
+        coproc.h
+
+Charlie 5 Dec 2012
+    - OpenCL: First pass at adding support for Intel Ivy Bridge GPUs.
+      The following files still need updating: 
+        ProjectInfoPage.cpp,.h, ProjectListCtrl.cpp,.h
+    client/
+        acct_mgr.cpp
+        client_state.cpp
+        cpu_sched.cpp
+        cs_account.cpp
+        cs_scheduler.cpp
+        cs_statefile.cpp
+        gpu_detect.cpp,.h
+        gpu_opencl.cpp
+        log_flags.cpp
+        project.cpp
+        scheduler_op.cpp
+    clientgui/
+        AdvancedFrame.cpp
+        AsyncRPC.cpp
+        BOINCTaskBar.cpp
+        DlgItemProperties.cpp
+    lib/
+        cc_config.cpp,.h
+        coproc.cpp,.h
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+
+David  7 Dec 2012
+    - lib: add size info to messages when realloc() fails in MFILE
+    lib/
+        mfile.cpp
+
+Rom    5 Dec 2012
+    - MGR: Fix two potential security issues with browser.cpp where the
+        query to the cookie database could have been abused.  At present
+        neither of the two parameters originate as user input so using it
+        as an attack vector isn't very high.  Prevent the functions from
+        being exploited in the future in case the routines were ever used
+        in a different way.
+        
+    clientgui/
+        browser.cpp
+
+Rom    5 Dec 2012
+    - client: strcasestr doesn't exist on Windows.
+    
+    client/
+        gpu_opencl.cpp
+
+Charlie 5 Dec 2012
+    - client: strcasestr does exist on Windows in lib/str_replace.cpp, 
+        but I just needed to #include "str_replace.h".  This is 
+        preferable because it handles INTEL as well as Intel and intel.
+    
+    client/
+        gpu_opencl.cpp
+
+David  5 Dec 2012
+    - fix typo in GUI RPC
+
+    lib/
+        gui_rpc_client_ops.cpp
+
+Charlie 6 Dec 2012
+    - OpenCL: Add peak FLOPS computation for Intel Ivy Bridge GPUs.
+ 
+    lib/
+        coproc.cpp
+
+Rom    8 Nov 2012
+    - Tag for 7.0.40 release, all platforms
+      client_release_7.0.40
+
+    /
+        configure.ac
+        version.h
