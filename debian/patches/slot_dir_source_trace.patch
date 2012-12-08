@@ -126,8 +126,15 @@
      struct stat sbuf;
  #ifdef _WIN32
      int retval = stat(path, &sbuf);
-@@ -106,7 +106,7 @@
-     return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFDIR));
+@@ -108,19 +108,19 @@
+ 
+ #ifndef _WIN32
+ 
+-int is_file_follow_symlinks(const char* path) {
++int is_file_follow_symlinks(const char* const path) {
+     struct stat sbuf;
+     int retval = stat(path, &sbuf);
+     return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFREG));
  }
  
 -int is_dir_follow_symlinks(const char* path) {
@@ -135,16 +142,14 @@
      struct stat sbuf;
      int retval = stat(path, &sbuf);
      return (!retval && (((sbuf.st_mode) & S_IFMT) == S_IFDIR));
-@@ -113,7 +113,7 @@
  }
  
- #ifndef _WIN32
 -int is_symlink(const char* path) {
 +int is_symlink(const char* const path) {
      struct stat sbuf;
      int retval = lstat(path, &sbuf);
      return (!retval && S_ISLNK(sbuf.st_mode));
-@@ -122,13 +122,13 @@
+@@ -129,7 +129,7 @@
  
  // Open a directory
  //
@@ -153,28 +158,7 @@
      DIRREF dirp;
  #ifdef _WIN32
      if (!is_dir(p)) return NULL;
-     dirp = (DIR_DESC*) calloc(sizeof(DIR_DESC), 1);
-     if (!dirp) {
--        fprintf(stderr, "calloc() failed in dir_open()\n");
-+        fprintf(stderr, "calloc() failed in lib/filesys.cpp: dir_open()\n");
-         return NULL;
-     }
-     dirp->first = true;
-@@ -136,9 +136,12 @@
-     strcat(dirp->path, "\\*");
-     dirp->handle = INVALID_HANDLE_VALUE;
- #else
-+    errno=0;
-     dirp = opendir(p);
-     if (!dirp) {
--        fprintf(stderr,"dir_open: Could not open directory '%s'.\n",p);
-+        char whereami[MAXPATHLEN];
-+	boinc_getcwd(whereami);
-+        fprintf(stderr,"lib/filesys.cpp: Could not open directory '%s' from directory '%s': %s.\n",p,whereami,strerror(errno));
-         return NULL;
-     }
- #endif
-@@ -208,7 +211,7 @@
+@@ -215,7 +215,7 @@
  #endif
  }
  
@@ -183,19 +167,43 @@
      char file[MAXPATHLEN];
  
      DIRREF dir = dir_open(p);
-@@ -228,7 +231,11 @@
-     }
-     dir = path + "\\*";
- #else
-+    errno=0;
-     dirp = opendir(path.c_str());
-+    if (NULL == dirp) {
-+        fprintf(stderr, "opendir() failed in DirScanner::DirScanner. %s\n", strerror(errno));
-+    }
+@@ -295,7 +295,7 @@
  #endif
  }
  
-@@ -362,7 +369,7 @@
+-static int boinc_delete_file_aux(const char* path) {
++static int boinc_delete_file_aux(const char* const path) {
+ #ifdef _WIN32
+     if (!DeleteFileA(path)) {
+         return ERR_UNLINK;
+@@ -309,7 +309,7 @@
+ 
+ // Delete the file located at path
+ //
+-int boinc_delete_file(const char* path) {
++int boinc_delete_file(const char* const path) {
+     int retval = 0;
+ 
+     if (!boinc_file_exists(path)) {
+@@ -333,7 +333,7 @@
+ 
+ // get file size
+ //
+-int file_size(const char* path, double& size) {
++int file_size(const char* const path, double& size) {
+     int retval;
+ 
+ #if defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__MINGW32__)
+@@ -348,7 +348,7 @@
+     return 0;
+ }
+ 
+-int boinc_truncate(const char* path, double size) {
++int boinc_truncate(const char* const path, double size) {
+     int retval;
+ #if defined(_WIN32) && !defined(__CYGWIN32__)
+     // the usual Windows nightmare.
+@@ -369,7 +369,7 @@
  
  // remove everything from specified directory
  //
@@ -204,7 +212,52 @@
      char filename[MAXPATHLEN], path[MAXPATHLEN];
      int retval;
      DIRREF dirp;
-@@ -613,7 +620,7 @@
+@@ -397,7 +397,7 @@
+ // Win: use special version because stat() is slow, can be avoided
+ // Unix: follow symbolic links
+ //
+-int dir_size(const char* dirpath, double& size, bool recurse) {
++int dir_size(const char* const dirpath, double& size, bool recurse) {
+ #ifdef WIN32
+     char path2[_MAX_PATH];
+     sprintf(path2, "%s/*", dirpath);
+@@ -452,7 +452,7 @@
+     return 0;
+ }
+ 
+-FILE* boinc_fopen(const char* path, const char* mode) {
++FILE* boinc_fopen(const char* const path, const char* mode) {
+     // if opening for read, and file isn't there,
+     // leave now (avoid 5-second delay!!)
+     //
+@@ -503,7 +503,7 @@
+ }
+ 
+ 
+-int boinc_file_exists(const char* path) {
++int boinc_file_exists(const char* const path) {
+     struct stat buf;
+     if (stat(path, &buf)) {
+         return false;     // stat() returns zero on success
+@@ -513,7 +513,7 @@
+ 
+ // same, but doesn't traverse symlinks
+ //
+-int boinc_file_or_symlink_exists(const char* path) {
++int boinc_file_or_symlink_exists(const char* const path) {
+     struct stat buf;
+ #ifdef _WIN32
+     if (stat(path, &buf)) {
+@@ -527,7 +527,7 @@
+ 
+ // returns zero on success, nonzero if didn't touch file
+ //
+-int boinc_touch_file(const char *path) {
++int boinc_touch_file(const char* const path) {
+ 
+     if (boinc_file_exists(path)) {
+         return 0;
+@@ -620,7 +620,7 @@
  
  // make a dir that's owner and group RWX
  //
@@ -213,7 +266,7 @@
      if (is_dir(path)) return 0;
  #ifdef _WIN32
      if (!CreateDirectoryA(path, NULL)) {
-@@ -628,7 +635,7 @@
+@@ -635,7 +635,7 @@
      return 0;
  }
  
@@ -222,16 +275,16 @@
  #ifdef _WIN32
      if (!RemoveDirectoryA(name)) {
          return ERR_RMDIR;
-@@ -641,7 +648,7 @@
+@@ -648,7 +648,7 @@
  }
  
  #ifndef _WIN32
 -int boinc_chown(const char* path, gid_t gid) {
-+int boinc_chown(const char* const path, const gid_t gid) {
++int boinc_chown(const char* const path, gid_t gid) {
      if (gid) {
          if (chown(path, (uid_t)-1, gid)) {
              return ERR_CHOWN;
-@@ -654,7 +661,7 @@
+@@ -661,7 +661,7 @@
  // if "filepath" is of the form a/b/c,
  // create directories dirpath/a, dirpath/a/b etc.
  //
@@ -240,16 +293,7 @@
      char buf[MAXPATHLEN], oldpath[MAXPATHLEN], newpath[MAXPATHLEN];
      int retval;
      char *p, *q;
-@@ -721,7 +728,7 @@
-     return 0;
- }
- 
--int FILE_LOCK::unlock(const char* filename) {
-+int FILE_LOCK::unlock(const char* const filename) {
- #if defined(_WIN32) && !defined(__CYGWIN32__)
-     CloseHandle(handle);
- #else
-@@ -733,7 +740,7 @@
+@@ -740,7 +740,7 @@
      return 0;
  }
  
@@ -258,7 +302,7 @@
  #ifdef _WIN32
      getcwd(path, MAXPATHLEN);
  #else
-@@ -745,7 +752,7 @@
+@@ -752,7 +752,7 @@
  #endif
  }
  
@@ -267,16 +311,16 @@
      boinc_getcwd(path);
      if (strlen(relname)) {
          strcat(path, "/");
-@@ -756,7 +763,7 @@
+@@ -763,7 +763,7 @@
  // get total and free space on current filesystem (in bytes)
  //
- #ifdef _WIN32
--int get_filesystem_info(double &total_space, double &free_space, char*) {
-+int get_filesystem_info(double &total_space, double &free_space, const char* const) {
-     char cwd[MAXPATHLEN];
-     boinc_getcwd(cwd);
-     FreeFn pGetDiskFreeSpaceEx;
-@@ -789,7 +796,7 @@
+ #if defined(_WIN32) && !(defined(WXDEBUG) || defined(WXNDEBUG))
+-int boinc_allocate_file(const char* path, double size) {
++int boinc_allocate_file(const char* const path, double size) {
+     int retval = 0;
+     HANDLE h = CreateFile(
+         path,
+@@ -823,7 +823,7 @@
          total_space = (double)dwTotalClusters * dwSectPerClust * dwBytesPerSect;
      }
  #else
@@ -287,13 +331,24 @@
  
 --- a/lib/filesys.h
 +++ b/lib/filesys.h
-@@ -47,19 +47,19 @@
-   extern FILE* boinc_fopen(const char* path, const char* mode);
+@@ -42,30 +42,30 @@
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+-  extern int boinc_delete_file(const char*);
+-  extern int boinc_touch_file(const char *path);
+-  extern FILE* boinc_fopen(const char* path, const char* mode);
++  extern int boinc_delete_file(const char* const);
++  extern int boinc_touch_file(const char* const path);
++  extern FILE* boinc_fopen(const char* const path, const char* mode);
    extern int boinc_copy(const char* orig, const char* newf);
    extern int boinc_rename(const char* old, const char* newf);
 -  extern int boinc_mkdir(const char*);
 +  extern int boinc_mkdir(const char* const);
- #ifndef _WIN32
+ #ifdef _WIN32
+-  extern int boinc_allocate_file(const char*, double size);
++  extern int boinc_allocate_file(const char* const, double size);
+ #else
 -  extern int boinc_chown(const char*, gid_t);
 +  extern int boinc_chown(const char* const, const gid_t);
  #endif
@@ -303,21 +358,29 @@
 -  extern int boinc_make_dirs(const char*, const char*);
 +  extern int boinc_rmdir(const char* const);
 +  extern void boinc_getcwd(/* not const*/ char* const);
-+  extern void relative_to_absolute(const char* const relname, char* const path);
++  extern void relative_to_absolute(const char* const relname, /* not const*/ char* const path);
 +  extern int boinc_make_dirs(const char* const, const char* const);
    extern char boinc_failed_file[MAXPATHLEN];
 -  extern int is_file(const char* path);
 -  extern int is_dir(const char* path);
+-  extern int is_file_follow_symlinks(const char* path);
 -  extern int is_dir_follow_symlinks(const char* path);
 -  extern int is_symlink(const char* path);
+-  extern int boinc_truncate(const char*, double);
+-  extern int boinc_file_exists(const char* path);
+-  extern int boinc_file_or_symlink_exists(const char* path);
 +  extern int is_file(const char* const path);
 +  extern int is_dir(const char* const path);
++  extern int is_file_follow_symlinks(const char* const path);
 +  extern int is_dir_follow_symlinks(const char* const path);
 +  extern int is_symlink(const char* const path);
-   extern int boinc_truncate(const char*, double);
-   extern int boinc_file_exists(const char* path);
-   extern int boinc_file_or_symlink_exists(const char* path);
-@@ -71,10 +71,10 @@
++  extern int boinc_truncate(const char* const, double);
++  extern int boinc_file_exists(const char* const path);
++  extern int boinc_file_or_symlink_exists(const char* const path);
+ 
+ #ifdef __cplusplus
+ }
+@@ -74,10 +74,10 @@
  /* C++ specific prototypes/defines follow here */
  #ifdef __cplusplus
  
@@ -332,7 +395,7 @@
  
  // TODO TODO TODO
  // remove this code - the DirScanner class does the same thing.
-@@ -96,7 +96,7 @@
+@@ -99,7 +99,7 @@
  extern int dir_scan(std::string&, DIRREF);
  extern void dir_close(DIRREF);
  

@@ -4,7 +4,6 @@ libnotify-0.7.patch
 sched_driver_f_free.patch
 improve_opendir_warning.patch
 termios_is_everywhere.patch
-mac_addresses_cores_in_kfreebsd.patch
 stripchart_debian.patch
 upstream_sztaki_configureEval.patch
 generate_less.patch
@@ -17,14 +16,11 @@ stripchart_security.patch
 #andYetMorePatches04.patch
 #convinceDavid#cwd_handling.patch
 parse_issues.patch
-#client_stream_realloc.patch #stream.cpp has been deleted in .38 release
 # --- A
 #convinceDavid# bug672328  MoreInformativeAppStartFailure.patch
 #send to David#
-#stream_memory_leak_fix.patch #stream.cpp has been deleted in .38 release
 #SETIprobCandidate#app_ipc_uninitialised_A_reorder.patch
 #SETIprobCandidate#app_ipc_uninitialised_B_buffer.patch
-#uninitialised_client_states.patch # this variable has been removed between 36 and 38 release 
 # --- B 
 #tmpA# add_init_to_client_state_constructor.patch
 #convinceDavid# client_path_char_array_length.patch
@@ -52,7 +48,6 @@ opendir_error_messages.patch
 sched_driver_char_buffers.patch
 csh2tcsh.patch
 #socklenBuildFixByDavid.patch
-ensure_there_is_no_newline_in_passwd.patch
 add_hardening_flags.patch
 cmath_missing.patch
 investigate_boinc_api.patch

@@ -1,7 +1,5 @@
-Index: boinc/api/graphics2_util.cpp
-===================================================================
---- boinc.orig/api/graphics2_util.cpp	2012-09-15 18:20:11.920438137 +0200
-+++ boinc/api/graphics2_util.cpp	2012-09-16 21:27:07.961955315 +0200
+--- a/api/graphics2_util.cpp
++++ b/api/graphics2_util.cpp
 @@ -37,7 +37,7 @@
  static key_t get_shmem_name(const char* prog_name) {
      char cwd[MAXPATHLEN], path[MAXPATHLEN];
@@ -20,11 +18,9 @@ Index: boinc/api/graphics2_util.cpp
  }
  #endif
  
-Index: boinc/lib/filesys.cpp
-===================================================================
---- boinc.orig/lib/filesys.cpp	2012-09-16 21:27:07.901956127 +0200
-+++ boinc/lib/filesys.cpp	2012-09-16 21:30:01.147609631 +0200
-@@ -426,7 +426,7 @@
+--- a/lib/filesys.cpp
++++ b/lib/filesys.cpp
+@@ -433,7 +433,7 @@
      while (1) {
          retval = dir_scan(filename, dirp, sizeof(filename));
          if (retval) break;
@@ -33,7 +29,7 @@ Index: boinc/lib/filesys.cpp
  
          if (is_dir(subdir)) {
              if (recurse) {
-@@ -544,8 +544,8 @@
+@@ -551,8 +551,8 @@
      }
      return 0;
  #elif defined(__EMX__)
@@ -44,7 +40,7 @@ Index: boinc/lib/filesys.cpp
      return system(cmd);
  #else
      // POSIX requires that shells run from an application will use the 
-@@ -668,7 +668,7 @@
+@@ -675,7 +675,7 @@
          p = strchr(q, '/');
          if (!p) break;
          *p = 0;
@@ -53,10 +49,8 @@ Index: boinc/lib/filesys.cpp
          retval = boinc_mkdir(newpath);
          if (retval) return retval;
          strcpy(oldpath, newpath);
-Index: boinc/lib/network.cpp
-===================================================================
---- boinc.orig/lib/network.cpp	2012-09-15 18:20:16.860372380 +0200
-+++ boinc/lib/network.cpp	2012-09-16 21:27:07.973955156 +0200
+--- a/lib/network.cpp
++++ b/lib/network.cpp
 @@ -70,7 +70,7 @@
      case WSAENOTSOCK:
          return "not a socket";

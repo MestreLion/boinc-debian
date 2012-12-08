@@ -2,11 +2,9 @@ Author: Steffen Moeller <moeller@debian.org>
 Description: Later versions of Debian come with libnotify 0.7.
 Disclaimer: For backports, this patch needs to be disabled.
 
-Index: boinc/clientgui/Makefile.am
-===================================================================
---- boinc.orig/clientgui/Makefile.am	2012-03-31 12:34:56.392088389 +0200
-+++ boinc/clientgui/Makefile.am	2012-03-31 12:38:41.129017444 +0200
-@@ -118,9 +118,13 @@
+--- a/clientgui/Makefile.am
++++ b/clientgui/Makefile.am
+@@ -117,9 +117,13 @@
      ../lib/error_numbers.h \
      locale $(mac_headers)
  
@@ -23,11 +21,9 @@ Index: boinc/clientgui/Makefile.am
  
  win_config.h: $(top_srcdir)/config.h
  	grep '#define.*BOINC.*VERSION' $^ > $@
-Index: boinc/configure.ac
-===================================================================
---- boinc.orig/configure.ac	2012-03-31 12:34:56.944080840 +0200
-+++ boinc/configure.ac	2012-03-31 12:38:41.133017390 +0200
-@@ -695,14 +695,12 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -725,14 +725,12 @@
  
  dnl ---------- libNotify --------------------------------------------------
  if test "${enable_manager}" = yes ; then
@@ -47,7 +43,7 @@ Index: boinc/configure.ac
  fi
  
  dnl ---------- Sqlite3 ----------------------------------------------------
-@@ -846,7 +844,7 @@
+@@ -876,7 +874,7 @@
     ],
    [enable_wx_debug="no"])
  

@@ -1,11 +1,9 @@
 Author: Steffen Moeller <moeller@debian.org>
 Description: Helping verbosity of error messages.
 
-Index: boinc/lib/filesys.cpp
-===================================================================
---- boinc.orig/lib/filesys.cpp	2012-07-07 21:53:21.100352017 +0800
-+++ boinc/lib/filesys.cpp	2012-07-07 21:54:18.016352939 +0800
-@@ -137,7 +137,10 @@
+--- a/lib/filesys.cpp
++++ b/lib/filesys.cpp
+@@ -144,7 +144,10 @@
      dirp->handle = INVALID_HANDLE_VALUE;
  #else
      dirp = opendir(p);

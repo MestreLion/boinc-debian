@@ -1,8 +1,6 @@
-Index: boinc/lib/filesys.cpp
-===================================================================
---- boinc.orig/lib/filesys.cpp	2012-08-17 15:54:07.000000000 +0200
-+++ boinc/lib/filesys.cpp	2012-08-17 16:00:33.580867206 +0200
-@@ -578,9 +582,9 @@
+--- a/lib/filesys.cpp
++++ b/lib/filesys.cpp
+@@ -585,9 +585,9 @@
      fclose(src);
      fclose(dst);
      // Copy file's ownership, permissions to the extent we are allowed
@@ -15,10 +13,8 @@ Index: boinc/lib/filesys.cpp
      return retval;
  #endif
  }
-Index: boinc/lib/diagnostics.cpp
-===================================================================
---- boinc.orig/lib/diagnostics.cpp	2012-08-17 15:47:19.767548254 +0200
-+++ boinc/lib/diagnostics.cpp	2012-08-17 15:54:07.000000000 +0200
+--- a/lib/diagnostics.cpp
++++ b/lib/diagnostics.cpp
 @@ -75,14 +75,14 @@
  
  static int         diagnostics_initialized = false;
@@ -66,10 +62,8 @@ Index: boinc/lib/diagnostics.cpp
  				else if (parse_int(buf, "<http_server_port>", proxy_port)) continue;
  			}
  			fclose(p);
-Index: boinc/client/sandbox.cpp
-===================================================================
---- boinc.orig/client/sandbox.cpp	2012-08-17 15:47:19.771548200 +0200
-+++ boinc/client/sandbox.cpp	2012-08-17 15:54:07.000000000 +0200
+--- a/client/sandbox.cpp
++++ b/client/sandbox.cpp
 @@ -207,7 +207,7 @@
          strcpy(filename, "");
          retval = dir_scan(filename, dirp, sizeof(filename));
