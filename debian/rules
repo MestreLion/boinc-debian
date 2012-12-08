@@ -136,7 +136,7 @@ CXXFLAGS_boinc-client := $(CXXFLAGS)
 ENABLE_SERVER_TEST := $(shell egrep '^Package:.*boinc-server-maker' debian/control.in)
 ENABLE_SERVER := --disable-server
 ifneq (,$(ENABLE_SERVER_TEST))
-ENABLE_SERVER :=--enable-server 
+ENABLE_SERVER := --enable-server
 TMP=$(shell sed -e 's/^%//' debian/control.in > debian/control)
 else
 TMP=$(shell egrep -v '^%' debian/control.in > debian/control)
