@@ -12,7 +12,7 @@ sched/db_dump_spec.xml               usr/share/boinc-server/sched
 sched/transitioner_catchup.php	     usr/share/boinc-server/sched
 #where is this?
 #sched/request_file_list 	     usr/share/boinc-server/sched 
-sched/put_file 			     usr/lib/boinc-server/sched
+#sched/put_file			     usr/lib/boinc-server/sched
 
 #test/uc_result                      usr/share/boinc-server/test
 #test/uc_wu_nodelete                 usr/share/boinc-server/test

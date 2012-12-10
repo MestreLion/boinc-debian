@@ -180,6 +180,7 @@ CFGFLAGS_boinc-client = \
 
 override_dh_clean:
 	dh_clean
+	rm -rf config.log
 	rm -rf clientscr/.libs override_dh_auto_install
 	rm -rf debian/boinc-app-examples debian/boinc-server-maker debian/boinc-app-examples.substvars debian/boinc-server-maker.substvars
 	rm -rf debian/tmp autoreconf-stamp build-*-stamp install-*-stamp
@@ -338,7 +339,7 @@ endif
 	do \
 		egrep -l "^#!.*env..*python" $$i/* | xargs -r sed -i '1s%#!.*%#!/usr/bin/python%' ; \
 	done
-	-chmod +x $(CURDIR)/debian/boinc-server-maker/usr/share/boinc-server/sched/transitioner_catchup.php ; \
+#	-chmod +x $(CURDIR)/debian/boinc-server-maker/usr/share/boinc-server/sched/transitioner_catchup.php ; \
 
 override_dh_install:
 	# boinc apps are built only together with the server
