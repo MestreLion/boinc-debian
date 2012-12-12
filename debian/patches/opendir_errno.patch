@@ -1,6 +1,6 @@
---- boinc-7.0.38+dfsg.orig/client/check_security.cpp
-+++ boinc-7.0.38+dfsg/client/check_security.cpp
-@@ -40,9 +40,9 @@ bool IsUserInGroupBM();
+--- a/client/check_security.cpp
++++ b/client/check_security.cpp
+@@ -40,9 +40,9 @@
  #endif
  
  static int CheckNestedDirectories(
@@ -12,7 +12,7 @@
  );
  
  #if (! defined(__WXMAC__) && ! defined(_MAC_INSTALLER))
-@@ -501,9 +501,9 @@ saverName[2] = "Progress Thru Processors
+@@ -503,9 +503,9 @@
  }
  
  
@@ -24,7 +24,7 @@
                                  ) {
      int             isDirectory;
      char            full_path[MAXPATHLEN];
-@@ -513,6 +513,7 @@ static int CheckNestedDirectories(char *
+@@ -515,6 +515,7 @@
      dirent          *dp;
      static int      errShown = 0;
  
@@ -32,7 +32,7 @@
      dirp = opendir(basepath);
      if (dirp == NULL) {
          // Ideally, all project-created subdirectories under project or slot 
-@@ -522,6 +523,7 @@ static int CheckNestedDirectories(char *
+@@ -524,6 +525,7 @@
          // the subdirectory to check them.
          strlcpy(full_path, basepath, sizeof(full_path));
          if ((depth > 1) && (errno == EACCES)) {
@@ -40,9 +40,9 @@
              return 0;
          } else {
              retval = -1200;
---- boinc-7.0.38+dfsg.orig/client/cs_platforms.cpp
-+++ boinc-7.0.38+dfsg/client/cs_platforms.cpp
-@@ -45,6 +45,7 @@ LPFN_ISWOW64PROCESS fnIsWow64Process;
+--- a/client/cs_platforms.cpp
++++ b/client/cs_platforms.cpp
+@@ -45,6 +45,7 @@
  #include <sys/sysctl.h>
  #endif
  
@@ -50,7 +50,7 @@
  #include "error_numbers.h"
  #include "filesys.h"
  #include "str_util.h"
-@@ -180,9 +181,17 @@ void CLIENT_STATE::detect_platforms() {
+@@ -180,9 +181,17 @@
                  int i;
                  for (i=0; i < nlibdirs; i++) {
                      struct dirent *entry;

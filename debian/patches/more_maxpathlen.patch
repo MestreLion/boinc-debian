@@ -40,7 +40,7 @@
      return system(cmd);
  #else
      // POSIX requires that shells run from an application will use the 
-@@ -675,7 +675,7 @@
+@@ -683,7 +683,7 @@
          p = strchr(q, '/');
          if (!p) break;
          *p = 0;
