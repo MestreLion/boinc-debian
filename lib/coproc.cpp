@@ -29,7 +29,6 @@
 #include <cstdlib>
 #endif
 
-
 #ifdef _WIN32
 #include "win_util.h"
 #else
@@ -290,8 +289,8 @@ void OPENCL_DEVICE_PROP::description(char* buf, const char* type) {
     strlcpy(s1, opencl_device_version, sizeof(s1));
     n = (int)strlen(s1) - 1;
     if ((n > 0) && (s1[n] == ' ')) s1[n] = '\0';
-    sprintf(s2, "%s (driver version %s, device version %s, %.0fMB, %.0fMB available)",
-        name, opencl_driver_version, s1, global_mem_size/MEGA, opencl_available_ram/MEGA
+    sprintf(s2, "%s (driver version %s, device version %s, %.0fMB, %.0fMB available, %.0f GFLOPS peak)",
+        name, opencl_driver_version, s1, global_mem_size/MEGA, opencl_available_ram/MEGA, peak_flops/1.e9
     );
 
     switch(is_used) {
@@ -325,6 +324,12 @@ void COPROCS::summary_string(char* buf, int len) {
         );
         strlcat(buf, buf2, len);
     }
+    if (intel_gpu.count) {
+        sprintf(buf2,"[INTEL|%s|%d|%dMB|%s]",
+            intel_gpu.name, intel_gpu.count, intel_gpu.opencl_prop.global_mem_size/MEGA, intel_gpu.version
+        );
+        strlcat(buf, buf2, len);
+    }
 }
 
 int COPROCS::parse(XML_PARSER& xp) {
@@ -355,6 +360,15 @@ int COPROCS::parse(XML_PARSER& xp) {
             }
             continue;
         }
+        if (xp.match_tag("coproc_intel_gpu")) {
+            retval = intel_gpu.parse(xp);
+            if (retval) {
+                intel_gpu.clear();
+            } else {
+                coprocs[n_rsc++] = intel_gpu;
+            }
+            continue;
+        }
     }
     return ERR_XML_PARSE;
 }
@@ -368,6 +382,9 @@ void COPROCS::write_xml(MIOFILE& mf, bool scheduler_rpc) {
     }
     if (ati.count) {
         ati.write_xml(mf, scheduler_rpc);
+    }
+    if (intel_gpu.count) {
+        intel_gpu.write_xml(mf, scheduler_rpc);
     }
     mf.printf("    </coprocs>\n");
 #endif
@@ -895,7 +912,7 @@ void COPROC_ATI::fake(double ram, double avail_ram, int n) {
 #ifndef _USING_FCGI_
 void COPROC_INTEL::write_xml(MIOFILE& f, bool scheduler_rpc) {
     f.printf(
-        "<coproc_intel>\n"
+        "<coproc_intel_gpu>\n"
         "   <count>%d</count>\n"
         "   <name>%s</name>\n"
         "   <available_ram>%f</available_ram>\n"
@@ -919,13 +936,13 @@ void COPROC_INTEL::write_xml(MIOFILE& f, bool scheduler_rpc) {
         opencl_prop.write_xml(f);
     }
         
-    f.printf("</coproc_intel>\n");
+    f.printf("</coproc_intel_gpu>\n");
 };
 #endif
 
 void COPROC_INTEL::clear() {
     COPROC::clear();
-    strcpy(type, proc_type_name_xml(PROC_TYPE_AMD_GPU));
+    strcpy(type, proc_type_name_xml(PROC_TYPE_INTEL_GPU));
     estimated_delay = -1;
     strcpy(name, "");
     strcpy(version, "");
@@ -937,7 +954,7 @@ int COPROC_INTEL::parse(XML_PARSER& xp) {
     clear();
 
     while (!xp.get_tag()) {
-        if (xp.match_tag("/coproc_intel")) {
+        if (xp.match_tag("/coproc_intel_gpu")) {
             if (!peak_flops) {
 				set_peak_flops();
             }
@@ -965,7 +982,6 @@ int COPROC_INTEL::parse(XML_PARSER& xp) {
     return ERR_XML_PARSE;
 }
 
-
 // http://en.wikipedia.org/wiki/Comparison_of_Intel_graphics_processing_units says:
 // The raw performance of integrated GPU, in single-precision FLOPS,
 // can be calculated as follows:
@@ -979,12 +995,11 @@ void COPROC_INTEL::set_peak_flops() {
     if (opencl_prop.max_compute_units) {
         x = opencl_prop.max_compute_units * 8 * opencl_prop.max_clock_frequency * 1e6;
     }
-    peak_flops =  (x>0)?x:45e9;
+    peak_flops = (x>0)?x:45e9;
 }
 
-//TODO: Fix this
 void COPROC_INTEL::fake(double ram, double avail_ram, int n) {
-    strcpy(type, proc_type_name_xml(PROC_TYPE_AMD_GPU));
+    strcpy(type, proc_type_name_xml(PROC_TYPE_INTEL_GPU));
     strcpy(version, "1.4.3");
     strcpy(name, "foobar");
     count = n;
@@ -994,9 +1009,19 @@ void COPROC_INTEL::fake(double ram, double avail_ram, int n) {
         device_nums[i] = i;
     }
     set_peak_flops();
+    opencl_prop.global_mem_size = ram;
 }
 
-
+// used wherever a processor type is specified in XML, e.g.
+// <coproc>
+//    <type>xxx</type>
+//
+// Don't confused this with the element names used for GPUS within <coprocs>,
+// namely:
+// coproc_cuda
+// coproc_ati
+// coproc_intel_gpu
+//
 const char* proc_type_name_xml(int pt) {
     switch(pt) {
     case PROC_TYPE_CPU: return "CPU";

@@ -35,10 +35,6 @@
 #define _WIN32_IE 0x0501
 #endif
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 4096
-#endif
-
 #endif
 
 #ifdef __APPLE__
@@ -167,9 +163,6 @@
 
 // Standard Libraries
 //
-#ifndef __APPLE__
-#include <malloc.h>
-#endif
 
 // C headers
 #include <cassert>

@@ -64,34 +64,39 @@ void segv_handler(int) {
 
 vector<COPROC_ATI> ati_gpus;
 vector<COPROC_NVIDIA> nvidia_gpus;
-vector<OPENCL_DEVICE_PROP> nvidia_opencls;
+vector<COPROC_INTEL> intel_gpus;
 vector<OPENCL_DEVICE_PROP> ati_opencls;
+vector<OPENCL_DEVICE_PROP> nvidia_opencls;
 vector<OPENCL_DEVICE_PROP> intel_gpu_opencls;
 
 void COPROCS::get(
     bool use_all, vector<string>&descs, vector<string>&warnings,
-    vector<int>& ignore_nvidia_dev,
-    vector<int>& ignore_ati_dev,
-    vector<int>& ignore_intel_gpu_dev
+    IGNORE_GPU_INSTANCE& ignore_gpu_instance
 ) {
     unsigned int i;
     char buf[256], buf2[256];
 
 #ifdef _WIN32
     try {
-        nvidia.get(use_all, warnings, ignore_nvidia_dev);
+        nvidia.get(use_all, warnings, ignore_gpu_instance[PROC_TYPE_NVIDIA_GPU]);
     }
     catch (...) {
         warnings.push_back("Caught SIGSEGV in NVIDIA GPU detection");
     }
     try {
-        ati.get(use_all, warnings, ignore_ati_dev);
+        ati.get(use_all, warnings, ignore_gpu_instance[PROC_TYPE_AMD_GPU]);
     } 
     catch (...) {
         warnings.push_back("Caught SIGSEGV in ATI GPU detection");
     }
     try {
-        get_opencl(use_all, warnings, ignore_ati_dev, ignore_nvidia_dev, ignore_intel_gpu_dev);
+        intel_gpu.get(use_all, warnings, ignore_gpu_instance[PROC_TYPE_INTEL_GPU]);
+    } 
+    catch (...) {
+        warnings.push_back("Caught SIGSEGV in INTEL GPU detection");
+    }
+    try {
+        get_opencl(use_all, warnings, ignore_gpu_instance);
     } 
     catch (...) {
         warnings.push_back("Caught SIGSEGV in OpenCL detection");
@@ -101,52 +106,59 @@ void COPROCS::get(
     if (setjmp(resume)) {
         warnings.push_back("Caught SIGSEGV in NVIDIA GPU detection");
     } else {
-        nvidia.get(use_all, warnings, ignore_nvidia_dev);
+        nvidia.get(use_all, warnings, ignore_gpu_instance[PROC_TYPE_NVIDIA_GPU]);
     }
 #ifndef __APPLE__       // ATI does not yet support CAL on Macs
     if (setjmp(resume)) {
         warnings.push_back("Caught SIGSEGV in ATI GPU detection");
     } else {
-        ati.get(use_all, warnings, ignore_ati_dev);
+        ati.get(use_all, warnings, ignore_gpu_instance[PROC_TYPE_AMD_GPU]);
     }
 #endif
     if (setjmp(resume)) {
+        warnings.push_back("Caught SIGSEGV in INTEL GPU detection");
+    } else {
+        intel_gpu.get(use_all, warnings, ignore_gpu_instance[PROC_TYPE_INTEL_GPU]);
+    }
+    if (setjmp(resume)) {
         warnings.push_back("Caught SIGSEGV in OpenCL detection");
     } else {
-        get_opencl(use_all, warnings, ignore_ati_dev, ignore_nvidia_dev, ignore_intel_gpu_dev);
+        get_opencl(use_all, warnings, ignore_gpu_instance);
     }
     signal(SIGSEGV, old_sig);
 #endif
 
     for (i=0; i<nvidia_gpus.size(); i++) {
+        // This is really CUDA description
         nvidia_gpus[i].description(buf);
         switch(nvidia_gpus[i].is_used) {
         case COPROC_IGNORED:
-            sprintf(buf2, "NVIDIA GPU %d (ignored by config): %s", nvidia_gpus[i].device_num, buf);
+            sprintf(buf2, "CUDA: NVIDIA GPU %d (ignored by config): %s", nvidia_gpus[i].device_num, buf);
             break;
         case COPROC_USED:
-            sprintf(buf2, "NVIDIA GPU %d: %s", nvidia_gpus[i].device_num, buf);
+            sprintf(buf2, "CUDA: NVIDIA GPU %d: %s", nvidia_gpus[i].device_num, buf);
             break;
         case COPROC_UNUSED:
         default:
-            sprintf(buf2, "NVIDIA GPU %d (not used): %s", nvidia_gpus[i].device_num, buf);
+            sprintf(buf2, "CUDA: NVIDIA GPU %d (not used): %s", nvidia_gpus[i].device_num, buf);
             break;
         }
         descs.push_back(string(buf2));
     }
 
     for (i=0; i<ati_gpus.size(); i++) {
+        // This is really CAL description
         ati_gpus[i].description(buf);
         switch(ati_gpus[i].is_used) {
         case COPROC_IGNORED:
-            sprintf(buf2, "ATI GPU %d (ignored by config): %s", ati_gpus[i].device_num, buf);
+            sprintf(buf2, "CAL: ATI GPU %d (ignored by config): %s", ati_gpus[i].device_num, buf);
             break;
         case COPROC_USED:
-            sprintf(buf2, "ATI GPU %d: %s", ati_gpus[i].device_num, buf);
+            sprintf(buf2, "CAL: ATI GPU %d: %s", ati_gpus[i].device_num, buf);
             break;
         case COPROC_UNUSED:
         default:
-            sprintf(buf2, "ATI GPU %d: (not used) %s", ati_gpus[i].device_num, buf);
+            sprintf(buf2, "CAL: ATI GPU %d: (not used) %s", ati_gpus[i].device_num, buf);
             break;
         }
         descs.push_back(string(buf2));
@@ -169,13 +181,14 @@ void COPROCS::get(
     // Create descriptions for OpenCL Intel GPUs
     //
     for (i=0; i<intel_gpu_opencls.size(); i++) {
-        intel_gpu_opencls[i].description(buf, GPU_TYPE_ATI);
+        intel_gpu_opencls[i].description(buf, GPU_TYPE_INTEL);
         descs.push_back(string(buf));
     }
 
     ati_gpus.clear();
     nvidia_gpus.clear();
-    nvidia_opencls.clear();
+    intel_gpus.clear();
     ati_opencls.clear();
+    nvidia_opencls.clear();
     intel_gpu_opencls.clear();
 }

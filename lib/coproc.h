@@ -162,7 +162,7 @@ struct OPENCL_DEVICE_PROP {
     void write_xml(MIOFILE&);
 #endif
     int parse(XML_PARSER&);
-void description(char* buf, const char* type);
+    void description(char* buf, const char* type);
 };
 
 
@@ -317,7 +317,7 @@ struct COPROC_NVIDIA : public COPROC {
     void write_xml(MIOFILE&, bool scheduler_rpc);
 #endif
     COPROC_NVIDIA(): COPROC() {
-        strcpy(type, proc_type_name_xml(PROC_TYPE_NVIDIA_GPU));
+        clear();
     }
     void get(
         bool use_all,
@@ -356,7 +356,7 @@ struct COPROC_ATI : public COPROC {
     void write_xml(MIOFILE&, bool scheduler_rpc);
 #endif
     COPROC_ATI(): COPROC() {
-        strcpy(type, proc_type_name_xml(PROC_TYPE_AMD_GPU));
+        clear();
     }
     void get(
         bool use_all,
@@ -374,19 +374,27 @@ struct COPROC_ATI : public COPROC {
 struct COPROC_INTEL : public COPROC {
     char name[256];
     char version[50];
+    double global_mem_size;
     COPROC_USAGE is_used;               // temp used in scan process
 
 #ifndef _USING_FCGI_
     void write_xml(MIOFILE&, bool scheduler_rpc);
 #endif
     COPROC_INTEL(): COPROC() {
-        strcpy(type, proc_type_name_xml(PROC_TYPE_INTEL_GPU));
+        clear();
     }
+    void get(
+        bool use_all,
+        std::vector<std::string>&,
+        std::vector<int>& ignore_devs
+    );
     void clear();
     int parse(XML_PARSER&);
     void set_peak_flops();
     void fake(double ram, double avail_ram, int);
 };
+
+typedef std::vector<int> IGNORE_GPU_INSTANCE[NPROC_TYPES];
 
 struct COPROCS {
     int n_rsc;
@@ -400,16 +408,12 @@ struct COPROCS {
         bool use_all, 
         std::vector<std::string> &descs,
         std::vector<std::string> &warnings,
-        std::vector<int>& ignore_nvidia_dev,
-        std::vector<int>& ignore_ati_dev,
-        std::vector<int>& ignore_intel_gpu_dev
+        IGNORE_GPU_INSTANCE &ignore_gpu_instance
     );
     void get_opencl(
         bool use_all, 
         std::vector<std::string> &warnings,
-        std::vector<int>& ignore_nvidia_dev, 
-        std::vector<int>& ignore_ati_dev,
-        std::vector<int>& ignore_intel_gpu_dev
+        IGNORE_GPU_INSTANCE &ignore_gpu_instance
     );
     cl_int get_opencl_info(
         OPENCL_DEVICE_PROP& prop, 
@@ -442,6 +446,7 @@ struct COPROCS {
         }
         nvidia.clear();
         ati.clear();
+        intel_gpu.clear();
         COPROC c;
         strcpy(c.type, "CPU");
         add(c);
