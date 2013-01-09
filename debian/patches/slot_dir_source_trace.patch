@@ -1,6 +1,6 @@
 --- a/client/app.cpp
 +++ b/client/app.cpp
-@@ -420,8 +420,8 @@
+@@ -421,8 +421,8 @@
      int retval;
  
      get_project_dir(result->project, project_dir, sizeof(project_dir));
@@ -11,7 +11,7 @@
          "%s/trickle_up_%s_%d.xml",
          project_dir, result->name, (int)time(0)
      );
-@@ -456,7 +456,7 @@
+@@ -457,7 +457,7 @@
      return 0;
  }
  
@@ -20,7 +20,7 @@
      unsigned int i;
      for (i=0; i<active_tasks.size(); i++) {
          if (active_tasks[i]->slot == slot) {
-@@ -466,7 +466,7 @@
+@@ -467,7 +467,7 @@
      return false;
  }
  
@@ -29,7 +29,7 @@
      char path[MAXPATHLEN];
      unsigned int i;
      for (i=0; i<active_tasks.size(); i++) {
-@@ -507,7 +507,7 @@
+@@ -508,7 +508,7 @@
  #endif
  }
  
@@ -38,7 +38,7 @@
      unsigned int i;
      for (i=0; i<active_tasks.size(); i++) {
          if (active_tasks[i]->slot == slot) return true;
-@@ -619,7 +619,7 @@
+@@ -620,7 +620,7 @@
  #endif
  
  int ACTIVE_TASK::parse(XML_PARSER& xp) {
@@ -47,7 +47,7 @@
      int n, dummy;
      unsigned int i;
      PROJECT* project=0;
-@@ -894,7 +894,7 @@
+@@ -895,7 +895,7 @@
  
      DirScanner dirscan(slot_dir);
      while (dirscan.scan(filename)) {

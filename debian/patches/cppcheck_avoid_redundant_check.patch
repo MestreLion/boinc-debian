@@ -1,7 +1,5 @@
-Index: boinc/api/make_app_icon_h.cpp
-===================================================================
---- boinc.orig/api/make_app_icon_h.cpp
-+++ boinc/api/make_app_icon_h.cpp
+--- a/api/make_app_icon_h.cpp
++++ b/api/make_app_icon_h.cpp
 @@ -39,7 +39,7 @@
      }
      

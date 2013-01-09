@@ -1,18 +1,14 @@
 Description: The use of the C Shell is deprecated.
-Index: boinc/tools/db_query
-===================================================================
---- boinc.orig/tools/db_query	2011-04-27 22:39:13.000000000 +0200
-+++ boinc/tools/db_query	2011-04-27 22:45:42.000000000 +0200
+--- a/tools/db_query
++++ b/tools/db_query
 @@ -1,4 +1,4 @@
 -#! /bin/tcsh
 +#!/usr/bin/tcsh
  
  set CIVDATE = `date "+%Y:%m:%d:%H:%M"`
  set UNIXDATE = `perl -e 'print time()'`
-Index: boinc/tools/watch_tcp
-===================================================================
---- boinc.orig/tools/watch_tcp	2011-04-27 22:39:13.000000000 +0200
-+++ boinc/tools/watch_tcp	2011-04-27 22:45:42.000000000 +0200
+--- a/tools/watch_tcp
++++ b/tools/watch_tcp
 @@ -1,4 +1,4 @@
 -#! /bin/csh 
 +#!/usr/bin/tcsh

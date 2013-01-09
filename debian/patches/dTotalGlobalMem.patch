@@ -1,36 +1,5 @@
-Index: boinc/sched/plan_class_spec.cpp
-===================================================================
---- boinc.orig/sched/plan_class_spec.cpp	2012-08-17 16:08:27.014489919 +0200
-+++ boinc/sched/plan_class_spec.cpp	2012-08-18 14:42:31.369116154 +0200
-@@ -210,11 +210,11 @@
-         }
- 
-         // GPU RAM
--        if (min_gpu_ram_mb && min_gpu_ram_mb * MEGA > cp.prop.dtotalGlobalMem) {
-+        if (min_gpu_ram_mb && min_gpu_ram_mb * MEGA > cp.prop.totalGlobalMem) {
-             if (config.debug_version_select) {
-                 log_messages.printf(MSG_NORMAL,
-                     "[version] GPU RAM required min: %f, supplied: %f\n",
--                    min_gpu_ram_mb * MEGA, cp.prop.dtotalGlobalMem
-+                    min_gpu_ram_mb * MEGA, cp.prop.totalGlobalMem
-                 );
-             }
-             return false;
-@@ -291,8 +291,8 @@
-         // i.e. fill the device memory with tasks
-         if (ngpus < 0) {
-             hu.ncudas =
--                (floor(cp.prop.dtotalGlobalMem / hu.gpu_ram) * hu.gpu_ram) /
--                cp.prop.dtotalGlobalMem
-+                (floor(cp.prop.totalGlobalMem / hu.gpu_ram) * hu.gpu_ram) /
-+                cp.prop.totalGlobalMem
-             ;
-         } else if (ngpus > 0) {
-             hu.ncudas = ngpus * gpu_utilization;
-Index: boinc/sched/sched_send.cpp
-===================================================================
---- boinc.orig/sched/sched_send.cpp	2012-08-17 16:08:27.014489919 +0200
-+++ boinc/sched/sched_send.cpp	2012-08-18 14:42:31.373116100 +0200
+--- a/sched/sched_send.cpp
++++ b/sched/sched_send.cpp
 @@ -1432,7 +1432,7 @@
  
      if (g_request->coprocs.nvidia.count && ssp->have_cuda_apps) {

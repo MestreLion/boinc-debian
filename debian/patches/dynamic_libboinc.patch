@@ -1,7 +1,5 @@
-Index: boinc/Makefile.incl
-===================================================================
---- boinc.orig/Makefile.incl	2012-03-31 13:44:20.891195251 +0200
-+++ boinc/Makefile.incl	2012-05-29 16:08:30.239454422 +0200
+--- a/Makefile.incl
++++ b/Makefile.incl
 @@ -37,22 +37,22 @@
  # dependencies to make sure libs gets compiled before
  # programs linking to them:

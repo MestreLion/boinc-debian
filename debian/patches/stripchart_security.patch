@@ -52,10 +52,8 @@ Disclaimer: This is mostly dead code of upstream.
 #+UNIXDATE=`perl -e 'print time()'`
 # 
 # echo $CIVDATE $UNIXDATE $SIZE
-Index: boinc/stripchart/stripchart.cnf
-===================================================================
---- boinc.orig/stripchart/stripchart.cnf	2012-01-15 02:02:04.000000000 +0100
-+++ boinc/stripchart/stripchart.cnf	2012-01-15 02:02:05.000000000 +0100
+--- a/stripchart/stripchart.cnf
++++ b/stripchart/stripchart.cnf
 @@ -1,4 +1,5 @@
 -#! /usr/bin/env perl
 +

@@ -1,10 +1,8 @@
 Author: Steffen Moeller <moeller@debian.org>
 Description: int may not be enough (theoretically) for large files.
 
-Index: boinc/sched/file_upload_handler.cpp
-===================================================================
---- boinc.orig/sched/file_upload_handler.cpp	2011-10-30 00:29:08.000000000 +0200
-+++ boinc/sched/file_upload_handler.cpp	2011-10-30 00:29:10.000000000 +0200
+--- a/sched/file_upload_handler.cpp
++++ b/sched/file_upload_handler.cpp
 @@ -173,17 +173,17 @@
  
      while (bytes_left > 0) {

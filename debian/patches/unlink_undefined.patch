@@ -1,7 +1,5 @@
-Index: boinc/tools/process_input_template.cpp
-===================================================================
---- boinc.orig/tools/process_input_template.cpp	2012-06-30 21:30:06.832322542 +0200
-+++ boinc/tools/process_input_template.cpp	2012-06-30 22:00:54.927436303 +0200
+--- a/tools/process_input_template.cpp
++++ b/tools/process_input_template.cpp
 @@ -17,6 +17,7 @@
  
  #include <stdio.h>
@@ -10,10 +8,8 @@ Index: boinc/tools/process_input_template.cpp
  #include <sys/types.h>
  #include <sys/stat.h>
  
-Index: boinc/sched/single_job_assimilator.cpp
-===================================================================
---- boinc.orig/sched/single_job_assimilator.cpp	2012-06-30 21:30:06.792323083 +0200
-+++ boinc/sched/single_job_assimilator.cpp	2012-06-30 22:00:54.931436249 +0200
+--- a/sched/single_job_assimilator.cpp
++++ b/sched/single_job_assimilator.cpp
 @@ -24,6 +24,7 @@
  #include <string>
  #include <cstdlib>
@@ -22,10 +18,8 @@ Index: boinc/sched/single_job_assimilator.cpp
  
  #include "boinc_db.h"
  #include "error_numbers.h"
-Index: boinc/tools/create_work.cpp
-===================================================================
---- boinc.orig/tools/create_work.cpp	2012-06-30 21:30:06.820322705 +0200
-+++ boinc/tools/create_work.cpp	2012-06-30 22:00:54.935436195 +0200
+--- a/tools/create_work.cpp
++++ b/tools/create_work.cpp
 @@ -27,6 +27,7 @@
  #include <cstring>
  #include <ctime>
@@ -34,10 +28,8 @@ Index: boinc/tools/create_work.cpp
  
  #include "backend_lib.h"
  #include "boinc_db.h"
-Index: boinc/vda/vda.cpp
-===================================================================
---- boinc.orig/vda/vda.cpp	2012-06-30 14:43:21.007806400 +0200
-+++ boinc/vda/vda.cpp	2012-06-30 22:00:54.939436141 +0200
+--- a/vda/vda.cpp
++++ b/vda/vda.cpp
 @@ -21,6 +21,7 @@
  // vda add path     add a file
  
@@ -46,10 +38,8 @@ Index: boinc/vda/vda.cpp
  
  #include "boinc_db.h"
  #include "filesys.h"
-Index: boinc/vda/vdad.cpp
-===================================================================
---- boinc.orig/vda/vdad.cpp	2012-06-30 14:43:21.007806400 +0200
-+++ boinc/vda/vdad.cpp	2012-06-30 22:00:54.943436087 +0200
+--- a/vda/vdad.cpp
++++ b/vda/vdad.cpp
 @@ -27,6 +27,7 @@
  #include <sys/types.h>
  #include <vector>

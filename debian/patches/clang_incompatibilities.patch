@@ -1,9 +1,7 @@
 Author: Steffen Moeller <steffen.moeller@uk-sh.de>
 Description: Tested compatibility with clang.
-Index: boinc/lib/Makefile.am
-===================================================================
---- boinc.orig/lib/Makefile.am	2012-08-01 20:48:02.126264079 +0200
-+++ boinc/lib/Makefile.am	2012-08-01 20:52:55.174302455 +0200
+--- a/lib/Makefile.am
++++ b/lib/Makefile.am
 @@ -147,13 +147,13 @@
  libboinc_la_CFLAGS = $(AM_CFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
  libboinc_la_CXXFLAGS = $(AM_CXXFLAGS) $(PICFLAGS) $(PTHREAD_CFLAGS)
@@ -20,11 +18,8 @@ Index: boinc/lib/Makefile.am
  
  
  if ENABLE_FCGI
- 
-Index: boinc/sched/make_work.cpp
-===================================================================
---- boinc.orig/sched/make_work.cpp	2012-08-01 20:48:02.126264079 +0200
-+++ boinc/sched/make_work.cpp	2012-08-01 20:52:55.186302294 +0200
+--- a/sched/make_work.cpp
++++ b/sched/make_work.cpp
 @@ -176,9 +176,6 @@
      char keypath[MAXPATHLEN];
      char buf[BLOB_SIZE];

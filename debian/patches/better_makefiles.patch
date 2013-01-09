@@ -1,10 +1,8 @@
 Author: Guo Yixuan <culu.gyx@gmail.com>
 Description: Better clean target for several Makefiles
  This would save some rm's in override_dh_auto_clean.
-Index: boinc/samples/sleeper/Makefile
-===================================================================
---- boinc.orig/samples/sleeper/Makefile	2012-09-17 21:46:22.208746208 +0200
-+++ boinc/samples/sleeper/Makefile	2012-09-17 21:46:22.428749121 +0200
+--- a/samples/sleeper/Makefile
++++ b/samples/sleeper/Makefile
 @@ -19,11 +19,10 @@
  libstdc++.a:
  	ln -s `g++ -print-file-name=libstdc++.a`
@@ -19,10 +17,8 @@ Index: boinc/samples/sleeper/Makefile
  
  sleeper: sleeper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
  	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o sleeper sleeper.o libstdc++.a -pthread -lboinc_api -lboinc
-Index: boinc/samples/worker/Makefile
-===================================================================
---- boinc.orig/samples/worker/Makefile	2012-09-17 21:46:22.212746265 +0200
-+++ boinc/samples/worker/Makefile	2012-09-17 21:46:22.428749121 +0200
+--- a/samples/worker/Makefile
++++ b/samples/worker/Makefile
 @@ -4,11 +4,10 @@
  
  all: $(PROGS)
@@ -37,10 +33,8 @@ Index: boinc/samples/worker/Makefile
  
  worker: worker.o
  	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o worker worker.o
-Index: boinc/samples/wrapper/Makefile
-===================================================================
---- boinc.orig/samples/wrapper/Makefile	2012-09-17 21:46:22.212746265 +0200
-+++ boinc/samples/wrapper/Makefile	2012-09-17 21:46:22.432749185 +0200
+--- a/samples/wrapper/Makefile
++++ b/samples/wrapper/Makefile
 @@ -21,11 +21,10 @@
  libstdc++.a:
  	ln -s `g++ -print-file-name=libstdc++.a`

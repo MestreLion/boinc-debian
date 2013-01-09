@@ -1,5 +1,5 @@
---- boinc.orig/client/cs_files.cpp	2012-09-15 12:23:56.549116980 +0200
-+++ boinc/client/cs_files.cpp	2012-09-15 14:59:54.911398600 +0200
+--- a/client/cs_files.cpp
++++ b/client/cs_files.cpp
 @@ -177,7 +177,9 @@
      //
      if (download_gzipped && !boinc_file_exists(pathname)) {

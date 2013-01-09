@@ -1,8 +1,6 @@
 Description: Picked from http://boinc.berkeley.edu/svn/trunk/boinc@25877
-Index: boinc/api/boinc_api.h
-===================================================================
---- boinc.orig/api/boinc_api.h	2012-09-16 23:16:46.000000000 +0800
-+++ boinc/api/boinc_api.h	2012-09-16 23:21:04.000000000 +0800
+--- a/api/boinc_api.h
++++ b/api/boinc_api.h
 @@ -18,6 +18,8 @@
  #ifndef _BOINC_API_
  #define _BOINC_API_

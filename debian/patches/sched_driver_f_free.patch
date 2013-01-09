@@ -1,9 +1,7 @@
 Author: Steffen Moeller <moeller@debian.org>
 Description: Increased buffers and eliminated memory sink.
-Index: boinc/sched/sched_driver.cpp
-===================================================================
---- boinc.orig/sched/sched_driver.cpp	2012-03-30 18:44:06.691639668 +0200
-+++ boinc/sched/sched_driver.cpp	2012-03-30 19:42:10.688047314 +0200
+--- a/sched/sched_driver.cpp
++++ b/sched/sched_driver.cpp
 @@ -44,6 +44,8 @@
  #include <vector>
  #include "util.h"

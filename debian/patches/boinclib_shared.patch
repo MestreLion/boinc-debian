@@ -28,7 +28,7 @@
  parse_test_LDADD = $(LIBBOINC)
 --- a/client/Makefile.am
 +++ b/client/Makefile.am
-@@ -89,7 +89,7 @@
+@@ -90,7 +90,7 @@
  if OS_DARWIN
  boinc_client_LDFLAGS += -Wl,-flat_namespace,-undefined,dynamic_lookup
  endif

@@ -63,4 +63,3 @@ boinclib_shared.patch
 dynamic_libboinc.patch
 Missing_libSched.patch
 missing_libs_wrapper.patch
-missing_gpu_intel.cpp_in_Makefile.am.patch
