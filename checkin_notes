@@ -5313,3 +5313,205 @@ Rom    11 Dec 2012
     /
         configure.ac
         version.h
+
+David  12 Dec 2012
+    - fix compile warning
+    - Git can ignore Unix compile outputs
+
+    .gitignore
+    client/
+        gpu_detect.h
+
+David  12 Dec 2012
+    - client: show Intel GPU memory size as integer
+    lib/
+        coproc.cpp
+
+Rom    13 Dec 2012
+    - Apply RustyBSD's patch for selectively disabling the detection of the
+        X screensaver framework in configure.ac
+
+    /
+        configure.ac
+
+Rom    13 Dec 2012
+    - SCR: Include the compiled X11 screensaver app in the self extracting
+        archive distro of the client software.
+
+    packages\generic\sea\
+        Makefile.am
+
+Charlie 14 Dec 2012
+    - Mgr: Fix delay displaying notices.
+
+    clientgui/
+        NoticeListCtrl.cpp
+
+
+Charlie 14 Dec 2012
+    - OpenCL: Eliminate spurious error message when an OpenCL platform exists 
+        but the computer has no corresponding devices.
+    - Mac: Fix linker warning.
+        
+    client/
+        gpu_opencl.cpp
+    mac_build/
+        boinc.xcodeproj/
+            project.pbxproj
+
+
+David  18 Dec 2012
+    - client simulator: fix build errors
+
+    client/
+        app.cpp
+        makefile_sim
+        sim.cpp
+
+Charlie 18 Dec 2012
+    - Mgr: Fix potential crashes displaying notices asynchronously on Windows.
+    
+    clientgui/
+        BOINCHtmlLBox.cpp,.h
+        BOINCInternetFSHandler.cpp
+
+Charlie 18 Dec 2012
+    - Mgr: Fix bad line endings.
+    
+    clientgui/
+        ViewNotices.cpp,.h
+
+Charlie 18 Dec 2012
+    - Mgr: More robust way to display "No notices" message.
+    
+    clientgui/
+        NoticeListCtrl.cpp,.h
+        ViewNotices.cpp,.h
+
+Charlie 18 Dec 2012
+    - Mgr: Shorten Internet timeout for notices on Windows to 5 seconds.
+            Fix license info.
+    
+    clientgui/
+        BOINCInternetFSHandler.cpp,.h
+
+Charlie 20 Dec 2012
+    - Mgr: fix license declaration in file derived from wxWidgets.
+    - Mgr: Windows only: If OpenURL fails, we probably don't have an Internet 
+        connection so use a shorter timeout for subsequent calls to OpenURL 
+        until one succeeds; otherwise notices takes takes too long to display
+        if there are multiple notices with images.
+    - Mgr: Display the fetching notices message until we have notices to 
+         display or have determined that there are no notices.
+    - Mgr: Don't call get_notices RPC before previous one is processed to 
+        prevent multiple display of notices.
+    - Mgr: Display "Fetching notices..." instead of "There are no notices" 
+        while getting notices.  Display "There are no notices" only if we 
+        have actually determined there are no notices.
+    - Mgr: Add code to reload notices with images / items missing due to 
+        problems accessing their URLs.
+
+    clientgui/
+        MainDocument.cpp,.h
+        BOINCInternetFSHandler.cpp
+        NoticeListCtrl.cpp,.h
+        ViewNotices.cpp,.h
+    lib/
+        gui_rpc_client.h
+        gui_rpc_client_ops.cpp
+
+Charlie 21 Dec 2012
+    - Mgr: If network activity is suspended, don't retrieve URL references within 
+        notices unless they are already in our cache or in the Windows cache.
+    - Mgr: Clear our internal Internet cache when selecting a different computer.
+    - Mgr: Display a message and "Retry now" button if some images or other items 
+        within notices failed to load from the Internet; if network activity is 
+        suspended, say so in the message.
+
+    clientgui/
+        BOINCInternetFSHandler.cpp,.h
+        events.h
+        NoticeListCtrl.cpp,.h
+        ViewNotices.cpp,.h
+
+Charlie 22 Dec 2012
+    - Mgr: When removing entries from our hash table, delete data to avoid memory 
+        leaks.
+    - Mgr: Allow existing  to retrieve images or other items from the Internet even 
+        if network activity is suspended.  (But client won't get new notices.)
+    - Mgr: Reset Internet timeout when retrying notices.
+
+    clientgui/
+        BOINCInternetFSHandler.cpp
+        ViewNotices.cpp,.h
+
+Charlie 23 Dec 2012
+    - Mgr: Bug fixes for Windows Async Internet access, including closing the 
+        WinINet handle when aborting due to timeout, etc. to prevent crashes.
+    - Mgr: Add all the new notices features to the Simple View notices dialog.
+
+    clientgui/
+        BOINCInternetFSHandler.cpp,.h
+        NoticeListCtrl.cpp
+        sg_DlgMessages.cpp,.h
+
+David  24 Dec 2012
+    - client: improved log messages for work fetch
+
+    client/
+        work_fetch.cpp
+
+Charlie 26 Dec 2012
+    - Mgr: When closing Simple View notices, wait for all Async Internet access
+        to complete before calling the notices panel destructor.
+
+    clientgui/
+        BOINCBaseFrame.cpp
+        BOINCInternetFSHandler.cpp,.h
+        NoticeListCtrl.cpp
+        sg_DlgMessages.cpp,.h
+
+David  27 Dec 2012
+    - eliminate use of alloca() and strdupa().
+    - don't include malloc.h
+    - fix compile warnings
+
+    configure.ac
+    clientscr/
+        screensaver_x11.cpp
+    lib/
+        str_util.cpp
+    sched/
+        hr_info.cpp
+
+David  27 Dec 2012
+    - client: processor identification for ARM
+        (from Evandro Menezes and Joachim Fritzsch)
+
+    client/
+        hostinfo_unix.cpp
+        hostinfo_unix_test.cpp
+
+David  29 Dec 2012
+    - client: disable remote access if
+        - gui_rpc_auth.cfg is empty, or
+        - it doesn't exist and we can't open it for writing, or
+        - the write to it fails
+        (from RustyBSD)
+
+    client/
+        gui_rpc_server.cpp
+
+David  29 Dec 2012
+    - client: don't crash if GUI RPC password is too long
+        (from RustyBSD)
+
+    client/
+        gui_rpc_server_ops.cpp
+
+Rom    1 Jan 2013
+    - client: Account for the display management power system when
+        calculating idle time from the XSS system on Linux.
+
+    client/
+        hostinfo_unix.cpp

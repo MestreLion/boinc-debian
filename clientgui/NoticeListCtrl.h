@@ -116,9 +116,10 @@ public:
 
     int GetItemHeight(size_t i) { return (int)OnGetItemHeight(i); }
 
-private:
+    bool    m_bDisplayFetchingNotices;
     bool    m_bDisplayEmptyNotice;
-    bool    m_bComputerChanged;
+private:
+    bool    m_bNeedsReloading;
 #ifdef __WXMAC__
     CNoticeListCtrlAccessible*    m_accessible;
 #endif
