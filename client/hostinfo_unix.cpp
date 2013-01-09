@@ -150,6 +150,10 @@ mach_port_t gEventHandle = NULL;
 #define _SC_PAGESIZE _SC_PAGE_SIZE
 #endif
 
+#if HAVE_DPMS
+#include <X11/extensions/dpms.h>
+#endif
+
 #if HAVE_XSS
 #include <X11/extensions/scrnsaver.h>
 #endif
@@ -422,6 +426,9 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
 #elif __ia64__
     strcpy(host.p_model, "IA-64 ");
     model_hack = true;
+#elif __arm__
+    strcpy(host.p_vendor, "ARM");
+    vendor_hack = vendor_found = true;
 #endif
 
     host.m_cache=-1;
@@ -460,6 +467,8 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
             strstr(buf, "family     : ") || strstr(buf, "model name : ")
 #elif __powerpc__ || __sparc__
             strstr(buf, "cpu\t\t: ")
+#elif __arm__
+            strstr(buf, "Processor\t: ")
 #else
             strstr(buf, "model name\t: ") || strstr(buf, "cpu model\t\t: ")
 #endif
@@ -545,6 +554,8 @@ static void parse_cpuinfo_linux(HOST_INFO& host) {
                 strlcpy(features, strchr(buf, ':') + 2, sizeof(features));
             } else if ((strstr(buf, "features   : ") == buf)) {    /* ia64 */
                 strlcpy(features, strchr(buf, ':') + 2, sizeof(features));
+            } else if ((strstr(buf, "Features\t: ") == buf)) { /* arm */
+               strlcpy(features, strchr(buf, ':') + 2, sizeof(features));
             }
             if (strlen(features)) {
                 features_found = true;
@@ -1751,7 +1762,51 @@ bool xss_idle(long idle_treshold) {
     
     if(disp != NULL) {
         XScreenSaverQueryInfo(disp, DefaultRootWindow(disp), xssInfo);
-        idle_time = xssInfo->idle / 1000; // xssInfo->idle is in ms
+
+        idle_time = xssInfo->idle;
+
+#if HAVE_DPMS
+        int dummy;
+        CARD16 standby, suspend, off;
+        CARD16 state;
+        BOOL onoff;
+
+        if (DPMSQueryExtension(disp, &dummy, &dummy)) {
+            if (DPMSCapable(disp)) {
+                DPMSGetTimeouts(disp, &standby, &suspend, &off);
+                DPMSInfo(disp, &state, &onoff);
+
+                if (onoff) {
+                    switch (state) {
+                      case DPMSModeStandby:
+                          /* this check is a littlebit paranoid, but be sure */
+                          if (idle_time < (unsigned) (standby * 1000)) {
+                              idle_time += (standby * 1000);
+                          }
+                          break;
+                      case DPMSModeSuspend:
+                          if (idle_time < (unsigned) ((suspend + standby) * 1000)) {
+                              idle_time += ((suspend + standby) * 1000);
+                          }
+                          break;
+                      case DPMSModeOff:
+                          if (idle_time < (unsigned) ((off + suspend + standby) * 1000)) {
+                              idle_time += ((off + suspend + standby) * 1000);
+                          }
+                          break;
+                      case DPMSModeOn:
+                        default:
+                          break;
+                    }
+                }
+
+            } 
+        }
+#endif
+
+        // convert from milliseconds to seconds
+        idle_time = idle_time / 1000;
+
     } else {
         disp = XOpenDisplay(NULL);
         // XOpenDisplay may return NULL if there is no running X

@@ -24,6 +24,7 @@
 #include "BOINCGUIApp.h"
 #include "MainDocument.h"
 #include "NoticeListCtrl.h"
+#include "BOINCInternetFSHandler.h"
 
 ////@begin XPM images
 ////@end XPM images
@@ -376,6 +377,11 @@ CNoticeListCtrl::CNoticeListCtrl( )
 CNoticeListCtrl::CNoticeListCtrl( wxWindow* parent )
 {
     Create( parent );
+    
+    wxFileSystemHandler *internetFSHandler = wxGetApp().GetInternetFSHandler();
+    if (internetFSHandler) {
+        ((CBOINCInternetFSHandler*)internetFSHandler)->SetAbortInternetIO(false);
+    }
 }
  
  
@@ -386,6 +392,11 @@ CNoticeListCtrl::~CNoticeListCtrl( )
         delete m_accessible;
     }
 #endif
+
+    wxFileSystemHandler *internetFSHandler = wxGetApp().GetInternetFSHandler();
+    if (internetFSHandler) {
+        ((CBOINCInternetFSHandler*)internetFSHandler)->SetAbortInternetIO(false);
+    }
 }
 
 
@@ -412,10 +423,11 @@ bool CNoticeListCtrl::Create( wxWindow* parent )
 #endif
 ////@end CNoticeListCtrl creation
 
-    // Display the empty notice notification until we have some
-    // notices to display.
+    // Display the fetching notices message until we have notices
+    // to display or have determined that there are no notices.
+    m_bDisplayFetchingNotices = false;
     m_bDisplayEmptyNotice = true;
-    m_bComputerChanged = true;
+    m_bNeedsReloading = false;
 
     return TRUE;
 }
@@ -476,11 +488,6 @@ wxString CNoticeListCtrl::OnGetItem(size_t i) const {
     wxASSERT(pDoc);
     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
 
-    if (m_bDisplayEmptyNotice) {
-        strBuffer = wxT("<table border=0 cellpadding=5><tr><td>");
-        strBuffer += _("There are no notices at this time.");
-        strBuffer += wxT("</font></td></tr></table><hr>");
-    } else 
     if (pDoc->IsConnected()) {
         NOTICE* np = pDoc->notice((unsigned int)i);
 
@@ -544,14 +551,15 @@ wxString CNoticeListCtrl::OnGetItem(size_t i) const {
 
 void CNoticeListCtrl::Clear() {
     SetItemCount(0);
-    m_bComputerChanged = true;
+    m_bNeedsReloading = true;
+    UpdateUI();
+    Refresh();
 }
 
 
 /*!
  * Update the UI.
  */
-
 bool CNoticeListCtrl::UpdateUI()
 {
     static bool bAlreadyRunning = false;
@@ -562,12 +570,24 @@ bool CNoticeListCtrl::UpdateUI()
 
     // Call Freeze() / Thaw() only when actually needed; 
     // otherwise it causes unnecessary redraws
-    if ((pDoc->GetNoticeCount() <= 0) || (!pDoc->IsConnected()) || m_bComputerChanged) {
+    int noticeCount = pDoc->GetNoticeCount();
+    if ((noticeCount < 0) || (!pDoc->IsConnected()) || m_bNeedsReloading) {
+        if (GetItemCount()) {
+            SetItemCount(0);
+        }
+        m_bDisplayFetchingNotices =  true;
+        m_bDisplayEmptyNotice = false;
+        m_bNeedsReloading = false;
+        return true;
+    }
+    
+    if (noticeCount == 0) {
+        if (GetItemCount()) {
+            SetItemCount(0);
+        }
+        m_bDisplayFetchingNotices = false;
         m_bDisplayEmptyNotice = true;
-        m_bComputerChanged = false;
-        Freeze();
-        SetItemCount(1);
-        Thaw();
+        m_bNeedsReloading = false;
         return true;
     }
     
@@ -579,16 +599,15 @@ bool CNoticeListCtrl::UpdateUI()
         if (
             pDoc->IsConnected() &&
             (pDoc->notices.complete ||
-            ((int)GetItemCount() != pDoc->GetNoticeCount()) ||
-            ((pDoc->GetNoticeCount() > 0) && (m_bDisplayEmptyNotice == true)))
+            ((int)GetItemCount() != noticeCount))
         ) {
             pDoc->notices.complete = false;
-            m_bDisplayEmptyNotice = false;
             Freeze();
-            SetItemCount(pDoc->GetNoticeCount());
+            SetItemCount(noticeCount);
+            m_bDisplayFetchingNotices = false;
+            m_bDisplayEmptyNotice = false;
             Thaw();
         }
-
 #ifdef __WXMAC__
         // Enable accessibility only after drawing the page 
         // to avoid a mysterious crash bug

@@ -1,11 +1,16 @@
 /////////////////////////////////////////////////////////////////////////////
-// Name:        fs_mem.cpp
-// Purpose:     in-memory file system
-// Author:      Vaclav Slavik
-// RCS-ID:      $Id: fs_mem.cpp 46522 2007-06-18 18:37:40Z VS $
-// Copyright:   (c) 2000 Vaclav Slavik
+// Name:        src/msw/urlmsw.cpp
+// Purpose:     MS-Windows native URL support based on WinINet
+// Author:      Hajo Kirchhoff
+// Modified by:
+// Created:     06/11/2003
+// RCS-ID:      $Id: urlmsw.cpp 58116 2009-01-15 12:45:22Z VZ $
+// Copyright:   (c) 2003 Hajo Kirchhoff
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////////
+
+// Modified for BOINC from wxWidgets 2.8.10 files src/common/fs_mem.cpp and
+// src/msw/urlmsw.cpp
 
 #if defined(__GNUG__) && !defined(__APPLE__)
 #pragma implementation "BOINCInternetFSHandler.h"
@@ -15,21 +20,29 @@
 #include "BOINCInternetFSHandler.h"
 #include "BOINCGUIApp.h"
 #include "MainDocument.h"
+#include "util.h"
+
 
 class MemFSHashObj : public wxObject
 {
 public:
-    MemFSHashObj(wxInputStream* stream, const wxString& mime)
+    MemFSHashObj(wxInputStream* stream, const wxString& mime, const wxString& key)
     {
-        wxMemoryOutputStream out;
-        stream->Read(out);
-        m_Len = out.GetSize();
-        m_Data = new char[m_Len];
-        out.CopyTo(m_Data, m_Len);
+        if (stream) {
+            wxMemoryOutputStream out;
+            stream->Read(out);
+            m_Len = out.GetSize();
+            m_Data = new char[m_Len];
+            out.CopyTo(m_Data, m_Len);
+        } else {
+            m_Len = 0;
+            m_Data = NULL;
+        }
+        m_Key = key;
         m_MimeType = mime;
         m_Time = wxDateTime::Now();
     }
-
+    
     virtual ~MemFSHashObj()
     {
         delete[] m_Data;
@@ -39,6 +52,7 @@ public:
     size_t m_Len;
     wxString m_MimeType;
     wxDateTime m_Time;
+    wxString m_Key;
 
     DECLARE_NO_COPY_CLASS(MemFSHashObj)
 };
@@ -50,6 +64,16 @@ static bool b_ShuttingDown = false;
 
 #ifdef __WXMSW__
 // *** code adapted from src/msw/urlmsw.cpp (wxWidgets 2.8.10)
+
+// If OpenURL fails, we probably don't have a connection to 
+// the Internet, so use a shorter timeout for subsequent calls
+// to OpenURL until one succeeds.
+// Otherwise notices takes too long to display if there are
+// multiple notices with images.
+
+#define STANDARD_INTERNET_TIMEOUT 5
+#define SHORT_INTERNET_TIMEOUT 2
+static double dInternetTimeout = STANDARD_INTERNET_TIMEOUT;
 
 #ifdef __VISUALC__  // be conservative about this pragma
     // tell the linker to include wininet.lib automatically
@@ -70,7 +94,8 @@ public:
 
 protected:
     // return the WinINet session handle
-    static HINTERNET GetSessionHandle();
+    static HINTERNET GetSessionHandle(bool closeSessionHandle = false);
+    
 };
 
 ////static bool lastReadHadEOF = false;
@@ -108,7 +133,7 @@ static void CALLBACK BOINCInternetStatusCallback(
 }
 
 
-HINTERNET wxWinINetURL::GetSessionHandle()
+HINTERNET wxWinINetURL::GetSessionHandle(bool closeSessionHandle)
 {
     // this struct ensures that the session is opened when the
     // first call to GetSessionHandle is made
@@ -146,9 +171,14 @@ HINTERNET wxWinINetURL::GetSessionHandle()
         
         void INetCloseSession() {
             InternetSetStatusCallback(NULL, BOINCInternetStatusCallback);
-            if (m_handle) {
-                InternetCloseHandle(m_handle);
-                m_handle = NULL;
+            
+            while (m_handle) {
+                BOOL closedOK = InternetCloseHandle(m_handle);
+                if (closedOK) {
+                    m_handle = NULL;
+                } else {
+                    wxGetApp().Yield(true);
+                }
             }
         }
     
@@ -159,8 +189,15 @@ HINTERNET wxWinINetURL::GetSessionHandle()
 
     wxASSERT(pDoc);
 
-    if (b_ShuttingDown || (!pDoc->IsConnected())) {
-        session.INetCloseSession();
+    if (closeSessionHandle) {
+        while (session.m_handle) {
+            BOOL closedOK = InternetCloseHandle(session.m_handle);
+            if (closedOK) {
+                session.m_handle = NULL;
+            } else{
+                wxGetApp().Yield(true);
+            }
+        }
         return 0;
     }
 
@@ -217,50 +254,33 @@ size_t wxWinINetInputStream::OnSysRead(void *buffer, size_t bufsize)
     DWORD bytesread = 0;
     DWORD lError = ERROR_SUCCESS;
     INTERNET_BUFFERS bufs;
-    BOOL complete = false;
+    BOOL success = false;
     CMainDocument* pDoc      = wxGetApp().GetDocument();
 
     wxASSERT(pDoc);
 
     if (b_ShuttingDown || (!pDoc->IsConnected())) {
+        SetError(wxSTREAM_EOF);
         return 0;
     }
 
-    if (m_hFile) {
-        operationEnded = false;
-        memset(&bufs, 0, sizeof(bufs));
-        bufs.dwStructSize = sizeof(INTERNET_BUFFERS);
-        bufs.Next = NULL;
-        bufs.lpvBuffer = buffer;
-        bufs.dwBufferLength = (DWORD)bufsize;
-
-        lastInternetStatus = 0;
-        complete = InternetReadFileEx(m_hFile, &bufs,  IRF_ASYNC | IRF_USE_CONTEXT, 2);
-        
-        if (!complete) {
-            lError = ::GetLastError();
-            if ((lError == WSAEWOULDBLOCK) || (lError == ERROR_IO_PENDING)){
-                while (!operationEnded) {
-                    if (b_ShuttingDown || (!pDoc->IsConnected())) {
-//                    if (b_ShuttingDown) {
-                        SetError(wxSTREAM_EOF);
-                        return 0;
-                    }
-                    wxGetApp().Yield(true);
-                }
-            }
-        }
-
-        lError = ::GetLastError();
-        bytesread = bufs.dwBufferLength;
-        complete = (lastInternetStatus == INTERNET_STATUS_REQUEST_COMPLETE);
+    if (!m_hFile) {
+        SetError(wxSTREAM_READ_ERROR);
+        return 0;
     }
+    
+    memset(&bufs, 0, sizeof(bufs));
+    bufs.dwStructSize = sizeof(INTERNET_BUFFERS);
+    bufs.Next = NULL;
+    bufs.lpvBuffer = buffer;
+    bufs.dwBufferLength = (DWORD)bufsize;
 
-    if (!complete) {
-        if ( lError != ERROR_SUCCESS )
-            SetError(wxSTREAM_READ_ERROR);
-
+    success = InternetReadFileEx(m_hFile, &bufs, IRF_SYNC, 2);
+    
+    lError = ::GetLastError();
+    
 #if 0       // Possibly useful for debugging
+    if ((!success) || (lError != ERROR_SUCCESS)) {
         DWORD iError, bLength = 0;
         InternetGetLastResponseInfo(&iError, NULL, &bLength);
         if ( bLength > 0 )
@@ -276,19 +296,23 @@ size_t wxWinINetInputStream::OnSysRead(void *buffer, size_t bufsize)
             wxLogError(wxT("Read failed with error %d: %s"),
                     iError, errorString.c_str());
         }
+    }
 #endif
+
+    if (!success) {
+        return 0;
     }
 
-    if ( bytesread == 0 )
-    {
-        SetError(wxSTREAM_EOF);
+    bytesread = bufs.dwBufferLength;
+    if (lError != ERROR_SUCCESS) {
+        SetError(wxSTREAM_READ_ERROR);
     } else {
-        // Apparently buffer has not always received all the data even
-        // when callback returns INTERNET_STATUS_REQUEST_COMPLETE.
-        // This extra delay seems to fix that.  Why????
-        SleepEx(10, TRUE);
+        if ( bytesread == 0 )
+        {
+            SetError(wxSTREAM_EOF);
+        }
     }
-
+    
     return bytesread;
 }
 
@@ -320,13 +344,20 @@ wxWinINetInputStream::~wxWinINetInputStream()
 
 wxInputStream *wxWinINetURL::GetInputStream(wxURL *owner)
 {
+static bool bAlreadyRunning = false;
+    if (bAlreadyRunning) {
+        fprintf(stderr, "wxWinINetURL::GetInputStream reentered!");
+        return NULL;
+    }
+    bAlreadyRunning = true;
     DWORD service;
     CMainDocument* pDoc      = wxGetApp().GetDocument();
 
     wxASSERT(pDoc);
 
     if (b_ShuttingDown || (!pDoc->IsConnected())) {
-        GetSessionHandle(); // Closes the session
+        GetSessionHandle(true); // Closes the session handle
+        bAlreadyRunning = false;
         return 0;
     }
     
@@ -340,6 +371,7 @@ wxInputStream *wxWinINetURL::GetInputStream(wxURL *owner)
     }
     else
     {
+        bAlreadyRunning = false;
         // unknown protocol. Let wxURL try another method.
         return 0;
     }
@@ -347,6 +379,7 @@ wxInputStream *wxWinINetURL::GetInputStream(wxURL *owner)
     wxWinINetInputStream *newStream = new wxWinINetInputStream;
     
     operationEnded = false;
+    double endtimeout = dtime() + dInternetTimeout;
 
     HINTERNET newStreamHandle = InternetOpenUrl
                                 (
@@ -360,18 +393,23 @@ wxInputStream *wxWinINetURL::GetInputStream(wxURL *owner)
                                 );
                               
     while (!operationEnded) {
-        if (b_ShuttingDown || (!pDoc->IsConnected())) {
-            GetSessionHandle(); // Closes the session
+        if (b_ShuttingDown || 
+            (!pDoc->IsConnected()) || 
+            (dtime() > endtimeout)
+            ) {
+            GetSessionHandle(true); // Closes the session handle
             if (newStreamHandle) {
-                delete newStreamHandle;
                 newStreamHandle = NULL;
             }
             if (newStream) {
                 delete newStream;
                 newStream = NULL;
             }
+            dInternetTimeout = SHORT_INTERNET_TIMEOUT;
+            bAlreadyRunning = false;
             return 0;
         }
+        
         wxGetApp().Yield(true);
     }
 
@@ -380,13 +418,24 @@ wxInputStream *wxWinINetURL::GetInputStream(wxURL *owner)
             (!b_ShuttingDown)
         ) {
             INTERNET_ASYNC_RESULT* res = (INTERNET_ASYNC_RESULT*)lastlpvStatusInformation;
-            newStreamHandle = (HINTERNET)(res->dwResult);
+            if (res && !res->dwError) {
+                newStreamHandle = (HINTERNET)(res->dwResult);
+            } else {
+                newStreamHandle = NULL;
+            }
+    }
+    
+    if (!newStreamHandle) {
+        GetSessionHandle(true); // Closes the session handle
+        dInternetTimeout = SHORT_INTERNET_TIMEOUT;
+        bAlreadyRunning = false;
+        return NULL;
     }
 
     newStream->Attach(newStreamHandle);
 
-    InternetSetStatusCallback(newStreamHandle, BOINCInternetStatusCallback);    // IS THIS NEEDED???
-
+    dInternetTimeout = STANDARD_INTERNET_TIMEOUT;
+    bAlreadyRunning = false;
     return newStream;
 }
 
@@ -398,6 +447,7 @@ CBOINCInternetFSHandler::CBOINCInternetFSHandler() : wxFileSystemHandler()
 {
     m_InputStream = NULL;
     b_ShuttingDown = false;
+    m_bMissingItems = false;
     
     if (!m_Hash)
     {
@@ -468,41 +518,41 @@ wxFSFile* CBOINCInternetFSHandler::OpenFile(wxFileSystem& WXUNUSED(fs), const wx
             wxURL url(right);
             if (url.GetError() == wxURL_NOERR)
             {
-                
 #ifdef __WXMSW__
                 wxWinINetURL * winURL = new wxWinINetURL;
-                wxInputStream* m_InputStream = winURL->GetInputStream(&url);
+                m_InputStream = winURL->GetInputStream(&url);
 #else
-                wxInputStream* m_InputStream = url.GetInputStream();
+                m_InputStream = url.GetInputStream();
 #endif
+                if (b_ShuttingDown) {
+                    return NULL;
+                }
+
                 strMIME = url.GetProtocol().GetContentType();
                 if (strMIME == wxEmptyString) {
                     strMIME = GetMimeTypeFromExt(strLocation);
                 }
 
-                if (m_InputStream)
-                {
-                    obj = new MemFSHashObj(m_InputStream, strMIME);
-                    delete m_InputStream;
-                    m_InputStream = NULL;
- 
-                    // If we couldn't read image, then return NULL so 
-                    // image tag handler displays "broken image" bitmap
-                    if (obj->m_Len == 0) {
-                        delete obj;
-                        return NULL;
-                   }
- 
-                    m_Hash->Put(strLocation, obj);
-                    
-                    return new wxFSFile (
-                        new wxMemoryInputStream(obj->m_Data, obj->m_Len),
-                        strLocation,
-                        strMIME,
-                        GetAnchor(strLocation),
-                        obj->m_Time
-                    );
+                obj = new MemFSHashObj(m_InputStream, strMIME, strLocation);
+                delete m_InputStream;
+                m_InputStream = NULL;
+
+                m_Hash->Put(strLocation, obj);
+                
+                // If we couldn't read image, then return NULL so 
+                // image tag handler displays "broken image" bitmap
+                if (obj->m_Len == 0) {
+                    m_bMissingItems = true;
+                    return NULL;
                 }
+
+                return new wxFSFile (
+                    new wxMemoryInputStream(obj->m_Data, obj->m_Len),
+                    strLocation,
+                    strMIME,
+                    GetAnchor(strLocation),
+                    obj->m_Time
+                );
             }
         }
         else
@@ -510,6 +560,12 @@ wxFSFile* CBOINCInternetFSHandler::OpenFile(wxFileSystem& WXUNUSED(fs), const wx
             strMIME = obj->m_MimeType;
             if ( strMIME.empty() ) {
                 strMIME = GetMimeTypeFromExt(strLocation);
+            }
+
+            // If we couldn't read image, then return NULL so 
+            // image tag handler displays "broken image" bitmap
+            if (obj->m_Len == 0) {
+                return NULL;
             }
 
             return new wxFSFile (
@@ -535,8 +591,36 @@ bool CBOINCInternetFSHandler::CheckHash(const wxString& strLocation)
 }
 
 
-void CBOINCInternetFSHandler::ShutDown() {
-    b_ShuttingDown = true;
+void CBOINCInternetFSHandler::UnchacheMissingItems() {
+    m_Hash->BeginFind();
+    wxHashTable::Node* node = m_Hash->Next();
+    for(;;) {
+        if (node == NULL) break;   // End of cache
+        MemFSHashObj* obj = (MemFSHashObj*)node->GetData();
+        // We must get next node before deleting this one
+        node = m_Hash->Next();
+        if (obj->m_Len == 0) {
+            delete m_Hash->Delete(obj->m_Key);
+        }
+    }
+    m_bMissingItems = false;
+#ifdef __WXMSW__
+    dInternetTimeout = STANDARD_INTERNET_TIMEOUT;
+#endif
+}
+
+
+void CBOINCInternetFSHandler::ClearCache() {
+    WX_CLEAR_HASH_TABLE(*m_Hash);
+    m_bMissingItems = false;
+#ifdef __WXMSW__
+    dInternetTimeout = STANDARD_INTERNET_TIMEOUT;
+#endif
+}
+
+
+void CBOINCInternetFSHandler::SetAbortInternetIO(bool set) {
+    b_ShuttingDown = set;
 #ifdef __WXMSW__
     if (m_InputStream) {
         delete m_InputStream;
