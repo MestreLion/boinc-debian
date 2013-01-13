@@ -382,7 +382,7 @@ override_dh_compress:
 override_dh_installexamples:
 	dh_installexamples -Xjpeglib 
 
-origDir ?= ../
+origDir ?= .
 
 get-orig-source:
 	diskfree=`df -k . | awk '{print $$4}' | tail -n +2` ; \
