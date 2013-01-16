@@ -3,7 +3,8 @@ boinc (7.0.44+dfsg-1) UNRELEASED; urgency=low
   [ Gianfranco Costamagna ]
   * New upstream release
   * General patch refresh
-  * Added libxext-dev and libxcb-dpms0-dev in order to address a long time bug (lp: 179849)
+  * Added libxext-dev and libxcb-dpms0-dev in order to address a long time
+    bug. (lp: #179849)
 
   [ Guo Yixuan ]
   * Added libx11-dev to build-deps. (It's used directly in
