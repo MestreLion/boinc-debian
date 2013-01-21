@@ -1,0 +1,16 @@
+Author: Gianfranco Costamagna <costamagnagianfranco@yahoo.it>
+Forwarded: yes (mail to boinc_alpha)
+Reviewed-By: <costamagnagianfranco@yahoo.it>
+Last-Update: <2013-01-21>
+
+--- a/clientgui/DlgAdvPreferences.cpp
++++ b/clientgui/DlgAdvPreferences.cpp
+@@ -802,7 +802,7 @@
+ #else
+ //TODO: fill in the default directory and wildcard for Linux
+         wxFileDialog picker(this, _("Applications to add"), 
+-                            wxT("/"), wxT(""), wxT("*.*"), 
++                            wxT("/"), wxT(""), wxT("*"), 
+                             wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_CHANGE_DIR|wxFD_MULTIPLE|wxFD_CHANGE_DIR);
+ #endif
+         if (picker.ShowModal() != wxID_OK) return;
