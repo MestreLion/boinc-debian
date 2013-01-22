@@ -2,6 +2,9 @@ Author: Gianfranco Costamagna <costamagnagianfranco@yahoo.it>
 Forwarded: yes (mail to boinc_alpha)
 Reviewed-By: <costamagnagianfranco@yahoo.it>
 Last-Update: <2013-01-21>
+quoting from man
+"bool wxFileName::IsFileExecutable() 	
+Returns true if a file with this name exists and if this process has execute permissions on it."
 
 --- a/clientgui/DlgAdvPreferences.cpp
 +++ b/clientgui/DlgAdvPreferences.cpp
@@ -14,3 +17,12 @@ Last-Update: <2013-01-21>
                              wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_CHANGE_DIR|wxFD_MULTIPLE|wxFD_CHANGE_DIR);
  #endif
          if (picker.ShowModal() != wxID_OK) return;
+@@ -816,7 +816,7 @@ void CDlgAdvPreferences::OnAddExclusiveA
+ #endif
+             wxString directory = picker.GetDirectory();
+             wxFileName fn(directory, appNames[i]);
+-            if (!fn.IsOk() || !fn.IsFileExecutable()) {
++            if (!fn.IsOk() /*|| !fn.IsFileExecutable()*/) {
+                 errmsg.Printf(_("'%s' is not an executable application."), appNames[i].c_str());
+                 wxGetApp().SafeMessageBox(errmsg, _("Add Exclusive App"),
+                             wxOK | wxICON_EXCLAMATION, this);
