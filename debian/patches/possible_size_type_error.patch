@@ -3,10 +3,10 @@ Description: int may not be enough (theoretically) for large files.
 
 --- a/sched/file_upload_handler.cpp
 +++ b/sched/file_upload_handler.cpp
-@@ -173,17 +173,17 @@
+@@ -123,13 +123,13 @@
+     bytes_left = nbytes - offset;
  
      while (bytes_left > 0) {
- 
 -        int n, m, to_write;
 +        int m;
  
@@ -17,6 +17,10 @@ Description: int may not be enough (theoretically) for large files.
 -        n = fread(buf, 1, m, in);
 +        size_t n = fread(buf, 1, m, in);
  
+         // delay opening the file until we've done the first socket read
+         // to avoid filesystem lockups (WCG, possible paranoia)
+@@ -195,7 +195,7 @@
+ 
          // try to write n bytes to file
          //
 -        to_write=n;
@@ -24,12 +28,3 @@ Description: int may not be enough (theoretically) for large files.
          while (to_write > 0) {
              ssize_t ret = write(fd, buf+n-to_write, to_write);
              if (ret < 0) {
-@@ -237,7 +237,7 @@
-     unsigned char buf[BLOCK_SIZE];
- 
-     while (1) {
--        int n = fread(buf, 1, BLOCK_SIZE, in);
-+        size_t n = fread(buf, 1, BLOCK_SIZE, in);
-         if (n <= 0) return;
-     }
- }

@@ -35,7 +35,7 @@ Description: Better clean target for several Makefiles
  	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o worker worker.o
 --- a/samples/wrapper/Makefile
 +++ b/samples/wrapper/Makefile
-@@ -21,11 +21,10 @@
+@@ -24,11 +24,10 @@
  libstdc++.a:
  	ln -s `g++ -print-file-name=libstdc++.a`
  
@@ -47,5 +47,5 @@ Description: Better clean target for several Makefiles
 -	/bin/rm -f $(PROGS) *.o libstdc++.a
 +	rm -f $(PROGS) *.o libstdc++.a
  
- wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
- 	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
+ REGEXP_OBJS = \
+ 	regexp.o \

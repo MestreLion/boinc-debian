@@ -2,8 +2,8 @@ Author: Steffen Moeller <moeller@debian.org>
 Description: Increased buffers and eliminated memory sink.
 --- a/sched/sched_driver.cpp
 +++ b/sched/sched_driver.cpp
-@@ -44,6 +44,8 @@
- #include <vector>
+@@ -47,6 +47,8 @@
+ 
  #include "util.h"
  #include "svn_version.h"
 +#include "str_replace.h"  // strlcpy
@@ -11,7 +11,7 @@ Description: Increased buffers and eliminated memory sink.
  
  using std::vector;
  
-@@ -58,7 +60,7 @@
+@@ -61,7 +63,7 @@
  double max_time = 1;
  
  void read_hosts() {
@@ -20,7 +20,7 @@ Description: Increased buffers and eliminated memory sink.
      host_descs.clear();
      FILE* f = fopen("host_descs.txt", "r");
      if (!f) {
-@@ -69,17 +71,18 @@
+@@ -72,15 +74,15 @@
          HOST_DESC hd;
          strcpy(buf2, buf);
          char* p1 = strtok(buf2, "\t\n");
@@ -38,7 +38,4 @@ Description: Increased buffers and eliminated memory sink.
 +        safe_strcpy(hd.p_model, p3);
          host_descs.push_back(hd);
      }
-+    free(f);
- }
- 
- inline double req_time() {
+     fclose(f);

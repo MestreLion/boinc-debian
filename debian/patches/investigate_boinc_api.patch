@@ -1,6 +1,6 @@
 --- a/api/boinc_api.cpp
 +++ b/api/boinc_api.cpp
-@@ -322,7 +322,7 @@
+@@ -331,7 +331,7 @@
  
      if (standalone) return true;
  
@@ -9,36 +9,16 @@
          "<current_cpu_time>%e</current_cpu_time>\n"
          "<checkpoint_cpu_time>%e</checkpoint_cpu_time>\n",
          cpu_t, cp_cpu_t
-@@ -334,23 +334,23 @@
+@@ -343,7 +343,7 @@
          double range = aid.fraction_done_end - aid.fraction_done_start;
          double fdone = aid.fraction_done_start + fraction_done*range;
          sprintf(buf, "<fraction_done>%e</fraction_done>\n", fdone);
 -        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
 +        strlcat(msg_buf, buf, sizeof(msg_buf));
      }
-     if (fpops_per_cpu_sec) {
-         sprintf(buf, "<fpops_per_cpu_sec>%e</fpops_per_cpu_sec>\n", fpops_per_cpu_sec);
--        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
-+        strlcat(msg_buf, buf, sizeof(msg_buf));
-     }
-     if (fpops_cumulative) {
-         sprintf(buf, "<fpops_cumulative>%e</fpops_cumulative>\n", fpops_cumulative);
--        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
-+        strlcat(msg_buf, buf, sizeof(msg_buf));
-     }
-     if (intops_per_cpu_sec) {
-         sprintf(buf, "<intops_per_cpu_sec>%e</intops_per_cpu_sec>\n", intops_per_cpu_sec);
--        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
-+        strlcat(msg_buf, buf, sizeof(msg_buf));
-     }
-     if (intops_cumulative) {
-         sprintf(buf, "<intops_cumulative>%e</intops_cumulative>\n", intops_cumulative);
--        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
-+        strlcat(msg_buf, buf, sizeof(msg_buf));
-     }
-     return app_client_shm->shm->app_status.send_msg(msg_buf);
- }
-@@ -549,6 +549,10 @@
+     if (bytes_sent) {
+         sprintf(buf, "<bytes_sent>%f</bytes_sent>\n", bytes_sent);
+@@ -608,6 +608,10 @@
  }
  
  int boinc_get_status(BOINC_STATUS *s) {
@@ -49,7 +29,7 @@
      s->no_heartbeat = boinc_status.no_heartbeat;
      s->suspended = boinc_status.suspended;
      s->quit_request = boinc_status.quit_request;
-@@ -720,7 +724,7 @@
+@@ -784,7 +788,7 @@
  int boinc_parse_init_data_file() {
      FILE* f;
      int retval;
@@ -58,26 +38,26 @@
  
      if (aid.project_preferences) {
          free(aid.project_preferences);
-@@ -770,15 +774,15 @@
+@@ -834,15 +838,15 @@
      );
      if (other_pid) {
          sprintf(buf, "<other_pid>%d</other_pid>\n", other_pid);
 -        strcat(msg_buf, buf);
 +        strncat(msg_buf, buf, sizeof(msg_buf));
      }
-     if (bytes_sent) {
-         sprintf(buf, "<bytes_sent>%f</bytes_sent>\n", bytes_sent);
+     if (_bytes_sent) {
+         sprintf(buf, "<bytes_sent>%f</bytes_sent>\n", _bytes_sent);
 -        strcat(msg_buf, buf);
 +        strncat(msg_buf, buf, sizeof(msg_buf));
      }
-     if (bytes_received) {
-         sprintf(buf, "<bytes_received>%f</bytes_received>\n", bytes_received);
+     if (_bytes_received) {
+         sprintf(buf, "<bytes_received>%f</bytes_received>\n", _bytes_received);
 -        strcat(msg_buf, buf);
 +        strncat(msg_buf, buf, sizeof(msg_buf));
      }
      if (app_client_shm->shm->app_status.send_msg(msg_buf)) {
          return 0;
-@@ -849,16 +853,16 @@
+@@ -913,16 +917,16 @@
  }
  
  static void handle_upload_file_status() {
@@ -97,7 +77,7 @@
          FILE* f = boinc_fopen(filename.c_str(), "r");
          if (!f) {
              fprintf(stderr,
-@@ -867,7 +871,7 @@
+@@ -931,7 +935,7 @@
              );
              continue;
          }
@@ -106,7 +86,7 @@
          fclose(f);
          if (p && parse_int(buf, "<status>", status)) {
              UPLOAD_FILE_STATUS uf;
-@@ -1004,7 +1008,7 @@
+@@ -1072,7 +1076,7 @@
  #ifdef _WIN32
          GetFullPathName(path, MAXPATHLEN, abspath, NULL);
  #else
@@ -115,25 +95,7 @@
  #endif
          argv[0] = const_cast<char*>(GRAPHICS_APP_FILENAME);
          if (fullscreen) {
-@@ -1103,7 +1107,7 @@
- // timer handler; runs in the timer thread
- //
- static void timer_handler() {
--    char buf[256];
-+    char buf[256*2];
-     if (g_sleep) return;
-     interrupt_count++;
-     if (!boinc_status.suspended) {
-@@ -1156,7 +1160,7 @@
-     if (in_critical_section==0 && options.check_heartbeat) {
-         if (heartbeat_giveup_time < interrupt_count) {
-             boinc_msg_prefix(buf, sizeof(buf));
--            buf[255] = 0;  // paranoia
-+            buf[sizeof(buf)-1] = 0;  // paranoia
-             fputs(buf, stderr);
-             fputs(" No heartbeat from core client for 30 sec - exiting\n", stderr);
-             if (options.direct_process_action) {
-@@ -1196,7 +1200,7 @@
+@@ -1260,7 +1264,7 @@
      // send graphics-related messages
      //
      if (send_web_graphics_url && !app_client_shm->shm->graphics_reply.has_msg()) {
@@ -142,7 +104,7 @@
              "<web_graphics_url>%s</web_graphics_url>",
              web_graphics_url
          );
-@@ -1204,7 +1208,7 @@
+@@ -1268,7 +1272,7 @@
          send_web_graphics_url = false;
      }
      if (send_remote_desktop_addr && !app_client_shm->shm->graphics_reply.has_msg()) {

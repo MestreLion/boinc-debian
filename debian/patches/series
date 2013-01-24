@@ -36,12 +36,9 @@ clang_incompatibilities.patch
 some_extra_clang_warnings.patch
 #tmpA# nvidia_direct_invocation.patch
 #tmpA# nvidia_direct_invocation_2.patch
-dTotalGlobalMem.patch
 nvidia_mem_display_simplification.patch
 api_NULL_not_defined.patch
-unlink_undefined.patch
 cppcheck_realloc.patch
-cppcheck_avoid_redundant_check.patch
 MainDocumentWarnings.patch
 more_maxpathlen.patch
 opendir_error_messages.patch
@@ -52,7 +49,6 @@ add_hardening_flags.patch
 cmath_missing.patch
 investigate_boinc_api.patch
 slot_dir_source_trace.patch
-ignored_return_value.patch
 opendir_errno.patch
 ticket_1168_verifycerts.patch
 better_makefiles.patch
@@ -62,6 +58,4 @@ client_app_maxpathlen.patch
 boinclib_shared.patch
 dynamic_libboinc.patch
 Missing_libSched.patch
-missing_libs_wrapper.patch
-link_with_gold.patch
 fix-add-exclusive-app.patch

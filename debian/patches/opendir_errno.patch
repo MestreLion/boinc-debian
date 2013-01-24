@@ -50,7 +50,7 @@
  #include "error_numbers.h"
  #include "filesys.h"
  #include "str_util.h"
-@@ -180,9 +181,17 @@
+@@ -178,9 +179,17 @@
                  int i;
                  for (i=0; i < nlibdirs; i++) {
                      struct dirent *entry;

@@ -21,16 +21,16 @@ Description: Add standard flags to custom Makefiles
 +	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o sleeper sleeper.o libstdc++.a -pthread -lboinc_api -lboinc
 --- a/samples/example_app/Makefile
 +++ b/samples/example_app/Makefile
-@@ -4,7 +4,7 @@
- BOINC_API_DIR = $(BOINC_DIR)/api
- BOINC_LIB_DIR = $(BOINC_DIR)/lib
+@@ -6,7 +6,7 @@
+ BOINC_ZIP_DIR = $(BOINC_DIR)/zip
+ FREETYPE_DIR = /usr/include/freetype2
  
 -CXXFLAGS = -g \
 +CXXFLAGS += -g \
  	-Wall -W -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common \
      -DAPP_GRAPHICS \
      -I$(BOINC_DIR) \
-@@ -47,12 +47,12 @@
+@@ -62,12 +62,12 @@
  # because otherwise you might get a version in /usr/lib etc.
  
  uc2: uc2.o libstdc++.a $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/libboinc.a
@@ -39,9 +39,9 @@ Description: Add standard flags to custom Makefiles
  	$(BOINC_API_DIR)/libboinc_api.a \
  	$(BOINC_LIB_DIR)/libboinc.a
  
- uc2_graphics: uc2_graphics.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_graphics2.a
--	$(CXX) $(CXXFLAGS) -o uc2_graphics uc2_graphics.o libstdc++.a -pthread \
-+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o uc2_graphics uc2_graphics.o libstdc++.a -pthread \
+ uc2_graphics: uc2_graphics.o ttfont.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_graphics2.a
+-	$(CXX) $(CXXFLAGS) -o uc2_graphics uc2_graphics.o ttfont.o libstdc++.a -pthread \
++	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o uc2_graphics uc2_graphics.o ttfont.o libstdc++.a -pthread \
  	$(BOINC_API_DIR)/libboinc_graphics2.a \
  	$(BOINC_API_DIR)/libboinc_api.a \
  	$(BOINC_LIB_DIR)/libboinc.a \
@@ -61,18 +61,18 @@ Description: Add standard flags to custom Makefiles
 +	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o worker worker.o
 --- a/samples/wrapper/Makefile
 +++ b/samples/wrapper/Makefile
-@@ -5,7 +5,7 @@
- BOINC_API_DIR = $(BOINC_DIR)/api
+@@ -6,7 +6,7 @@
  BOINC_LIB_DIR = $(BOINC_DIR)/lib
+ BOINC_ZIP_DIR = $(BOINC_DIR)/zip
  
 -CXXFLAGS = -g \
 +CXXFLAGS += -g \
  	-Wall -W -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common \
      -I$(BOINC_DIR) \
      -I$(BOINC_LIB_DIR) \
-@@ -28,4 +28,4 @@
- 	/bin/rm -f $(PROGS) *.o libstdc++.a
+@@ -38,4 +38,4 @@
+ 	regexp_report.o
  
- wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a
--	g++ $(CXXFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
-+	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o wrapper wrapper.o libstdc++.a -pthread -lboinc_api -lboinc
+ wrapper: wrapper.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_api.a $(REGEXP_OBJS)
+-	g++ $(CXXFLAGS) -o wrapper wrapper.o $(REGEXP_OBJS) libstdc++.a -pthread -lboinc_api -lboinc -lboinc_zip
++	g++ $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o wrapper wrapper.o $(REGEXP_OBJS) libstdc++.a -pthread -lboinc_api -lboinc -lboinc_zip

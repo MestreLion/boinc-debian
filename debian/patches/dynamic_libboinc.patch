@@ -1,6 +1,6 @@
 --- a/Makefile.incl
 +++ b/Makefile.incl
-@@ -37,22 +37,22 @@
+@@ -38,22 +38,22 @@
  # dependencies to make sure libs gets compiled before
  # programs linking to them:
  
@@ -29,7 +29,7 @@
  $(LIBAPI):
  	cd $(top_builddir)/api; ${MAKE} libboinc_api.la
  
-@@ -60,3 +60,4 @@
+@@ -61,3 +61,4 @@
  SERVERLIBS_FCGI = $(LIBSCHED_FCGI) $(LIBBOINC_CRYPT) $(LIBBOINC_FCGI) -lfcgi $(MYSQL_LIBS) $(PTHREAD_LIBS) $(RSA_LIBS) $(SSL_LIBS)
  APPLIBS = $(LIBAPI) $(LIBBOINC)
  

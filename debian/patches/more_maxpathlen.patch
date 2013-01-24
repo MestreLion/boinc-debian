@@ -51,7 +51,7 @@
          strcpy(oldpath, newpath);
 --- a/lib/network.cpp
 +++ b/lib/network.cpp
-@@ -70,7 +70,7 @@
+@@ -71,7 +71,7 @@
      case WSAENOTSOCK:
          return "not a socket";
      }
@@ -60,7 +60,7 @@
      return buf;
  #else
      switch (h_errno) {
-@@ -84,11 +84,11 @@
+@@ -85,11 +85,11 @@
          return "host not found or server failure";
  #ifdef NETDB_INTERNAL
      case NETDB_INTERNAL:
@@ -74,12 +74,12 @@
      return buf;
  #endif
  }
-@@ -108,7 +108,7 @@
-         {
+@@ -107,7 +107,7 @@
+         case AF_INET6: {
              sockaddr_in6* sin = (sockaddr_in6*)&s;
              char buf[256];
 -            inet_ntop(AF_INET6, (void*)(&sin->sin6_addr), buf, 256);
 +            inet_ntop(AF_INET6, (void*)(&sin->sin6_addr), buf, sizeof(buf));
              return (strcmp(buf, "::1") == 0);
+             break;
          }
- 

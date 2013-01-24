@@ -1,9 +1,9 @@
 Description: Picked from http://boinc.berkeley.edu/svn/trunk/boinc@25877
 --- a/api/boinc_api.h
 +++ b/api/boinc_api.h
-@@ -18,6 +18,8 @@
- #ifndef _BOINC_API_
- #define _BOINC_API_
+@@ -20,6 +20,8 @@
+ 
+ #include <stddef.h>     // for NULL
  
 +#include <stddef.h>     // for NULL
 +

@@ -1,8 +1,13 @@
+boinc (7.0.45+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release 
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Fri, 25 Jan 2013 00:01:24 +0100
+
 boinc (7.0.44+dfsg-1) UNRELEASED; urgency=low
 
   [ Gianfranco Costamagna ]
   * New upstream release
-  * General patch refresh
   * Added libxext-dev and libxcb-dpms0-dev in order to address a long time
     bug. (lp: #179849)
 

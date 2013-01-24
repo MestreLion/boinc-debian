@@ -1,7 +1,7 @@
 Author: Unknown
 --- a/configure.ac
 +++ b/configure.ac
-@@ -288,6 +288,20 @@
+@@ -289,6 +289,20 @@
  
  AC_SUBST([TOP_BUILD_DIR], [`pwd`])
  
@@ -29,4 +29,4 @@ Author: Unknown
 +#!/usr/bin/php
  
  <?php
- 
+ // This file is part of BOINC.

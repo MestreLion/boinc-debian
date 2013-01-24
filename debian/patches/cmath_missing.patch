@@ -41,7 +41,7 @@
 +#include <cmath>
  
  #include "error_numbers.h"
- #include "str_util.h"
+ #include "filesys.h"
 --- a/client/whetstone.cpp
 +++ b/client/whetstone.cpp
 @@ -29,7 +29,7 @@
@@ -121,7 +121,7 @@
  #include <ctype.h>
 --- a/lib/util.cpp
 +++ b/lib/util.cpp
-@@ -44,7 +44,7 @@
+@@ -50,7 +50,7 @@
  #include <errno.h>
  #include <string>
  #include <cstring>
@@ -209,12 +209,12 @@
  #endif
 --- a/vda/vda_lib.cpp
 +++ b/vda/vda_lib.cpp
-@@ -23,7 +23,7 @@
- #include <vector>
- #include <set>
+@@ -19,7 +19,7 @@
+ 
  #include <algorithm>
+ #include <limits.h>
 -#include <math.h>
 +#include <cmath>
- #include <limits.h>
- 
- using std::vector;
+ #include <set>
+ #include <stdio.h>
+ #include <vector>
