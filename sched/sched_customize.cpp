@@ -66,57 +66,42 @@ using std::string;
 #include "sched_customize.h"
 #include "plan_class_spec.h"
 
+GPU_REQUIREMENTS gpu_requirements[NPROC_TYPES];
+
 bool wu_is_infeasible_custom(WORKUNIT& wu, APP& app, BEST_APP_VERSION& bav) {
 #if 0
-    // example: if WU name contains "_v1", don't use CUDA app
+    // example: if WU name contains "_v1", don't use GPU apps.
     // Note: this is slightly suboptimal.
     // If the host is able to accept both GPU and CPU jobs,
     // we'll skip this job rather than send it for the CPU.
     // Fixing this would require a big architectural change.
     //
-    if (strstr(wu.name, "_v1") && bav.host_usage.ncudas) {
+    if (strstr(wu.name, "_v1") && bav.host_usage.uses_gpu()) {
         return true;
     }
 #endif
 #if 0
-    // example: for CUDA app, wu.batch is the minimum number of processors.
+    // example: for NVIDIA GPU app,
+    // wu.batch is the minimum number of GPU processors.
     // Don't send if #procs is less than this.
     //
-    if (!strcmp(app.name, "foobar") && bav.host_usage.ncudas) {
-        int n = g_request->coproc_cuda->prop.multiProcessorCount;
+    if (!strcmp(app.name, "foobar") && bav.host_usage.proc_type == PROC_TYPE_NVIDIA_GPU) {
+        int n = g_request->coprocs.nvidia.prop.multiProcessorCount;
         if (n < wu.batch) {
            return true;
         }
     }
 #endif
 #if 0
-    // example: if CUDA app and WU name contains ".vlar", don't send
+    // example: if GPU app and WU name contains ".vlar", don't send
     //
-    if (bav.host_usage.ncudas) {
+    if (bav.host_usage.uses_gpu()) {
         if (strstr(wu.name, ".vlar")) {
             return true;
         }
     }
 #endif
     return false;
-}
-
-// Suppose we have a computation that uses two devices alternately.
-// The devices have speeds s1 and s2.
-// The fraction of work done on device 1 is frac.
-//
-// This function returns:
-// 1) the overall speed
-// 2) the utilization of device 1, which is always in (0, 1).
-//
-static inline void coproc_perf(
-    double s1, double s2, double frac,
-    double& speed, double& u1
-) {
-    double y = (frac*s2 + (1-frac)*s1);
-    speed = s1*s2/y;
-        // do the math
-    u1 = frac*s2/y;
 }
 
 // the following is for an app that can use anywhere from 1 to 64 threads
@@ -143,8 +128,6 @@ static inline bool app_plan_mt(SCHEDULER_REQUEST&, HOST_USAGE& hu) {
     return true;
 }
 
-GPU_REQUIREMENTS ati_requirements;
-
 static bool ati_check(COPROC_ATI& c, HOST_USAGE& hu,
     int min_driver_version,
     bool need_amd_libs,
@@ -154,36 +137,65 @@ static bool ati_check(COPROC_ATI& c, HOST_USAGE& hu,
     double flops_scale
 ) {
     if (c.version_num) {
-        ati_requirements.update(min_driver_version, min_ram);
+        gpu_requirements[PROC_TYPE_AMD_GPU].update(min_driver_version, min_ram);
     }
 
     if (need_amd_libs) {
         if (!c.amdrt_detected) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] AMD run time libraries not found\n"
+                );
+            }
             return false;
         }
     } else {
         if (!c.atirt_detected) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] ATI run time libraries not found\n"
+                );
+            }
             return false;
         }
     }
     if (c.version_num < min_driver_version) {
+        if (config.debug_version_select) {
+            int app_major=min_driver_version/10000000;
+            int app_minor=(min_driver_version%10000000)/10000;
+            int app_rev=(min_driver_version%10000);
+            int dev_major=c.version_num/10000000;
+            int dev_minor=(c.version_num%10000000)/10000;
+            int dev_rev=(c.version_num%10000);
+            log_messages.printf(MSG_NORMAL,
+                "[version] Bad display driver revision %d.%d.%d<%d.%d.%d.\n",
+                dev_major,dev_minor,dev_rev,app_major,app_minor,app_rev 
+            );
+        }
         return false;
     }
     if (c.available_ram < min_ram) {
+        if (config.debug_version_select) {
+            log_messages.printf(MSG_NORMAL,
+                "[version] Insufficient GPU RAM %f>%f.\n",
+                min_ram, c.available_ram
+            );
+        }
         return false;
     }
 
     hu.gpu_ram = min_ram;
-    hu.natis = ndevs;
+    hu.proc_type = PROC_TYPE_AMD_GPU;
+    hu.gpu_usage = ndevs;
 
     coproc_perf(
         capped_host_fpops(),
-        flops_scale * hu.natis*c.peak_flops,
+        flops_scale * hu.gpu_usage*c.peak_flops,
         cpu_frac,
         hu.projected_flops,
         hu.avg_ncpus
     );
-    hu.peak_flops = hu.natis*c.peak_flops + hu.avg_ncpus*capped_host_fpops();
+    hu.peak_flops = hu.gpu_usage*c.peak_flops + hu.avg_ncpus*capped_host_fpops();
     hu.max_ncpus = hu.avg_ncpus;
     return true;
 }
@@ -194,6 +206,9 @@ static inline bool app_plan_ati(
 ) {
     COPROC_ATI& c = sreq.coprocs.ati;
     if (!c.count) {
+        if (config.debug_version_select) {
+            log_messages.printf(MSG_NORMAL,"[version] Host has no ATI GPUs\n");
+        }
         return false;
     }
 
@@ -258,14 +273,13 @@ static inline bool app_plan_ati(
     return true;
 }
 
-GPU_REQUIREMENTS cuda_requirements;
-
 #define CUDA_MIN_DRIVER_VERSION         17700
 #define CUDA23_MIN_CUDA_VERSION         2030
 #define CUDA23_MIN_DRIVER_VERSION       19038
 #define CUDA3_MIN_CUDA_VERSION          3000
 #define CUDA3_MIN_DRIVER_VERSION        19500
 #define CUDA_OPENCL_MIN_DRIVER_VERSION  19713
+#define CUDA_OPENCL_101_MIN_DRIVER_VERSION  28013
 
 static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
     int min_cc, int max_cc,
@@ -276,11 +290,26 @@ static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
     double flops_scale
 ) {
     int cc = c.prop.major*100 + c.prop.minor;
-    if (cc < min_cc) return false;
-    if (max_cc && cc >= max_cc) return false;
+    if (min_cc && (cc < min_cc)) {
+        log_messages.printf(MSG_NORMAL,
+            "[version] App requires compute capability > %d.%d (has %d.%d).\n",
+            min_cc/100, min_cc%100,
+            c.prop.major, c.prop.minor
+        );
+        return false;
+    }
+
+    if (max_cc && cc >= max_cc) { 
+        log_messages.printf(MSG_NORMAL,
+            "[version] App requires compute capability <= %d.%d (has %d.%d).\n",
+            max_cc/100, max_cc%100,
+            c.prop.major, c.prop.minor
+        );
+        return false;
+    }
 
     if (c.display_driver_version) {
-        cuda_requirements.update(min_driver_version, min_ram);
+        gpu_requirements[PROC_TYPE_NVIDIA_GPU].update(min_driver_version, min_ram);
     }
 
     // Old BOINC clients report display driver version;
@@ -288,40 +317,68 @@ static bool cuda_check(COPROC_NVIDIA& c, HOST_USAGE& hu,
     // Some Linux doesn't return either.
     //
     if (!c.cuda_version && !c.display_driver_version) {
+        if (config.debug_version_select) {
+            log_messages.printf(MSG_NORMAL,
+                "[version] Client did not provide cuda or driver version.\n"
+            );
+        }
         return false;
     }
     if (c.cuda_version) {
         if (min_cuda_version && (c.cuda_version < min_cuda_version)) {
+            if (config.debug_version_select) {
+                double app_version=(double)(min_cuda_version/1000)+(double)(min_cuda_version%100)/100.0;
+                double client_version=(double)(c.cuda_version/1000)+(double)(c.cuda_version%100)/100.0;
+                log_messages.printf(MSG_NORMAL,
+                    "[version] Bad CUDA version %f>%f.\n",
+                    app_version, client_version
+                );
+            }
             return false;
         }
     }
     if (c.display_driver_version) {
         if (min_driver_version && (c.display_driver_version < min_driver_version)) {
+            if (config.debug_version_select) {
+                double app_version=(double)(min_driver_version)/100.0;
+                double client_version=(double)(c.display_driver_version)/100.0;
+                log_messages.printf(MSG_NORMAL,
+                    "[version] Bad display driver revision %f>%f.\n",
+                    app_version, client_version
+                );
+            }
             return false;
         }
     }
     if (c.available_ram < min_ram) {
+        if (config.debug_version_select) {
+            log_messages.printf(MSG_NORMAL,
+                "[version] Insufficient GPU RAM %f>%f.\n",
+                min_ram, c.available_ram
+            );
+        }
         return false;
     }
 
     hu.gpu_ram = min_ram;
-    hu.ncudas = ndevs;
+    hu.proc_type = PROC_TYPE_NVIDIA_GPU;
+    hu.gpu_usage = ndevs;
 
     coproc_perf(
         capped_host_fpops(),
-        flops_scale * hu.ncudas*c.peak_flops,
+        flops_scale * hu.gpu_usage*c.peak_flops,
         cpu_frac,
         hu.projected_flops,
         hu.avg_ncpus
     );
-    hu.peak_flops = hu.ncudas*c.peak_flops + hu.avg_ncpus*capped_host_fpops();
+    hu.peak_flops = hu.gpu_usage*c.peak_flops + hu.avg_ncpus*capped_host_fpops();
     hu.max_ncpus = hu.avg_ncpus;
     return true;
 }
 
 // the following is for an app that uses an NVIDIA GPU
 //
-static inline bool app_plan_cuda(
+static inline bool app_plan_nvidia(
     SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
 ) {
     COPROC_NVIDIA& c = sreq.coprocs.nvidia;
@@ -509,6 +566,25 @@ static inline bool app_plan_opencl(
             );
             return false;
         }
+    } else if (strstr(plan_class, "intel_gpu")) {
+        COPROC_INTEL& c = sreq.coprocs.intel_gpu;
+        if (!c.count) return false;
+        if (!c.have_opencl) return false;
+        if (!strcmp(plan_class, "opencl_intel_gpu_101")) {
+            return opencl_check(
+                c, hu,
+                101,
+                256*MEGA,
+                1,
+                .1,
+                .2
+            );
+        } else {
+            log_messages.printf(MSG_CRITICAL,
+                "Unknown plan class: %s\n", plan_class
+            );
+            return false;
+        }
 
     // maybe add a clause for multicore CPU
 
@@ -627,6 +703,7 @@ bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu) {
                     "[version] Couldn't open plan class spec file '%s'\n", buf
                 );
             }
+            have_plan_class_spec = false;
         } else if (retval) {
             log_messages.printf(MSG_CRITICAL,
                 "Error parsing plan class spec file '%s'\n", buf
@@ -655,7 +732,7 @@ bool app_plan(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu) {
     } else if (strstr(plan_class, "ati")) {
         return app_plan_ati(sreq, plan_class, hu);
     } else if (strstr(plan_class, "cuda")) {
-        return app_plan_cuda(sreq, plan_class, hu);
+        return app_plan_nvidia(sreq, plan_class, hu);
     } else if (!strcmp(plan_class, "nci")) {
         return app_plan_nci(sreq, hu);
     } else if (!strcmp(plan_class, "sse3")) {
@@ -680,6 +757,7 @@ bool JOB::get_score() {
     WU_RESULT& wu_result = ssp->wu_results[index];
     wu = wu_result.workunit;
     app = ssp->lookup_app(wu.appid);
+    if (app->non_cpu_intensive) return false;
 
     score = 0;
 

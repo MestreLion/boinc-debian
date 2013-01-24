@@ -121,4 +121,11 @@ extern int create_delete_file_msg(
 //
 extern int cancel_jobs(int min_id, int max_id);
 
+// cancel a particular job
+//
+extern int cancel_job(DB_WORKUNIT&);
+
+extern int get_total_quota(double&);
+extern int get_project_flops(double&);
+extern double user_priority_delta(DB_USER_SUBMIT&, double, double, double);
 #endif

@@ -70,7 +70,6 @@ bool dont_delete_batches = false;
 bool do_input_files = true;
 bool do_output_files = true;
 int sleep_interval = DEFAULT_SLEEP_INTERVAL;
-static pthread_t thread_handle;
 
 void usage(char *name) {
     fprintf(stderr, "Deletes files that are no longer needed.\n\n"
@@ -92,7 +91,7 @@ void usage(char *name) {
         "  --preserve_result_files         update the DB, but don't delete output files.\n"
         "                                  For debugging.\n"
         "  --preserve_wu_files             update the DB, but don't delete input files.\n"
-        "                                 For debugging.\n"
+        "                                  For debugging.\n"
         "  --dont_delete_batches           don't delete anything with positive batch number\n"
         "  --input_files_only              delete only input (download) files\n"
         "  --output_files_only             delete only output (upload) files\n"
@@ -269,6 +268,7 @@ int result_delete_files(RESULT& result) {
 }
 
 // set by corresponding command line arguments.
+//
 static bool preserve_wu_files=false;
 static bool preserve_result_files=false;
 
@@ -549,7 +549,7 @@ int main(int argc, char** argv) {
         }
         if (one_pass) break;
         if (!got_any) {
-            sleep(sleep_interval);
+            daemon_sleep(sleep_interval);
         }
         if (!dont_retry_errors && !retry_errors_now && (dtime() > next_error_time)) {
             retry_errors_now = true;

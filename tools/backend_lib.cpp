@@ -53,8 +53,8 @@ using std::string;
 
 static struct random_init {
     random_init() {
-    srand48(getpid() + time(0));
-                        }
+        srand48(getpid() + time(0));
+    }
 } random_init;
 
 int read_file(FILE* f, char* buf, int len) {
@@ -161,8 +161,8 @@ int create_result(
     );
     if (retval) {
         fprintf(stderr,
-            "Failed to read result template file '%s': %d\n",
-            result_template_filename, retval
+            "Failed to read result template file '%s': %s\n",
+            result_template_filename, boincerror(retval)
         );
         return retval;
     }
@@ -171,7 +171,9 @@ int create_result(
         result_template, key, base_outfile_name, config_loc
     );
     if (retval) {
-        fprintf(stderr, "process_result_template() error: %d\n", retval);
+        fprintf(stderr,
+            "process_result_template() error: %s\n", boincerror(retval)
+        );
     }
     if (strlen(result_template) > sizeof(result.xml_doc_in)-1) {
         fprintf(stderr,
@@ -189,7 +191,7 @@ int create_result(
     } else {
         retval = result.insert();
         if (retval) {
-            fprintf(stderr, "result.insert(): %d\n", retval);
+            fprintf(stderr, "result.insert(): %s\n", boincerror(retval));
             return retval;
         }
     }
@@ -244,7 +246,7 @@ int create_work(
         wu, wu_template, infiles, ninfiles, config_loc, command_line, additional_xml
     );
     if (retval) {
-        fprintf(stderr, "process_input_template(): %d\n", retval);
+        fprintf(stderr, "process_input_template(): %s\n", boincerror(retval));
         return retval;
     }
 
@@ -317,13 +319,17 @@ int create_work(
     if (wu.id) {
         retval = wu.update();
         if (retval) {
-            fprintf(stderr, "create_work: workunit.update() %d\n", retval);
+            fprintf(stderr,
+                "create_work: workunit.update() %s\n", boincerror(retval)
+            );
             return retval;
         }
     } else {
         retval = wu.insert();
         if (retval) {
-            fprintf(stderr, "create_work: workunit.insert() %d\n", retval);
+            fprintf(stderr,
+                "create_work: workunit.insert() %s\n", boincerror(retval)
+            );
             return retval;
         }
         wu.id = boinc_db.insert_id();
@@ -511,6 +517,8 @@ int create_delete_file_msg(int host_id, const char* file_name) {
     return 0;
 }
 
+// cancel jobs in a range of workunit IDs
+//
 int cancel_jobs(int min_id, int max_id) {
     DB_WORKUNIT wu;
     DB_RESULT result;
@@ -533,6 +541,96 @@ int cancel_jobs(int min_id, int max_id) {
     retval = wu.update_fields_noid(set_clause, where_clause);
     if (retval) return retval;
     return 0;
+}
+
+// cancel a particular job
+//
+int cancel_job(DB_WORKUNIT& wu) {
+    DB_RESULT result;
+    char set_clause[256], where_clause[256];
+    int retval;
+
+    // cancel unsent results
+    //
+    sprintf(set_clause, "server_state=%d, outcome=%d",
+        RESULT_SERVER_STATE_OVER, RESULT_OUTCOME_DIDNT_NEED
+    );
+    sprintf(where_clause, "server_state=%d and workunitid=%d",
+        RESULT_SERVER_STATE_UNSENT, wu.id
+    );
+    retval = result.update_fields_noid(set_clause, where_clause);
+    if (retval) return retval;
+
+    // cancel the workunit
+    //
+    sprintf(set_clause, "error_mask=error_mask|%d, transition_time=%d",
+        WU_ERROR_CANCELLED, (int)(time(0))
+    );
+    retval = wu.update_field(set_clause);
+    if (retval) return retval;
+    return 0;
+}
+
+// return the sum of user quotas
+//
+int get_total_quota(double& total) {
+    DB_USER_SUBMIT us;
+
+    total = 0;
+    while (1) {
+        int retval = us.enumerate("");
+        if (retval == ERR_DB_NOT_FOUND) break;
+        if (retval) {
+            return retval;
+        }
+        total += us.quota;
+    }
+    return 0;
+}
+
+// return total project FLOPS (based on recent credit)
+//
+int get_project_flops(double& total) {
+    DB_APP_VERSION av;
+    char buf[256];
+
+    // compute credit per day
+    //
+    sprintf(buf, "where expavg_time > %f", dtime() - 30*86400);
+    total = 0;
+    while (1) {
+        int retval = av.enumerate(buf);
+        if (retval == ERR_DB_NOT_FOUND) break;
+        if (retval) {
+            return retval;
+        }
+        total += av.expavg_credit;
+    }
+    total /= COBBLESTONE_SCALE;     // convert to FLOPs per day
+    total /= 86400;                 // convert to FLOPs per second
+    return 0;
+}
+
+// compute delta to user.logical_start_time given the assumption
+// that user did flop_count FLOPS of computing
+//
+double user_priority_delta(
+    DB_USER_SUBMIT& us,
+    double flop_count,
+        // this should be wu.rsc_fpops_est * app.min_avg_pfc
+        // to account for systematic errors in rsc_fpops_est
+    double total_quota,
+    double project_flops
+) {
+    double runtime = flop_count / project_flops;
+    double share = us.quota / total_quota;
+#if 0
+    printf("  project flops %f\n", project_flops);
+    printf("  quota %f, total %f, share %f\n", us.quota, total_quota, share);
+    printf("  runtime %f\n", runtime);
+    printf("  delta %f\n", runtime/share);
+#endif
+    return runtime/share;
 }
 
 const char *BOINC_RCSID_b5f8b10eb5 = "$Id$";

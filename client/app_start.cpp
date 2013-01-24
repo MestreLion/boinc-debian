@@ -271,6 +271,7 @@ void ACTIVE_TASK::init_app_init_data(APP_INIT_DATA& aid) {
 
     }
     aid.ncpus = app_version->avg_ncpus;
+    aid.vbox_window = config.vbox_window;
     aid.checkpoint_period = gstate.global_prefs.disk_interval;
     aid.fraction_done_start = 0;
     aid.fraction_done_end = 1;
@@ -695,7 +696,7 @@ int ACTIVE_TASK::start() {
 
             if (!pCEB(&environment_block, sandbox_account_service_token, FALSE)) {
                 if (log_flags.task) {
-                    windows_error_string(error_msg, sizeof(error_msg));
+                    windows_format_error_string(GetLastError(), error_msg, sizeof(error_msg));
                     msg_printf(wup->project, MSG_INFO,
                         "Process environment block creation failed: %s", error_msg
                     );
@@ -718,7 +719,7 @@ int ACTIVE_TASK::start() {
                 success = true;
                 break;
             } else {
-                windows_error_string(error_msg, sizeof(error_msg));
+                windows_format_error_string(GetLastError(), error_msg, sizeof(error_msg));
                 msg_printf(wup->project, MSG_INTERNAL_ERROR,
                     "Process creation failed: %s", error_msg
                 );
@@ -726,7 +727,7 @@ int ACTIVE_TASK::start() {
 
             if (!pDEB(environment_block)) {
                 if (log_flags.task) {
-                    windows_error_string(error_msg, sizeof(error_msg2));
+                    windows_format_error_string(GetLastError(), error_msg, sizeof(error_msg2));
                     msg_printf(wup->project, MSG_INFO,
                         "Process environment block cleanup failed: %s",
                         error_msg2
@@ -756,7 +757,7 @@ int ACTIVE_TASK::start() {
                 success = true;
                 break;
             } else {
-                windows_error_string(error_msg, sizeof(error_msg));
+                windows_format_error_string(GetLastError(), error_msg, sizeof(error_msg));
                 msg_printf(wup->project, MSG_INTERNAL_ERROR,
                     "Process creation failed: %s", error_msg
                 );

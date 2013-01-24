@@ -44,16 +44,16 @@
 #include <openssl/engine.h>
 #include <openssl/err.h>
 
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#endif
+
 #include "md5_file.h"
 #include "cert_sig.h"
 #include "filesys.h"
 #include "error_numbers.h"
 
 #include "crypt.h"
-
-#ifdef _USING_FCGI_
-#include "boinc_fcgi.h"
-#endif
 
 // NOTE: the fast CGI I/O library doesn't have fscanf(),
 // so some of the following have been modified to use

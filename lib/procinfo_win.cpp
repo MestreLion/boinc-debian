@@ -5,6 +5,7 @@
 #include "diagnostics_win.h"
 #include "str_util.h"
 #include "str_replace.h"
+
 #include "procinfo.h"
 
 using std::vector;

@@ -105,7 +105,8 @@ enum SUSPEND_REASON {
     SUSPEND_REASON_EXCLUSIVE_APP_RUNNING = 512,
     SUSPEND_REASON_CPU_USAGE = 1024,
     SUSPEND_REASON_NETWORK_QUOTA_EXCEEDED = 2048,
-    SUSPEND_REASON_OS = 4096
+    SUSPEND_REASON_OS = 4096,
+    SUSPEND_REASON_WIFI_STATE = 8192
 };
 
 // Values of RESULT::state in client.
@@ -128,6 +129,16 @@ enum SUSPEND_REASON {
     // result was aborted
 #define RESULT_UPLOAD_FAILED        7
     // some output file permanent failure
+
+// Values of FILE_INFO::status.
+// If the status is neither of these two,
+// it's an error code indicating an unrecoverable error
+// in the transfer of the file,
+// or that the file was too big and was deleted.
+//
+#define FILE_NOT_PRESENT    0
+#define FILE_PRESENT        1
+#define FILE_VERIFY_PENDING 2
 
 // values of ACTIVE_TASK::task_state
 //

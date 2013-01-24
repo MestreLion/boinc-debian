@@ -70,6 +70,7 @@
 #include "md5_file.h"
 #include "network.h"
 #include "common_defs.h"
+
 #include "gui_rpc_client.h"
 
 using std::string;
@@ -210,8 +211,9 @@ ALL_PROJECTS_LIST::~ALL_PROJECTS_LIST() {
     clear();
 }
 
-bool compare_project_list_entry(const PROJECT_LIST_ENTRY* a, const PROJECT_LIST_ENTRY* b) 
-{
+bool compare_project_list_entry(
+    const PROJECT_LIST_ENTRY* a, const PROJECT_LIST_ENTRY* b
+) {
 #ifdef _WIN32
     return _stricmp(a->name.c_str(), b->name.c_str()) < 0;
 #else
@@ -219,8 +221,7 @@ bool compare_project_list_entry(const PROJECT_LIST_ENTRY* a, const PROJECT_LIST_
 #endif
 }
 
-bool compare_am_list_entry(const AM_LIST_ENTRY* a, const AM_LIST_ENTRY* b) 
-{
+bool compare_am_list_entry(const AM_LIST_ENTRY* a, const AM_LIST_ENTRY* b) {
 #ifdef _WIN32
     return _stricmp(a->name.c_str(), b->name.c_str()) < 0;
 #else
@@ -228,7 +229,7 @@ bool compare_am_list_entry(const AM_LIST_ENTRY* a, const AM_LIST_ENTRY* b)
 #endif
 }
 
-void ALL_PROJECTS_LIST::shuffle() {
+void ALL_PROJECTS_LIST::alpha_sort() {
     sort(projects.begin(), projects.end(), compare_project_list_entry);
     sort(account_managers.begin(), account_managers.end(), compare_am_list_entry);
 }
@@ -522,6 +523,7 @@ int APP_VERSION::parse_coproc(XML_PARSER& xp) {
 }
 
 int APP_VERSION::parse(XML_PARSER& xp) {
+    clear();
     while (!xp.get_tag()) {
         if (xp.match_tag("/app_version")) return 0;
         if (xp.parse_str("app_name", app_name, sizeof(app_name))) continue;
@@ -630,7 +632,7 @@ int RESULT::parse(XML_PARSER& xp) {
 #if 0
         if (xp.match_tag("stderr_out")) {
             char buf[65536];
-            xp.element_contents(("</stderr_out>", buf);
+            xp.element_contents("</stderr_out>", buf);
             stderr_out = buf;
             continue;
         }
@@ -980,7 +982,6 @@ int CC_STATE::parse(XML_PARSER& xp) {
         }
         if (xp.parse_bool("have_cuda", have_nvidia)) continue;
         if (xp.parse_bool("have_ati", have_ati)) continue;
-        if (xp.parse_bool("have_intel", have_intel)) continue;
     }
     return 0;
 }
@@ -1012,7 +1013,6 @@ void CC_STATE::clear() {
     host_info.clear_host_info();
     have_nvidia = false;
     have_ati = false;
-    have_intel = false;
 }
 
 PROJECT* CC_STATE::lookup_project(const char* url) {
@@ -1600,7 +1600,7 @@ int RPC_CLIENT::get_all_projects_list(ALL_PROJECTS_LIST& pl) {
         }
     }
 
-    pl.shuffle();
+    pl.alpha_sort();
 
     return 0;
 }

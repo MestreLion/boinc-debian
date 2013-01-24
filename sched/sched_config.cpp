@@ -147,16 +147,6 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_bool("dont_generate_upload_certificates", dont_generate_upload_certificates)) continue;
         if (xp.parse_int("uldl_dir_fanout", uldl_dir_fanout)) continue;
         if (xp.parse_bool("cache_md5_info", cache_md5_info)) continue;
-        if (xp.parse_double("fp_benchmark_weight", fp_benchmark_weight)) {
-            if (fp_benchmark_weight < 0 || fp_benchmark_weight > 1) {
-                fprintf(stderr,
-                    "CONFIG FILE ERROR: fp_benchmark_weight outside of 0..1"
-                );
-            } else {
-                use_benchmark_weights = true;
-            }
-            continue;
-        }
         if (xp.parse_int("fuh_debug_level", fuh_debug_level)) continue;
         if (xp.parse_int("reliable_priority_on_over", reliable_priority_on_over)) continue;
         if (xp.parse_int("reliable_priority_on_over_except_error", reliable_priority_on_over_except_error)) continue;
@@ -176,6 +166,7 @@ int SCHED_CONFIG::parse(FILE* f) {
         if (xp.parse_int("feeder_query_size", feeder_query_size)) continue;
         if (xp.parse_str("httpd_user", httpd_user, sizeof(httpd_user))) continue;
         if (xp.parse_bool("enable_vda", enable_vda)) continue;
+        if (xp.parse_double("vda_host_timeout", vda_host_timeout)) continue;
         if (xp.parse_bool("enable_assignment", enable_assignment)) continue;
         if (xp.parse_bool("enable_assignment_multi", enable_assignment_multi)) continue;
         if (xp.parse_bool("job_size_matching", job_size_matching)) continue;
@@ -248,6 +239,7 @@ int SCHED_CONFIG::parse(FILE* f) {
             max_jobs_in_progress.project_limits.gpu.per_proc = true;
             continue;
         }
+        if (xp.parse_int("max_results_accepted", max_results_accepted)) continue;
         if (xp.parse_int("max_wus_to_send", max_wus_to_send)) continue;
         if (xp.parse_int("min_core_client_version", min_core_client_version)) {
             if (min_core_client_version && min_core_client_version < 10000) {
@@ -305,13 +297,16 @@ int SCHED_CONFIG::parse(FILE* f) {
         //////////// SCHEDULER LOG FLAGS /////////
 
         if (xp.parse_bool("debug_array", debug_array)) continue;
+        if (xp.parse_bool("debug_array_detail", debug_array_detail)) continue;
         if (xp.parse_bool("debug_assignment", debug_assignment)) continue;
+        if (xp.parse_bool("debug_client_files", debug_client_files)) continue;
         if (xp.parse_bool("debug_credit", debug_credit)) continue;
         if (xp.parse_bool("debug_edf_sim_detail", debug_edf_sim_detail)) continue;
         if (xp.parse_bool("debug_edf_sim_workload", debug_edf_sim_workload)) continue;
         if (xp.parse_bool("debug_fcgi", debug_fcgi)) continue;
         if (xp.parse_bool("debug_handle_results", debug_handle_results)) continue;
         if (xp.parse_bool("debug_locality", debug_locality)) continue;
+        if (xp.parse_bool("debug_locality_lite", debug_locality_lite)) continue;
         if (xp.parse_bool("debug_prefs", debug_prefs)) continue;
         if (xp.parse_bool("debug_quota", debug_quota)) continue;
         if (xp.parse_bool("debug_request_details", debug_request_details)) continue;
@@ -375,7 +370,7 @@ int SCHED_CONFIG::download_path(const char* filename, char* path) {
 static bool is_project_dir(const char* dir) {
     char buf[1024];
     sprintf(buf, "%s/%s", dir, CONFIG_FILE);
-    if (!is_file(buf)) return false;
+    if (!is_file_follow_symlinks(buf)) return false;
     sprintf(buf, "%s/cgi-bin", dir);
     if (!is_dir_follow_symlinks(buf)) return false;
     return true;

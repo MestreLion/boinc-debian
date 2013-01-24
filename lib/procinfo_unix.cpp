@@ -47,9 +47,10 @@
 #include <procfs.h>  // definitions for solaris /proc structs
 #endif
 
-#include "procinfo.h"
 #include "str_util.h"
 #include "str_replace.h"
+
+#include "procinfo.h"
 
 using std::vector;
 

@@ -6,7 +6,7 @@ dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.58)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 7.0.44)
+AC_INIT(BOINC, 7.0.45)
 AC_CONFIG_MACRO_DIR([m4])
 LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
 AC_SUBST([LIBBOINC_VERSION])
@@ -16,6 +16,7 @@ AC_CANONICAL_TARGET
 dnl generate .tar.gz, .tar.bz2, .zip
 dnl AM_INIT_AUTOMAKE(dist-bzip2 dist-zip)
 AM_INIT_AUTOMAKE(dist-zip)
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_CONFIG_SRCDIR(lib/shmem.cpp)
 
@@ -390,9 +391,6 @@ case ${target} in
 	;;
 esac
 
-dnl m4/boinc_getsockopt.m4
-BOINC_GETSOCKOPT_TYPE
-
 if test "x${enable_fcgi}" = xyes ; then
 dnl m4/boinc_check_fcgi.m4
 BOINC_CHECK_FCGI
@@ -485,6 +483,16 @@ if test "x${bindir}" = "xNONE" -o -z "${bindir}" ; then
 fi
 if test "x${libdir}" = "xNONE" -o -z "${libdir}" ; then
   bindir="${exec_prefix}/lib"
+fi
+
+dnl if --sysconfdir was not specified, default ${sysconfdir} to '/etc/'.
+dnl this is done to preserve the behaviour of previous BOINC versions 
+dnl which always installed to /etc/ in client/scripts/. Now we install
+dnl to ${sysconfdir}/.
+dnl the default value for ${sysconfdir} set by automake is '${prefix}/etc',
+dnl but we also test for an empty string
+if test "${sysconfdir}" = '${prefix}/etc' -o "x${sysconfdir}" = "x"; then
+  sysconfdir=/etc
 fi
 
 AC_DEFINE_UNQUOTED(BOINC_PREFIX,"`eval echo ${prefix}`",[Directory tree where BOINC will be installed])
@@ -582,9 +590,15 @@ AH_TOP([
 ])
 AH_BOTTOM([
 
+#ifndef HAVE_XLOCALE_H
+#define NO_PER_THREAD_LOCALE 1
+#endif
+
 #ifndef HAVE_RES_INIT
 #define res_init() (0)
 #endif
+
+#include "project_specific_defines.h"
 
 /* end double-inclusion protection for config.h */
 #endif /* #ifndef BOINC_CONFIG_H */
@@ -611,7 +625,7 @@ AC_CHECK_HEADER(net/if_arp.h, [], [], [[
 #endif
 ]])
 
-AC_CHECK_HEADERS(sys/sysctl.h sys/mount.h sys/swap.h, [], [], [[
+AC_CHECK_HEADERS(sys/sysctl.h sys/mount.h sys/swap.h sys/sensors.h, [], [], [[
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
@@ -838,6 +852,9 @@ if (test "$enable_xss" == yes) && (test "$have_Xss" == yes); then
         CLIENTLIBS="${sah_lib_last} ${CLIENTLIBS}"])
     SAH_CHECK_LIB([Xss],[XScreenSaverAllocInfo],[
         AC_DEFINE([HAVE_XSS],[1],[Define to 1 if you have xss library])
+        CLIENTLIBS="${sah_lib_last} ${CLIENTLIBS}"])
+    SAH_CHECK_LIB([X11],[XOpenDisplay],[
+        AC_DEFINE([HAVE_X11],[1],[Define to 1 if you have X11 library])
         CLIENTLIBS="${sah_lib_last} ${CLIENTLIBS}"])
     echo DEBUG: CLIENTLIBS=${CLIENTLIBS} >&5
 fi

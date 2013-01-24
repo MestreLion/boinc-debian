@@ -38,6 +38,7 @@ function error($s) {
 function authenticate_user($r, $app) {
     $auth = (string)$r->authenticator;
     if (!$auth) error("no authenticator");
+    $auth = BoincDb::escape_string($auth);
     $user = BoincUser::lookup("authenticator='$auth'");
     if (!$user) error("bad authenticator");
     $user_submit = BoincUserSubmit::lookup_userid($user->id);
@@ -53,6 +54,7 @@ function authenticate_user($r, $app) {
 
 function get_app($r) {
     $name = (string)($r->batch->app_name);
+    $name = BoincDb::escape_string($name);
     $app = BoincApp::lookup("name='$name'");
     if (!$app) error("no app");
     return $app;
@@ -115,7 +117,7 @@ function stage_file($file) {
 
     $md5 = md5_file($file->source);
     if (!$md5) {
-        error("Can't get MD5 of file $source");
+        error("Can't get MD5 of file $file->source");
     }
     $name = "batch_$md5";
     $path = dir_hier_path($name, "../../download", $fanout);
@@ -136,8 +138,8 @@ function stage_files(&$jobs, $template) {
     }
 }
 
-function submit_job($job, $template, $app, $batch_id, $i) {
-    $cmd = "cd ../..; ./bin/create_work --appname $app->name --batch $batch_id --rsc_fpops_est $job->rsc_fpops_est";
+function submit_job($job, $template, $app, $batch_id, $i, $priority) {
+    $cmd = "cd ../..; ./bin/create_work --appname $app->name --batch $batch_id --rsc_fpops_est $job->rsc_fpops_est --priority $priority";
     if ($job->command_line) {
         $cmd .= " --command_line \"$job->command_line\"";
     }
@@ -177,16 +179,61 @@ function submit_batch($r) {
     stage_files($jobs, $template);
     $njobs = count($jobs);
     $now = time();
-    $batch_name = (string)($r->batch->batch_name);
-    $batch_id = BoincBatch::insert(
-        "(user_id, create_time, njobs, name, app_id) values ($user->id, $now, $njobs, '$batch_name', $app->id)"
-    );
+    $batch_id = (int)($r->batch->batch_id);
+    if ($batch_id) {
+        $batch = BoincBatch::lookup_id($batch_id);
+        if (!$batch) {
+            echo "<error>no batch $batch_id</error>\n";
+            exit;
+        }
+        if ($batch->user_id != $user->id) {
+            echo "<error>not owner</error>\n";
+            exit;
+        }
+        if ($batch->state != BATCH_STATE_INIT) {
+            echo "<error>batch not in init state</error>\n";
+            exit;
+        }
+    }
+
+    // - compute batch FLOP count
+    // - run adjust_user_priorities to increment user_submit.logical_start_time
+    // - use that for batch logical end time and job priority
+    //
+    $total_flops = 0;
+    foreach($jobs as $job) {
+        $total_flops += $job->rsc_fpops_est;
+            // TODO: if rsc_fpops_est not defined here, get it from template
+    }
+    $cmd = "cd ../../bin; ./adjust_user_priority --user $user->id --flops $total_flops --app $app->name";
+    $x = system($cmd);
+    if (!is_numeric($x) || (double)$x == 0) {
+        echo "<error>adjust_user_priority returned $x</error>\n";
+        exit;
+    }
+    $let = (double)$x;
+
+    if ($batch_id) {
+        $batch.update("logical_end_time=$let and state= ".BATCH_STATE_IN_PROGRESS);
+    } else {
+        $batch_name = (string)($r->batch->batch_name);
+        $batch_id = BoincBatch::insert(
+            "(user_id, create_time, njobs, name, app_id, logical_end_time, state) values ($user->id, $now, $njobs, '$batch_name', $app->id, $let, ".BATCH_STATE_IN_PROGRESS.")"
+        );
+    }
     $i = 0;
     foreach($jobs as $job) {
-        submit_job($job, $template, $app, $batch_id, $i++);
+        submit_job($job, $template, $app, $batch_id, $i++, $let);
     }
-    $batch = BoincBatch::lookup_id($batch_id);
-    $batch->update("state=".BATCH_STATE_IN_PROGRESS);
+    echo "<batch_id>$batch_id</batch_id>\n";
+}
+
+function create_batch($r) {
+    $app = get_app($r);
+    list($user, $user_submit) = authenticate_user($r, $app);
+    $batch_id = BoincBatch::insert(
+        "(user_id, create_time, name, app_id, state) values ($user->id, $now, '$batch_name', $app->id, ".BATCH_STATE_INIT.")"
+    );
     echo "<batch_id>$batch_id</batch_id>\n";
 }
 
@@ -308,6 +355,7 @@ function handle_retire_batch($r) {
     list($user, $user_submit) = authenticate_user($r, null);
     $batch_id = (int)($r->batch_id);
     $batch = BoincBatch::lookup_id($batch_id);
+    if (!$batch) error("no such batch");
     if ($batch->user_id != $user->id) {
         error("not owner");
     }
@@ -373,6 +421,7 @@ switch ($r->getName()) {
     case 'query_job': query_job($r); break;
     case 'retire_batch': handle_retire_batch($r); break;
     case 'submit_batch': submit_batch($r); break;
+    case 'create_batch': create_batch($r); break;
     default: error("bad command");
 }
 

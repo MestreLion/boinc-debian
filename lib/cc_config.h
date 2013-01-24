@@ -183,6 +183,7 @@ struct CONFIG {
     bool use_certs;
     bool use_certs_only;
         // overrides use_certs
+    bool vbox_window;
 
     CONFIG();
     void defaults();

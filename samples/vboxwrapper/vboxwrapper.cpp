@@ -74,6 +74,7 @@
 #include "vbox.h"
 
 using std::vector;
+using std::string;
 
 
 char* vboxwrapper_msg_prefix(char* sbuf, int len) {
@@ -83,10 +84,6 @@ char* vboxwrapper_msg_prefix(char* sbuf, int len) {
     int n;
 
     time_t x = time(0);
-    if (x == -1) {
-        strcpy(sbuf, "time() failed");
-        return sbuf;
-    }
 #ifdef _WIN32
 #ifdef __MINGW32__
     if ((tmp = localtime(&x)) == NULL) {
@@ -117,8 +114,9 @@ char* vboxwrapper_msg_prefix(char* sbuf, int len) {
 }
 
 
-int parse_job_file(VBOX_VM& vm) {
+int parse_job_file(VBOX_VM& vm, vector<string>& copy_to_shared) {
     MIOFILE mf;
+    string str;
     char buf[1024], buf2[256];
 
     boinc_resolve_filename(JOB_FILENAME, buf, sizeof(buf));
@@ -145,9 +143,12 @@ int parse_job_file(VBOX_VM& vm) {
             fclose(f);
             return 0;
         }
+        else if (xp.parse_string("vm_disk_controller_type", vm.vm_disk_controller_type)) continue;
+        else if (xp.parse_string("vm_disk_controller_model", vm.vm_disk_controller_model)) continue;
         else if (xp.parse_string("os_name", vm.os_name)) continue;
         else if (xp.parse_string("memory_size_mb", vm.memory_size_mb)) continue;
         else if (xp.parse_double("job_duration", vm.job_duration)) continue;
+        else if (xp.parse_string("fraction_done_filename", vm.fraction_done_filename)) continue;
         else if (xp.parse_bool("enable_cern_dataformat", vm.enable_cern_dataformat)) continue;
         else if (xp.parse_bool("enable_network", vm.enable_network)) continue;
         else if (xp.parse_bool("enable_shared_directory", vm.enable_shared_directory)) continue;
@@ -155,6 +156,10 @@ int parse_job_file(VBOX_VM& vm) {
         else if (xp.parse_bool("enable_remotedesktop", vm.enable_remotedesktop)) continue;
         else if (xp.parse_int("pf_guest_port", vm.pf_guest_port)) continue;
         else if (xp.parse_int("pf_host_port", vm.pf_host_port)) continue;
+        else if (xp.parse_string("copy_to_shared", str)) {
+            copy_to_shared.push_back(str);
+            continue;
+        }
         fprintf(stderr, "%s parse_job_file(): unexpected tag %s\n",
             vboxwrapper_msg_prefix(buf, sizeof(buf)), xp.parsed_tag
         );
@@ -185,6 +190,34 @@ void read_checkpoint(double& cpu, VBOX_VM& vm) {
     cpu = c;
     vm.pf_host_port = pf_host;
     vm.rd_host_port = rd_host;
+}
+
+void read_fraction_done(double& frac_done, VBOX_VM& vm) {
+    char buf[256];
+    double temp, frac = 0;
+
+    FILE* f = fopen(vm.fraction_done_filename.c_str(), "r");
+    if (!f) return;
+
+    // read the last line of the file
+    //
+    fseek(f, -32, SEEK_END);
+    while (!feof(f)) {
+        char* p = fgets(buf, 256, f);
+        if (p == NULL) break;
+        int n = sscanf(buf, "%lf", &temp);
+        if (n == 1) frac = temp;
+    }
+    fclose(f);
+
+    if (frac < 0) {
+        frac = 0;
+    }
+    if (frac > 1) {
+        frac = 1;
+    }
+
+    frac_done = frac;
 }
 
 // set CPU and network throttling if needed
@@ -239,20 +272,20 @@ void set_floppy_image(APP_INIT_DATA& aid, VBOX_VM& vm) {
             //
             // Use %.17g to represent doubles
             //
-            scratch  = "BOINC_USERNAME=" + std::string(aid.user_name) + "\n";
-            scratch += "BOINC_AUTHENTICATOR=" + std::string(aid.authenticator) + "\n";
+            scratch  = "BOINC_USERNAME=" + string(aid.user_name) + "\n";
+            scratch += "BOINC_AUTHENTICATOR=" + string(aid.authenticator) + "\n";
 
             sprintf(buf, "%d", aid.userid);
-            scratch += "BOINC_USERID=" + std::string(buf) + "\n";
+            scratch += "BOINC_USERID=" + string(buf) + "\n";
 
             sprintf(buf, "%d", aid.hostid);
-            scratch += "BOINC_HOSTID=" + std::string(buf) + "\n";
+            scratch += "BOINC_HOSTID=" + string(buf) + "\n";
 
             sprintf(buf, "%.17g", aid.user_total_credit);
-            scratch += "BOINC_USER_TOTAL_CREDIT=" + std::string(buf) + "\n";
+            scratch += "BOINC_USER_TOTAL_CREDIT=" + string(buf) + "\n";
 
             sprintf(buf, "%.17g", aid.host_total_credit);
-            scratch += "BOINC_HOST_TOTAL_CREDIT=" + std::string(buf) + "\n";
+            scratch += "BOINC_HOST_TOTAL_CREDIT=" + string(buf) + "\n";
         }
         vm.write_floppy(scratch);
     }
@@ -319,23 +352,25 @@ int main(int argc, char** argv) {
     BOINC_OPTIONS boinc_options;
     VBOX_VM vm;
     APP_INIT_DATA aid;
-    double elapsed_time = 0.0;
-    double trickle_period = 0.0;
-    double trickle_cpu_time = 0.0;
-    double fraction_done = 0.0;
-    double checkpoint_cpu_time = 0.0;
-    double last_status_report_time = 0.0;
-    double stopwatch_time = 0.0;
-    double sleep_time = 0.0;
-    double bytes_sent = 0.0;
-    double bytes_received = 0.0;
-    double ncpus = 0.0;
+    double elapsed_time = 0;
+    double trickle_period = 0;
+    double trickle_cpu_time = 0;
+    double fraction_done = 0;
+    double checkpoint_cpu_time = 0;
+    double last_status_report_time = 0;
+    double stopwatch_time = 0;
+    double stopwatch_endtime = 0;
+    double sleep_time = 0;
+    double bytes_sent = 0;
+    double bytes_received = 0;
+    double ncpus = 0;
     bool report_vm_pid = false;
     bool report_net_usage = false;
     int vm_pid = 0;
     unsigned long vm_exit_code = 0;
-    std::string vm_log;
-    std::string system_log;
+    string vm_log;
+    string system_log;
+    vector<string> copy_to_shared;
     char buf[256];
 
     memset(&boinc_options, 0, sizeof(boinc_options));
@@ -376,7 +411,59 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    retval = parse_job_file(vm);
+    // Prepare environment for detecting system conditions
+    //
+    boinc_get_init_data_p(&aid);
+
+    // Initialize VM Hypervisor
+    //
+    retval = vm.initialize();
+    if (retval) {
+        fprintf(
+            stderr,
+            "%s couldn't detect VM Hypervisor, telling BOINC to reschedule execution for a later date.\n",
+            vboxwrapper_msg_prefix(buf, sizeof(buf))
+        );
+        boinc_temporary_exit(86400, "Detection of VM Hypervisor failed.");
+    }
+
+    // Check to see if the system is in a state in which we expect to be able to run
+    // VirtualBox successfully.  Sometimes the system is in a wierd state after a
+    // reboot and the system needs a little bit of time.
+    //
+    if (!vm.is_system_ready()) {
+        fprintf(
+            stderr,
+            "%s couldn't communicate with VM Hypervisor, telling BOINC to reschedule execution for a later date.\n",
+            vboxwrapper_msg_prefix(buf, sizeof(buf))
+        );
+        boinc_temporary_exit(300, "Communication with VM Hypervisor failed.");
+    }
+
+    // Record what version of VirtualBox was used.
+    // 
+    if (!vm.virtualbox_version.empty()) {
+        fprintf(
+            stderr,
+            "%s Detected: %s\n",
+            vboxwrapper_msg_prefix(buf, sizeof(buf)),
+            vm.virtualbox_version.c_str()
+        );
+    }
+
+    // Record if anonymous platform was used.
+    // 
+    if (boinc_file_exists((std::string(aid.project_dir) + std::string("/app_info.xml")).c_str())) {
+        fprintf(
+            stderr,
+            "%s Detected: Anonymous Platform Enabled\n",
+            vboxwrapper_msg_prefix(buf, sizeof(buf))
+        );
+    }
+
+    // Parse Job File
+    //
+    retval = parse_job_file(vm, copy_to_shared);
     if (retval) {
         fprintf(
             stderr,
@@ -410,7 +497,32 @@ int main(int argc, char** argv) {
         }
     }
 
-    boinc_get_init_data_p(&aid);
+    // Copy files to the shared directory
+    //
+    if (vm.enable_shared_directory && copy_to_shared.size()) {
+        for (vector<string>::iterator iter = copy_to_shared.begin(); iter != copy_to_shared.end(); iter++) {
+            string source = *iter;
+            string destination = string("shared/") + *iter;
+            if (!boinc_file_exists(destination.c_str())) {
+                if (!boinc_copy(source.c_str(), destination.c_str())) {
+                    fprintf(stderr,
+                        "%s successfully copied '%s' to the shared directory.\n",
+                        vboxwrapper_msg_prefix(buf, sizeof(buf)),
+                        source.c_str()
+                    );
+                } else {
+                    fprintf(stderr,
+                        "%s failed to copy '%s' to the shared directory.\n",
+                        vboxwrapper_msg_prefix(buf, sizeof(buf)),
+                        source.c_str()
+                    );
+                }
+            }
+        }
+    }
+
+    // Configure Instance specific VM Parameters
+    //
     vm.vm_master_name = "boinc_";
     vm.image_filename = IMAGE_FILENAME_COMPLETE;
     if (boinc_is_standalone()) {
@@ -437,20 +549,26 @@ int main(int argc, char** argv) {
         vm.vm_cpu_count = "1";
     }
 
+    if (aid.vbox_window && !aid.using_sandbox) {
+        vm.headless = false;
+    }
+
     // Restore from checkpoint
+    //
     read_checkpoint(checkpoint_cpu_time, vm);
     elapsed_time = checkpoint_cpu_time;
 
     // Should we even try to start things up?
+    //
     if (vm.job_duration && (elapsed_time > vm.job_duration)) {
         return EXIT_TIME_LIMIT_EXCEEDED;
     }
 
-    retval = vm.run();
+    retval = vm.run(elapsed_time);
     if (retval) {
         // All failure to start error are unrecoverable by default
         bool  unrecoverable_error = true;
-        char* temp_reason = "";
+        char* temp_reason = (char*)"";
         int   temp_delay = 300;
 
         // Get logs before cleanup
@@ -466,7 +584,7 @@ int main(int argc, char** argv) {
             "%s VM failed to start.\n",
             vboxwrapper_msg_prefix(buf, sizeof(buf))
         );
-        if ((vm_log.find("VERR_VMX_MSR_LOCKED_OR_DISABLED") != std::string::npos) || (vm_log.find("VERR_SVM_DISABLED") != std::string::npos)) {
+        if ((vm_log.find("VERR_VMX_MSR_LOCKED_OR_DISABLED") != string::npos) || (vm_log.find("VERR_SVM_DISABLED") != string::npos)) {
             fprintf(
                 stderr,
                 "%s NOTE: BOINC has detected that your processor supports hardware acceleration for virtual machines\n"
@@ -479,7 +597,7 @@ int main(int argc, char** argv) {
                 "    Error Code: ERR_CPU_VM_EXTENSIONS_DISABLED\n",
                 vboxwrapper_msg_prefix(buf, sizeof(buf))
             );
-        } else if ((vm_log.find("VERR_VMX_IN_VMX_ROOT_MODE") != std::string::npos) || (vm_log.find("VERR_SVM_IN_USE") != std::string::npos)) {
+        } else if ((vm_log.find("VERR_VMX_IN_VMX_ROOT_MODE") != string::npos) || (vm_log.find("VERR_SVM_IN_USE") != string::npos)) {
             fprintf(
                 stderr,
                 "%s NOTE: VirtualBox hypervisor reports that another hypervisor has locked the hardware acceleration\n"
@@ -488,7 +606,7 @@ int main(int argc, char** argv) {
                 "    Error Code: ERR_CPU_VM_EXTENSIONS_DISABLED\n",
                 vboxwrapper_msg_prefix(buf, sizeof(buf))
             );
-        } else if ((vm_log.find("VERR_VMX_NO_VMX") != std::string::npos) || (vm_log.find("VERR_SVM_NO_SVM") != std::string::npos)) {
+        } else if ((vm_log.find("VERR_VMX_NO_VMX") != string::npos) || (vm_log.find("VERR_SVM_NO_SVM") != string::npos)) {
             fprintf(
                 stderr,
                 "%s NOTE: VirtualBox has reported an improperly configured virtual machine. It was configured to require\n"
@@ -496,7 +614,7 @@ int main(int argc, char** argv) {
                 "    Please report this issue to the project so that it can be addresssed.\n",
                 vboxwrapper_msg_prefix(buf, sizeof(buf))
             );
-        } else if (vm_log.find("VERR_EM_NO_MEMORY") != std::string::npos) {
+        } else if ((vm_log.find("VERR_EM_NO_MEMORY") != string::npos) || (vm_log.find("VERR_NO_MEMORY") != string::npos)) {
             fprintf(
                 stderr,
                 "%s NOTE: VirtualBox has failed to allocate enough memory to start the configured virtual machine.\n"
@@ -504,7 +622,7 @@ int main(int argc, char** argv) {
                 vboxwrapper_msg_prefix(buf, sizeof(buf))
             );
             unrecoverable_error = false;
-            temp_reason = "VM Hypervisor was unable to allocate enough memory to start VM.";
+            temp_reason = (char*)"VM Hypervisor was unable to allocate enough memory to start VM.";
         } else {
             fprintf(
                 stderr,
@@ -541,13 +659,12 @@ int main(int argc, char** argv) {
 
         if (boinc_status.no_heartbeat || boinc_status.quit_request) {
             vm.reset_vm_process_priority();
-            vm.stop();
-            write_checkpoint(checkpoint_cpu_time, vm);
-            boinc_temporary_exit(0);
+            vm.poweroff();
+            boinc_temporary_exit(300);
         }
         if (boinc_status.abort_request) {
+            vm.reset_vm_process_priority();
             vm.cleanup();
-            write_checkpoint(elapsed_time, vm);
             boinc_finish(EXIT_ABORTED_BY_CLIENT);
         }
         if (!vm.online) {
@@ -556,36 +673,48 @@ int main(int argc, char** argv) {
                 vm.get_vm_log(vm_log);
                 vm.get_vm_exit_code(vm_exit_code);
             }
-            vm.cleanup();
-            write_checkpoint(elapsed_time, vm);
 
-            if (vm.crashed || (elapsed_time < vm.job_duration)) {
+            // Is this a type of event we can recover from?
+            if ((vm_log.find("VERR_EM_NO_MEMORY") != std::string::npos) || (vm_log.find("VERR_NO_MEMORY") != std::string::npos)) {
                 fprintf(
                     stderr,
-                    "%s VM Premature Shutdown Detected.\n"
-                    "    Hypervisor System Log:\n\n"
-                    "%s\n"
-                    "    VM Execution Log:\n\n"
-                    "%s\n"
-                    "    VM Exit Code: %d (0x%x)\n\n",
-                    vboxwrapper_msg_prefix(buf, sizeof(buf)),
-                    system_log.c_str(),
-                    vm_log.c_str(),
-                    (unsigned int)vm_exit_code,
-                    (unsigned int)vm_exit_code
-                );
-                if (vm_exit_code) {
-                    boinc_finish(vm_exit_code);
-                } else {
-                    boinc_finish(EXIT_ABORTED_BY_CLIENT);
-                }
-            } else {
-                fprintf(
-                    stderr,
-                    "%s Virtual machine exited.\n",
+                    "%s NOTE: VirtualBox has failed to allocate enough memory to continue.\n"
+                    "    This might be a temporary problem and so this job will be rescheduled for another time.\n",
                     vboxwrapper_msg_prefix(buf, sizeof(buf))
                 );
-                boinc_finish(0);
+                vm.reset_vm_process_priority();
+                vm.poweroff();
+                boinc_temporary_exit(300, "VM Hypervisor was unable to allocate enough memory.");
+            } else {
+                vm.cleanup();
+                if (vm.crashed || (elapsed_time < vm.job_duration)) {
+                    fprintf(
+                        stderr,
+                        "%s VM Premature Shutdown Detected.\n"
+                        "    Hypervisor System Log:\n\n"
+                        "%s\n"
+                        "    VM Execution Log:\n\n"
+                        "%s\n"
+                        "    VM Exit Code: %d (0x%x)\n\n",
+                        vboxwrapper_msg_prefix(buf, sizeof(buf)),
+                        system_log.c_str(),
+                        vm_log.c_str(),
+                        (unsigned int)vm_exit_code,
+                        (unsigned int)vm_exit_code
+                    );
+                    if (vm_exit_code) {
+                        boinc_finish(vm_exit_code);
+                    } else {
+                        boinc_finish(EXIT_ABORTED_BY_CLIENT);
+                    }
+                } else {
+                    fprintf(
+                        stderr,
+                        "%s Virtual machine exited.\n",
+                        vboxwrapper_msg_prefix(buf, sizeof(buf))
+                    );
+                    boinc_finish(0);
+                }
             }
         }
         if (boinc_status.suspended) {
@@ -597,8 +726,6 @@ int main(int argc, char** argv) {
                 vm.resume();
             }
 
-            elapsed_time += POLL_PERIOD;
-
             if (!vm_pid) {
                 vm.get_vm_process_id(vm_pid);
                 if (vm_pid) {
@@ -608,42 +735,54 @@ int main(int argc, char** argv) {
             }
 
             if (boinc_time_to_checkpoint()) {
-                checkpoint_cpu_time = elapsed_time;
-                write_checkpoint(checkpoint_cpu_time, vm);
-                if (vm.job_duration) {
-                    fraction_done = elapsed_time / vm.job_duration;
+                // Only peform a VM checkpoint every ten minutes or so.
+                //
+                if (elapsed_time >= checkpoint_cpu_time + 600.0) {
+                    // Basic bookkeeping
+                    if (vm.job_duration) {
+                        fraction_done = elapsed_time / vm.job_duration;
+                    } else if (vm.fraction_done_filename.size() > 0) {
+                        read_fraction_done(fraction_done, vm);
+                    }
                     if (fraction_done > 1.0) {
                         fraction_done = 1.0;
                     }
-                }
-                boinc_report_app_status(
-                    elapsed_time,
-                    checkpoint_cpu_time,
-                    fraction_done
-                );
-                if ((elapsed_time - last_status_report_time) >= 6000.0) {
-                    last_status_report_time = elapsed_time;
-                    if (aid.global_prefs.daily_xfer_limit_mb) {
-                        fprintf(
-                            stderr,
-                            "%s Status Report: Job Duration: '%f', Elapsed Time: '%f', Network Bytes Sent (Total): '%f', Network Bytes Received (Total): '%f'\n",
-                            vboxwrapper_msg_prefix(buf, sizeof(buf)),
-                            vm.job_duration,
+
+                    if ((elapsed_time - last_status_report_time) >= 6000.0) {
+                        last_status_report_time = elapsed_time;
+                        if (aid.global_prefs.daily_xfer_limit_mb) {
+                            fprintf(
+                                stderr,
+                                "%s Status Report: Job Duration: '%f', Elapsed Time: '%f', Network Bytes Sent (Total): '%f', Network Bytes Received (Total): '%f'\n",
+                                vboxwrapper_msg_prefix(buf, sizeof(buf)),
+                                vm.job_duration,
+                                elapsed_time,
+                                bytes_sent,
+                                bytes_received
+                            );
+                        } else {
+                            fprintf(
+                                stderr,
+                                "%s Status Report: Job Duration: '%f', Elapsed Time: '%f'\n",
+                                vboxwrapper_msg_prefix(buf, sizeof(buf)),
+                                vm.job_duration,
+                                elapsed_time
+                            );
+                        }
+                    }
+
+                    // Checkpoint
+                    if (!vm.createsnapshot(elapsed_time)) {
+                        checkpoint_cpu_time = elapsed_time;
+                        write_checkpoint(checkpoint_cpu_time, vm);
+                        boinc_report_app_status(
                             elapsed_time,
-                            bytes_sent,
-                            bytes_received
+                            checkpoint_cpu_time,
+                            fraction_done
                         );
-                    } else {
-                        fprintf(
-                            stderr,
-                            "%s Status Report: Job Duration: '%f', Elapsed Time: '%f'\n",
-                            vboxwrapper_msg_prefix(buf, sizeof(buf)),
-                            vm.job_duration,
-                            elapsed_time
-                        );
+                        boinc_checkpoint_completed();
                     }
                 }
-                boinc_checkpoint_completed();
             }
 
             if (report_vm_pid || report_net_usage) {
@@ -689,7 +828,18 @@ int main(int argc, char** argv) {
             //
             if (vm.job_duration && (elapsed_time > vm.job_duration)) {
                 vm.cleanup();
-                write_checkpoint(elapsed_time, vm);
+
+                if (vm.enable_cern_dataformat) {
+                    FILE* output = fopen("output", "w");
+                    if (output) {
+                        fprintf(
+                            output,
+                            "Work Unit completed!\n"
+                        );
+                        fclose(output);
+                    }
+                }
+
                 boinc_finish(0);
             }
         }
@@ -729,10 +879,22 @@ int main(int argc, char** argv) {
             }
         }
 
+        stopwatch_endtime = dtime();
+
         // Sleep for the remainder of the polling period
-        sleep_time = POLL_PERIOD - (dtime() - stopwatch_time);
+        sleep_time = POLL_PERIOD - (stopwatch_endtime - stopwatch_time);
         if (sleep_time > 0) {
             boinc_sleep(sleep_time);
+        }
+
+        // Calculate the elapsed time after all potiential commands have been executed
+        // and base it off of wall clock time instead of a fixed interval.
+        if (!boinc_status.suspended) {
+            if (sleep_time > 0) {
+                elapsed_time += POLL_PERIOD;
+            } else {
+                elapsed_time += stopwatch_endtime - stopwatch_time;
+            }
         }
     }
 

@@ -18,6 +18,8 @@
 #ifndef _APP_IPC_
 #define _APP_IPC_
 
+#ifdef __cplusplus
+
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -202,6 +204,10 @@ struct APP_INIT_DATA {
     //
     double ncpus;
 
+    // client configuration info
+    //
+    bool vbox_window;
+
     // Items below here are for BOINC runtime system,
     // and should not be directly accessed by apps
     //
@@ -248,8 +254,8 @@ int parse_graphics_file(FILE* f, GRAPHICS_INFO* gi);
 extern const char* xml_graphics_modes[NGRAPHICS_MSGS];
 extern int boinc_link(const char* phys_name, const char* logical_name);
 extern int boinc_resolve_filename_s(const char*, std::string&);
+extern void url_to_project_dir(char* url, char* dir);
 
-#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -258,7 +264,5 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 #ifdef __cplusplus
 } // extern "C" {
 #endif
-
-extern void url_to_project_dir(char* url, char* dir);
 
 #endif

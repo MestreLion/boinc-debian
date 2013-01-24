@@ -29,6 +29,7 @@
 #ifdef __cplusplus
 #include <string>
 #endif
+
 #endif /* !WIN32 */
 
 #ifndef MAXPATHLEN

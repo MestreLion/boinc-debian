@@ -52,6 +52,7 @@
 #include "async_file.h"
 #include "client_msgs.h"
 #include "cs_notice.h"
+#include "cs_proxy.h"
 #include "cs_trickle.h"
 #include "file_names.h"
 #include "hostinfo.h"
@@ -144,6 +145,9 @@ CLIENT_STATE::CLIENT_STATE()
     launched_by_manager = false;
     initialized = false;
     last_wakeup_time = dtime();
+#ifdef _WIN32
+    have_sysmon_msg = false;
+#endif
 }
 
 void CLIENT_STATE::show_host_info() {
@@ -389,6 +393,10 @@ int CLIENT_STATE::init() {
         msg_printf(NULL, MSG_INFO, "Faking an ATI GPU");
         coprocs.ati.fake(512*MEGA, 256*MEGA, 2);
 #endif
+#if 0
+        msg_printf(NULL, MSG_INFO, "Faking an Intel GPU");
+        coprocs.intel_gpu.fake(512*MEGA, 256*MEGA, 2);
+#endif
     }
 
     if (coprocs.have_nvidia()) {
@@ -412,7 +420,7 @@ int CLIENT_STATE::init() {
             coprocs.add(coprocs.intel_gpu);
         }
     }
-    host_info._coprocs = coprocs;
+    host_info.coprocs = coprocs;
     
     if (coprocs.none() ) {
         msg_printf(NULL, MSG_INFO, "No usable GPUs found");
@@ -476,7 +484,7 @@ int CLIENT_STATE::init() {
             avp->flops = avp->avg_ncpus * host_info.p_fpops;
 
             // for GPU apps, use conservative estimate:
-            // assume app will run at peak CPU speed, not peak GPU
+            // assume GPU runs at 10X peak CPU speed
             //
             if (avp->gpu_usage.rsc_type) {
                 avp->flops += avp->gpu_usage.usage * 10 * host_info.p_fpops;
@@ -574,12 +582,13 @@ int CLIENT_STATE::init() {
     //
     set_client_state_dirty("init");
 
-    // initialize GUI RPC data structures before we start accepting
-    // GUI RPC's.
+    // check for initialization files
     //
     acct_mgr_info.init();
     project_init.init();
 
+    // set up for handling GUI RPCs
+    //
     if (!no_gui_rpc) {
         // When we're running at boot time,
         // it may be a few seconds before we can socket/bind/listen.
@@ -612,6 +621,24 @@ int CLIENT_STATE::init() {
 #endif
 
     http_ops->cleanup_temp_files();
+    
+    // must parse env vars after parsing state file
+    // otherwise items will get overwritten with state file info
+    //
+    parse_env_vars();
+
+    // do this after parsing env vars
+    //
+    proxy_info_startup();
+
+    if (gstate.projects.size() == 0) {
+        msg_printf(NULL, MSG_INFO,
+            "This computer is not attached to any projects"
+        );
+        msg_printf(NULL, MSG_INFO,
+            "Visit http://boinc.berkeley.edu for instructions"
+        );
+    }
 
     // get list of BOINC projects occasionally,
     // and initialize notice RSS feeds

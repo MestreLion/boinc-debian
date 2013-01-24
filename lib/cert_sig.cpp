@@ -28,13 +28,14 @@
 #endif
 #endif
 
+#include "miofile.h"
+#include "error_numbers.h"
+
+#include "cert_sig.h"
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
-
-#include "miofile.h"
-#include "error_numbers.h"
-#include "cert_sig.h"
 
 CERT_SIG::CERT_SIG() {
     this->clear();
