@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "cc_config.h"
+
 #ifdef _WIN32
 #include "boinc_win.h"
 #else
@@ -243,6 +245,7 @@ void CONFIG::defaults() {
     use_all_gpus = false;
     use_certs = false;
     use_certs_only = false;
+    vbox_window = false;
 }
 
 int EXCLUDE_GPU::parse(XML_PARSER& xp) {
@@ -410,6 +413,7 @@ int CONFIG::parse_options(XML_PARSER& xp) {
         if (xp.parse_bool("use_all_gpus", use_all_gpus)) continue;
         if (xp.parse_bool("use_certs", use_certs)) continue;
         if (xp.parse_bool("use_certs_only", use_certs_only)) continue;
+        if (xp.parse_bool("vbox_window", vbox_window)) continue;
 
         xp.skip_unexpected(true, "CONFIG::parse_options");
     }
@@ -603,7 +607,8 @@ int CONFIG::write(MIOFILE& out, LOG_FLAGS& log_flags) {
         "        <unsigned_apps_ok>%d</unsigned_apps_ok>\n"
         "        <use_all_gpus>%d</use_all_gpus>\n"
         "        <use_certs>%d</use_certs>\n"
-        "        <use_certs_only>%d</use_certs_only>\n",
+        "        <use_certs_only>%d</use_certs_only>\n"
+        "        <vbox_window>%d</vbox_window>\n",
         rec_half_life/86400,
         report_results_immediately,
         run_apps_manually,
@@ -616,7 +621,8 @@ int CONFIG::write(MIOFILE& out, LOG_FLAGS& log_flags) {
         unsigned_apps_ok,
         use_all_gpus,
         use_certs,
-        use_certs_only
+        use_certs_only,
+        vbox_window
     );
 
     out.printf("    </options>\n</cc_config>\n");

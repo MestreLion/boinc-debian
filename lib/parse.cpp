@@ -43,18 +43,17 @@
 #define strdup _strdup
 #endif
 
-#include "error_numbers.h"
-#include "str_util.h"
-#include "str_replace.h"
-#include "parse.h"
-
 #ifdef _USING_FCGI_
 #include "boinc_fcgi.h"
 #endif
 
+#include "error_numbers.h"
+#include "str_util.h"
+#include "str_replace.h"
+
+#include "parse.h"
+
 using std::string;
-
-
 
 // Parse a boolean; tag is of form "foobar"
 // Accept either <foobar/>, <foobar />, or <foobar>0|1</foobar>
@@ -695,7 +694,7 @@ bool XML_PARSER::parse_ulong(const char* start_tag, unsigned long& x) {
 // Same, for unsigned long long
 //
 bool XML_PARSER::parse_ulonglong(const char* start_tag, unsigned long long& x) {
-    char buf[256], *end;
+    char buf[256], *end=0;
     bool eof;
     char end_tag[256], tag[256];
 

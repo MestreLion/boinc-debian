@@ -19,22 +19,8 @@
 #include <stdio.h>
 #include <limits.h>
 
+#include "vda_lib.h"
 #include "stats.h"
-
-//#define SAMPLE_DEBUG
-
-char* time_str(double t) {
-    static char buf[256];
-    int n = (int)t;
-    int nsec = n % 60;
-    n /= 60;
-    int nmin = n % 60;
-    n /= 60;
-    int nhour = n % 24;
-    n /= 24;
-    sprintf(buf, "%4d days %02d:%02d:%02d", n, nhour, nmin, nsec);
-    return buf;
-}
 
 void STATS_ITEM::init(const char* n, const char* filename, STATS_KIND k) {
     f = fopen(filename, "w");
@@ -56,19 +42,27 @@ void STATS_ITEM::init(const char* n, const char* filename, STATS_KIND k) {
 }
 
 void STATS_ITEM::sample(double v, bool collecting_stats, double now) {
-#ifdef SAMPLE_DEBUG
-    switch (kind) {
-    case DISK:
-        printf("%s: %s: %fGB -> %fGB\n", now_str(), name, value/1e9, v/1e9);
-        break;
-    case NETWORK:
-        printf("%s: %s: %fMbps -> %fMbps\n", now_str(), name, value/1e6, v/1e6);
-        break;
-    case FAULT_TOLERANCE:
-        printf("%s: %s: %.0f -> %.0f\n", now_str(), name, value, v);
-        break;
-    }
+    char buf[256];
+    if (value != v) {
+        switch (kind) {
+        case DISK:
+#if 0
+            sprintf(buf, "%s: %f GB -> %f GB\n", name, value/1e9, v/1e9);
+            show_msg(buf);
 #endif
+            break;
+        case NETWORK:
+#if 0
+            sprintf(buf, "%s: %f Mbps -> %f Mbps\n", name, value/1e6, v/1e6);
+            show_msg(buf);
+#endif
+            break;
+        case FAULT_TOLERANCE:
+            sprintf(buf, "%s: %.0f -> %.0f\n", name, value, v);
+            show_msg(buf);
+            break;
+        }
+    }
     double old_val = value;
     value = v;
     if (!collecting_stats) return;
@@ -109,12 +103,12 @@ void STATS_ITEM::print(double now) {
     double dt = now - start_time;
     switch (kind) {
     case DISK:
-        printf("    mean: %fGB.  Max: %fGB at %s\n",
+        printf("    mean: %f GB.  Max: %f GB at %s\n",
             (integral/dt)/1e9, extreme_val/1e9, time_str(extreme_val_time)
         );
         break;
     case NETWORK:
-        printf("    mean: %fMbps.  Max: %fMbps at %s\n",
+        printf("    mean: %f Mbps.  Max: %f Mbps at %s\n",
             (integral/dt)/1e6, extreme_val/1e6, time_str(extreme_val_time)
         );
         break;

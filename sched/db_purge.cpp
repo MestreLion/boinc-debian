@@ -557,7 +557,7 @@ bool do_pass() {
         if (config.enable_assignment) {
             DB_ASSIGNMENT asg;
             char buf2[256];
-            sprintf(buf, "workunitid=%d", wu.id);
+            sprintf(buf2, "workunitid=%d", wu.id);
             asg.delete_from_db_multi(buf2);
         }
 
@@ -738,7 +738,7 @@ int main(int argc, char** argv) {
         }
         if (!do_pass() && !one_pass) {
             log_messages.printf(MSG_NORMAL, "Sleeping....\n");
-            sleep(sleep_sec);
+            daemon_sleep(sleep_sec);
         }
         if (one_pass) {
             break;

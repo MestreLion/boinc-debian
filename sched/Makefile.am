@@ -19,8 +19,7 @@ libsched_sources = \
     ../db/db_base.cpp \
     ../tools/process_result_template.cpp \
     ../tools/process_input_template.cpp \
-    ../tools/backend_lib.cpp \
-	../vda/sched_vda.cpp
+    ../tools/backend_lib.cpp
 
 lib_LTLIBRARIES = libsched.la
 libsched_la_SOURCES = $(libsched_sources)
@@ -92,6 +91,7 @@ cgidir = $(libexecdir)/cgi-bin
 scheddir = $(libexecdir)/sched
 
 bin_PROGRAMS = \
+	adjust_user_priority \
     delete_file \
     get_file \
     make_work \
@@ -149,18 +149,20 @@ cgi_sources = \
     hr.cpp \
     hr_info.cpp \
     plan_class_spec.cpp \
-    sched_main.cpp \
     sched_array.cpp \
     sched_assign.cpp \
     sched_customize.cpp \
+    sched_files.cpp \
     sched_hr.cpp \
-    sched_resend.cpp \
     sched_limit.cpp \
     sched_locality.cpp \
+    sched_main.cpp \
+    sched_resend.cpp \
     sched_result.cpp \
     sched_score.cpp \
     sched_send.cpp \
     sched_timezone.cpp \
+	../vda/sched_vda.cpp \
     sched_version.cpp \
     sched_types.cpp \
     time_stats_log.cpp
@@ -265,6 +267,9 @@ put_file_LDADD = $(SERVERLIBS)
 
 delete_file_SOURCES = delete_file.cpp
 delete_file_LDADD = $(SERVERLIBS)
+
+adjust_user_priority_SOURCES = adjust_user_priority.cpp
+adjust_user_priority_LDADD = $(SERVERLIBS)
 
 sched_driver_SOURCES = sched_driver.cpp
 sched_driver_LDADD = $(SERVERLIBS)

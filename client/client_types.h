@@ -31,14 +31,14 @@
 #include <sys/param.h>
 #endif
 
-#include "md5_file.h"
-#include "cert_sig.h"
-#include "hostinfo.h"
-#include "coproc.h"
-#include "miofile.h"
-#include "filesys.h"
-#include "common_defs.h"
 #include "cc_config.h"
+#include "common_defs.h"
+#include "coproc.h"
+#include "cert_sig.h"
+#include "filesys.h"
+#include "hostinfo.h"
+#include "md5_file.h"
+#include "miofile.h"
 
 #include "cs_notice.h"
 #include "cs_trickle.h"
@@ -92,16 +92,6 @@ struct URL_LIST {
         }
     }
 };
-
-// Values of FILE_INFO::status.
-// If the status is neither of these two,
-// it's an error code indicating an unrecoverable error
-// in the transfer of the file,
-// or that the file was too big and was deleted.
-//
-#define FILE_NOT_PRESENT    0
-#define FILE_PRESENT        1
-#define FILE_VERIFY_PENDING	2
 
 struct FILE_INFO {
     char name[256];
@@ -259,6 +249,8 @@ struct APP {
         // Specified in app_config.xml
     int n_concurrent;
         // temp during job scheduling, to enforce max_concurrent
+    int non_excluded_instances[MAX_RSC];
+        // for each resources type, the non-excluded instances
 #ifdef SIM
     double latency_bound;
     double fpops_est;

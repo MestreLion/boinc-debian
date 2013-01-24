@@ -15,26 +15,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <string>
 #include <cmath>
 
-using std::string;
-
-#include "str_util.h"
 #include "util.h"
+#include "coproc.h"
 
 #include "sched_config.h"
-#include "sched_main.h"
-#include "sched_msgs.h"
-#include "sched_send.h"
-#include "sched_score.h"
-#include "sched_shmem.h"
-#include "sched_version.h"
 #include "sched_customize.h"
 #include "plan_class_spec.h"
 
+using std::string;
 
-int PLAN_CLASS_SPECS::parse_file(char*path) {
+int PLAN_CLASS_SPECS::parse_file(const char* path) {
 #ifndef _USING_FCGI_
     FILE* f = fopen(path, "r");
 #else
@@ -48,47 +40,40 @@ int PLAN_CLASS_SPECS::parse_file(char*path) {
 
 
 bool PLAN_CLASS_SPEC::check(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
-    // fill HOST_USAGE with defaults
-    hu.ncudas = 0;
-    hu.natis = 0;
-    hu.gpu_ram = 0;
-    hu.avg_ncpus = 1;
-    hu.max_ncpus = 1;
-    hu.projected_flops = sreq.host.p_fpops;
-    hu.peak_flops = sreq.host.p_fpops;
-    hu.cmdline[0] = '\0';
+    COPROC* cpp = NULL;
+    bool can_use_multicore = true;
 
-#if 0
-    char buf[256];
-    sprintf(buf,
-        "No work sent. "
-        "See scheduler log messages on <a href=\"%s/host_sched_logs/%d/%d\">%s</a>",
-        config.master_url, sreq.hostid / 1000, sreq.hostid, config.long_name
-    );
-    add_no_work_message(buf);
-#endif
+    hu.sequential_app(sreq.host.p_fpops);
 
     // CPU features
+    //
+    // older clients report CPU features in p_model,
+    // within square brackets
+    //
+    // the requested features are surrounded by spaces,
+    // so we can look for them with strstr()
+    //
     if (!cpu_features.empty()) {
-        char features[512+3] = {0};
-        char *c;
-        strcpy(features, " ");
-        if (strlen(sreq.host.p_features)) {
-            strcat(features, sreq.host.p_features);
-            strcat(features, " ");
+        char buf[8192], buf2[512];
+        sprintf(buf, " %s ", sreq.host.p_features);
+        char* p = strrchr(sreq.host.p_model, '[');
+        if (p) {
+            sprintf(buf2, " %s", p+1);
+            p = strchr(buf2, ']');
+            if (p) {
+                *p = 0;
+            }
+            strcat(buf2, " ");
+            strcat(buf, buf2);
         }
-        if ((c = strrchr(sreq.host.p_model, '['))) {
-            strcat(features, c+1);
-            if((c = strrchr(features, ']')))
-            *c = ' ';
-        }
-        downcase_string(features);
+        downcase_string(buf);
+
         for (unsigned int i=0; i<cpu_features.size(); i++) {
-            if(!strstr(features, cpu_features[i].c_str())) {
+            if (!strstr(buf, cpu_features[i].c_str())) {
                 if (config.debug_version_select) {
                     log_messages.printf(MSG_NORMAL,
-                        "[version] CPU lacks feature '%s' (got '%s')\n",
-                        cpu_features[i].c_str(), features
+                        "[version] plan_class_spec: CPU lacks feature '%s' (got '%s')\n",
+                        cpu_features[i].c_str(), sreq.host.p_features
                     );
                 }
                 return false;
@@ -96,80 +81,129 @@ bool PLAN_CLASS_SPEC::check(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
         }
     }
 
-    // Mac OS X versions - this version parsing only works for Mac OS
-    if (min_macos_version || max_macos_version) {
-        unsigned int v1,v2,v3;
-        int v;
-        if (sscanf(sreq.host.os_version, "%u.%u.%u",&v1,&v2,&v3) != 3) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] Couldn't parse OS version '%s'\n",
-                    sreq.host.os_version
-                );
-            }
-            return false;
-        }
-        v = v1 * 10000 + v2 * 100 + v3;
-        if (min_macos_version && min_macos_version > v) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] OS version required min: %d, supplied: %d\n",
-                    min_macos_version, v
-                );
-            }
-            return false;
-        }
-        if (max_macos_version && max_macos_version < v) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] OS version required max: %d, supplied: %d\n",
-                    max_macos_version, v
-                );
-            }
-            return false;
-        }
-    }
-
-    // OS version (regexp match)
-    if(*os_version_string && regexec(&(os_version_regex), sreq.host.os_version, 0, NULL, 0)) {
+    // min NCPUS
+    //
+    if (min_ncpus && g_wreq->effective_ncpus < min_ncpus) {
         if (config.debug_version_select) {
             log_messages.printf(MSG_NORMAL,
-                "[version] Couldn't match OS version '%s' with required regexp '%s'\n",
-                sreq.host.os_version, os_version_string
+                "[version] plan_class_spec: not enough CPUs: %d < %f\n",
+                g_wreq->effective_ncpus, min_ncpus
             );
         }
         return false;
     }
 
-    // project-specific preference
-    if (*project_prefs_tag) {
-        char tag[256];
-        char buf[65536];
-        double v = 0;
-        extract_venue(g_reply->user.project_prefs, g_reply->host.venue, buf);
-        sprintf(tag,"<%s>",project_prefs_tag);
-        bool p = parse_double(buf, tag, v);
+    // OS version
+    //
+    if (have_os_regex && regexec(&(os_regex), sreq.host.os_version, 0, NULL, 0)) {
         if (config.debug_version_select) {
             log_messages.printf(MSG_NORMAL,
-                "[version] parsed project prefs setting '%s' : %s : %f\n",
-                project_prefs_tag, p?"true":"false", v
+                "[version] plan_class_spec: OS version '%s' didn't match regexp\n",
+                sreq.host.os_version
             );
         }
-        if ((v < project_prefs_min) || (v > project_prefs_max)) {
+        return false;
+    }
+
+    if (virtualbox) {
+
+        // host must run 7.0+ client
+        //
+        if (sreq.core_client_major_version < 7) {
+            add_no_work_message("BOINC client 7.0+ required for Virtualbox jobs");
+            return false;
+        }
+
+        // host must have VirtualBox 3.2 or later
+        //
+        if (strlen(sreq.host.virtualbox_version) == 0) {
+            add_no_work_message("VirtualBox is not installed");
+            return false;
+        }
+        int n, maj, min, rel;
+        n = sscanf(sreq.host.virtualbox_version, "%d.%d.%d", &maj, &min, &rel);
+        if (n != 3) {
             if (config.debug_version_select) {
                 log_messages.printf(MSG_NORMAL,
-                    "[version] project prefs setting '%s' (%f) prevents using plan class.\n",
-                    project_prefs_tag, v
+                    "[version] plan_class_spec: can't parse vbox version\n"
+                );
+            }
+            return false;
+        }
+        int v = maj*10000 + min*100 + rel;
+        if (min_vbox_version && v < min_vbox_version) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: vbox version too low: %d < %d\n",
+                    v, min_vbox_version
+                );
+            }
+            return false;
+        }
+        if (max_vbox_version && v > max_vbox_version) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: vbox version too high: %d > %d\n",
+                    v, max_vbox_version
+                );
+            }
+            return false;
+        }
+
+        // host must have VM acceleration in order to run multi-core jobs
+        //
+        if (max_threads > 1) {
+            if ((!strstr(sreq.host.p_features, "vmx") && !strstr(sreq.host.p_features, "svm"))
+                || sreq.host.p_vm_extensions_disabled
+            ) {
+                can_use_multicore = false;
+            }
+        }
+
+        // only send the version for host's primary platform.
+        // A Win64 host can't run a 32-bit VM app:
+        // it will look in the 32-bit half of the registry and fail
+        //
+        PLATFORM* p = g_request->platforms.list[0];
+        if (is_64b_platform(p->name)) {
+            if (!is64bit) return false;
+        } else {
+            if (is64bit) return false;
+        }
+    }
+
+    // project-specific preference
+    //
+    if (have_project_prefs_regex && strlen(project_prefs_tag)) {
+        char tag[256], value[256];
+        char buf[65536];
+        extract_venue(g_reply->user.project_prefs, g_reply->host.venue, buf);
+        sprintf(tag,"<%s>",project_prefs_tag);
+        bool p = parse_str(buf, tag, value, sizeof(value));
+        if (config.debug_version_select) {
+            log_messages.printf(MSG_NORMAL,
+                "[version] plan_class_spec: parsed project prefs setting '%s' : %s\n",
+                project_prefs_tag, p?"true":"false"
+            );
+        }
+        if (regexec(&(project_prefs_regex), value, 0, NULL, 0)) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: project prefs setting '%s' prevents using plan class.\n",
+                    project_prefs_tag
                 );
             }
             return false;
         }
     }
 
+    double gpu_ram = 0;
+    int driver_version = 0;
     double gpu_utilization = 1.0;
 
     // user defined gpu_utilization
-    if (*gpu_utilization_tag) {
+    //
+    if (strlen(gpu_utilization_tag)) {
         char tag[256];
         char buf[65536];
         double v = 0;
@@ -178,7 +212,7 @@ bool PLAN_CLASS_SPEC::check(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
         bool p = parse_double(buf, tag, v);
         if (config.debug_version_select) {
             log_messages.printf(MSG_NORMAL,
-                "[version] parsed project prefs setting '%s' : %s : %f\n",
+                "[version] plan_class_spec: parsed project prefs setting '%s' : %s : %f\n",
                 gpu_utilization_tag, p?"true":"false", v
             );
         }
@@ -187,334 +221,234 @@ bool PLAN_CLASS_SPEC::check(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
         }
     }
 
-    // CUDA GPU
-    if (type == 1) {
-        COPROC_NVIDIA& cp = sreq.coprocs.nvidia;
-
-        // devices
-        if (!cp.count) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] No CUDA devices found\n"
-                );
-            }
-            return false;
-        }
-
-        // update requirements
-        if (min_gpu_ram_mb) {
-            cuda_requirements.update(0, min_gpu_ram_mb * MEGA);
-        }
-        if (min_driver_version) {
-            cuda_requirements.update(abs(min_driver_version), 0);
-        }
-
-        // GPU RAM
-        if (min_gpu_ram_mb && min_gpu_ram_mb * MEGA > cp.prop.dtotalGlobalMem) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] GPU RAM required min: %f, supplied: %f\n",
-                    min_gpu_ram_mb * MEGA, cp.prop.dtotalGlobalMem
-                );
-            }
-            return false;
-        }
-
-        // compute capability
-        int v = (cp.prop.major)*100 + cp.prop.minor;
-        if (min_cuda_compcap && min_cuda_compcap > v) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] CUDA compute capability required min: %d, supplied: %d\n",
-                    min_cuda_compcap, v
-                );
-            }
-            return false;
-        }
-        if (max_cuda_compcap && max_cuda_compcap < v) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] CUDA compute capability required max: %d, supplied: %d\n",
-                    max_cuda_compcap, v
-                );
-            }
-            return false;
-        }
-
-        // CUDA version
-        if (min_cuda_version && min_cuda_version > cp.cuda_version) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] CUDA version required min: %d, supplied: %d\n",
-                    min_cuda_version, cp.cuda_version
-                );
-            }
-            return false;
-        }
-        if (max_cuda_version && max_cuda_version < cp.cuda_version) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] CUDA version required max: %d, supplied: %d\n",
-                    max_cuda_version, cp.cuda_version
-                );
-            }
-            return false;
-        }
-
-        // (display) driver version
-        if (min_driver_version && (min_driver_version > 0 || cp.display_driver_version)
-            && abs(min_driver_version) > cp.display_driver_version
-        ) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] driver version required min: %d, supplied: %d\n",
-                    abs(min_driver_version), cp.display_driver_version
-                );
-            }
-            return false;
-        }
-        if (max_driver_version && (max_driver_version > 0 || cp.display_driver_version)
-            && abs(max_driver_version) < cp.display_driver_version
-        ) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] driver version required max: %d, supplied: %d\n",
-                    abs(max_driver_version), cp.display_driver_version
-                );
-            }
-            return false;
-        }
-
-        hu.gpu_ram = (gpu_ram_used_mb?gpu_ram_used_mb:min_gpu_ram_mb) * MEGA;
-
-        // if ngpus < 0, set ncudas by the fraction of the total video RAM a tasks would take
-        // i.e. fill the device memory with tasks
-        if (ngpus < 0) {
-            hu.ncudas =
-                (floor(cp.prop.dtotalGlobalMem / hu.gpu_ram) * hu.gpu_ram) /
-                cp.prop.dtotalGlobalMem
-            ;
-        } else if (ngpus > 0) {
-            hu.ncudas = ngpus * gpu_utilization;
-        } else {
-            hu.ncudas = gpu_utilization;
-        }
-
-        cp.set_peak_flops();
-        hu.peak_flops = cp.peak_flops * hu.ncudas * peak_flops_factor;
-        if (gpu_flops && cpu_flops) {
-            hu.avg_ncpus = avg_ncpus * sreq.host.p_fpops / cpu_flops;
-            hu.projected_flops = cp.peak_flops / gpu_flops * speedup + 1.0 / hu.avg_ncpus;
-        } else {
-            hu.projected_flops = sreq.host.p_fpops * speedup;
-            hu.avg_ncpus = avg_ncpus;
-        }
-
-    } // CUDA
-
-    // NVidia OpenCL GPU
-    else if (type == 3) {
-        COPROC_NVIDIA& cp = sreq.coprocs.nvidia;
-
-        // devices
-        if (!cp.count) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] No NVidia devices found\n"
-                );
-            }
-            return false;
-        }
-
-        // check for OpenCL at all
-        if (!cp.have_opencl) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] NVidia device (or driver) doesn't support OpenCL\n"
-                );
-            }
-            return false;
-        }
-
-        // update requirements
-        if (min_gpu_ram_mb) {
-            cuda_requirements.update(0, min_gpu_ram_mb * MEGA);
-        }
-        if (min_driver_version) {
-            cuda_requirements.update(abs(min_driver_version), 0);
-        }
-
-        // GPU RAM
-        if (min_gpu_ram_mb && min_gpu_ram_mb * MEGA > cp.opencl_prop.global_mem_size) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] OpenCL GPU RAM required min: %f, supplied: %lu\n",
-                    min_gpu_ram_mb * MEGA, cp.opencl_prop.global_mem_size
-                );
-            }
-            return false;
-        }
-
-        // OpenCL device version
-        if (min_opencl_version && min_opencl_version > cp.opencl_prop.opencl_device_version_int) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] OpenCL device version required min: %d, supplied: %d\n",
-                    min_opencl_version, cp.opencl_prop.opencl_device_version_int
-                );
-            }
-            return false;
-        }
-
-        // (display) driver version
-        if (min_driver_version && (min_driver_version > 0 || cp.display_driver_version)
-            && abs(min_driver_version) > cp.display_driver_version
-        ) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] driver version required min: %d, supplied: %d\n",
-                    abs(min_driver_version), cp.display_driver_version
-                );
-            }
-            return false;
-        }
-        if (max_driver_version && (max_driver_version > 0 || cp.display_driver_version)
-            && abs(max_driver_version) < cp.display_driver_version
-        ) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] driver version required max: %d, supplied: %d\n",
-                    abs(max_driver_version), cp.display_driver_version
-                );
-            }
-            return false;
-        }
-
-        hu.gpu_ram = (gpu_ram_used_mb?gpu_ram_used_mb:min_gpu_ram_mb) * MEGA;
-
-        // if ngpus < 0, set ncudas by the fraction of the total video RAM a tasks would take
-        // i.e. fill the device memory with tasks
-        if (ngpus < 0) {
-            hu.ncudas =
-                (floor(cp.opencl_prop.global_mem_size / hu.gpu_ram) * hu.gpu_ram) /
-                cp.opencl_prop.global_mem_size
-            ;
-        } else if (ngpus > 0) {
-            hu.ncudas = ngpus * gpu_utilization;
-        } else {
-            hu.ncudas = gpu_utilization;
-        }
-
-        cp.set_peak_flops();
-        hu.peak_flops = cp.peak_flops * hu.ncudas * peak_flops_factor;
-        if (gpu_flops && cpu_flops) {
-            hu.avg_ncpus = avg_ncpus * sreq.host.p_fpops / cpu_flops;
-            hu.projected_flops = cp.peak_flops / gpu_flops * speedup + 1.0 / hu.avg_ncpus;
-        } else {
-            hu.projected_flops = sreq.host.p_fpops * speedup;
-            hu.avg_ncpus = avg_ncpus;
-        }
-
-    } // NVidia OpenCL
-
-
-    // ATI OpenCL GPU
-    else if (type == 4) {
+    // AMD
+    //
+    if (!strcmp(gpu_type, "amd") || !strcmp(gpu_type, "ati")) {
         COPROC_ATI& cp = sreq.coprocs.ati;
+        cpp = &cp;
 
-        // devices
         if (!cp.count) {
             if (config.debug_version_select) {
                 log_messages.printf(MSG_NORMAL,
-                    "[version] No ATI devices found\n"
+                    "[version] plan_class_spec: No AMD GPUs found\n"
                 );
             }
             return false;
         }
-
-        // check for OpenCL at all
-        if (!cp.have_opencl) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] ATI device (or driver) doesn't support OpenCL\n"
-                );
-            }
-            return false;
-        }
-
-        // update requirements
         if (min_gpu_ram_mb) {
-            ati_requirements.update(0, min_gpu_ram_mb * MEGA);
+            gpu_requirements[PROC_TYPE_AMD_GPU].update(0, min_gpu_ram_mb * MEGA);
         }
         if (min_driver_version) {
-            ati_requirements.update(abs(min_driver_version), 0);
+            gpu_requirements[PROC_TYPE_AMD_GPU].update(abs(min_driver_version), 0);
         }
 
-        // GPU RAM
-        if (min_gpu_ram_mb && min_gpu_ram_mb * MEGA > cp.opencl_prop.global_mem_size) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] OpenCL GPU RAM required min: %f, supplied: %lu\n",
-                    min_gpu_ram_mb * MEGA, cp.opencl_prop.global_mem_size
-                );
-            }
-            return false;
-        }
-
-        // OpenCL device version
-        if (min_opencl_version && min_opencl_version > cp.opencl_prop.opencl_device_version_int) {
-            if (config.debug_version_select) {
-                log_messages.printf(MSG_NORMAL,
-                    "[version] OpenCL device version required min: %d, supplied: %d\n",
-                    min_opencl_version, cp.opencl_prop.opencl_device_version_int
-                );
-            }
-            return false;
-        }
-
-        // (display) driver version
-        if (min_driver_version || max_driver_version) {
-            int driver_version = 0;
-            if (cp.have_cal) {
-                int major, minor, release, scanned;
-                scanned = sscanf(cp.version, "%d.%d.%d", &major, &minor, &release);
-                if (scanned != 3) {
-                    if (config.debug_version_select) {
-                        log_messages.printf(MSG_NORMAL,
-                            "[version] driver version '%s' couldn't be parsed\n",
-                            cp.version
-                        );
-                    }
-                    return false;
-                } else {
-                    driver_version = release + minor * 10000 + major * 1000000;
-                }
-            } else {
-                if (config.debug_version_select) {
+        if (need_ati_libs) {
+            if (!cp.atirt_detected) {
+	        if (config.debug_version_select) {
                     log_messages.printf(MSG_NORMAL,
-                        "[version] no CAL, driver version couldn't be determined\n"
+                        "[version] plan_class_spec: ATI libraries not found\n"
                     );
                 }
+                return false;
             }
-            if (min_driver_version
-                && (min_driver_version > 0 || driver_version)
-                && abs(min_driver_version) > driver_version
-            ) {
+        } else {
+            if (!cp.amdrt_detected) {
+	        if (config.debug_version_select) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[version] plan_class_spec: AMD libraries not found\n"
+                    );
+                }
+                return false;
+            }
+        }
+
+        if (min_cal_target && cp.attribs.target < min_cal_target) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: CAL target less than minimum (%d < %d)\n",
+                    cp.attribs.target, min_cal_target
+                );
+            }
+            return false;
+        }
+        if (max_cal_target && cp.attribs.target > max_cal_target) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: CAL target greater than maximum (%d > %d)\n",
+                    cp.attribs.target, max_cal_target
+                );
+            }
+            return false;
+        }
+
+        cp.set_peak_flops();
+        gpu_ram = cp.opencl_prop.global_mem_size;
+
+        driver_version = 0;
+        if (cp.have_cal) {
+            int major, minor, release, scanned;
+            scanned = sscanf(cp.version, "%d.%d.%d", &major, &minor, &release);
+            if (scanned != 3) {
                 if (config.debug_version_select) {
                     log_messages.printf(MSG_NORMAL,
-                        "[version] driver version required min: %d, supplied: %d\n",
+                        "[version] plan_class_spec: driver version '%s' couldn't be parsed\n",
+                        cp.version
+                    );
+                }
+                return false;
+            } else {
+                driver_version = ati_version_int(major,minor,release);
+            }
+        } else {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: no CAL, driver version couldn't be determined\n"
+                );
+            }
+        }
+
+    // NVIDIA
+    //
+    } else if (!strcmp(gpu_type, "nvidia")) {
+        COPROC_NVIDIA& cp = sreq.coprocs.nvidia;
+        cpp = &cp;
+
+        if (!cp.count) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: No NVIDIA GPUs found\n"
+                );
+            }
+            return false;
+        }
+
+        if (min_gpu_ram_mb) {
+            gpu_requirements[PROC_TYPE_NVIDIA_GPU].update(0, min_gpu_ram_mb * MEGA);
+        }
+        if (min_driver_version) {
+            gpu_requirements[PROC_TYPE_NVIDIA_GPU].update(abs(min_driver_version), 0);
+        }
+        // compute capability
+        int v = (cp.prop.major)*100 + cp.prop.minor;
+        if (min_nvidia_compcap && min_nvidia_compcap > v) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: NVIDIA compute capability required min: %d, supplied: %d\n",
+                    min_nvidia_compcap, v
+                );
+            }
+            return false;
+        }
+        if (max_nvidia_compcap && max_nvidia_compcap < v) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: CUDA compute capability required max: %d, supplied: %d\n",
+                    max_nvidia_compcap, v
+                );
+            }
+            return false;
+        }
+        if (cuda) {
+            // CUDA version
+            if (min_cuda_version && min_cuda_version > cp.cuda_version) {
+                if (config.debug_version_select) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[version] plan_class_spec: CUDA version required min: %d, supplied: %d\n",
+                        min_cuda_version, cp.cuda_version
+                    );
+                }
+                return false;
+            }
+            if (max_cuda_version && max_cuda_version < cp.cuda_version) {
+                if (config.debug_version_select) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[version] plan_class_spec: CUDA version required max: %d, supplied: %d\n",
+                        max_cuda_version, cp.cuda_version
+                    );
+                }
+                return false;
+            }
+        }
+        gpu_ram = cp.prop.totalGlobalMem;
+        cp.set_peak_flops();
+
+    // Intel GPU
+    //
+    } else if (!strcmp(gpu_type, "intel")) {
+        COPROC& cp = sreq.coprocs.intel_gpu;
+        cpp = &cp;
+
+        if (!cp.count) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] [version] No Intel GPUs found\n"
+                );
+            }
+            return false;
+        }
+        if (min_gpu_ram_mb) {
+            gpu_requirements[PROC_TYPE_INTEL_GPU].update(0, min_gpu_ram_mb * MEGA);
+        }
+    }
+
+    if (opencl) {
+        // check for OpenCL at all
+        if (!cpp->have_opencl) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] GPU doesn't support OpenCL\n"
+                );
+            }
+            return false;
+        }
+
+        // OpenCL device version
+        //
+        if (min_opencl_version && min_opencl_version > cpp->opencl_prop.opencl_device_version_int) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] OpenCL device version required min: %d, supplied: %d\n",
+                    min_opencl_version, cpp->opencl_prop.opencl_device_version_int
+                );
+            }
+            return false;
+        }
+
+        gpu_ram = cpp->opencl_prop.global_mem_size;
+    }
+
+    // general GPU
+    //
+    if (strlen(gpu_type)) {
+
+        // GPU RAM
+        if (min_gpu_ram_mb && min_gpu_ram_mb * MEGA > gpu_ram) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: GPU RAM required min: %f, supplied: %f\n",
+                    min_gpu_ram_mb * MEGA, gpu_ram
+                );
+            }
+            return false;
+        }
+
+        // (display) driver version
+        if (min_driver_version && driver_version) {
+            if (min_driver_version > driver_version) {
+                if (config.debug_version_select) {
+                    log_messages.printf(MSG_NORMAL,
+                        "[version] plan_class_spec: driver version required min: %d, supplied: %d\n",
                         abs(min_driver_version), driver_version
                     );
                 }
                 return false;
             }
-            if (max_driver_version
-                && (max_driver_version > 0 || driver_version)
-                && abs(max_driver_version) < driver_version
-            ) {
+        }
+        if (max_driver_version && driver_version) {
+            if (max_driver_version < driver_version) {
                 if (config.debug_version_select) {
                     log_messages.printf(MSG_NORMAL,
-                        "[version] driver version required max: %d, supplied: %d\n",
+                        "[version] plan_class_spec: driver version required max: %d, supplied: %d\n",
                         abs(max_driver_version), driver_version
                     );
                 }
@@ -524,49 +458,85 @@ bool PLAN_CLASS_SPEC::check(SCHEDULER_REQUEST& sreq, HOST_USAGE& hu) {
 
         hu.gpu_ram = (gpu_ram_used_mb?gpu_ram_used_mb:min_gpu_ram_mb) * MEGA;
 
-        // if ngpus < 0, set natis by the fraction of the total video RAM a tasks would take
+        double gpu_usage;
+
+        // if ngpus < 0, set gpu_usage by the fraction of the total
+        // video RAM a tasks would take
         // i.e. fill the device memory with tasks
+        //
         if (ngpus < 0) {
-            hu.natis =
-                (floor(cp.opencl_prop.global_mem_size / hu.gpu_ram) * hu.gpu_ram) /
-                cp.opencl_prop.global_mem_size
-            ;
+            gpu_usage = (floor(gpu_ram/ hu.gpu_ram) * hu.gpu_ram) / gpu_ram ;
         } else if (ngpus > 0) {
-            hu.natis = ngpus * gpu_utilization;
+            gpu_usage = ngpus * gpu_utilization;
         } else {
-            hu.natis = gpu_utilization;
+            gpu_usage = gpu_utilization;
         }
 
-        cp.set_peak_flops();
-        hu.peak_flops = cp.peak_flops * hu.natis * peak_flops_factor;
-        if (gpu_flops && cpu_flops) {
-            hu.avg_ncpus = avg_ncpus * sreq.host.p_fpops / cpu_flops;
-            hu.projected_flops = cp.peak_flops / gpu_flops * speedup + 1.0 / hu.avg_ncpus;
-        } else {
-            hu.projected_flops = sreq.host.p_fpops * speedup;
+        coproc_perf(
+            capped_host_fpops(),
+            gpu_peak_flops_scale * gpu_usage * cpp->peak_flops,
+            cpu_frac,
+            hu.projected_flops,
+            hu.avg_ncpus
+        );
+        if (avg_ncpus) {
             hu.avg_ncpus = avg_ncpus;
         }
+        // I believe the first term here is just hu.projected_flops,
+        // but I'm leaving it spelled out to match GPU scheduling 
+        // code in sched_customize.cpp
+        //
+        hu.peak_flops = gpu_peak_flops_scale*gpu_usage*cpp->peak_flops + hu.avg_ncpus*capped_host_fpops();
 
-    } else { // CPU only
-        hu.avg_ncpus = avg_ncpus;
-        hu.peak_flops = sreq.host.p_fpops * hu.max_ncpus;
-        hu.projected_flops = sreq.host.p_fpops * speedup * peak_flops_factor;
+        if (!strcmp(gpu_type, "amd") || !strcmp(gpu_type, "ati")) {
+            hu.proc_type = PROC_TYPE_AMD_GPU;
+            hu.gpu_usage = gpu_usage;
+        } else if (!strcmp(gpu_type, "nvidia")) {
+            hu.proc_type = PROC_TYPE_NVIDIA_GPU;
+            hu.gpu_usage = gpu_usage;
+        } else if (!strcmp(gpu_type, "intel")) {
+            hu.proc_type = PROC_TYPE_INTEL_GPU;
+            hu.gpu_usage = gpu_usage;
+        }
+
+    // CPU only
+    //
+    } else {
+        if (avg_ncpus) {
+            hu.avg_ncpus = avg_ncpus;
+        } else {
+            if (can_use_multicore) {
+                if (max_threads > g_wreq->effective_ncpus) {
+                    hu.avg_ncpus = g_wreq->effective_ncpus;
+                } else {
+                    hu.avg_ncpus = max_threads;
+                }
+            } else {
+                hu.avg_ncpus = 1;
+            }
+        }
+
+        hu.peak_flops = capped_host_fpops() * hu.avg_ncpus;
+        hu.projected_flops = capped_host_fpops() * hu.avg_ncpus * projected_flops_scale;
     }
-    hu.max_ncpus = max_ncpus;
+    hu.max_ncpus = hu.avg_ncpus;
 
     if (config.debug_version_select) {
         log_messages.printf(MSG_NORMAL,
-            "[version] host_flops: %e, \tspeedup: %.2f, \tprojected_flops: %e, \tpeak_flops: %e, \tpeak_flops_factor: %.2f\n",
-            sreq.host.p_fpops, speedup, hu.projected_flops, hu.peak_flops, peak_flops_factor
+            "[version] plan_class_spec: host_flops: %e, \tscale: %.2f, \tprojected_flops: %e, \tpeak_flops: %e\n",
+            sreq.host.p_fpops, projected_flops_scale, hu.projected_flops,
+            hu.peak_flops
         );
     }
 
     return true;
 
-} // check()
+}
 
 
-bool PLAN_CLASS_SPECS::check(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu) {
+bool PLAN_CLASS_SPECS::check(
+    SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USAGE& hu
+) {
     for (unsigned int i=0; i<classes.size(); i++) {
         if (!strcmp(classes[i].name, plan_class)) {
             return classes[i].check(sreq, hu);
@@ -574,74 +544,76 @@ bool PLAN_CLASS_SPECS::check(SCHEDULER_REQUEST& sreq, char* plan_class, HOST_USA
     }
     log_messages.printf(MSG_CRITICAL, "Unknown plan class: %s\n", plan_class);
     return false;
-} // check()
-
-
-void PLAN_CLASS_SPECS::print(void) {
-    for (unsigned int i=0; i<classes.size(); i++) {
-        classes[i].print();
-    }
 }
 
+int PLAN_CLASS_SPEC::parse(XML_PARSER& xp) {
+    char buf[256];
+    while (!xp.get_tag()) {
+        if (xp.match_tag("/plan_class")) {
+            return 0;
+        }
+        if (xp.parse_str("name", name, sizeof(name))) continue;
+        if (xp.parse_str("gpu_type", gpu_type, sizeof(gpu_type))) continue;
+        if (xp.parse_bool("cuda", cuda)) continue;
+        if (xp.parse_bool("cal", cal)) continue;
+        if (xp.parse_bool("opencl", opencl)) continue;
+        if (xp.parse_bool("virtualbox", virtualbox)) continue;
+        if (xp.parse_bool("is64bit", is64bit)) continue;
+        if (xp.parse_str("cpu_feature", buf, sizeof(buf))) {
+            cpu_features.push_back(" " + (string)buf + " ");
+            continue;
+        }
+        if (xp.parse_double("min_ncpus", min_ncpus)) continue;
+        if (xp.parse_int("max_threads", max_threads)) continue;
+        if (xp.parse_double("projected_flops_scale", projected_flops_scale)) continue;
+        if (xp.parse_str("os_regex", buf, sizeof(buf))) {
+            if (regcomp(&(os_regex), buf, REG_EXTENDED|REG_NOSUB) ) {
+                log_messages.printf(MSG_CRITICAL, "BAD REGEXP: %s\n", buf);
+                return ERR_XML_PARSE;
+            }
+            have_os_regex = true;
+            continue;
+        }
+        if (xp.parse_str("project_prefs_tag", project_prefs_tag, sizeof(project_prefs_tag))) continue;
+        if (xp.parse_str("project_prefs_regex", buf, sizeof(buf))) {
+            if (regcomp(&(project_prefs_regex), buf, REG_EXTENDED|REG_NOSUB) ) {
+                log_messages.printf(MSG_CRITICAL, "BAD REGEXP: %s\n", buf);
+                return ERR_XML_PARSE;
+            }
+            have_project_prefs_regex = true;
+            continue;
+        }
+        if (xp.parse_double("avg_ncpus", avg_ncpus)) continue;
 
-void PLAN_CLASS_SPEC::print(void) {
-    fprintf(stderr, "<plan_class>\n");
-    fprintf(stderr, "  <name> %s </name>\n", name);
-    fprintf(stderr, "  <type> %d </type>\n", type);
-    if(min_cuda_compcap)
-        fprintf(stderr, "  <min_cuda_compcap> %d </min_cuda_compcap>\n", min_cuda_compcap);
-    if(max_cuda_compcap)
-        fprintf(stderr, "  <max_cuda_compcap> %d </max_cuda_compcap>\n", max_cuda_compcap);
-    if(min_cuda_version)
-        fprintf(stderr, "  <min_cuda_version> %d </min_cuda_version>\n", min_cuda_version);
-    if(max_cuda_version)
-        fprintf(stderr, "  <max_cuda_version> %d </max_cuda_version>\n", max_cuda_version);
-    if(min_opencl_version)
-        fprintf(stderr, "  <min_opencl_version> %d </min_opencl_version>\n", min_opencl_version);
-    if(min_driver_version)
-        fprintf(stderr, "  <min_driver_version> %d </min_driver_version>\n", min_driver_version);
-    if(max_driver_version)
-        fprintf(stderr, "  <max_driver_version> %d </max_driver_version>\n", max_driver_version);
-    if(min_gpu_ram_mb)
-        fprintf(stderr, "  <min_gpu_ram_mb> %f </min_gpu_ram_mb>\n", min_gpu_ram_mb);
-    if(gpu_ram_used_mb)
-        fprintf(stderr, "  <gpu_ram_used_mb> %f </gpu_ram_used_mb>\n", gpu_ram_used_mb);
-    if(*project_prefs_tag) {
-        fprintf(stderr, "  <project_prefs_tag> %s </project_prefs_tag>\n", project_prefs_tag);
-        fprintf(stderr, "  <project_prefs_min> %f </project_prefs_min>\n", project_prefs_min);
-        fprintf(stderr, "  <project_prefs_max> %f </project_prefs_max>\n", project_prefs_max);
+        if (xp.parse_double("cpu_frac", cpu_frac)) continue;
+        if (xp.parse_double("min_gpu_ram_mb", min_gpu_ram_mb)) continue;
+        if (xp.parse_double("gpu_ram_used_mb", gpu_ram_used_mb)) continue;
+        if (xp.parse_double("gpu_peak_flops_scale", gpu_peak_flops_scale)) continue;
+        if (xp.parse_double("ngpus", ngpus)) continue;
+        if (xp.parse_int("min_driver_version", min_driver_version)) continue;
+        if (xp.parse_int("max_driver_version", max_driver_version)) continue;
+        if (xp.parse_str("gpu_utilization_tag", gpu_utilization_tag, sizeof(gpu_utilization_tag))) continue;
+
+        if (xp.parse_bool("need_ati_libs", need_ati_libs)) continue;
+        if (xp.parse_int("min_cal_target", min_cal_target)) continue;
+        if (xp.parse_int("max_cal_target", max_cal_target)) continue;
+
+        if (xp.parse_int("min_nvidia_compcap", min_nvidia_compcap)) continue;
+        if (xp.parse_int("max_nvidia_compcap", max_nvidia_compcap)) continue;
+
+        if (xp.parse_int("min_cuda_version", min_cuda_version)) continue;
+        if (xp.parse_int("max_cuda_version", max_cuda_version)) continue;
+
+        if (xp.parse_int("min_opencl_version", min_opencl_version)) continue;
+        if (xp.parse_int("max_opencl_version", max_opencl_version)) continue;
+
+        if (xp.parse_int("min_vbox_version", min_vbox_version)) continue;
+        if (xp.parse_int("max_vbox_version", max_vbox_version)) continue;
     }
-    if(*gpu_utilization_tag)
-        fprintf(stderr, "  <gpu_utilization_tag> %s </gpu_utilization_tag>\n", project_prefs_tag);
-    if(min_macos_version)
-        fprintf(stderr, "  <min_macos_version> %d </min_macos_version>\n", min_macos_version);
-    if(max_macos_version)
-        fprintf(stderr, "  <max_macos_version> %d </max_macos_version>\n", max_macos_version);
-    if(*os_version_string)
-        fprintf(stderr, "  <os_version> %s </os_version>\n", os_version_string);
-    if(speedup)
-        fprintf(stderr, "  <speedup> %f </speedup>\n", speedup);
-    if(peak_flops_factor)
-        fprintf(stderr, "  <peak_flops_factor> %f </peak_flops_factor>\n", peak_flops_factor);
-    if(gpu_flops)
-        fprintf(stderr, "  <gpu_flops> %f </gpu_flops>\n", gpu_flops);
-    if(cpu_flops)
-        fprintf(stderr, "  <cpu_flops> %f </cpu_flops>\n", cpu_flops);
-    if(avg_ncpus)
-        fprintf(stderr, "  <avg_ncpus> %f </avg_ncpus>\n", avg_ncpus);
-    if(max_ncpus)
-        fprintf(stderr, "  <max_ncpus> %f </max_ncpus>\n", max_ncpus);
-    if(ngpus)
-        fprintf(stderr, "  <ngpus> %f </ngpus>\n", ngpus);
-    for (unsigned int i=0; i<cpu_features.size(); i++) {
-        fprintf(stderr, "  <cpu_feature> %s </cpu_feature>\n", cpu_features[i].c_str());
-    }
-    fprintf(stderr, "</plan_class>\n");
+    return ERR_XML_PARSE;
 }
-
 
 int PLAN_CLASS_SPECS::parse_specs(FILE* f) {
-    char buf[256];
     MIOFILE mf;
     XML_PARSER xp(&mf);
     mf.init_file(f);
@@ -656,109 +628,105 @@ int PLAN_CLASS_SPECS::parse_specs(FILE* f) {
         }
         if (xp.match_tag("plan_class")) {
             PLAN_CLASS_SPEC pc;
-
-            while (!xp.get_tag()) {
-                if (xp.match_tag("/plan_class")) {
-                    break;
-                }
-                if(xp.parse_str("name", pc.name, sizeof(pc.name))) {
-                    strcpy(buf,pc.name);
-                    downcase_string(buf);
-                    if (strstr(buf,"cuda")) {
-                        pc.type = 1;
-                    } else if (strstr(buf,"nvidia")) {
-                        pc.type = 1;
-                    } else if (strstr(buf,"ati")) {
-                        pc.type = 2;
-                    }
-                    continue;
-                }
-                if(xp.parse_str("type", buf, sizeof(buf))) {
-                    downcase_string(buf);
-                    if (!strcmp(buf,"cpu")) {
-                        pc.type = 0;
-                    } else if (!strcmp(buf,"cuda")) {
-                        pc.type = 1;
-                    } else if (strstr(buf,"nvidia")) {
-                        pc.type = 1;
-                    } else if (!strcmp(buf,"ati")) {
-                        pc.type = 2;
-                    } else {
-                        pc.type = atoi(buf);
-                    }
-                    continue;
-                }
-                if(xp.parse_int("min_cuda_compcap", pc.min_cuda_compcap)) continue;
-                if(xp.parse_int("max_cuda_compcap", pc.max_cuda_compcap)) continue;
-                if(xp.parse_int("min_cuda_version", pc.min_cuda_version)) continue;
-                if(xp.parse_int("max_cuda_version", pc.max_cuda_version)) continue;
-                if(xp.parse_int("min_opencl_version", pc.min_opencl_version)) continue;
-                if(xp.parse_int("min_opencl_device_version", pc.min_opencl_version)) continue;
-                if(xp.parse_int("min_driver_version", pc.min_driver_version)) continue;
-                if(xp.parse_int("max_driver_version", pc.max_driver_version)) continue;
-                if(xp.parse_double("min_gpu_ram_mb", pc.min_gpu_ram_mb)) continue;
-                if(xp.parse_double("gpu_ram_used_mb", pc.gpu_ram_used_mb)) continue;
-                if(xp.parse_str("project_prefs_tag", pc.project_prefs_tag, sizeof(pc.project_prefs_tag))) continue;
-                if(xp.parse_str("gpu_utilization_tag", pc.gpu_utilization_tag, sizeof(pc.gpu_utilization_tag))) continue;
-                if(xp.parse_double("project_prefs_min", pc.project_prefs_min)) continue;
-                if(xp.parse_double("project_prefs_max", pc.project_prefs_max)) continue;
-                if(xp.parse_int("min_macos_version", pc.min_macos_version)) continue;
-                if(xp.parse_int("max_macos_version", pc.max_macos_version)) continue;
-                if(xp.parse_str("os_version", pc.os_version_string, sizeof(pc.os_version_string))) {
-                    if ( regcomp(&(pc.os_version_regex), pc.os_version_string, REG_EXTENDED|REG_NOSUB) ) {
-                        log_messages.printf(MSG_CRITICAL, "BAD REGEXP: %s\n", pc.os_version_string);
-                        return ERR_XML_PARSE;
-                    }
-                    continue;
-                }
-                if(xp.parse_double("speedup", pc.speedup)) continue;
-                if(xp.parse_double("peak_flops_factor", pc.peak_flops_factor)) continue;
-                if(xp.parse_double("gpu_flops", pc.gpu_flops)) continue;
-                if(xp.parse_double("cpu_flops", pc.cpu_flops)) continue;
-                if(xp.parse_double("avg_ncpus", pc.avg_ncpus)) continue;
-                if(xp.parse_double("max_ncpus", pc.max_ncpus)) continue;
-                if(xp.parse_double("ngpus", pc.ngpus)) continue;
-                if(xp.parse_str("cpu_feature", buf, sizeof(buf))) {
-                    pc.cpu_features.push_back(" " + (string)buf + " ");
-                    continue;
-                }
-            }
+            int retval = pc.parse(xp);
+            if (retval) return retval;
             classes.push_back(pc);
         }
     }
     return ERR_XML_PARSE;
-} // parse_specs()
+}
 
 
 PLAN_CLASS_SPEC::PLAN_CLASS_SPEC() {
-    type = 0;
+    strcpy(name, "");
+    strcpy(gpu_type, "");
+    cuda = false;
+    cal = false;
+    opencl = false;
+    virtualbox = false;
+    is64bit = false;
+    min_ncpus = 0;
+    max_threads = 1;
+    projected_flops_scale = 1;
+    have_os_regex = false;
+    strcpy(project_prefs_tag, "");
+    avg_ncpus = 0;
 
-    min_cuda_compcap = 0;
-    max_cuda_compcap = 0;
+    cpu_frac = .1;
+    min_gpu_ram_mb = 0;
+    gpu_ram_used_mb = 0;
+    gpu_peak_flops_scale = 1;
+    ngpus = 1;
+    min_driver_version = 0;
+    max_driver_version = 0;
+    strcpy(gpu_utilization_tag, "");
+
+    need_ati_libs = false;
+
+    min_nvidia_compcap = 0;
+    max_nvidia_compcap = 0;
     min_cuda_version = 0;
     max_cuda_version = 0;
 
     min_opencl_version = 0;
+    max_opencl_version = 0;
 
-    min_driver_version = 0;
-    max_driver_version = 0;
-    min_gpu_ram_mb = 0;
-    gpu_ram_used_mb = 0;
-
-    *project_prefs_tag = '\0';
-    *gpu_utilization_tag = '\0';
-    project_prefs_min = 0;
-    project_prefs_max = 0;
-
-    min_macos_version = 0;
-    max_macos_version = 0;
-    *os_version_string = '\0';
-
-    speedup = 1.0;
-    peak_flops_factor = 1.0;
-    cpu_flops = 0;
-    gpu_flops = 0;
-    avg_ncpus = 1.0;
-    max_ncpus = 1.0;
-    ngpus = 0; /* defaults to CPU plan classes */
+    min_vbox_version = 0;
+    max_vbox_version = 0;
 }
+
+#ifdef PLAN_CLASS_TEST
+
+int main() {
+    SCHEDULER_REQUEST sreq;
+    SCHEDULER_REPLY sreply;
+    g_request = &sreq;
+    g_reply = &sreply;
+    g_wreq = &sreply.wreq;
+
+    PLAN_CLASS_SPECS pcs;
+    int retval = pcs.parse_file("plan_class_spec.xml.sample");
+    if (retval) {
+        printf("parse_file: %d\n");
+        exit(1);
+    }
+
+    config.debug_version_select = true;
+
+    HOST_USAGE hu;
+
+    strcpy(sreq.host.p_features, "sse3");
+    sreq.host.p_fpops =5e9;
+    g_wreq->effective_ncpus = 4;
+    if (1) {
+        sreq.coprocs.nvidia.fake(18000, 512*MEGA, 490*MEGA, 1);
+        sreq.coprocs.nvidia.opencl_prop.opencl_device_version_int = 0;
+    } else {
+        sreq.coprocs.nvidia.count = 0;
+    }
+    if (1) {
+        sreq.coprocs.ati.fake(512*MEGA, 256*MEGA, 1);
+        sreq.coprocs.ati.have_cal = true;
+        sreq.coprocs.ati.opencl_prop.opencl_device_version_int = 0;
+    } else {
+        sreq.coprocs.ati.count = 0;
+    }
+
+    for (unsigned int i=0; i<pcs.classes.size(); i++) {
+        bool b = pcs.check(sreq, pcs.classes[i].name, hu);
+        if (b) {
+            printf("%s: check succeeded\n", pcs.classes[i].name);
+            printf("\tncudas: %f\n\tnatis: %f\n\tgpu_ram: %fMB\n\tavg_ncpus: %f\n\tprojected_flops: %fG\n\tpeak_flops: %fG\n",
+                hu.ncudas,
+                hu.natis,
+                hu.gpu_ram/1e6,
+                hu.avg_ncpus,
+                hu.projected_flops/1e9,
+                hu.peak_flops/1e9
+            );
+        } else {
+            printf("%s: check failed\n", pcs.classes[i].name);
+        }
+    }
+}
+#endif

@@ -39,6 +39,8 @@
 //      new process call boinc_init_options() with flags to
 //        send status messages and handle checkpoint stuff,
 //        and returns from boinc_init_parallel()
+//      NOTE: THIS DOESN'T RESPECT CRITICAL SECTIONS.
+//      NEED TO MASK SIGNALS IN CHILD DURING CRITICAL SECTIONS
 //    Win:
 //      like sequential case, except suspend/resume must enumerate
 //      all threads (except timer) and suspend/resume them all
@@ -48,6 +50,13 @@
 //
 // 3) For compatibility with C, we use int instead of bool various places
 //
+// 4) We must periodically check that the client is still alive and exit if not.
+//      Originally this was done using heartbeat msgs from client.
+//      This is unreliable, e.g. if the client is blocked for a long time.
+//      As of Oct 11 2012 we use a different mechanism:
+//      the client passes its PID and we periodically check whether it exists.
+//      But we need to support the heartbeat mechanism also for compatibility.
+//
 // Terminology:
 // The processing of a result can be divided
 // into multiple "episodes" (executions of the app),
@@ -55,7 +64,6 @@
 // Unless otherwise noted, "CPU time" refers to the sum over all episodes
 // (not counting the part after the last checkpoint in an episode).
 
-#include <vector>
 
 #if defined(_WIN32) && !defined(__STDWX_H__) && !defined(_BOINC_WIN_) && !defined(_AFX_STDAFX_H_)
 #include "boinc_win.h"
@@ -77,6 +85,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <pthread.h>
+#include <vector>
 #ifndef __EMX__
 #include <sched.h>
 #endif
@@ -117,7 +126,6 @@ static FILE_LOCK file_lock;
 APP_CLIENT_SHM* app_client_shm = 0;
 static volatile int time_until_checkpoint;
     // time until enable checkpoint
-    // time until report fraction done to core client
 static volatile double fraction_done;
 static volatile double last_checkpoint_cpu_time;
 static volatile bool ready_to_checkpoint = false;
@@ -128,7 +136,7 @@ static volatile double initial_wu_cpu_time;
 static volatile bool have_new_trickle_up = false;
 static volatile bool have_trickle_down = true;
     // on first call, scan slot dir for msgs
-static volatile int heartbeat_giveup_time;
+static volatile int heartbeat_giveup_count;
     // interrupt count value at which to give up on core client
 #ifdef _WIN32
 static volatile int nrunning_ticks = 0;
@@ -141,12 +149,10 @@ static volatile int interrupt_count = 0;
 static volatile int running_interrupt_count = 0;
     // number of timer interrupts while not suspended.
     // Used to compute elapsed time
-static double fpops_per_cpu_sec = 0;
-static double fpops_cumulative = 0;
-static double intops_per_cpu_sec = 0;
-static double intops_cumulative = 0;
 static int want_network = 0;
 static int have_network = 1;
+static double bytes_sent = 0;
+static double bytes_received = 0;
 bool g_sleep = false;
     // simulate unresponsive app by setting to true (debugging)
 static FUNC_PTR timer_callback = 0;
@@ -154,15 +160,18 @@ char web_graphics_url[256];
 bool send_web_graphics_url = false;
 char remote_desktop_addr[256];
 bool send_remote_desktop_addr = false;
+int app_min_checkpoint_period = 0;
+    // min checkpoint period requested by app
 
 #define TIMER_PERIOD 0.1
     // period of worker-thread timer interrupts.
-    // Determines rate of handlling messages from client.
+    // Determines rate of handling messages from client.
 #define TIMERS_PER_SEC 10
     // This determines the resolution of fraction done and CPU time reporting
     // to the core client, and of checkpoint enabling.
     // It doesn't influence graphics, so 1 sec is enough.
-#define HEARTBEAT_GIVEUP_COUNT ((int)(30/TIMER_PERIOD))
+#define HEARTBEAT_GIVEUP_SECS 30
+#define HEARTBEAT_GIVEUP_COUNT ((int)(HEARTBEAT_GIVEUP_SECS/TIMER_PERIOD))
     // quit if no heartbeat from core in this #interrupts
 #define LOCKFILE_TIMEOUT_PERIOD 35
     // quit if we cannot aquire slot lock file in this #secs after startup
@@ -336,21 +345,13 @@ static bool update_app_progress(double cpu_t, double cp_cpu_t) {
         sprintf(buf, "<fraction_done>%e</fraction_done>\n", fdone);
         strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
     }
-    if (fpops_per_cpu_sec) {
-        sprintf(buf, "<fpops_per_cpu_sec>%e</fpops_per_cpu_sec>\n", fpops_per_cpu_sec);
-        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
+    if (bytes_sent) {
+        sprintf(buf, "<bytes_sent>%f</bytes_sent>\n", bytes_sent);
+        strcat(msg_buf, buf);
     }
-    if (fpops_cumulative) {
-        sprintf(buf, "<fpops_cumulative>%e</fpops_cumulative>\n", fpops_cumulative);
-        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
-    }
-    if (intops_per_cpu_sec) {
-        sprintf(buf, "<intops_per_cpu_sec>%e</intops_per_cpu_sec>\n", intops_per_cpu_sec);
-        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
-    }
-    if (intops_cumulative) {
-        sprintf(buf, "<intops_cumulative>%e</intops_cumulative>\n", intops_cumulative);
-        strlcat(msg_buf, buf, MSG_CHANNEL_SIZE);
+    if (bytes_received) {
+        sprintf(buf, "<bytes_received>%f</bytes_received>\n", bytes_received);
+        strcat(msg_buf, buf);
     }
     return app_client_shm->shm->app_status.send_msg(msg_buf);
 }
@@ -363,7 +364,7 @@ static void handle_heartbeat_msg() {
     if (app_client_shm->shm->heartbeat.get_msg(buf)) {
         boinc_status.network_suspended = false;
         if (match_tag(buf, "<heartbeat/>")) {
-            heartbeat_giveup_time = interrupt_count + HEARTBEAT_GIVEUP_COUNT;
+            heartbeat_giveup_count = interrupt_count + HEARTBEAT_GIVEUP_COUNT;
         }
         if (parse_double(buf, "<wss>", dtemp)) {
             boinc_status.working_set_size = dtemp;
@@ -375,6 +376,47 @@ static void handle_heartbeat_msg() {
             boinc_status.network_suspended = btemp;
         }
     }
+}
+
+static bool client_dead() {
+    bool dead;
+    if (aid.client_pid) {
+        // check every 10 sec
+        //
+        if (interrupt_count%(TIMERS_PER_SEC*10)) return false;
+#ifdef _WIN32
+        // Windows lacks an easy way to check for process existence :-(
+        //
+        DWORD pids[4096], nb;
+        BOOL r = EnumProcesses(pids, sizeof(pids), &nb);
+        if (!r) return false;
+        int n = nb/sizeof(DWORD);
+        dead = true;
+        for (int i=0; i<n; i++) {
+            if (pids[i] == aid.client_pid) {
+                dead = false;
+                break;
+            }
+        }
+#else
+        int retval = kill(aid.client_pid, 0);
+        dead = (retval == -1 && errno == ESRCH);
+#endif
+    } else {
+        dead = (interrupt_count > heartbeat_giveup_count);
+    }
+    if (dead) {
+        char buf[256];
+        boinc_msg_prefix(buf, sizeof(buf));
+        fputs(buf, stderr);     // don't use fprintf() here
+        if (aid.client_pid) {
+            fputs(" BOINC client no longer exists - exiting\n", stderr);
+        } else {
+            fputs(" No heartbeat from client for 30 sec - exiting\n", stderr);
+        }
+        return true;
+    }
+    return false;
 }
 
 #ifndef _WIN32
@@ -402,7 +444,7 @@ static void parallel_master(int child_pid) {
                 }
             }
 
-            if (heartbeat_giveup_time < interrupt_count) {
+            if (client_dead()) {
                 kill(child_pid, SIGKILL);
                 exit(0);
             }
@@ -468,6 +510,23 @@ int boinc_init_parallel() {
     return boinc_init_options(&_options);
 }
 
+static int min_checkpoint_period() {
+    int x = (int)aid.checkpoint_period;
+    if (app_min_checkpoint_period > x) {
+        x = app_min_checkpoint_period;
+    }
+    if (x == 0) x = DEFAULT_CHECKPOINT_PERIOD;
+    return x;
+}
+
+int boinc_set_min_checkpoint_period(int x) {
+    app_min_checkpoint_period = x;
+    if (x > time_until_checkpoint) {
+        time_until_checkpoint = x;
+    }
+    return 0;
+}
+
 int boinc_init_options_general(BOINC_OPTIONS& opt) {
     int retval;
     char buf[256];
@@ -504,7 +563,7 @@ int boinc_init_options_general(BOINC_OPTIONS& opt) {
             );
 #ifdef _WIN32
             char buf2[256];
-            windows_error_string(buf2, 256);
+            windows_format_error_string(GetLastError(), buf2, 256);
             fprintf(stderr, "%s Error: %s\n", boinc_msg_prefix(buf, sizeof(buf)), buf2);
 #endif
             // if we can't acquire the lock file there must be
@@ -536,14 +595,14 @@ int boinc_init_options_general(BOINC_OPTIONS& opt) {
     initial_wu_cpu_time = aid.wu_cpu_time;
 
     fraction_done = -1;
-    time_until_checkpoint = (int)aid.checkpoint_period;
+    time_until_checkpoint = min_checkpoint_period();
     last_checkpoint_cpu_time = aid.wu_cpu_time;
     last_wu_cpu_time = aid.wu_cpu_time;
 
     if (standalone) {
         options.check_heartbeat = false;
     }
-    heartbeat_giveup_time = interrupt_count + HEARTBEAT_GIVEUP_COUNT;
+    heartbeat_giveup_count = interrupt_count + HEARTBEAT_GIVEUP_COUNT;
 
     return 0;
 }
@@ -636,7 +695,7 @@ void boinc_exit(int status) {
         retval = file_lock.unlock(LOCKFILE);
         if (retval) {
 #ifdef _WIN32
-            windows_error_string(buf, 256);
+            windows_format_error_string(GetLastError(), buf, 256);
             fprintf(stderr,
                 "%s Can't unlock lockfile (%d): %s\n",
                 boinc_msg_prefix(buf, sizeof(buf)), retval, buf
@@ -682,6 +741,11 @@ void boinc_exit(int status) {
     set_signal_exit_code(status);
     exit(status);
 #endif
+}
+
+void boinc_network_usage(double sent, double received) {
+    bytes_sent = sent;
+    bytes_received = received;
 }
 
 int boinc_is_standalone() {
@@ -754,8 +818,8 @@ int boinc_report_app_status_aux(
     double checkpoint_cpu_time,
     double _fraction_done,
     int other_pid,
-    double bytes_sent,
-    double bytes_received
+    double _bytes_sent,
+    double _bytes_received
 ) {
     char msg_buf[MSG_CHANNEL_SIZE], buf[256];
     if (standalone) return 0;
@@ -772,12 +836,12 @@ int boinc_report_app_status_aux(
         sprintf(buf, "<other_pid>%d</other_pid>\n", other_pid);
         strcat(msg_buf, buf);
     }
-    if (bytes_sent) {
-        sprintf(buf, "<bytes_sent>%f</bytes_sent>\n", bytes_sent);
+    if (_bytes_sent) {
+        sprintf(buf, "<bytes_sent>%f</bytes_sent>\n", _bytes_sent);
         strcat(msg_buf, buf);
     }
-    if (bytes_received) {
-        sprintf(buf, "<bytes_received>%f</bytes_received>\n", bytes_received);
+    if (_bytes_received) {
+        sprintf(buf, "<bytes_received>%f</bytes_received>\n", _bytes_received);
         strcat(msg_buf, buf);
     }
     if (app_client_shm->shm->app_status.send_msg(msg_buf)) {
@@ -813,10 +877,10 @@ int boinc_wu_cpu_time(double& cpu_t) {
 
 int suspend_activities() {
 #ifdef _WIN32
-    static DWORD pid;
-    if (!pid) pid = GetCurrentProcessId();
+    static vector<int> pids;
     if (options.multi_thread) {
-        suspend_or_resume_threads(pid, timer_thread_id, false);
+        if (pids.size() == 0) pids.push_back(GetCurrentProcessId());
+        suspend_or_resume_threads(pids, timer_thread_id, false, true);
     } else {
         SuspendThread(worker_thread_handle);
     }
@@ -825,7 +889,7 @@ int suspend_activities() {
     // suspension is done by signal handler in worker thread
     //
     if (options.multi_process) {
-        suspend_or_resume_descendants(0, false);
+        suspend_or_resume_descendants(false);
     }
 #endif
     return 0;
@@ -833,16 +897,16 @@ int suspend_activities() {
 
 int resume_activities() {
 #ifdef _WIN32
-    static DWORD pid;
-    if (!pid) pid = GetCurrentProcessId();
+    static vector<int> pids;
     if (options.multi_thread) {
-        suspend_or_resume_threads(pid, timer_thread_id, true);
+        if (pids.size() == 0) pids.push_back(GetCurrentProcessId());
+        suspend_or_resume_threads(pids, timer_thread_id, true, true);
     } else {
         ResumeThread(worker_thread_handle);
     }
 #else
     if (options.multi_process) {
-        suspend_or_resume_descendants(0, true);
+        suspend_or_resume_descendants(true);
     }
 #endif
     return 0;
@@ -931,8 +995,12 @@ static void handle_process_control_msg() {
 
         if (match_tag(buf, "<resume/>")) {
             BOINCINFO("Received resume message");
-            if (boinc_status.suspended && options.direct_process_action) {
-                resume_activities();
+            if (options.direct_process_action) {
+                if (boinc_status.suspended) {
+                    resume_activities();
+                } else if (suspend_request) {
+                    suspend_request = false;
+                }
             }
             boinc_status.suspended = false;
         }
@@ -1103,7 +1171,7 @@ static void graphics_cleanup() {
 // timer handler; runs in the timer thread
 //
 static void timer_handler() {
-    char buf[256];
+    char buf[512];
     if (g_sleep) return;
     interrupt_count++;
     if (!boinc_status.suspended) {
@@ -1154,11 +1222,7 @@ static void timer_handler() {
     // (unless we're in a critical section)
     //
     if (in_critical_section==0 && options.check_heartbeat) {
-        if (heartbeat_giveup_time < interrupt_count) {
-            boinc_msg_prefix(buf, sizeof(buf));
-            buf[255] = 0;  // paranoia
-            fputs(buf, stderr);
-            fputs(" No heartbeat from core client for 30 sec - exiting\n", stderr);
+        if (client_dead()) {
             if (options.direct_process_action) {
                 exit_from_timer_thread(0);
             } else {
@@ -1179,7 +1243,7 @@ static void timer_handler() {
     // (e.g., if user clicked in the graphics window's close box.)
     //
     if (ga_win.pid) {
-        if (! ga_win.is_running()) {
+        if (!ga_win.is_running()) {
             app_client_shm->shm->graphics_reply.send_msg(
                 xml_graphics_modes[MODE_HIDE_GRAPHICS]
             );
@@ -1299,7 +1363,7 @@ int start_timer_thread() {
 #else
     pthread_attr_t thread_attrs;
     pthread_attr_init(&thread_attrs);
-    pthread_attr_setstacksize(&thread_attrs, 16384);
+    pthread_attr_setstacksize(&thread_attrs, 32768);
     int retval = pthread_create(&timer_thread_handle, &thread_attrs, timer_thread, NULL);
     if (retval) {
         fprintf(stderr,
@@ -1364,7 +1428,7 @@ int boinc_checkpoint_completed() {
     cur_cpu = boinc_worker_thread_cpu_time();
     last_wu_cpu_time = cur_cpu + aid.wu_cpu_time;
     last_checkpoint_cpu_time = last_wu_cpu_time;
-    time_until_checkpoint = (int)aid.checkpoint_period;
+    time_until_checkpoint = min_checkpoint_period();
     boinc_end_critical_section();
     ready_to_checkpoint = false;
 
@@ -1431,20 +1495,6 @@ int boinc_upload_status(std::string& name) {
         }
     }
     return ERR_NOT_FOUND;
-}
-
-void boinc_ops_per_cpu_sec(double fp, double i) {
-    fpops_per_cpu_sec = fp;
-    intops_per_cpu_sec = i;
-}
-
-void boinc_ops_cumulative(double fp, double i) {
-    fpops_cumulative = fp;
-    intops_cumulative = i;
-}
-
-void boinc_set_credit_claim(double credit) {
-    boinc_ops_cumulative(credit*8.64000e+11, 0);
 }
 
 void boinc_need_network() {

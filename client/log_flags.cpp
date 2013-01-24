@@ -42,6 +42,7 @@
 #include "file_names.h"
 #include "project.h"
 #include "result.h"
+#include "sandbox.h"
 
 using std::string;
 
@@ -216,18 +217,31 @@ void CONFIG::show() {
     FILE* f = fopen(REMOTEHOST_FILE_NAME, "r");
     if (f) {
         msg_printf(NULL, MSG_INFO,
-            "Config: GUI RPC allowed from:"
+            "Config: GUI RPCs allowed from:"
         );
         char buf[256];
         while (fgets(buf, 256, f)) {
             strip_whitespace(buf);
             if (!(buf[0] =='#' || buf[0] == ';') && strlen(buf) > 0 ) {
                 msg_printf(NULL, MSG_INFO,
-                    "Config:   %s", buf
+                    "    %s", buf
                 );
             }
         }
         fclose(f);
+    }
+    if (vbox_window) {
+        msg_printf(NULL, MSG_INFO,
+            "Config: open console window for VirtualBox applications"
+        );
+        if (g_use_sandbox) {
+            msg_printf(NULL, MSG_INFO,
+                "    NOTE: the client is running in protected mode,"
+            );
+            msg_printf(NULL, MSG_INFO,
+                "    so VirtualBox console windows cannot be opened."
+            );
+        }
     }
 }
 
@@ -400,6 +414,7 @@ int CONFIG::parse_options_client(XML_PARSER& xp) {
         if (xp.parse_bool("use_all_gpus", use_all_gpus)) continue;
         if (xp.parse_bool("use_certs", use_certs)) continue;
         if (xp.parse_bool("use_certs_only", use_certs_only)) continue;
+        if (xp.parse_bool("vbox_window", vbox_window)) continue;
 
         msg_printf_notice(NULL, false,
             "http://boinc.berkeley.edu/manager_links.php?target=notice&controlid=config",
@@ -522,33 +537,76 @@ int read_config_file(bool init, const char* fname) {
 // - Flag app versions and results for which all GPUs are excluded
 //
 void process_gpu_exclusions() {
-    unsigned int i, j;
+    unsigned int i, j, a;
     PROJECT *p;
+
+    for (i=0; i<gstate.apps.size(); i++) {
+        APP* app = gstate.apps[i];
+        for (int k=1; k<coprocs.n_rsc; k++) {
+            COPROC& cp = coprocs.coprocs[k];
+            app->non_excluded_instances[k] = (1<<cp.count)-1;  // all 1's
+        }
+    }
 
     for (i=0; i<gstate.projects.size(); i++) {
         p = gstate.projects[i];
         for (int k=1; k<coprocs.n_rsc; k++) {
-            int n=0;
             COPROC& cp = coprocs.coprocs[k];
-            p->rsc_pwf[k].non_excluded_instances = (1<<cp.count)-1;  // all 1's
+            int all_instances = (1<<cp.count)-1;  // bitmap of 1 for all inst
+            p->rsc_pwf[k].non_excluded_instances = all_instances;
             for (j=0; j<config.exclude_gpus.size(); j++) {
                 EXCLUDE_GPU& eg = config.exclude_gpus[j];
-                if (strcmp(eg.url.c_str(), p->master_url)) continue;
-                if (!eg.appname.empty()) continue;
                 if (!eg.type.empty() && (eg.type != cp.type)) continue;
+                if (strcmp(eg.url.c_str(), p->master_url)) continue;
+                int mask;
                 if (eg.device_num >= 0) {
+                    int index = cp.device_num_index(eg.device_num);
                     // exclusion may refer to nonexistent GPU
                     //
-                    int ind = cp.device_num_index(eg.device_num);
-                    if (ind >= 0) {
-                        n++;
-                        p->rsc_pwf[k].non_excluded_instances &= ~(1<<ind);
+                    if (index < 0) continue;
+                    mask = 1<<index;
+                } else {
+                    mask = all_instances;
+                }
+                if (eg.appname.empty()) {
+                    // exclusion applies to all apps
+                    //
+                    for (a=0; a<gstate.apps.size(); a++) {
+                        APP* app = gstate.apps[a];
+                        if (app->project != p) continue;
+                        app->non_excluded_instances[k] &= ~mask;
                     }
                 } else {
-                    n = cp.count;
+                    // exclusion applies to a particular app
+                    //
+                    APP* app = gstate.lookup_app(p, eg.appname.c_str());
+                    if (!app) continue;
+                    app->non_excluded_instances[k] &= ~mask;
                 }
             }
-            p->rsc_pwf[k].ncoprocs_excluded = n;
+
+            p->rsc_pwf[k].non_excluded_instances = 0;
+            for (a=0; a<gstate.apps.size(); a++) {
+                APP* app = gstate.apps[a];
+                if (app->project != p) continue;
+                p->rsc_pwf[k].non_excluded_instances |= app->non_excluded_instances[k];
+            }
+
+            // compute ncoprocs_excluded as the number of instances
+            // excluded for at least 1 app
+            //
+            p->rsc_pwf[k].ncoprocs_excluded = 0;
+            for (int b=0; b<cp.count; b++) {
+                int mask = 1<<b;
+                for (a=0; a<gstate.apps.size(); a++) {
+                    APP* app = gstate.apps[a];
+                    if (app->project != p) continue;
+                    if (!(app->non_excluded_instances[k] & mask)) {
+                        p->rsc_pwf[k].ncoprocs_excluded++;
+                        break;
+                    }
+                }
+            }
         }
     }
 

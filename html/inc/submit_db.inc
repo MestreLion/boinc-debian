@@ -37,6 +37,10 @@ class BoincBatch {
         $db = BoincDb::get();
         return $db->update($this, 'batch', $clause);
     }
+    static function update_aux($clause) {
+        $db = BoincDb::get();
+        return $db->update_aux('batch', $clause);
+    }
 }
 
 // see db/boinc_db.h
@@ -66,6 +70,10 @@ class BoincUserSubmit {
         $db = BoincDb::get();
         return $db->update_aux('user_submit', "$clause where user_id=$this->user_id");
     }
+    static function update_aux($clause) {
+        $db = BoincDb::get();
+        return $db->update_aux('user_submit', $clause);
+    }
 }
 
 class BoincUserSubmitApp {
@@ -86,6 +94,48 @@ class BoincUserSubmitApp {
     static function delete_user($user_id) {
         $db = BoincDb::get();
         $db->delete_aux('user_submit_app', "user_id=$user_id");
+    }
+    function update($clause) {
+        $db = BoincDb::get();
+        $db->update_aux('user_submit_app', "$clause where user_id=$this->user_id and app_id=$this->app_id");
+    }
+}
+
+class BoincJobFile {
+    static function insert($clause) {
+        $db = BoincDb::get();
+        $ret = $db->insert('job_file', $clause);
+        if (!$ret) return false;
+        return true;
+    }
+    static function lookup_md5($md5) {
+        $db = BoincDb::get();
+        return $db->lookup('job_file', 'BoincJobFile', "md5='$md5'");
+    }
+    function delete() {
+        $db = BoincDb::get();
+        $db->delete(this, 'job_file');
+    }
+    function update($clause) {
+        $db = BoincDb::get();
+        return $db->update($this, 'job_file', $clause);
+    }
+}
+
+class BoincBatchFileAssoc {
+    static function insert($clause) {
+        $db = BoincDb::get();
+        $ret = $db->insert('batch_file_assoc', $clause);
+        if (!$ret) return false;
+        return true;
+    }
+    static function lookup($clause) {
+        $db = BoincDb::get();
+        return $db->lookup('batch_file_assoc', 'BoincBatchFileAssoc', $clause);
+    }
+    function delete() {
+        $db = BoincDb::get();
+        $db->delete(this, 'batch_file_assoc');
     }
 }
 

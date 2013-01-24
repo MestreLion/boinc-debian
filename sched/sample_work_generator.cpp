@@ -50,8 +50,8 @@
 #define REPLICATION_FACTOR  1
 
 const char* app_name = "example_app";
-const char* in_template_file = "example_app_in.xml";
-const char* out_template_file = "example_app_out.xml";
+const char* in_template_file = "example_app_in";
+const char* out_template_file = "example_app_out";
 
 char* in_template;
 DB_APP app;
@@ -125,7 +125,7 @@ void main_loop() {
             exit(retval);
         }
         if (n > CUSHION) {
-            sleep(10);
+            daemon_sleep(10);
         } else {
             int njobs = (CUSHION-n)/REPLICATION_FACTOR;
             log_messages.printf(MSG_DEBUG,
@@ -143,7 +143,7 @@ void main_loop() {
             // Now sleep for a few seconds to let the transitioner
             // create instances for the jobs we just created.
             // Otherwise we could end up creating an excess of jobs.
-            sleep(5);
+            daemon_sleep(5);
         }
     }
 }

@@ -70,10 +70,7 @@ struct SCHED_CONFIG {
     bool ignore_upload_certificates;
     bool dont_generate_upload_certificates;
     int uldl_dir_fanout;        // fanout of ul/dl dirs; 0 if none
-    int uldl_dir_levels;
     bool cache_md5_info;
-    bool use_benchmark_weights;
-    double fp_benchmark_weight;
     int fuh_debug_level;
     int reliable_priority_on_over;
         // additional results generated after at least one result
@@ -97,6 +94,7 @@ struct SCHED_CONFIG {
         // user name under which web server runs (default: apache)
     bool enable_assignment;
     bool enable_vda;
+    double vda_host_timeout;
     bool enable_assignment_multi;
     bool job_size_matching;
     bool dont_send_jobs;
@@ -105,11 +103,13 @@ struct SCHED_CONFIG {
 
     vector<regex_t> *ban_cpu;
     vector<regex_t> *ban_os;
-    vector<int> dont_search_host_for_userid;
     int daily_result_quota;         // max results per day is this * mult
+    char debug_req_reply_dir[256];
+        // keep sched_request and sched_reply in files in this directory
     double default_disk_max_used_gb;
     double default_disk_max_used_pct;
     double default_disk_min_free_gb;
+    vector<int> dont_search_host_for_userid;
     bool dont_store_success_stderr;
     int file_deletion_strategy;
         // select method of automatically deleting files from host
@@ -126,6 +126,11 @@ struct SCHED_CONFIG {
     int max_download_urls_per_file;
     int max_ncpus;
     JOB_LIMITS max_jobs_in_progress;
+    int max_results_accepted;
+        // skip reported jobs beyond this limit
+        // (they'll get reported in the next RPC)
+        // This limits the memory usage of the scheduler;
+        // otherwise it can crash if the client is reporting thousands of jobs.
     int max_wus_to_send;            // max results per RPC is this * mult
     int min_core_client_version;
     int min_core_client_version_announced;
@@ -153,7 +158,7 @@ struct SCHED_CONFIG {
         // use the client's primary platform if a version exists.
         // e.g. send 64-bit versions to 64-bit clients,
         // rather than trying the 32-bit version to see if it's faster.
-        // Do this only if you're sure that your 64-bit versions are
+        // Do this only if you're sure that the 64-bit versions are
         // always faster than the corresponding 32-bit versions
     double version_select_random_factor;
         // in deciding what version is fastest,
@@ -175,13 +180,16 @@ struct SCHED_CONFIG {
     // scheduler log flags
     //
     bool debug_array;               // debug job-cache scheduling
+    bool debug_array_detail;        // show slot-level info
     bool debug_assignment;
     bool debug_credit;
     bool debug_edf_sim_detail;      // show details of EDF sim
     bool debug_edf_sim_workload;    // show workload for EDF sim
     bool debug_fcgi;
+    bool debug_client_files;        // stuff related to sticky files on client
     bool debug_handle_results;
     bool debug_locality;            // locality scheduling
+    bool debug_locality_lite;       // locality scheduling Lite
     bool debug_prefs;
     bool debug_quota;
     bool debug_request_details;
@@ -192,8 +200,6 @@ struct SCHED_CONFIG {
     bool debug_vda;
     bool debug_version_select;
 
-    char debug_req_reply_dir[256];  // keep sched_request and sched_reply
-                                    // in files in this directory
     int parse(FILE*);
     int parse_aux(FILE*);
     int parse_file(const char *dir = 0);

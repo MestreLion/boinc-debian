@@ -17,6 +17,7 @@
 
 #ifdef _WIN32
 #include "boinc_win.h"
+#include "win_util.h"
 #else
 #include "config.h"
 #include <cstring>
@@ -68,7 +69,7 @@ static bool valid_state_file(const char* fname) {
     return false;
 }
 
-// return true if r0 arrived before r1
+// return true if r0 arrived before r1,
 // with tie-break based on name hash.
 // used to sort result list
 //
@@ -402,7 +403,7 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
         if (xp.match_tag("host_info")) {
 #ifdef SIM
             retval = host_info.parse(xp, false);
-            coprocs = host_info._coprocs;
+            coprocs = host_info.coprocs;
 #else
             retval = host_info.parse(xp, true);
 #endif
@@ -546,8 +547,11 @@ int CLIENT_STATE::parse_state_file_aux(const char* fname) {
     return 0;
 }
 
-// this is called whenever new results are added, namely at startup
-// and after a scheduler RPC
+// this is called whenever new results are added,
+// namely at startup and after a scheduler RPC.
+// Sort results based on (arrival time, name),
+// then set result.index to their position in this order.
+// This determines the order in which results are run.
 //
 void CLIENT_STATE::sort_results() {
     unsigned int i;
@@ -628,7 +632,7 @@ int CLIENT_STATE::write_state_file() {
 #ifdef _WIN32
                         msg_printf(0, MSG_INFO,
                             "Can't delete previous state file; %s",
-                            windows_error_string(win_error_msg, sizeof(win_error_msg))
+                            windows_format_error_string(GetLastError(), win_error_msg, sizeof(win_error_msg))
                         );
 #else
                         msg_printf(0, MSG_INFO,
@@ -647,7 +651,7 @@ int CLIENT_STATE::write_state_file() {
 #ifdef _WIN32
                     msg_printf(0, MSG_INFO,
                         "Can't rename current state file to previous state file; %s",
-                        windows_error_string(win_error_msg, sizeof(win_error_msg))
+                        windows_format_error_string(GetLastError(), win_error_msg, sizeof(win_error_msg))
                     );
 #else
                     msg_printf(0, MSG_INFO, 
@@ -672,7 +676,7 @@ int CLIENT_STATE::write_state_file() {
 #ifdef _WIN32
             msg_printf(0, MSG_INFO,
                 "rename error: %s",
-                windows_error_string(win_error_msg, sizeof(win_error_msg))
+                windows_format_error_string(GetLastError(), win_error_msg, sizeof(win_error_msg))
             );
 #elif defined (__APPLE__)
             if (log_flags.statefile_debug) {
@@ -923,7 +927,7 @@ int CLIENT_STATE::write_state_gui(MIOFILE& f) {
 
     f.printf("<client_state>\n");
 
-    retval = host_info.write(f, true, false);
+    retval = host_info.write(f, true, true);
     if (retval) return retval;
 
     // the following are for compatibility with old managers

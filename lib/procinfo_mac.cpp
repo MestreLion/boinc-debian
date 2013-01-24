@@ -29,8 +29,9 @@
 #include "client_msgs.h"
 #endif
 
-#include "procinfo.h"
 #include "error_numbers.h"
+
+#include "procinfo.h"
 
 using std::vector;
 

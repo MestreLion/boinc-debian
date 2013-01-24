@@ -65,7 +65,7 @@ public:
     //
     char virtualbox_version[256];
 
-    COPROCS _coprocs;
+    COPROCS coprocs;
 
     HOST_INFO();
     int parse(XML_PARSER&, bool benchmarks_only = false);
@@ -79,6 +79,9 @@ public:
     bool users_idle(bool check_all_logins, double idle_time_to_run, double *actual_idle_time=NULL);
 #else
     bool users_idle(bool check_all_logins, double idle_time_to_run);
+#endif
+#ifdef ANDROID
+    bool host_wifi_online();
 #endif
     int get_host_info();
     int get_local_network_info();

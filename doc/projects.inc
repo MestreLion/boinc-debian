@@ -10,9 +10,40 @@ require_once("../inc/translation.inc");
 // 5: logo
 // 6: master URL (if different from web site)
 
+$sensing = array(
+    tra("Distributed sensing"),
+    array(
+        array(
+            "Quake Catcher Network",
+            "http://qcn.stanford.edu/sensor/",
+            tra("Stanford University"),
+            tra("Seismology"),
+            tra("The Quake-Catcher Network is developing the world's largest seismic network using sensors attached to Internet-connected computers.  You must buy a sensor to participate."),
+            ""
+        ),
+        array(
+            "Radioactive@Home",
+            "http://radioactiveathome.org/",
+            tra("BOINC Poland Foundation"),
+            tra("Environmental research"),
+            tra("This project is creating a free and continuously updated map of radiation levels by using sensors connected to volunteers' computers.  You must buy a sensor to participate."),
+            "radioactive.jpg",
+        ),
+    ),
+    "<br><span class=\"note\">".tra("To participate in these projects you must buy a sensor and attach it to your computer.")."</span>",
+);
+
 $cogsci = array(
     tra("Cognitive science and artifical intelligence"),
     array(
+        array(
+            "MindModeling@Home",
+            "http://mindmodeling.org/",
+            "University of Dayton and Wright State University",
+            "Cognitive Science",
+            "MindModeling@Home uses computational cognitive process modeling to better understand the human mind, and specifically to study the mechanisms and processes that enable and moderate human performance and learning.",
+            "mmlogo.gif"
+        ),
         array(
             "FreeHAL",
             "http://www.freehal.net/freehal_at_home/",
@@ -26,6 +57,22 @@ $cogsci = array(
 $biomed = array(
     tra("Biology and Medicine"),
     array(
+        array(
+            "RNA World",
+            "http://www.rnaworld.de/rnaworld/",
+            "Rechenkraft.net e.V.",
+            "Molecular biology",
+            "RNA World seeks to identify, analyze, structurally predict and design RNA molecules on the basis of established bioinformatics software.",
+            "rna4.png"
+        ),
+        array(
+            "FightMalaria@Home",
+            "http://boinc.ucd.ie/fmah/",
+            tra("University College Dublin"),
+            tra("Antimalarial drug discovery"),
+            tra("The parasite that causes malaria continues to evolve resistance to available medication. We therefore urgently need to discover new drugs to replace existing drugs. Importantly, these new drugs need to target NEW proteins in the parasite. The FightMalaria@Home project is aimed at finding these new targets."),
+            "FMAH_banner3_wt.png"
+        ),
         array(
             "POEM@HOME",
             "http://boinc.fzk.de/poem/",
@@ -119,13 +166,6 @@ $biomed = array(
 $earth = array(
     tra("Earth Sciences"),
     array(
-//        array(
-//            "Quake Catcher Network",
-//            "http://qcn.stanford.edu/",
-//            tra("Stanford University"),
-//            tra("Seismology"),
-//            tra("The Quake-Catcher Network is a collaborative initiative for developing the world's largest, low-cost strong-motion seismic network by utilizing sensors in and attached to internet-connected computers.")
-//        ),
         array(
             "Virtual Prairie",
             "http://vcsc.cs.uh.edu/virtual-prairie/",
@@ -145,8 +185,24 @@ $earth = array(
     ),
 );
 $astro_phys_chem = array(
-    tra("Astronomy/Physics/Chemistry"),
+    tra("Astronomy, Physics, and Chemistry"),
     array(
+        array(
+            "Asteroids@home",
+            "http://asteroidsathome.net/boinc/",
+            "Charles University in Prague",
+            "Astrophysics",
+            "The aim of the project is to derive shapes and spin for a significant part of the asteroid population. As input data, we use any asteroid photometry that is available. The results are asteroid convex shape models with the direction of the spin axis and the rotation period.",
+            "asteroids_logo.jpg"
+        ),
+        array(
+            "Constellation",
+            "http://aerospaceresearch.net/constellation/",
+            "<a href='http://rechenkraft.net'>Rechenkraft.net</a>, <a href='http://stuttgart.dglr.de'>DGLR</a>, <a href='http://selfnet.de'>Selfnet</a>, and <a href='http://shackspace.de'>shack</a>",
+            "Aerospace-related science and engineering",
+            "Constellation is a platform for aerospace-related simulations, including trajectory optimization of launchers, satellites and probes, simulation of Moon's near-surface exosphere, and analysis of dynamic systems of exploration-rovers",
+            "constellation2.png"
+        ),
         array(
             "eOn",
             "http://eon.ices.utexas.edu/eon2/",
@@ -211,6 +267,14 @@ $astro_phys_chem = array(
             "lhc.jpg"
         ),
         array(
+            "LHC@home Test4Theory",
+            "http://lhcathome2.cern.ch/test4theory/",
+            tra("CERN (European Organization for Nuclear Research)"),
+            tra("Physics"),
+            tra("This project uses CERN-developed virtual machine technology for full-fledged LHC event physics simulation on volunteer computers.  Requires that you install VirtualBox on your computer"),
+            "t4t.png"
+        ),
+        array(
             "SETI@home",
             "http://setiathome.berkeley.edu/",
             tra("University of California, Berkeley"),
@@ -218,14 +282,14 @@ $astro_phys_chem = array(
             tra("SETI (Search for Extraterrestrial Intelligence) is a scientific area whose goal is to detect intelligent life outside Earth. One approach, known as radio SETI, uses radio telescopes to listen for narrow-bandwidth radio signals from space. Such signals are not known to occur naturally, so a detection would provide evidence of extraterrestrial technology."),
             "seti_logo.png"
         ),
-        array(
-            "Quantum Monte Carlo at Home",
-            "http://qah.uni-muenster.de/",
-            tra("University of Muenster (Germany)"),
-            tra("Chemistry"),
-            tra("Study the structure and reactivity of molecules using Quantum Chemistry."),
-            "logo_oben.jpg"
-        ),
+//        array(
+//            "Quantum Monte Carlo at Home",
+//            "http://qah.uni-muenster.de/",
+//            tra("University of Muenster (Germany)"),
+//            tra("Chemistry"),
+//            tra("Study the structure and reactivity of molecules using Quantum Chemistry."),
+//            "logo_oben.jpg"
+//        ),
         array(
             "Spinhenge@home",
             "http://spin.fh-bielefeld.de/",
@@ -285,6 +349,22 @@ $math = array(
     tra("Mathematics, computing, and games"),
     array(
         array(
+            "OProject@Home",
+            "http://oproject.info/",
+            tra("Private"),
+            tra("Mathematics, Physics, Artificial Intelligence"),
+            tra("Simulation of quantum computing; Goldbach's conjecture."),
+            "oproject_logo.png"
+        ),
+        array(
+            "NumberFields@home",
+            "http://stat.la.asu.edu/NumberFields/",
+            "Arizona State University, school of Mathematics",
+            "Mathematics",
+            "NumberFields@home searches for fields with special properties. The primary application of this research is in the realm of algebraic number theory. Number theorists can mine the data for interesting patterns to help them formulate conjectures about number fields. Ultimately, this research will lead to a deeper understanding of the profound properties of numbers, the basic building blocks of all mathematics.",
+            "nf_banner_10.jpg"
+        ),
+        array(
             "SAT@home",
             "http://sat.isa.ru/pdsat/",
             "Institute for Systems Analysis and Institute for System Dynamics and Control Theory, Russian Academy of Science",
@@ -292,15 +372,15 @@ $math = array(
             "Solve hard and practically important problems (discrete functions inversion problems, discrete optimization, bioinformatics, etc.) that can be effectively reduced to Boolean satisfiability problem.",
             "sat_logo.png"
         ),
-        array(
-            "Mersenne@home",
-            "http://mersenneathome.net/",
-            tra("Private"),
-            tra("Mathematics"),
-            tra("Mersenne@home searches for 'Mersenne primes' - prime numbers of the form 2<sup>p</sup>-1."),
-
-            "mersenne_logo80.png"
-        ),
+//        array(
+//            "Mersenne@home",
+//            "http://mersenneathome.net/",
+//            tra("Private"),
+//            tra("Mathematics"),
+//            tra("Mersenne@home searches for 'Mersenne primes' - prime numbers of the form 2<sup>p</sup>-1."),
+//
+//            "mersenne_logo80.png"
+//        ),
         array(
             "DistrRTgen",
             "http://boinc.freerainbowtables.com/distrrtgen/",
@@ -361,7 +441,7 @@ $math = array(
             tra("Mathematical Institute of Leiden University / Kennislink"),
             tra("Mathematics"),
             tra("Search for 'abc-triples': positive integers a,b,c such that a+b=c, a &lt; b &lt; c, a,b,c have no common divisors and c > rad(abc), where rad(n) is the product of the distinct prime factors of n. The ABC conjecture says that there are only finitely many a,b,c such that log(c)/log(rad(abc)) > h for any real h > 1. The ABC conjecture is currently one of the greatest open problems in mathematics. If it is proven to be true, a lot of other open problems can be answered directly from it."),
-            ""
+            "abclogo.jpg"
         ),
         array(
             "PrimeGrid",
@@ -407,7 +487,7 @@ $math = array(
             "Chess960@home",
             "http://www.chess960athome.org/alpha/",
             tra("Chess-960.org"),
-            tra("Game-playing"),
+            tra("Game study"),
             tra("This project studies Chess 960, a variant of orthodox chess. In classical chess the starting position of the game never changes.  In Chess 960, just before the start of every game, the initial configuration of the chess pieces is determined randomly."),
             "chess960athome.jpg"
         ),
@@ -424,7 +504,7 @@ $math = array(
             "http://sudoku.nctu.edu.tw/",
             "National Chiao Tung University, Taiwan",
             tra("Mathematics"),
-            "Sudoku@vtaiwan seeks to solve the minimum Sudoku problem, which is a well-known problem in mathematics and computer science.",
+            "Sudoku@vtaiwan seeks to solve the minimum Sudoku problem, a well-known problem in mathematics and computer science.",
             "sudoku.png"
         ),
         array(
@@ -438,6 +518,6 @@ $math = array(
     ),
 );
 
-$areas = array($biomed, $astro_phys_chem, $math, $earth, $mixed, $cogsci);
+$areas = array($biomed, $astro_phys_chem, $math, $earth, $mixed, $cogsci, $sensing);
 
 ?>

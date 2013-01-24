@@ -39,13 +39,14 @@
 #endif
 #endif
 
+#include "error_numbers.h"
+
+#include "mem_usage.h"
+
 using std::FILE;
 using std::fread;
 using std::fopen;
 using std::fclose;
-
-#include "error_numbers.h"
-#include "mem_usage.h"
 
 int mem_usage(double& vm_usage, double& resident_set) {
 

@@ -510,7 +510,7 @@ int handle_wu(
         }
     }
 
-    // If we are deferring assimilation until all results are over and validated,
+    // If we're deferring assimilation until all results are over and validated,
     // when that happens make sure that WU state is advanced to assimilate ready
     // the items.size is a kludge
     //
@@ -632,7 +632,7 @@ int handle_wu(
     if (deferred_file_delete_time
         && deferred_file_delete_time < wu_item.transition_time
     ) {
-        wu_item.transition_time = deferred_file_delete_time;
+        wu_item.transition_time = (int)deferred_file_delete_time;
     }
 
     // Handle transitioner overload.
@@ -728,7 +728,7 @@ void main_loop() {
             pause();
 #else
             log_messages.printf(MSG_DEBUG, "sleeping %d\n", sleep_interval);
-            sleep(sleep_interval);
+            daemon_sleep(sleep_interval);
 #endif
         }
     }

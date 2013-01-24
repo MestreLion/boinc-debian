@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
+// Utility functions for server software (not just scheduler)
 
 #include "config.h"
 #include <cstdlib>
@@ -85,6 +86,15 @@ void check_stop_daemons() {
             stop_file
         );
         exit(0);
+    }
+}
+
+// sleep for n seconds, but check every second for trigger file
+//
+void daemon_sleep(int nsecs) {
+    for (int i=0; i<nsecs; i++) {
+        check_stop_daemons();
+        sleep(1);
     }
 }
 
@@ -307,9 +317,11 @@ bool app_plan_uses_gpu(const char* plan_class) {
 // This could be used, for example, so that late workunits
 // are sent only to cloud or cluster resources
 //
-int restrict_wu_to_user(DB_WORKUNIT& wu, int userid) {
+int restrict_wu_to_user(WORKUNIT& _wu, int userid) {
     DB_RESULT result;
     DB_ASSIGNMENT asg;
+    DB_WORKUNIT wu;
+    wu = _wu;
     char buf[256];
     int retval;
 
@@ -318,7 +330,7 @@ int restrict_wu_to_user(DB_WORKUNIT& wu, int userid) {
     sprintf(buf, "where workunitid=%d and server_state=%d",
         wu.id, RESULT_SERVER_STATE_UNSENT
     );
-    while (result.enumerate(buf)) {
+    while (!result.enumerate(buf)) {
         char buf2[256];
         sprintf(buf2, "server_state=%d, outcome=%d",
             RESULT_SERVER_STATE_OVER,

@@ -49,6 +49,9 @@ struct PLATFORM {
     void clear();
 };
 
+#define LOCALITY_SCHED_NONE     0
+#define LOCALITY_SCHED_LITE     1
+
 // An application.
 //
 struct APP {
@@ -71,9 +74,15 @@ struct APP {
         // use host scaling cautiously, to thwart cherry picking
     bool homogeneous_app_version;
         // do all instances of each job using the same app version
+    bool non_cpu_intensive;
+    int locality_scheduling;
+        // type of locality scheduling used by this app (see above)
 
     int write(FILE*);
     void clear();
+
+    // not in DB:
+    bool have_job;
 };
 
 // A version of an application.
@@ -251,7 +260,8 @@ struct HOST {
     double connected_frac;
     double active_frac;
     double cpu_efficiency;  // deprecated as of 6.4 client
-        // reused for volunteer data archival as a timeout
+                            // reused as a flag for volunteer data archival:
+                            // nonzero means this host has been declared dead
     double duration_correction_factor;
 
     int p_ncpus;            // Number of CPUs on host
@@ -287,11 +297,10 @@ struct HOST {
     double d_boinc_used_project;
                             // amount being used for this project
 
-    // The following item is not used.
-    // It's redundant (server can compute based on other params and prefs)
-    //
-    double d_boinc_max;     // max disk space that BOINC is allowed to use,
-                            // reflecting user preferences
+    double d_boinc_max;
+        // This field has been repurposed.
+        // it's now used to store the project's share of available disk space
+        // (reported by recent clients as <d_project_share>
     double n_bwup;          // Average upload bandwidth, bytes/sec
     double n_bwdown;        // Average download bandwidth, bytes/sec
                             // The above are derived from actual
@@ -324,7 +333,12 @@ struct HOST {
     char p_features[1024];
     char virtualbox_version[256];
     bool p_vm_extensions_disabled;
-    double d_project_share; // this project's share of available disk space
+    // stuff from time_stats
+    double gpu_active_frac;
+    double cpu_and_network_available_frac;
+    double client_start_time;
+    double previous_uptime;
+
 
     int parse(XML_PARSER&);
     int parse_time_stats(XML_PARSER&);
@@ -536,7 +550,7 @@ struct RESULT {
     double granted_credit;          // == canonical credit of WU
     double opaque;                  // project-specific; usually external ID
     int random;                     // determines send order
-    int app_version_num;            // version# of app (not core client)
+    int app_version_num;            // version# of app
         // DEPRECATED - THIS DOESN'T DETERMINE VERSION ANY MORE
     int appid;                      // copy of WU's appid
     int exit_status;                // application exit status, if any
@@ -604,6 +618,17 @@ struct BATCH {
 #define BATCH_STATE_RETIRED         4
     // input/output files can be deleted,
     // result and workunit records can be purged.
+
+// info for users who can submit jobs
+//
+struct USER_SUBMIT {
+    int user_id;
+    double quota;
+    double logical_start_time;
+    bool submit_all;
+    bool manage_all;
+    void clear();
+};
 
 struct MSG_FROM_HOST {
     int id;
@@ -685,6 +710,7 @@ struct VDA_FILE {
     bool need_update;
     bool initialized;
     bool retrieving;
+    bool retrieved;
     void clear();
 };
 
@@ -697,7 +723,7 @@ struct VDA_CHUNK_HOST {
     bool transfer_in_progress;
     bool transfer_wait;
     double transfer_request_time;
-        // when vdad assigned this chunk to this host
+        // when vdad decided to do the transfer
     double transfer_send_time;
         // when transfer request was sent to host
 

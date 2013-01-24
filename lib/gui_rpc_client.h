@@ -103,7 +103,7 @@ struct ALL_PROJECTS_LIST {
     ~ALL_PROJECTS_LIST();
 
     void clear();
-    void shuffle();
+    void alpha_sort();
 };
 
 struct RSC_DESC {
@@ -389,7 +389,6 @@ struct CC_STATE {
     TIME_STATS time_stats;
     bool have_nvidia;           // deprecated; include for compat (set by <have_cuda/>)
     bool have_ati;              // deprecated; include for compat
-    bool have_intel;
 
     CC_STATE();
     ~CC_STATE();
@@ -405,6 +404,11 @@ struct CC_STATE {
     void print();
     void clear();
     int parse(XML_PARSER&);
+    inline bool have_gpu() {
+        return !host_info.coprocs.none()
+            || have_nvidia || have_ati      // for old clients
+        ;
+    }
 };
 
 struct PROJECTS {

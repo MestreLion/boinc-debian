@@ -33,15 +33,15 @@
 #include <ctype.h>
 #endif
 
+#ifdef _USING_FCGI_
+#include "boinc_fcgi.h"
+#endif
+
 #include "error_numbers.h"
 #include "common_defs.h"
 #include "filesys.h"
 #include "str_replace.h"
 #include "str_util.h"
-
-#ifdef _USING_FCGI_
-#include "boinc_fcgi.h"
-#endif
 
 using std::string;
 
@@ -590,79 +590,6 @@ const char* run_mode_string(int mode) {
     }
     return "unknown";
 }
-
-#ifdef WIN32
-
-// get message for last error
-//
-char* windows_error_string(char* pszBuf, int iSize) {
-    DWORD dwRet;
-    LPSTR lpszTemp = NULL;
-
-    dwRet = FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_ARGUMENT_ARRAY,
-        NULL,
-        GetLastError(),
-        LANG_NEUTRAL,
-        (LPSTR)&lpszTemp,
-        0,
-        NULL
-    );
-
-    // is supplied buffer long enough?
-    //
-    if (!dwRet || ((long)iSize < (long)dwRet+14)) {
-        pszBuf[0] = '\0';
-    } else {
-        lpszTemp[lstrlenA(lpszTemp)-2] = '\0';  // remove CRLF
-        sprintf(pszBuf, "%s (0x%x)", lpszTemp, GetLastError());
-    }
-
-    if (lpszTemp) {
-        LocalFree((HLOCAL) lpszTemp);
-    }
-
-    return pszBuf;
-}
-
-// get message for given error
-//
-char* windows_format_error_string(
-    unsigned long dwError, char* pszBuf, int iSize
-) {
-    DWORD dwRet;
-    LPSTR lpszTemp = NULL;
-
-    dwRet = FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_ARGUMENT_ARRAY,
-        NULL,
-        dwError,
-        LANG_NEUTRAL,
-        (LPSTR)&lpszTemp,
-        0,
-        NULL
-    );
-
-    // is supplied buffer long enough?
-    //
-    if (!dwRet || ( (long)iSize < (long)dwRet+14)) {
-        pszBuf[0] = '\0';
-    } else {
-        lpszTemp[lstrlenA(lpszTemp)-2] = '\0';  // remove CRLF
-        sprintf(pszBuf, "%s (0x%x)", lpszTemp, dwError);
-    }
-
-    if (lpszTemp) {
-        LocalFree((HLOCAL) lpszTemp);
-    }
-
-    return pszBuf;
-}
-#endif
 
 // string substitution:
 // haystack is the input string
