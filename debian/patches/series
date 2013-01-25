@@ -58,4 +58,5 @@ client_app_maxpathlen.patch
 boinclib_shared.patch
 dynamic_libboinc.patch
 Missing_libSched.patch
+#configure.ac.patch
 fix-add-exclusive-app.patch

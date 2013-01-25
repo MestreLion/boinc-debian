@@ -1,0 +1,12 @@
+I hope to fix the ftbfs of s@h in this way
+--- a/configure.ac
++++ b/configure.ac
+@@ -612,7 +612,7 @@
+ #define res_init() (0)
+ #endif
+ 
+-#include "project_specific_defines.h"
++//#include "project_specific_defines.h"
+ 
+ /* end double-inclusion protection for config.h */
+ #endif /* #ifndef BOINC_CONFIG_H */

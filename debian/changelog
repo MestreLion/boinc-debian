@@ -1,6 +1,6 @@
 boinc (7.0.45+dfsg-1) UNRELEASED; urgency=low
 
-  * New upstream release 
+  * New upstream release
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Fri, 25 Jan 2013 00:01:24 +0100
 
@@ -58,7 +58,7 @@ boinc (7.0.36+dfsg-3) UNRELEASED; urgency=low
   * Added Gianfranco to uploaders.
 
   [ Gianfranco Costamagna ]
-  * Added missing_libs_wrapper.patch to fix a FTBFS on ubuntu 13.04 raring
+  * Added missing_libs_wrapper.patch to fix a FTBFS on ubuntu 13.04
   * added boinc-ftbfs-hurd.patch from upstream
 
   [ Guo Yixuan ]
