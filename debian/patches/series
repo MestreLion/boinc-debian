@@ -59,3 +59,4 @@ boinclib_shared.patch
 dynamic_libboinc.patch
 Missing_libSched.patch
 fix-add-exclusive-app.patch
+zip_only_built_with_server.patch

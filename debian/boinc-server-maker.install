@@ -115,4 +115,6 @@ usr/bin/crypt_prog		     usr/lib/boinc-server/bin
 
 #usr/libexec/sched  		     usr/lib/boinc-server
 
+# Only built together with server
+usr/lib/libboinc_zip.so.*         usr/lib
 

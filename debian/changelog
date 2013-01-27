@@ -1,6 +1,7 @@
-boinc (7.0.45+dfsg-1) UNRELEASED; urgency=low
+boinc (7.0.45+dfsg-1) experimental; urgency=low
 
   * New upstream release
+  * Removed boinc zip library from client builds
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Fri, 25 Jan 2013 00:01:24 +0100
 
