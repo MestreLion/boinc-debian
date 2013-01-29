@@ -28,57 +28,60 @@ QUILT_NO_DIFF_TIMESTAMPS=1
 Repackaged upstream source:
 ===========================
  The BOINC project does not distribute source code releases as tarballs,
- but they are tagged in the BOINC Subversion repository.  Anonymous
- Subversion access is available at http://boinc.berkeley.edu/svn/. The
- branch for the BOINC source is trunk/boinc, tagged releases are in tags/.
- For more information see:
+ but they are tagged in the BOINC Git repository.  Anonymous Git access
+ is explained on http://boinc.berkeley.edu/trac/wiki/SourceCodeGit .
+ The 'boinc' source package refers to the respective release tags.
+ The 'boinc-experimental' source package uses the commit of a particular
+ day.  For more information see:
 
    http://boinc.berkeley.edu/trac/wiki/SourceCode
 
- To obtain the source from Subversion and package it as .orig.tar.gz the
- Debian BOINC Maintainers use a script called 'export-boinc' which is
- available in our pkg-boinc Git repository:
+ Upstream's change to Git has hit us unprepared. Our traditional approach 
+ was to check everything out and then prepare a tarball from it. We have
+ put that approach into the script 'export-boinc' which is available in
+ our pkg-boinc Git repository:
 
    wget -O export-boinc \
     "http://git.debian.org/?p=pkg-boinc/scripts.git;a=blob_plain;f=export-boinc;hb=HEAD"
    chmod 755 export-boinc
 
- The latest tags upstream presents at http://boinc.berkeley.edu/svn/tags/ .
- Choose 'the right one' of those.  To obtain the .orig.tar.gz
- tarball for BOINC tag 6_10_58 this script is invoked as:
-
-   $ ./export-boinc -r 6.10.58
-
  It will take a considerable while to download as the final tarball yields >15MB.
  The script will take care of remove the non-DFSG files from the upstream
- tag.
+ tag.  Above process is integrated into debian/rules's get-orig-source target.
 
- Above process is integrated into debian/rules's get-orig-source target. It will
- download the very latest version unless an environment variable VERSION was set:
-   $ VERSION=6.10.58 ./debian/rules get-orig-source
+ Since the advent of git there should be better ways, also for an improved
+ communication with upstream. We are still experimenting.
 
 
 Screen saver
 ------------
 
-No screen saver is built, disabled in the patch
-debian/patches/Makefile_subdirs.patch, which also allowed for the
-removal of the build dependencies
- libxcb-util0-dev|libxcb-atom1-dev
-
-
+ No screen saver is built, disabled in the patch
+ debian/patches/Makefile_subdirs.patch, which also allowed for the
+ removal of the build dependencies
+ libxcb-atom1-dev
 
 
 Removed non-dfsg upstream files
 ===============================
  The files removed from upstream tag are:
 
-   client/mac
-   clientgui/mac
-   mac_build
-   mac_installer
-   win_build
+   *.dll
+   *.exe
+   samples/example_app/bin
+   api/ttf
+   api/ttfont.{cpp,h}
+   samples/glut
+   zip/configure
+   lib/mac
+   curl
+   samples/jpeglib
+   .vimrc
    coprocs
+   win_build
+   mac_build
+   clientgui/mac
+   mac_installer
    client/app_stats_mac.cpp
-
-
+   version.h
+   .gitignore
