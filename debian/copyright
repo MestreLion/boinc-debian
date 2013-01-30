@@ -155,7 +155,7 @@ License: LGPL-2.1+, other
 
 Files: client/os2/boinc_attach.cmd
 Copyright: © 2005 Yuri Dario
-License: PD
+License: LGPL-3+
 
 Files: clientgui/wizardex.*
 Copyright: © 1999 Vadim Zeitlin <zeitlin@dptmaths.ens-cachan.fr>
