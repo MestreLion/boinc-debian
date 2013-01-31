@@ -134,12 +134,12 @@ CFLAGS_boinc-client := $(CFLAGS)
 CXXFLAGS_boinc-client := $(CXXFLAGS)
 
 ENABLE_SERVER_TEST := $(shell egrep '^Package:.*boinc-server-maker' debian/control.in)
+ifeq (,$(ENABLE_SERVER_TEST))
 ENABLE_SERVER := --disable-server
-ifneq (,$(ENABLE_SERVER_TEST))
+TMP=$(shell egrep -v '^%' debian/control.in > debian/control)
+else
 ENABLE_SERVER := --enable-server
 TMP=$(shell sed -e 's/^%//' debian/control.in > debian/control)
-else
-TMP=$(shell egrep -v '^%' debian/control.in > debian/control)
 endif
 
 # --disable-static
@@ -242,7 +242,7 @@ override_dh_auto_build: update-boinc-applinks.1
 	    fi; \
 	  done; \
 	fi
-ifeq (,$(ENABLE_SERVER_TEST))
+ifneq (,$(ENABLE_SERVER_TEST))
 	$(MAKE) -C samples/sleeper
 	$(MAKE) -C samples/worker
 	$(MAKE) -C samples/example_app
