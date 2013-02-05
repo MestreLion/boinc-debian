@@ -8,6 +8,7 @@ boinc (7.0.47+dfsg-1) UNRELEASED; urgency=low
 boinc (7.0.46+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release
+  * Fixed a FTBFS when building without zip library (Closes: #699789)
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Tue, 29 Jan 2013 23:46:33 +0100
 

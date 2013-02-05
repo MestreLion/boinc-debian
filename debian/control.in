@@ -7,7 +7,7 @@ Uploaders: Steffen Moeller <moeller@debian.org>,
  Rene Mayorga <rmayorga@debian.org>,
  Daniel Hahler <ubuntu@thequod.de>,
  Gianfranco Costamagna <costamagnagianfranco@yahoo.it>
-Standards-Version: 3.9.4
+Standards-Version: 3.9.3
 Build-Depends: debhelper (>= 7.0.50~), po-debconf, pkg-config (>= 0.15),
  dpkg-dev (>= 1.16.1.1),
  libtool, autoconf (>= 2.59), autotools-dev, automake1.9 (>= 1.9.3), gettext,
@@ -21,7 +21,6 @@ Build-Depends: debhelper (>= 7.0.50~), po-debconf, pkg-config (>= 0.15),
 Homepage: http://boinc.berkeley.edu/
 Vcs-Git: git://git.debian.org/git/pkg-boinc/boinc.git
 Vcs-Browser: http://git.debian.org/?p=pkg-boinc/boinc.git
-
 
 Package: boinc
 Architecture: all
@@ -40,7 +39,6 @@ Description: metapackage for the BOINC client and the manager
  BOINC Manager, a graphical monitor and control utility for the
  BOINC core client.
 
-
 Package: libboinc7
 Provides: libboinc
 Breaks: libboinc (<= 7.0.34+dfsg-1)
@@ -58,7 +56,6 @@ Description: libraries of BOINC the client depends on
  the number of cores per machine growing, and with scientific apps
  commonly started for every core, it is essential to have memory
  shared as much as possible between binaries of all projects.
-
 
 # Not compatible with Wheezy with direct notion of libcuda1:i386 [amd64]
 Package: boinc-nvidia-cuda
@@ -105,7 +102,6 @@ Description: metapackage for AMD/ATI OpenCL-savvy BOINC client and manager
  amd64. If this is planned, install the amd-app package provided
  through the AMD developer forum.
 
-
 Package: boinc-client
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
@@ -130,7 +126,7 @@ Description: core client for the BOINC distributed computing infrastructure
  attaching a local machine to a project, this client will also
  dynamically download the scientific data and executables to be then
  wrapped by the BOINC core client.
-
+#
 #Package: boinc-screensaver
 #Section: x11
 #Architecture: any
@@ -161,7 +157,6 @@ Description: core client for the BOINC distributed computing infrastructure
 # it is suggested not to have all CPUs used to avoid multiple
 # processes running on the same core.
 
-
 Package: boinc-manager
 Section: x11
 Architecture: any
@@ -189,7 +184,6 @@ Description: GUI to control and monitor the BOINC core client
  boinc-client package, not the boinc-manager, is required for every
  machine contributing.
 
-
 Package: boinc-dev
 Section: oldlibs
 Architecture: all
@@ -199,7 +193,6 @@ Description: development files to build applications for BOINC projects
  Dummy transitional package helping the transition of a split of
  architecture-independent development files and the architecture-dependent
  dynamic libraries.  Static libraries are no longer redistributed.
-
 
 Package: libboinc-app-dev
 Section: libdevel
@@ -221,7 +214,6 @@ Description: development files to build applications for BOINC projects
  This package contains header files that are needed to develop and
  compile applications which utilizes the BOINC infrastructure.
 
-
 Package: libboinc-app7
 Provides: libboinc-app
 Breaks: libboinc-app (<= 7.0.34+dfsg-1),
@@ -238,8 +230,7 @@ Description: libraries for BOINC's scientific applications
  .
  This package contains dynamic libraries that are needed for applications
  which utilizes the BOINC infrastructure and the boinc-client itself.
-
-
+%
 %Package: boinc-server-maker
 %Architecture: any
 %Provides: boinc-server
@@ -261,8 +252,7 @@ Description: libraries for BOINC's scientific applications
 % .
 % This package contains the daemons and tools to create and run BOINC
 % projects.
-
-
+%
 %Package: boinc-app-examples
 %Architecture: any
 %Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -284,7 +274,6 @@ Description: libraries for BOINC's scientific applications
 % The package also features the wrapper application, which is likely
 % to find its audience also in real projects.
 
-
 Package: boinc-dbg
 Section: debug
 Priority: extra
@@ -301,7 +290,6 @@ Description: debugging symbols for BOINC binaries
  the BOINC packages. It is provided primarily to provide a backtrace
  with names in a debugger, this makes it somewhat easier to interpret
  core dumps.
-
 
 Package: boinc-cgi-stripchart
 Section: libs
