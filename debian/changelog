@@ -1,21 +1,26 @@
+boinc (7.0.48+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Fri, 08 Feb 2013 15:42:50 +0100
+
 boinc (7.0.47+dfsg-1) UNRELEASED; urgency=low
 
-  * New upstream release, l10n updated
-  * Adding path to some files (Closes: #646583 lp: #347651)
+  * New upstream release, l10n updated.
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Thu, 31 Jan 2013 22:09:35 +0100
 
 boinc (7.0.46+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release
-  * Fixed a FTBFS when building without zip library (Closes: #699789)
+  * Fixed a FTBFS when building without zip library. (Closes: #699789)
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Tue, 29 Jan 2013 23:46:33 +0100
 
 boinc (7.0.45+dfsg-1) experimental; urgency=low
 
   * New upstream release
-  * Removed boinc zip library from client builds
+  * Removed boinc zip library from client builds.
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Fri, 25 Jan 2013 00:01:24 +0100
 
@@ -37,7 +42,7 @@ boinc (7.0.44+dfsg-1) UNRELEASED; urgency=low
 boinc (7.0.42+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release
-  * Revised some patches
+  * Revised some patches.
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Wed, 12 Dec 2012 01:53:09 +0100
 
@@ -47,7 +52,7 @@ boinc (7.0.40+dfsg-1) UNRELEASED; urgency=low
   * Dropped mac_addresses_cores_in_kfreebsd.patch (file to patch deleted upstream)
     and ensure_there_is_no_newline_in_passwd.patch (applied upstream)
   * Revised slot_dir_source_trace.patch
-  * Removed some old patches
+  * Removed some old patches.
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sat, 08 Dec 2012 01:26:23 +0100
 
@@ -56,7 +61,7 @@ boinc (7.0.39+dfsg-1) UNRELEASED; urgency=low
   * New upstram release
   * Dropped add-missing-test-files.patch and add-missing-stripchart-samples.patch patch
     already applied upstream
-  * Added link time optimisation
+  * Added link time optimisation.
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Mon, 26 Nov 2012 00:11:23 +0100
 
@@ -65,7 +70,7 @@ boinc (7.0.38+dfsg-1) UNRELEASED; urgency=low
   * New upstream release
   * Revised some patches (some of them should will be removed in a future commit)
   * Added add-missing-test-files.patch to fix a FTBFS 
-  * Added add-missing-stripchart-samples.patch to fix another FTBFS
+  * Added add-missing-stripchart-samples.patch to fix another FTBFS.
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Mon, 05 Nov 2012 13:16:32 +0100
 

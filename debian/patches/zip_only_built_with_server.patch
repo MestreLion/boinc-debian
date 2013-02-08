@@ -1,7 +1,5 @@
-Index: boinc_debian/Makefile.am
-===================================================================
---- boinc_debian.orig/Makefile.am
-+++ boinc_debian/Makefile.am
+--- a/Makefile.am
++++ b/Makefile.am
 @@ -9,7 +9,10 @@
  ACLOCAL_AMFLAGS = -I m4
  

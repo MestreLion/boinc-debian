@@ -311,9 +311,9 @@
      boinc_getcwd(path);
      if (strlen(relname)) {
          strcat(path, "/");
-@@ -771,7 +771,7 @@
- // get total and free space on current filesystem (in bytes)
- //
+@@ -769,7 +769,7 @@
+ }
+ 
  #if defined(_WIN32) && !(defined(WXDEBUG) || defined(WXNDEBUG))
 -int boinc_allocate_file(const char* path, double size) {
 +int boinc_allocate_file(const char* const path, double size) {
