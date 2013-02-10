@@ -20,9 +20,9 @@ samples/image_libs/bmplib.cpp
 samples/image_libs/bmplib.h
 samples/image_libs/tgalib.cpp
 samples/image_libs/tgalib.h
-samples/mac_build
-samples/mac_build/UpperCase2.xcodeproj
-samples/mac_build/UpperCase2.xcodeproj/project.pbxproj
+#samples/mac_build
+#samples/mac_build/UpperCase2.xcodeproj
+#samples/mac_build/UpperCase2.xcodeproj/project.pbxproj
 samples/multi_thread
 samples/multi_thread/Makefile
 samples/multi_thread/multi_thread.cpp
