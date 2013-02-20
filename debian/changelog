@@ -1,3 +1,9 @@
+boinc (7.0.52+dfsg-2) UNRELEASED; urgency=low
+
+  * Try to fix ftbfs on hurd-i386.
+
+ -- Guo Yixuan <culu.gyx@gmail.com>  Wed, 20 Feb 2013 16:01:52 +0800
+
 boinc (7.0.52+dfsg-1) experimental; urgency=low
 
   * New upstream release, all platforms.
