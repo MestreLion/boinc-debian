@@ -1,3 +1,9 @@
+boinc (7.0.53+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sun, 24 Feb 2013 23:05:30 +0100
+
 boinc (7.0.52+dfsg-2) experimental; urgency=low
 
   * Try to fix ftbfs on hurd-i386.

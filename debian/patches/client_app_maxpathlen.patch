@@ -98,7 +98,7 @@
      DIRREF dirp;
      int retval;
  
-@@ -339,7 +339,7 @@
+@@ -341,7 +341,7 @@
  }
  
  void boinc_version_dir(PROJECT& p, VERSION_INFO& vi, char* buf) {
