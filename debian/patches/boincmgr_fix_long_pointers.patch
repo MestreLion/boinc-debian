@@ -1,0 +1,94 @@
+From http://boinc.berkeley.edu/trac/ticket/1226
+
+Thanks Alyssa Milburn
+Closes bug 679207
+--- a/clientgui/DlgOptions.cpp
++++ b/clientgui/DlgOptions.cpp
+@@ -651,7 +651,7 @@
+     CMainDocument*      pDoc = wxGetApp().GetDocument();
+     CBOINCBaseFrame*    pFrame = wxGetApp().GetFrame();
+     CSkinAdvanced*      pSkinAdvanced = wxGetApp().GetSkinManager()->GetAdvanced();
+-    int                 iBuffer = 0;
++    long                lBuffer = 0;
+     wxString            strBuffer = wxEmptyString;
+ 
+ 
+@@ -731,8 +731,8 @@
+ 			pDoc->proxy_info.noproxy_hosts = (const char*)m_HTTPNoProxiesCtrl->GetValue().mb_str();
+ 		}
+         strBuffer = m_HTTPPortCtrl->GetValue();
+-        strBuffer.ToLong((long*)&iBuffer);
+-        pDoc->proxy_info.http_server_port = iBuffer;
++        strBuffer.ToLong((long*)&lBuffer);
++        pDoc->proxy_info.http_server_port = lBuffer;
+ 
+         pDoc->proxy_info.use_socks_proxy = m_EnableSOCKSProxyCtrl->GetValue();
+         pDoc->proxy_info.socks_server_name = (const char*)m_SOCKSAddressCtrl->GetValue().mb_str();
+@@ -742,8 +742,8 @@
+ 			pDoc->proxy_info.noproxy_hosts = (const char*)m_SOCKSNoProxiesCtrl->GetValue().mb_str();
+ 		}
+         strBuffer = m_SOCKSPortCtrl->GetValue();
+-        strBuffer.ToLong((long*)&iBuffer);
+-        pDoc->proxy_info.socks_server_port = iBuffer;
++        strBuffer.ToLong((long*)&lBuffer);
++        pDoc->proxy_info.socks_server_port = lBuffer;
+ 
+         pDoc->SetProxyConfiguration();
+     }
+--- a/clientgui/ProxyPage.cpp
++++ b/clientgui/ProxyPage.cpp
+@@ -392,7 +392,7 @@
+ void CErrProxyPage::OnPageChanging( wxWizardExEvent& event ) {
+     CMainDocument* pDoc = wxGetApp().GetDocument();
+     wxString       strBuffer = wxEmptyString;
+-    int            iBuffer = 0;
++    long           lBuffer = 0;
+ 
+     wxASSERT(pDoc);
+     wxASSERT(wxDynamicCast(pDoc, CMainDocument));
+@@ -405,8 +405,8 @@
+         pDoc->proxy_info.http_user_passwd = (const char*)m_pProxyHTTPPasswordCtrl->GetValue().mb_str();
+ 
+         strBuffer = m_pProxyHTTPPortCtrl->GetValue();
+-        strBuffer.ToLong((long*)&iBuffer);
+-        pDoc->proxy_info.http_server_port = iBuffer;
++        strBuffer.ToLong((long*)&lBuffer);
++        pDoc->proxy_info.http_server_port = lBuffer;
+ 
+         pDoc->proxy_info.use_socks_proxy = (m_pProxySOCKSServerCtrl->GetValue().Length() > 0);
+         pDoc->proxy_info.socks_server_name = (const char*)m_pProxySOCKSServerCtrl->GetValue().mb_str();
+@@ -414,8 +414,8 @@
+         pDoc->proxy_info.socks5_user_passwd = (const char*)m_pProxySOCKSPasswordCtrl->GetValue().mb_str();
+ 
+         strBuffer = m_pProxySOCKSPortCtrl->GetValue();
+-        strBuffer.ToLong((long*)&iBuffer);
+-        pDoc->proxy_info.socks_server_port = iBuffer;
++        strBuffer.ToLong((long*)&lBuffer);
++        pDoc->proxy_info.socks_server_port = lBuffer;
+ 
+         pDoc->SetProxyConfiguration();
+     }
+--- a/clientgui/ViewProjects.cpp
++++ b/clientgui/ViewProjects.cpp
+@@ -1187,16 +1187,19 @@
+ wxInt32 CViewProjects::ConvertLinkToWebsiteIndex(const wxString& strLink, wxInt32& iProjectIndex, wxInt32& iWebsiteIndex) {
+     wxString strTemplate = strLink;
+     wxString strBuffer = wxEmptyString;
++    long lProjectIndex, lWebsiteIndex;
+ 
+     strTemplate.Replace(wxT("web:"), wxEmptyString);
+ 
+     strBuffer = strTemplate;
+     strBuffer.Remove(strBuffer.Find(wxT(":")));
+-    strBuffer.ToLong((long*) &iProjectIndex);
++    strBuffer.ToLong((long*) &lProjectIndex);
++    iProjectIndex = lProjectIndex;
+ 
+     strBuffer = strTemplate;
+     strBuffer = strBuffer.Mid(strBuffer.Find(wxT(":")) + 1);
+-    strBuffer.ToLong((long*) &iWebsiteIndex);
++    strBuffer.ToLong((long*) &lWebsiteIndex);
++    iWebsiteIndex = lWebsiteIndex;
+ 
+     return 0;
+ }
