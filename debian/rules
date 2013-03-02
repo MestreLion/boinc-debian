@@ -228,9 +228,6 @@ override_dh_auto_build: update-boinc-applinks.1
 	@echo
 	# disable optimization in api/, for SETI to work
 	$(MAKE) -C api CFLAGS="$(CFLAGS_noopt)" CXXFLAGS="$(CXXFLAGS_noopt)"
-	# workaround for bug #679207 (proxy setting segfault)
-	$(MAKE) -C lib
-	$(MAKE) -C clientgui CFLAGS="$(CFLAGS_plain)" CXXFLAGS="$(CXXFLAGS_plain)"
 	$(MAKE)
 
 	# Generate binary message catalogs of the BOINC Manager.

@@ -1,8 +1,12 @@
 boinc (7.0.53+dfsg-1) UNRELEASED; urgency=low
 
+  [ Gianfranco Costamagna ]
   * New upstream release.
   * Added boincmgr_fix_long_pointers.patch to fix boincmgr crash
     Thanks Alyssa Milburn (Closes: #679207)
+
+  [ Guo Yixuan ]
+  * Reverted the workaround for #679207.
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Sun, 24 Feb 2013 23:05:30 +0100
 
