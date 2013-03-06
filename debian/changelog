@@ -6,6 +6,7 @@ boinc (7.0.53+dfsg-1) UNRELEASED; urgency=low
     Thanks Alyssa Milburn (Closes: #679207)
   * Added sleep to boinc-client init script to workaround GPU
     detection issues (lp: #933354).
+  * Bumped policy to 3.9.4. No changes required
 
   [ Guo Yixuan ]
   * Reverted the workaround for #679207.

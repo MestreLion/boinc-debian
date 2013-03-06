@@ -1,6 +1,4 @@
- version=3
-# opts="dversionmangle=s/\+dfsg//,uversionmangle=s/\///;s/_/./g" \
-#   http://boinc.berkeley.edu/svn/tags/boinc_core_release_(\d+_\d*[02468]_.*)
-opts=dversionmangle=s/\+dfsg// \
-http://boinc.berkeley.edu/git/boinc.git/refs/tags/ \
-	client_release_([\d\.]+)
+version=3
+opts=uversionmangle=s/^(7_0_37)$/0.0.$1/,dversionmangle=s/\+dfsg$// \
+http://boinc.berkeley.edu/git/boinc.git/refs/tags/client_release_(\d.*)
+# Bart Martens <bartm@debian.org>  Tue, 05 Mar 2013 20:35:41 +0000

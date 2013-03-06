@@ -7,7 +7,7 @@ Uploaders: Steffen Moeller <moeller@debian.org>,
  Rene Mayorga <rmayorga@debian.org>,
  Daniel Hahler <ubuntu@thequod.de>,
  Gianfranco Costamagna <costamagnagianfranco@yahoo.it>
-Standards-Version: 3.9.3
+Standards-Version: 3.9.4
 Build-Depends: debhelper (>= 7.0.50~), po-debconf, pkg-config (>= 0.15),
  dpkg-dev (>= 1.16.1.1),
  libtool, autoconf (>= 2.59), autotools-dev, automake1.9 (>= 1.9.3), gettext,
