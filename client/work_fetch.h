@@ -89,7 +89,6 @@ struct RSC_PROJECT_WORK_FETCH {
     }
     double queue_est;
         // an estimate of instance-secs of queued work;
-        // a temp used in computing overall debts
     bool anon_skip;
         // set if this project is anonymous platform
         // and it has no app version that uses this resource
@@ -243,8 +242,7 @@ struct RSC_WORK_FETCH {
     }
 
     void rr_init();
-    void accumulate_shortfall(double d_time);
-    void update_saturated_time(double dt);
+    void update_stats(double sim_now, double dt, double buf_end);
     void update_busy_time(double dur, double nused);
     PROJECT* choose_project_hyst(bool strict);
     PROJECT* choose_project(int);

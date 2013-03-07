@@ -190,24 +190,19 @@ void RSC_WORK_FETCH::rr_init() {
     sim_used_instances = 0;
 }
 
-void RSC_WORK_FETCH::accumulate_shortfall(double d_time) {
+void RSC_WORK_FETCH::update_stats(double sim_now, double dt, double buf_end) {
     double idle = ninstances - sim_nused;
-    if (idle > 1e-6) {
-        //msg_printf(0, MSG_INFO, "adding shortfall %d %f", rsc_type, idle*d_time);
-        shortfall += idle*d_time;
+    if (idle > 1e-6 && sim_now < buf_end) {
+        double dt2;
+        if (sim_now + dt > buf_end) {
+            dt2 = buf_end - sim_now;
+        } else {
+            dt2 = dt;
+        }
+        shortfall += idle*dt2;
     }
-#if 0
-    msg_printf(0, MSG_INFO, "accum shortf (%s): idle %f dt %f sf %f",
-        rsc_name(rsc_type), idle, d_time, shortfall
-    );
-#endif
-}
-
-void RSC_WORK_FETCH::update_saturated_time(double dt) {
-    double idle = ninstances - sim_nused;
-    //msg_printf(0, MSG_INFO, "update_saturated rsc %d idle %f dt %f", rsc_type, idle, dt);
     if (idle < 1e-6) {
-        saturated_time = dt;
+        saturated_time = sim_now + dt - gstate.now;
     }
 }
 
@@ -257,16 +252,23 @@ PROJECT* RSC_WORK_FETCH::choose_project_hyst(bool strict) {
 
         // check whether we can fetch work of any type from this project
         //
-        if (p->pwf.cant_fetch_work_reason) continue;
+        if (p->pwf.cant_fetch_work_reason) {
+            //msg_printf(p, MSG_INFO, "skip: cfwr %d", p->pwf.cant_fetch_work_reason);
+            continue;
+        }
 
         // check whether we can fetch work of this type
         //
-        if (dont_fetch(p, rsc_type)) continue;
+        if (dont_fetch(p, rsc_type)) {
+            //msg_printf(p, MSG_INFO, "skip: dont_fetch");
+            continue;
+        }
 
         // if strict, check backoff
         //
         if (strict) {
             if (project_state(p).backoff_time > gstate.now) {
+                //msg_printf(p, MSG_INFO, "skip: backoff");
                 continue;
             }
         }
@@ -275,47 +277,66 @@ PROJECT* RSC_WORK_FETCH::choose_project_hyst(bool strict) {
         // only fetch work if a device is idle
         //
         if (p->resource_share == 0 && nidle_now == 0) {
+            //msg_printf(p, MSG_INFO, "skip: zero share");
             continue;
         }
 
         // if project has excluded GPUs of this type,
-        // and it has more runnable jobs than non-excluded instances,
-        // don't fetch work for it.
-        // TODO: THIS IS CRUDE. Making it smarter would require
+        // we need to avoid fetching work just because there's an idle instance
+        // or a shortfall;
+        // fetching work might not alleviate either of these,
+        // and we'd end up fetching unbounded work.
+        // At the same time, we want to respect work buf params if possible.
+        //
+        // Current policy:
+        // don't fetch work if remaining time of this project's jobs
+        // exceeds work_buf_min * (#usable instances / #instances)
+        //
+        // TODO: THIS IS FAIRLY CRUDE. Making it smarter would require
         // computing shortfall etc. on a per-project basis
         //
-        if (rsc_type) {
-            int n_not_excluded = ninstances - p->rsc_pwf[rsc_type].ncoprocs_excluded;
-            if (n_not_excluded == 0) {
-                continue;
-            }
-            if (p->rsc_pwf[rsc_type].ncoprocs_excluded
-                && p->rsc_pwf[rsc_type].n_runnable_jobs > n_not_excluded
-            ) {
+        int nexcl = p->rsc_pwf[rsc_type].ncoprocs_excluded;
+        if (rsc_type && nexcl) {
+            int n_not_excluded = ninstances - nexcl;
+            if (p->rsc_pwf[rsc_type].queue_est > (gstate.work_buf_min() * n_not_excluded)/ninstances) {
+                //msg_printf(p, MSG_INFO, "skip: too much work");
                 continue;
             }
         }
 
         RSC_PROJECT_WORK_FETCH& rpwf = project_state(p);
-        if (rpwf.anon_skip) continue;
+        if (rpwf.anon_skip) {
+            //msg_printf(p, MSG_INFO, "skip: anon");
+            continue;
+        }
 
         // if we're sending work only because of exclusion starvation,
         // make sure this project can use the starved instances
         //
         if (!buffer_low) {
             if ((sim_excluded_instances & rpwf.non_excluded_instances) == 0) {
+                //msg_printf(p, MSG_INFO, "skip: excl");
                 continue;
             }
         }
 
         if (pbest) {
             if (pbest->sched_priority > p->sched_priority) {
+                //msg_printf(p, MSG_INFO, "skip: prio");
                 continue;
             }
         }
         pbest = p;
     }
-    if (!pbest) return NULL;
+    if (!pbest) {
+        if (log_flags.work_fetch_debug) {
+            msg_printf(0, MSG_INFO,
+                "[work_fetch] no eligible project for %s",
+                rsc_name(rsc_type)
+            );
+        }
+        return NULL;
+    }
     work_fetch.clear_request();
     if (buffer_low) {
         work_fetch.set_all_requests_hyst(pbest, rsc_type);
@@ -453,6 +474,10 @@ void RSC_WORK_FETCH::set_request(PROJECT* p) {
             req_secs = 1;
         } else {
             req_secs = shortfall;
+            if (w.ncoprocs_excluded) {
+                double non_excl_inst = ninstances - w.ncoprocs_excluded;
+                req_secs *= non_excl_inst/ninstances;
+            }
         }
     }
 
@@ -692,6 +717,13 @@ void WORK_FETCH::piggyback_work_request(PROJECT* p) {
         return;
     }
 
+    // if project was updated from manager and config says so,
+    // always fetch work if needed
+    //
+    if (p->sched_rpc_pending && config.fetch_on_update) {
+        set_all_requests_hyst(p, -1);
+        return;
+    }
     compute_cant_fetch_work_reason();
     PROJECT* bestp = choose_project(false);
     if (p != bestp) {
