@@ -62,4 +62,4 @@ fix-add-exclusive-app.patch
 zip_only_built_with_server.patch
 #fix-for-debian-bug-646583.patch
 hurd-ftbfs.patch
-boincmgr_fix_long_pointers.patch
+disable_new_version_check.patch

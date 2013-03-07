@@ -1,0 +1,22 @@
+Description: Disable new version check in notices tab
+Author: Gianfranco Costamagna <costamagnagianfranco@yahoo.it
+	ChristianB
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1140597
+
+---
+
+Forwarded: not-needed
+Reviewed-By: costamagnagianfranco@yahoo.it
+Last-Update: <2013-03-07>
+
+--- boinc-7.0.54+dfsg.orig/client/client_state.cpp
++++ boinc-7.0.54+dfsg/client/client_state.cpp
+@@ -458,7 +458,7 @@ int CLIENT_STATE::init() {
+ 
+     // inform the user if there's a newer version of client
+     //
+-    newer_version_startup_check();
++//    newer_version_startup_check();
+ 
+     // parse account files again,
+     // now that we know the host's venue on each project

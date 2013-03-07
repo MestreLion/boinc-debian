@@ -1,3 +1,11 @@
+boinc (7.0.54+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+  * Dropped boincmgr_fix_long_pointers.patch accepted upstream.
+  * New Patch disable_new_version_check.patch (lp: #1140597)
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Thu, 07 Mar 2013 17:06:38 +0100
+
 boinc (7.0.53+dfsg-1) UNRELEASED; urgency=low
 
   [ Gianfranco Costamagna ]
