@@ -21,13 +21,14 @@ package edu.berkeley.boinc.rpc;
 
 import java.io.Serializable;
 
-public class Transfer implements Serializable{
+public class Transfer implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public String name;
 	public String project_url;
 	public boolean generated_locally;
 	public long nbytes;
 	public boolean xfer_active;
+	public boolean is_upload;
 	public int status;
 	public long next_request_time;
     public long time_so_far;

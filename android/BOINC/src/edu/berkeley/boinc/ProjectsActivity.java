@@ -19,12 +19,13 @@
 package edu.berkeley.boinc;
 
 import java.util.ArrayList;
+
 import edu.berkeley.boinc.adapter.ProjectsListAdapter;
-import edu.berkeley.boinc.client.ClientStatus;
 import edu.berkeley.boinc.client.Monitor;
 import edu.berkeley.boinc.rpc.Project;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -37,165 +38,163 @@ import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.ListView;
+
 
 public class ProjectsActivity extends FragmentActivity {
 	
 	private final String TAG = "BOINC ProjectsActivity";
 	
 	private Monitor monitor;
-	private Boolean mIsBound = false;
-	
+	private Boolean mIsBound;
+
 	private ListView lv;
 	private ProjectsListAdapter listAdapter;
+	private ArrayList<Project> data = new ArrayList<Project>();
 	
-	private ArrayList<Project> data = new ArrayList<Project>(); //Adapter for list data
+	// Controls when to display the proper projects activity, by default we display a
+	// view that says we are loading projects.  When initialSetup is false, we have
+	// something to display.
+	//
+	private Boolean initialSetup; 
 	
-	private Boolean dataOutdated = false; //shows that current data is out of date. this happens when writing client status async just started and has not returned (clientstatechanged broadcast) yet.
-	private Boolean initialSetup = true; //prevents reinitPrefsLayout() from adding elements to the list, every time it gets called. also prevent loadLayout from reading elements out of bounds (array not set up, if this is not false)
-	
-	/*
-	 * Receiver is necessary, because writing of prefs has to be done asynchroneously. PrefsActivity will change to "loading" layout, until monitor read new results.
-	 */
-	private BroadcastReceiver mClientStatusChangeRec = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			Log.d(TAG+"-localClientStatusRecNoisy", "received");
-			if(dataOutdated) { //cause activity to re-init layout
-				Log.d(TAG, "data was outdated, go directly to reinitPrefsLayout");
-				dataOutdated = false;
-				reinitProjectsLayout();
-			}
-			loadProjects();
-		}
-	};
-	private IntentFilter ifcsc = new IntentFilter("edu.berkeley.boinc.clientstatuschange");
-	
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		doBindService();
-	}
-	
-	public void onResume() {
-		super.onResume();
-		//gets called every time Activity comes to front, therefore also after onCreate
-		
-		//register receiver of client status
-		registerReceiver(mClientStatusChangeRec, ifcsc);
-		
-		//determine layout
-		if(initialSetup) { //no data available (first call) 
-			setContentView(R.layout.projects_layout_loading);
-		}
-		
-		loadProjects();
-	}
-	
-	public void onPause() {
-		//unregister receiver, so there are not multiple intents flying in
-		Log.d(TAG+"-onPause","remove receiver");
-		unregisterReceiver(mClientStatusChangeRec);
-		super.onPause();
-	}
-	
-	/*
-	 * Service binding part
-	 * only necessary, when function on monitor instance has to be called
-	 * currently in Prefs- and DebugActivity 
-	 * 
-	 */
+    // This is called when the connection with the service has been established, 
+	// getService returns the Monitor object that is needed to call functions.
+	//
 	private ServiceConnection mConnection = new ServiceConnection() {
 	    public void onServiceConnected(ComponentName className, IBinder service) {
-	    	Log.d(TAG, "onServiceConnected");
-	    	
 	        monitor = ((Monitor.LocalBinder)service).getService();
 		    mIsBound = true;
-			loadProjects();
 	    }
 
 	    public void onServiceDisconnected(ComponentName className) {
-	    	Log.d(TAG, "onServiceDisconnected");
-	    	
 	        monitor = null;
-	        mIsBound = false;
+		    mIsBound = false;
 	    }
 	};
+	
+	// BroadcastReceiver event is used to update the UI with updated information from 
+	// the client.  This is generally called once a second.
+	//
+	private IntentFilter ifcsc = new IntentFilter("edu.berkeley.boinc.clientstatuschange");
+	private BroadcastReceiver mClientStatusChangeRec = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			Log.d(TAG, "ClientStatusChange - onReceive()");
+			
+			// Read projects from state saved in ClientStatus
+			ArrayList<Project> tmpA = Monitor.getClientStatus().getProjects(); 
+			if(tmpA == null) {
+				return;
+			}
 
-	private void doBindService() {
-		if(!mIsBound) {
-			getApplicationContext().bindService(new Intent(this, Monitor.class), mConnection, 0); //calling within Tab needs getApplicationContext() for bindService to work!
+			// Switch to a view that can actually display messages
+			if (initialSetup) {
+				initialSetup = false;
+				setContentView(R.layout.projects_layout); 
+				lv = (ListView) findViewById(R.id.projectsList);
+		        listAdapter = new ProjectsListAdapter(ProjectsActivity.this, lv, R.id.projectsList, data);
+		    }
+			
+			// Update Project data
+			data.clear();
+			for (Project tmp: tmpA) {
+				data.add(tmp);
+			}
+			
+			// Force list adapter to refresh
+			listAdapter.notifyDataSetChanged(); 
 		}
+	};
+
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+	    Log.d(TAG, "onCreate()");
+
+	    super.onCreate(savedInstanceState);
+
+	    // Establish a connection with the service, onServiceConnected gets called when
+	    // (calling within Tab needs getApplicationContext() for bindService to work!)
+		getApplicationContext().bindService(new Intent(this, Monitor.class), mConnection, Service.START_STICKY_COMPATIBILITY);
+	}
+	
+	@Override
+	public void onPause() {
+		Log.d(TAG, "onPause()");
+
+		unregisterReceiver(mClientStatusChangeRec);
+		super.onPause();
 	}
 
-	private void doUnbindService() {
+	@Override
+	public void onResume() {
+		Log.d(TAG, "onResume()");
+
+		super.onResume();
+		
+		// Switch to the loading view until we have something to display
+		initialSetup = true;
+		setContentView(R.layout.projects_layout_loading);
+
+		registerReceiver(mClientStatusChangeRec, ifcsc);
+	}
+	
+	@Override
+	protected void onDestroy() {
+	    Log.d(TAG, "onDestroy()");
+
 	    if (mIsBound) {
 	    	getApplicationContext().unbindService(mConnection);
 	        mIsBound = false;
 	    }
+	    
+	    super.onDestroy();
 	}
 	
-	private void loadProjects() {
-		ArrayList<Project> tmpA = Monitor.getClientStatus().getProjects(); //read project from state saved in ClientStatus
-		if(tmpA == null) {
-			Log.d(TAG, "loadProjects returns, data is not present");
-			return;
-		}
-		
-		if(initialSetup) {
-			//init layout instead
-			reinitProjectsLayout();
-		} else {
-			Log.d(TAG, "loadProjects outdated: " + dataOutdated );
-			if(dataOutdated) { //data is not present or not current, show loading instead!
-				setContentView(R.layout.projects_layout_loading);
-			} else {
-				//only show button, when other projects are present. If there are no projects attached, banner is shown!
-				if(Monitor.getClientStatus().setupStatus == ClientStatus.SETUP_STATUS_AVAILABLE) {
-					((Button) findViewById(R.id.add_project_button)).setVisibility(View.VISIBLE);
-				} else {
-					((Button) findViewById(R.id.add_project_button)).setVisibility(View.GONE);
-				}
-				//deep copy, so ArrayList adapter actually recognizes the difference
-				data.clear();
-				for (Project tmp: tmpA) {
-					data.add(tmp);
-				}
-				listAdapter.notifyDataSetChanged(); //force list adapter to refresh
-			}
-		}
-	}
-	
-	private void reinitProjectsLayout() {
-		
-		setContentView(R.layout.projects_layout);
-		lv = (ListView) findViewById(R.id.listview);
-        listAdapter = new ProjectsListAdapter(ProjectsActivity.this,R.id.listview,data);
-        lv.setAdapter(listAdapter);
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+	    Log.d(TAG, "onCreateOptionsMenu()");
 
-        if(initialSetup) { //prevent from re-population when reinit is called after dataOutdated
-        	initialSetup = false;
-        }
+	    MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.projects_menu, menu);
+
+		return true;
 	}
 	
-	// handler for onClick of listItem
-	public void onItemClick (View view) {
-		Project project = (Project) view.getTag(); //gets added to view by ProjectsListAdapter
-		Log.d(TAG,"onItemClick projectName: " + project.project_name + " - url: " + project.master_url);
-		(new ConfirmDeletionDialogFragment(project.project_name, project.master_url)).show(getSupportFragmentManager(), "confirm_projects_deletion");
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    Log.d(TAG, "onOptionsItemSelected()");
+
+	    switch (item.getItemId()) {
+			case R.id.projects_add:
+				onProjectAdd();
+				return true;
+			default:
+				return super.onOptionsItemSelected(item);
+		}
 	}
 	
-	public void addProjectButtonClicked(View view) {
-		Log.d(TAG, "addProjectButtonClicked");
+	public void onProjectClicked(String url, String name) {
+	    Log.d(TAG, "onProjectClicked()");
+	}
+	
+	public void onProjectAdd() {
+		Log.d(TAG, "onProjectAdd()");
 		startActivity(new Intent(this,LoginActivity.class));
 	}
 
-	@Override
-	protected void onDestroy() {
-	    Log.d(TAG,"onDestroy()");
-	    super.onDestroy();
-	    doUnbindService();
+	public void onProjectUpdate(String url, String name) {
+	    Log.d(TAG, "onProjectUpdate()");
+	    monitor.updateProjectAsync(url);
+	}
+	
+	public void onProjectDelete(String url, String name) {
+	    Log.d(TAG, "onProjectDelete() - Name: " + name + ", URL: " + url);
+		(new ConfirmDeletionDialogFragment(name, url)).show(getSupportFragmentManager(), "confirm_projects_deletion");
 	}
 	
 	public class ConfirmDeletionDialogFragment extends DialogFragment {
@@ -203,9 +202,9 @@ public class ProjectsActivity extends FragmentActivity {
 		private final String TAG = "ConfirmDeletionDialogFragment";
 		
 		private String name = "";
-		private String url;
+		private String url = "";
 		
-		public ConfirmDeletionDialogFragment(String name, String url) {
+		public ConfirmDeletionDialogFragment(String url, String name) {
 			this.name = name;
 			this.url = url;
 		}
@@ -217,20 +216,17 @@ public class ProjectsActivity extends FragmentActivity {
 	        builder.setMessage(dialogTitle)
 	               .setPositiveButton(R.string.confirm_deletion_confirm, new DialogInterface.OnClickListener() {
 	                   public void onClick(DialogInterface dialog, int id) {
-	                       Log.d(TAG,"confirm clicked.");
+	                       Log.d(TAG, "confirm clicked.");
 	                       monitor.detachProjectAsync(url); //asynchronous call to detach project with given url.
-	                       dataOutdated = true; //async call started, data out dated until broadcast
-	                       loadProjects();
 	                   }
 	               })
 	               .setNegativeButton(R.string.confirm_deletion_cancel, new DialogInterface.OnClickListener() {
 	                   public void onClick(DialogInterface dialog, int id) {
-	                       Log.d(TAG,"dialog canceled.");
+	                       Log.d(TAG, "dialog canceled.");
 	                   }
 	               });
 	        // Create the AlertDialog object and return it
 	        return builder.create();
 	    }
 	}
-
 }

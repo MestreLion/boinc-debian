@@ -206,7 +206,7 @@ HINTERNET wxWinINetURL::GetSessionHandle(bool closeSessionHandle)
     }
     return session.m_handle;
 }
-\
+
 
 
 // this class needn't be exported
@@ -253,7 +253,8 @@ size_t wxWinINetInputStream::OnSysRead(void *buffer, size_t bufsize)
 {
     DWORD bytesread = 0;
     DWORD lError = ERROR_SUCCESS;
-    INTERNET_BUFFERS bufs;
+    BYTE *buf = (BYTE*)buffer;
+    DWORD buflen = (DWORD)bufsize;
     BOOL success = false;
     CMainDocument* pDoc      = wxGetApp().GetDocument();
 
@@ -268,50 +269,63 @@ size_t wxWinINetInputStream::OnSysRead(void *buffer, size_t bufsize)
         SetError(wxSTREAM_READ_ERROR);
         return 0;
     }
-    
-    memset(&bufs, 0, sizeof(bufs));
-    bufs.dwStructSize = sizeof(INTERNET_BUFFERS);
-    bufs.Next = NULL;
-    bufs.lpvBuffer = buffer;
-    bufs.dwBufferLength = (DWORD)bufsize;
 
-    success = InternetReadFileEx(m_hFile, &bufs, IRF_SYNC, 2);
-    
-    lError = ::GetLastError();
+    while (1) {
+        bytesread = 0;
+        success = InternetReadFile(m_hFile, buf, buflen, &bytesread);
+        if (success) {
+            if ( bytesread == 0 ) {
+                SetError(wxSTREAM_EOF);
+            }
+            break;
+        } else {    // success == false
+            lError = ::GetLastError();
+            if (lError == ERROR_IO_PENDING) {
+                // We've received only part of the data so far
+                buf += bytesread;
+                buflen -= bytesread;
+                if (buflen <= 0) {
+                    // Buffer is full; I'll assume wxWinINetInputStream 
+                    // will call us again with a fresh empty buffer.
+                    break;  
+                }
+                continue;   // Read the enxt chunk of data
+            } else {
+                SetError(wxSTREAM_READ_ERROR);
+                break;
+            }
+        }
+
     
 #if 0       // Possibly useful for debugging
-    if ((!success) || (lError != ERROR_SUCCESS)) {
-        DWORD iError, bLength = 0;
-        InternetGetLastResponseInfo(&iError, NULL, &bLength);
-        if ( bLength > 0 )
-        {
-            wxString errorString;
-            InternetGetLastResponseInfo
-            (
-                &iError,
-                wxStringBuffer(errorString, bLength),
-                &bLength
-            );
+        if ((!success) || (lError != ERROR_SUCCESS)) {
+            DWORD iError, bLength = 0;
+            InternetGetLastResponseInfo(&iError, NULL, &bLength);
+            if ( bLength > 0 )
+            {
+                wxString errorString;
+                InternetGetLastResponseInfo
+                (
+                    &iError,
+                    wxStringBuffer(errorString, bLength),
+                    &bLength
+                );
 
-            wxLogError(wxT("Read failed with error %d: %s"),
-                    iError, errorString.c_str());
+                wxLogError(wxT("Read failed with error %d: %s"),
+                        iError, errorString.c_str());
+            }
+            else
+            {
+                wxLogError(wxT("Read failed with error %d"), lError);
+            }
         }
-    }
 #endif
 
-    if (!success) {
-        return 0;
-    }
-
-    bytesread = bufs.dwBufferLength;
-    if (lError != ERROR_SUCCESS) {
-        SetError(wxSTREAM_READ_ERROR);
-    } else {
-        if ( bytesread == 0 )
-        {
-            SetError(wxSTREAM_EOF);
+        if (!success) {
+            wxLogTrace(wxT("Function Status"), wxT("wxWinINetInputStream::OnSysRead - Download failure!\n"));
+            return 0;
         }
-    }
+    }   // End while(1)
     
     return bytesread;
 }
@@ -346,7 +360,6 @@ wxInputStream *wxWinINetURL::GetInputStream(wxURL *owner)
 {
 static bool bAlreadyRunning = false;
     if (bAlreadyRunning) {
-        fprintf(stderr, "wxWinINetURL::GetInputStream reentered!");
         return NULL;
     }
     bAlreadyRunning = true;
@@ -381,6 +394,7 @@ static bool bAlreadyRunning = false;
     operationEnded = false;
     double endtimeout = dtime() + dInternetTimeout;
 
+    wxLogTrace(wxT("Function Status"), wxT("wxWinINetURL::GetInputStream - Downloading file: '%s'\n"), owner->GetURL().c_str());
     HINTERNET newStreamHandle = InternetOpenUrl
                                 (
                                     GetSessionHandle(),
@@ -391,7 +405,6 @@ static bool bAlreadyRunning = false;
                                     INTERNET_FLAG_PASSIVE,
                                     1
                                 );
-                              
     while (!operationEnded) {
         if (b_ShuttingDown || 
             (!pDoc->IsConnected()) || 
@@ -399,6 +412,7 @@ static bool bAlreadyRunning = false;
             ) {
             GetSessionHandle(true); // Closes the session handle
             if (newStreamHandle) {
+                InternetCloseHandle(newStreamHandle);
                 newStreamHandle = NULL;
             }
             if (newStream) {
@@ -426,6 +440,10 @@ static bool bAlreadyRunning = false;
     }
     
     if (!newStreamHandle) {
+        if (newStream) {
+            delete newStream;
+            newStream = NULL;
+        }
         GetSessionHandle(true); // Closes the session handle
         dInternetTimeout = SHORT_INTERNET_TIMEOUT;
         bAlreadyRunning = false;
@@ -492,6 +510,23 @@ bool CBOINCInternetFSHandler::CanOpen(const wxString& location)
 {
     if (b_ShuttingDown) return false;
 
+    // Check to see if we support the download of the specified file type
+    // TODO: We'll need to revisit this policy after the next public release.
+    //   Either wait for the wxWidgets 3.0 migration, or fix the async file
+    //   download issue.  Until then disable image file downloads.
+    //
+    wxURI uri = wxURI(location);
+    wxFileName file = wxFileName(uri.GetPath());
+
+    if (file.GetExt() == wxT("gif")) return false;
+    if (file.GetExt() == wxT("tif")) return false;
+    if (file.GetExt() == wxT("jpg")) return false;
+    if (file.GetExt() == wxT("png")) return false;
+    if (file.GetExt() == wxT("tiff")) return false;
+    if (file.GetExt() == wxT("jpeg")) return false;
+
+    // Regular check based on protocols
+    //
     wxString p = GetProtocol(location);
     if ((p == wxT("http")) || (p == wxT("ftp")))
     {
@@ -521,6 +556,8 @@ wxFSFile* CBOINCInternetFSHandler::OpenFile(wxFileSystem& WXUNUSED(fs), const wx
 #ifdef __WXMSW__
                 wxWinINetURL * winURL = new wxWinINetURL;
                 m_InputStream = winURL->GetInputStream(&url);
+                delete winURL;
+                winURL = NULL;
 #else
                 m_InputStream = url.GetInputStream();
 #endif
@@ -534,9 +571,11 @@ wxFSFile* CBOINCInternetFSHandler::OpenFile(wxFileSystem& WXUNUSED(fs), const wx
                 }
 
                 obj = new BOINCMemFSHashObj(m_InputStream, strMIME, strLocation);
-                delete m_InputStream;
-                m_InputStream = NULL;
-
+                if (m_InputStream) {
+                    delete m_InputStream;
+                    m_InputStream = NULL;
+                }
+                
                 m_Hash->Put(strLocation, obj);
                 
                 // If we couldn't read image, then return NULL so 

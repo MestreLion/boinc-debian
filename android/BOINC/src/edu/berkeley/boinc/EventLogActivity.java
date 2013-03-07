@@ -19,17 +19,20 @@
 package edu.berkeley.boinc;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.lang.StringBuffer;
 
 import edu.berkeley.boinc.adapter.EventLogListAdapter;
 import edu.berkeley.boinc.client.Monitor;
 import edu.berkeley.boinc.rpc.Message;
+import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -41,16 +44,35 @@ import android.widget.ListView;
 public class EventLogActivity extends FragmentActivity {
 
 	private final String TAG = "BOINC EventLogActivity";
-	
+		
+	private Monitor monitor;
+	private Boolean mIsBound;
+
 	private ListView lv;
 	private EventLogListAdapter listAdapter;
 	private ArrayList<Message> data = new ArrayList<Message>();
+	private int lastSeqno = 0;
 
 	// Controls when to display the proper messages activity, by default we display a
 	// view that says we are loading messages.  When initialSetup is false, we have
 	// something to display.
 	//
 	private Boolean initialSetup; 
+	
+    // This is called when the connection with the service has been established, 
+	// getService returns the Monitor object that is needed to call functions.
+	//
+	private ServiceConnection mConnection = new ServiceConnection() {
+	    public void onServiceConnected(ComponentName className, IBinder service) {
+	        monitor = ((Monitor.LocalBinder)service).getService();
+		    mIsBound = true;
+	    }
+
+	    public void onServiceDisconnected(ComponentName className) {
+	        monitor = null;
+		    mIsBound = false;
+	    }
+	};
 	
 	// BroadcastReceiver event is used to update the UI with updated information from 
 	// the client.  This is generally called once a second.
@@ -72,14 +94,15 @@ public class EventLogActivity extends FragmentActivity {
 				initialSetup = false;
 				setContentView(R.layout.eventlog_layout); 
 				lv = (ListView) findViewById(R.id.eventlogList);
-		        listAdapter = new EventLogListAdapter(EventLogActivity.this, R.id.eventlogList, data);
-		        lv.setAdapter(listAdapter);
-			}
+		        listAdapter = new EventLogListAdapter(EventLogActivity.this, lv, R.id.eventlogList, data);
+		    }
 			
-			// Deep copy, so ArrayList adapter actually recognizes the difference
-			data.clear();
-			for (Message tmp: tmpA) {
-				data.add(tmp);
+			// Add new messages to the event log
+			for (Message msg: tmpA) {
+				if (msg.seqno > lastSeqno) {
+					data.add(msg);
+					lastSeqno = msg.seqno; 
+				}
 			}
 			
 			// Force list adapter to refresh
@@ -96,6 +119,10 @@ public class EventLogActivity extends FragmentActivity {
 	    Log.d(TAG, "onCreate()");
 
 	    super.onCreate(savedInstanceState);
+
+	    // Establish a connection with the service, onServiceConnected gets called when
+	    // (calling within Tab needs getApplicationContext() for bindService to work!)
+		getApplicationContext().bindService(new Intent(this, Monitor.class), mConnection, Service.START_STICKY_COMPATIBILITY);
 	}
 
 	@Override
@@ -123,6 +150,11 @@ public class EventLogActivity extends FragmentActivity {
 	protected void onDestroy() {
 	    Log.d(TAG, "onDestroy()");
 
+	    if (mIsBound) {
+	    	getApplicationContext().unbindService(mConnection);
+	        mIsBound = false;
+	    }
+	    
 	    super.onDestroy();
 	}
 
@@ -132,6 +164,7 @@ public class EventLogActivity extends FragmentActivity {
 
 	    MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.eventlog_menu, menu);
+
 		return true;
 	}
 	
@@ -152,19 +185,43 @@ public class EventLogActivity extends FragmentActivity {
 
 		Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
 		StringBuffer emailText = new StringBuffer();
+		Boolean copySelection = false;
 		
+		// Determine what kind of email operation we are going to use
+	    for (int index = 0; index < lv.getCount(); index++) {
+	    	if (lv.isItemChecked(index)) {
+	    		copySelection = true;
+	    	}
+	    }
+
+	    // Put together the email intent		
 		emailIntent.setType("plain/text");
 		emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Event Log for BOINC on Android");
 
 		// Construct the message body
 		emailText.append("\n\nContents of the Event Log:\n\n");
-		for (Message msg: data) {
-			emailText.append(new Date(msg.timestamp*1000).toString());
-			emailText.append("|");
-			emailText.append(msg.project);
-			emailText.append("|");
-			emailText.append(msg.body);
-			emailText.append("\r\n");
+		if (copySelection) {
+			// Copy selected items
+		    for (int index = 0; index < lv.getCount(); index++) {
+		    	if (lv.isItemChecked(index)) {
+					emailText.append(listAdapter.getDate(index));
+					emailText.append("|");
+					emailText.append(listAdapter.getProject(index));
+					emailText.append("|");
+					emailText.append(listAdapter.getMessage(index));
+					emailText.append("\r\n");
+		    	}
+		    }
+		} else {
+			// Copy all items
+		    for (int index = 0; index < lv.getCount(); index++) {
+				emailText.append(listAdapter.getDate(index));
+				emailText.append("|");
+				emailText.append(listAdapter.getProject(index));
+				emailText.append("|");
+				emailText.append(listAdapter.getMessage(index));
+				emailText.append("\r\n");
+			}
 		}
 		
 		emailIntent.putExtra(android.content.Intent.EXTRA_TEXT, emailText.toString());

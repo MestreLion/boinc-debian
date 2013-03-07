@@ -21,58 +21,117 @@ package edu.berkeley.boinc.adapter;
 import java.util.ArrayList;
 import java.util.Date;
 
-import edu.berkeley.boinc.R;
-import edu.berkeley.boinc.rpc.Message;
-
 import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.ListView;
 import android.widget.TextView;
+import edu.berkeley.boinc.R;
+import edu.berkeley.boinc.rpc.Message;
 
-public class EventLogListAdapter extends ArrayAdapter<Message>{
+
+public class EventLogListAdapter extends ArrayAdapter<Message> implements OnItemClickListener {
 	
-	// private final String TAG = "MessagesListAdapter";
-
 	private ArrayList<Message> entries;
     private Activity activity;
- 
-    public EventLogListAdapter(Activity a, int textViewResourceId, ArrayList<Message> entries) {
-        super(a, textViewResourceId, entries);
-        this.entries = entries;
-        this.activity = a;
+    private ListView listView;
+    
+    public static class ViewEventLog {
+    	int entryIndex;
+    	CheckBox cbCheck;
+        TextView tvMessage;
+        TextView tvDate;
+        TextView tvProjectName;
     }
  
-    @Override
+    public EventLogListAdapter(Activity activity, ListView listView, int textViewResourceId, ArrayList<Message> entries) {
+        super(activity, textViewResourceId, entries);
+        this.entries = entries;
+        this.activity = activity;
+        this.listView = listView;
+        
+        listView.setAdapter(this);
+        listView.setOnItemClickListener(this);
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+    }
+ 
+	@Override
+	public int getCount() {
+		return entries.size();
+	}
+
+	public String getDate(int position) {
+		return new Date(entries.get(position).timestamp*1000).toString();
+	}
+
+	@Override
+	public Message getItem(int position) {
+		return entries.get(position);
+	}
+
+	@Override
+	public long getItemId(int position) {
+		return position;
+	}
+
+	public String getMessage(int position) {
+		return entries.get(position).body;
+	}
+
+	public String getProject(int position) {
+		return entries.get(position).project;
+	}
+
+	@Override
     public View getView(int position, View convertView, ViewGroup parent) {
+	    View vi = convertView;
+		ViewEventLog viewEventLog;
     	
-    	// Setup view
-        View v = convertView;
-        LayoutInflater vi = (LayoutInflater)activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        v = vi.inflate(R.layout.eventlog_layout_listitem, null);
+		// Only inflate a new view if the ListView does not already have a view assigned.
+	    if (convertView == null) {
+	    	
+	    	vi = ((LayoutInflater)activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.eventlog_layout_listitem, null);
 
-    	// Get Message
-    	Message listItem = entries.get(position);
-    	
-		// Construct output
-		String project = listItem.project;
-		String date = new Date(listItem.timestamp*1000).toString();
-		String message = listItem.body;
-
-        // Instantiate layout elements
-		TextView tvProjectName = (TextView) v.findViewById(R.id.msgs_project);
-		TextView tvDate = (TextView) v.findViewById(R.id.msgs_date);
-		TextView tvMessage = (TextView) v.findViewById(R.id.msgs_message);
+	        viewEventLog = new ViewEventLog();
+	        viewEventLog.cbCheck = (CheckBox)vi.findViewById(R.id.msgs_check);
+	        viewEventLog.tvMessage = (TextView)vi.findViewById(R.id.msgs_message);
+	        viewEventLog.tvDate = (TextView)vi.findViewById(R.id.msgs_date);
+	        viewEventLog.tvProjectName = (TextView)vi.findViewById(R.id.msgs_project);
+	    
+	        vi.setTag(viewEventLog);
+	        
+	    } else {
+	    	
+	    	viewEventLog = (ViewEventLog)vi.getTag();
+	    	
+	    }
 
 		// Populate UI Elements
-		tvProjectName.setText(project);
-		tvDate.setText(date);
-		tvMessage.setText(message);
+	    viewEventLog.entryIndex = position;
+	    viewEventLog.cbCheck.setChecked(listView.isItemChecked(position));
+	    viewEventLog.tvMessage.setText(getMessage(position));
+	    viewEventLog.tvDate.setText(getDate(position));
+	    viewEventLog.tvProjectName.setText(getProject(position));
 
-		// Log.d(TAG, "project name: " + projectNameS + " - account: " + accountS);
-        return v;
-
+        return vi;
     }
+
+    public void onItemClick(AdapterView<?> adapter, View view, int position, long id ) {
+		ViewEventLog viewEventLog = (ViewEventLog)view.getTag();
+
+		if (viewEventLog.cbCheck.isChecked()) {
+			viewEventLog.cbCheck.setChecked(false);
+		} else {
+			viewEventLog.cbCheck.setChecked(true);
+		}
+
+		notifyDataSetChanged();
+    }
+
 }
