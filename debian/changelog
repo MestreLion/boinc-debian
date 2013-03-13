@@ -1,3 +1,13 @@
+boinc (7.0.56+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+    - Fix for man pages (lp: #1140560) (Thanks Christian Beer)
+    - Fix for xml parsing issues.
+    - Fix in work fetch.
+    - Fix issue in Milkyway@Home (fixed in .55 release)
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Wed, 13 Mar 2013 15:42:42 +0100
+
 boinc (7.0.54+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release.

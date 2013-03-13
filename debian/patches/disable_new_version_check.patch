@@ -9,9 +9,9 @@ Forwarded: not-needed
 Reviewed-By: costamagnagianfranco@yahoo.it
 Last-Update: <2013-03-07>
 
---- boinc-7.0.54+dfsg.orig/client/client_state.cpp
-+++ boinc-7.0.54+dfsg/client/client_state.cpp
-@@ -458,7 +458,7 @@ int CLIENT_STATE::init() {
+--- a/client/client_state.cpp
++++ b/client/client_state.cpp
+@@ -460,7 +460,7 @@
  
      // inform the user if there's a newer version of client
      //
@@ -20,9 +20,9 @@ Last-Update: <2013-03-07>
  
      // parse account files again,
      // now that we know the host's venue on each project
---- boinc-7.0.54+dfsg.orig/client/scheduler_op.cpp
-+++ boinc-7.0.54+dfsg/client/scheduler_op.cpp
-@@ -129,7 +129,7 @@ int SCHEDULER_OP::init_op_project(PROJEC
+--- a/client/scheduler_op.cpp
++++ b/client/scheduler_op.cpp
+@@ -129,7 +129,7 @@
          // and project list
          //
          if (!config.no_info_fetch) {
