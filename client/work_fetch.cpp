@@ -35,36 +35,8 @@
 
 using std::vector;
 
-bool use_hyst_fetch = true;
-
 RSC_WORK_FETCH rsc_work_fetch[MAX_RSC];
 WORK_FETCH work_fetch;
-
-#define FETCH_IF_IDLE_INSTANCE          0
-    // If resource has an idle instance,
-    // get work for it from the project with greatest LTD,
-    // even if it's overworked.
-#define FETCH_IF_MAJOR_SHORTFALL        1
-    // If resource is saturated for less than work_buf_min(),
-    // get work for it from the project with greatest LTD,
-    // even if it's overworked.
-#define FETCH_IF_MINOR_SHORTFALL        2
-    // If resource is saturated for less than work_buf_total(),
-    // get work for it from the non-overworked project with greatest LTD.
-#define FETCH_IF_PROJECT_STARVED        3
-    // If any project is not overworked and has too few jobs
-    // to use its instance share,
-    // get work from the one with greatest LTD.
-
-static const char* criterion_name(int criterion) {
-    switch (criterion) {
-    case FETCH_IF_IDLE_INSTANCE: return "idle instance";
-    case FETCH_IF_MAJOR_SHORTFALL: return "major shortfall";
-    case FETCH_IF_MINOR_SHORTFALL: return "minor shortfall";
-    case FETCH_IF_PROJECT_STARVED: return "starved";
-    }
-    return "unknown";
-}
 
 inline bool dont_fetch(PROJECT* p, int rsc_type) {
     if (p->no_rsc_pref[rsc_type]) return true;
@@ -171,14 +143,6 @@ RSC_PROJECT_WORK_FETCH& RSC_WORK_FETCH::project_state(PROJECT* p) {
     return p->rsc_pwf[rsc_type];
 }
 
-#if 0
-bool RSC_WORK_FETCH::may_have_work(PROJECT* p) {
-    if (dont_fetch(p, rsc_type)) return false;
-    RSC_PROJECT_WORK_FETCH& w = project_state(p);
-    return (w.backoff_time < gstate.now);
-}
-#endif
-
 void RSC_WORK_FETCH::rr_init() {
     shortfall = 0;
     nidle_now = 0;
@@ -223,16 +187,21 @@ static bool wacky_dcf(PROJECT* p) {
 // return the highest-priority project that may have jobs
 // and doesn't exclude those instances.
 //
-// If strict is true, enforce hysteresis and backoff rules
-// (which are there to limit rate of scheduler RPCs).
-// Otherwise, we're going to do a scheduler RPC anyway
-// and we're deciding whether to piggyback a work request,
-// so there is no reason to enforce these rules.
+// Only choose a project if the buffer is below min level;
+// if strict_hyst is true, relax this to max level
 //
-PROJECT* RSC_WORK_FETCH::choose_project_hyst(bool strict) {
+// If backoff_exempt_project is non-NULL,
+// don't enforce resource backoffs for that project;
+// this is for when we're going to do a scheduler RPC anyway
+// and we're deciding whether to piggyback a work request
+//
+PROJECT* RSC_WORK_FETCH::choose_project_hyst(
+    bool strict_hyst,
+    PROJECT* backoff_exempt_project
+) {
     PROJECT* pbest = NULL;
     bool buffer_low = true;
-    if (strict) {
+    if (strict_hyst) {
         if (saturated_time > gstate.work_buf_min()) buffer_low = false;
     } else {
         if (saturated_time > gstate.work_buf_total()) buffer_low = false;
@@ -257,16 +226,17 @@ PROJECT* RSC_WORK_FETCH::choose_project_hyst(bool strict) {
             continue;
         }
 
-        // check whether we can fetch work of this type
+        // see whether work fetch for this resource is banned
+        // by prefs, config, project, or acct mgr
         //
         if (dont_fetch(p, rsc_type)) {
             //msg_printf(p, MSG_INFO, "skip: dont_fetch");
             continue;
         }
 
-        // if strict, check backoff
+        // check backoff
         //
-        if (strict) {
+        if (p != backoff_exempt_project) {
             if (project_state(p).backoff_time > gstate.now) {
                 //msg_printf(p, MSG_INFO, "skip: backoff");
                 continue;
@@ -343,105 +313,6 @@ PROJECT* RSC_WORK_FETCH::choose_project_hyst(bool strict) {
     } else {
         set_request_excluded(pbest);
     }
-    return pbest;
-}
-
-// Choose the best project to ask for work for this resource,
-// given the specific criterion
-//
-PROJECT* RSC_WORK_FETCH::choose_project(int criterion) {
-    PROJECT* pbest = NULL;
-
-    switch (criterion) {
-    case FETCH_IF_IDLE_INSTANCE:
-        if (nidle_now == 0) return NULL;
-        break;
-    case FETCH_IF_MAJOR_SHORTFALL:
-        if (saturated_time > gstate.work_buf_min()) return NULL;
-        break;
-    case FETCH_IF_MINOR_SHORTFALL:
-        if (saturated_time > gstate.work_buf_total()) return NULL;
-        break;
-    case FETCH_IF_PROJECT_STARVED:
-        if (deadline_missed_instances >= ninstances) return NULL;
-        break;
-    }
-
-    for (unsigned i=0; i<gstate.projects.size(); i++) {
-        PROJECT* p = gstate.projects[i];
-        if (p->pwf.cant_fetch_work_reason) continue;
-        if (!project_state(p).may_have_work) continue;
-        RSC_PROJECT_WORK_FETCH& rpwf = project_state(p);
-        if (rpwf.anon_skip) continue;
-        switch (criterion) {
-        case FETCH_IF_MINOR_SHORTFALL:
-            if (wacky_dcf(p)) continue;
-            if (!p->resource_share) continue;
-            break;
-        case FETCH_IF_MAJOR_SHORTFALL:
-            if (wacky_dcf(p)) continue;
-            if (!p->resource_share) continue;
-            break;
-        case FETCH_IF_PROJECT_STARVED:
-            if (p->sched_priority < 0) continue;
-            if (rpwf.nused_total >= ninstances) continue;
-            if (!p->resource_share) continue;
-            break;
-        }
-
-        if (pbest) {
-            if (!p->resource_share) {
-                continue;
-            }
-            if (pbest->sched_priority > p->sched_priority) {
-                continue;
-            }
-        }
-        pbest = p;
-    }
-    if (!pbest) return NULL;
-
-    // decide how much work to request from each resource
-    //
-    work_fetch.clear_request();
-    switch (criterion) {
-    case FETCH_IF_IDLE_INSTANCE:
-    case FETCH_IF_MAJOR_SHORTFALL:
-        set_request(pbest);
-        break;
-    case FETCH_IF_PROJECT_STARVED:
-        set_request(pbest);
-        break;
-    case FETCH_IF_MINOR_SHORTFALL:
-        // in this case, potentially request work for all resources
-        //
-        if (pbest->sched_priority < 0) {
-            set_request(pbest);
-        } else {
-            work_fetch.set_all_requests(pbest);
-        }
-        break;
-    }
-    // in principle there should be a nonzero request.
-    // check, just in case
-    //
-    if (!req_secs && !req_instances) {
-        if (log_flags.work_fetch_debug) {
-            msg_printf(pbest, MSG_INFO,
-                "[work_fetch] error: project chosen but zero request"
-            );
-        }
-        return 0;
-    }
-
-    if (log_flags.work_fetch_debug) {
-        msg_printf(pbest, MSG_INFO,
-            "[work_fetch] chosen: %s %s: %.2f inst, %.2f sec",
-            criterion_name(criterion), rsc_name(rsc_type),
-            req_instances, req_secs
-        );
-    }
-
     return pbest;
 }
 
@@ -725,7 +596,7 @@ void WORK_FETCH::piggyback_work_request(PROJECT* p) {
         return;
     }
     compute_cant_fetch_work_reason();
-    PROJECT* bestp = choose_project(false);
+    PROJECT* bestp = choose_project(false, p);
     if (p != bestp) {
         if (p->pwf.cant_fetch_work_reason == 0) {
             if (bestp) {
@@ -762,9 +633,11 @@ PROJECT* WORK_FETCH::non_cpu_intensive_project_needing_work() {
 
 // choose a project to fetch work from,
 // and set the request fields of resource objects.
-// If strict is true, enforce hysteresis and backoff rules
 //
-PROJECT* WORK_FETCH::choose_project(bool strict) {
+PROJECT* WORK_FETCH::choose_project(
+    bool strict_hyst,
+    PROJECT* backoff_exempt_project
+) {
     PROJECT* p;
 
     if (log_flags.work_fetch_debug) {
@@ -794,57 +667,15 @@ PROJECT* WORK_FETCH::choose_project(bool strict) {
     }
 
     p = 0;
-if (use_hyst_fetch) {
     if (gpus_usable) {
         for (int i=1; i<coprocs.n_rsc; i++) {
-            p = rsc_work_fetch[i].choose_project_hyst(strict);
+            p = rsc_work_fetch[i].choose_project_hyst(strict_hyst, backoff_exempt_project);
             if (p) break;
         }
     }
     if (!p) {
-        p = rsc_work_fetch[0].choose_project_hyst(strict);
+        p = rsc_work_fetch[0].choose_project_hyst(strict_hyst, backoff_exempt_project);
     }
-} else {
-    if (gpus_usable) {
-        for (int i=1; i<coprocs.n_rsc; i++) {
-            p = rsc_work_fetch[i].choose_project(FETCH_IF_IDLE_INSTANCE);
-            if (p) break;
-        }
-    }
-    if (!p) {
-        p = rsc_work_fetch[0].choose_project(FETCH_IF_IDLE_INSTANCE);
-    }
-
-    if (!p && gpus_usable) {
-        for (int i=1; i<coprocs.n_rsc; i++) {
-            p = rsc_work_fetch[i].choose_project(FETCH_IF_MAJOR_SHORTFALL);
-            if (p) break;
-        }
-    }
-    if (!p) {
-        p = rsc_work_fetch[0].choose_project(FETCH_IF_MAJOR_SHORTFALL);
-    }
-    
-    if (!p && gpus_usable) {
-        for (int i=1; i<coprocs.n_rsc; i++) {
-            p = rsc_work_fetch[i].choose_project(FETCH_IF_MINOR_SHORTFALL);
-            if (p) break;
-        }
-    }
-    if (!p) {
-        p = rsc_work_fetch[0].choose_project(FETCH_IF_MINOR_SHORTFALL);
-    }
-
-    if (!p && gpus_usable) {
-        for (int i=1; i<coprocs.n_rsc; i++) {
-            p = rsc_work_fetch[i].choose_project(FETCH_IF_PROJECT_STARVED);
-            if (p) break;
-        }
-    }
-    if (!p) {
-        p = rsc_work_fetch[0].choose_project(FETCH_IF_PROJECT_STARVED);
-    }
-}
 
     if (log_flags.work_fetch_debug) {
         print_state();
