@@ -358,14 +358,14 @@ bool CLIENT_STATE::cpu_benchmarks_poll() {
     static double last_time = 0;
     if (!benchmarks_running) return false;
 
-    if (now < last_time + BENCHMARK_POLL_PERIOD) return false;
+    if (!clock_change && now < last_time + BENCHMARK_POLL_PERIOD) return false;
     last_time = now;
 
     active_tasks.send_heartbeats();
 
     // if active tasks don't quit after 10 sec, give up on benchmark
     //
-    if (now >= (cpu_benchmarks_start + 10.0) && active_tasks.is_task_executing()) {
+    if (gstate.clock_change || now >= (cpu_benchmarks_start + 10.0) && active_tasks.is_task_executing()) {
         msg_printf(NULL, MSG_INTERNAL_ERROR,
             "Failed to stop applications; aborting CPU benchmarks"
         );
