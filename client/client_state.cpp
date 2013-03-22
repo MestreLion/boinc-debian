@@ -84,6 +84,7 @@ CLIENT_STATE::CLIENT_STATE()
     scheduler_op = new SCHEDULER_OP(http_ops);
 #endif
     client_state_dirty = false;
+    clock_change = false;
     check_all_logins = false;
     cmdline_gui_rpc_port = 0;
     run_cpu_benchmarks = false;
@@ -279,7 +280,9 @@ void CLIENT_STATE::set_now() {
 
     // if time went backward significantly, clear delays
     //
+    clock_change = false;
     if (x < (now-60)) {
+        clock_change = true;
         clear_absolute_times();
     }
 
@@ -1267,7 +1270,7 @@ bool CLIENT_STATE::abort_unstarted_late_jobs() {
 bool CLIENT_STATE::garbage_collect() {
     bool action;
     static double last_time=0;
-    if (gstate.now - last_time < GARBAGE_COLLECT_PERIOD) return false;
+    if (!clock_change && now - last_time < GARBAGE_COLLECT_PERIOD) return false;
     last_time = gstate.now;
 
     action = abort_unstarted_late_jobs();
@@ -1575,8 +1578,8 @@ bool CLIENT_STATE::update_results() {
     static double last_time=0;
     int retval;
 
-    if (gstate.now - last_time < UPDATE_RESULTS_PERIOD) return false;
-    last_time = gstate.now;
+    if (!clock_change && now - last_time < UPDATE_RESULTS_PERIOD) return false;
+    last_time = now;
 
     result_iter = results.begin();
     while (result_iter != results.end()) {
@@ -2010,7 +2013,7 @@ int CLIENT_STATE::quit_activities() {
 
 #endif
 
-// See if a timestamp in the client state file
+// Called at startup to see if a timestamp in the client state file
 // is later than the current time.
 // If so, the user must have decremented the system clock.
 //
@@ -2032,6 +2035,8 @@ void CLIENT_STATE::clear_absolute_times() {
         "System clock was turned backwards; clearing timeouts"
     );
 
+    exclusive_app_running = 0;
+    exclusive_gpu_app_running = 0;
     new_version_check_time = now;
     all_projects_list_check_time = now;
     retry_shmem_time = 0;
