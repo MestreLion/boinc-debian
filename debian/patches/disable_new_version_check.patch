@@ -11,7 +11,7 @@ Last-Update: <2013-03-07>
 
 --- a/client/client_state.cpp
 +++ b/client/client_state.cpp
-@@ -460,7 +460,7 @@
+@@ -463,7 +463,7 @@
  
      // inform the user if there's a newer version of client
      //
