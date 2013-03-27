@@ -1,0 +1,18 @@
+--- boinc-7.0.58+dfsg.orig/clientgui/DlgAbout.cpp
++++ boinc-7.0.58+dfsg/clientgui/DlgAbout.cpp
+@@ -80,10 +80,14 @@ bool CDlgAbout::Create(wxWindow* parent,
+     m_AboutBOINCURLCtrl = NULL;
+ #if defined(_WIN64) && defined(_M_X64)
+     m_strVersion.Printf(wxT("%s (x64)"), wxT(BOINC_VERSION_STRING));
++#elif defined(__x86_64__) || defined(_M_X64)
++    m_strVersion.Printf(wxT("%s (x64)"), wxT(BOINC_VERSION_STRING));
++#elif defined(__i386) || defined(_M_IX86)
++    m_strVersion.Printf(wxT("%s (x86)"), wxT(BOINC_VERSION_STRING));
+ #elif defined(__ppc__)
+     m_strVersion.Printf(wxT("%s (PowerPC)"), wxT(BOINC_VERSION_STRING));
+ #else
+-    m_strVersion.Printf(wxT("%s (x86)"), wxT(BOINC_VERSION_STRING));
++    m_strVersion.Printf(wxT("%s (unknown)"), wxT(BOINC_VERSION_STRING));
+ #endif
+     m_strWidgetsVersion.Printf(wxT("%d.%d.%d"), wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER);
+ ////@end CDlgAbout member initialisation
