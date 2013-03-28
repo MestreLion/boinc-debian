@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## $Id: test_exit.py 2114 2003-08-15 20:27:21Z quarl $
+## $Id$
 
 # Make sure server hears that client exited with nonzero status.
 

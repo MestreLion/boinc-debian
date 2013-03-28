@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## $Id: test_concat.py 2144 2003-08-18 23:51:46Z quarl $
+## $Id$
 
 # tests whether command-line arg passing works
 

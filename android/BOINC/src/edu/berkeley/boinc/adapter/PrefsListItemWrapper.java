@@ -19,7 +19,6 @@
 package edu.berkeley.boinc.adapter;
 
 import android.content.Context;
-import android.view.View;
 
 public class PrefsListItemWrapper {
 	

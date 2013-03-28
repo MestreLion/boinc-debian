@@ -1,6 +1,6 @@
 #!/usr/local/bin/php -q
 <?php {
-    // $Id: test_masterurl_failure.php 1510 2003-06-17 01:36:47Z quarl $
+    // $Id$
 
     $use_proxy_html = 1;
 
