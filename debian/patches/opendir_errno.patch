@@ -5,7 +5,7 @@
  
  static int CheckNestedDirectories(
 -    char * basepath, int depth, 
-+    const char * const basepath, int depth, 
++    const char * const basepath, int depth,
      int use_sandbox, int isManager, 
 -    char * path_to_error
 +    const char * const path_to_error

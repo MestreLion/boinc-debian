@@ -1,3 +1,10 @@
+boinc (7.0.59+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+  * New debian/watch file for upstream git switch.
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Thu, 28 Mar 2013 23:25:42 +0100
+
 boinc (7.0.58+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release.
