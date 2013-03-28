@@ -144,7 +144,7 @@ public class BOINCActivity extends TabActivity {
 					layout();
 				}
 				if(intialStart && (clientSetupStatus == ClientStatus.SETUP_STATUS_NOPROJECT)) { // if it is first start and no project attached, show login activity
-					startActivity(new Intent(this,LoginActivity.class));
+					startActivity(new Intent(this,AttachProjectListActivity.class));
 					intialStart = false;
 				}
 			} 
@@ -236,7 +236,7 @@ public class BOINCActivity extends TabActivity {
 	        tabHost.addTab(prefsSpec);
     	}
         
-    	if(res.getBoolean(R.bool.tab_messages)) {
+    	if(res.getBoolean(R.bool.tab_eventlog)) {
 	        TabSpec msgsSpec = tabHost.newTabSpec(getResources().getString(R.string.tab_eventlog));
 	        msgsSpec.setIndicator(getResources().getString(R.string.tab_eventlog), getResources().getDrawable(R.drawable.icon_msgs_tab));
 	        Intent msgsIntent = new Intent(this, EventLogActivity.class);
@@ -260,7 +260,7 @@ public class BOINCActivity extends TabActivity {
 	// triggered by click on noproject_warning, starts login activity
 	public void noProjectClicked(View view) {
 		Log.d(TAG, "noProjectClicked()");
-		startActivity(new Intent(this, LoginActivity.class));
+		startActivity(new Intent(this, AttachProjectListActivity.class));
 	}
     
 	

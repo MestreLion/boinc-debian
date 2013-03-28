@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# $Id: fake_php.py 2180 2003-08-22 22:52:52Z chrisz $
+# $Id$
 
 # fake php - all we really need is 'include schedulers.txt'
 

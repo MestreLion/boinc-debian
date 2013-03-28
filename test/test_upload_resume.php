@@ -1,6 +1,6 @@
 #!/usr/local/bin/php -q
 <?php {
-    // $Id: test_upload_resume.php 1510 2003-06-17 01:36:47Z quarl $
+    // $Id$
 
     // This tests whether upload resuming works correctly.
 

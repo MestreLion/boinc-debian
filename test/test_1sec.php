@@ -1,6 +1,6 @@
 #!/usr/local/bin/php -q
 <?php {
-    // $Id: test_1sec.php 1383 2003-06-11 23:09:11Z quarl $
+    // $Id$
 
     // This tests whether the client handles multiple projects,
     // and whether CPU time is divided correctly between projects
