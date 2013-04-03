@@ -1,6 +1,7 @@
 boinc (7.0.60+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release.
+  * Disabling install checking_notes since not updated anymore
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Tue, 02 Apr 2013 18:38:43 +0200
 
