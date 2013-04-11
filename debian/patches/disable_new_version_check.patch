@@ -1,5 +1,6 @@
 Description: Disable new version check in notices tab
-Author: Gianfranco Costamagna <costamagnagianfranco@yahoo.it
+ Debian/Ubuntu specific patch.
+Author: Gianfranco Costamagna <costamagnagianfranco@yahoo.it>,
 	ChristianB
 Bug-Ubuntu: https://bugs.launchpad.net/bugs/1140597
 
