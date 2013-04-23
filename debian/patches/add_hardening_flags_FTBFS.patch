@@ -1,0 +1,100 @@
+--- boinc-7.0.65+dfsg.orig/client/cs_account.cpp
++++ boinc-7.0.65+dfsg/client/cs_account.cpp
+@@ -79,7 +79,7 @@ int PROJECT::write_account_file() {
+     fprintf(f, "<project_preferences>\n%s</project_preferences>\n",
+         project_prefs.c_str()
+     );
+-    fprintf(f, gui_urls.c_str());
++    fprintf(f, "%s" ,gui_urls.c_str());
+     fprintf(f, "</account>\n");
+     fclose(f);
+     retval = boinc_rename(TEMP_ACCT_FILE_NAME, path);
+--- boinc-7.0.65+dfsg.orig/client/cs_benchmark.cpp
++++ boinc-7.0.65+dfsg/client/cs_benchmark.cpp
+@@ -365,7 +365,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll()
+ 
+     // if active tasks don't quit after 10 sec, give up on benchmark
+     //
+-    if (gstate.clock_change || now >= (cpu_benchmarks_start + 10.0) && active_tasks.is_task_executing()) {
++    if (gstate.clock_change || (now >= (cpu_benchmarks_start + 10.0) && active_tasks.is_task_executing())) {
+         msg_printf(NULL, MSG_INTERNAL_ERROR,
+             "Failed to stop applications; aborting CPU benchmarks"
+         );
+@@ -462,7 +462,7 @@ bool CLIENT_STATE::cpu_benchmarks_poll()
+             }
+             ndone++;
+             if (benchmark_descs[i].error) {
+-                msg_printf(0, MSG_INFO, benchmark_descs[i].error_str);
++                msg_printf(0, MSG_INFO, "%s", benchmark_descs[i].error_str);
+                 had_error = true;
+             }
+         }
+--- boinc-7.0.65+dfsg.orig/client/main.cpp
++++ boinc-7.0.65+dfsg/client/main.cpp
+@@ -80,7 +80,7 @@ void log_message_startup(const char* msg
+         msg
+     );
+     if (!gstate.executing_as_daemon) {
+-        fprintf(stdout, evt_msg);
++        fprintf(stdout, "%s", evt_msg);
+     } else {
+ #ifdef _WIN32
+         LogEventInfoMessage(evt_msg);
+@@ -89,7 +89,7 @@ void log_message_startup(const char* msg
+ #elif defined (ANDROID)
+         __android_log_print(ANDROID_LOG_INFO, "BOINC", evt_msg);
+ #else
+-        syslog(LOG_DAEMON|LOG_INFO, evt_msg);
++        syslog(LOG_DAEMON|LOG_INFO, "%s", evt_msg);
+ #endif
+     }
+ }
+@@ -121,7 +121,7 @@ void log_message_error(const char* msg)
+ #elif defined (ANDROID)
+         __android_log_print(ANDROID_LOG_ERROR, "BOINC", evt_msg);
+ #else
+-        syslog(LOG_DAEMON|LOG_ERR, evt_msg);
++        syslog(LOG_DAEMON|LOG_ERR, "%s", evt_msg);
+ #endif
+     }
+ }
+@@ -143,7 +143,7 @@ void log_message_error(const char* msg,
+ #elif defined (ANDROID)
+         __android_log_print(ANDROID_LOG_ERROR, "BOINC", evt_msg);
+ #else
+-        syslog(LOG_DAEMON|LOG_ERR, evt_msg);
++        syslog(LOG_DAEMON|LOG_ERR, "%s", evt_msg);
+ #endif
+     }
+ }
+--- boinc-7.0.65+dfsg.orig/client/main.cpp
++++ boinc-7.0.65+dfsg/client/main.cpp
+@@ -112,7 +112,7 @@ void log_message_error(const char* msg)
+     );
+ #endif
+     if (!gstate.executing_as_daemon) {
+-        fprintf(stderr, evt_msg);
++        fprintf(stderr, "%s", evt_msg);
+     } else {
+ #ifdef _WIN32
+         LogEventErrorMessage(evt_msg);
+@@ -134,7 +134,7 @@ void log_message_error(const char* msg,
+         msg, error_code
+     );
+     if (!gstate.executing_as_daemon) {
+-        fprintf(stderr, evt_msg);
++        fprintf(stderr, "%s", evt_msg);
+     } else {
+ #ifdef _WIN32
+         LogEventErrorMessage(evt_msg);
+--- boinc-7.0.65+dfsg.orig/client/work_fetch.cpp
++++ boinc-7.0.65+dfsg/client/work_fetch.cpp
+@@ -784,7 +784,7 @@ void WORK_FETCH::write_request(FILE* f,
+     if (log_flags.work_fetch_debug) {
+         char buf[256];
+         request_string(buf);
+-        msg_printf(p, MSG_INFO, buf);
++        msg_printf(p, MSG_INFO, "%s", buf);
+     }
+ }
+ 
