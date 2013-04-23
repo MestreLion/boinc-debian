@@ -2,7 +2,6 @@ boinc (7.0.65+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release.
   * debian/control.in dropped version check
-      - debhelper (>= 7.0.50~)           (version 8      in stable)
       - pkg-config (>= 0.15)             (version 0.25   in stable)
       - autoconf (>= 2.59)               (version 2.67   in stable)
       - automake1.9 (>= 1.9.3)           (version 1.9.6  in stable)
