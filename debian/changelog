@@ -7,6 +7,9 @@ boinc (7.0.65+dfsg-1) UNRELEASED; urgency=low
       - autoconf (>= 2.59)               (version 2.67   in stable)
       - automake1.9 (>= 1.9.3)           (version 1.9.6  in stable)
       - libcurl4-openssl-dev (>= 7.17.1) (version 7.21.0 in stable)
+      - python (>= 2.3)                  (version 2.6.6  in stable)
+      - Breaks: udev (<< 136-1)          (version 164    in stable)
+      - removed boinc-app-seti from boinc-client Suggests field
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Wed, 17 Apr 2013 09:06:54 +0200
 
