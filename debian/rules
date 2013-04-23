@@ -9,9 +9,6 @@
 #export CPP=/usr/lib/gcc-snapshot/bin/cpp
 
 # Set default flags with dpkg-buildflags
-# -Wformat -Werror=format-security will need many fixes to avoid ftbfs,
-# so it's disabled for now
-#export DEB_BUILD_MAINT_OPTIONS = hardening=-format,+bindnow
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
@@ -260,9 +257,6 @@ BINARIES= sched/census sched/cgi sched/db_dump sched/db_purge \
 BINARIES += samples/worker/worker samples/wrapper/wrapper samples/sleeper/sleeper \
 	samples/nvcuda/cuda samples/example_app/example_app samples/vm_wrapper/vm_wrapper \
 	samples/atiopencl/atiopencl
-
-#override_dh_shlibdeps:
-#	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
 
 override_dh_auto_clean: 
 	dh_auto_clean
