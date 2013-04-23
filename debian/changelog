@@ -9,6 +9,7 @@ boinc (7.0.65+dfsg-1) UNRELEASED; urgency=low
       - python (>= 2.3)                  (version 2.6.6  in stable)
       - Breaks: udev (<< 136-1)          (version 164    in stable)
       - removed boinc-app-seti from boinc-client Suggests field
+      - Bumped debhelper required version to 8
     debian/compat
       - Bumped to version 8
 
