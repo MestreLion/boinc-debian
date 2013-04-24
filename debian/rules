@@ -349,10 +349,6 @@ override_dh_install:
 override_dh_strip:
 	dh_strip -a --dbg-package=boinc-dbg
 
-# disabled since upstream doesn't update it anymore, and this is not intended for client pourposes
-#override_dh_installchangelogs:
-#	dh_installchangelogs -k checkin_notes
-
 override_dh_fixperms:
 	dh_fixperms
 	# some files are not right with 755
