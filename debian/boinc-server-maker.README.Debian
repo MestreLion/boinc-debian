@@ -23,3 +23,10 @@ already be achieved with the wrapper application alone, especially
 when one can rely on the client side to also run Debian. But
 this all needs more time than we currently have to think through
 and experiment further.
+
+Current developments of the packaging aim at keeping the debian
+side as tiny as possibly and improve the install target of the
+Makefiles instead.
+
+ -- 
+   Steffen

@@ -1,5 +1,6 @@
 boinc (7.0.65+dfsg-1) unstable; urgency=low
 
+  [ Gianfranco Costamagna ]
   * New upstream release.
   * debian/control.in dropped version check
       - pkg-config (>= 0.15)             (version 0.25   in stable)
@@ -13,7 +14,11 @@ boinc (7.0.65+dfsg-1) unstable; urgency=low
     debian/compat
       - Bumped to version 8
 
- -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Wed, 17 Apr 2013 09:06:54 +0200
+  [ Steffen Moeller ]
+  * Merged work on packaging of BOINC server code
+  * boinc-cgi-stripchart package now built together with server parts
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Tue, 30 Apr 2013 21:45:44 +0200
 
 boinc (7.0.60+dfsg-1) UNRELEASED; urgency=low
 

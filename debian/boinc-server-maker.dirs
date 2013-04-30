@@ -1,7 +1,4 @@
-usr/lib/boinc-server/bin
-usr/lib/boinc-server/tools
-usr/lib/boinc-server/sched
-usr/share/boinc-server/bin
-usr/share/boinc-server/lib
-usr/share/boinc-server/tools
-#usr/share/boinc-server/samples/example_app
+usr/lib/boinc-server-maker
+usr/share/boinc-server-maker
+usr/share/pyshared/Boinc
+usr/share/boinc-server-maker/py/Boinc
