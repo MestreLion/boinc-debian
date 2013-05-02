@@ -365,9 +365,6 @@ override_dh_strip:
 	[ -d debian/boinc-dbg ] && dh_strip -a --no-package=-boinc-server-dbg --no-package=boinc-server-maker --no-package=boinc-app-examples --dbg-package=boinc-dbg || true
 	[ -d debian/boinc-server-dbg ] && dh_strip -a -Nboinc -Nlibboinc7 -Nboinc-nvidia-cuda -Nboinc-amd-opencl -Nboinc-client -Nboinc-manager -Nboinc-dev -Nlibboinc-app-dev -Nlib || true
 
-override_dh_installchangelogs:
-	dh_installchangelogs -k checkin_notes
-
 override_dh_fixperms:
 	dh_fixperms
 	# some files are not right with 755
