@@ -1,11 +1,9 @@
 Author: Steffen Moeller <moeller@debian.org>
 Forwarded: yes (PM to David)
 
-Index: boinc_upstream/Makefile.am
-===================================================================
---- boinc_upstream.orig/Makefile.am
-+++ boinc_upstream/Makefile.am
-@@ -13,7 +13,7 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -16,7 +16,7 @@
  endif
  
  if ENABLE_SERVER
@@ -14,20 +12,16 @@ Index: boinc_upstream/Makefile.am
  ## once contained samples/example_app which breaks out-of-source-tree builds
  endif
  
-Index: boinc_upstream/html/Makefile.am
-===================================================================
 --- /dev/null
-+++ boinc_upstream/html/Makefile.am
++++ b/html/Makefile.am
 @@ -0,0 +1,5 @@
 +
 +htmldir=$(DESTDIR)/$(prefix)/share/boinc-server-maker/html
 +install-data-local:
 +	mkdir -p $(htmldir)
 +	cp -r bt  drupal  inc  languages  ops  project.sample  queue  user $(htmldir)
-Index: boinc_upstream/sched/Makefile.am
-===================================================================
---- boinc_upstream.orig/sched/Makefile.am
-+++ boinc_upstream/sched/Makefile.am
+--- a/sched/Makefile.am
++++ b/sched/Makefile.am
 @@ -87,11 +87,12 @@
  
  if ENABLE_SERVER
@@ -88,10 +82,8 @@ Index: boinc_upstream/sched/Makefile.am
  
  fcgi_SOURCES = $(cgi_sources)
  fcgi_CPPFLAGS = -D_USING_FCGI_ $(AM_CPPFLAGS)
-Index: boinc_upstream/configure.ac
-===================================================================
---- boinc_upstream.orig/configure.ac
-+++ boinc_upstream/configure.ac
+--- a/configure.ac
++++ b/configure.ac
 @@ -975,6 +975,7 @@
                   db/Makefile
                   doc/Makefile
@@ -100,10 +92,8 @@ Index: boinc_upstream/configure.ac
                   lib/Makefile
                   locale/Makefile
                   Makefile
-Index: boinc_upstream/db/Makefile.am
-===================================================================
---- boinc_upstream.orig/db/Makefile.am
-+++ boinc_upstream/db/Makefile.am
+--- a/db/Makefile.am
++++ b/db/Makefile.am
 @@ -9,4 +9,5 @@
  endif
  
@@ -111,10 +101,8 @@ Index: boinc_upstream/db/Makefile.am
 -EXTRA_DIST = constraints.sql schema.sql init_db
 +extradir = $(prefix)/share/boinc-server-maker/db
 +dist_extra_DATA = constraints.sql schema.sql init_db
-Index: boinc_upstream/tools/Makefile.am
-===================================================================
---- boinc_upstream.orig/tools/Makefile.am
-+++ boinc_upstream/tools/Makefile.am
+--- a/tools/Makefile.am
++++ b/tools/Makefile.am
 @@ -1,11 +1,13 @@
  ## -*- mode: makefile; tab-width: 4 -*-
  include $(top_srcdir)/Makefile.incl
@@ -148,10 +136,8 @@ Index: boinc_upstream/tools/Makefile.am
  AM_CXXFLAGS += $(MYSQL_CFLAGS)
  AM_LDFLAGS += -static -L../sched -L../lib/.libs
  
-Index: boinc_upstream/vda/Makefile.am
-===================================================================
---- boinc_upstream.orig/vda/Makefile.am
-+++ boinc_upstream/vda/Makefile.am
+--- a/vda/Makefile.am
++++ b/vda/Makefile.am
 @@ -1,6 +1,7 @@
  include $(top_srcdir)/Makefile.incl
  
@@ -161,10 +147,8 @@ Index: boinc_upstream/vda/Makefile.am
  
  AM_CXXFLAGS += $(MYSQL_CFLAGS)
  AM_LDFLAGS += -static -L../lib/.libs -L../sched
-Index: boinc_upstream/apps/Makefile.am
-===================================================================
---- boinc_upstream.orig/apps/Makefile.am
-+++ boinc_upstream/apps/Makefile.am
+--- a/apps/Makefile.am
++++ b/apps/Makefile.am
 @@ -3,7 +3,7 @@
  
  include $(top_srcdir)/Makefile.incl
@@ -174,10 +158,8 @@ Index: boinc_upstream/apps/Makefile.am
  example_PROGRAMS = upper_case concat 1sec
  
  upper_case_SOURCES = upper_case.cpp
-Index: boinc_upstream/lib/Makefile.am
-===================================================================
---- boinc_upstream.orig/lib/Makefile.am
-+++ boinc_upstream/lib/Makefile.am
+--- a/lib/Makefile.am
++++ b/lib/Makefile.am
 @@ -8,7 +8,8 @@
  # Stuff needed for server builds goes here.
  if ENABLE_SERVER
@@ -188,10 +170,8 @@ Index: boinc_upstream/lib/Makefile.am
  
  endif
  # end of "if ENABLE_SERVER"
-Index: boinc_upstream/py/Makefile.am
-===================================================================
---- boinc_upstream.orig/py/Makefile.am
-+++ boinc_upstream/py/Makefile.am
+--- a/py/Makefile.am
++++ b/py/Makefile.am
 @@ -19,6 +19,10 @@
  	Boinc/tools.py \
  	Boinc/util.py
