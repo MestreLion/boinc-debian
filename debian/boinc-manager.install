@@ -1,5 +1,9 @@
-debian/icons/boincmgr-*.xpm     usr/share/pixmaps
+debian/icons/boincmgr-16.png    usr/share/icons/hicolor/16x16/apps/boincmgr.png
+debian/icons/boincmgr-32.png    usr/share/icons/hicolor/32x32/apps/boincmgr.png
+debian/icons/boincmgr-48.png    usr/share/icons/hicolor/48x48/apps/boincmgr.png
+debian/icons/boincmgr-128.png   usr/share/icons/hicolor/128x128/apps/boincmgr.png
+debian/icons/boincmgr-256.png   usr/share/icons/hicolor/256x256/apps/boincmgr.png
+debian/icons/boincmgr-512.png   usr/share/icons/hicolor/512x512/apps/boincmgr.png
 debian/boinc-manager.desktop    usr/share/applications
 usr/bin/boincmgr
 usr/share/locale/*/BOINC-Manager.mo
-#usr/share/boinc/boincmgr*.png

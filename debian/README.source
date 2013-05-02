@@ -62,6 +62,38 @@ Screen saver
  libxcb-atom1-dev
 
 
+Launcher icon sources
+---------------------
+
+The launcher icon used by BOINC Manager comes in multiple sizes, all found in
+debian/icons, and were obtained from several sources:
+
+sizes 32 and 256: Windows icon
+sizes 16, 48 and 128: Mac OSX icon
+size 512: Berkley BOINC website - Logos and graphics page
+
+To re-create this icon set the following tools and packages are needed:
+
+- convert and identify, from imagemagick
+- icotool, from icoutils
+- icns2png, from icnsutils
+
+   sudo apt-get install imagemagick icoutils icnsutils
+
+Then run from source top-level dir:
+
+   tempdir=$(mktemp -d --tmpdir=.) && cd "$tempdir"
+   for i in 32 256;    do icotool -x -w $i        ../clientgui/res/BOINCGUIApp.ico; done
+   for i in 16 48 128; do icns2png -x -s $i -d 32 ../clientgui/res/BOINCMgr.icns; done
+   wget http://boinc.berkeley.edu/logo/boinc_glossy2_512_F.tif &&
+   convert +set 'date:create' *.tif boinc-512.png
+   for icon in *.png; do
+      size=$(identify -format '%w' "$icon") &&
+      mv "$icon" ../debian/icons/boincmgr-"$size".png
+   done
+   cd .. && rm -rf "$tempdir"
+
+
 Removed non-dfsg upstream files
 ===============================
  The files removed from upstream tag are:
