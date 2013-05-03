@@ -121,3 +121,10 @@ locale/zh_CN/BOINC-Web.mo
 locale/zh_TW/BOINC-Client.mo
 locale/zh_TW/BOINC-Manager.mo
 locale/zh_TW/BOINC-Web.mo
+debian/icons/boincmgr-16.png
+debian/icons/boincmgr-32.png
+debian/icons/boincmgr-48.png
+debian/icons/boincmgr-128.png
+debian/icons/boincmgr-256.png
+debian/icons/boincmgr-512.png
+
