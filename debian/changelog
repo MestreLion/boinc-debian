@@ -1,3 +1,17 @@
+boinc (7.0.65+dfsg-2) UNRELEASED; urgency=low
+
+  [ Gianfranco Costamagna ]
+  * Disabled checkin notes in install_changelogs
+    Not updated anymore by upstream
+  * Fixed a lintian warning
+
+  [ Rodrigo Silva ]
+  * New debian/icons and refator the icon size directoty
+    (lp: #1173622)
+  * Improved manager launcher.
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Tue, 30 Apr 2013 21:45:44 +0200
+
 boinc (7.0.65+dfsg-1) unstable; urgency=low
 
   [ Gianfranco Costamagna ]
@@ -23,7 +37,6 @@ boinc (7.0.65+dfsg-1) unstable; urgency=low
 boinc (7.0.60+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release.
-  * Disabling install checking_notes since not updated anymore
 
  -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Tue, 02 Apr 2013 18:38:43 +0200
 
