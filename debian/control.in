@@ -82,7 +82,7 @@ Package: boinc
 @Architecture: amd64 i386
 @Section: contrib/net
 @Priority: extra
-@Depends: ${misc:Depends}, boinc, fglrx-driver, amd-libopencl1
+@Depends: ${misc:Depends}, boinc, fglrx-driver, amd-libopencl1|fglrx|fglrx-updates
 @Description: metapackage for AMD/ATI OpenCL-savvy BOINC client and manager
 @ The Berkeley Open Infrastructure for Network Computing (BOINC) is a
 @ software platform for distributed computing: several initiatives of
