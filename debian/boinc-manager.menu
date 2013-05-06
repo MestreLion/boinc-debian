@@ -10,4 +10,4 @@
     icon128x128="usr/share/icons/hicolor/128x128/apps/boincmgr.png"\
     icon256x256="usr/share/icons/hicolor/256x256/apps/boincmgr.png"\
     icon512x512="usr/share/icons/hicolor/512x512/apps/boincmgr.png"\
-    command="boincmgr"
+    command="boincmgr" icon="/usr/share/pixmaps/boincmgr.png"

@@ -1,4 +1,5 @@
-debian/icons/* 			/usr/share/icons/hicolor/
-debian/boinc-manager.desktop    usr/share/applications
+debian/icons/* 				usr/share/icons/hicolor
+debian/icons/256x256/boincmgr.png	usr/share/pixmaps/
+debian/boinc-manager.desktop    	usr/share/applications
 usr/bin/boincmgr
 usr/share/locale/*/BOINC-Manager.mo
