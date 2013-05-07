@@ -88,10 +88,21 @@ Then run from source top-level dir:
    wget http://boinc.berkeley.edu/logo/boinc_glossy2_512_F.tif &&
    convert +set 'date:create' *.tif boinc-512.png
    for icon in *.png; do
-      size=$(identify -format '%w' "$icon") &&
-      mv "$icon" ../debian/icons/boincmgr-"$size".png
+      size=$(identify -format '%G' "$icon") &&
+      install -m 644 -D "$icon" ../debian/icons/hicolor/"$size"/apps/boincmgr.png
+      if [ "$size" = "32x32" ]; then
+         convert "$icon" boincmgr.xpm &&
+         install -m 644 -D boincmgr.xpm ../debian/icons/pixmaps/boincmgr.xpm
+      fi
    done
    cd .. && rm -rf "$tempdir"
+
+This will create the icon images in a format and directory structure compatible
+with Freedesktop.org Icon Specification (default 'hicolor' theme and 'apps'
+context) and Debian Menu System (XPM format, max size 32x32, /usr/share/pixmaps)
+
+Any changes to this structure should be reflected in boinc-manager.install,
+source/include-binaries and boinc-manager.menu
 
 
 Removed non-dfsg upstream files
