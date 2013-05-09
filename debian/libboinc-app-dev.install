@@ -5,6 +5,7 @@ lib/*.h	                        usr/include/boinc/lib
 api/*.h                         usr/include/boinc/api
 
 config.h			usr/include/boinc
+project_specific_defines.h	usr/include/boinc
 Makefile.am                     usr/share/boinc-dev
 
 usr/lib/lib*.so                 usr/lib
