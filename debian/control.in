@@ -72,7 +72,7 @@ Package: boinc
 @ Berkeley serves as a common portal to the otherwise independently run
 @ projects.
 @ .
-@ Regular users (rightously) often find it an unbearable nuissance to
+@ Regular users (righteously) often find it an unbearable nuisance to
 @ care for the exact configuration of BOINC for CUDA-savvy graphics
 @ cards. This package adds a series of dependencies from the non-free
 @ section to the regular boinc package. This also meant this binary
@@ -91,7 +91,7 @@ Package: boinc
 @ Berkeley serves as a common portal to the otherwise independently run
 @ projects.
 @ .
-@ Regular users (rightously) often find it an unbearable nuissance to
+@ Regular users (righteously) often find it an unbearable nuisance to
 @ care for the configuration of BOINC for the OpenCL-savvy AMD/ATI
 @ graphics cards.  This package adds a series of dependencies from the
 @ non-free section to the regular boinc package. This also meant this
@@ -144,7 +144,7 @@ Package: boinc
 # available resources, and to change that ratio to a higher after
 # some user determined duration of inactivity. There is now quite
 # a number of individuals who prefer to have everything presented
-# with their accustomed priciple for setting and choosing a screen
+# with their accustomed principle for setting and choosing a screen
 # saver. Upon inactivity, the BOINC client is started, and stopped
 # again when the user is back. To save the screen, it then shows
 # the graphical progress indication as optionally shown also by
@@ -267,7 +267,7 @@ Package: boinc
 % This package extends the boinc-server-maker package. It features a
 % series of small applications that a newly installed environment may
 % decide to use for testing purposes. Having them separated has the neat
-% side effect that thosee binaries may be retrieved more easily for foreign
+% side effect that those binaries may be retrieved more easily for foreign
 % platforms to feed the local servers with.
 % .
 % The package also features the wrapper application, which is likely
