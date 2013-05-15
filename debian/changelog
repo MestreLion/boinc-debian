@@ -1,4 +1,10 @@
-boinc (7.0.65+dfsg-2) UNRELEASED; urgency=low
+boinc (7.0.65+dfsg-3) UNRELEASED; urgency=low
+
+  * Added lightdm to init script (lp: #1177433)
+
+ -- Gianfranco Costamagna <costamagnagianfranco@yahoo.it>  Wed, 15 May 2013 17:33:13 +0200
+
+boinc (7.0.65+dfsg-2) unstable; urgency=low
 
   [ Gianfranco Costamagna ]
   * Disabled checkin_notes in override_install_changelogs,

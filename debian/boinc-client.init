@@ -3,7 +3,7 @@
 # Provides:          boinc boinc-client
 # Required-Start:    $all
 # Required-Stop:     $local_fs $remote_fs
-# Should-Start:      x11-common network-manager gdm kdm dbus
+# Should-Start:      x11-common network-manager gdm kdm dbus lightdm
 # Should-Stop:       x11-common
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
